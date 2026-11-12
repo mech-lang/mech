@@ -1,0 +1,366 @@
+{
+  "schema": "mech.related-post-gen.native-query-evidence.v1",
+  "scope": "Completed IR339/341/342/343/344 exploratory compiler candidates only. IR345/346 and later work excluded. Offline evidence/source verifier; no binaries or native execution required.",
+  "timed_exact_outputs": 2314,
+  "primary": {
+    "record": "first-native-query-gains/latency.json",
+    "config": "first-native-query-gains/config.json",
+    "paired": "first-native-query-gains/paired-comparisons.json",
+    "outputs": 1581,
+    "rounds": 31,
+    "variants": 51
+  },
+  "resources": {
+    "record": "new-managed-resources/resources-query-first/report.json",
+    "plan": "new-managed-resources/resources-query-first/plan.json",
+    "outputs": 343,
+    "rounds": 7,
+    "variants": 49
+  },
+  "confirmation": {
+    "record": "independent-managed-query-comparison-prepared-v3/report.json",
+    "plan": "independent-managed-query-comparison-prepared-v3/plan.json",
+    "additional_paired": "independent-managed-query-comparison-prepared-v3/additional-paired-comparisons.json",
+    "outputs": 390,
+    "rounds": 13,
+    "variants": 30
+  },
+  "managed_work_qualifications": {
+    "mech-managed-host-v2-4": {
+      "record": "control-qualifications/mech-managed-host-v2-4/full.json",
+      "sha256": "33c4c7f10e88dd6f0f5f11ec02eb63f778ff35bbaed3b894f27609ae6294a2bc",
+      "work": 36864870728,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-retire-overlap": {
+      "record": "control-qualifications/mech-managed-retire-overlap/full.json",
+      "sha256": "b8d2406f969b31b78364588b530b39d09c8f78c212b095f6d2f37dd3854fa4bc",
+      "work": 36864870728,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-scoped-frame": {
+      "record": "control-qualifications/mech-managed-scoped-frame/full.json",
+      "sha256": "5563120bf594b061de18a21d6e6ce7b5b8910f3ee7a2fd7080d852a33444b157",
+      "work": 36864870728,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-typed-fixed-byte": {
+      "record": "control-qualifications/mech-managed-typed-fixed-byte/full.json",
+      "sha256": "e176c78351c33f5c631b2cd393084fdae5b0d871eb7c03968fa73bf324c1052d",
+      "work": 36997602022,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": false
+    },
+    "mech-managed-guarded-owner-wide": {
+      "record": "control-qualifications/mech-managed-guarded-owner-wide/full.json",
+      "sha256": "82c9f13b3ffacf1fc783080967874331c9452cd15f90bb3f618d3da40929fdb8",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-guarded-owner-byte": {
+      "record": "control-qualifications/mech-managed-guarded-owner-byte/full.json",
+      "sha256": "7c43e4a490cb43b56c1c2da1a0a29abb5169955e4518f271334cc9a613392997",
+      "work": 37025278893,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-key-u32-probe": {
+      "record": "control-qualifications/mech-managed-key-u32-probe/full.json",
+      "sha256": "66d611848f4281505fb4fecb5c838ea4d5b329801e305177ddcda682fc334138",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-static-replay-byte": {
+      "record": "control-qualifications/mech-managed-static-replay-byte/full.json",
+      "sha256": "875c72e3bd3c4758e859974005a602f6bbb999da345566923fee5582db779710",
+      "work": 37025278893,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-static-replay-u32": {
+      "record": "control-qualifications/mech-managed-static-replay-u32/full.json",
+      "sha256": "9e4b9ece067ee3f81b5435831764dce93f5e07e6b12a946805b2c6022eb8d0f3",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-owned-capture-wide": {
+      "record": "control-qualifications/mech-managed-owned-capture-wide/full.json",
+      "sha256": "7afc87ae5409bdeac0187b2ebe21f88355ca37ce745dad5446a9462bef7d29a4",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-owned-capture-u32": {
+      "record": "control-qualifications/mech-managed-owned-capture-u32/full.json",
+      "sha256": "a1e32729382d541c6e479e86480a9875a34470eba4a5d0d527206a9e184a99e5",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-worker-wide": {
+      "record": "control-qualifications/mech-managed-dense-worker-wide/full.json",
+      "sha256": "061bd68f34d723330ee35d74290ceb17958709f7c71173a3e4fe75e39797ee3a",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-worker-u32": {
+      "record": "control-qualifications/mech-managed-dense-worker-u32/full.json",
+      "sha256": "18cf01d359f448a3453c13e5929067b507b1b8b13056cb8cafb82ddf7cdd1cd6",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-producer-element-wide": {
+      "record": "control-qualifications/mech-managed-producer-element-wide/full.json",
+      "sha256": "92bb2e03dff7049773e6f363d17005484e7259ddde30107f938ec7b104d7e3df",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-producer-element-u32": {
+      "record": "control-qualifications/mech-managed-producer-element-u32/full.json",
+      "sha256": "946253e828c9bac717870eb055cbd07dfb921ce5126891815af974c8981926de",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-comparison-chain-wide": {
+      "record": "control-qualifications/mech-managed-comparison-chain-wide/full.json",
+      "sha256": "fdb1d3dba327406fbf0d25f86bf2d3714d55925fc14d1fc0f2ae35d38939a537",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-comparison-chain-u32": {
+      "record": "control-qualifications/mech-managed-comparison-chain-u32/full.json",
+      "sha256": "a4391fc961507d7314e9f2345ce1c71d0d6dfdf94503417b5dbd0304e04247ec",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-comparison-wide": {
+      "record": "control-qualifications/mech-managed-dense-comparison-wide/full.json",
+      "sha256": "2f5fe279449aed16b17997a4d7b6beba583e2726a1c7444515d79989db26a89d",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-comparison-u32": {
+      "record": "control-qualifications/mech-managed-dense-comparison-u32/full.json",
+      "sha256": "33f42e8b99fb89108907328cf7a2e9920aebe5e393dbf62e5347969a8bf3659b",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-producer-comparison-wide": {
+      "record": "control-qualifications/mech-managed-dense-producer-comparison-wide/full.json",
+      "sha256": "fd7a7f32eabd2a4d2cb74d240360da33f3d57d05a15e365b18997708dd3b5f81",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-producer-comparison-u32": {
+      "record": "control-qualifications/mech-managed-dense-producer-comparison-u32/full.json",
+      "sha256": "31fe31c621d164c90678beb07518103137ece3f697d1bfec83d7080a11ecbdc4",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-producer-wide": {
+      "record": "control-qualifications/mech-managed-dense-producer-wide/full.json",
+      "sha256": "dbffa28c0eeabd1e02a03dd463d0c38103f1333ecd2bd69ac72d649d1a3c3947",
+      "work": 36864870920,
+      "numeric_work": 24547911858,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    },
+    "mech-managed-dense-producer-u32": {
+      "record": "control-qualifications/mech-managed-dense-producer-u32/full.json",
+      "sha256": "b7a12f574ac0a62117a004fd84d4dd4f086b0918741cb7deab052ffebca2a0bf",
+      "work": 37134118305,
+      "numeric_work": 24618013850,
+      "numeric_regions": 8,
+      "exact_total_required": true
+    }
+  },
+  "historical_IR335_work_variation": "Retain every observation and exact per-variant numeric-worker bill. Historical unselected IR335 typed-fixed-byte total work varies; physical cause remains unattributed. All other managed totals required exact per matching same-source/compiler qualification. Worker contract tasks4/batch1, observed peak1..4; no filtering or rerun.",
+  "source_closure": {
+    "bases": {
+      "owned-capture-compiler-v1": {
+        "commit": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164",
+        "inventory_record": "owned-capture-compiler-v1/source-inventory.json"
+      },
+      "dense-worker-compiler-v2": {
+        "commit": "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+        "inventory_record": "dense-worker-compiler-v2/source-inventory.json"
+      }
+    },
+    "compilers": {
+      "producer-element-compiler-v1": {
+        "base": "owned-capture-compiler-v1",
+        "base_commit": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164",
+        "inventory_record": "producer-element-compiler-v1/source-inventory.json",
+        "overrides": {
+          "hosts/gpu/src/native_artifact/codegen/options.rs": "f8e59521e71887d1660d53d28a74cbe1d03fa6db3f9b9fefb28bf4e8fef1fb9f",
+          "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "7957b4b46bd21b33ad50c9d6a30863d3bfdab0ccebf8eb7851e50003870c7405",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs": "2549141875dbfaf40b7ad3b1d9431830363e08e8429165bc54ae93d091b7cfba",
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "9d30179d8ae0601921b91fa01be12cf66f3ed5a204761d89c8028acfedf81db2",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges.rs": "73082733ce2d99a810d4935da13c4ce0d2c78ac21aa65691e617bb6cfbeb289b",
+          "hosts/gpu/src/native_artifact/program/image/identity.rs": "ed5980ccdee80fdc78eeda1099a4fdc202d90c9f2a79345ba0d5635ab230cf09",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges/length.rs": "2e3f8b17c650e677b8a6869c90d926b8512be2ef9c1928ab2e03893e228570f6",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges/contents.rs": "25b4cc201f7498b5b0c33a8ddc35857a08e945c1048cd5f6e156771652cb32a4",
+          "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "d5309eb04264b6a1a37d3b9e525b5f067b3190c5aa9694a9a02d7b241b92c4f2",
+          "hosts/gpu/src/native_artifact/program/runtime/composition_tests/producer_element_ranges.rs": "c7645a5f1db6b46ab67ccf8017a341c76a8b339d889f7279826a22c0634c23a9"
+        },
+        "patch_record": "source-overrides/producer-element-compiler-v1/candidate.patch",
+        "source_count": 2821
+      },
+      "comparison-chain-compiler-v3": {
+        "base": "owned-capture-compiler-v1",
+        "base_commit": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164",
+        "inventory_record": "comparison-chain-compiler-v3/source-inventory.json",
+        "overrides": {
+          "vendor/cranelift-codegen/src/isa/aarch64/lower.rs": "f8b58827af323de7b7342c7e43eeefdd683e490d1303b55082c5739d7901fcbf",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/isle.rs": "9a32fd5ed50ce1f8fb594777148c82d921c483f13ba16affd3196372828fca85",
+          "hosts/gpu/src/native_artifact/program/image/identity.rs": "d5b6c31f68328c5fb0da1cba3a02ae56be49a26576daaa9ea6838ed4f90a3bc7",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction.rs": "3f225d579bf398fb90cb175870510920f43832d5f5bd988c0def6ad821124154",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction/tests.rs": "6691b31f0e052002a14a9a7a286df9e8a819f2819fb34e6a2a6c507e7a4cadac"
+        },
+        "patch_record": "source-overrides/comparison-chain-compiler-v3/candidate.patch",
+        "source_count": 2819
+      },
+      "dense-comparison-compiler-v2": {
+        "base": "dense-worker-compiler-v2",
+        "base_commit": "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+        "inventory_record": "dense-comparison-compiler-v2/source-inventory.json",
+        "overrides": {
+          "vendor/cranelift-codegen/src/isa/aarch64/lower.rs": "f8b58827af323de7b7342c7e43eeefdd683e490d1303b55082c5739d7901fcbf",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/isle.rs": "9a32fd5ed50ce1f8fb594777148c82d921c483f13ba16affd3196372828fca85",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction.rs": "3f225d579bf398fb90cb175870510920f43832d5f5bd988c0def6ad821124154",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction/tests.rs": "6691b31f0e052002a14a9a7a286df9e8a819f2819fb34e6a2a6c507e7a4cadac",
+          "hosts/gpu/src/native_artifact/program/image/identity.rs": "7592f05a7eb8bbc25b2e0d6bcf87d5bef1cfe534da76410036cdea08a4ce334d"
+        },
+        "patch_record": "source-overrides/dense-comparison-compiler-v2/candidate.patch",
+        "source_count": 2820
+      },
+      "dense-producer-comparison-compiler-v1": {
+        "base": "dense-worker-compiler-v2",
+        "base_commit": "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+        "inventory_record": "dense-producer-comparison-compiler-v1/source-inventory.json",
+        "overrides": {
+          "vendor/cranelift-codegen/src/isa/aarch64/lower.rs": "f8b58827af323de7b7342c7e43eeefdd683e490d1303b55082c5739d7901fcbf",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/isle.rs": "9a32fd5ed50ce1f8fb594777148c82d921c483f13ba16affd3196372828fca85",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction.rs": "3f225d579bf398fb90cb175870510920f43832d5f5bd988c0def6ad821124154",
+          "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction/tests.rs": "6691b31f0e052002a14a9a7a286df9e8a819f2819fb34e6a2a6c507e7a4cadac",
+          "hosts/gpu/src/native_artifact/codegen/options.rs": "f8e59521e71887d1660d53d28a74cbe1d03fa6db3f9b9fefb28bf4e8fef1fb9f",
+          "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "d628d21856350c41636c1b23ed6bf94b69ffb78a18dde5619dc00ed3137f4d0a",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs": "2549141875dbfaf40b7ad3b1d9431830363e08e8429165bc54ae93d091b7cfba",
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "9d30179d8ae0601921b91fa01be12cf66f3ed5a204761d89c8028acfedf81db2",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges.rs": "73082733ce2d99a810d4935da13c4ce0d2c78ac21aa65691e617bb6cfbeb289b",
+          "hosts/gpu/src/native_artifact/program/image/identity.rs": "0d3b008d2a31d7954191831348769fa12b51d717cc927f06fd7519c1c0032eb6",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges/length.rs": "2e3f8b17c650e677b8a6869c90d926b8512be2ef9c1928ab2e03893e228570f6",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges/contents.rs": "25b4cc201f7498b5b0c33a8ddc35857a08e945c1048cd5f6e156771652cb32a4",
+          "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "d5309eb04264b6a1a37d3b9e525b5f067b3190c5aa9694a9a02d7b241b92c4f2",
+          "hosts/gpu/src/native_artifact/program/runtime/composition_tests/producer_element_ranges.rs": "c7645a5f1db6b46ab67ccf8017a341c76a8b339d889f7279826a22c0634c23a9"
+        },
+        "patch_record": "source-overrides/dense-producer-comparison-compiler-v1/candidate.patch",
+        "source_count": 2824
+      },
+      "dense-producer-compiler-v1": {
+        "base": "dense-worker-compiler-v2",
+        "base_commit": "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+        "inventory_record": "dense-producer-compiler-v1/source-inventory.json",
+        "overrides": {
+          "hosts/gpu/src/native_artifact/codegen/options.rs": "f8e59521e71887d1660d53d28a74cbe1d03fa6db3f9b9fefb28bf4e8fef1fb9f",
+          "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "d628d21856350c41636c1b23ed6bf94b69ffb78a18dde5619dc00ed3137f4d0a",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs": "2549141875dbfaf40b7ad3b1d9431830363e08e8429165bc54ae93d091b7cfba",
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "9d30179d8ae0601921b91fa01be12cf66f3ed5a204761d89c8028acfedf81db2",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges.rs": "73082733ce2d99a810d4935da13c4ce0d2c78ac21aa65691e617bb6cfbeb289b",
+          "hosts/gpu/src/native_artifact/program/image/identity.rs": "aae1d816d5b8931ce912583b3fedfe58575ce935560c00be8a7241892ffa1e6d",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges/length.rs": "2e3f8b17c650e677b8a6869c90d926b8512be2ef9c1928ab2e03893e228570f6",
+          "hosts/gpu/src/native_artifact/program/codegen/producer_element_ranges/contents.rs": "25b4cc201f7498b5b0c33a8ddc35857a08e945c1048cd5f6e156771652cb32a4",
+          "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "d5309eb04264b6a1a37d3b9e525b5f067b3190c5aa9694a9a02d7b241b92c4f2",
+          "hosts/gpu/src/native_artifact/program/runtime/composition_tests/producer_element_ranges.rs": "c7645a5f1db6b46ab67ccf8017a341c76a8b339d889f7279826a22c0634c23a9"
+        },
+        "patch_record": "source-overrides/dense-producer-compiler-v1/candidate.patch",
+        "source_count": 2822
+      }
+    },
+    "vendor_inventory": "comparison-chain-compiler-v3/vendor-full-source-inventory.json",
+    "vendor_base_commit": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164",
+    "vendor_overrides": {
+      "vendor/cranelift-codegen/src/isa/aarch64/lower.isle": "3de00e3325cbb90a3522ed70981b39169c308d4fcae4def7189727d8c375776e",
+      "vendor/cranelift-codegen/src/isa/aarch64/lower.rs": "f8b58827af323de7b7342c7e43eeefdd683e490d1303b55082c5739d7901fcbf",
+      "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction.rs": "3f225d579bf398fb90cb175870510920f43832d5f5bd988c0def6ad821124154",
+      "vendor/cranelift-codegen/src/isa/aarch64/lower/isle.rs": "9a32fd5ed50ce1f8fb594777148c82d921c483f13ba16affd3196372828fca85",
+      "vendor/cranelift-codegen/src/isa/aarch64/lower/boolean_conjunction/tests.rs": "6691b31f0e052002a14a9a7a286df9e8a819f2819fb34e6a2a6c507e7a4cadac"
+    },
+    "literal_inventory": "typed-replay-compiler-v3/source-inventory.json",
+    "literal_includes": 164
+  },
+  "qualification": {
+    "new_adapter_exact_outputs": 640,
+    "new_managed_sources": 10,
+    "ordinary_and_metrics_adapters": 20,
+    "edges_per_adapter": 31,
+    "IR341_preparation": "comparison-chain-preparation-v3/qualification-audit.json",
+    "other_preparations": [
+      "producer-element-qualified-v1/qualification.json",
+      "dense-comparison-qualified-v1/qualification.json",
+      "dense-producer-comparison-qualified-v1/qualification.json",
+      "dense-producer-qualified-v1/qualification.json"
+    ],
+    "native_functions": 1031,
+    "native_correctness_calls": 1847152,
+    "matcher_contracts": 4,
+    "primary_native_contracts": "comparison-chain-backend-contracts-v3/completed.json",
+    "constant_supplement": "comparison-chain-constant-contracts-v1/completed.json",
+    "broad": "dense-producer-comparison-compiler-v1/broad-native-tests.json",
+    "broad_passed": 1088,
+    "broad_inherited_failures": 16,
+    "ignored": 11,
+    "filtered": 35
+  },
+  "selection": {
+    "new_selected": false,
+    "selected_checkpoint_IR": 334,
+    "fastest_Rust_target_met": false,
+    "IR341_u32": "Confirmed gain only against matching IR338 U32 parent; no gain established over current selected checkpoint or fastest Rust.",
+    "IR342_wide": "Primary paired gain against IR340 wide failed independent confirmation; unselected.",
+    "IR339_IR344_IR343": "Producer proof correct but relevant paired regressions retained; unselected.",
+    "best_primary_diagnostic": {
+      "variant": "mech-managed-dense-worker-u32",
+      "post_json_ms": 1.433625,
+      "current_fastest_Rust_ms": 1.227917,
+      "multiple": 1.1675259809905718
+    }
+  }
+}
