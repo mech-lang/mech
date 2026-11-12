@@ -56,6 +56,11 @@ fn unsigned_guard_source_keeps_reports_errors_aliases_and_retry() {
     source_keeps_reports_errors_aliases_and_retry(OptimizationPass::UnsignedGuardFacts);
 }
 
+#[test]
+fn selected_increment_source_keeps_reports_errors_aliases_and_retry() {
+    source_keeps_reports_errors_aliases_and_retry(OptimizationPass::SelectedUnsignedIncrements);
+}
+
 fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
     let mut words = vec![0, 1, u64::MAX, 1 << 63, (1 << 63) - 1];
     let mut seed = 0x7542_3918_abcd_0053u64;
@@ -76,6 +81,8 @@ fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
             match pass {
                 OptimizationPass::ScalarSelects => native.test_emissions().scalar_selects,
                 OptimizationPass::UnsignedGuardFacts => native.test_emissions().unsigned_guards,
+                OptimizationPass::SelectedUnsignedIncrements =>
+                    native.test_emissions().selected_unsigned_increments,
                 _ => unreachable!(),
             } > 0,
             "real source must actually select the transform"
@@ -84,6 +91,8 @@ fn source_keeps_reports_errors_aliases_and_retry(pass: OptimizationPass) {
             match pass {
                 OptimizationPass::ScalarSelects => ordinary.test_emissions().scalar_selects,
                 OptimizationPass::UnsignedGuardFacts => ordinary.test_emissions().unsigned_guards,
+                OptimizationPass::SelectedUnsignedIncrements =>
+                    ordinary.test_emissions().selected_unsigned_increments,
                 _ => unreachable!(),
             },
             0,
