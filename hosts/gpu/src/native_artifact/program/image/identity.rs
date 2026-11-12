@@ -503,7 +503,9 @@ fn selected_template(
 // the original complete logical backing claim and transport/setup floors.
 // IR330 retains checked worker owner prefixes and bounds short-key loads by
 // their actual spans; all original logical managed envelopes stay in force.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 331;
+// IR334 commits proved frame-footprint observations atomically on the same
+// scoped worker account; aggregate misses preserve the ordered visitor.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 334;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
