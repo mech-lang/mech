@@ -1,6 +1,37 @@
 # Current compression scoreboard
 
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
+R325 carries the reverse reduction cursor. Paired elapsed changes -0.499% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.094231× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.071535×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is reymont-prefix-32769 at 1.300001× Roc and 1.186219× libdeflate, requiring a 23.08% elapsed reduction to match Roc.
+
+| Input | R320 / Roc | R325 / Roc | R320 / libdeflate | R325 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.182140× | 0.181623× | 2.322590× | 2.315992× |
+| prefix-random-8192 | 0.792260× | 0.789417× | 2.831918× | 2.821758× |
+| prefix-random-16384 | 1.084564× | 1.080017× | 2.920775× | 2.908531× |
+| prefix-periodic-131072 | 0.702952× | 0.696108× | 1.273056× | 1.260660× |
+| prefix-periodic-1048576 | 0.709009× | 0.706669× | 1.201583× | 1.197617× |
+| prefix-repeated-131072 | 0.705422× | 0.702686× | 1.180861× | 1.176282× |
+| prefix-repeated-1048576 | 0.711252× | 0.709879× | 1.115845× | 1.113691× |
+| prefix-natural-4096 | 0.972967× | 0.962622× | 1.662757× | 1.645078× |
+| prefix-natural-32767 | 1.323575× | 1.309101× | 1.205449× | 1.192266× |
+| reymont-prefix-32769 | 1.312570× | 1.300001× | 1.197689× | 1.186219× |
+| heldout-window-32768 | 1.320556× | 1.304625× | 1.198138× | 1.183684× |
+| prefix-natural-65537 | 1.321319× | 1.307254× | 1.109463× | 1.097654× |
+| prefix-natural-262144 | 1.331517× | 1.321870× | 1.079355× | 1.071535× |
+| prefix-natural-1048576 | 1.337900× | 1.328470× | 1.079916× | 1.072305× |
+| prefix-random-1048576 | 1.610436× | 1.612026× | 2.280150× | 2.282401× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R325 timing, proof and replay evidence](native-reverse-load-writeback.md).
+
+## Historical R320 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
 R320 reuses the initial byte pair on selected paths. Paired elapsed changes -0.823% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 The closest primary case above parity is prefix-random-16384 at 1.072412× Roc. The closest above libdeflate parity is prefix-natural-1048576 at 1.078552×.

@@ -63867,6 +63867,378 @@
         }
       },
       "complete_goal": false
+    },
+    "325": {
+      "git_parent": "1d91c6f4644d15554633a4105a4585d6f56564fd",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+      "retained_compiler": "R325",
+      "retained_source_packet_round": 325,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Carry the reverse reduction cursor in a writeback load.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "26b5e4544003e67edf0aef2e69dfe39b71321c77eeaa22f450f4365cc334db0e",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": {
+            "before": "45dbe52b397da180d78dd1243822754df7f8f9074ec600d43cb77fa5b4adac30",
+            "after": "3b5d50e16e02d57af063c1e6db874374c918754548926c412be0a9c991bc4229"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+            "before": "4c1e60a6d2f9597a450292a30d4ff3080df4a6698c792fa24dcab3489e56e0f0",
+            "after": "590348dffcbd0234ddbfa1fd7aac94c0e14d000e090db1220dda21f02e45a679"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/tests.rs": {
+            "before": "25f8ee696161a20a67405fd0678a148bcf1b39a84b0429f4157dc2f860948dc0",
+            "after": "6aad7488de632aa93a0aa89e0a0cd31c3bdb4291d3a5607f12d0850ab991485d"
+          }
+        },
+        "backend_changed": true,
+        "backend_delta": {
+          "source_round": 317,
+          "changes": {
+            "src/machinst/lower.rs": {
+              "before": "e225371cac1f4c646b812d81aafbbf3e665599674a40a5c0486bf2737b0f2a0b",
+              "after": "11b5c3536aca6bbe2b830d599c0eee2197bc97f1c8623abdc9d7a3f781174e26"
+            },
+            "src/isa/aarch64/inst.isle": {
+              "before": "ac36acbf673e499b9642a12960c3b3ec94032fba5a744f0b192161a2ec6e38df",
+              "after": "9caf2751ba3e02418f5ea4f7739b4de337be18bb65576e443514348e8d273c8c"
+            },
+            "src/isa/aarch64/inst/mod.rs": {
+              "before": "9782170a2ac16720ef9e310e81dd8afc33e8978ddb3faa60716443a68e190550",
+              "after": "b098b60770ccd112969f2fb2b071604c828e4af404b1941ad922ade7fd86afa4"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698",
+              "after": "823b089228c7c7e57b610fb71a5f8a696c4de1ef59d46c6ffbcaf4ba11141d42"
+            },
+            "src/isa/aarch64/lower/isle.rs": {
+              "before": "9803cfe76e1aba6852b7206a11dd12b54a1424d1d6e2a709b90a852eef403c34",
+              "after": "c5d7eb444965330a898f576c4d36e8e02870d48c271b27f2f77ee0a36ead8c9d"
+            }
+          },
+          "patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+          "regalloc_changed": false,
+          "generated_selector_sha256": "d4d20f4283cb592dbdb943fe90041035ad61e9dd2a6305cbea2ede81676759f8",
+          "generator_sha256": "e78b07ba9a192fa384917e36b58f240cdaecae5e65dfa5a9ee58ef2a767d1adf"
+        },
+        "inherited_backend_patch_sha256": "04eec5f0bca9f502c9b1cb98706f37ab2adbf21b62dabcac11d9ab2cf5904809",
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "28e424fa883a637e084ec0fa108c4100c30a709289bc32667c0d63e7a084cb94",
+        "worker_sha256": "530c8510af391221803ae2f11932da0f36f5b4addb8134036f53598649cd912a"
+      },
+      "summary": {
+        "published_parent": "1d91c6f4644d15554633a4105a4585d6f56564fd",
+        "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 325,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 325,
+        "selected_mode": "reverse-load-writeback",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.995014009221721,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r320": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r320": 46,
+          "mech-candidate": 46
+        },
+        "faster_than_both_in_peer_cohort": {
+          "mech-r320": 0,
+          "mech-candidate": 0
+        },
+        "roc_faster_than_libdeflate": 17,
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "cohort_block_gate_misses": [],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.989815987163731,
+            "primary_block_means": {
+              "primary-a": 0.9894110921483839,
+              "primary-b": 0.9887306374909173
+            },
+            "matched": 0.9904238792612711
+          },
+          "heldout-window-32768": {
+            "primary": 0.9873980352980987,
+            "primary_block_means": {
+              "primary-a": 0.9896466194664353,
+              "primary-b": 0.9882330709792463
+            },
+            "matched": 0.9879361759848259
+          },
+          "prefix-natural-32767": {
+            "primary": 0.9886692705345821,
+            "primary_block_means": {
+              "primary-a": 0.991083818660606,
+              "primary-b": 0.9890443517007146
+            },
+            "matched": 0.9890643616030574
+          },
+          "heldout-window-32767": {
+            "primary": 0.9880248110953567,
+            "primary_block_means": {
+              "primary-a": 0.9890204283272132,
+              "primary-b": 0.9876233794254513
+            },
+            "matched": 0.9878043380051879
+          },
+          "prefix-natural-32769": {
+            "primary": 0.9855638333166472,
+            "primary_block_means": {
+              "primary-a": 0.9886948479408084,
+              "primary-b": 0.9857468988023479
+            },
+            "matched": 0.9903767566647992
+          },
+          "prefix-natural-32768": {
+            "primary": 0.9890899381704368,
+            "primary_block_means": {
+              "primary-a": 0.9900120938899891,
+              "primary-b": 0.9888117136247615
+            },
+            "matched": 0.9840026616544982
+          },
+          "prefix-natural-65535": {
+            "primary": 0.9878072720674766,
+            "primary_block_means": {
+              "primary-a": 0.9878661423968733,
+              "primary-b": 0.9928488337992579
+            },
+            "matched": 0.9927811724018669
+          },
+          "prefix-natural-65537": {
+            "primary": 0.990387377415093,
+            "primary_block_means": {
+              "primary-a": 0.9922633099244733,
+              "primary-b": 0.988857741314226
+            },
+            "matched": 0.989355593679791
+          },
+          "prefix-natural-65536": {
+            "primary": 0.9923008349527089,
+            "primary_block_means": {
+              "primary-a": 0.9904388114734263,
+              "primary-b": 0.9897126645636817
+            },
+            "matched": 0.9914855961824143
+          },
+          "prefix-natural-33027": {
+            "primary": 0.9883974705082061,
+            "primary_block_means": {
+              "primary-a": 0.9920362126980873,
+              "primary-b": 0.9869712481818083
+            },
+            "matched": 0.9891865954741291
+          },
+          "prefix-natural-131072": {
+            "primary": 0.9902083948405805,
+            "primary_block_means": {
+              "primary-a": 0.9898537717872803,
+              "primary-b": 0.9911005641621428
+            },
+            "matched": 0.994362641471023
+          },
+          "prefix-natural-262144": {
+            "primary": 0.992777881318088,
+            "primary_block_means": {
+              "primary-a": 0.9930635995269952,
+              "primary-b": 0.9918514961081618
+            },
+            "matched": 0.9927548684408195
+          },
+          "prefix-natural-1048576": {
+            "primary": 0.9928481197612296,
+            "primary_block_means": {
+              "primary-a": 0.9924250883417824,
+              "primary-b": 0.9927679848370115
+            },
+            "matched": 0.9929517336445788
+          },
+          "heldout-slides-65537": {
+            "primary": 0.990303104755852,
+            "primary_block_means": {
+              "primary-a": 0.9902606539056911,
+              "primary-b": 0.9892171402074025
+            },
+            "matched": 0.9915401144234194
+          },
+          "one-stored": {
+            "primary": 1.0381832827579192,
+            "primary_block_means": {
+              "primary-a": 1.0082435540491466,
+              "primary-b": 0.9851247352925985
+            },
+            "matched": 0.9938682126242274
+          },
+          "empty": {
+            "primary": 0.9850049075006386,
+            "primary_block_means": {
+              "primary-a": 1.0449265014223703,
+              "primary-b": 0.9848560423421177
+            },
+            "matched": 0.9940081890963213
+          },
+          "seven-stored-prefix": {
+            "primary": 0.9981422157910188,
+            "primary_block_means": {
+              "primary-a": 0.9843000238222182,
+              "primary-b": 0.9811381669626117
+            },
+            "matched": 0.9950019438481315
+          }
+        },
+        "priority_geomeans": {
+          "primary": 0.9925745029146713,
+          "matched": 0.9909904138459046,
+          "primary-a": 0.9942371275163865,
+          "primary-b": 0.9883860100069033
+        },
+        "retention_witnesses": [
+          "reymont-prefix-32769",
+          "prefix-natural-262144"
+        ],
+        "retention_reason": "Both combined timing gates pass, all heap families agree, and both established natural-text witnesses improve in each primary cohort and the matched comparison.",
+        "highest_paired_ratio": {
+          "case": "one-stored",
+          "ratio": 1.0381832827579192
+        },
+        "candidate_frontier": {
+          "case": "prefix-random-16384",
+          "x_reference": 1.0942312547573578
+        },
+        "dual_peer_frontier": "reymont-prefix-32769",
+        "heap_families_identical": true
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "28e424fa883a637e084ec0fa108c4100c30a709289bc32667c0d63e7a084cb94",
+            "metadata.json": "07bd682351c7d682a353225fcb700dcc828db03e2033cbb5edc2c04a123c78bc"
+          },
+          "decoded": {
+            "object.o": "28e424fa883a637e084ec0fa108c4100c30a709289bc32667c0d63e7a084cb94",
+            "metadata.json": "07bd682351c7d682a353225fcb700dcc828db03e2033cbb5edc2c04a123c78bc"
+          }
+        },
+        "worker_sha256": "530c8510af391221803ae2f11932da0f36f5b4addb8134036f53598649cd912a",
+        "ordered_reduction_tests": 10,
+        "candidate_cursor_calls": 270,
+        "retained_cursor_calls": 270,
+        "unsupported_endian_controls": 2,
+        "warnings_as_errors": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r320": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r320": 46,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-reverse-load-writeback.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r325-reverse-load-writeback-9561f7980d3f.tar.gz",
+        "bytes": 5859639,
+        "sha256": "9561f7980d3fd2822196670ceba9c0050bb51b51e0724203ac48c7b5648d6c53",
+        "files": 1107,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "7c91e3f900479fe2c07faef4cb7bdec1d6cb231157154d3245c05c1abc2a10f0",
+            "counter-results.json": "a56eba1945be82b687016581307b85dd7337da12c57e8ba836374cb170a5db6e",
+            "REPORT.md": "bd44c49d7a46874019a77b10db0503b0fd5ff23aac1e1a015ab1ab5addee3196",
+            "library-results.json": "95ba53c958af219c539ae43d3312a74b2c45c7beb3a5bf2d2b5ac5eb44800ab7",
+            "result-decision.json": "55a7293225f697070ea90cf235c553b24094533e2d8150a0db289cb2210a1bf3",
+            "screen-disposition.json": "7b9fccb6acb86983e940f377a1fbb09754b84b8b71ce645cddd93ec6b9166e2b",
+            "profile-summary.json": "6fc80f63a42e988cf2534a36d43a7de39a457857cf55085315f34a7f9b227fcb",
+            "dual-peer-frontier.json": "05d720afbb916022e4f316306f638805d6af42cced9211ad0785056e0db51910"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
