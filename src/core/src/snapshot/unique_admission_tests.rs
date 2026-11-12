@@ -67,6 +67,82 @@ fn admit(value: Value, budget: &crate::ManagedMemoryBudget, independent: bool) -
 }
 
 #[test]
+fn fused_admission_keeps_exact_capacity_nodes_aliases_and_failure_recovery() {
+    for matrix in [false, true] {
+        let raw = fresh(matrix);
+        let expected = raw.canonical_data_draft().unwrap();
+        let budget = crate::ManagedMemoryBudget::new(1_000_000);
+        let bytes = raw.memory_budget_admission_bytes(&budget).unwrap();
+        let nodes = raw.memory_budget_ownership_witness().unwrap().1;
+        let node_short = budget.with_limits(bytes, nodes - 1);
+        assert!(raw.clone().admit_into_memory_budget(&node_short).is_err());
+        assert_eq!(
+            (budget.used_bytes(), budget.retained_snapshot_nodes()),
+            (0, 0)
+        );
+        let short = crate::ManagedMemoryBudget::new(bytes - 1);
+        assert!(raw.clone().admit_into_memory_budget(&short).is_err());
+        assert_eq!(
+            (short.used_bytes(), short.retained_snapshot_nodes()),
+            (0, 0)
+        );
+        for failure in [0, 1] {
+            budget.inject_snapshot_import_failure_after(failure);
+            assert!(matches!(
+                raw.clone().admit_into_memory_budget(&budget),
+                Err(crate::MemoryRuntimeError::AllocationFailed { .. })
+            ));
+            assert_eq!(
+                (budget.used_bytes(), budget.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+        budget.inject_snapshot_import_failure_after(u32::MAX);
+        let admitted = raw.clone().admit_into_memory_budget(&budget).unwrap();
+        assert_eq!(
+            (budget.used_bytes(), budget.retained_snapshot_nodes()),
+            (bytes, nodes)
+        );
+        assert_eq!(admitted.canonical_data_draft().unwrap(), expected);
+        let alias = raw.clone().admit_into_memory_budget(&budget).unwrap();
+        assert!(Arc::ptr_eq(&admitted.root, &alias.root));
+        let again = alias.admit_into_memory_budget(&budget).unwrap();
+        assert!(Arc::ptr_eq(&admitted.root, &again.root));
+        assert_eq!(
+            (budget.used_bytes(), budget.retained_snapshot_nodes()),
+            (bytes, nodes)
+        );
+        let foreign = crate::ManagedMemoryBudget::new(bytes);
+        let rebound = again.admit_into_memory_budget(&foreign).unwrap();
+        assert!(rebound.shares_frozen_storage(&admitted));
+        assert_eq!(rebound.canonical_data_draft().unwrap(), expected);
+        drop((admitted, rebound));
+        assert_eq!(
+            (budget.used_bytes(), budget.retained_snapshot_nodes()),
+            (0, 0)
+        );
+        assert_eq!(
+            (foreign.used_bytes(), foreign.retained_snapshot_nodes()),
+            (0, 0)
+        );
+        assert_eq!(raw.canonical_data_draft().unwrap(), expected);
+        let unique = fresh(matrix);
+        let root = Arc::as_ptr(&unique.root);
+        let unique = unique.admit_into_memory_budget(&budget).unwrap();
+        assert_eq!(Arc::as_ptr(&unique.root), root);
+        assert_eq!(
+            (budget.used_bytes(), budget.retained_snapshot_nodes()),
+            (bytes, nodes)
+        );
+        drop(unique);
+        assert_eq!(
+            (budget.used_bytes(), budget.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
 fn first_admission_reuses_exclusive_wrapper_without_changing_metadata_or_data() {
     for matrix in [false, true] {
         for independent in [false, true] {
@@ -146,7 +222,11 @@ fn registration_link_exclusivity_keeps_concurrent_imports_and_retirements_safe()
                 let expected = raw.canonical_data_draft().unwrap();
                 start.wait();
                 for visit in 0..64 {
-                    let owned = admit(raw.clone(), &budget, visit % 2 == 0);
+                    let owned = if visit % 3 == 0 {
+                        raw.clone().admit_into_memory_budget(&budget).unwrap()
+                    } else {
+                        admit(raw.clone(), &budget, visit % 2 == 0)
+                    };
                     let alias = owned.clone();
                     std::thread::yield_now();
                     drop(owned);

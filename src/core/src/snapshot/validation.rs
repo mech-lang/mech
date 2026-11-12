@@ -719,7 +719,30 @@ impl Value {
         self,
         reservation: &mut crate::ManagedMemoryReservation,
     ) -> crate::MemoryRuntimeResult<Self> {
-        self.into_memory_budget_inner(reservation, true)
+        self.into_memory_budget_inner(reservation, true, None)
+    }
+
+    /// Measures and admits this immutable value with one ownership traversal.
+    /// The checked byte/node witness stays private to this consumed value;
+    /// capacity, allocation failures and same-account alias reuse follow the
+    /// same rules as separate quotation and `into_memory_budget`.
+    pub fn admit_into_memory_budget(
+        mut self,
+        budget: &crate::ManagedMemoryBudget,
+    ) -> crate::MemoryRuntimeResult<Self> {
+        if self.memory_budget_retained_bytes(budget).is_some() {
+            return Ok(self);
+        }
+        if let Some(schemas) = &self.schemas
+            && let Some(owner) = self.root.data.budget_import(budget, schemas, &self.shape)
+        {
+            self.root = owner;
+            return Ok(self);
+        }
+        let witness = self.memory_budget_ownership_witness()?;
+        let required = self.unshared_memory_budget_admission_for_required(budget, witness.0)?;
+        let mut reservation = budget.reserve_capacity(required)?;
+        self.into_memory_budget_inner(&mut reservation, true, Some(witness))
     }
 
     /// Uses separately admitted wrapper ownership instead of searching for an
@@ -732,13 +755,14 @@ impl Value {
         self,
         reservation: &mut crate::ManagedMemoryReservation,
     ) -> crate::MemoryRuntimeResult<Self> {
-        self.into_memory_budget_inner(reservation, false)
+        self.into_memory_budget_inner(reservation, false, None)
     }
 
     fn into_memory_budget_inner(
         mut self,
         reservation: &mut crate::ManagedMemoryReservation,
         reuse_existing: bool,
+        checked_witness: Option<(u64, u64)>,
     ) -> crate::MemoryRuntimeResult<Self> {
         let budget = reservation.budget();
         // Exact same account AND retained schema owner: no registry lookup,
@@ -767,7 +791,10 @@ impl Value {
             self.root = owner;
             return Ok(self);
         }
-        let (retained_bytes, retained_nodes) = self.memory_budget_ownership_witness()?;
+        let (retained_bytes, retained_nodes) = match checked_witness {
+            Some(witness) => witness,
+            None => self.memory_budget_ownership_witness()?,
+        };
         let admitted_bytes =
             self.unshared_memory_budget_admission_for_required(&budget, retained_bytes)?;
         if admitted_bytes > reservation.capacity_bytes() {

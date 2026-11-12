@@ -24,4 +24,4 @@ Run the offline evidence verifier from the repository root:
 python3 benchmarks/related-post-gen/integration/native-compact-20261111/verify.py
 ```
 
-It checks all record hashes, current compiler sources and measured Objects, then reconstructs medians, reference selection and resource counters from raw observations. It does not rerun executables. The retained measurement scripts, build commands and exact source pins support new machine-specific runs; their absolute temporary paths document the original environment and need relocation for a new build.
+It checks all record hashes, compiler sources at the recorded `compiler_source_commit` and measured Objects, then reconstructs medians, reference selection and resource counters from raw observations. Git history supplies that pinned source so later compiler improvements do not invalidate this historical packet or acquire its timing claims. It does not rerun executables. The retained measurement scripts, build commands and exact source pins support new machine-specific runs; their absolute temporary paths document the original environment and need relocation for a new build.
