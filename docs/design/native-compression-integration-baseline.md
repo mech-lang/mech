@@ -76,3 +76,5 @@ The two Mech actors use their independently qualified full descriptors. Their en
 Run all 81 compression cases against the exact R355 linked worker. Retain both peer ratios and every adverse result. Repeat the paired cohorts to identify per-input regressions before updating the retained scoreboard.
 
 Run the managed guarded-U16 related-post program from #990 against its fixed original `rust_con` at upstream revision `fc2982b0c929b1b701209d401a1dc30c773ef4ab`. Preserve the published timer boundaries and require at most 1.00× the fresh Rust result. The archived independent managed result was 0.750324×. [Fixed related-post comparison](../../benchmarks/related-post-gen/integration/fixed-benchmark-target-20261112/REPORT.md).
+
+The first fresh merged-build guard passed at 0.739244× in the primary cohort and 0.735746× in confirmation, with the archived managed Object reproduced byte for byte. [Fresh guard and verifier](../../benchmarks/related-post-gen/integration/merge-guard-20261112.md).
