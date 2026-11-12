@@ -11,6 +11,7 @@ mod local_phis;
 mod preheaders;
 mod repeated_bounds;
 mod selected_homes;
+mod selected_increments;
 mod selected_ranges;
 mod threaded_edges;
 mod unsigned_intervals;
@@ -322,6 +323,7 @@ fn optimize_ordered(
         current_predicate_branches: 0,
         selected_home_constant_operands: 0,
         selected_home_merge_parameters: 0,
+        selected_increment_guards_removed: 0,
         identity_edges: 0,
         loop_edges: 0,
         bitwise_constant_branches: 0,
@@ -658,6 +660,18 @@ pub(in crate::native_artifact) fn finish_imported_passes(
     let homes = rematerialize_boolean_homes(controls, context, isa)?;
     report.selected_home_constant_operands += homes.constant_operands;
     report.selected_home_merge_parameters += homes.merge_parameters;
+    if controls.enabled(OptimizationPass::SelectedUnsignedIncrements) {
+        context.compute_cfg();
+        context.compute_domtree();
+        let removed =
+            selected_increments::optimize(&mut context.func, &context.cfg, &context.domtree);
+        report.selected_increment_guards_removed += removed;
+        if removed != 0 {
+            optimize_ordered(controls, context, isa, true)?;
+            context.func.dfg.resolve_all_aliases();
+            context.verify(isa).map_err(backend)?;
+        }
+    }
     (report.after_blocks, report.after_instructions) = counts(&context.func);
     Ok(())
 }

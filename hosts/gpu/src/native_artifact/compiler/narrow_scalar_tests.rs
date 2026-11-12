@@ -307,3 +307,168 @@ fn checked_u32_native_arithmetic_preserves_edges_errors_admission_and_recovery()
         }
     }
 }
+
+#[test]
+fn checked_u16_native_arithmetic_preserves_edges_raw_admission_and_recovery() {
+    use mech_syntax::document::{
+        AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+        parse_canonical_document,
+    };
+    let edges = [
+        0,
+        1,
+        2,
+        3,
+        255,
+        256,
+        32767,
+        32768,
+        u16::MAX / 2,
+        u16::MAX / 2 + 1,
+        u16::MAX - 1,
+        u16::MAX,
+    ];
+    let mut pairs = edges
+        .iter()
+        .flat_map(|&a| edges.iter().map(move |&b| (a, b)))
+        .collect::<Vec<_>>();
+    let mut seed = 0x32a9u16;
+    for _ in 0..4096 {
+        seed ^= seed << 7;
+        seed ^= seed >> 9;
+        seed ^= seed << 8;
+        let left = seed;
+        seed ^= seed << 7;
+        seed ^= seed >> 9;
+        seed ^= seed << 8;
+        pairs.push((left, seed));
+        // Include many successful products as well as full-width failures.
+        pairs.push((left & 0xff, seed & 0xff));
+    }
+    let catalog = mech_stdlib::source_catalog();
+    for operator in ["+", "-", "*", "/", "%"] {
+        let text = format!("left<u16> {operator} right<u16>\n");
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x5533324152495448), Revision(0), text.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let artifact = mech_engine::CanonicalSourceFrontend
+            .compile_document_with_catalog(
+                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+                catalog.clone(),
+            )
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap(),
+        )
+        .unwrap();
+        for artifact in [artifact, decoded] {
+            let plan =
+                mech_engine::native_artifact::lower_pure_native_artifact(&artifact, &catalog)
+                    .unwrap();
+            let jit = JitArtifact::compile(&plan).unwrap();
+            assert_eq!(jit.descriptor().inputs().len(), 2);
+            assert_eq!(jit.descriptor().outputs().len(), 1);
+            let calls = AtomicU64::new(0);
+            let mut locals = vec![0; jit.descriptor().lets().len()];
+            let mut outputs = [u64::MAX];
+            for &(left, right) in &pairs {
+                let expected = match operator {
+                    "+" => left.checked_add(right),
+                    "-" => left.checked_sub(right),
+                    "*" => left.checked_mul(right),
+                    "/" => left.checked_div(right),
+                    _ => left.checked_rem(right),
+                };
+                let inputs = [u64::from(left), u64::from(right)];
+                outputs[0] = u64::MAX;
+                calls.store(0, Ordering::SeqCst);
+                let mut frame = NativeEntryFrame {
+                    version: ABI_VERSION,
+                    input_count: 2,
+                    local_count: locals.len() as u64,
+                    output_count: 1,
+                    inputs: inputs.as_ptr(),
+                    locals: locals.as_mut_ptr(),
+                    outputs: outputs.as_mut_ptr(),
+                    context: (&calls as *const AtomicU64).cast_mut().cast(),
+                    admit_next: count,
+                    error_node: NO_NODE,
+                };
+                // SAFETY: real source-derived code, canonical U16 inputs and
+                // exact disjoint scratch/output extents for this private ABI.
+                let status = unsafe { (jit.entry)(&mut frame) };
+                if let Some(value) = expected {
+                    assert_eq!(status, STATUS_OK, "{left} {operator} {right}");
+                    assert_eq!(outputs[0], u64::from(value));
+                } else {
+                    assert_eq!(status, STATUS_ARITHMETIC, "{left} {operator} {right}");
+                    assert_eq!(outputs[0], u64::MAX);
+                    assert_ne!(frame.error_node, NO_NODE);
+                }
+            }
+            for bad in [65536, 65537, u64::MAX] {
+                for inputs in [[bad, 3], [9, bad]] {
+                    outputs[0] = u64::MAX;
+                    calls.store(0, Ordering::SeqCst);
+                    let mut frame = NativeEntryFrame {
+                        version: ABI_VERSION,
+                        input_count: 2,
+                        local_count: locals.len() as u64,
+                        output_count: 1,
+                        inputs: inputs.as_ptr(),
+                        locals: locals.as_mut_ptr(),
+                        outputs: outputs.as_mut_ptr(),
+                        context: (&calls as *const AtomicU64).cast_mut().cast(),
+                        admit_next: count,
+                        error_node: NO_NODE,
+                    };
+                    // SAFETY: allocations are exact; only an input payload is
+                    // deliberately malformed and must be rejected before admission.
+                    assert_eq!(unsafe { (jit.entry)(&mut frame) }, STATUS_ABI);
+                    assert_eq!(calls.load(Ordering::SeqCst), 0);
+                    assert_eq!(frame.error_node, NO_NODE);
+                    assert_eq!(outputs[0], u64::MAX);
+                }
+            }
+            let inputs = [u64::from(u16::MAX), 0];
+            let mut frame = NativeEntryFrame {
+                version: ABI_VERSION,
+                input_count: 2,
+                local_count: locals.len() as u64,
+                output_count: 1,
+                inputs: inputs.as_ptr(),
+                locals: locals.as_mut_ptr(),
+                outputs: outputs.as_mut_ptr(),
+                context: (&calls as *const AtomicU64).cast_mut().cast(),
+                admit_next: deny,
+                error_node: NO_NODE,
+            };
+            // SAFETY: exact valid buffers; refusal must precede arithmetic and
+            // publication, including division/remainder with a zero divisor.
+            assert_eq!(unsafe { (jit.entry)(&mut frame) }, STATUS_ADMISSION);
+            assert_eq!(outputs[0], u64::MAX);
+            let input = [
+                NativeScalarValue::from_bits(NativeScalarKind::U16, 42).unwrap(),
+                NativeScalarValue::from_bits(NativeScalarKind::U16, 6).unwrap(),
+            ];
+            let mut result = [NativeScalarValue::U64(99)];
+            jit.evaluate_into(&input, &mut result, NativeExecutionLimits::default(), None)
+                .unwrap();
+            let expected = match operator {
+                "+" => 48,
+                "-" => 36,
+                "*" => 252,
+                "/" => 7,
+                _ => 0,
+            };
+            assert_eq!(
+                result[0],
+                NativeScalarValue::from_bits(NativeScalarKind::U16, expected).unwrap()
+            );
+        }
+    }
+}

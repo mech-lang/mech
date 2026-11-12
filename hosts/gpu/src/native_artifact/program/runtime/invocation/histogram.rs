@@ -624,7 +624,9 @@ impl Invocation<'_, '_, '_> {
             }
             entries.push(MapEntryDraft {
                 items: Box::new([
-                    ValueDataDraft::String(key.to_string()),
+                    // Clone the byte string directly: formatting Box<str> can grow
+                    // a spare-capacity buffer that canonical finalization must shrink.
+                    ValueDataDraft::String(key.as_ref().to_owned()),
                     ValueDataDraft::U64(slot.count),
                 ]),
             });
