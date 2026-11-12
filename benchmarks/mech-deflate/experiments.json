@@ -65695,6 +65695,206 @@
         }
       },
       "complete_goal": false
+    },
+    "332": {
+      "git_parent": "c5e7595c7c64619d7ed963bc2f5ad0fc2c892cf9",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+      "retained_compiler": "R327",
+      "retained_source_packet_round": 327,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the native producer classification screen.",
+      "source": {
+        "source_program_changed_in_pilot": true,
+        "retained_source_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pilot_source_sha256": "4fef5a919f1d7918e099a0ccd21dd3a2c75dbcdf3f63c5564f0118564ed9b9d2",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "989281d037f16b22293095a50badbd55cdbbaa829e9df76502e44d2763916d4e",
+        "worker_sha256": "4870c5a13022eb0a8186f41a8c317d6b24086c17c6b806238546889cf727671a"
+      },
+      "summary": {
+        "round": 332,
+        "published_parent": "c5e7595c7c64619d7ed963bc2f5ad0fc2c892cf9",
+        "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retain_source": false,
+        "retained_source_packet_round": 327,
+        "retained_runtime_packet_round": 272,
+        "source_representation_pilot": true,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 16,
+        "blockmean_1_05_gates_passed": 16,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 1.0056904927775563,
+        "target_matched_x_roc": [
+          1.3120905133093328,
+          1.3274165121016095
+        ],
+        "target_matched_x_libdeflate": [
+          1.056715454899424,
+          1.0690585208855663
+        ],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 1.0117556507282583,
+            "matched": 1.0112245462626002
+          },
+          "prefix-natural-32768": {
+            "primary": 1.0111203381872866,
+            "matched": 1.0110148372478187
+          },
+          "prefix-natural-65537": {
+            "primary": 1.0095004439396966,
+            "matched": 0.9995605406322654
+          },
+          "prefix-natural-262144": {
+            "primary": 1.01101962758324,
+            "matched": 1.0116805956881905
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.015332054780337,
+            "matched": 1.015281437221075
+          },
+          "eight-literals": {
+            "primary": 0.9992003213959995,
+            "matched": 0.9992210925603032
+          },
+          "prefix-random-16384": {
+            "primary": 0.9910970861409598,
+            "matched": 0.9942780337192983
+          },
+          "prefix-random-1048576": {
+            "primary": 0.9992511295510862,
+            "matched": 0.9959531614275017
+          }
+        },
+        "cpu_target": {
+          "before": {
+            "cycles": 191241722.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 745141176.5,
+            "lifetime_peak_physical": 50430912.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46498752.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47939584.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 191105452.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 721261538.5,
+            "lifetime_peak_physical": 50414592.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46482432.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47906816.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144954364.0,
+            "instructions": 479482739.5,
+            "level": 12.0,
+            "lifetime_peak_physical": 14533504.0,
+            "physical_after": 14533504.0,
+            "rss_after": 15155200.0
+          }
+        },
+        "memory_target": {
+          "before": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "level": 12.0
+          }
+        },
+        "cases_with_same_heap_families": 16,
+        "linked_compression_checks": 324,
+        "exhaustive_native_class_outputs": 131072,
+        "reason": "The corrected pilot restores the native parser. The matched 256 KiB and 1 MiB natural witnesses are slower. Retain R327."
+      },
+      "qualification": {
+        "original": {
+          "verified": true,
+          "complete_smokes": 162,
+          "image_sha256": {
+            "object.o": "989281d037f16b22293095a50badbd55cdbbaa829e9df76502e44d2763916d4e",
+            "metadata.json": "ccdf9311c4d7a9d4dd1d18dec11795aed8b4b21ad4cf6824ce81748ff7f22b12"
+          },
+          "worker_sha256": "4870c5a13022eb0a8186f41a8c317d6b24086c17c6b806238546889cf727671a"
+        },
+        "decoded": {
+          "verified": true,
+          "complete_smokes": 162,
+          "image_sha256": {
+            "object.o": "989281d037f16b22293095a50badbd55cdbbaa829e9df76502e44d2763916d4e",
+            "metadata.json": "ccdf9311c4d7a9d4dd1d18dec11795aed8b4b21ad4cf6824ce81748ff7f22b12"
+          },
+          "worker_sha256": "f6e01c9c5cefb2f54f70155e490d448b0d4033c7cd6a3620f6bb480b9aa5c42a"
+        },
+        "class_control": {
+          "tested_offsets_per_form": 65536,
+          "total_native_outputs": 131072,
+          "original_decoded_object_sha256": "1a9cb7fc65e0bdf4f7c38d810a6ba5fef5738a80926606e448cfbb8f8ce31391",
+          "original_decoded_metadata_sha256": "9e18ee4d8fd2dfc3334cb349e6fc4399432441fbb510f95805140322b3a653f9",
+          "independent_oracle": "Original 256-entry table and wrapping shift expression",
+          "cleaned_up": true
+        }
+      },
+      "report": "docs/design/native-producer-offset-class-with-live-captures.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r332-produced-match-class-live-2789c51d2678.tar.gz",
+        "bytes": 1131825,
+        "sha256": "2789c51d2678f88d56f8e7b6f6ef8f5831cf4905c283dc6ae78e5a7737e10905",
+        "files": 239,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "c8300e20e379382b6eccca637240877ebc5b43a01b533eaf0eace9455329e772",
+            "pilot-counters.json": "b44c1626988fd89cca967a794a4cb77d60b83d72a4d7cb778203fe58bcdbb838",
+            "result-decision.json": "eff508c6bda250919e4939011039f9f787bb74037cf3ceb4a252a75321daf11b",
+            "diagnostic-profile-summary.json": "aa877f08f4f1204840f9c5b431a7c2fc9a9691428bbf9ec1278a6fde44ed84ff"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
