@@ -94,6 +94,14 @@ fn numeric_workers_keep_uneven_partitions_native_calls_errors_aliases_and_restor
         let restored =
             unsafe { NativeProgramDescriptor::decode_build_owned_image(&image, &catalog) }.unwrap();
         for descriptor in [jit.descriptor(), &restored] {
+            assert!(
+                descriptor
+                    .metadata()
+                    .worker_value_prefixes
+                    .iter()
+                    .all(|&prefix| prefix < descriptor.metadata().types.len()),
+                "the existing original/decoded/restored numeric error/alias/retry contract must exercise physical worker prefixes"
+            );
             let memory = mode.memory_budget();
             let mut outputs = vec![None; artifact.outputs().len()];
             for (data, count, accepts) in [

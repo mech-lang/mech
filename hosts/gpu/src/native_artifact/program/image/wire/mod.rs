@@ -832,7 +832,7 @@ fn decode_inner<
             return Err("worker import recipe differs from source capture proof".into());
         }
     }
-    let descriptor = NativeProgramDescriptor {
+    let mut descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
             schemas,
@@ -874,6 +874,7 @@ fn decode_inner<
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,
+            worker_value_prefixes: Box::new([]),
             borrowed_strings,
             closed_tails,
             selected_joins: w.selected_joins.into(),
@@ -887,6 +888,8 @@ fn decode_inner<
         identity: w.identity,
         machine_backend: w.machine_backend,
     };
+    descriptor.metadata.worker_value_prefixes =
+        native::program::prepare::worker_values::derive(&descriptor.metadata)?;
     if !OBJECT_BOUND {
         if let Some(backend) = &descriptor.machine_backend {
             let metadata = descriptor.metadata();

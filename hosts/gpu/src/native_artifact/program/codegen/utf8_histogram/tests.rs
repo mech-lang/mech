@@ -285,3 +285,191 @@ fn native_string_classes_record_first_equal_rows_across_full_replay_unicode_and_
         }
     }
 }
+
+#[test]
+fn packed_short_histogram_keys_preserve_every_ascii_byte_unicode_and_padding_length() {
+    let mut owned = vec![String::new(), "é".into(), "東京".into(), "é\0🧑".into()];
+    for len in 1..=8 {
+        for at in 0..len {
+            for byte in 0..=127u8 {
+                let mut bytes = vec![b'a'; len];
+                bytes[at] = byte;
+                owned.push(String::from_utf8(bytes).unwrap());
+            }
+        }
+        // These all have a zero packed word, but their lengths are different.
+        owned.push("\0".repeat(len));
+    }
+    // Distinct allocations with identical content must have the same class.
+    owned.extend(owned.clone());
+    let texts = owned.iter().map(String::as_str).collect::<Vec<_>>();
+    let cells = cells(&texts);
+    for funding in [Funding::Metered, Funding::Prepaid, Funding::Unmetered] {
+        let kernel = Kernel::classified(true, funding, true);
+        let mut slots = vec![Slot::default(); 16_384];
+        let mut representatives = vec![u64::MAX; cells.len()];
+        let mut f = frame(&cells, &mut slots);
+        f.representatives = representatives.as_mut_ptr() as u64;
+        // SAFETY: all immutable String owners and disjoint exact banks remain live.
+        assert_eq!(unsafe { (kernel.entry)(&mut f) }, COMPLETE);
+        verify(&f, &slots, &texts);
+        for slot in slots.iter().filter(|slot| slot.row_plus_one != 0) {
+            let bytes = texts[slot.row_plus_one as usize - 1].as_bytes();
+            assert!(bytes.len() <= 8);
+            let mut packed = [0u8; 8];
+            packed[..bytes.len()].copy_from_slice(bytes);
+            assert_eq!(slot.hash, u64::from_le_bytes(packed));
+        }
+        let mut first = BTreeMap::new();
+        for (row, text) in texts.iter().enumerate() {
+            let expected = *first.entry(*text).or_insert(row as u64);
+            assert_eq!(representatives[row], expected);
+        }
+    }
+}
+
+#[test]
+fn packed_short_histogram_keys_keep_exact_metered_chunk_debits_and_resume() {
+    let kernel = Kernel::new(true);
+    for len in 0..=8 {
+        let text = "a".repeat(len);
+        let texts = [text.as_str(), text.as_str()];
+        let cells = cells(&texts);
+        let widths = [8u64, 4, 2, 1]
+            .into_iter()
+            .filter(|width| len as u64 & width != 0)
+            .collect::<Vec<_>>();
+        for initial_fuel in 0..=49 + 5 * len as u64 {
+            for initial_comparison in 0..=len as u64 + 1 {
+                let mut expected_fuel = initial_fuel;
+                let mut expected_comparison = initial_comparison;
+                let mut completed = 0;
+                let expected = 'rows: {
+                    for row in 0..2 {
+                        let mut debits = vec![(16, 0)];
+                        debits.extend(widths.iter().map(|width| (width * 2, 0)));
+                        debits.push((8, 0));
+                        if row == 1 {
+                            // Fuel is spent before the comparison debit, as in
+                            // the maintained per-chunk refusal sequence.
+                            for width in &widths {
+                                debits.push((*width, 0));
+                                debits.push((0, *width));
+                            }
+                        }
+                        for (fuel, comparison) in debits {
+                            if expected_fuel < fuel || expected_comparison < comparison {
+                                break 'rows COLD;
+                            }
+                            expected_fuel -= fuel;
+                            expected_comparison -= comparison;
+                        }
+                        completed += 1;
+                    }
+                    COMPLETE
+                };
+                let mut slots = vec![Slot::default(); 4];
+                let mut f = frame(&cells, &mut slots);
+                f.fuel = initial_fuel;
+                f.comparison = initial_comparison;
+                // SAFETY: exact disjoint owned banks and both byte owners live.
+                assert_eq!(unsafe { (kernel.entry)(&mut f) }, expected);
+                assert_eq!(
+                    (f.completed, f.fuel, f.comparison),
+                    (completed, expected_fuel, expected_comparison),
+                    "length {len}, fuel {initial_fuel}, comparison {initial_comparison}"
+                );
+                verify(&f, &slots, &texts);
+                f.fuel = u64::MAX;
+                f.comparison = u64::MAX;
+                assert_eq!(unsafe { (kernel.entry)(&mut f) }, COMPLETE);
+                verify(&f, &slots, &texts);
+            }
+        }
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+#[test]
+fn packed_short_histogram_keys_and_long_fallback_stay_inside_guarded_byte_extents() {
+    use std::ffi::c_void;
+    unsafe extern "C" {
+        fn getpagesize() -> i32;
+        fn mmap(
+            at: *mut c_void,
+            bytes: usize,
+            protection: i32,
+            flags: i32,
+            fd: i32,
+            offset: i64,
+        ) -> *mut c_void;
+        fn mprotect(at: *mut c_void, bytes: usize, protection: i32) -> i32;
+        fn munmap(at: *mut c_void, bytes: usize) -> i32;
+    }
+    struct Guarded {
+        base: *mut c_void,
+        extent: usize,
+        key: *const u8,
+    }
+    impl Guarded {
+        fn new(bytes: &[u8], at_end: bool) -> Self {
+            let page = unsafe { getpagesize() } as usize;
+            assert!(bytes.len() < page);
+            let anonymous = if cfg!(target_os = "macos") {
+                0x1000
+            } else {
+                0x20
+            };
+            // SAFETY: own all three pages. Only the middle page becomes writable.
+            let base = unsafe { mmap(std::ptr::null_mut(), page * 3, 0, 2 | anonymous, -1, 0) };
+            assert_ne!(base as usize, usize::MAX);
+            let key = unsafe {
+                let middle = base.cast::<u8>().add(page);
+                assert_eq!(mprotect(middle.cast(), page, 3), 0);
+                let key = if at_end {
+                    middle.add(page - bytes.len())
+                } else {
+                    middle
+                };
+                std::ptr::copy_nonoverlapping(bytes.as_ptr(), key, bytes.len());
+                key
+            };
+            Self {
+                base,
+                extent: page * 3,
+                key,
+            }
+        }
+    }
+    impl Drop for Guarded {
+        fn drop(&mut self) {
+            // SAFETY: the same complete mapping stays exclusively owned until now.
+            assert_eq!(unsafe { munmap(self.base, self.extent) }, 0);
+        }
+    }
+    for funding in [Funding::Metered, Funding::Prepaid, Funding::Unmetered] {
+        let kernel = Kernel::funded(true, funding);
+        for len in (0..=17).chain([31, 32, 33, 129, 1025]) {
+            for at_end in [false, true] {
+                let bytes = (0..len).map(|i| b'a' + (i % 26) as u8).collect::<Vec<_>>();
+                let owner = Guarded::new(&bytes, at_end);
+                let cells = [Cell {
+                    address: owner.key as u64,
+                    bytes: len as u64,
+                }; 2];
+                let mut slots = vec![Slot::default(); 4];
+                let mut f = frame(&cells, &mut slots);
+                // SAFETY: exact source and banks live; even one byte outside
+                // the key extent crosses an inaccessible page at its boundary.
+                assert_eq!(unsafe { (kernel.entry)(&mut f) }, COMPLETE);
+                assert_eq!(f.completed, 2);
+                let occupied = slots
+                    .iter()
+                    .filter(|slot| slot.row_plus_one != 0)
+                    .collect::<Vec<_>>();
+                assert_eq!(occupied.len(), 1);
+                assert_eq!(occupied[0].count, 2);
+            }
+        }
+    }
+}

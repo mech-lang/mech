@@ -28,6 +28,20 @@ pub(in crate::native_artifact) struct NativeTypedStorage<T: PlannedArenaElement>
 }
 pub(in crate::native_artifact) type NativeWordStorage = NativeTypedStorage<u64>;
 impl NativeTypedStorage<u64> {
+    pub(in crate::native_artifact) fn new_compact(
+        funded: usize,
+        physical: usize,
+        limit: u64,
+        budget: &ManagedMemoryBudget,
+    ) -> Result<Self, NativeExecutionError> {
+        Self::for_slot(
+            funded,
+            physical,
+            PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64)),
+            limit,
+            Some(budget),
+        )
+    }
     /// The caller must charge setup work before this initializes every word.
     pub(in crate::native_artifact) fn new(
         words: usize,
@@ -35,6 +49,7 @@ impl NativeTypedStorage<u64> {
         shared_budget: Option<&ManagedMemoryBudget>,
     ) -> Result<Self, NativeExecutionError> {
         Self::for_slot(
+            words,
             words,
             PlannedSlotKind::FixedScalar(ScalarMemoryKind::Unsigned(IntegerWidth::W64)),
             limit,
@@ -50,6 +65,24 @@ impl NativeTypedStorage<Option<mech_core::Value>> {
     ) -> Result<Self, NativeExecutionError> {
         Self::for_slot(
             count,
+            count,
+            PlannedSlotKind::CanonicalValueHandle,
+            limit,
+            Some(budget),
+        )
+    }
+
+    /// Physical canonical-owner storage need not include raw numeric argument
+    /// words. Keep the same complete logical admission and transport ceiling.
+    pub(in crate::native_artifact) fn new_values_compact(
+        funded: usize,
+        physical: usize,
+        limit: u64,
+        budget: &ManagedMemoryBudget,
+    ) -> Result<Self, NativeExecutionError> {
+        Self::for_slot(
+            funded,
+            physical,
             PlannedSlotKind::CanonicalValueHandle,
             limit,
             Some(budget),
@@ -73,10 +106,16 @@ impl<T: PlannedArenaElement> NativeTypedStorage<T> {
 
     fn for_slot(
         words: usize,
+        physical: usize,
         slot: PlannedSlotKind,
         limit: u64,
         shared_budget: Option<&ManagedMemoryBudget>,
     ) -> Result<Self, NativeExecutionError> {
+        if physical > words {
+            return Err(NativeExecutionError::Descriptor {
+                reason: "native physical prefix exceeds admitted transport",
+            });
+        }
         let bytes = words
             .checked_mul(core::mem::size_of::<T>())
             .and_then(|bytes| u64::try_from(bytes).ok())
@@ -99,7 +138,7 @@ impl<T: PlannedArenaElement> NativeTypedStorage<T> {
         // shared-account admission, initialization and exclusive ownership.
         let plan = FixedHostArenaPlan::<T>::new(words, slot)?;
         debug_assert_eq!(plan.capacity_bytes(), bytes);
-        let (values, identity) = plan.materialize(&budget)?;
+        let (values, identity) = plan.materialize_prefix(physical, &budget)?;
         Ok(Self { values, identity })
     }
 

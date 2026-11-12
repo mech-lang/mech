@@ -20,6 +20,8 @@ use mech_engine::native_artifact::{
 
 mod allocation;
 mod ascii_facts;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod optional_metadata_tests;
 pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     values: Vec<T>,
     count: usize,
@@ -316,10 +318,33 @@ impl State {
             plan.collections().len(),
             "collection builder metadata allocation",
         )?;
-        let string_spans =
-            allocation::metadata(plan.collections().len(), "String span metadata allocation")?;
+        // Absent projection categories have no executable selector/element
+        // action in this checked plan. Keep their original logical byte/node
+        // envelope and setup charge above, but construct no unused carriers.
+        // A present category keeps the complete collection-indexed lane;
+        // neither generated coordinates nor current-visit checks change.
+        let string_spans = allocation::metadata(
+            if plan
+                .collections()
+                .iter()
+                .any(|collection| collection.string_span_projection().is_some())
+            {
+                plan.collections().len()
+            } else {
+                0
+            },
+            "String span metadata allocation",
+        )?;
         let string_maps = allocation::metadata(
-            plan.collections().len(),
+            if plan
+                .collections()
+                .iter()
+                .any(|collection| collection.string_element_map_projection().is_some())
+            {
+                plan.collections().len()
+            } else {
+                0
+            },
             "String map projection metadata allocation",
         )?;
         Ok(Some(Self {

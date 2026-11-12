@@ -20,7 +20,8 @@ const KINDS: [RetirementKind; 3] = [
 #[serde(deny_unknown_fields, rename = "mech.native.image.RetirementTables")]
 pub(in crate::native_artifact) struct RetirementTables {
     // A three-range prefix per loop, followed by ascending slot ordinals.
-    // The invocation copies ALL words into its own admitted typed storage.
+    // Invocations borrow this exact immutable table while retaining the full
+    // logical transport admission and setup-work envelope for its old copy.
     words: Box<[u64]>,
     iterations: usize,
 }
