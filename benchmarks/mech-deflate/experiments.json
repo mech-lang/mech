@@ -63094,6 +63094,183 @@
         }
       },
       "complete_goal": false
+    },
+    "321": {
+      "git_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+      "retained_compiler": "R320",
+      "retained_source_packet_round": 320,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the priority natural-text cases slow in both timing screens.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "22d7866b3b0e04eaad21ecf1f1a44d8a927784c6ac9856b19ba150cfe8ce64c1",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/selected_boolean/tests.rs": {
+            "before": null,
+            "after": "181ecc237230ed211c0d238848c347177532eb015f9d0686d9b8c81f7aadf950"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/selected_boolean.rs": {
+            "before": null,
+            "after": "5db3b0cfb7e5f015f85f12100c66506c3302b9eb8611577f7fb39254f8af5336"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates.rs": {
+            "before": "57c4b2960f22d8136d5a6c37029a5fc57fa7eb664d43e4cc50fc13a37470d589",
+            "after": "7072a864a89b126186c17b5cbcaf9736d54196ac19beda5ffd4c47f0cc9862e3"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "aaa190d92996808a69d62b7fa369119acaeae954f3cb7e39ee74e1d9db7e0a8e",
+            "after": "512342020399d0d3df2dfa58c5968c5253c0c4e4e0c0ca99a48a6ab061293128"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "937bba39a98c757da76fbc93fb2136fbae8cc9bdc0c496e39674703bd56ff8ea",
+            "after": "b1953483c87db6c7a1271565a258128b5d3fd3315ea61aa04ef3e7bb56324ee8"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "inherited_backend_patch_sha256": "04eec5f0bca9f502c9b1cb98706f37ab2adbf21b62dabcac11d9ab2cf5904809",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "7afc71a09883257c09ca6e736ff35f9118ee71cbbce616f7107e7ed783e10f65",
+        "worker_sha256": "033a52cb135375f21cb553b06a303ed43df6609408c8b7075c76204a26db3a52"
+      },
+      "summary": {
+        "round": 321,
+        "published_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+        "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 320,
+        "retained_runtime_packet_round": 272,
+        "screen_cases": 15,
+        "original_1_05_gates_passed": 15,
+        "blockmean_1_05_gates_passed": 15,
+        "screen_paired_geomean": 1.0045317235009668,
+        "matched_cases": 15,
+        "matched_timed_calls": 154656,
+        "target": "prefix-natural-262144",
+        "target_matched_x_libdeflate": [
+          1.07884284042671,
+          1.0840635386875668
+        ],
+        "target_screen_after_over_before": 1.0066203178856923,
+        "target_counter_medians": {
+          "before": {
+            "cycles": 192721217.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 759431602.5,
+            "lifetime_peak_physical": 50430912.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46498752.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47939584.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 194452570.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 768632364.5,
+            "lifetime_peak_physical": 50430912.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46498752.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47939584.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144697653.5,
+            "instructions": 479445324.0,
+            "level": 12.0,
+            "lifetime_peak_physical": 14435200.0,
+            "physical_after": 14435200.0,
+            "rss_after": 15056896.0
+          }
+        },
+        "heap_families_agree": true,
+        "reason": "Both independent timing screens slow the 256 KiB and 1 MiB natural-text cases"
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "7afc71a09883257c09ca6e736ff35f9118ee71cbbce616f7107e7ed783e10f65",
+          "metadata.json": "20461fa7563c3f19b7098465f111f6d58d8c8354bc540160fa2ce27ee46bc7c8"
+        },
+        "worker_sha256": "033a52cb135375f21cb553b06a303ed43df6609408c8b7075c76204a26db3a52"
+      },
+      "report": "docs/design/native-selected-boolean-words.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r321-selected-boolean-72219c85bf5a.tar.gz",
+        "bytes": 1237040,
+        "sha256": "72219c85bf5aab357a9a3227b67b04b48e7a40f7d8ec3267755d58e7bb42b29d",
+        "files": 238,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "e5ac3b67a781e33c907ba5eff6afc2368bf6635de475cfd0cffddbdc9597d7fb",
+            "pilot-counters.json": "04ce4a714e8e48409caa6736dae6fdbe677243d2df281071e9b218735dcfa265",
+            "result-decision.json": "e59992d144e3d96fdb82be68036a60e140fd1a8d05f317310ea5c3f22df52bc5",
+            "candidate-profile-summary.json": "93466ec9f6bef36dc66c252343c8a8cd127c8d923db91e95711cc9839adaa97d"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
