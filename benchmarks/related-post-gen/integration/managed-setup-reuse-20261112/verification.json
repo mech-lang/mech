@@ -1,0 +1,41 @@
+{
+  "command": [
+    "python3",
+    "benchmarks/related-post-gen/integration/managed-setup-reuse-20261112/verify.py"
+  ],
+  "exit": 0,
+  "result": {
+    "verified_records": 6229,
+    "unique_blobs": 3085,
+    "compressed_bytes": 17731768,
+    "base_IR336_source_commit": "4b6133f85ae85f858bfe29f8cc871aada58a77bb",
+    "IR337_source_inventory_entries": 2816,
+    "IR338_source_inventory_entries": 2817,
+    "literal_include_entries": 164,
+    "source_overlay_files": 13,
+    "primary_exact_outputs": 1209,
+    "resource_exact_outputs": 259,
+    "new_timed_exact_outputs": 1468,
+    "managed_qualifications": 4,
+    "edges_per_variant": 31,
+    "prior_compact_resource_qualification_executions": 96,
+    "focused_passes": 50,
+    "compact_typed_passes": 1,
+    "broad_passed": 1079,
+    "broad_failures": 16,
+    "all_broad_failures_inherited": true,
+    "managed_IR334_still_selected": true,
+    "new_managed_gain_established": false,
+    "fastest_Rust_target_met": false,
+    "native_executions_by_verifier": 0
+  },
+  "pins": {
+    "verify.py": "e67111330199d905f8ceb69be2e12557aaeb09a8ec712b7f9ca4aaa0399cc88e",
+    "records.json": "eefa42329193df287e2d52f0f78460dc8f06879d76e0dc8b12d435d3f26d70e7",
+    "report.json": "62c11789bd4cc92a680d13e96ac795cf600507cc27af1a0c0cffbdea03f70bb5"
+  },
+  "measured_source_commit": "6f7e0458e088cf7e50c97ebfe2d15e7bca02b22f",
+  "published_source_equivalent_commit": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164",
+  "all_primary_and_resource_samples_retained": true,
+  "native_measurement_executions": 0
+}
