@@ -1,6 +1,6 @@
 //! Dispatch one prepared strategy, then retain the ordinary route if live loans decline it.
 use super::{Error, GlobalHelper, Invocation};
-use crate::native_artifact::program::prepare::call_routes::LibraryCallRoute;
+use crate::native_artifact::program::prepare::{call_routes::LibraryCallRoute, line_matrix};
 
 impl Invocation<'_, '_, '_> {
     pub(super) fn prepared_library_call(
@@ -8,7 +8,8 @@ impl Invocation<'_, '_, '_> {
         site: usize,
         words: &[u64],
     ) -> Result<Option<Option<u64>>, Error> {
-        match self.descriptor.metadata().call_routes[site] {
+        let metadata = self.descriptor.metadata();
+        match metadata.call_routes[site] {
             LibraryCallRoute::Canonical => Ok(None),
             LibraryCallRoute::BorrowedMapKeysLength => {
                 Ok(self.borrowed_keys_length_call(site, words)?.map(Some))
@@ -27,6 +28,17 @@ impl Invocation<'_, '_, '_> {
             }
             LibraryCallRoute::UnsignedMatrixLength => {
                 Ok(self.unsigned_matrix_length_call(site, words)?.map(Some))
+            }
+            // The line-matrix route owns this consumer, including its deferred
+            // capture and ordinary canonical fallback. A private view has no
+            // canonical arena owner for the generic length route to read.
+            LibraryCallRoute::MatrixLength
+                if matches!(
+                    metadata.line_matrices.sites[site],
+                    Some(line_matrix::Site::Length(_))
+                ) =>
+            {
+                Ok(None)
             }
             LibraryCallRoute::MatrixLength => Ok(self.matrix_length_call(site, words)?.map(Some)),
             LibraryCallRoute::UnsignedMatrixElement => {
