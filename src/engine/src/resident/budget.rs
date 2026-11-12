@@ -37,6 +37,8 @@ pub(crate) mod payload;
 #[path = "native_worker_budget.rs"]
 mod workers;
 #[cfg(feature = "native-artifact")]
+use workers::NativeGrantLink;
+#[cfg(feature = "native-artifact")]
 pub use workers::{
     NativeWorkDebitBatch, NativeWorkGroup, NativeWorkerBudgetError, NativeWorkerCreditStatistics,
     NativeWorkerNativeFuel, NativeWorkerWorkLoan,
@@ -270,13 +272,46 @@ impl Default for ControlWorkAccount {
     }
 }
 
+type SharedControlWorkAccount = std::rc::Rc<ControlWorkAccountCell>;
+
+#[cfg(not(feature = "native-artifact"))]
+type ControlWorkAccountCell = std::cell::RefCell<ControlWorkAccount>;
+
+#[cfg(feature = "native-artifact")]
+#[derive(Debug, Default)]
+struct ControlWorkAccountCell {
+    ledger: std::cell::RefCell<ControlWorkAccount>,
+    // Grant ownership must be readable while another account has its ledger
+    // borrowed for a debit. Reuse the admitted Rc allocation for this link.
+    native_grant_link: std::cell::RefCell<Option<NativeGrantLink>>,
+}
+
+#[cfg(feature = "native-artifact")]
+impl ControlWorkAccountCell {
+    fn new(ledger: ControlWorkAccount) -> Self {
+        Self {
+            ledger: std::cell::RefCell::new(ledger),
+            native_grant_link: Default::default(),
+        }
+    }
+}
+
+#[cfg(feature = "native-artifact")]
+impl std::ops::Deref for ControlWorkAccountCell {
+    type Target = std::cell::RefCell<ControlWorkAccount>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.ledger
+    }
+}
+
 /// A shared library-work account for one native invocation, not permission to
 /// execute a call. Actual NativeHost call plans and payload admission remain
 /// mandatory. Clones retain the same spent work and can never renew limits.
 #[cfg(feature = "native-artifact")]
 #[derive(Clone, Debug)]
 pub struct NativeLibraryWorkBudget {
-    account: std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>,
+    account: SharedControlWorkAccount,
 }
 #[cfg(feature = "native-artifact")]
 impl NativeLibraryWorkBudget {
@@ -285,11 +320,9 @@ impl NativeLibraryWorkBudget {
         comparison_limit: u64,
         memory: &mech_core::ManagedMemoryBudget,
     ) -> mech_core::MemoryRuntimeResult<Self> {
-        let bytes = (core::mem::size_of::<std::cell::RefCell<ControlWorkAccount>>()
-            + 2 * core::mem::size_of::<usize>()) as u64;
-        let reservation = memory.reserve_capacity(bytes)?;
+        let reservation = memory.reserve_capacity(Self::worker_account_metadata_bytes())?;
         Ok(Self {
-            account: std::rc::Rc::new(std::cell::RefCell::new(ControlWorkAccount {
+            account: std::rc::Rc::new(ControlWorkAccountCell::new(ControlWorkAccount {
                 identity: next_control_work_identity(),
                 used: ControlWork::default(),
                 reserved: ControlWork::default(),
@@ -600,7 +633,7 @@ impl NativeLibraryWorkBudget {
     /// Nested native/resident leaf execution must inherit the same account.
     /// Replacing a live caller's account, even with equal limits, is rejected.
     pub fn with_scope<T>(&self, execute: impl FnOnce() -> T) -> Result<T, ResidentKernelError> {
-        struct Guard(Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>);
+        struct Guard(Option<SharedControlWorkAccount>);
         impl Drop for Guard {
             fn drop(&mut self) {
                 with_control_work(|active| *active.borrow_mut() = self.0.take());
@@ -655,8 +688,8 @@ impl NativeLibraryWorkBudget {
         // followed by a call cap; teardown need not look up those addresses
         // again. Guards still restore all three in reverse order on unwind.
         struct AccountGuard<'a>(
-            &'a RefCell<Option<Rc<RefCell<ControlWorkAccount>>>>,
-            Option<Rc<RefCell<ControlWorkAccount>>>,
+            &'a RefCell<Option<SharedControlWorkAccount>>,
+            Option<SharedControlWorkAccount>,
         );
         impl Drop for AccountGuard<'_> {
             fn drop(&mut self) {
@@ -712,7 +745,7 @@ impl NativeLibraryWorkBudget {
 }
 
 struct ControlWorkScope {
-    total: std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>,
+    total: SharedControlWorkAccount,
     observed: ControlWork,
 }
 
@@ -720,7 +753,7 @@ struct ControlWorkScope {
 // caps. Independent cells preserve the original reentrant borrow boundaries;
 // holding a field reference does not borrow the whole context across execution.
 struct ControlWorkContext {
-    active: std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>>,
+    active: std::cell::RefCell<Option<SharedControlWorkAccount>>,
     scope: std::cell::RefCell<Option<ControlWorkScope>>,
     limits: std::cell::Cell<Option<(u64, u64)>>,
 }
@@ -734,9 +767,7 @@ thread_local! {
 }
 #[inline]
 fn with_control_work<T>(
-    call: impl FnOnce(
-        &std::cell::RefCell<Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>>,
-    ) -> T,
+    call: impl FnOnce(&std::cell::RefCell<Option<SharedControlWorkAccount>>) -> T,
 ) -> T {
     CONTROL_WORK_CONTEXT.with(|context| call(&context.active))
 }
@@ -805,7 +836,7 @@ pub(crate) fn charge_planning_step() -> Result<(), super::general::ResidentExecu
 
 pub(crate) fn with_control_work_budget<T>(execute: impl FnOnce() -> T) -> T {
     struct Guard {
-        previous: Option<std::rc::Rc<std::cell::RefCell<ControlWorkAccount>>>,
+        previous: Option<SharedControlWorkAccount>,
         limits: Option<(u64, u64)>,
     }
     impl Drop for Guard {

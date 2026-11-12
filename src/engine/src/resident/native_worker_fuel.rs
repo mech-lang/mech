@@ -1,5 +1,84 @@
 //! Disjoint finite fuel for callback-free native code on a worker thread.
 use super::*;
+use std::ptr::NonNull;
+
+thread_local! {
+    static GRANT_OWNERS: RefCell<Option<SharedControlWorkAccount>> = const { RefCell::new(None) };
+}
+
+#[derive(Debug)]
+pub(in super::super) struct NativeGrantLink {
+    // Identity only. The owner account retains the Arc containing this
+    // escrow until the final nonempty grant is settled.
+    escrow: NonNull<Escrow>,
+    next: Option<SharedControlWorkAccount>,
+}
+
+pub(super) fn current_thread_holds(escrow: &Escrow) -> bool {
+    GRANT_OWNERS
+        .try_with(|head| {
+            let mut owner = head.borrow().clone();
+            while let Some(account) = owner {
+                let link = account.native_grant_link.borrow();
+                let link = link.as_ref().expect("registered native grant owner");
+                if link.escrow == NonNull::from(escrow) {
+                    return true;
+                }
+                owner = link.next.clone();
+            }
+            false
+        })
+        .unwrap_or(true)
+}
+
+fn link_owner(account: &SharedControlWorkAccount, escrow: &Escrow) -> bool {
+    GRANT_OWNERS
+        .try_with(|head| {
+            let next = head.replace(Some(account.clone()));
+            let previous = account.native_grant_link.replace(Some(NativeGrantLink {
+                escrow: NonNull::from(escrow),
+                next,
+            }));
+            debug_assert!(previous.is_none());
+        })
+        .is_ok()
+}
+
+fn unlink_owner(account: &SharedControlWorkAccount) {
+    let removed = account
+        .native_grant_link
+        .take()
+        .expect("last native grant owns a link");
+    // An outstanding grant may itself be in a caller's TLS destructor. If
+    // this registry is already gone, taking the link above is enough.
+    let _ = GRANT_OWNERS.try_with(|head| {
+        let mut owner = head.borrow_mut();
+        let first = owner.as_ref().expect("registered native grant owner");
+        if Rc::ptr_eq(first, account) {
+            *owner = removed.next;
+            return;
+        }
+        let mut previous = first.clone();
+        loop {
+            let mut link = previous.native_grant_link.borrow_mut();
+            let next = &mut link.as_mut().expect("registered native grant owner").next;
+            let candidate = next
+                .as_ref()
+                .expect("last native grant owner is registered");
+            if Rc::ptr_eq(candidate, account) {
+                *next = removed.next;
+                return;
+            }
+            let candidate = candidate.clone();
+            drop(link);
+            previous = candidate;
+        }
+    });
+}
+
+fn has_fuel(work: ControlWork) -> bool {
+    work.compute != 0 || work.comparison != 0
+}
 
 /// One thread-local native reservation. A normal exit validates its generated
 /// fuel delta and commits that spent work; only unspent reservation is released.
@@ -7,7 +86,7 @@ use super::*;
 /// This handle retains the worker's existing account and admitted metadata.
 #[derive(Debug)]
 pub struct NativeWorkerNativeFuel {
-    account: Rc<RefCell<ControlWorkAccount>>,
+    account: SharedControlWorkAccount,
     shared: Arc<Mutex<Escrow>>,
     allowance: ControlWork,
     settled: bool,
@@ -48,6 +127,10 @@ impl NativeLibraryWorkBudget {
         };
         // A zero grant is valid: generated code takes its original unfunded
         // header without executing a body, then releases this empty loan.
+        if has_fuel(allowance) && !has_fuel(account.reserved) && !link_owner(&self.account, &state)
+        {
+            return Ok(None);
+        }
         // Each product/sum is bounded by this exact account's free remainder.
         account.reserved.compute += allowance.compute;
         account.reserved.comparison += allowance.comparison;
@@ -85,6 +168,9 @@ impl NativeWorkerNativeFuel {
         let mut shared = lock_escrow(&self.shared);
         account.reserved.compute -= self.allowance.compute;
         account.reserved.comparison -= self.allowance.comparison;
+        if has_fuel(self.allowance) && !has_fuel(account.reserved) {
+            unlink_owner(&self.account);
+        }
         if shared.sealed {
             // Group close already charged every outstanding grant in full.
             used = self.allowance;
@@ -223,6 +309,113 @@ mod tests {
         assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
     }
 
+    // The parent owns the group so a failing baseline can be sealed and
+    // joined after the timeout, even when both local accounts are stuck.
+    fn same_thread_workers(
+        run: impl FnOnce(NativeLibraryWorkBudget, NativeLibraryWorkBudget) + Send + 'static,
+        expected: (u64, u64),
+    ) {
+        use std::sync::mpsc::channel;
+        use std::time::Duration;
+        let memory = mech_core::ManagedMemoryBudget::new(1 << 20);
+        let root = NativeLibraryWorkBudget::new(100, 100, &memory).unwrap();
+        let group = root.reserve_worker_group(100, 100).unwrap();
+        let first = group.worker_loan().unwrap();
+        let second = group.worker_loan().unwrap();
+        let (done, finished) = channel();
+        let thread = std::thread::spawn(move || {
+            let first = NativeLibraryWorkBudget::from_worker_loan(first).unwrap();
+            let second = NativeLibraryWorkBudget::from_worker_loan(second).unwrap();
+            run(first, second);
+            let _ = done.send(());
+        });
+        if let Err(error) = finished.recv_timeout(Duration::from_secs(5)) {
+            drop(group);
+            if let Err(panic) = thread.join() {
+                std::panic::resume_unwind(panic);
+            }
+            panic!("same-thread native grant prevented progress: {error}");
+        }
+        thread.join().unwrap();
+        assert_eq!(group.finish().unwrap(), expected);
+        assert_eq!(root.used(), expected);
+        drop(root);
+        assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+    }
+
+    #[test]
+    fn same_thread_native_grant_declines_unscoped_debit_without_preparing() {
+        same_thread_workers(
+            |left, right| {
+                let fuel = left.reserve_native_worker_fuel().unwrap().unwrap();
+                assert_eq!(fuel.allowance(), (50, 50));
+                let forbidden = |_| -> Result<(u64, u64, ()), ResidentKernelError> {
+                    panic!("same-thread reservation must decline before preparation")
+                };
+                assert_eq!(right.with_unscoped_debit(forbidden), Ok(None));
+                assert_eq!(right.used(), (0, 0));
+                let peer = right.reserve_native_worker_fuel().unwrap().unwrap();
+                assert_eq!(peer.allowance(), (25, 25));
+                // The older account can settle while the newer one still
+                // owns fuel in this escrow.
+                fuel.finish(10, 5).unwrap();
+                assert_eq!(left.with_unscoped_debit(forbidden), Ok(None));
+                peer.finish(0, 0).unwrap();
+                GRANT_OWNERS.with(|head| assert!(head.borrow().is_none()));
+                assert_eq!(
+                    right.with_unscoped_debit(|remaining| {
+                        assert_eq!(remaining, (90, 95));
+                        Ok::<_, ResidentKernelError>((2, 3, ()))
+                    }),
+                    Ok(Some(()))
+                );
+            },
+            (12, 8),
+        );
+    }
+
+    #[test]
+    fn same_thread_native_grant_keeps_direct_and_batch_debit_refusal_bounded() {
+        same_thread_workers(
+            |left, right| {
+                let first = left.reserve_native_worker_fuel().unwrap().unwrap();
+                assert_eq!(first.allowance(), (50, 50));
+                let expected = ResidentKernelError::ResourceLimit {
+                    phase: mech_core::ResidentResourcePhase::Admission,
+                    dimension: MemoryBudgetDimension::ComputeWork,
+                    required: 130,
+                    limit: 100,
+                };
+                assert_eq!(right.charge(80, 0), Err(expected.clone()));
+                assert_eq!(
+                    checked_control_account_work(&right.account.borrow(), 80, 0).unwrap_err(),
+                    expected
+                );
+                assert_eq!(right.used(), (0, 0));
+                right.charge(10, 2).unwrap();
+                let second = left.reserve_native_worker_fuel().unwrap().unwrap();
+                assert_eq!(second.allowance(), (20, 24));
+                first.finish(5, 7).unwrap();
+                assert_eq!(
+                    right.with_debit_batch(|meter| meter.charge(80, 0)).unwrap(),
+                    Err(ResidentKernelError::ResourceLimit {
+                        phase: mech_core::ResidentResourcePhase::Admission,
+                        dimension: MemoryBudgetDimension::ComputeWork,
+                        required: 115,
+                        limit: 100,
+                    })
+                );
+                assert_eq!(right.used(), (10, 2));
+                // Abandonment still charges the full second grant and removes
+                // its ownership mark, while allowing the available retry.
+                drop(second);
+                right.charge(65, 0).unwrap();
+                assert_eq!(right.used(), (75, 2));
+            },
+            (100, 33),
+        );
+    }
+
     #[test]
     fn native_worker_fuel_pressure_waits_for_unspent_fuel_before_denial() {
         for mode in 0..3 {
@@ -245,6 +438,21 @@ mod tests {
             let (waiting, wait) = std::sync::mpsc::channel();
             let b = std::thread::spawn(move || {
                 let worker = NativeLibraryWorkBudget::from_worker_loan(second).unwrap();
+                let independent_memory = mech_core::ManagedMemoryBudget::new(1 << 20);
+                let independent_root =
+                    NativeLibraryWorkBudget::new(1, 1, &independent_memory).unwrap();
+                let independent_group = independent_root.reserve_worker_group(1, 1).unwrap();
+                let independent_worker = NativeLibraryWorkBudget::from_worker_loan(
+                    independent_group.worker_loan().unwrap(),
+                )
+                .unwrap();
+                let independent_grant = independent_worker
+                    .reserve_native_worker_fuel()
+                    .unwrap()
+                    .unwrap();
+                assert_eq!(independent_grant.allowance(), (1, 1));
+                // The current thread holds a grant, but in a different escrow.
+                // The original cross-thread settlement must still wake us.
                 NATIVE_FUEL_WAIT_NOTIFY.with(|slot| *slot.borrow_mut() = Some(waiting));
                 match mode {
                     0 => worker.charge(80, 0).unwrap(),
@@ -261,6 +469,9 @@ mod tests {
                         assert!(result.unwrap().is_some());
                     }
                 }
+                independent_grant.finish(0, 0).unwrap();
+                drop(independent_worker);
+                assert_eq!(independent_group.finish().unwrap(), (0, 0));
             });
             wait.recv_timeout(std::time::Duration::from_secs(5))
                 .unwrap();
