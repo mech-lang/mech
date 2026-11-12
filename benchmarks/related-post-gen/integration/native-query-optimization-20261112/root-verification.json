@@ -5,15 +5,16 @@
     "benchmarks/related-post-gen/integration/native-query-optimization-20261112/verify.py"
   ],
   "exit": 0,
-  "time_UTC": "2026-11-12T09:18:02.750504+00:00",
+  "time_UTC": "2026-11-12T09:22:10.663841+00:00",
   "verification_mode": "Independent full offline reassembly, SHA/output/timer/order/paired/resource/source/native-contract verification; no benchmark executables invoked",
   "pins": {
-    "verify.py": "70ccf6d0ebac177b63a13089074f982e1efdb7642535008bf008201ca2a75a32",
+    "verify.py": "7ec2548a228bf53658ff27f303fd1943cddfbd5cc38d3c12821a28ad3ea00bc0",
     "report.json": "a4940403734a477af0ad071bdacb44ef28c65ccdb354b570ae2bf4cdf5edf330",
     "records.json": "3f96d25964b6a32f5b71122af570967c886bf16194cad016767edf01da20037d",
     "verification.json": "3b73d38ec6110d6b9560a73b229aa893a536c4ac12582f1baa76844ec7ad8049"
   },
   "selected_managed_checkpoint": 334,
   "fastest_Rust_target_met": false,
-  "source_publication": "Candidate source patches are reproducible evidence; maintained production source remains IR340."
+  "source_publication": "Candidate source patches are reproducible evidence; maintained production source remains IR340.",
+  "direct_Object_checks": "All12realquerycomparisonchains decoded and checked from retained Mach-O __text words."
 }
