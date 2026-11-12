@@ -10,6 +10,7 @@ mod known_widths;
 mod local_phis;
 mod preheaders;
 mod repeated_bounds;
+mod selected_homes;
 mod selected_ranges;
 mod threaded_edges;
 mod unsigned_intervals;
@@ -319,6 +320,8 @@ fn optimize_ordered(
         boolean_phi_values: 0,
         known_width_branches_removed: 0,
         current_predicate_branches: 0,
+        selected_home_constant_operands: 0,
+        selected_home_merge_parameters: 0,
         identity_edges: 0,
         loop_edges: 0,
         bitwise_constant_branches: 0,
@@ -652,8 +655,33 @@ pub(in crate::native_artifact) fn finish_imported_passes(
     report.window_bounds_combined += combine_window_bounds(controls, context, isa)?;
     report.ordered_capture_spans += fold_ordered_capture_spans(controls, context, isa)?;
     report.adjacent_addresses_reused += reuse_adjacent_addresses(controls, context, isa)?;
+    let homes = rematerialize_boolean_homes(controls, context, isa)?;
+    report.selected_home_constant_operands += homes.constant_operands;
+    report.selected_home_merge_parameters += homes.merge_parameters;
     (report.after_blocks, report.after_instructions) = counts(&context.func);
     Ok(())
+}
+
+pub(in crate::native_artifact) fn rematerialize_boolean_homes(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<selected_homes::Report, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::ScalarEdgeHomes)
+    {
+        return Ok(selected_homes::Report::default());
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let report = selected_homes::optimize(&mut context.func, &context.cfg, &context.domtree);
+    if report.constant_operands != 0 || report.merge_parameters != 0 {
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(report)
 }
 
 pub(in crate::native_artifact) fn fold_bitwise_constants(

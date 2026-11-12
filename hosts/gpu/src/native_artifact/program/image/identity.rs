@@ -513,7 +513,11 @@ fn selected_template(
 // invocation-specific owners, payload bounds and exact work policy stay checked.
 // IR338 moves fresh owned worker captures through two unchanged ordered debits
 // under the existing inactive worker batch; owner drops remain outside escrow.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 340;
+// IR344 combines dense worker banks and checked producer element-range proofs.
+// IR346 additionally emits packed unsigned cells directly into canonical words.
+// Direct unsigned loads and compact native bit-count lowering share the exact IR343 backend.
+// Canonical selected-Boolean rematerialization with direct loads and compact bit-count lowering.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 349;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

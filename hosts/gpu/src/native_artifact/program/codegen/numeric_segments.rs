@@ -353,17 +353,13 @@ pub(in crate::native_artifact) fn emit_entry(
                     template.inputs()[0].body(),
                     |b| words.read(b, view),
                 )?;
-                let value = b.ins().load(
+                let value = numeric_words::load_unsigned_word(
+                    b,
                     ty,
                     numeric_words::guarded_load_flags(controls.options()),
                     address,
                     0,
                 );
-                let value = if width < 8 {
-                    b.ins().uextend(types::I64, value)
-                } else {
-                    value
-                };
                 words.write(b, *output as usize, value);
                 typed_loads.push((source, width));
             }

@@ -163,6 +163,8 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub boolean_phi_values: usize,
     pub known_width_branches_removed: usize,
     pub current_predicate_branches: usize,
+    pub selected_home_constant_operands: usize,
+    pub selected_home_merge_parameters: usize,
     pub identity_edges: usize,
     pub loop_edges: usize,
     pub bitwise_constant_branches: usize,

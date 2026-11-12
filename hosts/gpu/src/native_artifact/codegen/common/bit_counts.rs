@@ -158,3 +158,7 @@ pub(in crate::native_artifact) fn optimize(function: &mut Function) -> usize {
     }
     changed
 }
+
+#[cfg(test)]
+#[path = "bit_counts_tests.rs"]
+mod tests;

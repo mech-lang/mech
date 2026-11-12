@@ -43,6 +43,7 @@ type BoxReturnCallIndInfo = Box<ReturnCallInfo<Reg>>;
 type VecMachLabel = Vec<MachLabel>;
 type BoxExternalName = Box<ExternalName>;
 type VecArgPair = Vec<ArgPair>;
+type ComparisonChain = super::boolean_conjunction::Chain;
 
 /// The main entry point for lowering with ISLE.
 pub(crate) fn lower(
@@ -75,6 +76,112 @@ pub struct ExtendedValue {
 
 impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
     isle_lower_prelude_methods!();
+
+    fn icmp_conjunction(&mut self, value: Value) -> Option<ComparisonChain> {
+        // This is the pure ISLE preflight. It does not normalize operands,
+        // lower instructions, sink values or emit machine code.
+        super::boolean_conjunction::derive(self.lower_ctx.dfg(), value, |value| {
+            matches!(
+                self.lower_ctx.get_value_as_source_or_const(value).inst,
+                InputSourceInst::UniqueUse(_, 0)
+            )
+        })
+    }
+
+    fn emit_icmp_conjunction_branch(
+        &mut self,
+        chain: ComparisonChain,
+        taken: MachLabel,
+        not_taken: MachLabel,
+    ) {
+        // Total impure RHS constructor. Complete preflight has already proved
+        // the bounded integer tree. Materialize every later operand BEFORE
+        // asking for the first flags producer; nothing can clobber its NZCV
+        // while operands are being requested or normalized.
+        let mut comparisons = chain.iter();
+        let first = comparisons.next().unwrap();
+        let mut prepared = [None; super::boolean_conjunction::MAX_COMPARISONS];
+        let mut count = 0;
+        for comparison in comparisons {
+            // CCMP has no extended-register form. Keep the exact existing
+            // signed/unsigned normalization for both I8/I16 operands.
+            let signed = matches!(
+                comparison.cc,
+                IntCC::SignedLessThan
+                    | IntCC::SignedLessThanOrEqual
+                    | IntCC::SignedGreaterThan
+                    | IntCC::SignedGreaterThanOrEqual
+            );
+            let narrow = comparison.ty.bits() < 32;
+            let mut operand = |value| {
+                if narrow && signed {
+                    generated_code::constructor_put_in_reg_sext32(self, value)
+                } else if narrow {
+                    generated_code::constructor_put_in_reg_zext32(self, value)
+                } else {
+                    self.put_in_reg(value)
+                }
+            };
+            let left = operand(comparison.left);
+            let right = operand(comparison.right);
+            let size = if comparison.ty == I64 {
+                OperandSize::Size64
+            } else {
+                OperandSize::Size32
+            };
+            prepared[count] = Some((size, left, right, comparison.cc));
+            count += 1;
+        }
+        // Retain the ordinary first ICMP lowering, including exact narrow
+        // extensions and constant rewrites that can also change its IntCC.
+        let generated_code::FlagsAndCC::FlagsAndCC { flags, mut cc } =
+            generated_code::constructor_lower_icmp_into_flags(
+                self,
+                &first.cc,
+                first.left,
+                first.right,
+                first.ty,
+            );
+        const MAX_INSTRUCTIONS: usize = super::boolean_conjunction::MAX_COMPARISONS + 2;
+        let mut instructions: smallvec::SmallVec<[MInst; MAX_INSTRUCTIONS]> =
+            smallvec::SmallVec::new();
+        match flags {
+            generated_code::ProducesFlags::AlreadyExistingFlags => {}
+            generated_code::ProducesFlags::ProducesFlagsSideEffect { inst }
+            | generated_code::ProducesFlags::ProducesFlagsReturnsReg { inst, .. }
+            | generated_code::ProducesFlags::ProducesFlagsReturnsResultWithConsumer {
+                inst, ..
+            } => instructions.push(inst),
+            generated_code::ProducesFlags::ProducesFlagsTwiceSideEffect { inst1, inst2 } => {
+                instructions.push(inst1);
+                instructions.push(inst2);
+            }
+        }
+        for &(size, left, right, next_cc) in prepared[..count].iter().flatten() {
+            instructions.push(MInst::CCmp {
+                size,
+                rn: left,
+                rm: right,
+                nzcv: super::boolean_conjunction::false_flags(next_cc),
+                cond: lower_condcode(cc),
+            });
+            cc = next_cc;
+        }
+        instructions.push(MInst::CondBr {
+            taken: BranchTarget::Label(taken),
+            not_taken: BranchTarget::Label(not_taken),
+            kind: CondBrKind::Cond(lower_condcode(cc)),
+        });
+        // Mirror with_flags: emit producers and consumer back-to-back. The
+        // shared facade represents at most two producers; this private list
+        // holds at most two prefix instructions, seven CCMPs and one branch.
+        // No lowering, put-in-reg, callback or instruction construction occurs
+        // inside this loop. AArch64 regalloc moves/spills/reloads (including
+        // their non-S address materialization) preserve NZCV.
+        for inst in instructions {
+            self.lower_ctx.emit(inst);
+        }
+    }
 
     fn gen_call_info(
         &mut self,

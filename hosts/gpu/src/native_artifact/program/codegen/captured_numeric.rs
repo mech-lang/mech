@@ -92,12 +92,7 @@ pub(super) fn emit(
         template.inputs()[0].body(),
         |b| words.read(b, view),
     )?;
-    let value = b.ins().load(ty, MemFlags::new(), address, 0);
-    let value = if width < 8 {
-        b.ins().uextend(types::I64, value)
-    } else {
-        value
-    };
+    let value = numeric_words::load_unsigned_word(b, ty, MemFlags::new(), address, 0);
     words.write(b, output as usize, value);
     Ok(Some(bad))
 }

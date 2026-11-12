@@ -164,6 +164,18 @@ fn rule(function: &Function, incoming: &BTreeMap<Value, Vec<Value>>, value: Valu
     }
     let alias = |arg| function.dfg.resolve_aliases(arg);
     match function.dfg.insts[inst] {
+        Data::Load {
+            opcode: Opcode::Uload8,
+            ..
+        } => Rule::Fixed(8),
+        Data::Load {
+            opcode: Opcode::Uload16,
+            ..
+        } => Rule::Fixed(16),
+        Data::Load {
+            opcode: Opcode::Uload32,
+            ..
+        } => Rule::Fixed(32),
         Data::UnaryImm {
             opcode: Opcode::Iconst,
             imm,

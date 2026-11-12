@@ -79,6 +79,9 @@ pub(in crate::native_artifact) enum OptimizationPass {
     /// Use an exact fixed matrix extent certified by this numeric loan's
     /// original selected factory. Growing views retain their current length.
     StaticNumericExtents,
+    /// Reconstruct immutable producer element bounds and conditional target
+    /// length from the exact source Program; retain independent cold guards.
+    ProducerElementRanges,
     /// Preserve bytewise FNV while loading bounded words and admitting exact
     /// two-byte equality tails in native immutable UTF8 work.
     Utf8WordChunks,
@@ -107,6 +110,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     DisjointState,
     NontrappingHomes,
     ChildFunding,
+    /// Reconstruct current canonical Boolean homes from proved selected edges.
+    ScalarEdgeHomes,
 }
 #[cfg(feature = "canonical-native-program")]
 impl OptimizationOptions {

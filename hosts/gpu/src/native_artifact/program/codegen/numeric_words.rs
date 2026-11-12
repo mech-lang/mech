@@ -54,6 +54,28 @@ pub(super) fn guarded_load_flags(options: OptimizationOptions) -> MemFlags {
     }
 }
 
+/// Read one admitted unsigned packed cell directly into its canonical word.
+/// `ty` is the validated physical access type, not the result type. An I64
+/// result from ULoad8/16/32 still reads exactly one, two, or four bytes.
+/// Keeping extension in the memory operation avoids a separate narrow SSA
+/// value whose pure extension may move across source blocks before lowering.
+/// Address/selector proofs and every memory flag remain the caller's authority.
+pub(in crate::native_artifact) fn load_unsigned_word(
+    b: &mut FunctionBuilder<'_>,
+    ty: cranelift_codegen::ir::Type,
+    flags: MemFlags,
+    address: Value,
+    offset: i32,
+) -> Value {
+    match ty {
+        types::I8 => b.ins().uload8(types::I64, flags, address, offset),
+        types::I16 => b.ins().uload16(types::I64, flags, address, offset),
+        types::I32 => b.ins().uload32(flags, address, offset),
+        types::I64 => b.ins().load(types::I64, flags, address, offset),
+        _ => unreachable!("unsigned word load requires a validated physical width"),
+    }
+}
+
 pub(super) fn source_slots(
     code: CodePlan<'_>,
     sites: impl IntoIterator<Item = usize>,
@@ -354,3 +376,7 @@ pub(super) fn element_address(
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "numeric_address_tests.rs"]
 mod tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "numeric_unsigned_load_tests.rs"]
+mod unsigned_load_tests;
