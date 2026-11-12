@@ -144,7 +144,7 @@ impl NativeWorkMeter {
         Ok(budget)
     }
 
-    fn library_error(
+    pub(in crate::native_artifact) fn library_error(
         phase: NativeExecutionPhase,
         error: ResidentKernelError,
     ) -> NativeExecutionError {
@@ -162,6 +162,35 @@ impl NativeWorkMeter {
             error => NativeExecutionError::LibraryWork { phase, error },
         }
     }
+    /// Two ordered capture-installation debits over the existing worker
+    /// ledger. Constructor-only: active source/call observers keep their
+    /// original path. The callback must obey with_debit_batch's allocation,
+    /// account-access and destructor restrictions; no fuel is prepaid.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn with_inactive_worker_debit_batch<T, E>(
+        &mut self,
+        execute: impl FnOnce(
+            &mut mech_engine::native_artifact::NativeWorkDebitBatch<'_>,
+        ) -> Result<T, E>,
+    ) -> Result<Option<T>, E>
+    where
+        E: From<NativeExecutionError>,
+    {
+        let Some(library) = self.library.as_ref() else {
+            return Ok(None);
+        };
+        if NativeLibraryWorkBudget::has_active_scope()
+            || !library.is_worker_budget()
+            || library.limits().0 != self.limit
+        {
+            return Ok(None);
+        }
+        library
+            .with_debit_batch(execute)
+            .map_err(|error| E::from(Self::library_error(NativeExecutionPhase::Setup, error)))?
+            .map(Some)
+    }
+
     #[inline]
     pub(in crate::native_artifact) fn charge(
         &mut self,

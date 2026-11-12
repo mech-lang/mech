@@ -243,6 +243,76 @@ impl<'a> NativeValueArena<'a> {
         })
     }
 
+    /// Consume a worker's already-owned immutable capture into its fresh
+    /// constructor slot. Pure preflight proves every check between the two
+    /// original put debits before a bounded shared-lock callback begins.
+    /// Refused preflight keeps the original put's checks and paid prefix.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn put_owned_worker_capture(
+        &mut self,
+        slot: u32,
+        value: Value,
+        work: &mut NativeWorkMeter,
+    ) -> Result<NativeValueHandle, NativeValueError> {
+        self.check_work(work)?;
+        let index = slot as usize;
+        let prepared = (|| {
+            let ty = self.types.get(index)?;
+            if value.schema() != ty.schema
+                || value.schema_key() != ty.key
+                || !self.values.values().get(index)?.is_none()
+                || self.generations.values().get(index) != Some(&0)
+            {
+                return None;
+            }
+            let retained = value.memory_budget_retained_bytes(&self.budget)?;
+            retained.checked_mul(4)?.checked_add(32)
+        })();
+        // The callback only borrows this outer owner. On either denied debit
+        // it remains here until after the batch/escrow guard has been dropped.
+        let mut owner = Some(value);
+        if let Some(retirement) = prepared {
+            let handle = NativeValueHandle {
+                domain: self.values.domain_id(),
+                slot,
+                generation: 1,
+            };
+            let outcome = work.with_inactive_worker_debit_batch(|batch| {
+                let error = |error| {
+                    NativeValueError::from(NativeWorkMeter::library_error(
+                        NativeExecutionPhase::Setup,
+                        error,
+                    ))
+                };
+                batch.charge(32, 0).map_err(error)?;
+                batch.charge(retirement, 0).map_err(error)?;
+                // Freshness was checked before entering this callback. These
+                // fixed writes drop no old owner and access no memory account.
+                self.values.values_mut()[index] = owner.take();
+                self.generations.values_mut()[index] = 1;
+                Ok::<_, NativeValueError>(handle)
+            });
+            #[cfg(test)]
+            if !matches!(&outcome, Ok(None)) {
+                // work.used borrows the same engine account. This observation
+                // would panic if the batch still held its account borrow; on
+                // denial the still-present outer owner has not been dropped.
+                OWNED_CAPTURE_BATCH_END.with(|seen| {
+                    seen.set(Some((
+                        owner.is_some(),
+                        mech_engine::native_artifact::NativeLibraryWorkBudget::has_active_scope(),
+                        work.used(),
+                        self.budget.used_bytes(),
+                    )))
+                });
+            }
+            if let Some(handle) = outcome? {
+                return Ok(handle);
+            }
+        }
+        self.put(slot, owner.as_ref().unwrap(), work)
+    }
+
     #[cfg(all(test, feature = "canonical-native-program"))]
     pub(in crate::native_artifact) fn test_current_value(&self, slot: u32) -> Option<&Value> {
         self.values.values().get(slot as usize)?.as_ref()
@@ -675,6 +745,11 @@ impl<'a> NativeValueArena<'a> {
 #[cfg(all(test, feature = "canonical-native-program-runtime"))]
 thread_local! {
     static PHYSICAL_RETIREMENTS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
+}
+
+#[cfg(all(test, feature = "canonical-native-program-runtime"))]
+thread_local! {
+    static OWNED_CAPTURE_BATCH_END: core::cell::Cell<Option<(bool, bool, u64, u64)>> = const { core::cell::Cell::new(None) };
 }
 
 #[cfg(test)]

@@ -506,6 +506,7 @@ impl PreparedNativeProgram {
             line_matrices,
             prefix,
         };
+        utf8_reads::derive_replay_facts(&mut metadata).map_err(str::to_owned)?;
         metadata.worker_value_prefixes = worker_values::derive(&metadata)?;
         Ok(Self {
             metadata,
