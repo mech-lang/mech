@@ -278,6 +278,10 @@ fn numeric_related_workers_use_physical_prefixes_with_full_admission_and_checked
     for artifact in artifacts(related) {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let restored = super::super::tests::restore_admitted_helper_descriptor(&jit);
+        assert_eq!(
+            jit.descriptor().metadata().worker_value_slots,
+            restored.metadata().worker_value_slots
+        );
         for descriptor in [jit.descriptor(), &restored] {
             let metadata = descriptor.metadata();
             assert_eq!(
@@ -285,10 +289,12 @@ fn numeric_related_workers_use_physical_prefixes_with_full_admission_and_checked
                 1,
                 "actual related source must outline its worker"
             );
-            let physical = metadata.worker_value_prefixes[0];
+            let slots = metadata.worker_value_slots[0].as_ref().unwrap();
+            let physical = slots.physical_slots();
+            let prefix = slots.logical_prefix();
             let full = metadata.types.len();
             assert!(
-                physical > 0 && physical < full,
+                physical > 0 && physical < prefix && prefix < full,
                 "actual related source must positively select compact owner backing"
             );
             let mode = NativeProgramLimitMode::NoLimits;
@@ -298,7 +304,7 @@ fn numeric_related_workers_use_physical_prefixes_with_full_admission_and_checked
                     .unwrap();
             assert_eq!(
                 worker.state.as_ref().unwrap().arena.test_physical_slots(),
-                (physical, physical, physical)
+                (physical, physical, prefix)
             );
             drop(worker);
             assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
@@ -424,16 +430,11 @@ fn unsupported_worker_projection_categories_keep_full_arena_and_no_image_permiss
         for descriptor in [jit.descriptor(), &restored] {
             let metadata = descriptor.metadata();
             assert!(!metadata.parallel.regions.is_empty());
-            assert!(
-                metadata
-                    .worker_value_prefixes
-                    .iter()
-                    .all(|&prefix| prefix == metadata.types.len())
-            );
+            assert!(metadata.worker_value_slots.iter().all(Option::is_none));
             let image = descriptor.encode_build_owned_image().unwrap();
             let mut wire: serde_json::Value = serde_json::from_slice(&image).unwrap();
-            assert!(wire["descriptor"].get("worker_value_prefixes").is_none());
-            wire["descriptor"]["worker_value_prefixes"] = serde_json::json!([0]);
+            assert!(wire["descriptor"].get("worker_value_slots").is_none());
+            wire["descriptor"]["worker_value_slots"] = serde_json::json!([0]);
             assert!(super::super::tests::rejects_malformed_helper_image(
                 &serde_json::to_vec(&wire).unwrap()
             ));

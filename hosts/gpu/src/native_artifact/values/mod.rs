@@ -51,6 +51,52 @@ impl std::fmt::Display for NativeValueError {
 }
 impl std::error::Error for NativeValueError {}
 
+/// Private all-path source-slot inventory. Constructed once from the checked
+/// worker proof and borrowed by every fresh worker. It is never image authority.
+#[derive(Debug, Eq, PartialEq)]
+pub(in crate::native_artifact) struct NativeValueSlotMap {
+    indices: Box<[u32]>,
+    physical: usize,
+}
+impl NativeValueSlotMap {
+    #[cfg(any(
+        feature = "canonical-native",
+        feature = "canonical-native-program-runtime"
+    ))]
+    pub(in crate::native_artifact) fn from_inventory(
+        inventory: &[bool],
+    ) -> Result<Self, &'static str> {
+        let prefix = inventory
+            .iter()
+            .rposition(|&live| live)
+            .map_or(0, |i| i + 1);
+        let mut indices = Vec::with_capacity(prefix);
+        let mut physical = 0usize;
+        for &live in &inventory[..prefix] {
+            indices.push(if live {
+                let index = u32::try_from(physical)
+                    .ok()
+                    .filter(|&index| index != u32::MAX)
+                    .ok_or("worker dense index exceeds u32 sentinel")?;
+                physical += 1;
+                index
+            } else {
+                u32::MAX
+            });
+        }
+        Ok(Self {
+            indices: indices.into_boxed_slice(),
+            physical,
+        })
+    }
+    pub(in crate::native_artifact) fn physical_slots(&self) -> usize {
+        self.physical
+    }
+    pub(in crate::native_artifact) fn logical_prefix(&self) -> usize {
+        self.indices.len()
+    }
+}
+
 /// Both handle lanes and generation lanes are actual planned Host arenas on
 /// the caller's existing finite account. Values retain their existing shared
 /// root ownership; this arena never imports or traverses unadmitted payloads.
@@ -58,6 +104,7 @@ pub struct NativeValueArena<'a> {
     values: NativeTypedStorage<Option<Value>>,
     generations: NativeWordStorage,
     types: &'a [NativeValueSlot],
+    slots: Option<&'a NativeValueSlotMap>,
     budget: ManagedMemoryBudget,
     work_identity: u64,
 }
@@ -79,8 +126,44 @@ impl<'a> NativeValueArena<'a> {
         budget: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, NativeValueError> {
+        Self::new_storage(types, physical, None, max_transport_bytes, budget, work)
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn new_with_worker_slots(
+        types: &'a [NativeValueSlot],
+        slots: Option<&'a NativeValueSlotMap>,
+        max_transport_bytes: u64,
+        budget: &ManagedMemoryBudget,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Self, NativeValueError> {
+        match slots {
+            Some(slots) => Self::new_storage(
+                types,
+                slots.physical_slots(),
+                Some(slots),
+                max_transport_bytes,
+                budget,
+                work,
+            ),
+            None => Self::new(types, max_transport_bytes, budget, work),
+        }
+    }
+
+    fn new_storage(
+        types: &'a [NativeValueSlot],
+        physical: usize,
+        slots: Option<&'a NativeValueSlotMap>,
+        max_transport_bytes: u64,
+        budget: &ManagedMemoryBudget,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Self, NativeValueError> {
         let count = u32::try_from(types.len()).map_err(|_| NativeValueError::InvalidSlot)?;
-        if physical > types.len() {
+        let logical_prefix = slots.map_or(physical, NativeValueSlotMap::logical_prefix);
+        if physical > logical_prefix
+            || logical_prefix > types.len()
+            || slots.is_some_and(|slots| slots.physical_slots() != physical)
+        {
             return Err(NativeValueError::InvalidSlot);
         }
         let bytes = u64::from(count)
@@ -119,9 +202,10 @@ impl<'a> NativeValueArena<'a> {
         Ok(Self {
             values,
             generations,
-            // Every type-checked direct index is now bounded by the same
-            // physical prefix; omitted semantic slots cannot expose storage.
-            types: &types[..physical],
+            // Types, handles and generated word coordinates remain global.
+            // The checked map affects only these two private physical banks.
+            types: &types[..logical_prefix],
+            slots,
             budget: budget.clone(),
             work_identity: work.identity(),
         })
@@ -136,6 +220,51 @@ impl<'a> NativeValueArena<'a> {
         )
     }
 
+    fn logical_type(&self, slot: u32) -> Result<&NativeValueSlot, NativeValueError> {
+        self.types
+            .get(slot as usize)
+            .ok_or(NativeValueError::InvalidSlot)
+    }
+
+    fn physical_index(&self, slot: u32) -> Option<usize> {
+        if slot as usize >= self.types.len() {
+            return None;
+        }
+        match self.slots {
+            Some(slots) => slots
+                .indices
+                .get(slot as usize)
+                .copied()
+                .filter(|&index| index != u32::MAX)
+                .and_then(|index| {
+                    ((index as usize) < self.values.values().len()).then_some(index as usize)
+                }),
+            None => Some(slot as usize),
+        }
+    }
+
+    #[cfg(feature = "canonical-native-program-runtime")]
+    fn current(&self, slot: u32) -> Result<Option<&Value>, NativeValueError> {
+        self.logical_type(slot)?;
+        Ok(self
+            .physical_index(slot)
+            .and_then(|index| self.values.values()[index].as_ref()))
+    }
+
+    fn generation(&self, slot: u32) -> Result<u64, NativeValueError> {
+        self.logical_type(slot)?;
+        Ok(self
+            .physical_index(slot)
+            .map_or(0, |index| self.generations.values()[index]))
+    }
+
+    // Only a proved worker slot can be written. Check this after the original
+    // fallible validation/debits; holes retain their old empty/zero previews.
+    fn writable_index(&self, slot: u32) -> Result<usize, NativeValueError> {
+        self.physical_index(slot)
+            .ok_or(NativeValueError::InvalidSlot)
+    }
+
     /// Prepay one fixed-shape native producer's eventual slot installation.
     /// The ticket binds this arena generation, exact type, same account and
     /// retained bound. Installing it performs no new resource admission.
@@ -147,15 +276,15 @@ impl<'a> NativeValueArena<'a> {
         work: &mut NativeWorkMeter,
     ) -> Result<PreparedValuePut, NativeValueError> {
         self.check_work(work)?;
-        let index = slot as usize;
-        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        let ty = self.logical_type(slot)?;
         if example.schema() != ty.schema || example.schema_key() != ty.key {
             return Err(NativeValueError::TypeMismatch);
         }
         let retained = example
             .memory_budget_retained_bytes(&self.budget)
             .ok_or(NativeValueError::UnadmittedPayload)?;
-        let generation = self.generations.values()[index]
+        let generation = self
+            .generation(slot)?
             .checked_add(1)
             .ok_or(NativeValueError::GenerationExhausted)?;
         let retirement = retained
@@ -181,10 +310,10 @@ impl<'a> NativeValueArena<'a> {
         ticket: PreparedValuePut,
         value: Value,
     ) -> Result<(), NativeValueError> {
-        let index = ticket.handle.slot as usize;
-        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        let slot = ticket.handle.slot;
+        let ty = self.logical_type(slot)?;
         if ticket.handle.domain != self.values.domain_id()
-            || self.generations.values()[index].checked_add(1) != Some(ticket.handle.generation)
+            || self.generation(slot)?.checked_add(1) != Some(ticket.handle.generation)
         {
             return Err(NativeValueError::StaleHandle);
         }
@@ -197,6 +326,7 @@ impl<'a> NativeValueArena<'a> {
         {
             return Err(NativeValueError::UnadmittedPayload);
         }
+        let index = self.writable_index(slot)?;
         self.values.values_mut()[index] = Some(value);
         self.generations.values_mut()[index] = ticket.handle.generation;
         Ok(())
@@ -212,15 +342,15 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<NativeValueHandle, NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
-        let index = slot as usize;
-        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        let ty = self.logical_type(slot)?;
         if value.schema() != ty.schema || value.schema_key() != ty.key {
             return Err(NativeValueError::TypeMismatch);
         }
         let retained = value
             .memory_budget_retained_bytes(&self.budget)
             .ok_or(NativeValueError::UnadmittedPayload)?;
-        let generation = self.generations.values()[index]
+        let generation = self
+            .generation(slot)?
             .checked_add(1)
             .ok_or(NativeValueError::GenerationExhausted)?;
         // Prepay retirement before retaining a root: eventual replacement or
@@ -234,6 +364,7 @@ impl<'a> NativeValueArena<'a> {
                 reason: "native value retirement work overflows",
             })?;
         work.charge(NativeExecutionPhase::Setup, retirement)?;
+        let index = self.writable_index(slot)?;
         self.values.values_mut()[index] = Some(value.clone());
         self.generations.values_mut()[index] = generation;
         Ok(NativeValueHandle {
@@ -255,9 +386,9 @@ impl<'a> NativeValueArena<'a> {
         work: &mut NativeWorkMeter,
     ) -> Result<NativeValueHandle, NativeValueError> {
         self.check_work(work)?;
-        let index = slot as usize;
         let prepared = (|| {
-            let ty = self.types.get(index)?;
+            let index = self.physical_index(slot)?;
+            let ty = self.logical_type(slot).ok()?;
             if value.schema() != ty.schema
                 || value.schema_key() != ty.key
                 || !self.values.values().get(index)?.is_none()
@@ -266,12 +397,12 @@ impl<'a> NativeValueArena<'a> {
                 return None;
             }
             let retained = value.memory_budget_retained_bytes(&self.budget)?;
-            retained.checked_mul(4)?.checked_add(32)
+            Some((index, retained.checked_mul(4)?.checked_add(32)?))
         })();
         // The callback only borrows this outer owner. On either denied debit
         // it remains here until after the batch/escrow guard has been dropped.
         let mut owner = Some(value);
-        if let Some(retirement) = prepared {
+        if let Some((index, retirement)) = prepared {
             let handle = NativeValueHandle {
                 domain: self.values.domain_id(),
                 slot,
@@ -315,7 +446,7 @@ impl<'a> NativeValueArena<'a> {
 
     #[cfg(all(test, feature = "canonical-native-program"))]
     pub(in crate::native_artifact) fn test_current_value(&self, slot: u32) -> Option<&Value> {
-        self.values.values().get(slot as usize)?.as_ref()
+        self.current(slot).ok().flatten()
     }
     #[cfg(all(test, feature = "canonical-native-program"))]
     pub(in crate::native_artifact) fn test_handle_value(
@@ -326,15 +457,14 @@ impl<'a> NativeValueArena<'a> {
     }
 
     fn index(&self, handle: NativeValueHandle) -> Result<usize, NativeValueError> {
-        let index = handle.slot as usize;
-        if handle.domain != self.values.domain_id()
-            || self.generations.values().get(index) != Some(&handle.generation)
-            || self
-                .values
-                .values()
-                .get(index)
-                .and_then(Option::as_ref)
-                .is_none()
+        if handle.domain != self.values.domain_id() {
+            return Err(NativeValueError::StaleHandle);
+        }
+        let index = self
+            .physical_index(handle.slot)
+            .ok_or(NativeValueError::StaleHandle)?;
+        if self.generations.values()[index] != handle.generation
+            || self.values.values()[index].is_none()
         {
             return Err(NativeValueError::StaleHandle);
         }
@@ -372,10 +502,9 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<Value, NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
-        self.values
-            .values()
-            .get(slot as usize)
-            .and_then(Option::as_ref)
+        self.current(slot)
+            .ok()
+            .flatten()
             .cloned()
             .ok_or(NativeValueError::StaleHandle)
     }
@@ -395,26 +524,21 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<NativeValueHandle, NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
-        let value = self
-            .values
-            .values()
-            .get(source as usize)
-            .ok_or(NativeValueError::InvalidSlot)?
-            .as_ref()
-            .ok_or(NativeValueError::StaleHandle)?;
+        let value = self.current(source)?.ok_or(NativeValueError::StaleHandle)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
-        let index = target as usize;
-        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        let ty = self.logical_type(target)?;
         if value.schema() != ty.schema || value.schema_key() != ty.key {
             return Err(NativeValueError::TypeMismatch);
         }
         value
             .memory_budget_retained_bytes(&self.budget)
             .ok_or(NativeValueError::UnadmittedPayload)?;
-        let generation = self.generations.values()[index]
+        let generation = self
+            .generation(target)?
             .checked_add(1)
             .ok_or(NativeValueError::GenerationExhausted)?;
         work.charge(NativeExecutionPhase::Setup, 32)?;
+        let index = self.writable_index(target)?;
         let value = value.clone();
         self.values.values_mut()[index] = Some(value);
         self.generations.values_mut()[index] = generation;
@@ -436,19 +560,14 @@ impl<'a> NativeValueArena<'a> {
         work: &NativeWorkMeter,
     ) -> Result<Option<(Value, NativeValueHandle)>, NativeValueError> {
         self.check_work(work)?;
-        let index = slot as usize;
-        let value = self
-            .values
-            .values()
-            .get(index)
-            .ok_or(NativeValueError::InvalidSlot)?;
-        Ok(value.as_ref().map(|value| {
+        let value = self.current(slot)?;
+        Ok(value.map(|value| {
             (
                 value.clone(),
                 NativeValueHandle {
                     domain: self.values.domain_id(),
                     slot,
-                    generation: self.generations.values()[index],
+                    generation: self.generation(slot).unwrap(),
                 },
             )
         }))
@@ -467,14 +586,15 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<NativeValueHandle, NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 96)?;
-        let index = slot as usize;
-        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
+        let ty = self.logical_type(slot)?;
         if ty.schema != schema || ty.key != key {
             return Err(NativeValueError::TypeMismatch);
         }
-        let generation = self.generations.values()[index]
+        let generation = self
+            .generation(slot)?
             .checked_add(1)
             .ok_or(NativeValueError::GenerationExhausted)?;
+        let index = self.writable_index(slot)?;
         self.values.values_mut()[index] = None;
         self.generations.values_mut()[index] = generation;
         Ok(NativeValueHandle {
@@ -492,10 +612,9 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<(), NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 16)?;
-        let index = handle.slot as usize;
         if handle.domain != self.values.domain_id()
-            || self.generations.values().get(index) != Some(&handle.generation)
-            || !self.values.values().get(index).is_some_and(Option::is_none)
+            || self.generation(handle.slot).ok() != Some(handle.generation)
+            || !matches!(self.current(handle.slot), Ok(None))
         {
             return Err(NativeValueError::StaleHandle);
         }
@@ -512,20 +631,13 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<NativeValueHandle, NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 16)?;
-        let index = slot as usize;
-        if self
-            .values
-            .values()
-            .get(index)
-            .and_then(Option::as_ref)
-            .is_none()
-        {
+        if self.current(slot).ok().flatten().is_none() {
             return Err(NativeValueError::StaleHandle);
         }
         Ok(NativeValueHandle {
             domain: self.values.domain_id(),
             slot,
-            generation: self.generations.values()[index],
+            generation: self.generation(slot)?,
         })
     }
 
@@ -539,11 +651,7 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<Option<u64>, NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 16)?;
-        self.values
-            .values()
-            .get(slot as usize)
-            .ok_or(NativeValueError::InvalidSlot)?
-            .as_ref()
+        self.current(slot)?
             .map(|value| {
                 value
                     .memory_budget_retained_bytes(&self.budget)
@@ -563,11 +671,7 @@ impl<'a> NativeValueArena<'a> {
         // frame current_leaf. It grants neither mutation nor an entry loan.
         // The caller must fund and validate its selected view before execution.
         self.check_work(work)?;
-        self.values
-            .values()
-            .get(slot as usize)
-            .map(Option::as_ref)
-            .ok_or(NativeValueError::InvalidSlot)
+        self.current(slot)
     }
     #[cfg(feature = "canonical-native-program-runtime")]
     pub(in crate::native_artifact) fn native_retirement_available(
@@ -576,13 +680,8 @@ impl<'a> NativeValueArena<'a> {
         work: &NativeWorkMeter,
     ) -> Result<bool, NativeValueError> {
         self.check_work(work)?;
-        let index = slot as usize;
-        let value = self
-            .values
-            .values()
-            .get(index)
-            .ok_or(NativeValueError::InvalidSlot)?;
-        Ok(value.is_none() || self.generations.values()[index] != u64::MAX)
+        let value = self.current(slot)?;
+        Ok(value.is_none() || self.generation(slot)? != u64::MAX)
     }
 
     /// Pure preview for an escaping alias from one native piece. No ticket or
@@ -597,10 +696,9 @@ impl<'a> NativeValueArena<'a> {
         work: &NativeWorkMeter,
     ) -> Result<Option<u64>, NativeValueError> {
         self.check_work(work)?;
-        let index = slot as usize;
-        let ty = self.types.get(index).ok_or(NativeValueError::InvalidSlot)?;
-        if self.values.values()[index].is_some()
-            || self.generations.values()[index] == u64::MAX
+        let ty = self.logical_type(slot)?;
+        if self.current(slot)?.is_some()
+            || self.generation(slot)? == u64::MAX
             || value.schema() != ty.schema
             || value.schema_key() != ty.key
         {
@@ -640,12 +738,11 @@ impl<'a> NativeValueArena<'a> {
     fn retire_current_value(&mut self, slot: u32) -> Result<(), NativeValueError> {
         #[cfg(test)]
         PHYSICAL_RETIREMENTS.with(|count| count.set(count.get() + 1));
-        let index = slot as usize;
-        let value = self
-            .values
-            .values_mut()
-            .get_mut(index)
-            .ok_or(NativeValueError::InvalidSlot)?;
+        self.logical_type(slot)?;
+        let Some(index) = self.physical_index(slot) else {
+            return Ok(());
+        };
+        let value = &mut self.values.values_mut()[index];
         if value.is_some() {
             let next = self.generations.values()[index]
                 .checked_add(1)
@@ -673,13 +770,8 @@ impl<'a> NativeValueArena<'a> {
     ) -> Result<(), NativeValueError> {
         self.check_work(work)?;
         work.charge(NativeExecutionPhase::Setup, 16)?;
-        let value = self
-            .values
-            .values()
-            .get(slot as usize)
-            .ok_or(NativeValueError::InvalidSlot)?;
-        if value
-            .as_ref()
+        if self
+            .current(slot)?
             .is_some_and(|value| value.shares_frozen_storage(owner))
         {
             self.retire_current(slot, work)?;
@@ -698,11 +790,9 @@ impl<'a> NativeValueArena<'a> {
         let end = start
             .checked_add(outputs.len())
             .ok_or(NativeValueError::InvalidSlot)?;
-        let values = self
-            .values
-            .values()
-            .get(start..end)
-            .ok_or(NativeValueError::InvalidSlot)?;
+        if end > self.types.len() || start > end {
+            return Err(NativeValueError::InvalidSlot);
+        }
         work.charge(
             NativeExecutionPhase::Completion,
             (outputs.len() as u64)
@@ -710,13 +800,18 @@ impl<'a> NativeValueArena<'a> {
                 .and_then(|n| n.checked_add(32))
                 .ok_or(NativeValueError::InvalidSlot)?,
         )?;
-        if values.iter().any(Option::is_none) {
+        if (start..end).any(|slot| self.current(slot as u32).ok().flatten().is_none()) {
             return Err(NativeValueError::StaleHandle);
         }
         // All fallible checks/debits precede allocation-free publication.
         // The caller has already prepaid retirement of the previous outputs.
-        for (target, value) in outputs.iter_mut().zip(values) {
-            *target = Some(value.as_ref().unwrap().clone());
+        for (offset, target) in outputs.iter_mut().enumerate() {
+            *target = Some(
+                self.current((start + offset) as u32)
+                    .unwrap()
+                    .unwrap()
+                    .clone(),
+            );
         }
         Ok(())
     }

@@ -97,9 +97,11 @@ fn numeric_workers_keep_uneven_partitions_native_calls_errors_aliases_and_restor
             assert!(
                 descriptor
                     .metadata()
-                    .worker_value_prefixes
+                    .worker_value_slots
                     .iter()
-                    .all(|&prefix| prefix < descriptor.metadata().types.len()),
+                    .all(|slots| slots.as_ref().is_some_and(
+                        |slots| slots.physical_slots() < descriptor.metadata().types.len()
+                    )),
                 "the existing original/decoded/restored numeric error/alias/retry contract must exercise physical worker prefixes"
             );
             let memory = mode.memory_budget();

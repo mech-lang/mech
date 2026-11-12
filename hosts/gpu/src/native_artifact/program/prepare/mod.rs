@@ -127,7 +127,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) map_admission: native::program::prepare::map_admission::Layout,
     pub(in crate::native_artifact) parallel: native::program::prepare::parallel::Layout,
     // Pure nonserialized storage inventory; rebuilt on every image path.
-    pub(in crate::native_artifact) worker_value_prefixes: Box<[usize]>,
+    pub(in crate::native_artifact) worker_value_slots:
+        Box<[Option<crate::native_artifact::values::NativeValueSlotMap>]>,
     pub(in crate::native_artifact) borrowed_strings: native::program::prepare::borrowed::Layout,
     pub(in crate::native_artifact) closed_tails: native::program::prepare::tail::Layout,
     pub(in crate::native_artifact) selected_joins: native::program::prepare::selected_join::Layout,
@@ -499,7 +500,7 @@ impl PreparedNativeProgram {
             fixed_key_loops,
             map_admission,
             parallel,
-            worker_value_prefixes: Box::new([]),
+            worker_value_slots: Box::new([]),
             borrowed_strings,
             closed_tails,
             selected_joins,
@@ -507,7 +508,7 @@ impl PreparedNativeProgram {
             prefix,
         };
         utf8_reads::derive_replay_facts(&mut metadata).map_err(str::to_owned)?;
-        metadata.worker_value_prefixes = worker_values::derive(&metadata)?;
+        metadata.worker_value_slots = worker_values::derive(&metadata)?;
         Ok(Self {
             metadata,
             complete_frontiers: line_retention_frontiers.into_boxed_slice(),
