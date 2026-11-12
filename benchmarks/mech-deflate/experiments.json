@@ -63444,6 +63444,208 @@
         }
       },
       "complete_goal": false
+    },
+    "323": {
+      "git_parent": "549e7052a6fe3c1370c207041fec88bed81623bb",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+      "retained_compiler": "R320",
+      "retained_source_packet_round": 320,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the fused unsigned subtraction screen.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "301635de646f9c71dae7bf44956646c2ddab00a6b795e8b95f0c8edd40e05c7f",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "aaa190d92996808a69d62b7fa369119acaeae954f3cb7e39ee74e1d9db7e0a8e",
+            "after": "00da73e78ea763d8e0b4b8d2abd7c6d7c74021004e221412690fc5f97789d20d"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/saturating_subtraction/tests.rs": {
+            "before": null,
+            "after": "b8281de867e346a41b8afe315c011eb91e3926da4f973082aeea12c435590984"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/saturating_subtraction.rs": {
+            "before": null,
+            "after": "4d8f0abbbe7e5cea050b50e678d4b5b77c3862878ee1fcf60ced3386101d7292"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "937bba39a98c757da76fbc93fb2136fbae8cc9bdc0c496e39674703bd56ff8ea",
+            "after": "80c18aeb56237442f12b3af51e519823a5cbf4b26f9ba2bbacfa701a877e9ea3"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "backend_patch_sha256": "9260b5bdcd0481333fd4ad808f4a5dfb9f9d4720883a632e210812164004efc5",
+        "backend_delta": {
+          "source_round": 317,
+          "changes": {
+            "src/isa/aarch64/lower.isle": {
+              "before": "10d4b5b35122798b53d57684bc61f1b9db232c113a949dd3d0262fbc6bc4829d",
+              "after": "c5ec449b98c25e9e4d422b7068866504d16e3e7abd7bdd27c48ecb19656ffa5f"
+            }
+          },
+          "patch_sha256": "9260b5bdcd0481333fd4ad808f4a5dfb9f9d4720883a632e210812164004efc5",
+          "regalloc_changed": false,
+          "generated_selector_sha256": "16cc9980480947dc8ea47fb51b9804cf601541fcd66f0c12ae326ebdbf9668c9",
+          "generator_sha256": "e78b07ba9a192fa384917e36b58f240cdaecae5e65dfa5a9ee58ef2a767d1adf"
+        },
+        "inherited_backend_patch_sha256": "04eec5f0bca9f502c9b1cb98706f37ab2adbf21b62dabcac11d9ab2cf5904809",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "258df3649ac8458e9a0e30f8e0685c5380717aff273a80e279692f96955c290d",
+        "worker_sha256": "d7955da4b2ec7918ef45cd59d2652f46b2e61590f936a9e798a8546e3f8a07c5"
+      },
+      "summary": {
+        "round": 323,
+        "published_parent": "549e7052a6fe3c1370c207041fec88bed81623bb",
+        "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 320,
+        "retained_runtime_packet_round": 272,
+        "screen_cases": 15,
+        "original_1_05_gates_passed": 15,
+        "blockmean_1_05_gates_passed": 15,
+        "screen_paired_geomean": 1.0016035757345392,
+        "matched_cases": 15,
+        "matched_timed_calls": 154656,
+        "matched_plain_timed_calls": 154656,
+        "target": "prefix-natural-262144",
+        "target_matched_x_libdeflate": [
+          1.0768928074232513,
+          1.0788310099475937
+        ],
+        "target_matched_x_roc": [
+          1.335215112644225,
+          1.3376182462560646
+        ],
+        "target_plain_matched": {
+          "roc": [
+            1.3391036431039551,
+            1.3383928195818897
+          ],
+          "libdeflate": [
+            1.0804139623118725,
+            1.0798404565478232
+          ]
+        },
+        "target_screen_after_over_before": 1.000841588506466,
+        "target_counter_medians": {
+          "before": {
+            "cycles": 193259987.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 759494043.0,
+            "lifetime_peak_physical": 50430912.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46498752.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47939584.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 193893344.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 755467655.0,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144981506.5,
+            "instructions": 479516660.5,
+            "level": 12.0,
+            "lifetime_peak_physical": 14468032.0,
+            "physical_after": 14468032.0,
+            "rss_after": 15073280.0
+          }
+        },
+        "heap_families_agree": true,
+        "reason": "256 KiB natural slows in both comparisons with the retained compiler. Other priority natural cases give mixed results."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "258df3649ac8458e9a0e30f8e0685c5380717aff273a80e279692f96955c290d",
+          "metadata.json": "8717de52f92b95bd9389a8400f93fa8d46a20a1f226327b89685b4d972210d49"
+        },
+        "worker_sha256": "d7955da4b2ec7918ef45cd59d2652f46b2e61590f936a9e798a8546e3f8a07c5"
+      },
+      "report": "docs/design/native-fused-unsigned-subtraction.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r323-fused-saturation-aaeb45bc963a.tar.gz",
+        "bytes": 1840850,
+        "sha256": "aaeb45bc963a1d7c2459627537ce62461187bff132de0602ff11099e85176ae8",
+        "files": 289,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "2b42ae92abaad7d103660fabc3bba8554a65c950b835e3ed72be4b6008039a0e",
+            "pilot-counters.json": "b09f9baae5c432cc894af7cb3bc3ec089c9c14c008601523b0a77a7d23b83929",
+            "result-decision.json": "8e6684b748c1088de4d1e86ded448db785a8d4b178afcc0478db73193d8a02f1",
+            "candidate-profile-summary.json": "6a167cc235b77b4e724b2cb37a6becbfb74dd72a03363b2ab931f3c9ee41a7cb"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
