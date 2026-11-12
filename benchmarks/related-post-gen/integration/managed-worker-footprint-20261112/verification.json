@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-compact-native-development-20261111/benchmarks/related-post-gen/integration/managed-worker-footprint-20261112/verify.py"
+  ],
+  "exit": 0,
+  "seconds": 3.9855529579799622,
+  "stdout": "{\n  \"verified_records\": 5283,\n  \"unique_blobs\": 3142,\n  \"compressed_bytes\": 8176485,\n  \"measured_source_commit\": \"55a47b080eba45e46596976279d196b9c97eba2e\",\n  \"published_source_equivalent_commit\": \"6cd626c3dfb5cdac2efc3c6978949a717ada27a8\",\n  \"source_inventory_entries\": 2814,\n  \"literal_include_entries\": 164,\n  \"primary_exact_outputs\": 868,\n  \"independent_exact_outputs\": 351,\n  \"resource_exact_outputs\": 196,\n  \"qualification_edges\": 31,\n  \"selected\": \"IR334\",\n  \"incremental_latency_gain_confirmed\": true,\n  \"fastest_Rust_target_met\": false,\n  \"post_JSON_instructions\": 29679792,\n  \"allocation_bytes_and_requests_unchanged\": true\n}\n",
+  "stderr": ""
+}
