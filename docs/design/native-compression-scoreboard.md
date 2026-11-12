@@ -26,6 +26,8 @@ The separate selected byte-pair pilot took 1.017441× its paired control and los
 
 The first equal join argument pilot measured 1.000934× control with identical win sets. The linked matcher still tests a constant false value on the skip route. [Separate seven-case pilot and branch audit](native-equal-join-pilot.md).
 
+The short reduction pair pilot measured 1.009291× control. All four natural sizes regressed. [Nine-case pilot and linked parser audit](native-short-reduction-pair-pilot.md).
+
 ## Selected-read bounds comparison
 
 The selected-read bounds comparison uses the same 81 level-12 cases and pairs each candidate run with its control.
