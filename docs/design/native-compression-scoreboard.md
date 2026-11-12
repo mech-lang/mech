@@ -24,6 +24,8 @@ Repeated 128 KiB joins repeated 256 KiB and repeated 1 MiB below both peers. Nat
 
 The separate selected byte-pair pilot took 1.017441× its paired control and lost the repeated 256 KiB win over libdeflate. The trial is recorded as evidence. [Seven-case pilot and machine audit](native-selected-byte-pair-pilot.md).
 
+The first equal join argument pilot measured 1.000934× control with identical win sets. The linked matcher still tests a constant false value on the skip route. [Separate seven-case pilot and branch audit](native-equal-join-pilot.md).
+
 ## Selected-read bounds comparison
 
 The selected-read bounds comparison uses the same 81 level-12 cases and pairs each candidate run with its control.
