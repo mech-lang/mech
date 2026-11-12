@@ -64782,6 +64782,207 @@
         }
       },
       "complete_goal": false
+    },
+    "328": {
+      "git_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+      "retained_compiler": "R327",
+      "retained_source_packet_round": 327,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the carried displacement screen.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "55fb554b28ec6de2d4de7b26db50c45ac43f7125d110e64783d716d73bbe7848",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/address_phis.rs": {
+            "before": null,
+            "after": "ab81bacdc8a502b3c6ab12b3f2814c77e2f336016864b1e9075384e351f7d4ac"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/adjacent_addresses.rs": {
+            "before": "1f1352322fa1f3b81fdc4bd663f9f1e8e50f41fdb9dbe59cd79023ffa7b65c60",
+            "after": "e89a67f2829b4b9f191fad1c1887f34a86d2e816415ac505c9b0d68cf6bad6c4"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "ec1e3c6618c12448621a18133ec96ba57a2bbb83b80980db936513cf9051802e",
+            "after": "689257451447965dced8560cfadec18ef95ece7629d997e70e2442a5858071de"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "14b9734cdb56b236503f1e60f5eb672392394c129912aa4ce736ff1829f840a1",
+            "after": "bc568e8cdc1be2b9c2cbd28221e11520fd892402928861e39d86594697ddb9fc"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/address_phis/tests.rs": {
+            "before": null,
+            "after": "f930f75dd975ff94929cfdf8cc13224da259166d2eff2a3605742ae7d0d8f1f2",
+            "test_only": true
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "backend_changed": false,
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "c6057b69d2c4e3900e124a7cb805e5b54637920139dcf47e7b50b84a6ef5e958",
+        "worker_sha256": "21744f6963d4ab23be7683454c552f611a35ef629497d71c8cdea7e7e2fa0c5d"
+      },
+      "summary": {
+        "round": 328,
+        "published_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 327,
+        "retained_runtime_packet_round": 272,
+        "screen_cases": 15,
+        "original_1_05_gates_passed": 15,
+        "blockmean_1_05_gates_passed": 15,
+        "screen_paired_geomean": 1.0023629937444603,
+        "matched_cases": 15,
+        "matched_timed_calls": 154656,
+        "target": "prefix-natural-262144",
+        "target_matched_x_libdeflate": [
+          1.052317384630709,
+          1.0625747554289455
+        ],
+        "target_matched_x_roc": [
+          1.3073771583678613,
+          1.320120701791531
+        ],
+        "target_screen_after_over_before": 1.0052121438776849,
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 1.0061893323201159,
+            "matched": 1.0084017223793038
+          },
+          "prefix-natural-262144": {
+            "primary": 1.0052121438776849,
+            "matched": 1.0097474117106182
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0044343905812916,
+            "matched": 1.0054263688784097
+          }
+        },
+        "target_counter_medians": {
+          "before": {
+            "cycles": 190920827.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 745152321.0,
+            "lifetime_peak_physical": 50463744.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46531584.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 191728623.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 744566743.5,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 145099412.0,
+            "instructions": 479515966.5,
+            "level": 12.0,
+            "lifetime_peak_physical": 14402496.0,
+            "physical_after": 14402496.0,
+            "rss_after": 15007744.0
+          }
+        },
+        "heap_families_agree": true,
+        "matcher_stack_read_sample_share": {
+          "retained": 0.2625523012552301,
+          "candidate": 0.4422680412371134
+        },
+        "reason": "Both timing comparisons slow Reymont, 256 KiB natural and 1 MiB natural. The shorter address sequences do not lower elapsed time on those cases. Keep R327."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "c6057b69d2c4e3900e124a7cb805e5b54637920139dcf47e7b50b84a6ef5e958",
+          "metadata.json": "c3322bcaafb09cea29d075e5398b3b5c511369ba05492ba9659822ec01fdfa2f"
+        },
+        "worker_sha256": "21744f6963d4ab23be7683454c552f611a35ef629497d71c8cdea7e7e2fa0c5d"
+      },
+      "report": "docs/design/native-carried-child-displacements.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r328-carried-child-displacements-209305838183.tar.gz",
+        "bytes": 1367662,
+        "sha256": "209305838183525640f4438e842afbefac0c61463e9ab07582bc097887d6d882",
+        "files": 233,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "0fa705798cae92a03ce7fc6bb21a0e535a5fbc759759f36d2ff9ea6e8bc86e6a",
+            "pilot-counters.json": "be285bb4d7fb55ee18dfbdb45577e33ba32a029e3cb313e2721dde86610ffdd3",
+            "result-decision.json": "e2210e1ca5e4dd59309123dd0495f6695d70128223d6513c35db09db9f9a0caa",
+            "candidate-profile-summary.json": "0c72feaff6be1c2be84171d5bf4ef2cee2bfad247ec0a1c027fbb1a57fe2ba9c"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
