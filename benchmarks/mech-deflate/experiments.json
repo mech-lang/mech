@@ -71227,6 +71227,323 @@
         }
       },
       "complete_goal": false
+    },
+    "348": {
+      "campaign_round": 348,
+      "git_parent": "34f35828318404255eb21c0c2114f376bfb0acab",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "34f35828318404255eb21c0c2114f376bfb0acab",
+      "retained_compiler": "R343",
+      "retained_source_packet_round": 343,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the packed field experiment.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "1c22fc85daed9357f924d5bd036fa37b3ccee52db9422bc37879505dbd182ae0",
+        "compiler_parent_round": 343,
+        "prior_source_packet_commit": "f33d8c1b0e92208b0592964339dc5dabdc78069d",
+        "baseline_object_sha256": "81a8c384df1ac5ffde825061bb4d1171fa9895371866f2f796cf62f9dcd58d97",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/known_widths.rs": {
+            "before": "24dde6f3630e3ddfd14ac721381ea3491d1551204bbaeccd17ba3fb987701b14",
+            "after": "bd19e5ba34f6ebf43fe134876800f85fcfbfab76a7e4b298894e777ae97c771b"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "8791c90b5b3a252efca619d9cf35174486b044a609e7a020d6a6870dec8d6a3a",
+            "after": "297cb51bd48df0a18b3c1803ee653bd9a8385fee8f4a2ea971d52beafe5d782f"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "211c7e6bd249ac6e155cb024ae22c35921fe26e4b5aa2a4812d70599ead76853",
+            "after": "ece58680a8813c0d601324ebb3689dce62d3dfd7106f32b1a63fa7eb4d998f3c"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "shared_timing_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "ab8258342dac65fdd7968f8624ea87734e962bcb4f48ebd212e03d2af34c0d59",
+        "worker_sha256": "b66eef7bd3534c8c6e4f78897480361490b4bea1c5adf3741653f43c56a3f622"
+      },
+      "summary": {
+        "round": 348,
+        "candidate_compiler_round": 348,
+        "published_parent": "34f35828318404255eb21c0c2114f376bfb0acab",
+        "measured_parent": "34f35828318404255eb21c0c2114f376bfb0acab",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "source_program_changed": false,
+        "retained_source_packet_round": 343,
+        "retained_runtime_packet_round": 272,
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "screen_qualified_for_full": false,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 16,
+        "blockmean_1_05_gates_passed": 16,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 1.0002794663640453,
+        "target_matched_x_roc": [
+          1.237152489943965,
+          1.239182164042689
+        ],
+        "target_matched_x_libdeflate": [
+          0.9992150348468737,
+          1.0008543484252475
+        ],
+        "witness_changes": {
+          "empty": {
+            "primary": 1.0,
+            "matched": 0.9600889578555851
+          },
+          "one-stored": {
+            "primary": 1.0,
+            "matched": 0.9636266563029278
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0,
+            "matched": 0.9804711871645913
+          },
+          "eight-literals": {
+            "primary": 1.0009294801170432,
+            "matched": 0.9990604714243869
+          },
+          "reymont-prefix-32769": {
+            "primary": 1.002256860039369,
+            "matched": 1.0016912119475285
+          },
+          "heldout-window-32768": {
+            "primary": 1.0032811591421584,
+            "matched": 1.0006166631857754
+          },
+          "prefix-natural-32767": {
+            "primary": 1.0021899669472436,
+            "matched": 1.000272016971901
+          },
+          "prefix-natural-32768": {
+            "primary": 1.0014302422071566,
+            "matched": 0.9997175729826208
+          },
+          "prefix-natural-65537": {
+            "primary": 1.0048705719918063,
+            "matched": 1.0018898507518834
+          },
+          "prefix-natural-131072": {
+            "primary": 1.0023431598292287,
+            "matched": 1.002631547375738
+          },
+          "prefix-natural-262144": {
+            "primary": 0.9997773075505862,
+            "matched": 1.001640601393298
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0008931244505432,
+            "matched": 1.0008259055821949
+          },
+          "prefix-random-16384": {
+            "primary": 0.9902413858448633,
+            "matched": 0.9826131628801742
+          },
+          "prefix-random-1048576": {
+            "primary": 0.9985051827585425,
+            "matched": 0.9963033774184507
+          },
+          "prefix-periodic-1048576": {
+            "primary": 0.999099949324138,
+            "matched": 1.000273273778543
+          },
+          "prefix-repeated-1048576": {
+            "primary": 0.9987294550508123,
+            "matched": 0.9987128884536518
+          }
+        },
+        "cpu_target": {
+          "before": {
+            "cycles": 179738503.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 661215554.5,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47988736.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 179703053.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 660988955.0,
+            "lifetime_peak_physical": 50447360.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515200.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47972352.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144929605.0,
+            "instructions": 479479884.0,
+            "level": 12.0,
+            "lifetime_peak_physical": 14402432.0,
+            "physical_after": 14402432.0,
+            "rss_after": 15024128.0
+          }
+        },
+        "memory_target": {
+          "before": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "level": 12.0
+          }
+        },
+        "cases_with_same_heap_families": 16,
+        "linked_compression_checks": 324,
+        "compiler_tests": 54,
+        "focused_jit_invocations": 8576,
+        "worst_matched": {
+          "case": "prefix-natural-131072",
+          "ratio": 1.002631547375738
+        },
+        "screen_wins_before_after": {
+          "roc": [
+            3,
+            3
+          ],
+          "libdeflate": [
+            4,
+            3
+          ],
+          "both": [
+            0,
+            0
+          ]
+        },
+        "screen_crossings": {
+          "roc": {
+            "below": [],
+            "above": []
+          },
+          "libdeflate": {
+            "below": [],
+            "above": [
+              "prefix-natural-262144"
+            ]
+          }
+        },
+        "screen_priority_matched_geomean": 0.9920115378269178,
+        "screen_1_05_gate_misses": {
+          "pooled_misses": [],
+          "block_misses": []
+        },
+        "decision": "Keep R343 after the packed-field projection screen."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "ab8258342dac65fdd7968f8624ea87734e962bcb4f48ebd212e03d2af34c0d59",
+            "metadata.json": "0fbe037d7013e3ee99058c6addc9ff12b704a3093d2a8bc37e7dff97ee36ca71"
+          },
+          "decoded": {
+            "object.o": "ab8258342dac65fdd7968f8624ea87734e962bcb4f48ebd212e03d2af34c0d59",
+            "metadata.json": "0fbe037d7013e3ee99058c6addc9ff12b704a3093d2a8bc37e7dff97ee36ca71"
+          }
+        },
+        "worker_sha256": "b66eef7bd3534c8c6e4f78897480361490b4bea1c5adf3741653f43c56a3f622",
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "warnings_as_errors": true,
+        "cfg_tests": 54,
+        "focused_jit_invocations": 8576,
+        "unchanged_root_object": {
+          "code_bytes": 1000052,
+          "stack_bytes": 57472,
+          "sha256": "51a9ba5c59bcc94bddc46ef1b585f003a9923b626ecd0f20f7d6c86438309854"
+        },
+        "unchanged_vector_selection": true
+      },
+      "report": "docs/design/native-packed-field-projection.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r348-packed-field-projection-3253de31f36f.tar.gz",
+        "bytes": 1370470,
+        "sha256": "3253de31f36f6e971ce176c8dfaa4353e897198dd379253b10d9a12290dcd603",
+        "files": 293,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "ae18126b85a2fa30360cae161ba91e635ae7a69b2f42d25c08b2c4e498e2df9b",
+            "pilot-counters.json": "c0e34a255c17c9f0aea74036177612524815685a79a1d6d3e79c5e7afc57cc86",
+            "result-decision.json": "8599d2e43b77af3bc44d328681d50d165ef8f3204d0ea9148b7b89d4a60992a6",
+            "screen-result.json": "a9a8e4564128219cfac8bce42e1d1b164a180003c50881396f780bff7f392b0c",
+            "screen-disposition.json": "3b9222eb2d3319dfa84e92d04a6ac563db1d84fc73e1d082b90854e1ad740940",
+            "candidate-profile-summary.json": "6294fe5cdebd2d35571762c37f06877f6ff10afb80f76b2a8cccb33f17c8795e",
+            "screen-report.md": "ae18126b85a2fa30360cae161ba91e635ae7a69b2f42d25c08b2c4e498e2df9b",
+            "reference-tally-routes.json": "400718656dd38b7ba2725fa46e180988d3f839b2c43cc416d8c2abf23d5e93d9"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
