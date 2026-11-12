@@ -125,6 +125,10 @@ impl CFGInfo {
             }
         }
 
+        if self.use_natural_loop_depths(f, &ctx.block_to_rpo) {
+            return Ok(());
+        }
+
         let approx_loop_depth = self.approx_loop_depth.cleared();
         let mut backedge_stack: SmallVec<[u32; 4]> = smallvec![];
         let mut cur_depth = 0;
@@ -147,6 +151,84 @@ impl CFGInfo {
         }
 
         Ok(())
+    }
+
+    // Count actual natural-loop membership for reducible graphs. The layout
+    // approximation is still useful when a cyclic region has multiple entries.
+    fn use_natural_loop_depths<F: Function>(&mut self, f: &F, rpo: &[Option<u32>]) -> bool {
+        let mut latches = Vec::new();
+        for &block in &self.postorder {
+            for &header in f.block_succs(block) {
+                if rpo[header.index()] > rpo[block.index()] {
+                    continue;
+                }
+                if !self.dominates(header, block) {
+                    return false;
+                }
+                latches.push((header, block));
+            }
+        }
+
+        let depths = self.approx_loop_depth.repopulate(f.num_blocks(), 0);
+        if latches.is_empty() {
+            return true;
+        }
+
+        // Process inner headers first. Collapse each completed inner loop to
+        // its header when walking the predecessors of an enclosing loop.
+        latches.sort_unstable_by_key(|&(header, _)| rpo[header.index()].unwrap());
+        let mut innermost = alloc::vec![Block::invalid(); f.num_blocks()];
+        let mut parent = alloc::vec![Block::invalid(); f.num_blocks()];
+        let mut representative = alloc::vec![Block::invalid(); f.num_blocks()];
+        let mut pending = Vec::new();
+        for group in latches.chunk_by(|a, b| a.0 == b.0).rev() {
+            let header = group[0].0;
+            innermost[header.index()] = header;
+            representative[header.index()] = header;
+            pending.extend(group.iter().map(|&(_, latch)| latch));
+
+            while let Some(block) = pending.pop() {
+                if rpo[block.index()].is_none() {
+                    continue;
+                }
+                let inner = innermost[block.index()];
+                let walk_from = if inner.is_invalid() {
+                    innermost[block.index()] = header;
+                    block
+                } else {
+                    let mut root = inner;
+                    while representative[root.index()] != root {
+                        let next = representative[root.index()];
+                        representative[root.index()] = representative[next.index()];
+                        root = representative[root.index()];
+                    }
+                    if root == header {
+                        continue;
+                    }
+                    parent[root.index()] = header;
+                    representative[root.index()] = header;
+                    root
+                };
+                pending.extend(f.block_preds(walk_from));
+            }
+        }
+
+        // A loop's parent dominates its header, so RPO visits the parent first.
+        for group in latches.chunk_by(|a, b| a.0 == b.0) {
+            let header = group[0].0;
+            let outer = parent[header.index()];
+            depths[header.index()] = if outer.is_valid() {
+                depths[outer.index()] + 1
+            } else {
+                1
+            };
+        }
+        for (index, inner) in innermost.into_iter().enumerate() {
+            if inner.is_valid() {
+                depths[index] = depths[inner.index()];
+            }
+        }
+        true
     }
 
     pub fn dominates(&self, a: Block, b: Block) -> bool {
