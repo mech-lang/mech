@@ -895,7 +895,7 @@ fn decode_inner<
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,
-            worker_value_prefixes: Box::new([]),
+            worker_value_slots: Box::new([]),
             borrowed_strings,
             closed_tails,
             selected_joins: w.selected_joins.into(),
@@ -911,7 +911,7 @@ fn decode_inner<
     };
     native::program::prepare::utf8_reads::derive_replay_facts(&mut descriptor.metadata)
         .map_err(str::to_owned)?;
-    descriptor.metadata.worker_value_prefixes =
+    descriptor.metadata.worker_value_slots =
         native::program::prepare::worker_values::derive(&descriptor.metadata)?;
     if !OBJECT_BOUND {
         if let Some(backend) = &descriptor.machine_backend {

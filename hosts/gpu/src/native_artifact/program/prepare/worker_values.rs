@@ -1,5 +1,6 @@
-//! Physical canonical-owner prefixes for the SAME checked all-path worker CFG.
-//! No slot is remapped; unknown storage/effect categories retain the full arena.
+//! Dense physical canonical-owner storage for the SAME checked all-path worker CFG.
+//! Only private owner/generation banks are remapped; raw words remain global.
+//! Unknown storage/effect categories retain the full identity arena.
 use super::{
     ProgramMetadata,
     composition::frames::Source,
@@ -15,7 +16,7 @@ use mech_engine::native_artifact::{
 
 struct Inventory<'a> {
     plan: &'a Plan,
-    prefix: usize,
+    slots: Vec<bool>,
     supported: bool,
 }
 impl Inventory<'_> {
@@ -26,7 +27,7 @@ impl Inventory<'_> {
             .get(value as usize)
             .ok_or("worker arena value outside plan")?;
         self.supported &= numeric(ty.definition().body());
-        self.prefix = self.prefix.max(value as usize + 1);
+        self.slots[value as usize] = true;
         Ok(())
     }
     fn values(&mut self, values: impl IntoIterator<Item = u32>) -> Result<(), &'static str> {
@@ -88,7 +89,7 @@ fn under(plan: &Plan, mut owner: u32, root: u32) -> Result<bool, &'static str> {
 /// path, including exact Object-bound restoration. Never serialized authority.
 pub(in crate::native_artifact) fn derive(
     metadata: &ProgramMetadata,
-) -> Result<Box<[usize]>, &'static str> {
+) -> Result<Box<[Option<crate::native_artifact::values::NativeValueSlotMap>]>, &'static str> {
     let plan = &metadata.plan;
     let facts = plan.facts();
     let full = metadata.types.len();
@@ -96,7 +97,7 @@ pub(in crate::native_artifact) fn derive(
     for region in &metadata.parallel.regions {
         let mut inventory = Inventory {
             plan,
-            prefix: 0,
+            slots: vec![false; full],
             supported: true,
         };
         inventory.values(region.captures.iter().copied())?;
@@ -146,7 +147,9 @@ pub(in crate::native_artifact) fn derive(
                     inventory.values([left.get(), right.get()])?
                 }
                 Term::Scalar(Branch::Complete) => inventory.supported = false,
-                _ => {}
+                Term::Header { .. }
+                | Term::TailHeader { .. }
+                | Term::Scalar(Branch::Jump(_) | Branch::Reject | Branch::IntegrityFailure) => {}
             }
             match block.action() {
                 Action::CollectionBegin { collection }
@@ -168,7 +171,14 @@ pub(in crate::native_artifact) fn derive(
                 | Action::TextJoinFinish { .. }
                 | Action::HistogramQueryStep { .. }
                 | Action::HistogramFinish { .. } => inventory.supported = false,
-                _ => {}
+                Action::Scalar(_)
+                | Action::Structural { .. }
+                | Action::LibraryCall { .. }
+                | Action::PrepareU64Range { .. }
+                | Action::CollectionElement { .. }
+                | Action::CollectionPush { .. }
+                | Action::Initialize { .. }
+                | Action::Latch { .. } => {}
             }
             if let Some(action) = metadata.buffer_frames.action(site as usize) {
                 inventory.values(action.retire().iter().map(|value| value.get()))?;
@@ -235,7 +245,9 @@ pub(in crate::native_artifact) fn derive(
                     ResultRecipe::Aggregate { value } | ResultRecipe::Frame { value, .. } => {
                         inventory.value(*value)?
                     }
-                    _ => {}
+                    ResultRecipe::Unreachable
+                    | ResultRecipe::Scalar
+                    | ResultRecipe::Array { .. } => {}
                 }
                 inventory.values(
                     proof
@@ -317,9 +329,13 @@ pub(in crate::native_artifact) fn derive(
             }
         }
         result.push(if inventory.supported {
-            inventory.prefix
+            Some(
+                crate::native_artifact::values::NativeValueSlotMap::from_inventory(
+                    &inventory.slots,
+                )?,
+            )
         } else {
-            full
+            None
         });
     }
     Ok(result.into_boxed_slice())

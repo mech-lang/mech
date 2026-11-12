@@ -687,20 +687,20 @@ impl<'a> Prepared<'a> {
             NativeExecutionPhase::Setup,
             amount(descriptor.metadata().retirements.words().len(), 16, 128)?,
         )?;
-        let physical = worker_region
+        let slots = worker_region
             .map(|region| {
                 descriptor
                     .metadata()
-                    .worker_value_prefixes
+                    .worker_value_slots
                     .get(region)
-                    .copied()
-                    .ok_or_else(|| invalid("worker arena prefix inventory absent"))
+                    .map(Option::as_ref)
+                    .ok_or_else(|| invalid("worker arena slot inventory absent"))
             })
             .transpose()?
-            .unwrap_or(descriptor.metadata().types.len());
-        let mut arena = NativeValueArena::new_with_prefix(
+            .flatten();
+        let mut arena = NativeValueArena::new_with_worker_slots(
             &descriptor.metadata().types,
-            physical,
+            slots,
             limits.execution.max_transport_bytes,
             memory,
             &mut work,
