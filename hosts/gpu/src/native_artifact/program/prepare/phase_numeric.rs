@@ -292,6 +292,7 @@ pub(in crate::native_artifact) fn derive_interval(
     )
 }
 
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) fn derive_complete(
     plan: &Plan,
     tail: &NativeTailLoop,
