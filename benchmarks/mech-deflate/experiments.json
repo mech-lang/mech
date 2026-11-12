@@ -67352,6 +67352,288 @@
         }
       },
       "complete_goal": false
+    },
+    "336": {
+      "git_parent": "993e0c35b9706464244817844cac711ef0994f44",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ebc837def6d5c878cb3ecdeadd0e3f078a3f12e4",
+      "retained_compiler": "R333",
+      "retained_source_packet_round": 333,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after measuring checked packed-prefix spans.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "d0de6fabc39e65698c0177fa60fd2a9f0376ee909352a50135210f3512b5f7b5",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates.rs": {
+            "before": "57c4b2960f22d8136d5a6c37029a5fc57fa7eb664d43e4cc50fc13a37470d589",
+            "after": "99737ae2c95167df948d0dfb2fa83a829d4669bcdacb1af78dcd76dce7651949"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/packed_prefix_tests.rs": {
+            "before": null,
+            "after": "64f8eed4cd9953a8d86c42bc1158313f84c44455adaf5a4f611017c8edd1b5e2"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/scalar_spans.rs": {
+            "before": "38ea7a42e67c5038512a747d1f3e7541f86aeab7f73b80accd7181ec866cbf38",
+            "after": "59485dd292305799d36ca5f821c0a7edf06c744c6a20a06a4a7916cd7e14cf73"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "d5764a10ac6c7de5e7f30319b8f36e1417a6fbab0723e6bf5d8f4082fbd50f69",
+            "after": "2f98486bb84506a933bd5469a0430a34bd42a6907a47ec56dda47ccbf3be329e"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds.rs": {
+            "before": "08ce90b8c8d9a95f62fd94ab7366aa09f0494fed6fe81a9e426cf1cde3e4b3b2",
+            "after": "a1fdf88bf9984ba635bce019d86e9e268369cfcc4901784c8caad6e17c913e19"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "242dca92551020713e191ad377dd24f75a9afe0c1c6635eae076efb2a44e4f9d",
+            "after": "1dc19fa7bc1ad09c122370bd5ffa68938ebff4e1f95122b1bee35e9f17768060"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "bdeeb286b31d4aa9153fbb0c6aab8e2931c76981b2d98bff78aff1cf42d1ffd5",
+        "worker_sha256": "059f91ad333e3a880d5d6ea56b5e20fdb5eef2246a7bf4133f9d30df3a16ab6c"
+      },
+      "summary": {
+        "round": 336,
+        "published_parent": "993e0c35b9706464244817844cac711ef0994f44",
+        "measured_parent": "ebc837def6d5c878cb3ecdeadd0e3f078a3f12e4",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "source_program_changed": false,
+        "retained_source_packet_round": 333,
+        "retained_runtime_packet_round": 272,
+        "screen_qualified_for_full": false,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 16,
+        "blockmean_1_05_gates_passed": 16,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 0.9995509512922665,
+        "target_matched_x_roc": [
+          1.2798935242465281,
+          1.2853464524799734
+        ],
+        "target_matched_x_libdeflate": [
+          1.032629989125396,
+          1.037029462296978
+        ],
+        "witness_changes": {
+          "empty": {
+            "primary": 1.0,
+            "matched": 0.9699617678244395
+          },
+          "one-stored": {
+            "primary": 1.0,
+            "matched": 0.9909878820858119
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0,
+            "matched": 0.995299696547647
+          },
+          "eight-literals": {
+            "primary": 1.0015159346428175,
+            "matched": 0.9983124652468006
+          },
+          "reymont-prefix-32769": {
+            "primary": 1.004323357059637,
+            "matched": 0.9997837880793113
+          },
+          "heldout-window-32768": {
+            "primary": 1.0068740950791437,
+            "matched": 1.0016231112343341
+          },
+          "prefix-natural-32767": {
+            "primary": 1.0042944226295314,
+            "matched": 1.0003788785922325
+          },
+          "prefix-natural-32768": {
+            "primary": 1.0026849763244483,
+            "matched": 1.0042494119693721
+          },
+          "prefix-natural-65537": {
+            "primary": 1.0070192676526135,
+            "matched": 1.0077887490258326
+          },
+          "prefix-natural-131072": {
+            "primary": 1.004247063800811,
+            "matched": 1.007104808668508
+          },
+          "prefix-natural-262144": {
+            "primary": 1.005992683076514,
+            "matched": 1.0042604545848104
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.009052770468251,
+            "matched": 1.0077971860735064
+          },
+          "prefix-random-16384": {
+            "primary": 0.9817237541498776,
+            "matched": 0.9906676199123633
+          },
+          "prefix-random-1048576": {
+            "primary": 0.9953031680026025,
+            "matched": 0.9942638814182093
+          },
+          "prefix-periodic-1048576": {
+            "primary": 0.9840794238625743,
+            "matched": 0.9835733274234215
+          },
+          "prefix-repeated-1048576": {
+            "primary": 0.9862453024365081,
+            "matched": 0.9868677739035558
+          }
+        },
+        "cpu_target": {
+          "before": {
+            "cycles": 186315422.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 693701065.5,
+            "lifetime_peak_physical": 50430912.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46498752.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47923200.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 187929405.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 690979472.5,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47939584.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144877943.5,
+            "instructions": 479464960.5,
+            "level": 12.0,
+            "lifetime_peak_physical": 14533504.0,
+            "physical_after": 14533504.0,
+            "rss_after": 15155200.0
+          }
+        },
+        "memory_target": {
+          "before": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "level": 12.0
+          }
+        },
+        "cases_with_same_heap_families": 16,
+        "linked_compression_checks": 324,
+        "cfg_tests": 50,
+        "native_jit_calls": 78732,
+        "worst_matched": {
+          "case": "prefix-natural-1048576",
+          "ratio": 1.0077971860735064
+        },
+        "decision": "Keep R333 after the checked packed-prefix span screen."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "bdeeb286b31d4aa9153fbb0c6aab8e2931c76981b2d98bff78aff1cf42d1ffd5",
+            "metadata.json": "b7496407732d89109d38e950610f54c3619a9c5949a604980144a162dc38c7ae"
+          },
+          "decoded": {
+            "object.o": "bdeeb286b31d4aa9153fbb0c6aab8e2931c76981b2d98bff78aff1cf42d1ffd5",
+            "metadata.json": "b7496407732d89109d38e950610f54c3619a9c5949a604980144a162dc38c7ae"
+          }
+        },
+        "worker_sha256": "059f91ad333e3a880d5d6ea56b5e20fdb5eef2246a7bf4133f9d30df3a16ab6c",
+        "warnings_as_errors": true,
+        "cfg_tests": 50,
+        "native_jit_calls": 78732
+      },
+      "report": "docs/design/native-checked-packed-prefix.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r336-checked-packed-prefix-00a34e16027a.tar.gz",
+        "bytes": 1496282,
+        "sha256": "00a34e16027ab62368ef3d3a940949f57cd0dff5e219c6d82c90f30e4f4a0c9c",
+        "files": 267,
+        "reports_replayed": 6,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay-screen.py",
+          "expected_outputs": {
+            "REPORT.md": "d21b88ad5525768094029d0972d3dd2ebe24bbb7773ec23772573c963606aab2",
+            "pilot-counters.json": "96078f53c0b67a62547a00722c50a12e048b81e04349bac1954333ae99c016aa",
+            "result-decision.json": "8a055818051f7c4a093fa23e7f7324421ac8b258bc8c9fdb22dae45831dd7c1a",
+            "screen-result.json": "e24de1776d84ed152bfecf10929e10acc323714ea1a169f74f22cff5a3910271",
+            "screen-disposition.json": "034ae4c694f1f65d4b6b17cb7d9b4825e2a0d09af2326bb30ba7e350031fc4bb",
+            "candidate-profile-summary.json": "b82a0f5190ea20b49f617789ec98bd3e7096062f481edd96ce8ee269a64d06b3"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
