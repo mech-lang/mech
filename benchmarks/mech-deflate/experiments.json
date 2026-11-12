@@ -72853,6 +72853,409 @@
         }
       },
       "complete_goal": false
+    },
+    "354": {
+      "campaign_round": 354,
+      "git_parent": "b4d567fc345d6dbbe4f2154a2b7911befb5ccc22",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+      "retained_compiler": "R350",
+      "retained_source_packet_round": 350,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the conditional exit experiment.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": true,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_parent_round": 350,
+        "prior_source_packet_commit": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+        "baseline_object_sha256": "279f9e4291dbbe92af1177ff8ffee7b005f0140fb2fcb2ca612779e6c12957ec",
+        "changed_sources": {
+          "src/isa/aarch64/lower/isle.rs": {
+            "before": "c5d7eb444965330a898f576c4d36e8e02870d48c271b27f2f77ee0a36ead8c9d",
+            "after": "d086a89e7ea67f909a4ecefc280039c7b03357b146232f15f0a10e19d9f2eb80"
+          },
+          "src/isa/aarch64/inst.isle": {
+            "before": "9caf2751ba3e02418f5ea4f7739b4de337be18bb65576e443514348e8d273c8c",
+            "after": "755d951aee6a537eb1c93fdbea0309fda33279f430f42f2bcb5b87706a573369"
+          },
+          "src/isa/aarch64/lower.isle": {
+            "before": "0054b5c8c121279b9a19d294374b016b1074bdbdd0bd0d684651e52f6d4c7017",
+            "after": "75da81b8a6e0952ba8d2233df17237a85a760f95af2d939b598a3a980877e4d9"
+          }
+        },
+        "backend_patch_sha256": "b3aa2dea85a65c0eb69ba7df8292358085ad096639dac3368824a99b2bdde622",
+        "shared_timing_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "547a1beffa521fe6fdd6bb9531bc0a848eab1276a27c747fff6d9f3a605429fd",
+        "worker_sha256": "c72fabaa78f3ac0da62800c3ecff00a75b8248ca354a8434f9af103a99169159"
+      },
+      "summary": {
+        "round": 354,
+        "candidate_compiler_round": 354,
+        "published_parent": "b4d567fc345d6dbbe4f2154a2b7911befb5ccc22",
+        "measured_parent": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "source_program_changed": false,
+        "retained_source_packet_round": 350,
+        "retained_runtime_packet_round": 272,
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "screen_qualified_for_full": false,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 16,
+        "blockmean_1_05_gates_passed": 16,
+        "primary_timed_calls": 56592,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 0.9997796199141917,
+        "matched_priority_geomean": 0.9947455375511167,
+        "target_matched_x_roc": [
+          1.2338293288220752,
+          1.239579963246841
+        ],
+        "target_matched_x_libdeflate": [
+          0.9960703297855036,
+          1.0007128165493908
+        ],
+        "comparisons": {
+          "empty": {
+            "roc": [
+              2.0983484455246266,
+              2.033638857977867
+            ],
+            "libdeflate": [
+              0.016865392332173282,
+              0.016345291591060972
+            ]
+          },
+          "one-stored": {
+            "roc": [
+              2.0737949237668656,
+              2.008768986360845
+            ],
+            "libdeflate": [
+              0.018370556978692294,
+              0.017794529583447065
+            ]
+          },
+          "seven-stored-prefix": {
+            "roc": [
+              2.261226824172818,
+              2.199815467559987
+            ],
+            "libdeflate": [
+              0.01884154077313327,
+              0.01832983422198825
+            ]
+          },
+          "eight-literals": {
+            "roc": [
+              0.18306992397552962,
+              0.18356082812410468
+            ],
+            "libdeflate": [
+              2.3172406582218006,
+              2.3234543662283653
+            ]
+          },
+          "reymont-prefix-32769": {
+            "roc": [
+              1.2065957635524298,
+              1.2127064023871368
+            ],
+            "libdeflate": [
+              1.0992373856347843,
+              1.104804322682073
+            ]
+          },
+          "heldout-window-32768": {
+            "roc": [
+              1.2069175574132722,
+              1.2114263587856293
+            ],
+            "libdeflate": [
+              1.098384734240253,
+              1.102488078803185
+            ]
+          },
+          "prefix-natural-32767": {
+            "roc": [
+              1.2088221459090434,
+              1.211927186723811
+            ],
+            "libdeflate": [
+              1.0999364037683492,
+              1.1027617552387106
+            ]
+          },
+          "prefix-natural-32768": {
+            "roc": [
+              1.2078470785218112,
+              1.2122623695530594
+            ],
+            "libdeflate": [
+              1.0992737577224554,
+              1.1032921584369717
+            ]
+          },
+          "prefix-natural-65537": {
+            "roc": [
+              1.2082959995943479,
+              1.2139724857979648
+            ],
+            "libdeflate": [
+              1.0201519088035427,
+              1.0249445078337975
+            ]
+          },
+          "prefix-natural-131072": {
+            "roc": [
+              1.2136476357556505,
+              1.2186453105720367
+            ],
+            "libdeflate": [
+              1.0011637228706036,
+              1.0052864110195032
+            ]
+          },
+          "prefix-natural-262144": {
+            "roc": [
+              1.2220195996521452,
+              1.2273145458308017
+            ],
+            "libdeflate": [
+              0.9856510083471907,
+              0.9899217819433117
+            ]
+          },
+          "prefix-natural-1048576": {
+            "roc": [
+              1.2338293288220752,
+              1.239579963246841
+            ],
+            "libdeflate": [
+              0.9960703297855036,
+              1.0007128165493908
+            ]
+          },
+          "prefix-random-16384": {
+            "roc": [
+              1.0204077657254673,
+              1.019405889055356
+            ],
+            "libdeflate": [
+              2.7475236272710384,
+              2.744825999993784
+            ]
+          },
+          "prefix-random-1048576": {
+            "roc": [
+              1.5383848912186455,
+              1.5345486303400764
+            ],
+            "libdeflate": [
+              2.1732210826699507,
+              2.167801734711246
+            ]
+          },
+          "prefix-periodic-1048576": {
+            "roc": [
+              0.6881064150908872,
+              0.6775455068982069
+            ],
+            "libdeflate": [
+              1.1691350277932584,
+              1.1511913966591985
+            ]
+          },
+          "prefix-repeated-1048576": {
+            "roc": [
+              0.6915916333617435,
+              0.6863255851252664
+            ],
+            "libdeflate": [
+              1.0871990582775324,
+              1.0789207009242021
+            ]
+          }
+        },
+        "timing_changes": {
+          "empty": {
+            "primary": 1.0,
+            "matched": 0.9691616577386025
+          },
+          "one-stored": {
+            "primary": 1.0,
+            "matched": 0.9686439885348418
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0,
+            "matched": 0.9728415761053532
+          },
+          "eight-literals": {
+            "primary": 0.9987999907766094,
+            "matched": 1.0026815117301335
+          },
+          "reymont-prefix-32769": {
+            "primary": 1.0046609054504505,
+            "matched": 1.0050643629119964
+          },
+          "heldout-window-32768": {
+            "primary": 1.0049898140490083,
+            "matched": 1.0037357989737266
+          },
+          "prefix-natural-32767": {
+            "primary": 1.0035885251643217,
+            "matched": 1.0025686498425561
+          },
+          "prefix-natural-32768": {
+            "primary": 1.0013516550302228,
+            "matched": 1.0036555049970828
+          },
+          "prefix-natural-65537": {
+            "primary": 1.00400889540595,
+            "matched": 1.0046979268370686
+          },
+          "prefix-natural-131072": {
+            "primary": 1.0016191035538955,
+            "matched": 1.0041178960590769
+          },
+          "prefix-natural-262144": {
+            "primary": 1.003647368384228,
+            "matched": 1.0043329470166957
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.003716666873388,
+            "matched": 1.0046608021793872
+          },
+          "prefix-random-16384": {
+            "primary": 1.0064735620769771,
+            "matched": 0.9990181604807769
+          },
+          "prefix-random-1048576": {
+            "primary": 0.9951762718496661,
+            "matched": 0.9975063061913393
+          },
+          "prefix-periodic-1048576": {
+            "primary": 0.983549223400246,
+            "matched": 0.9846522166323862
+          },
+          "prefix-repeated-1048576": {
+            "primary": 0.9852252749206788,
+            "matched": 0.992385610261247
+          }
+        },
+        "screen_wins_before_after": {
+          "roc": [
+            3,
+            3
+          ],
+          "libdeflate": [
+            5,
+            4
+          ],
+          "both": [
+            0,
+            0
+          ]
+        },
+        "screen_crossings": {
+          "roc": {
+            "below": [],
+            "above": []
+          },
+          "libdeflate": {
+            "below": [],
+            "above": [
+              "prefix-natural-1048576"
+            ]
+          }
+        },
+        "worst_matched": {
+          "case": "reymont-prefix-32769",
+          "ratio": 1.0050643629119964
+        },
+        "cases_with_same_heap_families": 16,
+        "decision": "Retain R350 after the conditional exit screen."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "warnings_as_errors": true,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "547a1beffa521fe6fdd6bb9531bc0a848eab1276a27c747fff6d9f3a605429fd",
+            "metadata.json": "9ff29d389b30ec82ea1bf400a82f10cbc7ba7d04247cfede2d683cf4e20e3eef"
+          },
+          "decoded": {
+            "object.o": "547a1beffa521fe6fdd6bb9531bc0a848eab1276a27c747fff6d9f3a605429fd",
+            "metadata.json": "9ff29d389b30ec82ea1bf400a82f10cbc7ba7d04247cfede2d683cf4e20e3eef"
+          }
+        },
+        "worker_sha256": "c72fabaa78f3ac0da62800c3ecff00a75b8248ca354a8434f9af103a99169159",
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "focused_jit_invocations": 14000,
+        "unchanged_root_object": false,
+        "unchanged_vector_selection": true
+      },
+      "report": "docs/design/native-conditional-exit-selection.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r354-conditional-exit-5773b3dbaec3.tar.gz",
+        "bytes": 1673497,
+        "sha256": "5773b3dbaec3214a21ea347ba38039bf21faf2b6d33c98a7650dcfdc8fdc3579",
+        "files": 297,
+        "reports_replayed": 7,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay-screen.py",
+          "expected_outputs": {
+            "REPORT.md": "1aad19624415562dcc88ebeb576b4b8e65bcd657f25764069b6c17ba6d77fae8",
+            "pilot-counters.json": "a98ee463e54444147337fd6d2035d96e8d799f90a05ce8e1a992bcc4e46857b6",
+            "result-decision.json": "5d580244b648cbd30d075988106f39ffbda1293644ebf2c0846aa54f25721c6f",
+            "screen-disposition.json": "16b490c645fb7759ac623456d0745a82069fdd7f3390384e937e0a9da605db6d",
+            "machine-audit.json": "6ebfc25461b106c5bae980a7a26dbd44cf39b98c7fdfb801392da8052038bd66",
+            "screen-result.json": "5d580244b648cbd30d075988106f39ffbda1293644ebf2c0846aa54f25721c6f",
+            "candidate-profile-summary.json": "5dec3f46652405d1287634774bac0983639cec31cb2cf7bfbbe8040762eab742"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
