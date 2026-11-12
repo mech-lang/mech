@@ -7,6 +7,7 @@ use mech_engine::native_artifact::{
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
     NativeProgramArtifactPlan as Plan, NativeProgramFacts as Facts, NativeProgramReadRole as Read,
+    NativeScalarOp as Op,
 };
 use std::collections::BTreeSet;
 
@@ -36,6 +37,9 @@ pub(in crate::native_artifact) struct Region {
     pub element_site: u32,
     pub project_site: Option<u32>,
     pub read_site: u32,
+    /// One genuine checked narrowing of the lookup result, with no other uses.
+    pub conversion_site: Option<u32>,
+    pub output_width: u8,
     pub push_site: u32,
     pub output: u32,
 }
@@ -87,12 +91,12 @@ impl Layout {
                     plan.values()[source.get() as usize].definition().body(),
                     &SchemaBody::String,
                 )
-                || !matrix(
+                || unsigned_matrix_width(
                     plan.values()[collection.output().get() as usize]
                         .definition()
                         .body(),
-                    &SchemaBody::UnsignedInteger(IntegerWidth::W64),
                 )
+                .is_none()
                 || !scalar(plan, element, &SchemaBody::String)
                 || !immutable_before(&facts, *source, generator.initialize(), generator.parent())?
                 || !matches!(plan.blocks()[generator.initialize() as usize].action(),
@@ -131,6 +135,26 @@ impl Layout {
 fn matrix(body: &SchemaBody, expected: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { element, dimensions }
         if element.as_ref() == expected && dimensions.len() == 2)
+}
+
+fn unsigned_matrix_width(body: &SchemaBody) -> Option<u8> {
+    let SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = body
+    else {
+        return None;
+    };
+    if dimensions.len() != 2 {
+        return None;
+    }
+    Some(match element.as_ref() {
+        SchemaBody::UnsignedInteger(IntegerWidth::W8) => 1,
+        SchemaBody::UnsignedInteger(IntegerWidth::W16) => 2,
+        SchemaBody::UnsignedInteger(IntegerWidth::W32) => 4,
+        SchemaBody::UnsignedInteger(IntegerWidth::W64) => 8,
+        _ => return None,
+    })
 }
 
 fn scalar(plan: &Plan, value: Value, body: &SchemaBody) -> bool {
@@ -199,6 +223,13 @@ fn derive_body(
     let mut element_site = None;
     let mut projection: Option<(u32, Value, Value, usize)> = None;
     let mut read: Option<(u32, Value, Value)> = None;
+    let output_width = unsigned_matrix_width(
+        plan.values()[collection.output().get() as usize]
+            .definition()
+            .body(),
+    )
+    .ok_or("native String lookup has nonunsigned output")?;
+    let mut conversion: Option<(u32, Value)> = None;
     let mut pushed = false;
     while site != generator.latch() {
         if !sites.insert(site) || plan.activation_boundary() == Some(site) {
@@ -307,13 +338,44 @@ fn derive_body(
                 }
                 read = Some((site, *output, map));
             }
+            Action::Scalar(Scalar::Primitive {
+                op,
+                operands,
+                output,
+            }) if read.is_some() && conversion.is_none() && !pushed => {
+                let expected = match output_width {
+                    1 => Op::U64ToU8,
+                    2 => Op::U64ToU16,
+                    4 => Op::U64ToU32,
+                    _ => return Ok(None),
+                };
+                let (_, read_output, _) = read.unwrap();
+                let output_body = match output_width {
+                    1 => SchemaBody::UnsignedInteger(IntegerWidth::W8),
+                    2 => SchemaBody::UnsignedInteger(IntegerWidth::W16),
+                    4 => SchemaBody::UnsignedInteger(IntegerWidth::W32),
+                    _ => unreachable!(),
+                };
+                if *op != expected
+                    || operands.as_ref() != [read_output]
+                    || !defined_here(facts, *output, site)?
+                    || !only_action_read(facts, read_output, site)?
+                    || !scalar(plan, *output, &output_body)
+                {
+                    return Ok(None);
+                }
+                conversion = Some((site, *output));
+            }
             Action::CollectionPush {
                 collection: owner,
                 value,
             } if *owner == collection_id
                 && site == collection.push()
                 && !pushed
-                && read.is_some_and(|(_, output, _)| output == *value) =>
+                && conversion.map(|(_, output)| output).or_else(|| {
+                    read.filter(|_| output_width == 8)
+                        .map(|(_, output, _)| output)
+                }) == Some(*value) =>
             {
                 if !only_action_read(facts, *value, site)? {
                     return Ok(None);
@@ -369,6 +431,8 @@ fn derive_body(
         element_site,
         project_site,
         read_site,
+        conversion_site: conversion.map(|(site, _)| site),
+        output_width,
         push_site: collection.push(),
         output: collection.output().get(),
     }))

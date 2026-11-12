@@ -1238,6 +1238,7 @@ impl<'plan> CfgDefinition<'plan> {
                     ),
                     controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses)
                         && prepared.metadata().utf8_reads.at_header(index).unwrap().classification_site.is_some(),
+                    prepared.metadata().utf8_reads.at_header(index).unwrap().output_width,
                 )?;
                 if controls.enabled(
                     crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks,

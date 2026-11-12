@@ -267,6 +267,12 @@ impl PreparedNativeProgram {
         let generic_dictionary =
             generic_dictionary::Layout::derive(&plan, &map_owner_words, &utf8_reads)
                 .map_err(str::to_owned)?;
+        compose_work(
+            &mut analysis_visits,
+            &mut visits,
+            |site| Ok(generic_dictionary.extra_work(site)),
+            "guarded dictionary publication work overflow",
+        )?;
         let dictionary_seed_frames =
             dictionary_seed_frames::Layout::derive(&plan, &map_owner_words)
                 .map_err(str::to_owned)?;

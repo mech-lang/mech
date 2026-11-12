@@ -45,7 +45,7 @@ pub(super) struct Loan {
     map_handle: NativeValueHandle,
     slots: Box<[Slot]>,
     cells: Box<[Cell]>,
-    output: Vec<u64>,
+    output: data::CollectedValues,
     classes: Option<ClassifiedSource>,
     pub(super) frame: Box<Frame>,
     commit_compute: u64,
@@ -143,6 +143,26 @@ pub(in crate::native_artifact::program::runtime) fn boxed<T>(value: T) -> Option
         Some(Box::from_raw(pointer.as_ptr()))
     }
 }
+fn private_output(width: u8, count: usize) -> Option<data::CollectedValues> {
+    macro_rules! allocate {
+        ($kind:ident, $ty:ty) => {{
+            let mut values = Vec::<$ty>::new();
+            if values.try_reserve_exact(count).is_err() || values.capacity() != count {
+                return None;
+            }
+            values.resize(count, 0);
+            data::CollectedValues::$kind(values)
+        }};
+    }
+    Some(match width {
+        1 => allocate!(U8, u8),
+        2 => allocate!(U16, u16),
+        4 => allocate!(U32, u32),
+        8 => allocate!(U64, u64),
+        _ => return None,
+    })
+}
+
 fn map<'a>(owner: &'a Value, ordinal: Option<usize>) -> Option<&'a MapValue> {
     match (owner.data(), ordinal) {
         (ValueData::Map(map), None) => Some(map),
@@ -156,6 +176,188 @@ fn map<'a>(owner: &'a Value, ordinal: Option<usize>) -> Option<&'a MapValue> {
 impl State {
     /// Fixed-size scheduling preview only. It grants neither a source visit
     /// nor a native loan; complete authority remains in prepare_utf8_read.
+    /// Pure finite replay envelope, not paid credit or a source visit. Narrow
+    /// failure retains paid physical work, but must not displace an ordinary
+    /// arithmetic error with a speculative work/comparison denial.
+    pub(in crate::native_artifact::program::runtime) fn utf8_replay_credit(
+        &self,
+        descriptor: &NativeProgramDescriptor,
+        region: &Region,
+        retirements: &[u64],
+        map_bytes: u64,
+        map_count: usize,
+        memory: &ManagedMemoryBudget,
+    ) -> Result<Option<(u64, u64)>, Error> {
+        use crate::native_artifact::program::prepare::retirement::RetirementKind;
+        let metadata = descriptor.metadata();
+        let slots = metadata
+            .retirements
+            .slots(retirements, region.iteration, RetirementKind::Collection)
+            .map_err(invalid)?;
+        let Some(source) = self
+            .sources
+            .get(region.iteration as usize)
+            .and_then(Option::as_ref)
+        else {
+            return Ok(None);
+        };
+        let SourceBacking::Value(owner) = &source.backing else {
+            return Ok(None);
+        };
+        let Some(source_bytes) = owner.memory_budget_retained_bytes(memory) else {
+            return Ok(None);
+        };
+        let credit = (|| {
+            let n = source.count;
+            let m = u64::try_from(map_count).ok()?;
+            // A table bank has capacity<4*m (or four cells when empty).
+            // Each probe compares at most its stored key plus this input key;
+            // total stored bytes and any one input key are bounded by the
+            // admitted owner envelopes. Repeated/shared strings stay covered.
+            let capacity = m.checked_mul(4)?.checked_add(4)?;
+            let physical_compare = capacity
+                .checked_mul(4)?
+                .checked_add(32)?
+                .checked_add(map_bytes)?
+                .checked_add(source_bytes)?;
+            // Ordinary String search prepays candidate(len+8), then the
+            // largest candidate/stored key envelope for every binary-search
+            // level. The physical hash-bank scan alone does not bound this,
+            // especially for one long absent selector among many tiny keys.
+            let levels = m.checked_ilog2().map_or(0, |height| u64::from(height) + 1);
+            let candidate = source_bytes.checked_add(8)?;
+            let largest_key = source_bytes.checked_add(map_bytes)?.checked_add(8)?;
+            let compare = physical_compare
+                .checked_add(candidate)?
+                .checked_add(largest_key.checked_mul(levels)?)?;
+            let map_call = compare.checked_mul(64)?;
+            let payload = source_bytes
+                .checked_add(map_bytes)?
+                .checked_add(metadata.scalar_bytes)?
+                .checked_add(metadata.observation_schema_bytes)?;
+            let mut visits = 0u64;
+            let mut library_metadata_work = 0u64;
+            for (site, block) in metadata.plan.blocks().iter().enumerate() {
+                if block.iteration() == Some(region.iteration) {
+                    visits = visits.checked_add(metadata.visits.get(site)?.work)?;
+                    if let Some(group) = metadata.map_admission.group(site) {
+                        visits = visits.checked_add(group.work)?;
+                    }
+                    if let Action::LibraryCall { template, .. } = block.action() {
+                        let ordinal = if Some(site as u32) == region.project_site {
+                            region.map_ordinal
+                        } else if site == region.read_site as usize {
+                            None
+                        } else {
+                            return None;
+                        };
+                        let call = metadata.calls.get(site)?.as_ref()?;
+                        if call.template() != template {
+                            return None;
+                        }
+                        library_metadata_work = library_metadata_work
+                            .checked_add(
+                                call.selected_string_map_replay_metadata_work_bound(ordinal)?,
+                            )?
+                            // Repeated call lane lookup plus retained-demand
+                            // reconciliation, including a failed call.
+                            .checked_add(256 + 256)?;
+                    }
+                }
+            }
+            let inventory = (metadata.plan.values().len() as u64)
+                .checked_add(metadata.plan.blocks().len() as u64)?
+                .checked_add(metadata.plan.iterations().len() as u64)?
+                .checked_add(metadata.plan.collections().len() as u64)?;
+            // Managed String/map projection roots can retire in this sealed
+            // body. Their whole retained bound is at most payload, per slot.
+            let retirement = payload
+                .checked_mul(4)?
+                .checked_add(64)?
+                .checked_mul(slots.len() as u64)?;
+            // Covers element construction/import, scalar push/growth, retained
+            // map argument/owner queries, schema work and exact source visits.
+            let traversal = visits
+                .checked_add(library_metadata_work)?
+                .checked_add(map_call)?
+                .checked_add(payload.checked_mul(128)?)?
+                .checked_add(retirement)?
+                .checked_add(inventory.checked_mul(8192)?)?
+                .checked_add(65536)?;
+            // A returned virtual dictionary materializes a plain String/U64
+            // Map. Mirror publication::sort_with_debits: floor(m/2)+(m-1)
+            // sift calls, at most levels+1 iterations and two comparisons per
+            // iteration, each comparing at most two complete key envelopes.
+            let sift_calls = (m / 2).checked_add(m.saturating_sub(1))?;
+            let sift_steps = sift_calls.checked_mul(levels.checked_add(1)?)?;
+            let sort_compares = sift_steps.checked_mul(2)?;
+            let compared_bytes = map_bytes.checked_mul(2)?.checked_add(1)?;
+            let sort_comparison = sort_compares.checked_mul(compared_bytes)?;
+            let sort_compute = sort_compares
+                .checked_mul(compared_bytes.checked_mul(8)?.checked_add(32)?)?
+                .checked_add(sift_steps.checked_mul(32)?)?
+                .checked_add(m.saturating_sub(1).checked_mul(32)?)?;
+            let finalization = map_bytes
+                .checked_mul(3)?
+                .checked_add(m.checked_mul(8)?)?
+                .checked_add(8)?;
+            // scalar_bytes = 4*(schema + canonical owner + claim) +4096,
+            // exactly the fixed owner/workspace prefix in publication_plan.
+            // map_bytes includes frozen logical_bytes, hence key payload and
+            // published bytes are each <= this O(1) envelope.
+            let drafts = m.checked_mul(
+                (size_of::<mech_core::snapshot::MapEntryDraft>()
+                    + 2 * size_of::<ValueDataDraft>()
+                    + size_of::<String>()) as u64,
+            )?;
+            let order = m.checked_mul(size_of::<(&str, u64)>() as u64)?;
+            let workspace = metadata
+                .scalar_bytes
+                .checked_add(order)?
+                .checked_add(drafts.checked_mul(4)?)?
+                .checked_add(map_bytes.checked_mul(8)?)?;
+            let materialize_compute = workspace
+                .checked_mul(16)?
+                .checked_add(metadata.observation_schema_bytes)?
+                .checked_add(128 + 256)?
+                .checked_add(sort_compute)?;
+            let materialize_comparison = sort_comparison.checked_add(finalization)?;
+            let replay = n
+                .checked_add(1)?
+                .checked_mul(traversal)?
+                .checked_add(materialize_compute)?;
+            let metadata_bytes = capacity
+                .checked_mul(size_of::<Slot>() as u64)?
+                .checked_add(n.checked_mul(ADMITTED_CELL_BYTES)?)?
+                .checked_add((size_of::<Storage>() + size_of::<Frame>()) as u64)?;
+            // Probe bound is the existing setup formula using only O(1) upper
+            // envelopes, plus descriptor/owner/caller inventory queries.
+            let setup = map_bytes
+                .checked_add(source_bytes)?
+                .checked_mul(64)?
+                .checked_add(
+                    metadata_bytes
+                        .checked_add(n.checked_mul(8)?)?
+                        .checked_mul(16)?,
+                )?
+                .checked_add(m.checked_mul(capacity)?.checked_mul(64)?)?
+                .checked_add(metadata.observation_schema_bytes.checked_mul(16)?)?
+                .checked_add(2048)?;
+            let probe = metadata
+                .scalar_bytes
+                .checked_add(metadata.observation_schema_bytes)?
+                .checked_mul(128)?
+                .checked_add(inventory.checked_mul(8192)?)?
+                .checked_add(setup)?
+                .checked_add(65536)?;
+            let comparisons = n
+                .checked_add(1)?
+                .checked_mul(compare)?
+                .checked_add(materialize_comparison)?;
+            Some((replay.checked_add(probe)?, comparisons))
+        })();
+        Ok(credit)
+    }
     pub(in crate::native_artifact::program::runtime) fn fresh_utf8_header(
         &self,
         collection: u32,
@@ -215,6 +417,7 @@ impl State {
         prior: ResourceDemand,
         classified: bool,
         dictionary: &mut Option<Dictionary>,
+        replay: Option<(u64, u64)>,
     ) -> Result<Option<u64>, Error> {
         #[cfg(test)]
         if FORCE_REFUSAL.with(|v| v.get()) {
@@ -390,7 +593,8 @@ impl State {
         else {
             return Ok(None);
         };
-        let Some(output_bytes) = (count as u64).checked_mul(8) else {
+        let output_width = u64::from(region.output_width);
+        let Some(output_bytes) = (count as u64).checked_mul(output_width) else {
             return Ok(None);
         };
         let metadata_bytes = (capacity as u64)
@@ -489,18 +693,28 @@ impl State {
         let Some(preflight_compare) = preflight_compare else {
             return Ok(None);
         };
-        let Some(preflight_compute) = preflight_compare
-            .checked_mul(64)
-            .and_then(|n| n.checked_add((count as u64).checked_mul(1024)?))
-        else {
+        let Some(preflight_compute) = preflight_compare.checked_mul(64).and_then(|n| {
+            n.checked_add(
+                (count as u64).checked_mul(if region.conversion_site.is_some() {
+                    2048
+                } else {
+                    1024
+                })?,
+            )
+        }) else {
             return Ok(None);
         };
         // Retain the source producer and packed push's original logical floors
         // while removing actual canonical String/scalar construction work.
-        let Some(commit_compute) = key_bytes
-            .checked_mul(16)
-            .and_then(|n| n.checked_add((count as u64).checked_mul(416)?))
-        else {
+        let Some(commit_compute) = key_bytes.checked_mul(16).and_then(|n| {
+            n.checked_add((count as u64).checked_mul(416u64.checked_add(
+                if region.conversion_site.is_some() {
+                    384
+                } else {
+                    0
+                },
+            )?)?)
+        }) else {
             return Ok(None);
         };
         let Some(commit_cloned) = key_bytes.checked_add(output_bytes) else {
@@ -509,7 +723,7 @@ impl State {
         let builder = self.builder(id as u32)?;
         if builder.values.len() != 0
             || builder.values.capacity() != 0
-            || builder.values.packed_width() != Some(8)
+            || builder.values.packed_width() != Some(output_width)
             || builder.reservation.capacity_bytes() != 0
             || builder.payload_bytes != 0
             || builder.join.is_some()
@@ -604,10 +818,20 @@ impl State {
         else {
             return Ok(None);
         };
+        let Some(admission) = total.checked_add(replay.map_or(0, |r| r.0)) else {
+            return Ok(None);
+        };
+        let Some(comparisons) = preflight_compare.checked_add(replay.map_or(0, |r| r.1)) else {
+            return Ok(None);
+        };
         if ctx
             .library()
             .unscoped_remaining()
-            .is_none_or(|(c, p)| c < total || p < preflight_compare)
+            .is_none_or(|(c, p)| c < admission || p < comparisons)
+            || admission > {
+                let work = ctx.work();
+                work.limit().saturating_sub(work.used())
+            }
         {
             return Ok(None);
         }
@@ -640,11 +864,9 @@ impl State {
         let Some(mut cells) = fixed(query_count, Cell::default()) else {
             return Ok(None);
         };
-        let mut output = Vec::<u64>::new();
-        if output.try_reserve_exact(count).is_err() || output.capacity() != count {
+        let Some(mut output) = private_output(region.output_width, count) else {
             return Ok(None);
         };
-        output.resize(count, 0);
         if !table.each(|key, value| {
             let code = hash(key.as_bytes());
             let mut at = code as usize & (capacity - 1);
@@ -697,7 +919,7 @@ impl State {
             // one-based column-major MatrixScalarAccess producer.
             rows: 1,
             columns: query_count as u64,
-            output: output.as_mut_ptr() as u64,
+            output: output.unsigned_pointer()?,
             stored_bytes,
             fuel: preflight_compute,
             comparison: preflight_compare,
@@ -854,7 +1076,7 @@ impl State {
             }
             || loan.frame.slots != loan.slots.as_ptr() as u64
             || loan.frame.cells != loan.cells.as_ptr() as u64
-            || loan.frame.output != loan.output.as_ptr() as u64
+            || loan.frame.output != loan.output.unsigned_pointer()?
         {
             return Err(invalid("incomplete native String lookup success"));
         }
@@ -879,7 +1101,7 @@ impl State {
         {
             return Err(invalid("native String lookup builder changed during loan"));
         }
-        builder.values = data::CollectedValues::U64(output);
+        builder.values = output;
         builder.reservation = output_reservation;
         builder.payload_bytes = bytes;
         self.live_bytes = add(old, bytes)?;

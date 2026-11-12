@@ -657,6 +657,27 @@ fn decode_inner<
             return Err("native UTF8 lookup header template is not funded".into());
         }
     }
+    for region in &generic_dictionary.regions {
+        if region.guard.is_none() {
+            continue;
+        }
+        let site = region.exit as usize;
+        let required = base_visits
+            .get(site)
+            .and_then(|visit| {
+                let owners = map_owner_words.as_ref()?;
+                visit
+                    .work
+                    .checked_add(
+                        native::program::prepare::map_owner::extra_work(owners, site).ok()?,
+                    )?
+                    .checked_add(generic_dictionary.extra_work(site))
+            })
+            .ok_or("guarded dictionary exit price overflows")?;
+        if visits.get(site).is_none_or(|visit| visit.work < required) {
+            return Err("guarded dictionary publication template is not funded".into());
+        }
+    }
     for region in &numeric_maps.regions {
         let required = base_visits
             .get(region.header as usize)

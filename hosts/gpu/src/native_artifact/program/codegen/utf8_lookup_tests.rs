@@ -62,6 +62,7 @@ impl Kernel {
                 physical_order,
                 word_chunks,
                 true,
+                8,
             );
             for (block, status) in [(complete, COMPLETE), (cold, COLD), (missing, MISSING)] {
                 b.switch_to_block(block);

@@ -32,6 +32,16 @@ pub(super) enum NativePlanCacheState {
     Cached(Rc<NativeTurnPlanCache>),
 }
 
+pub(super) fn plan_cache_guard_work() -> Option<u64> {
+    let bytes = (core::mem::size_of::<NativePlanCacheState>()
+        + core::mem::size_of::<ResourceDemand>()
+        + core::mem::size_of::<mech_core::MemoryBudgetLimits>()
+        + core::mem::size_of::<mech_core::ManagedMemoryReservation>()
+        + core::mem::size_of::<mech_core::ManagedNodeReservation>()
+        + 3 * core::mem::size_of::<u64>()) as u64;
+    bytes.checked_mul(8)?.checked_add(256)
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeCollectionInvocationError {
     Binding(crate::native_artifact::NativeArtifactLoweringError),
@@ -311,18 +321,8 @@ impl NativeCollectionCall {
                 if matches!(cache, NativePlanCacheState::Cold) {
                     // Only fixed metadata is inspected by this one-time
                     // optional-capacity decision. It never observes payload.
-                    let guard_bytes = (core::mem::size_of::<NativePlanCacheState>()
-                        + core::mem::size_of::<ResourceDemand>()
-                        + core::mem::size_of::<mech_core::MemoryBudgetLimits>()
-                        + core::mem::size_of::<mech_core::ManagedMemoryReservation>()
-                        + core::mem::size_of::<mech_core::ManagedNodeReservation>()
-                        + 3 * core::mem::size_of::<u64>())
-                        as u64;
                     work.charge(
-                        guard_bytes
-                            .checked_mul(8)
-                            .and_then(|n| n.checked_add(256))
-                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        plan_cache_guard_work().ok_or(ResidentKernelError::InvalidShape)?,
                         0,
                     )?;
                     let retained = NativeTurnPlanCache::retained_bytes(
