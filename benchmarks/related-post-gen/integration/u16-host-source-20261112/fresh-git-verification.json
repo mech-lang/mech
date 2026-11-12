@@ -1,0 +1,35 @@
+{
+  "status": "passed",
+  "isolated_real_Git_objects": true,
+  "synthetic_commit_aliases": false,
+  "required_published_commits": [
+    "7a6686c6790b0d8e0a282a5619bb884f8ffe08d0"
+  ],
+  "imported_objects": 4036,
+  "imported_object_types": {
+    "blob": 3010,
+    "tree": 1025,
+    "commit": 1
+  },
+  "native_executions": 0,
+  "verification": {
+    "status": "passed",
+    "verified_records": 34532,
+    "unique_blobs": 15555,
+    "archive_shards": 2,
+    "compressed_bytes": 78415608,
+    "timed_resource_exact_outputs": 5063,
+    "qualification_exact_outputs": 3040,
+    "qualified_adapters": 95,
+    "managed_work_labels": 22,
+    "reconstructed_compiler_snapshots": 9,
+    "vendor_files": 246,
+    "literal_includes": 164,
+    "focused355_distinct_passed": 79,
+    "broad355_passed": 1108,
+    "inherited_failure_names_matched": 16,
+    "exact355_test_backend_V3": true,
+    "fixed_benchmark_goal_met": true,
+    "native_executions_by_verifier": 0
+  }
+}
