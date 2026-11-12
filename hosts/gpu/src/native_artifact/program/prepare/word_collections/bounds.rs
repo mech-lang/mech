@@ -106,11 +106,11 @@ impl State {
                 {
                     args[0]
                 }
-                U64Add | U32Add | U8Add => Range(
+                U64Add | U16Add | U32Add | U8Add => Range(
                     args[0].0.checked_add(args[1].0)?,
                     args[0].1.checked_add(args[1].1)?,
                 ),
-                U64Sub | U32Sub
+                U64Sub | U16Sub | U32Sub
                     if args[0].0 >= args[1].1
                         || self.ge.contains(&(inputs[0].get(), inputs[1].get())) =>
                 {

@@ -165,6 +165,7 @@ pub(in crate::native_artifact) struct CfgCleanup {
     pub current_predicate_branches: usize,
     pub selected_home_constant_operands: usize,
     pub selected_home_merge_parameters: usize,
+    pub selected_increment_guards_removed: usize,
     pub identity_edges: usize,
     pub loop_edges: usize,
     pub bitwise_constant_branches: usize,
@@ -595,6 +596,15 @@ impl CodegenReport {
         let mut counts = EmissionCounters::default();
         counts.scalar_selects = self.scalar_selects;
         counts.unsigned_guards = self.unsigned_guards;
+        counts.selected_unsigned_increments = self
+            .cfg_cleanup
+            .as_ref()
+            .map_or(0, |r| r.selected_increment_guards_removed)
+            + self
+                .numeric_functions
+                .iter()
+                .map(|r| r.cleanup.selected_increment_guards_removed)
+                .sum::<usize>();
         counts.edge_facts = (
             self.source_edge_facts
                 .regions

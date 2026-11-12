@@ -112,6 +112,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     ChildFunding,
     /// Reconstruct current canonical Boolean homes from proved selected edges.
     ScalarEdgeHomes,
+    /// Prove checked I64 +1 through bounded exact selected-edge SSA transport.
+    SelectedUnsignedIncrements,
 }
 #[cfg(feature = "canonical-native-program")]
 impl OptimizationOptions {
@@ -137,6 +139,7 @@ pub(in crate::native_artifact) struct EmissionCounters {
     pub cfg_cleanup: (usize, usize),
     pub scalar_selects: usize,
     pub unsigned_guards: usize,
+    pub selected_unsigned_increments: usize,
     pub loop_outlining: usize,
     pub loop_invariants: (usize, usize, usize),
     pub preserving_calls: usize,

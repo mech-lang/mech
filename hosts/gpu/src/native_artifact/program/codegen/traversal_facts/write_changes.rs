@@ -215,8 +215,8 @@ fn modular(op: Op, args: &[Id], mask: u64, get: impl Fn(Id) -> Option<Form>) -> 
                 _ => None,
             }
         }
-        U32Add | U64Add | U64WrappingAdd | U32Sub | U64Sub | U64WrappingSub => {
-            let subtract = matches!(op, U32Sub | U64Sub | U64WrappingSub);
+        U16Add | U32Add | U64Add | U64WrappingAdd | U16Sub | U32Sub | U64Sub | U64WrappingSub => {
+            let subtract = matches!(op, U16Sub | U32Sub | U64Sub | U64WrappingSub);
             let (mut a, mut b) = (get(args[0])?, get(args[1])?);
             if !subtract && matches!(a, Form::Constant(_)) {
                 std::mem::swap(&mut a, &mut b);

@@ -3889,6 +3889,28 @@ pub(super) fn finalize_value(
     )
 }
 
+// A valid closed leaf has no path-dependent validation. Delay allocating its
+// diagnostic child until the ordinary recursive/malformed case actually needs
+// it. Both successful cases use exactly the same canonical scalar construction
+// and String allocation authority as finalize_data below.
+fn finalize_map_item(
+    schema: &SchemaBody,
+    draft: ValueDataDraft,
+    shape: &ShapeInstance,
+    context: &SnapshotValidationContext<'_>,
+    path: impl FnOnce() -> SnapshotPath,
+) -> Result<ValueData, SnapshotValueError> {
+    match (schema, draft) {
+        (SchemaBody::String, ValueDataDraft::String(value)) => {
+            Ok(ValueData::String(context.try_boxed_str(value)?))
+        }
+        (SchemaBody::UnsignedInteger(IntegerWidth::W64), ValueDataDraft::U64(value)) => {
+            Ok(ValueData::U64(value))
+        }
+        (schema, draft) => finalize_data(schema, draft, shape, context, &path()),
+    }
+}
+
 pub(super) fn finalize_data(
     schema: &SchemaBody,
     draft: ValueDataDraft,
@@ -4187,26 +4209,26 @@ pub(super) fn finalize_data(
                     });
                 }
                 let mut items = entry.items.into_vec().into_iter();
-                let key_data = finalize_data(
+                let key_data = finalize_map_item(
                     key,
                     items.next().expect("validated map key exists"),
                     shape,
                     context,
-                    &path.child(SnapshotPathSegment::MapKey(index as u64)),
+                    || path.child(SnapshotPathSegment::MapKey(index as u64)),
                 )?;
-                let value_data = finalize_data(
+                let value_data = finalize_map_item(
                     value,
                     items.next().expect("validated map value exists"),
                     shape,
                     context,
-                    &path.child(SnapshotPathSegment::MapValue(index as u64)),
+                    || path.child(SnapshotPathSegment::MapValue(index as u64)),
                 )?;
-                super::relations::insert_map_entry(
+                super::relations::insert_map_entry_with_path(
                     key,
                     &mut finalized,
                     key_data,
                     value_data,
-                    &path.child(SnapshotPathSegment::MapKey(index as u64)),
+                    || path.child(SnapshotPathSegment::MapKey(index as u64)),
                     context.canonicalization_budget,
                 )?;
             }
@@ -6276,3 +6298,7 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+#[path = "lazy_map_path_tests.rs"]
+mod lazy_map_path_tests;

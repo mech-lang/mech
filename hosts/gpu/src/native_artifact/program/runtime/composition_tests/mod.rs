@@ -2,6 +2,7 @@
 use super::*;
 mod checked_increment;
 mod narrow_numeric_tree;
+mod u16_arithmetic;
 use crate::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 use mech_core::ValueDataDraft as Data;
 use mech_engine::ProgramArtifact;

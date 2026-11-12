@@ -21,7 +21,12 @@ pub(in crate::native_artifact) const STATUS_INTEGRITY: u64 = 9;
 /// and from the adapter's conservative source scratch metadata.
 pub(in crate::native_artifact) const fn primitive_work(op: NativeScalarOp) -> u64 {
     match op {
-        NativeScalarOp::U8Add
+        NativeScalarOp::U16Add
+        | NativeScalarOp::U16Sub
+        | NativeScalarOp::U16Mul
+        | NativeScalarOp::U16Div
+        | NativeScalarOp::U16Rem
+        | NativeScalarOp::U8Add
         | NativeScalarOp::U32Sub
         | NativeScalarOp::U32Add
         | NativeScalarOp::U32Mul

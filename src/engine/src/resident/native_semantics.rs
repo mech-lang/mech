@@ -545,6 +545,45 @@ mod tests {
         }
     }
 
+    #[cfg(any(feature = "convert", feature = "native-artifact"))]
+    #[test]
+    fn maintained_u16_arithmetic_requires_its_exact_final_scalar_binding() {
+        use NativeScalarOp::*;
+        let catalog = catalog();
+        for (name, op) in [
+            ("add", U16Add),
+            ("sub", U16Sub),
+            ("mul", U16Mul),
+            ("div", U16Div),
+            ("mod", U16Rem),
+        ] {
+            assert_eq!(
+                op.signature(),
+                (
+                    &[NativeScalarKind::U16, NativeScalarKind::U16][..],
+                    NativeScalarKind::U16
+                )
+            );
+            let binding = Binding::scalar(op);
+            let kernel = binding.bind(&catalog, "math", name);
+            assert!(validated_scalar(&kernel).is_none());
+            let sealed = bind_call(
+                kernel.clone(),
+                &binding.request(),
+                binding.call("math", name),
+            );
+            assert_eq!(validated_scalar(&sealed).map(|s| s.op()), Some(op));
+            assert_eq!(sealed.parameters(), kernel.parameters());
+            // Changing the final selected binding invalidates the candidate;
+            // an operation name or matching port count grants no authority.
+            let changed = sealed
+                .clone()
+                .with_bound_call(binding.call("math", if name == "add" { "sub" } else { "add" }));
+            assert!(validated_scalar(&changed).is_none());
+            assert!(validated_scalar(&sealed.with_retained_state(Arc::new(0u64))).is_none());
+        }
+    }
+
     #[test]
     #[cfg(feature = "i64")]
     fn signed_scalar_branches_seal_only_their_exact_finished_contracts() {

@@ -517,7 +517,11 @@ fn selected_template(
 // IR346 additionally emits packed unsigned cells directly into canonical words.
 // Direct unsigned loads and compact native bit-count lowering share the exact IR343 backend.
 // Canonical selected-Boolean rematerialization with direct loads and compact bit-count lowering.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 349;
+// IR350 folds only impossible I64 +1 failures proved across exact selected SSA edges.
+// Compose selected increment proofs with lazy successful Map diagnostic paths.
+// IR353 certifies and natively emits all five checked U16 scalar arithmetic operations.
+// Compose checked U16 arithmetic with exact-capacity histogram key copies.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 355;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

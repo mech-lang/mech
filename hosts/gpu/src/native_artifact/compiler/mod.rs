@@ -566,6 +566,18 @@ pub(in crate::native_artifact) fn primitive(
         return b.ins().ineg(a);
     }
     let c = args[1];
+    // U16 transport uses explicit zero extension. The ordinary typed admission
+    // still rejects out-of-range raw caller words before this instruction path.
+    let (a, c) = if matches!(op, U16Add | U16Sub | U16Mul | U16Div | U16Rem) {
+        let left = b.ins().ireduce(types::I16, a);
+        let right = b.ins().ireduce(types::I16, c);
+        (
+            b.ins().uextend(types::I64, left),
+            b.ins().uextend(types::I64, right),
+        )
+    } else {
+        (a, c)
+    };
     match op {
         U64BitAnd => b.ins().band(a, c),
         U64BitOr => b.ins().bor(a, c),
@@ -582,12 +594,14 @@ pub(in crate::native_artifact) fn primitive(
             }
         }
         U64BitNot | U64Clz | U64Ctz => unreachable!(),
-        U8Add | U32Add => {
+        U8Add | U16Add | U32Add => {
             // Both inputs are validated exact-width words. Their sum fits the
             // I64 transport lane; overflow is tested at the semantic result width.
             let value = b.ins().iadd(a, c);
             let maximum = if op == U8Add {
                 i64::from(u8::MAX)
+            } else if op == U16Add {
+                i64::from(u16::MAX)
             } else {
                 i64::from(u32::MAX)
             };
@@ -597,7 +611,7 @@ pub(in crate::native_artifact) fn primitive(
             guard(b, valid, error, STATUS_ARITHMETIC);
             value
         }
-        U32Sub | U64Sub => {
+        U16Sub | U32Sub | U64Sub => {
             let valid = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, a, c);
             guard(b, valid, error, STATUS_ARITHMETIC);
             b.ins().isub(a, c)
@@ -611,22 +625,27 @@ pub(in crate::native_artifact) fn primitive(
             guard(b, valid, error, STATUS_ARITHMETIC);
             value
         }
-        U32Mul => {
+        U16Mul | U32Mul => {
             // Exact-width inputs make the complete product fit this U64 lane.
-            // Check the semantic U32 result before any publication.
+            // Check the semantic result width before any publication.
             let value = b.ins().imul(a, c);
-            let valid =
-                b.ins()
-                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, i64::from(u32::MAX));
+            let maximum = if op == U16Mul {
+                i64::from(u16::MAX)
+            } else {
+                i64::from(u32::MAX)
+            };
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, maximum);
             guard(b, valid, error, STATUS_ARITHMETIC);
             value
         }
-        U32Div | U32Rem => {
+        U16Div | U16Rem | U32Div | U32Rem => {
             let nonzero = b.ins().icmp_imm(IntCC::NotEqual, c, 0);
             guard(b, nonzero, error, STATUS_ARITHMETIC);
             let left = b.ins().ireduce(types::I32, a);
             let right = b.ins().ireduce(types::I32, c);
-            let value = if op == U32Div {
+            let value = if matches!(op, U16Div | U32Div) {
                 b.ins().udiv(left, right)
             } else {
                 b.ins().urem(left, right)

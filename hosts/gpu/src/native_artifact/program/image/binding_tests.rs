@@ -720,6 +720,89 @@ fn native_u32_arithmetic_images_preserve_selected_checked_operations() {
 }
 
 #[test]
+fn native_u16_arithmetic_images_preserve_selected_checked_operations() {
+    use mech_engine::native_artifact::{
+        NativeIterationAction as Action, NativeMatchAction as Scalar, NativeScalarOp as Op,
+    };
+    let catalog = mech_stdlib::source_catalog();
+    for (operator, expected) in [
+        ("+", Op::U16Add),
+        ("-", Op::U16Sub),
+        ("*", Op::U16Mul),
+        ("/", Op::U16Div),
+        ("%", Op::U16Rem),
+    ] {
+        for artifact in artifacts(&format!("left<u16> {operator} right<u16>\n")) {
+            let object = emit_program_object(&artifact, &catalog).unwrap();
+            assert!(object.descriptor().plan().blocks().iter().any(|block| matches!(block.action(), Action::Scalar(Scalar::Primitive { op, .. }) if *op == expected)));
+            let image = object.native_metadata();
+            let mut reader =
+                mech_engine::native_artifact::BuildOwnedImageReader::from_image(image).unwrap();
+            let mut wire =
+                <serde_json::Value as serde::Deserialize>::deserialize(&mut reader).unwrap();
+            reader.end().unwrap();
+            fn replace_op(value: &mut serde_json::Value, old: &str, new: &str) -> usize {
+                match value {
+                    serde_json::Value::String(s) if s == old => {
+                        *s = new.to_owned();
+                        1
+                    }
+                    serde_json::Value::Array(a) => {
+                        a.iter_mut().map(|v| replace_op(v, old, new)).sum()
+                    }
+                    serde_json::Value::Object(a) => {
+                        a.values_mut().map(|v| replace_op(v, old, new)).sum()
+                    }
+                    _ => 0,
+                }
+            }
+            let old = format!("{expected:?}");
+            assert!(replace_op(&mut wire, &old, &old.replace("U16", "U32")) > 0);
+            let forged = mech_engine::native_artifact::encode_native_metadata_image(
+                &serde_json::to_vec(&wire).unwrap(),
+            )
+            .unwrap();
+            // The unsafe independent loader requires an unchanged checked-build
+            // image; arbitrary rewritten images violate that precondition. The
+            // genuine Object binding is the rejection boundary for edited bytes.
+            // SAFETY: genuine same-Object identity/binding, negative decoding
+            // only; forged metadata is never executed.
+            assert!(
+                unsafe {
+                    NativeProgramDescriptor::decode_object_bound_image(
+                        &forged,
+                        &catalog,
+                        object.identity().bytes(),
+                        object.native_metadata_binding().bytes(),
+                    )
+                }
+                .is_err()
+            );
+            // SAFETY: exact bytes and symbols from this checked Object. No
+            // decoded metadata is executed through a fabricated native entry.
+            let independent =
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(image, &catalog) }
+                    .unwrap();
+            let bound = unsafe {
+                NativeProgramDescriptor::decode_object_bound_image(
+                    image,
+                    &catalog,
+                    object.identity().bytes(),
+                    object.native_metadata_binding().bytes(),
+                )
+            }
+            .unwrap();
+            for restored in [&independent, &bound] {
+                assert_eq!(
+                    restored.encode_build_owned_image().unwrap(),
+                    object.descriptor().encode_build_owned_image().unwrap()
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn frozen_uniform_collections_preserve_fields_and_reject_changed_proofs() {
     use serde::Deserialize;
     let catalog = mech_stdlib::source_catalog();
