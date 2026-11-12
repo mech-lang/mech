@@ -20,6 +20,8 @@ The same 47 cases beat Roc in the control and candidate. Repeated 256 KiB joins 
 
 [Selected-read proof, qualification, timing, and profiles](native-selected-read-bounds.md).
 
+The later countdown predicate trial measured 1.007504× its paired control across seven cases and lost the repeated 256 KiB win over libdeflate. The compiler change was rejected. [Trial timing and profiles](native-countdown-predicate-pilot.md).
+
 ## Historical R355 baseline
 
 R355 remains the retained performance baseline.
