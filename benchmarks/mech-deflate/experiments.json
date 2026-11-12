@@ -65441,6 +65441,260 @@
         }
       },
       "complete_goal": false
+    },
+    "331": {
+      "git_parent": "bb2b7c64fda075eba6e595ced51e4137fcee6fa8",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+      "retained_compiler": "R327",
+      "retained_source_packet_round": 327,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Record the producer classification trial that lost the native parser.",
+      "source": {
+        "source_program_changed_in_pilot": true,
+        "retained_source_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pilot_source_sha256": "0c14a7299b6b5394b3f14d9d9d0946782eaaeda5b7dfb686315cb794b32e257c",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "78081e5a1ad19c5b1d7e11891650ab05dd205501aab97a5dde26cf297309d248",
+        "worker_sha256": "b59a4f66fb16177c53e1dc8c573c674984dfb949810de1f05de76821e4e7b878"
+      },
+      "summary": {
+        "round": 331,
+        "published_parent": "bb2b7c64fda075eba6e595ced51e4137fcee6fa8",
+        "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retain_source": false,
+        "retained_source_packet_round": 327,
+        "retained_runtime_packet_round": 272,
+        "source_representation_pilot": true,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "phase_inventory": {
+          "retained": {
+            "numeric_phases": 170,
+            "parser_admitted": [
+              [
+                "mech_compact_numeric_12419",
+                [
+                  [
+                    0,
+                    258,
+                    true
+                  ],
+                  [
+                    3,
+                    259,
+                    false
+                  ]
+                ],
+                "mech_compact_numeric_12419_no_growth"
+              ],
+              [
+                "mech_compact_numeric_15296",
+                [
+                  [
+                    0,
+                    258,
+                    true
+                  ],
+                  [
+                    3,
+                    259,
+                    false
+                  ]
+                ],
+                "mech_compact_numeric_15296_no_growth"
+              ],
+              [
+                "mech_compact_numeric_26895",
+                [
+                  [
+                    0,
+                    258,
+                    true
+                  ],
+                  [
+                    3,
+                    259,
+                    false
+                  ]
+                ],
+                "mech_compact_numeric_26895_no_growth"
+              ],
+              [
+                "mech_compact_numeric_31086",
+                [
+                  [
+                    0,
+                    258,
+                    true
+                  ],
+                  [
+                    3,
+                    259,
+                    false
+                  ]
+                ],
+                "mech_compact_numeric_31086_no_growth"
+              ]
+            ],
+            "root_code_bytes": 979776,
+            "root_stack_bytes": 57440
+          },
+          "candidate": {
+            "numeric_phases": 166,
+            "parser_admitted": [],
+            "root_code_bytes": 993680,
+            "root_stack_bytes": 57488
+          }
+        },
+        "original_1_05_gates_passed": 4,
+        "blockmean_1_05_gates_passed": 4,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 1.6821475479691579,
+        "target_matched_x_roc": [
+          1.3097714509465401,
+          2.8359093288666206
+        ],
+        "target_matched_x_libdeflate": [
+          1.059146018853923,
+          2.293256639033568
+        ],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 2.1506112223768996,
+            "matched": 2.15410153587446
+          },
+          "prefix-natural-65537": {
+            "primary": 2.180017018753744,
+            "matched": 2.1769196551431533
+          },
+          "prefix-natural-262144": {
+            "primary": 2.1667470435609975,
+            "matched": 2.1651940319948015
+          },
+          "prefix-natural-1048576": {
+            "primary": 2.0983570015300255,
+            "matched": 2.097260254573385
+          },
+          "eight-literals": {
+            "primary": 1.0110857469310799,
+            "matched": 1.0081556110938243
+          },
+          "prefix-random-16384": {
+            "primary": 1.5123007674559394,
+            "matched": 1.500320505853563
+          },
+          "prefix-random-1048576": {
+            "primary": 1.466316269599666,
+            "matched": 1.4660210513940355
+          }
+        },
+        "cpu_target": {
+          "before": {
+            "cycles": 191050772.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 745162213.0,
+            "lifetime_peak_physical": 50430912.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46498752.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47939584.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 411771418.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 1902618508.5,
+            "lifetime_peak_physical": 50234304.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46302144.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47726592.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 145034904.5,
+            "instructions": 479517180.5,
+            "level": 12.0,
+            "lifetime_peak_physical": 14500736.0,
+            "physical_after": 14500736.0,
+            "rss_after": 15122432.0
+          }
+        },
+        "memory_target": {
+          "before": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "level": 12.0
+          }
+        },
+        "linked_compression_checks": 162,
+        "reason": "The obsolete forwarded slot-table capture causes the numeric proof to decline. The matched result measures that fallback. Keep R327 and repeat after removing the unused capture."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "78081e5a1ad19c5b1d7e11891650ab05dd205501aab97a5dde26cf297309d248",
+          "metadata.json": "804c6355fdb59875d4a450b02f561cb1580e2b2d331e2736fb334e538bbcdef3"
+        },
+        "worker_sha256": "b59a4f66fb16177c53e1dc8c573c674984dfb949810de1f05de76821e4e7b878"
+      },
+      "report": "docs/design/native-producer-offset-class-initial.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r331-produced-match-class-51b9f4235f87.tar.gz",
+        "bytes": 1026830,
+        "sha256": "51b9f4235f87814687b607e1c60ee330c69087cea6eb2589e6690e93d5d073ed",
+        "files": 189,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "db001aa935252092e02de68670e0c71712994b4df77796f0d06744b9e0bb2628",
+            "pilot-counters.json": "11847b41ec05f248e1fb4bd81e0a2eb203811672caf12288d9ea88143544de20",
+            "result-decision.json": "f369ceeea6d56b4ee3e49bc92fe69c70f9bed66faa2ec417b4159837be7800e5",
+            "diagnostic-profile-summary.json": "ade9c9a0b4b5b2c40b39efbaf4a1bf5a713c141bc7da62dcd604b0d84e0cd9c0"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
