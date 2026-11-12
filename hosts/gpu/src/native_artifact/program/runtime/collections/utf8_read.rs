@@ -103,6 +103,40 @@ impl Table<'_> {
         Ok(true)
     }
 }
+// Tests run the old per-header scan through the exact same dynamic replay
+// formulas to compare source errors, required/limit thresholds and retries.
+#[cfg(all(test, feature = "canonical-native-program"))]
+std::thread_local! {
+    static REFERENCE_REPLAY: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+#[cfg(all(test, feature = "canonical-native-program"))]
+pub(in crate::native_artifact) fn with_reference_replay_for_test<T>(run: impl FnOnce() -> T) -> T {
+    struct Reset(bool);
+    impl Drop for Reset {
+        fn drop(&mut self) {
+            REFERENCE_REPLAY.with(|v| v.set(self.0));
+        }
+    }
+    let reset = Reset(REFERENCE_REPLAY.with(|v| v.replace(true)));
+    let result = run();
+    drop(reset);
+    result
+}
+fn replay_facts(
+    metadata: &crate::native_artifact::program::prepare::ProgramMetadata,
+    region: &Region,
+) -> Option<crate::native_artifact::program::prepare::utf8_reads::ReplayFacts> {
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    if REFERENCE_REPLAY.with(std::cell::Cell::get) {
+        return crate::native_artifact::program::prepare::utf8_reads::reference_replay_facts(
+            metadata, region,
+        );
+    }
+    #[cfg(not(all(test, feature = "canonical-native-program")))]
+    let _ = metadata;
+    region.replay_facts()
+}
+
 fn fits(need: u64, cap: Option<u64>) -> bool {
     cap.is_some_and(|cap| need <= cap)
 }
@@ -235,40 +269,7 @@ impl State {
                 .checked_add(map_bytes)?
                 .checked_add(metadata.scalar_bytes)?
                 .checked_add(metadata.observation_schema_bytes)?;
-            let mut visits = 0u64;
-            let mut library_metadata_work = 0u64;
-            for (site, block) in metadata.plan.blocks().iter().enumerate() {
-                if block.iteration() == Some(region.iteration) {
-                    visits = visits.checked_add(metadata.visits.get(site)?.work)?;
-                    if let Some(group) = metadata.map_admission.group(site) {
-                        visits = visits.checked_add(group.work)?;
-                    }
-                    if let Action::LibraryCall { template, .. } = block.action() {
-                        let ordinal = if Some(site as u32) == region.project_site {
-                            region.map_ordinal
-                        } else if site == region.read_site as usize {
-                            None
-                        } else {
-                            return None;
-                        };
-                        let call = metadata.calls.get(site)?.as_ref()?;
-                        if call.template() != template {
-                            return None;
-                        }
-                        library_metadata_work = library_metadata_work
-                            .checked_add(
-                                call.selected_string_map_replay_metadata_work_bound(ordinal)?,
-                            )?
-                            // Repeated call lane lookup plus retained-demand
-                            // reconciliation, including a failed call.
-                            .checked_add(256 + 256)?;
-                    }
-                }
-            }
-            let inventory = (metadata.plan.values().len() as u64)
-                .checked_add(metadata.plan.blocks().len() as u64)?
-                .checked_add(metadata.plan.iterations().len() as u64)?
-                .checked_add(metadata.plan.collections().len() as u64)?;
+            let facts = replay_facts(metadata, region)?;
             // Managed String/map projection roots can retire in this sealed
             // body. Their whole retained bound is at most payload, per slot.
             let retirement = payload
@@ -277,13 +278,7 @@ impl State {
                 .checked_mul(slots.len() as u64)?;
             // Covers element construction/import, scalar push/growth, retained
             // map argument/owner queries, schema work and exact source visits.
-            let traversal = visits
-                .checked_add(library_metadata_work)?
-                .checked_add(map_call)?
-                .checked_add(payload.checked_mul(128)?)?
-                .checked_add(retirement)?
-                .checked_add(inventory.checked_mul(8192)?)?
-                .checked_add(65536)?;
+            let traversal = facts.traversal(map_call, payload, retirement)?;
             // A returned virtual dictionary materializes a plain String/U64
             // Map. Mirror publication::sort_with_debits: floor(m/2)+(m-1)
             // sift calls, at most levels+1 iterations and two comparisons per
@@ -343,13 +338,7 @@ impl State {
                 .checked_add(m.checked_mul(capacity)?.checked_mul(64)?)?
                 .checked_add(metadata.observation_schema_bytes.checked_mul(16)?)?
                 .checked_add(2048)?;
-            let probe = metadata
-                .scalar_bytes
-                .checked_add(metadata.observation_schema_bytes)?
-                .checked_mul(128)?
-                .checked_add(inventory.checked_mul(8192)?)?
-                .checked_add(setup)?
-                .checked_add(65536)?;
+            let probe = facts.probe(setup)?;
             let comparisons = n
                 .checked_add(1)?
                 .checked_mul(compare)?

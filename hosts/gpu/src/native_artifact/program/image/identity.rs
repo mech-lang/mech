@@ -509,7 +509,11 @@ fn selected_template(
 // private output; a miss commits no logical body work before ordinary replay.
 // IR336 selects canonical or deferred publication at the original producer exit
 // using a freshly proved total guard circuit; bypasses keep canonical ownership.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 336;
+// IR337 derives immutable typed-lookup replay facts once per checked descriptor;
+// invocation-specific owners, payload bounds and exact work policy stay checked.
+// IR338 moves fresh owned worker captures through two unchanged ordered debits
+// under the existing inactive worker batch; owner drops remain outside escrow.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 338;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
