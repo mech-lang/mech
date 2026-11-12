@@ -1,5 +1,28 @@
 # Current compression scoreboard
 
+The current retained compression image was measured before the #990 integration. The merged compiler has separate qualification pending.
+
+**47/81 cases faster than Roc (58.02%)** in the primary cohort. Goal 100%.
+
+The matched R355 campaign counts 47/81 faster than Roc (58.02%), 8/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
+
+Natural 256 KiB and 1 MiB measure 0.971824× and 0.977661× libdeflate in this cohort. The nearest remaining libdeflate case is prefix-natural-65536 at 1.002675× libdeflate and 1.191474× Roc. The nearest remaining case where Roc is faster is heldout-window-32767 at 1.186594× Roc and 1.082331× libdeflate.
+
+| Input | R350 / Roc | Retained image / Roc | R350 / libdeflate | Retained image / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.183427× | 0.181837× | 2.333083× | 2.312853× |
+| prefix-natural-262144 | 1.218120× | 1.197968× | 0.988171× | 0.971824× |
+| prefix-natural-1048576 | 1.233933× | 1.211662× | 0.995631× | 0.977661× |
+| prefix-natural-8192 | 1.067948× | 1.057526× | 1.332191× | 1.319191× |
+| prefix-natural-65536 | 1.209767× | 1.191474× | 1.018069× | 1.002675× |
+| prefix-repeated-1048576 | 0.692360× | 0.647542× | 1.090039× | 1.019478× |
+| prefix-repeated-262144 | 0.695735× | 0.650503× | 1.131380× | 1.057826× |
+| heldout-window-32767 | 1.208369× | 1.186594× | 1.102194× | 1.082331× |
+
+[R355 qualification, profiling and paired measurement evidence](native-natural-loop-register-allocation.md).
+
+## Historical R350 measured comparison
+
 **46/81 cases faster than Roc (56.79%)** in the primary cohort. Goal 100%.
 
 The matched R350 campaign counts 46/81 faster than Roc (56.79%), 5/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
