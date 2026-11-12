@@ -1,3 +1,4 @@
+use super::super::cfg_cleanup::masked_integer_comparison;
 use super::{Compare, Step, Trace, Window, Word};
 use cranelift_codegen::Context;
 use cranelift_codegen::ir::condcodes::IntCC;
@@ -45,11 +46,35 @@ impl Walk<'_> {
     // Arithmetic here is CLIF's modular integer arithmetic. Return the same
     // predicate sense while recognizing (cursor - width) == cursor as width == 0.
     fn test(&self, value: Value) -> Option<(Compare, Option<Value>)> {
-        let (cc, left, right) = match self.result(value)? {
+        let instruction = self.result(value)?;
+        if let Some(comparison) =
+            masked_integer_comparison(self.function, instruction, |value| Some(self.value(value)))
+        {
+            return self.test(comparison);
+        }
+        let (cc, left, right) = match instruction {
             Data::Unary {
                 opcode: Opcode::Uextend,
                 arg,
             } => return self.test(*arg),
+            Data::BinaryImm64 {
+                opcode: Opcode::BandImm,
+                arg,
+                imm,
+            } if imm.bits() == 1 && self.function.dfg.value_type(self.value(*arg)) == types::I8 => {
+                // Resolve only the current path's incoming value. A masked
+                // join parameter may differ on the original exit edge.
+                return match self.result(*arg)? {
+                    Data::UnaryImm {
+                        opcode: Opcode::Iconst,
+                        imm,
+                    } => Some((
+                        Compare::new(IntCC::NotEqual, Word::Imm(imm.bits() & 1), Word::Imm(0)),
+                        None,
+                    )),
+                    _ => None,
+                };
+            }
             Data::IntCompare { cond, args, .. }
                 if self.function.dfg.value_type(args[0]) == types::I64 =>
             {
@@ -329,7 +354,16 @@ pub(super) fn capture(context: &Context, header: Block) -> Result<Trace, &'stati
                 return Err("selected path reads an unavailable operand");
             }
             match opcode {
-                Opcode::Load if store.is_none() && loads.len() < 3 => loads.push((inst, args[0])),
+                // The final read supplies the original complete append word.
+                // Packed-load folding can fuse either earlier U32 read.
+                _ if store.is_none()
+                    && matches!(
+                        (opcode, loads.len()),
+                        (Opcode::Load, 0..=2) | (Opcode::Uload32, 0..=1)
+                    ) =>
+                {
+                    loads.push((inst, args[0]));
+                }
                 Opcode::Store if store.is_none() => store = Some((inst, term, args[0], args[1])),
                 _ if pure(opcode) => {}
                 _ => return Err("selected path has an unsupported effect"),
@@ -500,4 +534,282 @@ pub(super) fn capture(context: &Context, header: Block) -> Result<Trace, &'stati
     };
     trace.window = entry_window(context, &path, header, &trace, *cache, *previous, i);
     Ok(trace)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::native_artifact::program::codegen::numeric_words::load_unsigned_word;
+    use cranelift_codegen::ir::{AbiParam, BlockArg, Endianness, InstBuilder, MemFlags, Type};
+    use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+
+    #[test]
+    fn append_guard_recognizes_only_a_canonical_comparison_mask() {
+        let mut function = Function::new();
+        function.signature.params = vec![
+            AbiParam::new(types::I64),
+            AbiParam::new(types::I64),
+            AbiParam::new(types::I8),
+        ];
+        let mut context = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let [cursor, end, byte] = b.block_params(entry).try_into().unwrap();
+        let bound = b.ins().icmp(IntCC::NotEqual, cursor, end);
+        let masked = b.ins().band_imm(bound, 1);
+        let wide = b.ins().uextend(types::I64, bound);
+        let extended_mask = b.ins().band_imm(wide, 1);
+        let wrong_mask = b.ins().band_imm(bound, 2);
+        let arbitrary_bit = b.ins().band_imm(byte, 1);
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+
+        let walk = Walk {
+            function: &function,
+            aliases: BTreeMap::new(),
+        };
+        assert!(walk.test(bound).is_some());
+        assert_eq!(walk.test(masked), walk.test(bound));
+        assert_eq!(walk.test(extended_mask), walk.test(bound));
+        assert_eq!(walk.test(wrong_mask), None);
+        assert_eq!(walk.test(arbitrary_bit), None);
+    }
+
+    #[test]
+    fn append_guard_resolves_only_the_selected_join_input() {
+        let mut function = Function::new();
+        function.signature.params = vec![
+            AbiParam::new(types::I8),
+            AbiParam::new(types::I8),
+            AbiParam::new(types::I8),
+        ];
+        let mut context = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        let other = b.create_block();
+        let join = b.create_block();
+        let latch = b.create_block();
+        let exit = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.append_block_param(join, types::I8);
+
+        b.switch_to_block(entry);
+        let [select, select_other, input] = b.block_params(entry).try_into().unwrap();
+        let one = b.ins().iconst(types::I8, 1);
+        let from_append = b.ins().brif(select, join, &[one.into()], other, &[]);
+
+        b.switch_to_block(other);
+        let zero = b.ins().iconst(types::I8, 0);
+        let from_other = b
+            .ins()
+            .brif(select_other, join, &[zero.into()], join, &[input.into()]);
+
+        b.switch_to_block(join);
+        let flag = b.block_params(join)[0];
+        let masked = b.ins().band_imm(flag, 1);
+        b.ins().brif(masked, latch, &[], exit, &[]);
+        b.switch_to_block(latch);
+        b.ins().return_(&[]);
+        b.switch_to_block(exit);
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+
+        let unresolved = Walk {
+            function: &function,
+            aliases: BTreeMap::new(),
+        };
+        assert_eq!(unresolved.test(masked), None);
+        for (incoming, edge, expected) in [
+            (from_append, 0, Some(true)),
+            (from_other, 0, Some(false)),
+            (from_other, 1, None),
+        ] {
+            let edges = function.dfg.insts[incoming]
+                .branch_destination(&function.dfg.jump_tables, &function.dfg.exception_tables);
+            let incoming = &edges[edge];
+            assert_eq!(incoming.block(&function.dfg.value_lists), join);
+            let args = incoming
+                .args(&function.dfg.value_lists)
+                .map(|arg| arg.as_value().unwrap())
+                .collect::<Vec<_>>();
+            let mut path = Walk {
+                function: &function,
+                aliases: BTreeMap::new(),
+            };
+            path.enter(join, &args);
+            assert_eq!(
+                path.test(masked).and_then(|(test, _)| test.constant()),
+                expected
+            );
+            if expected.is_none() {
+                assert_eq!(path.test(masked), None);
+            }
+        }
+    }
+
+    #[derive(Clone, Copy)]
+    enum Reads {
+        Plain,
+        Fused,
+        Fused16,
+        Signed32,
+        FusedPrevious,
+        ExtraBefore,
+        ExtraAfter,
+    }
+
+    type Outcome = Result<(usize, usize, usize), &'static str>;
+    type ClonedRead = (Opcode, MemFlags, i32, Type);
+
+    // A checked append recurrence fed by the shared physical-word loader.
+    fn witness(reads: Reads) -> (Outcome, Vec<ClonedRead>) {
+        let mut context = Context::new();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 4];
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut builder_context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        let header = b.create_block();
+        for _ in 0..3 {
+            b.append_block_param(header, types::I64);
+        }
+        let visit = b.create_block();
+        let append = b.create_block();
+        let finish = b.create_block();
+        let leave = b.create_block();
+
+        b.switch_to_block(entry);
+        let [base, count, cursor, length] = b.block_params(entry).try_into().unwrap();
+        b.ins()
+            .jump(header, &[count, cursor, length].map(BlockArg::Value));
+
+        b.switch_to_block(header);
+        let [count, cursor, length] = b.block_params(header).try_into().unwrap();
+        let more = b.ins().icmp_imm(IntCC::NotEqual, count, 0);
+        let more = b.ins().band_imm(more, 1);
+        b.ins().brif(more, visit, &[], leave, &[]);
+
+        b.switch_to_block(visit);
+        let flags = MemFlags::new().with_endianness(Endianness::Little);
+        let safe_flags = flags.with_notrap();
+        let cache_word = |b: &mut FunctionBuilder<'_>, offset: i32, flags: MemFlags| match reads {
+            Reads::Plain => {
+                let value = b.ins().load(types::I32, flags, base, offset);
+                b.ins().uextend(types::I64, value)
+            }
+            Reads::Fused16 => load_unsigned_word(b, types::I16, flags, base, offset),
+            Reads::Signed32 => b.ins().sload32(flags, base, offset),
+            _ => load_unsigned_word(b, types::I32, flags, base, offset),
+        };
+        let header_word = cache_word(&mut b, 0, flags);
+        let cost = cache_word(&mut b, 4, safe_flags);
+        let prev_index = b.ins().iadd_imm(length, -1);
+        let prev_bytes = b.ins().imul_imm(prev_index, 8);
+        let prev_address = b.ins().iadd(base, prev_bytes);
+        let previous = if matches!(reads, Reads::FusedPrevious) {
+            load_unsigned_word(&mut b, types::I32, flags, prev_address, 0)
+        } else {
+            load_unsigned_word(&mut b, types::I64, flags, prev_address, 0)
+        };
+        if matches!(reads, Reads::ExtraBefore) {
+            load_unsigned_word(&mut b, types::I32, flags, base, 8);
+        }
+        let width = b.ins().band_imm(header_word, 0xffff);
+        let start = b.ins().isub(cursor, width);
+        let empty = b.ins().icmp(IntCC::Equal, start, cursor);
+        b.ins().brif(empty, append, &[], leave, &[]);
+
+        b.switch_to_block(append);
+        let word = b.ins().iadd(previous, cost);
+        let bytes = b.ins().imul_imm(length, 8);
+        let address = b.ins().iadd(base, bytes);
+        b.ins().store(flags, word, address, 0);
+        if matches!(reads, Reads::ExtraAfter) {
+            load_unsigned_word(&mut b, types::I32, flags, base, 8);
+        }
+        let next_length = b.ins().iadd_imm(length, 1);
+        let next_count = b.ins().iadd_imm(count, -1);
+        b.ins().jump(finish, &[]);
+        b.switch_to_block(finish);
+        b.ins().jump(
+            header,
+            &[next_count, start, next_length].map(BlockArg::Value),
+        );
+
+        b.switch_to_block(leave);
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+
+        let old = context
+            .func
+            .layout
+            .blocks()
+            .flat_map(|block| context.func.layout.block_insts(block))
+            .collect::<BTreeSet<_>>();
+        let result = super::super::optimize(&mut context, header, None);
+        let settings =
+            cranelift_codegen::settings::Flags::new(cranelift_codegen::settings::builder());
+        context.verify(&settings).unwrap();
+        let f = &context.func;
+        let cloned = f
+            .layout
+            .blocks()
+            .flat_map(|block| f.layout.block_insts(block))
+            .filter(|inst| !old.contains(inst))
+            .filter_map(|inst| {
+                let Data::Load {
+                    opcode: opcode @ (Opcode::Load | Opcode::Uload32),
+                    flags,
+                    offset,
+                    ..
+                } = f.dfg.insts[inst]
+                else {
+                    return None;
+                };
+                Some((
+                    opcode,
+                    flags,
+                    offset.into(),
+                    f.dfg.value_type(f.dfg.first_result(inst)),
+                ))
+            })
+            .collect();
+        (result, cloned)
+    }
+
+    #[test]
+    fn fused_cache_reads_clone_in_order_without_changing_width_or_flags() {
+        let (result, cloned) = witness(Reads::Fused);
+        assert_eq!(witness(Reads::Plain).0, Ok((4, 0, 0)));
+        assert_eq!(result, Ok((4, 0, 0)));
+        let flags = MemFlags::new().with_endianness(Endianness::Little);
+        assert_eq!(
+            cloned,
+            [
+                (Opcode::Uload32, flags, 0, types::I64),
+                (Opcode::Uload32, flags.with_notrap(), 4, types::I64),
+            ]
+        );
+    }
+
+    #[test]
+    fn unsupported_loads_leave_the_checked_append_path() {
+        for reads in [
+            Reads::Fused16,
+            Reads::Signed32,
+            Reads::FusedPrevious,
+            Reads::ExtraBefore,
+            Reads::ExtraAfter,
+        ] {
+            assert_eq!(
+                witness(reads),
+                (Err("selected path has an unsupported effect"), vec![]),
+            );
+        }
+    }
 }
