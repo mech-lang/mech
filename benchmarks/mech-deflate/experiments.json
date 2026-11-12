@@ -65265,6 +65265,182 @@
         }
       },
       "complete_goal": false
+    },
+    "330": {
+      "git_parent": "4111148fca1263e9a24f6113b43a5206a407978f",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+      "retained_compiler": "R327",
+      "retained_source_packet_round": 327,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior source and compiler after measuring the composed cost table.",
+      "source": {
+        "source_program_changed_in_pilot": true,
+        "retained_source_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pilot_source_sha256": "107cec90be563c0544024edb67e1380c7593450515bb779d784e781c5228556a",
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "abd5e14046e6370ca6054fa6959995ebc749cb9c3e666c01a65ada2591a95559",
+        "worker_sha256": "479eb5b39414186f87978366d0d35864c350d3f2ba46be8d65c0fa6c25fd9138"
+      },
+      "summary": {
+        "round": 330,
+        "published_parent": "4111148fca1263e9a24f6113b43a5206a407978f",
+        "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retain_source": false,
+        "retained_source_packet_round": 327,
+        "retained_runtime_packet_round": 272,
+        "source_representation_pilot": true,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 8,
+        "blockmean_1_05_gates_passed": 7,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 1.076816357004211,
+        "target_matched_x_roc": [
+          1.306734123320464,
+          1.5250919222777655
+        ],
+        "target_matched_x_libdeflate": [
+          1.0579913287052232,
+          1.2347837256657852
+        ],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 1.1574384102665252,
+            "matched": 1.1599889568644037
+          },
+          "prefix-natural-65537": {
+            "primary": 1.1711849082418686,
+            "matched": 1.1648755512106648
+          },
+          "prefix-natural-262144": {
+            "primary": 1.1710242677522187,
+            "matched": 1.1671019337908202
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.156013745612368,
+            "matched": 1.1593972768891156
+          },
+          "eight-literals": {
+            "primary": 1.0082130071438202,
+            "matched": 0.9976213777902506
+          },
+          "prefix-random-16384": {
+            "primary": 0.9902667020707487,
+            "matched": 1.005764259589948
+          },
+          "prefix-random-1048576": {
+            "primary": 1.0007506259362111,
+            "matched": 1.0004485409929273
+          }
+        },
+        "cpu_target": {
+          "before": {
+            "cycles": 190929404.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 745138951.0,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 221754255.5,
+            "initialized_bytes_copied": 37412.0,
+            "instructions": 756486677.0,
+            "lifetime_peak_physical": 52315072.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 415.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 48382912.0,
+            "requested_payload_bytes": 13102056.0,
+            "rss_after": 49889280.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144887992.0,
+            "instructions": 479453496.0,
+            "level": 12.0,
+            "lifetime_peak_physical": 14517120.0,
+            "physical_after": 14517120.0,
+            "rss_after": 15138816.0
+          }
+        },
+        "memory_target": {
+          "before": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "initialized_bytes_copied": 37412.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 415.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13102056.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "level": 12.0
+          }
+        },
+        "cases_with_same_heap_families": 6,
+        "linked_compression_checks": 162,
+        "reason": "The source pilot removes the dependent map load, while repeated threshold checks, two table guards and construction remain. All four measured natural sizes lose more than 10 percent in both screens. Retain R327."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "abd5e14046e6370ca6054fa6959995ebc749cb9c3e666c01a65ada2591a95559",
+          "metadata.json": "c4bec55d138e79b0032eb7d7ed3a3cce5011cb5830325d5021674a4c59f68653"
+        },
+        "worker_sha256": "479eb5b39414186f87978366d0d35864c350d3f2ba46be8d65c0fa6c25fd9138"
+      },
+      "report": "docs/design/native-composed-offset-cost.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r330-composed-cost-e5b0a68594f9.tar.gz",
+        "bytes": 1047499,
+        "sha256": "e5b0a68594f905da7266df8750aee53cb49a0ef97a72501c62ec90e31f2c8d83",
+        "files": 195,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "7cea634a7679923ec97e37c6e533b4b685bc0769fd4d0ee5df3ec366afef067e",
+            "pilot-counters.json": "388427d1f6e0b6c52e6f242707bc364b18db456c9383f11035888ef461dce94d",
+            "result-decision.json": "3ffd9da129dd8324bafc68412ddefc27cec942e9758edbe1e178b7101c459cbe",
+            "diagnostic-profile-summary.json": "22d6d6b49a2f3f633c2c869b0921bf529a0ba2f6eb372a78ea5c413212370e29"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
