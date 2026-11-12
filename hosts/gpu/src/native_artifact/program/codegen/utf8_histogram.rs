@@ -302,6 +302,22 @@ fn emit(
     let cell = b.ins().iadd(cells, offset);
     let address = get(b, cell, offset_of!(Cell, address));
     let bytes = get(b, cell, offset_of!(Cell, bytes));
+    // The private short-key bank stores every byte in one word. Equal packed
+    // words and equal lengths are exact equality, not a probabilistic hash hit.
+    // Long keys keep the maintained chunked hash and full byte comparison.
+    let short_key = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, bytes, 8);
+    let packed = b.create_block();
+    let long = b.create_block();
+    let hashed_key = b.create_block();
+    b.append_block_param(hashed_key, types::I64);
+    b.append_block_param(hashed_key, types::I64);
+    b.ins().brif(short_key, packed, &[], long, &[]);
+    b.switch_to_block(packed);
+    let word = emit_packed_short_key(b, address, bytes, fuel, cold, funding);
+    let bucket_hash = short_key_bucket_hash(b, word, bytes);
+    let first = b.ins().band(bucket_hash, mask);
+    b.ins().jump(hashed_key, &[word.into(), first.into()]);
+    b.switch_to_block(long);
     let word = if matches!(funding, Funding::Prepaid | Funding::Unmetered) {
         emit_hash(b, address, bytes)
     } else {
@@ -361,6 +377,10 @@ fn emit(
         word
     };
     let first = b.ins().band(word, mask);
+    b.ins().jump(hashed_key, &[word.into(), first.into()]);
+    b.switch_to_block(hashed_key);
+    let word = b.block_params(hashed_key)[0];
+    let first = b.block_params(hashed_key)[1];
     b.def_var(probe_at, first);
     b.def_var(probes, zero);
     b.ins().jump(probe, &[]);
@@ -391,6 +411,15 @@ fn emit(
     let comparable = b.create_block();
     b.ins().brif(same, comparable, &[], advance, &[]);
     b.switch_to_block(comparable);
+    if matches!(funding, Funding::Prepaid | Funding::Unmetered) {
+        // Both words came from complete, bounded short-key loads in this leaf.
+        // Their checked equal lengths distinguish trailing NULs and zero padding.
+        // Prepaid managed entry retains the original complete pass charges;
+        // the metered test specialization still executes its exact debit ladder.
+        let needs_bytes = b.create_block();
+        b.ins().brif(short_key, hit, &[], needs_bytes, &[]);
+        b.switch_to_block(needs_bytes);
+    }
     let old_address = get(b, old_cell, offset_of!(Cell, address));
     b.def_var(equal_at, zero);
     b.ins().jump(compare_head, &[]);
@@ -546,6 +575,141 @@ fn emit(
     }
     let status = b.block_params(exit)[0];
     b.ins().return_(&[status]);
+}
+
+/// Lossless private representation for an arbitrary UTF8 byte string of at
+/// most eight bytes. Each load is within the exact source allocation; an empty
+/// input performs no load. This does not assume ASCII or accessible padding.
+fn emit_packed_short_key(
+    b: &mut FunctionBuilder<'_>,
+    address: Value,
+    bytes: Value,
+    fuel: Variable,
+    cold: cranelift_codegen::ir::Block,
+    funding: Funding,
+) -> Value {
+    if matches!(funding, Funding::Prepaid | Funding::Unmetered) {
+        return emit_packed_short_overlap(b, address, bytes);
+    }
+    let zero = b.ins().iconst(types::I64, 0);
+    let packed = b.declare_var(types::I64);
+    let position = b.declare_var(types::I64);
+    b.def_var(packed, zero);
+    b.def_var(position, zero);
+    for (width, ty) in [
+        (8i64, types::I64),
+        (4, types::I32),
+        (2, types::I16),
+        (1, types::I8),
+    ] {
+        let read = b.create_block();
+        let next = b.create_block();
+        let at = b.use_var(position);
+        let remaining = b.ins().isub(bytes, at);
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, width);
+        b.ins().brif(enough, read, &[], next, &[]);
+        b.switch_to_block(read);
+        // Exactly the maintained hash's per-chunk debit and refusal point.
+        spend(b, fuel, width * 2, cold, funding);
+        let pointer = b.ins().iadd(address, at);
+        let flags = MemFlags::new().with_endianness(cranelift_codegen::ir::Endianness::Little);
+        let chunk = b.ins().load(ty, flags, pointer, 0);
+        let chunk = if width == 8 {
+            chunk
+        } else {
+            b.ins().uextend(types::I64, chunk)
+        };
+        let shift = b.ins().ishl_imm(at, 3);
+        let chunk = b.ins().ishl(chunk, shift);
+        let prior = b.use_var(packed);
+        let combined = b.ins().bor(prior, chunk);
+        b.def_var(packed, combined);
+        let after = b.ins().iadd_imm(at, width);
+        b.def_var(position, after);
+        b.ins().jump(next, &[]);
+        b.switch_to_block(next);
+    }
+    b.use_var(packed)
+}
+
+/// The complete short-key span was bounded by the caller before this entry.
+/// For four through eight bytes, the first and last four-byte reads cover every
+/// byte. Their overlap contains identical bits, so OR forms the exact little-
+/// endian word. The two/three-byte case uses the first two and last one byte.
+/// No read crosses either end, including an empty inaccessible byte pointer.
+/// Logical metered chunk refusals remain in emit_packed_short_key; only entry
+/// which already owns its complete pass allowance uses these overlapping loads.
+fn emit_packed_short_overlap(b: &mut FunctionBuilder<'_>, address: Value, bytes: Value) -> Value {
+    let flags = MemFlags::new().with_endianness(cranelift_codegen::ir::Endianness::Little);
+    let four = b.create_block();
+    let small = b.create_block();
+    let two = b.create_block();
+    let tiny = b.create_block();
+    let one = b.create_block();
+    let empty = b.create_block();
+    let done = b.create_block();
+    b.append_block_param(done, types::I64);
+    let enough = b
+        .ins()
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, bytes, 4);
+    b.ins().brif(enough, four, &[], small, &[]);
+    b.switch_to_block(four);
+    let tail_at = b.ins().iadd_imm(bytes, -4);
+    let tail = b.ins().iadd(address, tail_at);
+    let first = b.ins().load(types::I32, flags, address, 0);
+    let last = b.ins().load(types::I32, flags, tail, 0);
+    let first = b.ins().uextend(types::I64, first);
+    let last = b.ins().uextend(types::I64, last);
+    let shift = b.ins().ishl_imm(tail_at, 3);
+    let last = b.ins().ishl(last, shift);
+    let packed = b.ins().bor(first, last);
+    b.ins().jump(done, &[packed.into()]);
+    b.switch_to_block(small);
+    let enough = b
+        .ins()
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, bytes, 2);
+    b.ins().brif(enough, two, &[], tiny, &[]);
+    b.switch_to_block(two);
+    let tail_at = b.ins().iadd_imm(bytes, -1);
+    let tail = b.ins().iadd(address, tail_at);
+    let first = b.ins().load(types::I16, flags, address, 0);
+    let last = b.ins().load(types::I8, flags, tail, 0);
+    let first = b.ins().uextend(types::I64, first);
+    let last = b.ins().uextend(types::I64, last);
+    let shift = b.ins().ishl_imm(tail_at, 3);
+    let last = b.ins().ishl(last, shift);
+    let packed = b.ins().bor(first, last);
+    b.ins().jump(done, &[packed.into()]);
+    b.switch_to_block(tiny);
+    b.ins().brif(bytes, one, &[], empty, &[]);
+    b.switch_to_block(one);
+    let first = b.ins().load(types::I8, flags, address, 0);
+    let first = b.ins().uextend(types::I64, first);
+    b.ins().jump(done, &[first.into()]);
+    b.switch_to_block(empty);
+    let zero = b.ins().iconst(types::I64, 0);
+    b.ins().jump(done, &[zero.into()]);
+    b.switch_to_block(done);
+    b.block_params(done)[0]
+}
+
+/// Bucket mixing is independent of the exact full key retained in Slot.hash.
+/// Two avalanche rounds distribute short inputs without adding a byte loop;
+/// neither these bucket bits nor a long-key hash certify byte equality.
+fn short_key_bucket_hash(b: &mut FunctionBuilder<'_>, packed: Value, bytes: Value) -> Value {
+    let seed = b.ins().iconst(types::I64, HASH_OFFSET as i64);
+    let word = b.ins().bxor(packed, seed);
+    let word = b.ins().bxor(word, bytes);
+    let upper = b.ins().ushr_imm(word, 33);
+    let word = b.ins().bxor(word, upper);
+    let word = b.ins().imul_imm(word, 0xff51afd7ed558ccdu64 as i64);
+    let upper = b.ins().ushr_imm(word, 33);
+    let word = b.ins().bxor(word, upper);
+    let word = b.ins().imul_imm(word, 0xc4ceb9fe1a85ec53u64 as i64);
+    let upper = b.ins().ushr_imm(word, 33);
+    b.ins().bxor(word, upper)
 }
 
 #[cfg(test)]

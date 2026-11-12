@@ -346,7 +346,7 @@ impl<'plan> CfgDefinition<'plan> {
                             code_bytes: code,
                             sites,
                             funding: "complete_original_call_pass_prepayment",
-                            hash: "bounded_word_mix",
+                            hash: "exact_short_word_or_bounded_word_mix",
                             bank: "adaptive_three_quarter_occupancy",
                             halfword_equality: controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks),
                         },

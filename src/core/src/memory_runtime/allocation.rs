@@ -214,7 +214,13 @@ unsafe impl Allocator for PlannedHostArenaAllocator {
                 {
                     return Err(AllocError);
                 }
-                let pointer = authority.block.pointer().ok_or(AllocError)?;
+                let pointer = if layout.size() == 0 {
+                    // A zero-length physical prefix can retain a nonzero
+                    // logical claim. Its aligned sentinel is never dereferenced.
+                    NonNull::new(layout.align() as *mut u8).ok_or(AllocError)?
+                } else {
+                    authority.block.pointer().ok_or(AllocError)?
+                };
                 Ok(NonNull::slice_from_raw_parts(
                     pointer,
                     authority.block.bytes(),
@@ -245,7 +251,11 @@ unsafe impl Allocator for PlannedHostArenaAllocator {
     unsafe fn deallocate(&self, pointer: NonNull<u8>, layout: Layout) {
         match &self.kind {
             PlannedHostArenaAllocatorKind::Fixed(authority) => {
-                debug_assert_eq!(Some(pointer), authority.block.pointer());
+                if layout.size() != 0 {
+                    debug_assert_eq!(Some(pointer), authority.block.pointer());
+                } else {
+                    debug_assert!(authority.block.pointer().is_none());
+                }
                 debug_assert_eq!(layout.size(), authority.block.bytes());
                 debug_assert!(layout.align() <= authority.block.alignment());
                 // Elements are destroyed by the projected Box first. The sole
@@ -327,14 +337,37 @@ impl<T: PlannedArenaElement> FixedHostArenaPlan<T> {
         &self,
         budget: &super::ManagedMemoryBudget,
     ) -> MemoryRuntimeResult<(PlannedArenaProjection<T>, super::MemoryDomainId)> {
+        self.materialize_prefix(self.count, budget)
+    }
+
+    /// Realize only a typed physical prefix while retaining this plan's full
+    /// logical admission claim. The prefix has no access to omitted elements,
+    /// cannot grow, and holds the complete claim until its last owner retires.
+    /// This changes storage work, never the caller's finite resource envelope.
+    pub fn materialize_prefix(
+        &self,
+        physical_count: usize,
+        budget: &super::ManagedMemoryBudget,
+    ) -> MemoryRuntimeResult<(PlannedArenaProjection<T>, super::MemoryDomainId)> {
+        if physical_count > self.count {
+            return Err(MemoryRuntimeError::InvalidLayout {
+                object: None,
+                size: self.bytes,
+                alignment: core::mem::align_of::<T>() as u32,
+                reason: "physical arena prefix exceeds its logical plan",
+            });
+        }
         let identity = super::MemoryDomainId::issue()?;
         if self.count == 0 {
             return PlannedArenaProjection::empty().map(|values| (values, identity));
         }
         let charge = budget.reserve(self.admission_bytes()?)?;
+        // The original plan validated Layout::array<T>(self.count), and the
+        // prefix bound above makes this product no larger than self.bytes.
+        let physical_bytes = (physical_count * core::mem::size_of::<T>()) as u64;
         let block = HostBlock::allocate(
             Some(MemoryObjectId::new(0)),
-            self.bytes,
+            physical_bytes,
             core::mem::align_of::<T>() as u32,
             MemorySpace::Host,
         )?;
@@ -345,7 +378,7 @@ impl<T: PlannedArenaElement> FixedHostArenaPlan<T> {
                 claimed: Cell::new(false),
             })),
         };
-        PlannedArenaProjection::initialize(self.count, allocator, Some(MemoryObjectId::new(0)))
+        PlannedArenaProjection::initialize(physical_count, allocator, Some(MemoryObjectId::new(0)))
             .map(|values| (values, identity))
     }
 }

@@ -68,7 +68,21 @@ impl<'a> NativeValueArena<'a> {
         budget: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, NativeValueError> {
+        Self::new_with_prefix(types, types.len(), max_transport_bytes, budget, work)
+    }
+    /// A private compiler-derived physical prefix. The original full type
+    /// inventory continues to set transport limits, work and both byte claims.
+    pub(in crate::native_artifact) fn new_with_prefix(
+        types: &'a [NativeValueSlot],
+        physical: usize,
+        max_transport_bytes: u64,
+        budget: &ManagedMemoryBudget,
+        work: &mut NativeWorkMeter,
+    ) -> Result<Self, NativeValueError> {
         let count = u32::try_from(types.len()).map_err(|_| NativeValueError::InvalidSlot)?;
+        if physical > types.len() {
+            return Err(NativeValueError::InvalidSlot);
+        }
         let bytes = u64::from(count)
             .checked_mul(
                 (core::mem::size_of::<Option<Value>>() + core::mem::size_of::<u64>()) as u64,
@@ -93,16 +107,33 @@ impl<'a> NativeValueArena<'a> {
                 reason: "native value setup work overflows",
             })?;
         work.charge(NativeExecutionPhase::Setup, setup)?;
-        let values = NativeTypedStorage::new_values(types.len(), max_transport_bytes, budget)?;
-        let generations = NativeWordStorage::new(types.len(), max_transport_bytes, Some(budget))?;
+        let values = NativeTypedStorage::new_values_compact(
+            types.len(),
+            physical,
+            max_transport_bytes,
+            budget,
+        )?;
+        let generations =
+            NativeWordStorage::new_compact(types.len(), physical, max_transport_bytes, budget)?;
         work.bind_memory_budget(budget)?;
         Ok(Self {
             values,
             generations,
-            types,
+            // Every type-checked direct index is now bounded by the same
+            // physical prefix; omitted semantic slots cannot expose storage.
+            types: &types[..physical],
             budget: budget.clone(),
             work_identity: work.identity(),
         })
+    }
+
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact) fn test_physical_slots(&self) -> (usize, usize, usize) {
+        (
+            self.values.values().len(),
+            self.generations.values().len(),
+            self.types.len(),
+        )
     }
 
     /// Prepay one fixed-shape native producer's eventual slot installation.

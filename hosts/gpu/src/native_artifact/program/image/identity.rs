@@ -497,7 +497,13 @@ fn selected_template(
 // IR307 emits current-funded fixed-key selection and replacement in native code.
 // IR308 binds a selected numeric tree's same-plan dead-owner handoff request.
 // IR311 combines selected IR308 with PR973 through spill-copy facts on taken branches.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 320;
+// IR326 packs short histogram keys exactly and omits absent projection carriers,
+// retaining the existing complete managed charging and admission contract.
+// IR327 realizes only the canonical argument-owner prefix while retaining
+// the original complete logical backing claim and transport/setup floors.
+// IR330 retains checked worker owner prefixes and bounds short-key loads by
+// their actual spans; all original logical managed envelopes stay in force.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 331;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
