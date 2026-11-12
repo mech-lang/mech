@@ -67917,6 +67917,268 @@
         }
       },
       "complete_goal": false
+    },
+    "338": {
+      "git_parent": "dbe900ffdb1d94a8c080faea42d0ab61765f5650",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ebc837def6d5c878cb3ecdeadd0e3f078a3f12e4",
+      "retained_compiler": "R333",
+      "retained_source_packet_round": 333,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after measuring paired scalar reduction.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "f3afe164a1b2b3e2f7abc7308393e53f60396c821c0d983a6e6fb4d6901a3916",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+            "before": "590348dffcbd0234ddbfa1fd7aac94c0e14d000e090db1220dda21f02e45a679",
+            "after": "09082dc6d8bff28b3f4095f633483ba2c8f3891855193a741f331015bf3ae90e"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "1bf775925f2fdb6a299126d859af8b40384d962457ce894289c79027ed252885",
+        "worker_sha256": "fb9729a59b4f0f927747e8fcea7cde6774facff584d9be8759c37c0568ff3ca3"
+      },
+      "summary": {
+        "round": 338,
+        "published_parent": "dbe900ffdb1d94a8c080faea42d0ab61765f5650",
+        "measured_parent": "ebc837def6d5c878cb3ecdeadd0e3f078a3f12e4",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "source_program_changed": false,
+        "retained_source_packet_round": 333,
+        "retained_runtime_packet_round": 272,
+        "screen_qualified_for_full": false,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 16,
+        "blockmean_1_05_gates_passed": 16,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 1.0118115491648694,
+        "target_matched_x_roc": [
+          1.2759049137709029,
+          1.3109125379958975
+        ],
+        "target_matched_x_libdeflate": [
+          1.0308853140534289,
+          1.059170216246327
+        ],
+        "witness_changes": {
+          "empty": {
+            "primary": 1.0,
+            "matched": 0.9753197641385593
+          },
+          "one-stored": {
+            "primary": 1.0,
+            "matched": 0.9741293577531694
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0,
+            "matched": 0.9808845608765427
+          },
+          "eight-literals": {
+            "primary": 1.0118858860656454,
+            "matched": 1.0096561592467743
+          },
+          "reymont-prefix-32769": {
+            "primary": 1.0201383040926277,
+            "matched": 1.02129627211884
+          },
+          "heldout-window-32768": {
+            "primary": 1.018346915272283,
+            "matched": 1.0186512126745526
+          },
+          "prefix-natural-32767": {
+            "primary": 1.0244005115272428,
+            "matched": 1.0202866029710618
+          },
+          "prefix-natural-32768": {
+            "primary": 1.021983464858108,
+            "matched": 1.0212346464038038
+          },
+          "prefix-natural-65537": {
+            "primary": 1.022379139116445,
+            "matched": 1.0246270276829559
+          },
+          "prefix-natural-131072": {
+            "primary": 1.022743985128474,
+            "matched": 1.0258014294219484
+          },
+          "prefix-natural-262144": {
+            "primary": 1.0269557711930628,
+            "matched": 1.0274374867963558
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0239469617758825,
+            "matched": 1.0224587190883465
+          },
+          "prefix-random-16384": {
+            "primary": 0.9999342899350369,
+            "matched": 0.9996676830280457
+          },
+          "prefix-random-1048576": {
+            "primary": 1.000194856145174,
+            "matched": 1.0000992283237327
+          },
+          "prefix-periodic-1048576": {
+            "primary": 0.9981567350552605,
+            "matched": 0.9977254115207732
+          },
+          "prefix-repeated-1048576": {
+            "primary": 0.9989210859729836,
+            "matched": 0.9987543179627624
+          }
+        },
+        "cpu_target": {
+          "before": {
+            "cycles": 186654917.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 693741181.5,
+            "lifetime_peak_physical": 50463680.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46531520.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 190026631.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 719355860.5,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144800156.5,
+            "instructions": 479458769.0,
+            "level": 12.0,
+            "lifetime_peak_physical": 14418816.0,
+            "physical_after": 14418816.0,
+            "rss_after": 15040512.0
+          }
+        },
+        "memory_target": {
+          "before": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "level": 12.0
+          }
+        },
+        "cases_with_same_heap_families": 16,
+        "linked_compression_checks": 324,
+        "candidate_native_positions": 136192,
+        "control_native_positions": 68096,
+        "worst_matched": {
+          "case": "prefix-natural-262144",
+          "ratio": 1.0274374867963558
+        },
+        "decision": "Keep R333 after the paired scalar reduction screen."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "1bf775925f2fdb6a299126d859af8b40384d962457ce894289c79027ed252885",
+            "metadata.json": "4d245f9b026b6e3e4fc0b4fcc4e45b52b7e850323c6a75db6762bdc51de4dcab"
+          },
+          "decoded": {
+            "object.o": "1bf775925f2fdb6a299126d859af8b40384d962457ce894289c79027ed252885",
+            "metadata.json": "4d245f9b026b6e3e4fc0b4fcc4e45b52b7e850323c6a75db6762bdc51de4dcab"
+          }
+        },
+        "worker_sha256": "fb9729a59b4f0f927747e8fcea7cde6774facff584d9be8759c37c0568ff3ca3",
+        "warnings_as_errors": true,
+        "candidate_native_positions": 136192,
+        "control_native_positions": 68096
+      },
+      "report": "docs/design/native-peeled-pair.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r338-peeled-pair-1130d0e35143.tar.gz",
+        "bytes": 1124177,
+        "sha256": "1130d0e351439d8f3bc2278a3a45bac64480c63326f0363389e69606d817b7ff",
+        "files": 268,
+        "reports_replayed": 6,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay-screen.py",
+          "expected_outputs": {
+            "REPORT.md": "30a4521ce4ae564b380613753d9290b1e5bec0c66e1b1e8201b26372ec802f9d",
+            "pilot-counters.json": "ae9c3c2be4a6c1e6639804837332654591a237c7602142a8ad59dca1dc50cd6a",
+            "result-decision.json": "766032eff45d496b69022c4b29897ae80b73a81c6d6e076a90b9794860461e5b",
+            "screen-result.json": "cfa80a3d4d609a91bfe1596d2577b68b2b4010df163821de76feade5e91d289f",
+            "screen-disposition.json": "6634fbf360e6325a4309f01212dc534a8aff9edc82d5df0d70bc392910fd8d7f",
+            "candidate-profile-summary.json": "41e40aa7845f2c09d5cbefe981f8a14c87bd6de5e7fd7a3cb4446b6be0378116"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
