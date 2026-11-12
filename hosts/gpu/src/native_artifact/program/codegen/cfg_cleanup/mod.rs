@@ -500,10 +500,32 @@ pub(in crate::native_artifact) fn reuse_dominating_window_facts(
     Ok(replaced)
 }
 
+enum ScalarSpanProof {
+    CheckedWindow,
+    SelectedRead,
+}
+
 pub(in crate::native_artifact) fn prove_scalar_spans(
     controls: &CompilationControls,
     context: &mut Context,
     isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    fold_scalar_span_guards(controls, context, isa, ScalarSpanProof::CheckedWindow)
+}
+
+pub(in crate::native_artifact) fn reuse_selected_read_bounds(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    fold_scalar_span_guards(controls, context, isa, ScalarSpanProof::SelectedRead)
+}
+
+fn fold_scalar_span_guards(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    source: ScalarSpanProof,
 ) -> Result<usize, NativeCompileError> {
     if !controls.enabled(OptimizationPass::CfgCleanup) {
         return Ok(0);
@@ -511,8 +533,12 @@ pub(in crate::native_artifact) fn prove_scalar_spans(
     context.func.dfg.resolve_all_aliases();
     context.compute_cfg();
     context.compute_domtree();
-    let replaced =
-        current_predicates::scalar_spans::fold(&mut context.func, &context.cfg, &context.domtree);
+    let replaced = current_predicates::scalar_spans::fold(
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+        source,
+    );
     if replaced != 0 {
         context.compute_cfg();
         context.compute_domtree();
