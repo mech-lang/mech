@@ -273,6 +273,16 @@ pub(super) fn define<M: Module>(
             eprintln!("{symbol} reused selected readable bounds: {changed}");
         }
     }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COALESCE_EQUAL_JOIN_ARGUMENTS").is_some()
+    {
+        let removed =
+            cfg_cleanup::coalesce_equal_join_arguments(&controls, &mut context, module.isa())?;
+        if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} merged equal block arguments: {removed}");
+        }
+    }
     // Late forwarding may expose a complete idiom without crossing a phase.
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
     let mut composed = None;

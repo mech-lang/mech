@@ -513,6 +513,34 @@ pub(in crate::native_artifact) fn prove_scalar_spans(
     fold_scalar_span_guards(controls, context, isa, ScalarSpanProof::CheckedWindow)
 }
 
+pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    let removed = local_phis::equal_arguments::simplify(&mut context.func, &context.cfg);
+    if removed != 0 {
+        context.func.dfg.resolve_all_aliases();
+        let branches = fold(&mut context.func);
+        if branches != 0 {
+            context.compute_cfg();
+            context.compute_domtree();
+            context.eliminate_unreachable_code(isa).map_err(backend)?;
+            context.remove_constant_phis(isa).map_err(backend)?;
+            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("constant branches after equal argument coalescing: {branches}");
+            }
+        }
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
 pub(in crate::native_artifact) fn reuse_selected_read_bounds(
     controls: &CompilationControls,
     context: &mut Context,
