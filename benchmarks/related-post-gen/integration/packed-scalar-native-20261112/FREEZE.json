@@ -1,0 +1,68 @@
+{
+  "status": "FROZEN; ready for independent root verification",
+  "native_executions": 0,
+  "files": {
+    "README.md": {
+      "sha256": "7ee5607bc39dd607afc6b223d795ecad934ab20c477e11197092dcc3dd5653d4",
+      "bytes": 9182
+    },
+    "assemble.py": {
+      "sha256": "1ae2389df9b251106052251f3597cac3f177a1de2377afaeb400e6dd73f07874",
+      "bytes": 24861
+    },
+    "fresh-git-verification.json": {
+      "sha256": "4992b661d84fe8de783ccc8c6a4fe8b28f117dd9e8063614586b2882d6c4aede",
+      "bytes": 27712
+    },
+    "omitted-binaries.json": {
+      "sha256": "bf10e29911e197bef3d9f4f0b1ec6827d08f3f38f08461c4ffade407e7e53432",
+      "bytes": 35016
+    },
+    "records.json": {
+      "sha256": "77a670bfaadd98132e870a29fcdf8e3b1dbeccdec5673106c533fd888089c6c5",
+      "bytes": 10588941
+    },
+    "records.zip": {
+      "sha256": "c4f5c087675405e7eff8bede991fab305017e9de9219bcd71c5fa1637bda48a0",
+      "bytes": 68133641
+    },
+    "report.json": {
+      "sha256": "75dc6ef3507f1c710603a738fbf2e8198ed1c98481232f09bebd714c01a3df42",
+      "bytes": 435221
+    },
+    "verification.json": {
+      "sha256": "f68f39d73bcd1065951bf22a0464fe34192ddd1f1e6616f69317dfb7595264e7",
+      "bytes": 25013
+    },
+    "verify-fresh-git.py": {
+      "sha256": "d4f93cfa25863672f72f195b5a9cc213a7b0cf1e0a7bbc5f90d408be5675b808",
+      "bytes": 4779
+    },
+    "verify.py": {
+      "sha256": "67af5e64137f30aef555eca12a3e0d5eea6597bc23538e525ed70cd62539630d",
+      "bytes": 39875
+    }
+  },
+  "container": {
+    "path": "records.zip",
+    "format": "ZIP_STORED gzip members",
+    "sha256": "c4f5c087675405e7eff8bede991fab305017e9de9219bcd71c5fa1637bda48a0",
+    "bytes": 68133641
+  },
+  "logical_records": 21857,
+  "unique_blobs": 10296,
+  "compressed_gzip_payload_bytes": 65806723,
+  "timed_resource_exact_outputs": 4869,
+  "separate_qualification_exact_outputs": 1856,
+  "separate_census_exact_outputs": 28,
+  "compiler_snapshots": 10,
+  "fresh_git_real_objects": 4047,
+  "test_provenance": "Standalone IR346 tests use historical backend; IR347/348/349 exactV3. Raw receipts and distinction retained.",
+  "required_published_source_aliases": [
+    "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+    "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164"
+  ],
+  "optional_published_IR349_alias": "7a6686c6790b0d8e0a282a5619bb884f8ffe08d0",
+  "all_agent_processes_terminal": true,
+  "mutation_policy": "Do not mutate pinned files after independent review without notifying root."
+}
