@@ -1,5 +1,7 @@
 # Complete level-12 comparison after compiler integration
 
+**The merged build failed compression performance qualification. R355 remains the retained baseline.**
+
 The merged compact executable and the retained R355 executable compressed the same 81 runtime inputs in a fresh four-actor comparison with Roc and libdeflate 1.26. The 24 rotated orders retained 245,664 measured calls, including 6,830 zero timer readings. Every block mean used in a ratio was positive. Each actor warmed up for at least 200 ms per case. Timings include complete compression, scratch construction, output ownership transfer and private cleanup. Output validation and inflation ran outside the timer.
 
 ## Results
@@ -68,3 +70,9 @@ Original and decoded merged artifacts produced byte-identical Objects and descri
 The two Mech actors use their independently qualified full descriptors. Their entry symbol, input and output schemas, offsets and packet widths agree. The timed result covers the complete merged compiler and linked runtime relative to R355. Both use the compact diagnostic entry, which omits ordinary exact resource admission, accounting and recovery. The comparison does not isolate the sparse SSA repair or an allocator change.
 
 [Checksummed raw receipts and offline replay](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/merged-compression-anchor-c56b4c5380e8.tar.gz).
+
+## Merge recovery qualification
+
+Run all 81 compression cases against the exact R355 linked worker. Retain both peer ratios and every adverse result. Repeat the paired cohorts to identify per-input regressions before updating the retained scoreboard.
+
+Run the managed guarded-U16 related-post program from #990 against its fixed original `rust_con` at upstream revision `fc2982b0c929b1b701209d401a1dc30c773ef4ab`. Preserve the published timer boundaries and require at most 1.00× the fresh Rust result. The archived independent managed result was 0.750324×. [Fixed related-post comparison](../../benchmarks/related-post-gen/integration/fixed-benchmark-target-20261112/REPORT.md).
