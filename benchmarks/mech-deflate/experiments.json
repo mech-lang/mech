@@ -63646,6 +63646,227 @@
         }
       },
       "complete_goal": false
+    },
+    "324": {
+      "git_parent": "118de8daf63318e5dd914fe37581cea264c38f96",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+      "retained_compiler": "R320",
+      "retained_source_packet_round": 320,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the carried halfword address screen.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "b4c44c69ceec1d0d597b51b8c86fda0e3fd02c32bd7403f78fd8942e11166faf",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/address_phis/tests.rs": {
+            "before": null,
+            "after": "f7d43fb8083db94d5041f1831516bba0cdb0d8eb1d74071e0fcaef1084197029"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/address_phis.rs": {
+            "before": null,
+            "after": "566a0fbf4b1e131e7b1670ffd2be1ca8f385268fe954fc2cae01982df07b5f90"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/adjacent_addresses.rs": {
+            "before": "1f1352322fa1f3b81fdc4bd663f9f1e8e50f41fdb9dbe59cd79023ffa7b65c60",
+            "after": "f8cf7c533f4f913211bb294ac290b02d16629a5e7af4e2402ff9e9fa3c2510c5"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "aaa190d92996808a69d62b7fa369119acaeae954f3cb7e39ee74e1d9db7e0a8e",
+            "after": "8ac99925c33d43cd2029bb1954669e35aa629f91f7c6c52072fd5c5308342738"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "937bba39a98c757da76fbc93fb2136fbae8cc9bdc0c496e39674703bd56ff8ea",
+            "after": "7c6145ba3060c5a2d7aa5d5424ca36e69f6a3db605daa665593935671b71df6d"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "backend_patch_sha256": "7cb1fe062fe1a28d36cca715425c745f55c8a39cc215d0ee6c2e573e5ae28256",
+        "backend_delta": {
+          "source_round": 317,
+          "changes": {
+            "src/machinst/lower.rs": {
+              "before": "e225371cac1f4c646b812d81aafbbf3e665599674a40a5c0486bf2737b0f2a0b",
+              "after": "8048a39afd40631e798fbc32c63e0586b7c0dfca1ae4cb595328e3e6d908c675"
+            },
+            "src/isa/aarch64/lower/isle.rs": {
+              "before": "9803cfe76e1aba6852b7206a11dd12b54a1424d1d6e2a709b90a852eef403c34",
+              "after": "8fa5f4ed6a5545cba02805c944b1b9fb9a4f4aac1632fd9798be62f3f1e28cbf"
+            },
+            "src/isa/aarch64/inst.isle": {
+              "before": "ac36acbf673e499b9642a12960c3b3ec94032fba5a744f0b192161a2ec6e38df",
+              "after": "f35088b08050fe731f4f10dbec520b2236a635d35dc55edcc211f47b7d914038"
+            }
+          },
+          "patch_sha256": "7cb1fe062fe1a28d36cca715425c745f55c8a39cc215d0ee6c2e573e5ae28256",
+          "regalloc_changed": false,
+          "generated_selector_sha256": "ca860cf06fa0d231dfd9aac3e1d7e9d73a60b8010bca9427701a6659aa556371",
+          "generator_sha256": "e78b07ba9a192fa384917e36b58f240cdaecae5e65dfa5a9ee58ef2a767d1adf"
+        },
+        "inherited_backend_patch_sha256": "04eec5f0bca9f502c9b1cb98706f37ab2adbf21b62dabcac11d9ab2cf5904809",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "4e4bd2c737ee4f9c05913d888ced40f177db3a246a90b0096d46d9fa8033ac93",
+        "worker_sha256": "033af31c1d6cc05fef2ab659b8d6d5ecd94581b6f4aca6a391e648daec39b7a0"
+      },
+      "summary": {
+        "round": 324,
+        "published_parent": "118de8daf63318e5dd914fe37581cea264c38f96",
+        "measured_parent": "ecd961c4f707cb61f23dd4cb5cc2be99c82b92ea",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 320,
+        "retained_runtime_packet_round": 272,
+        "screen_cases": 15,
+        "original_1_05_gates_passed": 15,
+        "blockmean_1_05_gates_passed": 15,
+        "screen_paired_geomean": 1.0025845231135722,
+        "matched_cases": 15,
+        "matched_timed_calls": 154656,
+        "target": "prefix-natural-262144",
+        "target_matched_x_libdeflate": [
+          1.0743434683316466,
+          1.0860442460962383
+        ],
+        "target_matched_x_roc": [
+          1.3316158071510593,
+          1.3461185626352876
+        ],
+        "target_screen_after_over_before": 1.0109226792365067,
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 1.0080897427463733,
+            "matched": 1.0073234095042398
+          },
+          "prefix-natural-262144": {
+            "primary": 1.0109226792365067,
+            "matched": 1.0108910959199684
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0086784613233908,
+            "matched": 1.010987478170309
+          }
+        },
+        "target_counter_medians": {
+          "before": {
+            "cycles": 193532762.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 759424081.0,
+            "lifetime_peak_physical": 50463744.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46531584.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 194709433.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 759122282.0,
+            "lifetime_peak_physical": 50463744.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46531584.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144910254.0,
+            "instructions": 479493103.0,
+            "level": 12.0,
+            "lifetime_peak_physical": 14353280.0,
+            "physical_after": 14353280.0,
+            "rss_after": 14974976.0
+          }
+        },
+        "heap_families_agree": true,
+        "target_matcher_stack_read_sample_percent": [
+          25.796344647519582,
+          33.281972265023114
+        ],
+        "reason": "Both timing comparisons slow the 256 KiB natural target, 1 MiB natural and Reymont. Keep the measured R320 compiler."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 162,
+        "image_sha256": {
+          "object.o": "4e4bd2c737ee4f9c05913d888ced40f177db3a246a90b0096d46d9fa8033ac93",
+          "metadata.json": "594d66c66c34e4455a14810ea28c031f8ef43680cd23dfde9fd1a72445b61b40"
+        },
+        "worker_sha256": "033af31c1d6cc05fef2ab659b8d6d5ecd94581b6f4aca6a391e648daec39b7a0"
+      },
+      "report": "docs/design/native-reused-child-address.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r324-reused-child-address-64f33a967557.tar.gz",
+        "bytes": 1283578,
+        "sha256": "64f33a967557eab17b4adc7cda6c66e04e79e0757754b8db59bd56bb3af6f4b0",
+        "files": 272,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "125473f822695417d9430c58d36ed455b11a1c443c6745d54c9fbbbdfe682f23",
+            "pilot-counters.json": "96a8d7237b4f2827a997a7eca8055787e3d647c2a52954d500e85a4e63c958eb",
+            "result-decision.json": "dda474118dc37288304b876fdcd229467410c58056da7e397f5e8fdc15503a56",
+            "candidate-profile-summary.json": "f94bc6578b0cd7888e435ff39d59a678a2609d1f98a943a6c9ab8d8ccf64c0d8"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
