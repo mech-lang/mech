@@ -70904,6 +70904,329 @@
         }
       },
       "complete_goal": false
+    },
+    "347": {
+      "campaign_round": 347,
+      "git_parent": "671803fd07121caa03da37b80fb5244fb9ead48d",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "671803fd07121caa03da37b80fb5244fb9ead48d",
+      "retained_compiler": "R343",
+      "retained_source_packet_round": 343,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the loop continuation experiment.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "30405531e14bd29e55255a9e96bfa8ed914e03a16a05145a1cc23303f1710d0f",
+        "compiler_parent_round": 343,
+        "prior_source_packet_commit": "f33d8c1b0e92208b0592964339dc5dabdc78069d",
+        "baseline_object_sha256": "81a8c384df1ac5ffde825061bb4d1171fa9895371866f2f796cf62f9dcd58d97",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates.rs": {
+            "before": "57c4b2960f22d8136d5a6c37029a5fc57fa7eb664d43e4cc50fc13a37470d589",
+            "after": "bb38ea639947ab55b6f15112eb94f490322fe948472b647d2fb17ee6ad99029e"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/threaded_edges/route.rs": {
+            "before": "d88dd8e25ba7656d1a6f094f3c6d97aa5dd80ca93a6ea543c1b16ec24bd3d1e7",
+            "after": "54786efb41516899387ae036c37e992e812b22ccb0d099ba1f138fced3d7ebab"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/threaded_edges/mod.rs": {
+            "before": "2ca9f437a29f8c0707a4c383d9565db909e3815c6a75304fd0969748d784ad57",
+            "after": "2cf4d3581a50fd49d7637b56cbdc98dc3ce3eb1cc5ad8ade356cb2f9c1e1801f"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "8791c90b5b3a252efca619d9cf35174486b044a609e7a020d6a6870dec8d6a3a",
+            "after": "f5f6b67e04cee8c0fe06baed4004de43fd6b4f294ad2bb39baf822481ce61d18"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "211c7e6bd249ac6e155cb024ae22c35921fe26e4b5aa2a4812d70599ead76853",
+            "after": "118410aeea6bcb53ed361031d43897f258438a649b147c7000cf9cd63d921b49"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "shared_timing_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "5c4f795d330540e56cfe446c91886864c57fe28d8059a33d06a75660776647f2",
+        "worker_sha256": "5ce7f15173276b4efbff927a6d375f24bc924a1ee3cc4eb93b8a1b550ac1b63a"
+      },
+      "summary": {
+        "round": 347,
+        "candidate_compiler_round": 347,
+        "published_parent": "671803fd07121caa03da37b80fb5244fb9ead48d",
+        "measured_parent": "671803fd07121caa03da37b80fb5244fb9ead48d",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "source_program_changed": false,
+        "retained_source_packet_round": 343,
+        "retained_runtime_packet_round": 272,
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "screen_qualified_for_full": false,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 16,
+        "blockmean_1_05_gates_passed": 16,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 1.00025763986936,
+        "target_matched_x_roc": [
+          1.2402046546302898,
+          1.240511302471116
+        ],
+        "target_matched_x_libdeflate": [
+          1.0002290854218174,
+          1.0004763979022464
+        ],
+        "witness_changes": {
+          "empty": {
+            "primary": 1.0,
+            "matched": 0.9995102245219241
+          },
+          "one-stored": {
+            "primary": 1.0,
+            "matched": 0.9851520172831364
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0,
+            "matched": 0.9803237004239244
+          },
+          "eight-literals": {
+            "primary": 0.9992162515621255,
+            "matched": 1.0026484078628333
+          },
+          "reymont-prefix-32769": {
+            "primary": 1.004601550848611,
+            "matched": 1.0016069710651871
+          },
+          "heldout-window-32768": {
+            "primary": 0.998860648932594,
+            "matched": 1.0013931542405479
+          },
+          "prefix-natural-32767": {
+            "primary": 1.0022539170767386,
+            "matched": 1.0001371158751478
+          },
+          "prefix-natural-32768": {
+            "primary": 1.0052133001556607,
+            "matched": 1.0024070701430137
+          },
+          "prefix-natural-65537": {
+            "primary": 1.0034316065593096,
+            "matched": 1.0012481866449185
+          },
+          "prefix-natural-131072": {
+            "primary": 1.0018272672424264,
+            "matched": 1.0011606522522443
+          },
+          "prefix-natural-262144": {
+            "primary": 1.001789463059964,
+            "matched": 1.0002472558377211
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0001553228728275,
+            "matched": 0.9916604103413503
+          },
+          "prefix-random-16384": {
+            "primary": 0.9929696585592358,
+            "matched": 0.9915029500066478
+          },
+          "prefix-random-1048576": {
+            "primary": 0.9942732066932377,
+            "matched": 1.0077550071424093
+          },
+          "prefix-periodic-1048576": {
+            "primary": 1.000178213028763,
+            "matched": 1.0007268351017937
+          },
+          "prefix-repeated-1048576": {
+            "primary": 0.9994295125675005,
+            "matched": 1.0007669233765921
+          }
+        },
+        "cpu_target": {
+          "before": {
+            "cycles": 179740493.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 661202912.5,
+            "lifetime_peak_physical": 50463744.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46531584.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47988736.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 179876474.5,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 660995197.5,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47988736.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144828593.0,
+            "instructions": 479455532.0,
+            "level": 12.0,
+            "lifetime_peak_physical": 14386048.0,
+            "physical_after": 14386048.0,
+            "rss_after": 15007744.0
+          }
+        },
+        "memory_target": {
+          "before": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "initialized_bytes_copied": 15060.0,
+            "live_mapped_payload_bytes": 0.0,
+            "mapped_payload_bytes": 6526340.0,
+            "mapped_payload_requests": 2.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "requested_payload_bytes": 13057176.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "level": 12.0
+          }
+        },
+        "cases_with_same_heap_families": 16,
+        "linked_compression_checks": 324,
+        "compiler_tests": 54,
+        "focused_jit_invocations": 810,
+        "worst_matched": {
+          "case": "prefix-random-1048576",
+          "ratio": 1.0077550071424093
+        },
+        "screen_wins_before_after": {
+          "roc": [
+            3,
+            3
+          ],
+          "libdeflate": [
+            3,
+            3
+          ],
+          "both": [
+            0,
+            0
+          ]
+        },
+        "screen_crossings": {
+          "roc": {
+            "below": [],
+            "above": []
+          },
+          "libdeflate": {
+            "below": [],
+            "above": []
+          }
+        },
+        "screen_priority_matched_geomean": 0.9967777060627813,
+        "screen_1_05_gate_misses": {
+          "pooled_misses": [],
+          "block_misses": []
+        },
+        "decision": "Keep R343 after the selected loop continuation screen."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "5c4f795d330540e56cfe446c91886864c57fe28d8059a33d06a75660776647f2",
+            "metadata.json": "2724ddb01e85b4e77dcad5d8c88b53aa62ca1ac3091286ef3f9058ac7917583f"
+          },
+          "decoded": {
+            "object.o": "5c4f795d330540e56cfe446c91886864c57fe28d8059a33d06a75660776647f2",
+            "metadata.json": "2724ddb01e85b4e77dcad5d8c88b53aa62ca1ac3091286ef3f9058ac7917583f"
+          }
+        },
+        "worker_sha256": "5ce7f15173276b4efbff927a6d375f24bc924a1ee3cc4eb93b8a1b550ac1b63a",
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "warnings_as_errors": true,
+        "cfg_tests": 54,
+        "focused_jit_invocations": 810,
+        "unchanged_root_object": {
+          "code_bytes": 1000052,
+          "stack_bytes": 57472,
+          "sha256": "51a9ba5c59bcc94bddc46ef1b585f003a9923b626ecd0f20f7d6c86438309854"
+        },
+        "unchanged_vector_selection": true
+      },
+      "report": "docs/design/native-selected-loop-continuation.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r347-selected-loop-continuation-445b3bad08e6.tar.gz",
+        "bytes": 1440014,
+        "sha256": "445b3bad08e6c61b3671b0431a68fbb1e7c295c503af5d43dbd2d0ea94b67792",
+        "files": 353,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "0b2c6dee8b92dd5b085748317d113e49a23b00c330ec2ecfc4d657bba967e42a",
+            "pilot-counters.json": "4798356b3ec03be3d5b8edd566175718a930886d232a0f92180823d3ed2c04cb",
+            "result-decision.json": "f5856e54659319153f4cb4cbc28bea5ac590e850882399d5a642d5eda02319a2",
+            "screen-result.json": "5b332009aa04767ecb7b435eeffb5ed449b0403ddb9b781c6ee729818a431573",
+            "screen-disposition.json": "7b2a41cc285dd7bd00511e3100eb731290181919f08530688b03b11906828cde",
+            "candidate-profile-summary.json": "7d85f36309864d72b0da2d233c34beed3ae1249b4a728fa537224d43e6f004af",
+            "screen-report.md": "0b2c6dee8b92dd5b085748317d113e49a23b00c330ec2ecfc4d657bba967e42a",
+            "reference-tally-routes.json": "400718656dd38b7ba2725fa46e180988d3f839b2c43cc416d8c2abf23d5e93d9"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
