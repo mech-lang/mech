@@ -143,6 +143,7 @@ pub(in crate::native_artifact) struct PreparedNativeProgram {
     complete_frontiers: Box<[NativeTextLineRetentionFrontier]>,
     // Compiler-only source facts belong to this exact immutable Plan owner.
     // Never serialized or moved into runtime ProgramMetadata.
+    #[cfg(feature = "canonical-native-program")]
     producer_element_reads: std::cell::OnceCell<std::collections::BTreeSet<(usize, u32)>>,
 }
 impl PreparedNativeProgram {
@@ -515,6 +516,7 @@ impl PreparedNativeProgram {
         Ok(Self {
             metadata,
             complete_frontiers: line_retention_frontiers.into_boxed_slice(),
+            #[cfg(feature = "canonical-native-program")]
             producer_element_reads: std::cell::OnceCell::new(),
         })
     }
@@ -522,6 +524,7 @@ impl PreparedNativeProgram {
     pub(in crate::native_artifact) fn plan(&self) -> &NativeProgramArtifactPlan {
         &self.metadata.plan
     }
+    #[cfg(feature = "canonical-native-program")]
     pub(in crate::native_artifact) fn producer_element_reads(
         &self,
         derive: impl FnOnce(&NativeProgramArtifactPlan) -> std::collections::BTreeSet<(usize, u32)>,

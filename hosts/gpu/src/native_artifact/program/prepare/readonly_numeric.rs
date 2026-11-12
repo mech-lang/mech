@@ -567,6 +567,7 @@ impl Provenance<'_, '_> {
     }
 }
 
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) fn derive_complete_for_diagnostic(
     plan: &Plan,
     tail: &NativeTailLoop,
