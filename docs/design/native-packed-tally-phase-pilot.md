@@ -19,3 +19,16 @@ The JIT checks compare status, output packet, and all backing contents for 21 re
 Each row sums that input's actual phase invocations per order. The measurement uses 24 alternating pairs and excludes packet reset and validation. The next compiler experiment is to carry the admitted geometry through the phase and reduce the failed-group cost on mixed data. The current result measures the isolated tally function. Full compression timing requires the compiler to select and emit the operation from the proved source shape.
 
 [Census, phase CLIF, diagnostic patch, and timing replay](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/mech-aa26a94713-tally-phase-pilot.tar.gz). Archive SHA-256 `27573c553ce525af5b70e7091123dfb9ee4e2f5b106b4fcf8388d3fbf2a83bcb`.
+
+## Admit geometry at the phase entry
+
+The separate entry experiment checks the same current node and bin extents once per call, before dispatch to the grouped body. It selects the original scalar entry if a length, checked address extent, or disjointness test fails. The grouped body continues to test the current cursor, window, and four lengths before updates. The original 47 differential controls pass, including the alias case whose first store changes the next node and the late bounds error.
+
+| Isolated tally phase | Scalar median | Entry-admitted group median | Group/scalar paired elapsed |
+| --- | ---: | ---: | ---: |
+| Random 1 MiB | 8.779 ms | 1.721 ms | **0.195524×** |
+| Natural 256 KiB | 1.068 ms | 1.087 ms | **1.019425×** |
+
+Both order halves agree on the direction in the 24-pair follow-up. The timer includes the once-per-phase dispatch. Each experiment has its own direct scalar control. These receipts give the compiler integration a concrete boundary to reproduce through the existing private buffer and view admission. The next complete-call measurement can then compare the resulting source-derived fast path across the 81 cases.
+
+[Entry admission patch, test receipts, and timing replay](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/mech-aa26a94713-tally-entry-admitted.tar.gz). Archive SHA-256 `e5a907b4951dea225a0383c5a12f06836b0087ffb396920b8e33867cf57d2924`.
