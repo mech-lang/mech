@@ -1,6 +1,22 @@
 # Current related-post integration targeting #973
 
-## Current IR317 compiler integration, 2026-11-11
+## Fixed benchmark target met, IR355 / 2026-11-12
+
+The comparison target is the existing [related_post_gen](https://github.com/zupat/related_post_gen) examples at `fc2982b0c929b1b701209d401a1dc30c773ef4ab`. The fastest locally verified unchanged example is `rust_con`, retained under the timer-descriptive alias `rust-preinitialized`. Twenty of the current 24 Rust control rows are local source experiments and are extra data, not completion gates. Four are unchanged repository-source builds (standard/concurrent, default/M3). Raw reports keep their historical names and timer eligibility; the new provenance layer fixes interpretation.
+
+| Complete Mech post-JSON versus original example's reported processing | Primary, 31 rounds | Independent, 13 rounds | Independent / example |
+| --- | ---: | ---: | ---: |
+| Original `rust_con` | 1.870584 ms | 1.866250 ms | 1.000000× |
+| Managed IR355 guarded U16 | **1.433000 ms** | **1.400292 ms** | **0.750324×** |
+| Compact IR353 guarded U16 | **1.224125 ms** | **1.174375 ms** | **0.629270×** |
+
+Both Mech candidates win all 31 and all 13 pairs. Rust's original eight-thread pool is initialized outside its timer; Mech includes four fresh workers, admission/setup/allocation, run/join, native cleanup and materialization. This preserves the original example's timing advantage and does not claim equivalent continuous timer scopes. Unbuilt suite entries are not claimed measured. Whole-process data remains visible, not an acceptance gate.
+
+IR355 stays on Cranelift and genuinely lowers checked U16 arithmetic. The measured [source](../mech/related_guarded_u16.mec) uses proved narrow-storage eligibility with unchanged general scoring fallback. Managed improvement versus the selected IR334 is confirmed in both cohorts (paired −1.391% and −1.832%, both 95% intervals below zero). Broad exact355 tests have 1,108 passes and the same 16 inherited failures; 79 focused checks pass. The source inventory matches published `c18d910c9dfd56d988a7c4e75a94b90ef8fb2b1a`.
+
+[New results, fixed-source provenance, all timings, resource measurements, qualifications and retained failures](fixed-benchmark-target-20261112/REPORT.md) publish the 2,659 new observations; the full archive also retains 2,404 observations from the preceding compiler comparison. No further Rust optimization is part of this goal. The historical sections below preserve their original interpretations and references; this fixed-target result supersedes their completion status.
+
+## Historical IR317 compiler integration, 2026-11-11
 
 PR990 includes #973 through **d09e3a4b78126b888e241599752b13a514e089d7**. The retained DEFLATE R304 source closure is reconstructed and verified; its portable SSA predicate, identity-route, loop-edge, agreeing-Boolean, bitwise, window/span and adjacent-address passes are integrated into the maintained numeric compiler. Existing leaf/tree lowering, narrow checked writes, guard ordering and backend patches remain. The entire experimental compact entry has not replaced this compiler. Production remains Cranelift; LLVM is not required.
 

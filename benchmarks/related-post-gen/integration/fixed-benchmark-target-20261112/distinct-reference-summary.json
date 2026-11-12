@@ -1,0 +1,76 @@
+{
+  "report_sha256": "a1d8be804821c451ff0bff5e813a57565c8e8fd39e6da8d7929d376649623e31",
+  "all31samples_retained": true,
+  "references": [
+    {
+      "reference_kind": "original_standard_benchmark_rust",
+      "name": "rust",
+      "median_ms": 8.727583,
+      "Mech": [
+        {
+          "name": "mech-managed-scoped-frame",
+          "median_ms": 1.44925,
+          "multiple": 0.1660539922679624
+        },
+        {
+          "name": "mech-ir353-managed-guarded-u16-4",
+          "median_ms": 1.429375,
+          "multiple": 0.16377672947939886
+        },
+        {
+          "name": "mech-ir353-compact-guarded-u16-4",
+          "median_ms": 1.224125,
+          "multiple": 0.14025933640505053
+        }
+      ],
+      "source": "/private/tmp/mech-related-narrow-updates-20261111/frozen-inputs/rust/source.rs"
+    },
+    {
+      "reference_kind": "fastest_retained_serial_Rust_control",
+      "name": "rust-ordered-mask-tables256",
+      "median_ms": 1.560208,
+      "Mech": [
+        {
+          "name": "mech-managed-scoped-frame",
+          "median_ms": 1.44925,
+          "multiple": 0.9288825592485105
+        },
+        {
+          "name": "mech-ir353-managed-guarded-u16-4",
+          "median_ms": 1.429375,
+          "multiple": 0.9161438731246091
+        },
+        {
+          "name": "mech-ir353-compact-guarded-u16-4",
+          "median_ms": 1.224125,
+          "multiple": 0.7845909007004194
+        }
+      ],
+      "source": "/private/tmp/mech-related-narrow-updates-20261111/frozen-inputs/rust-ordered-mask-tables256/source.rs"
+    },
+    {
+      "reference_kind": "added_custom_fresh_four_worker_Rust_control",
+      "name": "rust-ordered-mask-tables256-fresh4",
+      "median_ms": 1.24575,
+      "Mech": [
+        {
+          "name": "mech-managed-scoped-frame",
+          "median_ms": 1.44925,
+          "multiple": 1.1633554083885211
+        },
+        {
+          "name": "mech-ir353-managed-guarded-u16-4",
+          "median_ms": 1.429375,
+          "multiple": 1.1474011639574555
+        },
+        {
+          "name": "mech-ir353-compact-guarded-u16-4",
+          "median_ms": 1.224125,
+          "multiple": 0.982640979329721
+        }
+      ],
+      "source": "/private/tmp/mech-related-managed-parity-evidence-20261111/rust-fresh4-control/default/src/main.rs"
+    }
+  ],
+  "scope": "Explicit labels only; original raw report unchanged. Retained serial-control group is not asserted to be unchanged upstream source. Source provenance audit pending. Customfresh4 is extra data, no longer completion gate."
+}

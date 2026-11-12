@@ -1,0 +1,67 @@
+[
+  {
+    "path": "d_con/dub.json",
+    "git_blob_sha": "989815a991dc2f18d8e5717c051794a1280534b6",
+    "sha256": "af5346e64e0452553c1353e2eaf030d50eaf279009cae2a9943b3a6c46c4bef8"
+  },
+  {
+    "path": "d_con/dub.selections.json",
+    "git_blob_sha": "b150cf875558e07b30206377cb46be9328fe851a",
+    "sha256": "0d758f3db123b87319225350c6129816576c432249f648a097fb74893241e4e2"
+  },
+  {
+    "path": "d_con/source/app.d",
+    "git_blob_sha": "11555184fb1d5c84c042e6072eae2c4993f1becf",
+    "sha256": "0fcbe5f5366c8e5dd47f2ccbd066d1a50e81798cb60e3ebf0811ed32d62c0a43"
+  },
+  {
+    "path": "d_con_v2/dub.json",
+    "git_blob_sha": "f336e38f76eec43d8876b48b5d1f0bafd4416bb3",
+    "sha256": "8753d1e144c5df2553e8c442ebf4e741ad430cfee3979c345d4d077ec47e05ab"
+  },
+  {
+    "path": "d_con_v2/dub.selections.json",
+    "git_blob_sha": "b150cf875558e07b30206377cb46be9328fe851a",
+    "sha256": "0d758f3db123b87319225350c6129816576c432249f648a097fb74893241e4e2"
+  },
+  {
+    "path": "d_con_v2/source/app.d",
+    "git_blob_sha": "5d82d83408aee70ea061d35a9565f03f0996648a",
+    "sha256": "bef153d8542049a2f6916878c8afd297f171204f5213432edc36a530832dac4d"
+  },
+  {
+    "path": "d_highly_optimized/dub.json",
+    "git_blob_sha": "ab8b094e28d0f87025692c05ddb1182cf4940214",
+    "sha256": "e96a74ae28f0cee053fdb53746bdfaebd29eaa8b23f77bf2da573c05894ccede"
+  },
+  {
+    "path": "d_highly_optimized/dub.selections.json",
+    "git_blob_sha": "632b24d0789805fd8756855d1dfdf834a31e3486",
+    "sha256": "f69b7dab2d3621639f94372de2402a0c3b60bd2f3cfa4e4177b4b366eeaadef2"
+  },
+  {
+    "path": "d_highly_optimized/source/app.d",
+    "git_blob_sha": "8a93aa6c7800a34ee244dc94c9fda2728ef15120",
+    "sha256": "e3a504c09e3e7ff6e936d068849aa5c1624e515eb3d36777861960090210551d"
+  },
+  {
+    "path": "go_ho/go.mod",
+    "git_blob_sha": "c5548e891d4eadad3a9e80fe3fd46c63c93e8084",
+    "sha256": "54c6996ce39a56471e561025f98c1df63e0b53abb2dd997a33f31c43d28559f0"
+  },
+  {
+    "path": "go_ho/main.go",
+    "git_blob_sha": "f497e377a9688318c348a0f0f7e2f309e3e7e326",
+    "sha256": "c2a63fa5a7ffc5f76138f8fa284295bd1ff1298b255d6e4708b13c76fd501df0"
+  },
+  {
+    "path": "go_ho/powerset.go",
+    "git_blob_sha": "9d47795b27a51f6107bdcd5707d9e2e6d5f8ea17",
+    "sha256": "085c914b88b1265f815408367450484fa42ca830d8f9151b1d0d64f9e07220d3"
+  },
+  {
+    "path": "cpp/main_con.cpp",
+    "git_blob_sha": "d96bc1bba1001b7352f41d69a8e8dcc4081dd970",
+    "sha256": "a50355c1f2d66b27939b77740a160f2548166e2b1a873dd37f5ed5662f4a51dc"
+  }
+]

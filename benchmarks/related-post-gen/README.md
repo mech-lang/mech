@@ -1,22 +1,24 @@
-# Related-post native compiler review
+# Related-post native compiler benchmark
 
-Current integration: **IR317 on #973 through d09e3a4b78**, work126 / ABI42 / image11, production Cranelift. The retained DEFLATE SSA passes are now integrated into the numeric compiler. [Report and qualification](integration/retained-deflate-ssa-20261111/REPORT.md) · [all current timings](integration/retained-deflate-ssa-20261111/ALL-TIMINGS.md).
+The fixed target is the existing implementations of [zupat/related_post_gen](https://github.com/zupat/related_post_gen) at revision `fc2982b0c929b1b701209d401a1dc30c773ef4ab`. Compiler and source optimizations apply to Mech. Locally modified Rust experiments are additional controls; they do not raise the completion target.
 
-The first matched cohort measures **1.675333 ms / 1.106256× fastest eligible Rust** (1.514417 ms), versus same-source published IR315 at 1.683458 ms / 1.111621×. Paired change −0.229% [−1.149%, +0.659%] is inconclusive, so no unchanged confirmation is repeated. The compiler saves 49,933 instructions and 2,060 native code bytes with identical allocation/heap counts. All **528** selected contracts and **133** scalar/DEFLATE controls pass. The source retains four native workers and all setup inside the continuous post-JSON timer. Parity remains unmet.
+The fastest locally verified unchanged repository example is `rust_con`. Its exact retained binary appears in historical reports as `rust-preinitialized`. That name describes its timing boundary: its reported processing time excludes pool initialization. Mech's continuous post-JSON interval includes admission, setup, allocations, fresh worker creation/run/join, native cleanup and materialization. Winning with the larger Mech interval is conservative; the Rust timer has not been relabeled as equivalent.
 
-The earlier source selection has independent confirmation at **1.675500 ms / 1.118055×** against its own Rust reference; [that evidence remains](integration/narrow-checked-updates-20261111/REPORT.md). Ratios from different cohorts do not establish compiler gains. [Integration history](integration/README.md) preserves all earlier results and the remaining experimental compact-runtime distinction. Whole-process/restoration remain visible without an acceptance gate.
+| Implementation | First cohort, 31 rounds | Independent confirmation, 13 rounds | Confirmation / fixed example |
+| --- | ---: | ---: | ---: |
+| Unchanged repository `rust_con` | 1.870584 ms | 1.866250 ms | 1.000000× |
+| Managed Mech, IR355 guarded U16 | **1.433000 ms** | **1.400292 ms** | **0.750324×** |
+| Compact Mech, IR353 guarded U16 | **1.224125 ms** | **1.174375 ms** | **0.629270×** |
 
-This branch contains the accepted compiler optimization series for
-[zupat/related_post_gen](https://github.com/zupat/related_post_gen), starting from
-the DEFLATE compiler. The review targets the branch behind
-[PR #973](https://github.com/mech-lang/mech/pull/973):
-`codex/level12-compression-consolidated`.
+Both Mech candidates beat that example in every one of the 31 primary and 13 confirmation pairs. All 1,612 primary, 371 separate resource, and 676 confirmation outputs match exactly. The fixed benchmark target is met. Unbuilt suite entries, including Julia, are not claimed measured. Whole-process times remain recorded and are not an acceptance gate.
 
-The retained IR223 measurement used compiler **5925a2b3a4fd4dfcca7ada541e37a69d514171f8**
-(IR223, work114, ABI40, image8). The selected overall speed checkpoint remains
-**c3a6925108ad3523f4e29022b66f1c17b92c9878** (IR208). Neither meets the goal of
-matching the fastest eligible Rust implementation in both processing and
-complete fresh-process time.
+Production uses Cranelift, with no host scoring bridge or mandatory LLVM dependency. The qualified compiler is IR355 / work127 / ABI42 / image11, published at `c18d910c9dfd56d988a7c4e75a94b90ef8fb2b1a`. Its U16 arithmetic is genuinely native and checked; the [measured U16 source](mech/related_guarded_u16.mec) narrows only within proved vocabulary/post limits and retains general fallback scoring.
+
+Managed IR355 U16 also improves on the previously selected managed IR334: paired −1.391% in the primary cohort and −1.832% in confirmation, with both 95% intervals below zero. The U32 mask-reuse source attempts and their U16 combinations did not improve the selected result; their observations are retained. Resource measurements show managed U16 at 620 allocation requests, 4,592,577 requested bytes and 2,593,193 additional peak requested heap bytes, versus 725 / 6,376,193 / 4,211,067 for IR334.
+
+The added custom four-worker Rust control remains explicitly separate. It does not erase earlier benchmark wins or determine completion. [Current results, provenance, complete timings and retained failures](integration/fixed-benchmark-target-20261112/REPORT.md) · [integration history](integration/README.md).
+
+PR [#990](https://github.com/mech-lang/mech/pull/990) targets the branch behind [#973](https://github.com/mech-lang/mech/pull/973), `codex/level12-compression-consolidated`. The following IR223 notes are historical; their references and acceptance policies are not the current fixed target.
 
 ## Retained IR223 measurements
 
