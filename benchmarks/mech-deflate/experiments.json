@@ -64983,6 +64983,288 @@
         }
       },
       "complete_goal": false
+    },
+    "329": {
+      "git_parent": "fe067e26041272e256a64f728268342cfe34837c",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+      "retained_compiler": "R327",
+      "retained_source_packet_round": 327,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the current-view payload range screen.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "6fc9d9951b3a0a23aae6a3be12e616704788b5b156308f21d2255f6031c88018",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/relations.rs": {
+            "before": "ebd5c2e271917f275dbad55a67f49e423b1bd7ace7d2a0eb0df3099e10498fbb",
+            "after": "d734bb14d6ff3d4a703909f2d60b1893dc372fdbc31f5d3b2898d016f6c3835e"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "ec1e3c6618c12448621a18133ec96ba57a2bbb83b80980db936513cf9051802e",
+            "after": "5d318cbc97c8c9c754c6abfd901d8be2300187a2169405a124cba0eb2e303a35"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/payload_ranges.rs": {
+            "before": null,
+            "after": "9a62e8aa54645bbdd84149f6203f336ebdebcfcb42a750b2c43ae6f36199c41e"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/word_ranges/mod.rs": {
+            "before": "44d64fa1392ace2a8a64ea27365f422bb44c818e3f2ca4929a288884f6ecfa8a",
+            "after": "c451d5e65ba81f10c021f11e4dc5fff16af64f928bd6fd44ed37721deea7b170"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": {
+            "before": "f52f1991f4a9ddedaf9ae5e2d720448d9da90274f37e394e3bfb995ba4236084",
+            "after": "a63064a6d58b890f2c6921856fb523ead7a2d440ae1e15acd32570f86b81d42a"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+            "before": "e2b34201017033e6f76e3188ccae20b12594ec79fe679b531cd94a10d89081bf",
+            "after": "f20c99010053243959e480d146ab2a393fe401c2bae65a66a0962cfccf2709c5"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs": {
+            "before": null,
+            "after": "89decaa4e51c4e1b3cd86e70ddc5863160dd5e970102798d7a31cfa1bf0be563"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/mod.rs": {
+            "before": "74689daf48f4e724e7f1cc668e3cf698693b464f309d2a6532170341258d7d26",
+            "after": "1b4bce4336df98402ff939847e73c39f6212f04891786850dd623d3f4eb6740a"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "14b9734cdb56b236503f1e60f5eb672392394c129912aa4ce736ff1829f840a1",
+            "after": "dee2391f190aae4ec9d498bcf348125d004f6f158017dd663f05245e1ea6467a"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": {
+            "before": "59ec37de804c64bfe4e6eb0e6815696406c7e738947a83779bf472871ff1d209",
+            "after": "2ec1834176a91dee787ff1948d06967d54b494ca8a7b13d7dc29a708ee939438"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+            "before": "b545946d9d2a99a1711011886c42ec8983b97856d3bbe19e8af1b78e5ec92859",
+            "after": "8e59d5010b4f62888ca5d9c646ebf1713d6207b195db68c2dad0a2332b2d858a"
+          }
+        },
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "backend_changed": false,
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_object_sha256": "c0569eac2d472010759f95e3a277f3d2bb2bf515ab7be14aebe075cc7a229ae4",
+        "worker_sha256": "1cd8b10f8a64759cefaac937f400ef436a18b9a7ca38c3f8a9a762c1d8ff3168"
+      },
+      "summary": {
+        "round": 329,
+        "published_parent": "fe067e26041272e256a64f728268342cfe34837c",
+        "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 327,
+        "retained_runtime_packet_round": 272,
+        "screen_cases": 15,
+        "original_1_05_gates_passed": 15,
+        "blockmean_1_05_gates_passed": 15,
+        "screen_paired_geomean": 1.0000066167876087,
+        "matched_cases": 15,
+        "matched_timed_calls": 154656,
+        "target": "prefix-natural-262144",
+        "target_matched_x_libdeflate": [
+          1.058134058019948,
+          1.0595910832464572
+        ],
+        "target_matched_x_roc": [
+          1.310640237403718,
+          1.3124449575847776
+        ],
+        "target_screen_after_over_before": 0.9980451632575449,
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.9986007132183328,
+            "matched": 0.995957970036226
+          },
+          "heldout-window-32768": {
+            "primary": 0.9983280901087443,
+            "matched": 0.9975293526764225
+          },
+          "prefix-natural-32767": {
+            "primary": 0.9991754032852209,
+            "matched": 0.9974704715451219
+          },
+          "prefix-natural-32768": {
+            "primary": 0.9961548048788538,
+            "matched": 0.9988783950549709
+          },
+          "prefix-natural-65537": {
+            "primary": 0.9916450196600102,
+            "matched": 0.9983028360929231
+          },
+          "prefix-natural-262144": {
+            "primary": 0.9980451632575449,
+            "matched": 1.0013769760225237
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0017102607604014,
+            "matched": 1.003096251686402
+          },
+          "eight-literals": {
+            "primary": 1.0071433532090523,
+            "matched": 1.004593054466975
+          },
+          "prefix-random-16384": {
+            "primary": 1.0072004262332115,
+            "matched": 0.9932639626851835
+          }
+        },
+        "retention_witnesses": [
+          "reymont-prefix-32769",
+          "prefix-natural-262144"
+        ],
+        "target_counter_medians": {
+          "before": {
+            "cycles": 190695098.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 745126587.0,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "after": {
+            "cycles": 190723279.0,
+            "initialized_bytes_copied": 15060.0,
+            "instructions": 727771539.5,
+            "lifetime_peak_physical": 50447296.0,
+            "nonreturned_private_bytes_at_return": 0.0,
+            "payload_allocation_requests": 327.0,
+            "peak_private_payload_bytes": 9763141.0,
+            "physical_after": 46515136.0,
+            "requested_payload_bytes": 13057176.0,
+            "rss_after": 47955968.0,
+            "zeroed_bytes": 6663396.0
+          },
+          "reference": {
+            "cycles": 144847090.0,
+            "instructions": 479479831.0,
+            "level": 12.0,
+            "lifetime_peak_physical": 14435200.0,
+            "physical_after": 14435200.0,
+            "rss_after": 15056896.0
+          }
+        },
+        "heap_families_agree": true,
+        "linked_compression_checks": 324,
+        "linked_capture_controls": 120,
+        "reason": "The proof removes the recurring check. The 256 KiB witness moves in opposite directions in paired cohorts, and whole-call cycles are flat. Keep R327 and test the dependent loads next."
+      },
+      "qualification": {
+        "original": {
+          "verified": true,
+          "complete_smokes": 162,
+          "image_sha256": {
+            "object.o": "c0569eac2d472010759f95e3a277f3d2bb2bf515ab7be14aebe075cc7a229ae4",
+            "metadata.json": "2fc825c8e642c63b164e96a5b41c3ae648344d3417a414bdfae2a2ab7d5ac72f"
+          },
+          "worker_sha256": "1cd8b10f8a64759cefaac937f400ef436a18b9a7ca38c3f8a9a762c1d8ff3168"
+        },
+        "decoded": {
+          "verified": true,
+          "complete_smokes": 162,
+          "image_sha256": {
+            "object.o": "c0569eac2d472010759f95e3a277f3d2bb2bf515ab7be14aebe075cc7a229ae4",
+            "metadata.json": "2fc825c8e642c63b164e96a5b41c3ae648344d3417a414bdfae2a2ab7d5ac72f"
+          },
+          "worker_sha256": "7d5a3970c1b7d3a9e768c91b4cee2aa2511be7821a314accde592acd2a7c1b2e"
+        },
+        "focused": {
+          "literal15": {
+            "native_results": 40,
+            "minimum_current_cost_length": 30,
+            "original_decoded_identical": true,
+            "independent_oracle": true
+          },
+          "literal42": {
+            "native_results": 40,
+            "minimum_current_cost_length": 57,
+            "original_decoded_identical": true,
+            "independent_oracle": true
+          },
+          "rebound": {
+            "native_results": 40,
+            "minimum_current_cost_length": null,
+            "original_decoded_identical": true,
+            "independent_oracle": true
+          }
+        },
+        "cfg_tests": 61
+      },
+      "report": "docs/design/native-immutable-payload-range.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r329-immutable-payload-range-07ff92b59276.tar.gz",
+        "bytes": 1200450,
+        "sha256": "07ff92b592768a2f8e1ee812e19c0c1d034a8505b08e346a1a81e499b76a5ce3",
+        "files": 320,
+        "reports_replayed": 4,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "421a0b1e1ec5248c933e2dbae9e65391dbbd66069a5cf08ca0ab084f41688a7b",
+            "pilot-counters.json": "941da6654f5c2c72c7d65b3b2e6ab603fc48058516c9cd79abeb68716f3469c6",
+            "result-decision.json": "95b06cd513e248267bd0b985a70eed1becb899703246affb2805e8b82e7cc41b",
+            "candidate-profile-summary.json": "7198a52494d09572a111340f2ca845f3e38d21c643ccbd09c61e6753d1230576"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
