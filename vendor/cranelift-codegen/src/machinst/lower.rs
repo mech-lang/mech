@@ -204,6 +204,11 @@ pub struct Lower<'func, I: VCodeInst> {
     /// their original locations.
     inst_sunk: FxHashSet<Inst>,
 
+    // A lowered instruction can define the output of its immediately
+    // preceding pure instruction as well as its own output.
+    #[cfg(feature = "arm64")]
+    merged_predecessor: Option<Inst>,
+
     /// Instructions collected for the CLIF inst in progress, in forward order.
     ir_insts: Vec<I>,
 
@@ -504,6 +509,8 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             value_ir_uses,
             value_lowered_uses: SecondaryMap::default(),
             inst_sunk: FxHashSet::default(),
+            #[cfg(feature = "arm64")]
+            merged_predecessor: None,
             cur_scan_entry_color: None,
             cur_inst: None,
             ir_insts: vec![],
@@ -744,6 +751,11 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
         // then reverse these and append to the VCode at the end of
         // each IR instruction.
         for inst in self.f.layout.block_insts(block).rev() {
+            #[cfg(feature = "arm64")]
+            if let Some(merged) = self.merged_predecessor.take() {
+                debug_assert_eq!(merged, inst);
+                continue;
+            }
             let data = &self.f.dfg.insts[inst];
             let has_side_effect = has_lowering_side_effect(self.f, inst);
             // If  inst has been sunk to another location, skip it.
@@ -1618,6 +1630,31 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
         let constant = inst.as_inst().and_then(|(inst, _)| self.get_constant(inst));
 
         NonRegInput { inst, constant }
+    }
+
+    /// Let the current instruction define an already needed pure predecessor's
+    /// result. The two IR instructions must be adjacent and share a source
+    /// location. Keeping the reserved register preserves all other uses.
+    #[cfg(feature = "arm64")]
+    pub(crate) fn merge_adjacent_pure_result(&mut self, value: Value) -> Option<Writable<Reg>> {
+        let current = self.cur_inst?;
+        let ValueDef::Result(def, 0) = self.f.dfg.value_def(value) else {
+            return None;
+        };
+        if self.f.layout.prev_inst(current) != Some(def)
+            || self.f.dfg.inst_results(def).len() != 1
+            || self.value_lowered_uses[value] == 0
+            || has_lowering_side_effect(self.f, def)
+            || self.f.dfg.values_labels.is_some()
+            || !self.f.debug_tags.get(def).is_empty()
+            || self.srcloc(def) != self.srcloc(current)
+        {
+            return None;
+        }
+        let register = self.value_regs[value].only_reg()?;
+        debug_assert!(self.merged_predecessor.is_none());
+        self.merged_predecessor = Some(def);
+        Some(Writable::from_reg(register))
     }
 
     /// Increment the reference count for the Value, ensuring that it gets lowered.

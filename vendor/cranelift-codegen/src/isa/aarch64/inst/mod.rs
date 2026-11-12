@@ -400,6 +400,12 @@ fn aarch64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
             collector.reg_def(rd);
             memarg_operands(mem, collector);
         }
+        Inst::ULoad32PreIndexed { rd, rn, next, .. } => {
+            collector.reg_use(rn);
+            collector.reg_reuse_def(next, 0);
+            // AArch64 prohibits overlapping load destination and writeback base.
+            collector.reg_early_def(rd);
+        }
         Inst::Store8 { rd, mem, .. }
         | Inst::Store16 { rd, mem, .. }
         | Inst::Store32 { rd, mem, .. }
@@ -1039,6 +1045,7 @@ impl MachInst for Inst {
             | &Inst::ULoad16 { .. }
             | &Inst::SLoad16 { .. }
             | &Inst::ULoad32 { .. }
+            | &Inst::ULoad32PreIndexed { .. }
             | &Inst::SLoad32 { .. }
             | &Inst::ULoad64 { .. }
             | &Inst::LoadP64 { .. }
@@ -1400,6 +1407,11 @@ impl Inst {
                 let (mem_str, mem) = mem_finalize_for_show(&mem, access_ty, state);
 
                 format!("{mem_str}{op} {rd}, {mem}")
+            }
+            &Inst::ULoad32PreIndexed { rd, rn, offset, .. } => {
+                let rd = pretty_print_ireg(rd.to_reg(), OperandSize::Size32);
+                let rn = pretty_print_ireg(rn, OperandSize::Size64);
+                format!("ldr {rd}, [{rn}, #{}]!", offset.value())
             }
             &Inst::Store8 { rd, ref mem, .. }
             | &Inst::Store16 { rd, ref mem, .. }

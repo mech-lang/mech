@@ -1,5 +1,29 @@
 # Current compression scoreboard
 
+The reverse cursor comparison ran all 81 level-12 cases against its direct selected-read control. Both 1.05 timing gates passed. Paired elapsed was **0.996594× control** across the suite.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **47/81 (58.0%)** |
+| Faster than libdeflate | 12/81 (14.8%) |
+| Faster than both | 3/81 |
+| Faster than either | 56/81 (69.1%) |
+
+Repeated 128 KiB joins repeated 256 KiB and repeated 1 MiB below both peers. Natural 8 KiB is the closest Roc miss. Its nine-case pilot measured 1.005110× Roc, and the full matched comparison measured 1.034741×.
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Natural 8 KiB | 1.034741× | 1.289660× |
+| Repeated 32,767 bytes | 0.512233× | 1.000730× |
+| Periodic 1 MiB | 0.590594× | 1.001405× |
+| Repeated 128 KiB | 0.588129× | 0.999342× |
+| Repeated 256 KiB | 0.607588× | 0.989399× |
+| Repeated 1 MiB | 0.603854× | 0.951439× |
+
+[Reverse cursor proof, qualification, timing, and profiles](native-ordered-reduction-cursor-restoration.md).
+
+## Selected-read bounds comparison
+
 The selected-read bounds comparison uses the same 81 level-12 cases and pairs each candidate run with its control.
 
 | Peer result | Mech wins |

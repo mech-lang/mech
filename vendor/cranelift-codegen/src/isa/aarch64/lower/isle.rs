@@ -53,8 +53,76 @@ pub(crate) fn lower(
 ) -> Option<InstOutput> {
     // TODO: reuse the ISLE context across lowerings so we can reuse its
     // internal heap allocations.
+    if let Some(output) = lower_preindexed_word(lower_ctx, inst) {
+        return Some(output);
+    }
     let mut isle_ctx = IsleContext { lower_ctx, backend };
     generated_code::constructor_lower(&mut isle_ctx, inst)
+}
+
+// Keep the decremented base used by the next visit. Fuse only an adjacent
+// pure I64 address operation and an admitted native-endian I32 load.
+fn lower_preindexed_word(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> {
+    let dfg = lower.dfg();
+    let InstructionData::Load {
+        opcode: Opcode::Load,
+        arg: address,
+        flags,
+        offset,
+    } = dfg.insts[inst]
+    else {
+        return None;
+    };
+    if lower.output_ty(inst, 0) != I32
+        || dfg.value_type(address) != I64
+        || i32::from(offset) != 0
+        || !flags.notrap()
+        || flags.endianness(Endianness::Little) != Endianness::Little
+    {
+        return None;
+    }
+    let advance = dfg.value_def(address).inst()?;
+    let constant = |value| {
+        lower
+            .get_constant(dfg.value_def(value).inst()?)
+            .map(|word| word as i64)
+    };
+    let (base, step) = match dfg.insts[advance] {
+        InstructionData::BinaryImm64 {
+            opcode: Opcode::IaddImm,
+            arg,
+            imm,
+        } => (arg, i64::from(imm)),
+        InstructionData::Binary {
+            opcode: Opcode::Iadd,
+            args: [a, b],
+        } => {
+            if let Some(step) = constant(b) {
+                (a, step)
+            } else {
+                (b, constant(a)?)
+            }
+        }
+        InstructionData::Binary {
+            opcode: Opcode::Isub,
+            args: [a, b],
+        } => (a, constant(b)?.wrapping_neg()),
+        _ => return None,
+    };
+    if !matches!(step, -4 | -8) || !matches!(dfg.value_def(base), ValueDef::Param(..)) {
+        return None;
+    }
+    let offset = SImm9::maybe_from_i64(step)?;
+    let next = lower.merge_adjacent_pure_result(address)?;
+    let rn = lower.put_value_in_regs(base).only_reg().unwrap();
+    let rd = lower.alloc_tmp(I32).only_reg().unwrap();
+    lower.emit(MInst::ULoad32PreIndexed {
+        rd,
+        rn,
+        next,
+        offset,
+    });
+    Some(smallvec::smallvec![ValueRegs::one(rd.to_reg())])
 }
 
 pub(crate) fn lower_branch(

@@ -106,6 +106,13 @@
         (mem AMode)
         (flags MemFlags))
 
+       ;; A 32-bit load using the decremented address and retaining it.
+       (ULoad32PreIndexed
+        (rd WritableReg)
+        (rn Reg)
+        (next WritableReg)
+        (offset SImm9))
+
        ;; A signed (sign-extending) 32-bit load.
        (SLoad32
         (rd WritableReg)
