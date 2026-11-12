@@ -14,6 +14,7 @@ mod constants;
 mod emit;
 mod flow;
 mod histogram;
+mod immutable_arrays;
 mod layout;
 mod packed;
 mod parallel;

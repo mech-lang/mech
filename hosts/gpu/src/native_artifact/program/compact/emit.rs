@@ -78,7 +78,13 @@ pub(in crate::native_artifact) fn define<M: Module>(
     let actions = (0..plan.blocks().len())
         .map(|site| recipes::derive(plan, &layout, site))
         .collect::<Result<Vec<_>, _>>()?;
-    let phases = phases::define(module, prepared, &layout, observe)?;
+    let literals = if std::env::var_os("MECH_COMPOSE_READONLY_LOOKUPS").is_some() {
+        let root_flow = Flow::derive(plan)?;
+        super::immutable_arrays::LiteralViews::derive(plan, &layout, &root_flow, &actions)
+    } else {
+        super::immutable_arrays::LiteralViews::default()
+    };
+    let phases = phases::define(module, prepared, &layout, &literals, observe)?;
     let kernels = word_collections::define(module, prepared, &layout, observe)?;
     let initial = constants::prepare(module, plan, &layout)?;
     let histogram = super::histogram::define(module, &actions)?;
@@ -793,6 +799,7 @@ pub(super) fn define_entry<M: Module>(
                     blocks[phase.exit].unwrap(),
                     &blocks,
                     error,
+                    worker.is_none(),
                 )?;
                 for destination in phase.destinations() {
                     remaining[destination] -= 1;

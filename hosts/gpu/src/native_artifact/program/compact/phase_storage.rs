@@ -90,27 +90,22 @@ impl Slots {
     }
 }
 
-/// The local numeric callee receives two disjoint stack packets from Slots.
-/// A directly copied input word can be loaded at its only use on a terminal
-/// route. The caller's input slot stays initialized and immutable throughout.
-pub(super) fn sink_exit_packet_words(
-    function: &mut cranelift_codegen::ir::Function,
+/// Current words loaded from the compact caller's immutable input packet.
+pub(super) fn input_word_loads(
+    function: &cranelift_codegen::ir::Function,
     input_words: usize,
-    output_words: usize,
-) -> usize {
+) -> Option<
+    std::collections::BTreeMap<cranelift_codegen::ir::Value, (cranelift_codegen::ir::Inst, usize)>,
+> {
     use cranelift_codegen::ir::{InstructionData as Data, Opcode as Op, types};
     use std::collections::BTreeMap;
-
-    let Some(entry) = function.layout.entry_block() else {
-        return 0;
-    };
-    let &[_, input, output] = function.dfg.block_params(entry) else {
-        return 0;
+    let entry = function.layout.entry_block()?;
+    let &[_, input, _] = function.dfg.block_params(entry) else {
+        return None;
     };
     let within =
-        |offset: i32, words| offset >= 0 && offset % 8 == 0 && (offset as usize / 8) < words;
+        |offset: i32| offset >= 0 && offset % 8 == 0 && (offset as usize / 8) < input_words;
     let mut loads = BTreeMap::new();
-    let mut uses = BTreeMap::new();
     for block in function.layout.blocks() {
         for inst in function.layout.block_insts(block) {
             if !function
@@ -129,19 +124,47 @@ pub(super) fn sink_exit_packet_words(
                 ..
             } = function.dfg.insts[inst]
             else {
-                return 0;
+                return None;
             };
             let word = function.dfg.first_result(inst);
             if function.dfg.resolve_aliases(arg) != input
-                || !within(i32::from(offset), input_words)
+                || !within(i32::from(offset))
                 || function.dfg.value_type(word) != types::I64
             {
-                return 0;
+                return None;
             }
-            loads.insert(word, inst);
-            uses.insert(word, Vec::new());
+            loads.insert(word, (inst, i32::from(offset) as usize / 8));
         }
     }
+    Some(loads)
+}
+
+/// The local numeric callee receives two disjoint stack packets from Slots.
+/// A directly copied input word can be loaded at its only use on a terminal
+/// route. The caller's input slot stays initialized and immutable throughout.
+pub(super) fn sink_exit_packet_words(
+    function: &mut cranelift_codegen::ir::Function,
+    input_words: usize,
+    output_words: usize,
+) -> usize {
+    use cranelift_codegen::ir::{InstructionData as Data, Opcode as Op};
+    use std::collections::BTreeMap;
+
+    let Some(entry) = function.layout.entry_block() else {
+        return 0;
+    };
+    let &[_, _, output] = function.dfg.block_params(entry) else {
+        return 0;
+    };
+    let within =
+        |offset: i32, words| offset >= 0 && offset % 8 == 0 && (offset as usize / 8) < words;
+    let Some(loads) = input_word_loads(function, input_words) else {
+        return 0;
+    };
+    let mut uses = loads
+        .keys()
+        .map(|&word| (word, Vec::new()))
+        .collect::<BTreeMap<_, _>>();
     for block in function.layout.blocks() {
         for inst in function.layout.block_insts(block) {
             for value in function.dfg.inst_values(inst) {
@@ -173,7 +196,7 @@ pub(super) fn sink_exit_packet_words(
             {
                 return None;
             }
-            Some((loads[&word], store))
+            Some((loads[&word].0, store))
         })
         .collect::<Vec<_>>();
     for &(load, store) in &edits {

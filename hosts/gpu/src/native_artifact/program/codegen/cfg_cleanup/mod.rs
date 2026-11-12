@@ -3,6 +3,7 @@
 //! Trapping loads, source failures and work debits retain their ordering.
 mod adjacent_addresses;
 mod boolean_words;
+pub(in crate::native_artifact) mod composed_reads;
 mod current_predicates;
 mod dead_values;
 mod identity_routes;
@@ -541,6 +542,33 @@ pub(in crate::native_artifact) fn fold_proved_widths(
         context.verify(isa).map_err(backend)?;
     }
     Ok(removed)
+}
+
+pub(in crate::native_artifact) fn compose_readonly_lookups<M: cranelift_module::Module>(
+    controls: &CompilationControls,
+    context: &mut Context,
+    module: &mut M,
+    tables: &mut composed_reads::DenseTables,
+    capture: &composed_reads::Capture<'_>,
+) -> Result<Option<composed_reads::Admission>, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(None);
+    }
+    context.compute_cfg();
+    context.compute_domtree();
+    let selected = composed_reads::compose(
+        module,
+        tables,
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+        capture,
+    )?;
+    if selected.is_some() {
+        optimize(controls, context, module.isa())?;
+        context.verify(module.isa()).map_err(backend)?;
+    }
+    Ok(selected)
 }
 
 pub(in crate::native_artifact) fn fold_ordered_capture_spans(

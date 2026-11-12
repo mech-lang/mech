@@ -15,6 +15,14 @@ enum Route {
 type Entry = unsafe extern "C" fn(u64, u64, u64, *mut u64, u64) -> u64;
 
 fn compile(width: u64, route: Route) -> (cranelift_jit::JITModule, Entry) {
+    compile_with_mask(width, route, None)
+}
+
+fn compile_with_mask(
+    width: u64,
+    route: Route,
+    mask: Option<i64>,
+) -> (cranelift_jit::JITModule, Entry) {
     let mut module = cranelift_jit::JITModule::new(
         cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
             .unwrap(),
@@ -50,6 +58,10 @@ fn compile(width: u64, route: Route) -> (cranelift_jit::JITModule, Entry) {
             let enough = b
                 .ins()
                 .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, args[0], width as i64);
+            let enough = match mask {
+                Some(mask) => b.ins().band_imm(enough, mask),
+                None => enough,
+            };
             b.ins().brif(enough, inside, &[], fail, &[seven.into()]);
             b.switch_to_block(inside);
             if route == Route::Effect {
@@ -57,6 +69,10 @@ fn compile(width: u64, route: Route) -> (cranelift_jit::JITModule, Entry) {
             }
             let limit = b.ins().iadd_imm(args[0], width.wrapping_neg() as i64);
             let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, index, limit);
+            let fits = match mask {
+                Some(mask) => b.ins().band_imm(fits, mask),
+                None => fits,
+            };
             let rejected = if route == Route::DifferentRejection {
                 nine
             } else {
@@ -79,12 +95,12 @@ fn compile(width: u64, route: Route) -> (cranelift_jit::JITModule, Entry) {
     let removed = combine_window_bounds(&controls, &mut context, module.isa()).unwrap();
     assert_eq!(
         removed,
-        if route == Route::Shared && width != 0 {
+        if route == Route::Shared && width != 0 && matches!(mask, None | Some(1)) {
             2
         } else {
             0
         },
-        "{width} {route:?}"
+        "{width} {route:?} {mask:?}"
     );
     context.verify(module.isa()).unwrap();
     let id = module
@@ -148,4 +164,19 @@ fn shared_windows_decline_different_rejections_effects_alternate_entries_and_zer
     let mut bank = 123;
     assert_eq!(unsafe { entry(0, 0, 0, &mut bank, 0) }, 0);
     assert_eq!(bank, 0);
+}
+
+#[test]
+fn shared_windows_accept_only_the_canonical_comparison_mask() {
+    let (_masked, entry) = compile_with_mask(8, Route::Shared, Some(1));
+    let mut published = 123;
+    assert_eq!(unsafe { entry(7, 0, 0, &mut published, 0) }, 7);
+    assert_eq!(published, 123);
+    assert_eq!(unsafe { entry(9, 1, 1, &mut published, 0) }, 0);
+    assert_eq!(published, 2);
+    assert_eq!(unsafe { entry(9, 1, 2, &mut published, 0) }, 7);
+    assert_eq!(published, 2);
+    let (_lossy, rejected) = compile_with_mask(8, Route::Shared, Some(2));
+    assert_eq!(unsafe { rejected(9, 1, 1, &mut published, 0) }, 7);
+    assert_eq!(published, 2);
 }

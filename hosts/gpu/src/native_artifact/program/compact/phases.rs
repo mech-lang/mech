@@ -1,7 +1,10 @@
 //! Existing same-Plan numeric phases through a compact concrete array boundary.
 //! The generic source CFG remains the fallback when an actual writable owner
 //! is shared. Real unit append growth uses the existing concrete array helper.
-use super::{arrays::Arrays, layout::Layout, owner_flow::OwnerFlow, phase_storage};
+use super::{
+    arrays::Arrays, immutable_arrays::LiteralViews, layout::Layout, owner_flow::OwnerFlow,
+    phase_storage,
+};
 use crate::native_artifact::codegen::{
     common::ssa_words::Words,
     control::plan::CodePlan,
@@ -115,6 +118,7 @@ struct NoGrowthAlternative {
     function: FuncId,
     array: usize,
     countdown_slot: usize,
+    composed: Option<function::Composed>,
 }
 
 enum Output {
@@ -191,6 +195,7 @@ impl Phase {
         destination: Block,
         source_blocks: &[Option<Block>],
         error: Block,
+        root_entry: bool,
     ) -> Result<(), NativeCompileError> {
         let observe = observer(module, b, self.observe)?;
         let fallback = b.create_block();
@@ -290,7 +295,40 @@ impl Phase {
             b.append_block_param(returned, types::I64);
             b.append_block_param(returned, types::I64);
             b.ins().brif(enough, fast, &[], general, &[]);
-            for (block, function) in [(fast, no_growth.function), (general, self.function)] {
+            let mut routes = vec![(fast, no_growth.function), (general, self.function)];
+            if root_entry && let Some(composed) = &no_growth.composed {
+                let admission = composed.admission;
+                b.switch_to_block(fast);
+                let cursor = words.read(b, self.inputs[admission.cursor_word]);
+                let cache_length = words.read(b, self.arrays[admission.cache].0 + 1);
+                let cost_length = words.read(b, self.arrays[admission.costs].0 + 1);
+                let nonnegative =
+                    b.ins()
+                        .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, remaining);
+                let within = b
+                    .ins()
+                    .icmp(IntCC::UnsignedLessThanOrEqual, cursor, cache_length);
+                let records = b.ins().isub(cursor, remaining);
+                let work = b.ins().icmp_imm(
+                    IntCC::UnsignedGreaterThanOrEqual,
+                    records,
+                    admission.minimum_records as i64,
+                );
+                let readable = b.ins().icmp_imm(
+                    IntCC::UnsignedGreaterThanOrEqual,
+                    cost_length,
+                    admission.minimum_costs as i64,
+                );
+                let geometry = b.ins().band(nonnegative, within);
+                let ready = b.ins().band(work, readable);
+                let ready = b.ins().band(geometry, ready);
+                let prepare = b.create_block();
+                let sparse = b.create_block();
+                b.ins().brif(ready, prepare, &[], sparse, &[]);
+                routes[0].0 = sparse;
+                routes.push((prepare, composed.function));
+            }
+            for (block, function) in routes {
                 b.switch_to_block(block);
                 let function = module.declare_func_in_func(function, b.func);
                 let call = b.ins().call(function, &[storage.heap, input, out]);
@@ -579,10 +617,12 @@ pub(super) fn define<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
     layout: &Layout,
+    literals: &LiteralViews,
     observe: bool,
 ) -> Result<Vec<Phase>, NativeCompileError> {
     let closed = &prepared.metadata().closed_tails;
     let mut result = vec![];
+    let mut dense_tables = cfg_cleanup::composed_reads::DenseTables::default();
     let mut candidates = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {
         let Some(proof) = region.numeric.as_ref() else {
@@ -770,6 +810,8 @@ pub(super) fn define<M: Module>(
             None,
             private.as_ref(),
             None,
+            &BTreeMap::new(),
+            &mut dense_tables,
             "",
         )?;
         let entry_bounds = general.entry_bounds.clone();
@@ -790,6 +832,8 @@ pub(super) fn define<M: Module>(
                 Some(&contract),
                 private.as_ref(),
                 None,
+                &BTreeMap::new(),
+                &mut dense_tables,
                 "_vector",
             )?;
             let used = fast.code != general.code;
@@ -820,6 +864,16 @@ pub(super) fn define<M: Module>(
                 .iter()
                 .any(|&(array, _, row)| array == contract.array && row)
         {
+            let literal_views = arrays
+                .iter()
+                .enumerate()
+                .filter_map(|(array, &(base, writable))| {
+                    if writable || proof.arrays[array].appends {
+                        return None;
+                    }
+                    literals.literal(base).map(|literal| (array, literal))
+                })
+                .collect();
             let fast = function::define(
                 module,
                 prepared,
@@ -831,15 +885,21 @@ pub(super) fn define<M: Module>(
                 None,
                 None,
                 Some(&contract),
+                &literal_views,
+                &mut dense_tables,
                 "_no_growth",
             )?;
             if fast.entry_bounds != entry_bounds {
                 return Err(backend("no-growth variant entry bounds differ"));
             }
             summary["no_growth_variant"] = fast.summary;
+            if let Some(composed) = &fast.composed {
+                summary["composed_variant"] = composed.summary.clone();
+            }
             Some(NoGrowthAlternative {
                 function: fast.function,
                 array: contract.array,
+                composed: fast.composed,
                 countdown_slot: *bindings
                     .get(&contract.countdown)
                     .ok_or_else(|| backend("no-growth countdown lacks current binding"))?,

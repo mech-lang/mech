@@ -1,6 +1,7 @@
 //! Bounds of immutable scalar CLIF words, without source-type assumptions.
 pub(super) mod condition;
 pub(super) use crate::native_artifact::program::prepare::word_collections::bounds::Range;
+use cranelift_codegen::flowgraph::ControlFlowGraph;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{Function, InstructionData as Data, Opcode as Op, Value, ValueDef};
 use std::collections::BTreeMap;
@@ -105,6 +106,7 @@ pub(super) struct Facts<'a> {
     assumptions: Option<&'a BTreeMap<Value, Range>>,
     bound_values: bool,
     bitwise_constants: bool,
+    cfg: Option<&'a ControlFlowGraph>,
 }
 impl<'a> Facts<'a> {
     pub fn new(function: &'a Function) -> Self {
@@ -112,6 +114,7 @@ impl<'a> Facts<'a> {
             function,
             cache: BTreeMap::new(),
             assumptions: None,
+            cfg: None,
             bound_values: false,
             bitwise_constants: false,
         }
@@ -129,6 +132,7 @@ impl<'a> Facts<'a> {
             function,
             cache: BTreeMap::new(),
             assumptions: Some(assumptions),
+            cfg: None,
             bound_values: false,
             bitwise_constants: false,
         }
@@ -140,6 +144,21 @@ impl<'a> Facts<'a> {
         let mut facts = Self::selected(function, values);
         facts.bound_values = true;
         facts
+    }
+
+    pub fn across_edges(
+        function: &'a Function,
+        cfg: &'a ControlFlowGraph,
+        assumptions: Option<&'a BTreeMap<Value, Range>>,
+    ) -> Self {
+        Self {
+            function,
+            cache: BTreeMap::new(),
+            assumptions,
+            cfg: Some(cfg),
+            bound_values: false,
+            bitwise_constants: true,
+        }
     }
 
     pub fn condition(&mut self, value: Value) -> Option<bool> {
@@ -203,11 +222,59 @@ impl<'a> Facts<'a> {
         Some(found)
     }
 
+    fn arithmetic(op: Op, a: Range, b: Range, mask: u64) -> Option<Range> {
+        match op {
+            Op::Iadd | Op::IaddImm => {
+                let maximum = a.1.checked_add(b.1)?;
+                (maximum <= mask).then_some(Range(a.0 + b.0, maximum))
+            }
+            Op::Ushr | Op::UshrImm | Op::Ishl | Op::IshlImm if b.0 == b.1 => {
+                let width = u64::from(64 - mask.leading_zeros());
+                let shift = (b.0 % width) as u32;
+                if matches!(op, Op::Ushr | Op::UshrImm) {
+                    Some(Range(a.0 >> shift, a.1 >> shift))
+                } else {
+                    (a.1 <= mask >> shift).then(|| Range(a.0 << shift, a.1 << shift))
+                }
+            }
+            _ => None,
+        }
+    }
+
     fn definition(&mut self, value: Value, mask: u64, depth: usize) -> Option<Range> {
-        let ValueDef::Result(inst, 0) = self.function.dfg.value_def(value) else {
-            return None;
+        let inst = match self.function.dfg.value_def(value) {
+            ValueDef::Result(inst, 0) => inst,
+            ValueDef::Param(block, slot) if Some(block) != self.function.layout.entry_block() => {
+                let cfg = self.cfg?;
+                let f = self.function;
+                let mut joined: Option<Range> = None;
+                for predecessor in cfg.pred_iter(block) {
+                    for call in f.dfg.insts[predecessor.inst]
+                        .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
+                    {
+                        if call.block(&f.dfg.value_lists) == block {
+                            let argument = call.args(&f.dfg.value_lists).nth(slot)?.as_value()?;
+                            let range = self.range(argument, depth)?;
+                            joined = Some(joined.map_or(range, |prior| {
+                                Range(prior.0.min(range.0), prior.1.max(range.1))
+                            }));
+                        }
+                    }
+                }
+                return joined;
+            }
+            _ => return None,
         };
         match self.function.dfg.insts[inst] {
+            Data::Load { opcode, .. } if self.cfg.is_some() => {
+                let width = match opcode {
+                    Op::Uload8 => 8,
+                    Op::Uload16 => 16,
+                    Op::Uload32 => 32,
+                    _ => return None,
+                };
+                Some(Range(0, ((1u64 << width) - 1).min(mask)))
+            }
             Data::UnaryImm {
                 opcode: Op::Iconst,
                 imm,
@@ -238,7 +305,34 @@ impl<'a> Facts<'a> {
                 imm,
             } => {
                 let n = imm.bits() as u64 & mask;
-                Some(self.range(arg, depth)?.bit_and(Range(n, n)))
+                let input = self.range(arg, depth)?;
+                if self.cfg.is_some() && input.0 == input.1 {
+                    let exact = input.0 & n;
+                    Some(Range(exact, exact))
+                } else {
+                    Some(input.bit_and(Range(n, n)))
+                }
+            }
+            Data::Binary {
+                opcode: Op::Iadd | Op::Ushr | Op::Ishl,
+                args,
+            } if self.cfg.is_some() => {
+                let op = self.function.dfg.insts[inst].opcode();
+                Self::arithmetic(
+                    op,
+                    self.range(args[0], depth)?,
+                    self.range(args[1], depth)?,
+                    mask,
+                )
+            }
+            Data::BinaryImm64 {
+                opcode: Op::IaddImm | Op::UshrImm | Op::IshlImm,
+                arg,
+                imm,
+            } if self.cfg.is_some() => {
+                let op = self.function.dfg.insts[inst].opcode();
+                let n = imm.bits() as u64 & mask;
+                Self::arithmetic(op, self.range(arg, depth)?, Range(n, n), mask)
             }
             Data::Unary {
                 opcode: Op::Uextend,
