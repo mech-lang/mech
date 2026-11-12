@@ -1,6 +1,35 @@
 # Current compression scoreboard
 
 **46/81 cases faster than Roc (56.79%).** Goal 100%.
+R333 composes the two read-only cost lookups. Paired elapsed changes -0.551% across all 81. The pooled and block timing gates pass 81/81 and 81/81. The matched libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.063631× Roc. The closest above libdeflate parity is prefix-natural-1048576 at 1.035586×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The closest outstanding case in that group is prefix-natural-131072 at 1.243290× Roc and 1.046309× libdeflate.
+
+| Input | R327 / Roc | R333 / Roc | R327 / libdeflate | R333 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.184753× | 0.185797× | 2.352217× | 2.365505× |
+| prefix-natural-4096 | 0.989985× | 0.974822× | 1.656656× | 1.631282× |
+| prefix-random-16384 | 1.065231× | 1.061372× | 2.872542× | 2.862136× |
+| prefix-natural-131072 | 1.272104× | 1.243290× | 1.070558× | 1.046309× |
+| prefix-natural-32769 | 1.284679× | 1.257145× | 1.170855× | 1.145761× |
+| heldout-window-32768 | 1.288238× | 1.259260× | 1.173586× | 1.147187× |
+| reymont-prefix-32769 | 1.283504× | 1.259470× | 1.170657× | 1.148736× |
+| prefix-natural-65537 | 1.288771× | 1.261873× | 1.087115× | 1.064426× |
+| prefix-natural-262144 | 1.319093× | 1.302291× | 1.069925× | 1.056297× |
+| prefix-natural-1048576 | 1.308070× | 1.280082× | 1.058228× | 1.035586× |
+| prefix-random-1048576 | 1.588463× | 1.597372× | 2.239233× | 2.251792× |
+| prefix-periodic-1048576 | 0.710743× | 0.715957× | 1.199195× | 1.207993× |
+| prefix-repeated-1048576 | 0.717065× | 0.714685× | 1.133171× | 1.129410× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R333 timing, proof and replay evidence](native-composed-readonly-lookups.md).
+
+## Historical R327 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
 R327 reuses selected readable bounds. Paired elapsed changes -0.634% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
 
 The closest primary case above parity is prefix-random-16384 at 1.072563× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.060805×.
