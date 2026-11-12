@@ -308,6 +308,12 @@ fn emit_item(
         Item::Word(word) => words.read(b, *word),
         Item::Index => index,
         Item::Length(array) => words.read(b, shadow + proof.view(*array) + 1),
+        Item::Scalar(Op::U64ToU32, args)
+            if total && std::env::var_os("MECH_NARROW_ORDERED_ITEM").is_some() =>
+        {
+            let low = emit_item_low32(b, words, proof, shadow, &args[0], index, error);
+            b.ins().uextend(types::I64, low)
+        }
         Item::Scalar(op, args) => {
             let args = args
                 .iter()
@@ -342,4 +348,55 @@ fn emit_item(
             }
         }
     }
+}
+
+/// Project a total item expression into its observed low word. Each
+/// specialized operator commutes with truncation to U32. Unrecognized
+/// operators retain their full-width inputs before the projection.
+fn emit_item_low32(
+    b: &mut FunctionBuilder<'_>,
+    words: &Words,
+    proof: &Proof,
+    shadow: usize,
+    item: &Item,
+    index: Value,
+    error: Block,
+) -> Value {
+    if let Item::Constant(value) = item {
+        return b.ins().iconst(types::I32, i64::from(*value as u32));
+    }
+    let low = |b: &mut FunctionBuilder<'_>, arg| {
+        emit_item_low32(b, words, proof, shadow, arg, index, error)
+    };
+    if let Item::Scalar(op, args) = item {
+        match (*op, args.as_slice()) {
+            (Op::U32ToU64 | Op::U64ToU32, [arg]) => return low(b, arg),
+            (Op::U64BitAnd, [Item::Constant(mask), arg] | [arg, Item::Constant(mask)])
+                if *mask as u32 == u32::MAX =>
+            {
+                return low(b, arg);
+            }
+            (
+                Op::U64Add | Op::U64WrappingAdd | Op::U64BitAnd | Op::U64BitOr | Op::U64BitXor,
+                [left, right],
+            ) => {
+                let left = low(b, left);
+                let right = low(b, right);
+                return match op {
+                    Op::U64Add | Op::U64WrappingAdd => b.ins().iadd(left, right),
+                    Op::U64BitAnd => b.ins().band(left, right),
+                    Op::U64BitOr => b.ins().bor(left, right),
+                    Op::U64BitXor => b.ins().bxor(left, right),
+                    _ => unreachable!(),
+                };
+            }
+            (Op::U64ShlWrap, [arg, Item::Constant(count)]) if count & 63 < 32 => {
+                let arg = low(b, arg);
+                return b.ins().ishl_imm(arg, (count & 63) as i64);
+            }
+            _ => {}
+        }
+    }
+    let full = emit_item(b, words, proof, shadow, item, index, error, true);
+    b.ins().ireduce(types::I32, full)
 }
