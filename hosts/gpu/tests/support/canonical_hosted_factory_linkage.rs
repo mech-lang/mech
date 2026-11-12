@@ -247,7 +247,7 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
             .unwrap();
         assert!(!main.contains("decode_program_artifact"));
         assert!(!main.contains("let artifact ="));
-        crate::fixture::assert_compiled_hosted_launcher(
+        crate::assert_compiled_hosted_launcher(
             &generated,
             &main,
             "run_hosted_program_application(binding,",

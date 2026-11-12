@@ -1,8 +1,8 @@
 //! Original canonical artifacts through checked native bodies and real CLI services.
 use mech_core::{ManagedMemoryBudget, MechError};
 use mech_gpu::native_artifact::{
-    JitProgramArtifact, NativeExecutionLimits, NativeProgramExecutionError,
-    NativeProgramExecutionLimits, NativeProgramExecutionReport,
+    GeneratedLinkedApplication, JitProgramArtifact, NativeExecutionLimits,
+    NativeProgramExecutionError, NativeProgramExecutionLimits, NativeProgramExecutionReport,
 };
 use mech_runtime::*;
 use std::sync::Arc;
@@ -18,6 +18,32 @@ const GGTA_INPUT: &[u8] = b">ONE\nAAAA\n>THREE\nGGTA\n>FOUR\nTTTT\n";
 const GGTA_OUTPUT: &str = "G 50.000\nA 25.000\nT 25.000\n\nGG 33.333\nGT 33.333\nTA 33.333\n\n1\tGGT\n1\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n";
 const EMPTY_OUTPUT: &str =
     "\n\n\n\n0\tGGT\n0\tGGTA\n0\tGGTATT\n0\tGGTATTTTAATT\n0\tGGTATTTTAATTTATAGT\n";
+
+fn assert_compiled_hosted_launcher(
+    project: &GeneratedLinkedApplication,
+    main: &str,
+    dispatch: &str,
+) {
+    let symbol = project.metadata()["object"]["compiled_module_symbol"]
+        .as_str()
+        .expect("compiled module symbol in generated Object metadata");
+    assert!(main.contains(&format!("#[link_name = {symbol:?}]")));
+    assert!(main.contains("static LINKED_MODULE: NativeProgramModule;"));
+    let binding = main
+        .find("BuildOwnedHostedBinding::from_compiled_module(")
+        .expect("compiled module binding in generated launcher");
+    let launch = main
+        .find(dispatch)
+        .expect("hosted dispatch in generated launcher");
+    assert!(binding < launch);
+    assert!(
+        main[binding..launch]
+            .contains("&LINKED_MODULE, include_bytes!(\"../native-resources.json\")")
+    );
+    for descriptor in ["native-descriptor.bin", "native-descriptor.json"] {
+        assert!(!main.contains(&format!("include_bytes!(\"../{descriptor}\")")));
+    }
+}
 
 #[path = "support/canonical_hosted_fixture.rs"]
 mod fixture;
