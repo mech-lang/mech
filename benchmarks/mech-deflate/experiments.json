@@ -72450,6 +72450,409 @@
         }
       },
       "complete_goal": false
+    },
+    "351": {
+      "campaign_round": 351,
+      "git_parent": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+      "retained_compiler": "R350",
+      "retained_source_packet_round": 350,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the exhausted reduction cursor experiment.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "aa6b8c1a06e2d5c9217f3f0aabdb5ae8c815a85ac629723138b10683025d0a2d",
+        "compiler_parent_round": 350,
+        "prior_source_packet_commit": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+        "baseline_object_sha256": "279f9e4291dbbe92af1177ff8ffee7b005f0140fb2fcb2ca612779e6c12957ec",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+            "before": "70a8eaf7993f4732da27167f21c2c178e4049c1ffc656cc0ea7465f291c2f22b",
+            "after": "ae35d6a60d808b9db16893dece84f850016f1762467431b12f4c12714b50dab7"
+          }
+        },
+        "backend_patch_sha256": "898d9c6098d97c6090c42b3f600694d86962a4c1509d3539259ff23ad1762f17",
+        "shared_timing_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "8bfb62473f8d41df1868a4092ce150cdea46dfb3522034e0b940cfffabb82664",
+        "worker_sha256": "b7951a55848a5991c31b12ced2d7ddeb66778cc083b1e7151fd4ce02f9fe3e20"
+      },
+      "summary": {
+        "round": 351,
+        "candidate_compiler_round": 351,
+        "published_parent": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+        "measured_parent": "51bbe5d5f7a0a4cf40624287b83c90dc24cdbcf3",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "source_program_changed": false,
+        "retained_source_packet_round": 350,
+        "retained_runtime_packet_round": 272,
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "screen_qualified_for_full": false,
+        "screen_cases": 16,
+        "matched_cases": 16,
+        "original_1_05_gates_passed": 16,
+        "blockmean_1_05_gates_passed": 16,
+        "primary_timed_calls": 56592,
+        "matched_timed_calls": 154752,
+        "screen_paired_geomean": 1.0030876410658518,
+        "matched_priority_geomean": 1.0052187971978574,
+        "target_matched_x_roc": [
+          1.2334754904449747,
+          1.2410981465022208
+        ],
+        "target_matched_x_libdeflate": [
+          0.9961548037742157,
+          1.0023108607917774
+        ],
+        "comparisons": {
+          "empty": {
+            "roc": [
+              2.1591898316150124,
+              2.151728590788915
+            ],
+            "libdeflate": [
+              0.016725765584398908,
+              0.016667968459200003
+            ]
+          },
+          "one-stored": {
+            "roc": [
+              2.008863500434538,
+              2.004364014374947
+            ],
+            "libdeflate": [
+              0.018145950392906347,
+              0.018105306789787848
+            ]
+          },
+          "seven-stored-prefix": {
+            "roc": [
+              2.3090146735281816,
+              2.308630113600094
+            ],
+            "libdeflate": [
+              0.01916503113396999,
+              0.019161839251701264
+            ]
+          },
+          "eight-literals": {
+            "roc": [
+              0.18527916791896332,
+              0.18554974026997767
+            ],
+            "libdeflate": [
+              2.3136055150512633,
+              2.3169841878430204
+            ]
+          },
+          "reymont-prefix-32769": {
+            "roc": [
+              1.2114921154709284,
+              1.2198421945139857
+            ],
+            "libdeflate": [
+              1.1019908647406662,
+              1.1095862181959668
+            ]
+          },
+          "heldout-window-32768": {
+            "roc": [
+              1.2056242535645807,
+              1.2171166751029163
+            ],
+            "libdeflate": [
+              1.0997899012195451,
+              1.1102734736186985
+            ]
+          },
+          "prefix-natural-32767": {
+            "roc": [
+              1.203833501181832,
+              1.2130351887725361
+            ],
+            "libdeflate": [
+              1.099412316950258,
+              1.1078158450660789
+            ]
+          },
+          "prefix-natural-32768": {
+            "roc": [
+              1.2067940517889215,
+              1.218046197974266
+            ],
+            "libdeflate": [
+              1.098440680633242,
+              1.108682540125417
+            ]
+          },
+          "prefix-natural-65537": {
+            "roc": [
+              1.211701808925608,
+              1.2207899571411822
+            ],
+            "libdeflate": [
+              1.020067227502132,
+              1.027718055523598
+            ]
+          },
+          "prefix-natural-131072": {
+            "roc": [
+              1.2139611466837898,
+              1.2234754605252811
+            ],
+            "libdeflate": [
+              0.9986775350693282,
+              1.006504582517307
+            ]
+          },
+          "prefix-natural-262144": {
+            "roc": [
+              1.2194915747715855,
+              1.2298234785306055
+            ],
+            "libdeflate": [
+              0.984442662529034,
+              0.992783160369233
+            ]
+          },
+          "prefix-natural-1048576": {
+            "roc": [
+              1.2334754904449747,
+              1.2410981465022208
+            ],
+            "libdeflate": [
+              0.9961548037742157,
+              1.0023108607917774
+            ]
+          },
+          "prefix-random-16384": {
+            "roc": [
+              1.0140495284946383,
+              1.0153242088755057
+            ],
+            "libdeflate": [
+              2.755309504919119,
+              2.7587729836452044
+            ]
+          },
+          "prefix-random-1048576": {
+            "roc": [
+              1.5354308473998517,
+              1.5364199124870601
+            ],
+            "libdeflate": [
+              2.176580687403144,
+              2.177982756386614
+            ]
+          },
+          "prefix-periodic-1048576": {
+            "roc": [
+              0.6876285598748423,
+              0.6878799165554972
+            ],
+            "libdeflate": [
+              1.1670932457990684,
+              1.1675198666542757
+            ]
+          },
+          "prefix-repeated-1048576": {
+            "roc": [
+              0.6915618887233658,
+              0.6915601979814382
+            ],
+            "libdeflate": [
+              1.0862274065888413,
+              1.0862247509621372
+            ]
+          }
+        },
+        "timing_changes": {
+          "empty": {
+            "primary": 1.0,
+            "matched": 0.9965444257300357
+          },
+          "one-stored": {
+            "primary": 1.0,
+            "matched": 0.9977601832784467
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0,
+            "matched": 0.9998334528002372
+          },
+          "eight-literals": {
+            "primary": 0.9982175385746613,
+            "matched": 1.0014603495582013
+          },
+          "reymont-prefix-32769": {
+            "primary": 1.0081632746119324,
+            "matched": 1.006892392394821
+          },
+          "heldout-window-32768": {
+            "primary": 1.0091064634500213,
+            "matched": 1.009532341029435
+          },
+          "prefix-natural-32767": {
+            "primary": 1.0087411662507526,
+            "matched": 1.007643654692838
+          },
+          "prefix-natural-32768": {
+            "primary": 1.008010936587587,
+            "matched": 1.0093239987126756
+          },
+          "prefix-natural-65537": {
+            "primary": 1.0072937912934155,
+            "matched": 1.00750031744496
+          },
+          "prefix-natural-131072": {
+            "primary": 1.0074796666948562,
+            "matched": 1.007837412150695
+          },
+          "prefix-natural-262144": {
+            "primary": 1.0073120937359445,
+            "matched": 1.008472304337941
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0074688682907742,
+            "matched": 1.0061798196367049
+          },
+          "prefix-random-16384": {
+            "primary": 0.9886067439618342,
+            "matched": 1.0012570198447404
+          },
+          "prefix-random-1048576": {
+            "primary": 0.9990048952379759,
+            "matched": 1.0006441612716608
+          },
+          "prefix-periodic-1048576": {
+            "primary": 1.000219092824304,
+            "matched": 1.0003655413624772
+          },
+          "prefix-repeated-1048576": {
+            "primary": 1.0000220403095215,
+            "matched": 0.9999975551834838
+          }
+        },
+        "screen_wins_before_after": {
+          "roc": [
+            3,
+            3
+          ],
+          "libdeflate": [
+            6,
+            4
+          ],
+          "both": [
+            0,
+            0
+          ]
+        },
+        "screen_crossings": {
+          "roc": {
+            "below": [],
+            "above": []
+          },
+          "libdeflate": {
+            "below": [],
+            "above": [
+              "prefix-natural-131072",
+              "prefix-natural-1048576"
+            ]
+          }
+        },
+        "worst_matched": {
+          "case": "heldout-window-32768",
+          "ratio": 1.009532341029435
+        },
+        "cases_with_same_heap_families": 16,
+        "decision": "Retain the prior compiler after the exhausted-cursor screen."
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "warnings_as_errors": true,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "8bfb62473f8d41df1868a4092ce150cdea46dfb3522034e0b940cfffabb82664",
+            "metadata.json": "ef01c03aaf5f91fa20aac5dcb22eec1d8220418a1f28e1f31c12ea4df3a8c399"
+          },
+          "decoded": {
+            "object.o": "8bfb62473f8d41df1868a4092ce150cdea46dfb3522034e0b940cfffabb82664",
+            "metadata.json": "ef01c03aaf5f91fa20aac5dcb22eec1d8220418a1f28e1f31c12ea4df3a8c399"
+          },
+          "flag-disabled": {
+            "object.o": "279f9e4291dbbe92af1177ff8ffee7b005f0140fb2fcb2ca612779e6c12957ec",
+            "metadata.json": "c2e9d76b94868580268ec52e204408f704c6870c908a7f91059953177dac45d5"
+          }
+        },
+        "worker_sha256": "b7951a55848a5991c31b12ced2d7ddeb66778cc083b1e7151fd4ce02f9fe3e20",
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "linked_reduction_positions": 136192,
+        "linked_retained_positions": 68096,
+        "unchanged_root_object": true,
+        "unchanged_vector_selection": true
+      },
+      "report": "docs/design/native-exhausted-reduction-cursor.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r351-exhausted-reduction-cursor-68df2e5f7028.tar.gz",
+        "bytes": 1396102,
+        "sha256": "68df2e5f70281a3ed6fe81d8f09601d2bbeb92977e20b62f856931dc17f254ef",
+        "files": 310,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "c8909de18a29dd6c49a14f667fa6f78797596dfd3e82658acc3434f6e1c1f0ad",
+            "pilot-counters.json": "afd62f50deeffaa41786602627f7f881661b99b1642dbe9ea3b4fad0955f7a47",
+            "result-decision.json": "f9e85b9c3bff0b9c6ca056cf780954b58a7931c0aae9eaa0c6f46aac2bd09d09",
+            "screen-disposition.json": "c06bd7f6474065df90125816d9d0e1b46ddd4330a60ebceb85edd09431393d59",
+            "machine-audit.json": "ed6f131bc7ada77f30e6d68437d549b456e0d271ca889e34cdfd606a756bec8c",
+            "retained-matcher-diagnostic.json": "a7c28757c9038f35ee67b8929dc127be8341a083eebdb02a98b62b3665159d36",
+            "tiny-allocation/allocation-attribution.json": "942ab4c0219de410936993a7332bf473d80c4c4473bc3eba598d8ad68194ce62",
+            "candidate-profile-summary.json": "bdeb050a6eaf204c9f5690215a5b94e2ed472ce8ca46dc6f0ec8fc26da3ed484"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
