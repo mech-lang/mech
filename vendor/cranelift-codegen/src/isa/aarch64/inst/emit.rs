@@ -1013,6 +1013,17 @@ impl Inst {
                 sink.put4(enc_bit_rr(size.sf_bit(), op1, op2, rn, rd))
             }
 
+            &Inst::ULoad32PreIndexed {
+                rd,
+                rn,
+                next,
+                offset,
+            } => {
+                assert_eq!(rn, next.to_reg());
+                assert_ne!(rn, rd.to_reg());
+                sink.put4(enc_ldst_simm9(0b1011100001, offset, 0b11, rn, rd.to_reg()));
+            }
+
             &Inst::ULoad8 { rd, ref mem, flags }
             | &Inst::SLoad8 { rd, ref mem, flags }
             | &Inst::ULoad16 { rd, ref mem, flags }

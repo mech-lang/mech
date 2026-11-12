@@ -63,6 +63,20 @@ impl Reduction {
         for ty in [types::I64, types::I32, carried] {
             b.append_block_param(scalar_body, ty);
         }
+        let singleton =
+            carry_item && std::env::var_os("MECH_SINGLETON_ORDERED_REDUCTION").is_some();
+        let reverse = if singleton
+            && cfg!(target_arch = "aarch64")
+            && std::env::var_os("MECH_REVERSE_REDUCTION_CURSOR").is_some()
+        {
+            self.reads.iter().copied().find(|read| read.reverse)
+        } else {
+            None
+        };
+        if reverse.is_some() {
+            b.append_block_param(scalar_body, types::I64);
+        }
+        let scalar_arity = 3 + usize::from(reverse.is_some());
         let scalar_finish = b.create_block();
         b.append_block_param(scalar_finish, types::I32);
         b.append_block_param(scalar_finish, carried);
@@ -72,15 +86,15 @@ impl Reduction {
         let long = b
             .ins()
             .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 16);
-        if let Some(old_item) =
-            old_item.filter(|_| std::env::var_os("MECH_SINGLETON_ORDERED_REDUCTION").is_some())
-        {
+        if let Some(old_item) = old_item.filter(|_| singleton) {
             let short = b.create_block();
             b.ins().brif(long, vector, &[], short, &[]);
             b.switch_to_block(short);
             // Do the first admitted visit directly. Only the continuing
             // route constructs the next cursor and enters the scalar loop.
-            let cost = inputs.scalar(b, proof, &self.cost, start);
+            let reverse_cursor =
+                reverse.map(|window| (window, inputs.pointer(b, proof, window, start)));
+            let cost = inputs.scalar(b, proof, &self.cost, start, reverse_cursor);
             let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
             let selected = emit_item(
                 b,
@@ -105,8 +119,9 @@ impl Reduction {
             );
             b.switch_to_block(advance);
             let next = b.ins().iadd_imm(start, 1);
-            b.ins()
-                .jump(scalar_body, &[next.into(), minimum.into(), item.into()]);
+            let pointer = reverse_cursor.map_or(next, |(_, pointer)| pointer);
+            let args = [next.into(), minimum.into(), item.into(), pointer.into()];
+            b.ins().jump(scalar_body, &args[..scalar_arity]);
         } else {
             b.ins().brif(
                 long,
@@ -177,19 +192,43 @@ impl Reduction {
             winner
         };
         let more = b.ins().icmp(IntCC::UnsignedLessThan, end, stop);
-        b.ins().brif(
-            more,
-            scalar_body,
-            &[end.into(), minimum.into(), carried_value.into()],
-            scalar_finish,
-            &[minimum.into(), carried_value.into()],
-        );
-        // Short entries are already nonempty at admission. Vector entries
-        // reach this body only with a remainder. Advance before testing the
-        // backedge so each reached candidate needs no separate header hop.
+        let finish_args = [minimum.into(), carried_value.into()];
+        if let Some(window) = reverse {
+            let remainder = b.create_block();
+            b.ins()
+                .brif(more, remainder, &[], scalar_finish, &finish_args);
+            b.switch_to_block(remainder);
+            // The vector prefix is nonempty. Seed the cursor at the last
+            // vector candidate's low word, without loading it again.
+            let previous = b.ins().iadd_imm(end, -1);
+            let pointer = inputs.pointer(b, proof, window, previous);
+            b.ins().jump(
+                scalar_body,
+                &[
+                    end.into(),
+                    minimum.into(),
+                    carried_value.into(),
+                    pointer.into(),
+                ],
+            );
+        } else {
+            b.ins().brif(
+                more,
+                scalar_body,
+                &[end.into(), minimum.into(), carried_value.into()],
+                scalar_finish,
+                &finish_args,
+            );
+        }
+        // Short entries have completed their first visit. Vector entries
+        // reach this body only with a remainder.
         b.switch_to_block(scalar_body);
         let params = b.block_params(scalar_body).to_vec();
-        let cost = inputs.scalar(b, proof, &self.cost, params[0]);
+        let reverse_cursor = reverse.map(|window| {
+            let stride = i64::from(proof.arrays[window.array].width);
+            (window, b.ins().iadd_imm(params[3], -stride))
+        });
+        let cost = inputs.scalar(b, proof, &self.cost, params[0], reverse_cursor);
         let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
         let minimum = b.ins().umin(cost, params[1]);
         let selected = if carry_item {
@@ -209,10 +248,12 @@ impl Reduction {
         let choice = b.ins().select(less, selected, params[2]);
         let next = b.ins().iadd_imm(params[0], 1);
         let more = b.ins().icmp(IntCC::UnsignedLessThan, next, stop);
+        let pointer = reverse_cursor.map_or(next, |(_, pointer)| pointer);
+        let next_args = [next.into(), minimum.into(), choice.into(), pointer.into()];
         b.ins().brif(
             more,
             scalar_body,
-            &[next.into(), minimum.into(), choice.into()],
+            &next_args[..scalar_arity],
             scalar_finish,
             &[minimum.into(), choice.into()],
         );

@@ -103,7 +103,13 @@ impl Inputs {
             }
         }
     }
-    fn pointer(&self, b: &mut FunctionBuilder<'_>, proof: &Proof, w: Window, k: Value) -> Value {
+    pub(super) fn pointer(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        proof: &Proof,
+        w: Window,
+        k: Value,
+    ) -> Value {
         let shift = if proof.arrays[w.array].width == 8 {
             3
         } else {
@@ -163,19 +169,23 @@ impl Inputs {
         proof: &Proof,
         cost: &Cost,
         k: Value,
+        reverse_cursor: Option<(Window, Value)>,
     ) -> Value {
         match cost {
             Cost::Constant(value) => b.ins().iconst(types::I32, i64::from(*value)),
             Cost::Word(slot) => self.words[slot],
             Cost::Index => b.ins().ireduce(types::I32, k),
             Cost::Read(w) => {
-                let pointer = self.pointer(b, proof, *w, k);
+                let pointer = match reverse_cursor {
+                    Some((window, pointer)) if window == *w => pointer,
+                    _ => self.pointer(b, proof, *w, k),
+                };
                 b.ins()
                     .load(types::I32, MemFlags::new().with_notrap(), pointer, 0)
             }
             Cost::Add(a, c) | Cost::And(a, c) | Cost::Or(a, c) | Cost::Xor(a, c) => {
-                let a = self.scalar(b, proof, a, k);
-                let c = self.scalar(b, proof, c, k);
+                let a = self.scalar(b, proof, a, k, reverse_cursor);
+                let c = self.scalar(b, proof, c, k, reverse_cursor);
                 match cost {
                     Cost::Add(..) => b.ins().iadd(a, c),
                     Cost::And(..) => b.ins().band(a, c),
