@@ -10,6 +10,7 @@ mod credits;
 pub use credits::NativeWorkerCreditStatistics;
 #[path = "native_worker_fuel.rs"]
 mod native_fuel;
+pub(super) use native_fuel::NativeGrantLink;
 pub use native_fuel::NativeWorkerNativeFuel;
 
 // Retry only short ownership transfers. A bounded exponential pause avoids
@@ -126,11 +127,12 @@ fn next_after_native<'a>(
                 if may_wait
                     && !state.sealed
                     && (state.native_reserved.compute != 0
-                        || state.native_reserved.comparison != 0) =>
+                        || state.native_reserved.comparison != 0)
+                    && !native_fuel::current_thread_holds(&state) =>
             {
                 // An in-flight grant is real reserved fuel. Wait for its
                 // bounded generated code to settle before deciding a denial.
-                // Never wait while this SAME account owns a native grant.
+                // A grant held on this thread cannot settle while we wait.
                 state = wait_native(state);
             }
             Err(error) => return Err(error),
@@ -202,7 +204,7 @@ impl Escrow {
 /// carry only admitted backing and a synchronized escrow, never that Rc.
 #[derive(Debug)]
 pub struct NativeWorkGroup {
-    parent: Rc<RefCell<ControlWorkAccount>>,
+    parent: SharedControlWorkAccount,
     shared: Arc<Mutex<Escrow>>,
     memory: mech_core::ManagedMemoryBudget,
     allowance: ControlWork,
@@ -300,6 +302,9 @@ impl NativeLibraryWorkBudget {
             while !state.sealed
                 && (state.native_reserved.compute != 0 || state.native_reserved.comparison != 0)
             {
+                if native_fuel::current_thread_holds(&state) {
+                    return Ok(None);
+                }
                 state = wait_native(state);
             }
             if state.sealed {
@@ -424,7 +429,7 @@ impl NativeLibraryWorkBudget {
             .take()
             .ok_or(ResidentKernelError::InvalidInput)?;
         Ok(Self {
-            account: Rc::new(RefCell::new(ControlWorkAccount {
+            account: Rc::new(ControlWorkAccountCell::new(ControlWorkAccount {
                 identity: next_control_work_identity(),
                 used: ControlWork::default(),
                 reserved: ControlWork::default(),
@@ -455,8 +460,7 @@ impl NativeLibraryWorkBudget {
                 .size() as u64
     }
     pub fn worker_account_metadata_bytes() -> u64 {
-        (core::mem::size_of::<RefCell<ControlWorkAccount>>() + 2 * core::mem::size_of::<usize>())
-            as u64
+        (core::mem::size_of::<ControlWorkAccountCell>() + 2 * core::mem::size_of::<usize>()) as u64
     }
 }
 
