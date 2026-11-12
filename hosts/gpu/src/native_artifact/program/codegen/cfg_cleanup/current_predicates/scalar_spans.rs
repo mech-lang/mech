@@ -1,7 +1,7 @@
 //! Use a checked full extent to prove that a smaller current byte offset
 //! fits. The comparisons are about scalar SSA values and do not move reads.
-use super::super::window_bounds::comparison;
 use super::super::word_ranges::literal;
+use super::super::{ScalarSpanProof, window_bounds::comparison};
 use super::incoming;
 use super::relations::replace_proved;
 use cranelift_codegen::dominator_tree::DominatorTree;
@@ -115,13 +115,16 @@ impl Proof<'_> {
         Some(args.map(|word| self.current(word)))
     }
 
+    fn selected_order(&self, block: Block) -> Option<(Inst, Order)> {
+        let (condition, selected) = incoming(self.f, self.cfg, block)?;
+        let guard = comparison(self.f, condition)?;
+        Some((guard, order(self.f, guard, selected)?))
+    }
+
     fn selected_orders(&self, mut block: Block) -> Vec<Order> {
         let mut facts = Vec::new();
         loop {
-            if let Some((condition, selected)) = incoming(self.f, self.cfg, block)
-                && let Some(inst) = comparison(self.f, condition)
-                && let Some(fact) = order(self.f, inst, selected)
-            {
+            if let Some((_, fact)) = self.selected_order(block) {
                 facts.push(Order {
                     lower: self.current(fact.lower),
                     upper: self.current(fact.upper),
@@ -190,10 +193,8 @@ impl Proof<'_> {
             return false;
         }
         loop {
-            if let Some((condition, selected)) = incoming(self.f, self.cfg, block)
-                && let Some(guard) = comparison(self.f, condition)
+            if let Some((guard, bound)) = self.selected_order(block)
                 && readable.contains(&guard)
-                && let Some(bound) = order(self.f, guard, selected)
                 && bound.strict
                 && self.current(bound.lower) == index
             {
@@ -203,6 +204,41 @@ impl Proof<'_> {
                 return false;
             };
             block = parent;
+        }
+    }
+
+    fn selected_read_guard(&self, test: Order, mut block: Block) -> Option<Inst> {
+        // The checked read expresses the same zero-based offset as
+        // (index + 1) - 1. This identity holds in the I64 ring. A selected
+        // unsigned index < length also proves that index + 1 cannot wrap.
+        let (
+            _,
+            Data::BinaryImm64 {
+                opcode: Opcode::IaddImm,
+                arg,
+                imm,
+            },
+        ) = self.definition(test.lower)?
+        else {
+            return None;
+        };
+        if imm.bits() != -1 {
+            return None;
+        }
+        let [a, b] = self.sum(arg)?;
+        let index = [(a, b), (b, a)]
+            .into_iter()
+            .find_map(|(index, step)| (literal(self.f, step) == Some(1)).then_some(index))?;
+        let length = self.current(test.upper);
+        loop {
+            if let Some((guard, bound)) = self.selected_order(block)
+                && bound.strict
+                && self.current(bound.lower) == index
+                && self.current(bound.upper) == length
+            {
+                return Some(guard);
+            }
+            block = self.dom.idom(block)?;
         }
     }
 
@@ -251,23 +287,31 @@ pub(in super::super) fn fold(
     f: &mut Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
+    source: ScalarSpanProof,
 ) -> usize {
     let proof = Proof { f, cfg, dom };
     let mut edits = Vec::new();
+    let mut readable = BTreeSet::new();
     for block in f.layout.blocks().filter(|&block| dom.is_reachable(block)) {
         for inst in f.layout.block_insts(block) {
             if f.dfg.insts[inst].exception_table().is_some() {
                 return 0;
             }
-            if let Some(test) = order(f, inst, true)
-                && test.strict
-                && proof.fits(test.lower, test.upper, block)
-            {
+            let Some(test) = order(f, inst, true).filter(|test| test.strict) else {
+                continue;
+            };
+            let guard = match source {
+                ScalarSpanProof::CheckedWindow => {
+                    proof.fits(test.lower, test.upper, block).then_some(inst)
+                }
+                ScalarSpanProof::SelectedRead => proof.selected_read_guard(test, block),
+            };
+            if let Some(guard) = guard {
+                readable.insert(guard);
                 edits.push((inst, true));
             }
         }
     }
-    let readable = edits.iter().map(|&(inst, _)| inst).collect::<BTreeSet<_>>();
     if readable.is_empty() {
         return 0;
     }

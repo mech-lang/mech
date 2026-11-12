@@ -1,5 +1,27 @@
 # Current compression scoreboard
 
+The selected-read bounds comparison uses the same 81 level-12 cases and pairs each candidate run with its control.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **47/81 (58.0%)** |
+| Faster than libdeflate | 11/81 (13.6%) |
+| Faster than both | 2/81 |
+| Faster than either | 56/81 (69.1%) |
+
+The same 47 cases beat Roc in the control and candidate. Repeated 256 KiB joins repeated 1 MiB below both peers. The paired geometric mean is 0.994925× control.
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Natural 8 KiB | 1.043123× | 1.301655× |
+| Periodic 1 MiB | 0.590477× | 1.002281× |
+| Repeated 256 KiB | 0.608077× | 0.990174× |
+| Repeated 1 MiB | 0.604758× | 0.947619× |
+
+[Selected-read proof, qualification, timing, and profiles](native-selected-read-bounds.md).
+
+## Historical R355 baseline
+
 R355 remains the retained performance baseline.
 
 **47/81 cases faster than Roc (58.02%)** in the primary cohort. Goal 100%.
