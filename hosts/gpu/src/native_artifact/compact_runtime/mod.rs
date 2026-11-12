@@ -473,6 +473,7 @@ impl Heap {
     ///
     /// # Safety
     /// The view must originate from this heap in the exact generated entry.
+    #[inline]
     pub unsafe fn take_u8(&mut self, view: View) -> Result<Vec<u8>, u64> {
         let [pointer, length, capacity, rows, columns, owner] = view;
         if rows != 1 || columns != length || length > capacity || owner == 0 {
@@ -493,8 +494,12 @@ impl Heap {
             return Err(INVALID);
         }
         let slot = record.slot;
-        self.owners[slot] = ptr::null_mut();
-        self.free.push(slot);
+        if slot + 1 == self.owners.len() {
+            let _ = self.owners.pop();
+        } else {
+            self.owners[slot] = ptr::null_mut();
+            self.free.push(slot);
+        }
         self.counters.live_payload_bytes -= capacity;
         let record = unsafe { Box::from_raw(owner) };
         // Allocation uses this exact U8 layout through the pinned global
