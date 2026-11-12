@@ -1,7 +1,7 @@
 //! Share the exclusive valid start of a fixed-width window. Both source
 //! rejection paths must reach the same continuation with the same values.
 pub(super) mod ordered_spans;
-use super::word_ranges::literal;
+use super::{masked_integer_comparison, word_ranges::literal};
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
@@ -12,7 +12,7 @@ use cranelift_codegen::ir::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-fn unextended(f: &Function, mut value: Value) -> Option<Inst> {
+fn predicate_definition(f: &Function, mut value: Value) -> Option<Inst> {
     loop {
         let ValueDef::Result(inst, 0) = f.dfg.value_def(f.dfg.resolve_aliases(value)) else {
             return None;
@@ -22,13 +22,18 @@ fn unextended(f: &Function, mut value: Value) -> Option<Inst> {
                 opcode: Opcode::Uextend,
                 arg,
             } => value = arg,
-            _ => return Some(inst),
+            _ => match masked_integer_comparison(f, &f.dfg.insts[inst], |value| {
+                Some(f.dfg.resolve_aliases(value))
+            }) {
+                Some(comparison) => value = comparison,
+                None => return Some(inst),
+            },
         }
     }
 }
 
 pub(super) fn comparison(f: &Function, value: Value) -> Option<Inst> {
-    let mut inst = unextended(f, value)?;
+    let mut inst = predicate_definition(f, value)?;
     loop {
         let inner = match f.dfg.insts[inst] {
             Data::IntCompare {
@@ -50,7 +55,7 @@ pub(super) fn comparison(f: &Function, value: Value) -> Option<Inst> {
             _ => None,
         };
         // Equality to one is identity only for the result of a comparison.
-        if let Some(next) = inner.and_then(|word| unextended(f, word)) {
+        if let Some(next) = inner.and_then(|word| predicate_definition(f, word)) {
             if matches!(
                 f.dfg.insts[next],
                 Data::IntCompare { .. } | Data::IntCompareImm { .. }
@@ -166,7 +171,10 @@ fn only_successor_chain(
                         | Opcode::Uextend
                         | Opcode::Isub
                         | Opcode::IaddImm
-                )
+                ) || masked_integer_comparison(f, &f.dfg.insts[inst], |value| {
+                    Some(f.dfg.resolve_aliases(value))
+                })
+                .is_some()
             })
         {
             return None;

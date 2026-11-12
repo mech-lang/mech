@@ -1,5 +1,6 @@
 //! Selected-edge facts over current immutable integer SSA words. Comparison
 //! inversion uses the proved current interval, never an assumed Boolean type.
+use super::super::masked_integer_comparison;
 use super::{Facts, Range};
 use cranelift_codegen::ir::condcodes::{CondCode, IntCC};
 use cranelift_codegen::ir::{Function, InstructionData as Data, Opcode, Value, ValueDef};
@@ -82,6 +83,12 @@ fn assume_inner(
         let ValueDef::Result(inst, 0) = f.dfg.value_def(value) else {
             continue;
         };
+        if let Some(comparison) = masked_integer_comparison(f, &f.dfg.insts[inst], |value| {
+            Some(f.dfg.resolve_aliases(value))
+        }) {
+            pending.push((comparison, narrowed));
+            continue;
+        }
         let (cond, word, bound) = match f.dfg.insts[inst] {
             Data::Unary {
                 opcode: Opcode::Uextend,

@@ -32,6 +32,7 @@ const MAX_CONSTANT_DEPTH: usize = 16;
 const MAX_CONSTANT_STEPS: usize = 64;
 
 mod boolean_conditions;
+pub(super) use boolean_conditions::masked_integer_comparison;
 
 fn counts(function: &Function) -> (usize, usize) {
     (

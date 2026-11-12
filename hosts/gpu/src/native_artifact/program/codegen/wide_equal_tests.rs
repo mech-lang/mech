@@ -1,4 +1,6 @@
 use super::*;
+use crate::native_artifact::codegen::options::{CompilationControls, OptimizationOptions};
+use crate::native_artifact::program::codegen::cfg_cleanup;
 use cranelift_codegen::ir::AbiParam;
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
@@ -7,6 +9,9 @@ use cranelift_module::{Linkage, Module, default_libcall_names};
 fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
     let mut c = module.make_context();
     c.func.signature.params = vec![AbiParam::new(types::I64); 4];
+    if matches!(variant, "raw_mask" | "extra_raw_mask") {
+        c.func.signature.params.push(AbiParam::new(types::I8));
+    }
     c.func.signature.returns = vec![AbiParam::new(types::I64)];
     let mut fb = FunctionBuilderContext::new();
     let certificate;
@@ -51,6 +56,19 @@ fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
         let at = b.block_params(header)[0];
         let sum = b.ins().iadd_imm(at, 8);
         let valid = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, sum, args[3]);
+        let valid = match variant {
+            "cleanup_masks" => {
+                let word = b.ins().uextend(types::I64, valid);
+                b.ins().icmp_imm(IntCC::Equal, word, 1)
+            }
+            "extended_masks" => {
+                let word = b.ins().uextend(types::I64, valid);
+                b.ins().band_imm(word, 1)
+            }
+            "wrong_mask" => b.ins().band_imm(valid, 2),
+            "raw_mask" => b.ins().band_imm(args[4], 1),
+            _ => valid,
+        };
         b.ins().brif(valid, body, &[], exit, &[]);
         b.switch_to_block(body);
         let a = b.ins().iadd(args[0], at);
@@ -73,6 +91,20 @@ fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
         } else {
             b.ins().icmp(IntCC::Equal, difference, zero)
         };
+        let equal = match variant {
+            "cleanup_masks" => {
+                let word = b.ins().uextend(types::I64, equal);
+                b.ins().icmp_imm(IntCC::NotEqual, word, 0)
+            }
+            "extended_masks" => {
+                let word = b.ins().uextend(types::I64, equal);
+                b.ins().band_imm(word, 1)
+            }
+            _ => equal,
+        };
+        if variant == "extra_raw_mask" {
+            b.ins().band_imm(args[4], 1);
+        }
         b.ins().brif(equal, back, &[], mismatch, &[]);
         b.switch_to_block(back);
         let next = b
@@ -102,7 +134,10 @@ fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
 #[test]
 fn compact_wide_equal_preserves_first_bad_word_tails_and_current_buffers() {
     let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
-    let (mut c, certificate) = fixture(&module, "normal");
+    let (mut c, certificate) = fixture(&module, "cleanup_masks");
+    let controls = CompilationControls::new(OptimizationOptions::default());
+    let cleanup = cfg_cleanup::optimize(&controls, &mut c, module.isa()).unwrap();
+    assert_eq!(cleanup.boolean_conditions_simplified, 2);
     assert_eq!(optimize(&mut c, &[certificate], false).wider, [7]);
     cranelift_codegen::verify_function(&c.func, module.isa()).unwrap();
     let id = module
@@ -151,7 +186,7 @@ fn compact_wide_equal_preserves_first_bad_word_tails_and_current_buffers() {
 #[test]
 fn compact_wide_equal_keeps_scalar_backedge_after_entering_tiers() {
     let module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
-    let (mut context, certificate) = fixture(&module, "normal");
+    let (mut context, certificate) = fixture(&module, "extended_masks");
     let header = certificate.header;
     context.compute_cfg();
     context.compute_domtree();
@@ -196,8 +231,12 @@ fn compact_wide_equal_refuses_effects_other_steps_extra_state_or_unproved_geomet
         "big",
         "immediate",
         "extra_entry",
+        "wrong_mask",
+        "raw_mask",
+        "extra_raw_mask",
     ] {
         let (mut c, certificate) = fixture(&module, variant);
+        cranelift_codegen::verify_function(&c.func, module.isa()).unwrap();
         let before = c.func.display().to_string();
         assert!(
             optimize(&mut c, &[certificate], false).wider.is_empty(),
