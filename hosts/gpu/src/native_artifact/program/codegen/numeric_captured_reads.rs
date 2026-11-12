@@ -446,12 +446,8 @@ mod tests {
                 .unwrap();
                 // Deliberately no selector guard: an invalid raw ordinal must
                 // still access initialized storage after arbitrary code motion.
-                let loaded = b.ins().load(ty, memory, address, 0);
-                let loaded = if width < 8 {
-                    b.ins().uextend(types::I64, loaded)
-                } else {
-                    loaded
-                };
+                let loaded =
+                    super::super::numeric_words::load_unsigned_word(&mut b, ty, memory, address, 0);
                 b.ins().return_(&[loaded]);
                 b.seal_all_blocks();
                 b.finalize();

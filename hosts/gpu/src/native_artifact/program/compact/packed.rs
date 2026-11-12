@@ -24,14 +24,20 @@ pub(super) fn load(
             b.ins().load(types::I64, MemFlags::new(), address, 8),
         ]),
         Kind::Scalar { bytes, signed, .. } => {
-            let value = b.ins().load(native(*bytes)?, MemFlags::new(), address, 0);
-            Ok(vec![if *bytes == 8 {
-                value
-            } else if *signed {
+            let ty = native(*bytes)?;
+            let value = if *signed && *bytes < 8 {
+                let value = b.ins().load(ty, MemFlags::new(), address, 0);
                 b.ins().sextend(types::I64, value)
             } else {
-                b.ins().uextend(types::I64, value)
-            }])
+                crate::native_artifact::program::codegen::numeric_words::load_unsigned_word(
+                    b,
+                    ty,
+                    MemFlags::new(),
+                    address,
+                    0,
+                )
+            };
+            Ok(vec![value])
         }
         Kind::Product(fields) => {
             let mut result = vec![];

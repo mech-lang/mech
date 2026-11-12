@@ -389,3 +389,74 @@ fn default_pipeline_proves_join_widths_and_ablation_retains_the_guard() {
         }
     }
 }
+
+#[test]
+fn zero_extending_loads_keep_exact_width_facts_but_signed_and_full_words_do_not() {
+    use cranelift_codegen::ir::MemFlags;
+    for width in [1u8, 2, 4, 8] {
+        for signed in [false, true] {
+            let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+            let mut context = context(&module);
+            let mut state = FunctionBuilderContext::new();
+            {
+                let mut b = FunctionBuilder::new(&mut context.func, &mut state);
+                let entry = b.create_block();
+                let good = b.create_block();
+                let bad = b.create_block();
+                b.append_block_params_for_function_params(entry);
+                b.switch_to_block(entry);
+                let pointer = b.block_params(entry)[0];
+                let ty = match width {
+                    1 => types::I8,
+                    2 => types::I16,
+                    4 => types::I32,
+                    8 => types::I64,
+                    _ => unreachable!(),
+                };
+                let value = if signed && width < 8 {
+                    let value = b.ins().load(ty, MemFlags::new(), pointer, 0);
+                    b.ins().sextend(types::I64, value)
+                } else {
+                    crate::native_artifact::program::codegen::numeric_words::load_unsigned_word(
+                        &mut b,
+                        ty,
+                        MemFlags::new(),
+                        pointer,
+                        0,
+                    )
+                };
+                let maximum = if width < 8 {
+                    u64::MAX >> (64 - width as u32 * 8)
+                } else {
+                    u32::MAX as u64
+                };
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, maximum as i64);
+                b.ins().brif(valid, good, &[], bad, &[]);
+                b.switch_to_block(good);
+                b.ins().return_(&[value]);
+                b.switch_to_block(bad);
+                let rejected = b.ins().iconst(types::I64, REJECTED as i64);
+                b.ins().return_(&[rejected]);
+                b.seal_all_blocks();
+                b.finalize();
+            }
+            let entry = compile(
+                &mut module,
+                &format!("packed_{width}_{signed}"),
+                context,
+                Some(usize::from(!signed && width < 8)),
+            );
+            let bytes = [0xffu8; 8];
+            // SAFETY: all width-byte cells are initialized for this owned call.
+            let observed = unsafe { entry(bytes.as_ptr() as u64, 0) };
+            let expected = if signed || width == 8 {
+                REJECTED
+            } else {
+                u64::MAX >> (64 - width as u32 * 8)
+            };
+            assert_eq!(observed, expected);
+        }
+    }
+}

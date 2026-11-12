@@ -46,6 +46,7 @@ pub(in crate::native_artifact) struct Report {
     pub proven_projection_guards: Vec<(usize, u32, usize, u32)>,
     pub proven_boolean_successors: Vec<(usize, u32)>,
     pub proven_scalar_read_guards: Vec<(usize, usize, u32)>,
+    pub producer_element_read_guards: Vec<(usize, usize, u32)>,
     pub proven_checked_increment_writes: Vec<(usize, usize, usize, u32, u32)>,
     pub proven_independent_view_increment_writes: Vec<(usize, usize, usize)>,
     pub proven_scalar_arithmetic: Vec<usize>,
@@ -587,11 +588,17 @@ pub(in crate::native_artifact) fn emit_entry(
         .map(|v| (v.initialize, v.queries(proof)))
         .collect();
     let traversal = super::numeric_traversal::derive(code, proof, shadow, &checks, &[], false);
+    let producer_reads = if controls.enabled(OptimizationPass::ProducerElementRanges) {
+        super::numeric_traversal::producer_reads(code, proof, controls)
+    } else {
+        BTreeSet::new()
+    };
     b.ins().jump(target(region.tail.header()), &[]);
     let mut report = Report {
         header: site,
         parent: region.tail.parent(),
         source_sites: proof.sites.clone(),
+        producer_element_read_guards: Vec::new(),
         native_extent_bounds: Vec::new(),
         typed_loads: Vec::new(),
         movable_capture_reads: Vec::new(),
@@ -1237,8 +1244,14 @@ pub(in crate::native_artifact) fn emit_entry(
                 };
                 let ordinal = b.ins().iadd_imm(index, -1);
                 if let Operation::Read { array, index, .. } = operation
-                    && traversal.read(site, *array, *index)
+                    && (traversal.read(site, *array, *index)
+                        || producer_reads.contains(&(site, *array, *index)))
                 {
+                    if producer_reads.contains(&(site, *array, *index)) {
+                        report
+                            .producer_element_read_guards
+                            .push((site, *array, *index));
+                    }
                     report
                         .proven_scalar_read_guards
                         .push((site, *array, *index));
@@ -1357,7 +1370,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 let value = if checked_increment.is_some() || deferred_old {
                     None
                 } else {
-                    let value = b.ins().load(
+                    let value = super::numeric_words::load_unsigned_word(
+                        b,
                         ty,
                         if movable {
                             super::numeric_captured_reads::flags()
@@ -1384,11 +1398,6 @@ pub(in crate::native_artifact) fn emit_entry(
                             },
                         );
                     }
-                    let value = if width < 8 {
-                        b.ins().uextend(types::I64, value)
-                    } else {
-                        value
-                    };
                     report.typed_loads.push((site, width));
                     Some(value)
                 };
@@ -1415,17 +1424,13 @@ pub(in crate::native_artifact) fn emit_entry(
                             let changed = if checked_increment.is_some() {
                                 b.ins().iconst(types::I8, 1)
                             } else {
-                                let old = b.ins().load(
+                                let old = super::numeric_words::load_unsigned_word(
+                                    b,
                                     ty,
                                     super::numeric_words::guarded_load_flags(controls.options()),
                                     address,
                                     0,
                                 );
-                                let old = if width < 8 {
-                                    b.ins().uextend(types::I64, old)
-                                } else {
-                                    old
-                                };
                                 report.typed_loads.push((site, width));
                                 b.ins().icmp(IntCC::NotEqual, old, incoming)
                             };

@@ -25,11 +25,39 @@ pub(in super::super) fn assume_with_undo(
     known: &mut BTreeMap<Value, Range>,
     undo: &mut Vec<(Value, Option<Range>)>,
 ) -> bool {
+    assume_inner(f, value, truth, known, undo, &mut 65_536)
+}
+
+pub(in super::super) fn assume_bounded(
+    f: &Function,
+    value: Value,
+    truth: bool,
+    known: &mut BTreeMap<Value, Range>,
+    remaining: &mut usize,
+) -> bool {
+    assume_inner(f, value, truth, known, &mut Vec::new(), remaining)
+}
+
+fn assume_inner(
+    f: &Function,
+    value: Value,
+    truth: bool,
+    known: &mut BTreeMap<Value, Range>,
+    undo: &mut Vec<(Value, Option<Range>)>,
+    remaining: &mut usize,
+) -> bool {
     let Some(max) = mask(f, value) else {
         return false;
     };
     let mut pending = vec![(value, if truth { Range(1, max) } else { Range(0, 0) })];
+    // Shared Boolean DAGs may enqueue the same selected word many times.
+    // Propagate an initially known range once, then revisit only on progress.
+    let mut visited = BTreeMap::new();
     while let Some((value, want)) = pending.pop() {
+        let Some(next) = remaining.checked_sub(1) else {
+            return false;
+        };
+        *remaining = next;
         let value = f.dfg.resolve_aliases(value);
         let Some(current) = Facts::bound(f, known).value_range(value) else {
             return false;
@@ -37,6 +65,9 @@ pub(in super::super) fn assume_with_undo(
         let narrowed = Range(current.0.max(want.0), current.1.min(want.1));
         if narrowed.0 > narrowed.1 {
             return false;
+        }
+        if visited.insert(value, narrowed) == Some(narrowed) {
+            continue;
         }
         if known.get(&value).copied() != Some(narrowed) {
             undo.push((value, known.insert(value, narrowed)));

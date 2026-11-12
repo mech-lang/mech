@@ -87,6 +87,9 @@ pub(super) fn define<M: Module>(
         }
         return Err(backend(format!("{symbol}: {error:?}")));
     }
+    // Numeric phases have their own sealed SSA; never match through packets.
+    let mut bit_counts =
+        crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
     let cleanup = cfg_cleanup::optimize(&controls, &mut context, module.isa())?;
     let word_loops = &report;
     // Resolve literal admission flags before allocating the already selected
@@ -249,6 +252,8 @@ pub(super) fn define<M: Module>(
             eprintln!("{symbol} proved scalar spans: {changed}");
         }
     }
+    // Late forwarding may expose a complete idiom without crossing a phase.
+    bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
     if let Some(path) = std::env::var_os("MECH_INSPECT_PHASE_CLIF") {
         let path = std::path::PathBuf::from(path);
         if path.file_stem().is_some_and(|name| name == symbol.as_str()) {
@@ -288,6 +293,7 @@ pub(super) fn define<M: Module>(
         "input_words":input_words,"output_words":output_words,
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":no_growth.is_none(),"unique_writable_owner_gate":true,"cleanup":cleanup});
+    summary["bit_counts"] = serde_json::json!(bit_counts);
     if let Some(report) = vector_predicates.filter(|report| report.removed_branches != 0) {
         summary["private_vector_predicates"] = serde_json::json!(report);
     }

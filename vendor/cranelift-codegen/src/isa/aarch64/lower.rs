@@ -15,6 +15,7 @@ use crate::isa::aarch64::inst::*;
 use crate::machinst::lower::*;
 use crate::machinst::*;
 
+mod boolean_conjunction;
 pub mod isle;
 
 //============================================================================
