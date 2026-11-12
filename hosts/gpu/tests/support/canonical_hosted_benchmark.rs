@@ -35,6 +35,7 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
             FULL.as_bytes(),
         )
         .unwrap();
+        assert_eq!(secured.metadata()["object"], benchmark.metadata()["object"]);
         for relative in [
             "application.mec",
             "program.mecb",
@@ -71,8 +72,7 @@ fn benchmark_generator_preserves_the_original_object_and_isolates_policy_control
             assert_eq!(project.metadata()["timing_samples"], 0);
             let main = fs::read_to_string(project.root().join("src/main.rs")).unwrap();
             assert!(!main.contains("@BENCHMARK_") && !main.contains("@HOSTED_"));
-            assert!(main.contains("BuildOwnedHostedBinding::from_build_owned_image("));
-            assert!(main.contains(dispatch));
+            crate::fixture::assert_compiled_hosted_launcher(project, &main, dispatch);
         }
         let normal = fs::read_to_string(secured.root().join("src/main.rs")).unwrap();
         assert!(!normal.contains("NativeBenchmark") && !normal.contains("benchmark_policy"));

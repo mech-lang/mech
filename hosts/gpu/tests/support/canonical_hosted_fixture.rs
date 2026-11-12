@@ -5,6 +5,7 @@ use super::{
 };
 use mech_core::{MResult, ManagedMemoryBudget, MechError, Schema, Value};
 use mech_engine::{ProgramArtifact, decode_program_artifact_bytecode_v1};
+use mech_gpu::native_artifact::GeneratedLinkedApplication;
 use mech_runtime::{
     CanonicalNativeResourceCompletion, CanonicalNativeResourceLimits,
     CanonicalNativeResourceRunError, ConfigValue, HostInstanceConfig, HostManifestConfig,
@@ -15,6 +16,32 @@ use mech_runtime::{
 };
 use mech_terminal::{CliBackend, CliHostFactory};
 use std::sync::{Arc, Mutex};
+
+pub(super) fn assert_compiled_hosted_launcher(
+    project: &GeneratedLinkedApplication,
+    main: &str,
+    dispatch: &str,
+) {
+    let symbol = project.metadata()["object"]["compiled_module_symbol"]
+        .as_str()
+        .expect("compiled module symbol in generated Object metadata");
+    assert!(main.contains(&format!("#[link_name = {symbol:?}]")));
+    assert!(main.contains("static LINKED_MODULE: NativeProgramModule;"));
+    let binding = main
+        .find("BuildOwnedHostedBinding::from_compiled_module(")
+        .expect("compiled module binding in generated launcher");
+    let launch = main
+        .find(dispatch)
+        .expect("hosted dispatch in generated launcher");
+    assert!(binding < launch);
+    assert!(
+        main[binding..launch]
+            .contains("&LINKED_MODULE, include_bytes!(\"../native-resources.json\")")
+    );
+    for descriptor in ["native-descriptor.bin", "native-descriptor.json"] {
+        assert!(!main.contains(&format!("include_bytes!(\"../{descriptor}\")")));
+    }
+}
 
 #[derive(Clone, Debug, Default)]
 pub(super) struct Trace {
