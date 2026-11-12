@@ -1,0 +1,12 @@
+{
+  "verified_records": 2297,
+  "unique_blobs": 634,
+  "candidate_source_files": 2809,
+  "baseline_source_files": 2809,
+  "exact_primary_outputs": 868,
+  "exact_resource_outputs": 196,
+  "managed_ms": 1.608167,
+  "fastest_Rust_ms": 1.514167,
+  "times_fastest_Rust": 1.062080338562391,
+  "managed_target_met": false
+}
