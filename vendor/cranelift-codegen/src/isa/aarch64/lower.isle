@@ -1232,6 +1232,13 @@
 (rule uextend -2 (lower (has_type (fits_in_64 out) (uextend _ x @ (value_type in))))
       (extend x false (ty_bits in) (ty_bits out)))
 
+;; Scalar I32 OR lowering writes a W register. The same physical
+;; definition already supplies the zero-extended I64 result, including
+;; when the original low word has other uses.
+(rule uextend_i32_bor 1
+      (lower (has_type $I64 (uextend _ ored @ (has_type $I32 (bor _ _ _)))))
+      (put_in_reg ored))
+
 ;; Extraction of a vector lane automatically extends as necessary, so we can
 ;; skip an explicit extending instruction.
 (rule 1 (lower (has_type (fits_in_64 out)
