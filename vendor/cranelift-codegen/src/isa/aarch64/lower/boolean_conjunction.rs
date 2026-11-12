@@ -22,13 +22,13 @@ pub(super) struct Comparison {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(super) struct Chain {
+pub(in crate::isa::aarch64) struct Chain {
     comparisons: [Option<Comparison>; MAX_COMPARISONS],
     len: usize,
 }
 
 impl Chain {
-    pub fn iter(&self) -> impl Iterator<Item = Comparison> + '_ {
+    pub(super) fn iter(&self) -> impl Iterator<Item = Comparison> + '_ {
         self.comparisons[..self.len].iter().map(|c| c.unwrap())
     }
 }
