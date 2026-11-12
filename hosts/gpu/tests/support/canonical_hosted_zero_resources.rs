@@ -98,7 +98,7 @@ fn original_and_decoded_closed_program_generate_same_hosted_object_and_pins() {
                 .is_none()
         );
         assert_eq!(manifest["profile"]["dev"]["debug"].as_integer(), Some(0));
-        crate::fixture::assert_compiled_hosted_launcher(
+        crate::assert_compiled_hosted_launcher(
             &project,
             &main,
             "run_hosted_program_application(binding,",

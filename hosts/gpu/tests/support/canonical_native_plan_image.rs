@@ -175,7 +175,7 @@ fn generated_hosted_application_pins_the_same_object_descriptor() {
         assert!(!main.contains("decode_program_artifact"));
         assert!(!main.contains("CanonicalNativeResourceMetadata::prepare"));
         assert!(!main.contains("lower_native_program_artifact"));
-        crate::fixture::assert_compiled_hosted_launcher(
+        crate::assert_compiled_hosted_launcher(
             &project,
             &main,
             "run_hosted_program_application(binding,",
