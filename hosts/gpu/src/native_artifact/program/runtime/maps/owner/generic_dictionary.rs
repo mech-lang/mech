@@ -12,6 +12,44 @@ pub(in crate::native_artifact::program::runtime) struct Dictionary {
     pub header: usize,
 }
 impl Session<'_> {
+    /// Pure O(1) envelope for a still-owned dictionary before any optional
+    /// lookup attempt spends work or takes the virtual owner. No permit is
+    /// granted; take_dictionary retains its ordinary account/generation checks.
+    pub(in crate::native_artifact::program::runtime) fn dictionary_replay_envelope(
+        &self,
+        site: usize,
+    ) -> Result<Option<(u64, usize)>, Error> {
+        let Some(proof) = self.descriptor.metadata().generic_dictionary.header(site) else {
+            return Ok(None);
+        };
+        let Some(state) = self.state.as_ref() else {
+            return Ok(None);
+        };
+        let Some(id) = self
+            .descriptor
+            .metadata()
+            .generic_dictionary
+            .regions
+            .iter()
+            .position(|r| r.owner == proof.owner)
+        else {
+            return Ok(None);
+        };
+        let Some(owner) = state.dictionaries.get(id).and_then(Option::as_ref) else {
+            return Ok(None);
+        };
+        if owner.value != proof.result.get() || owner.owner != proof.owner || owner.header != site {
+            return Ok(None);
+        }
+        Ok(Some((
+            owner
+                .map
+                .retained_bytes()
+                .map_err(storage_error)?
+                .max(owner.map.logical_bytes()),
+            owner.map.len(),
+        )))
+    }
     pub(in crate::native_artifact::program::runtime) fn dictionary_nodes(
         &self,
         work: &mut NativeWorkMeter,

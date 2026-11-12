@@ -97,7 +97,7 @@ unsafe extern "C" fn observed(
         let ctx = unsafe { &mut *raw.cast::<Invocation<'_, '_, '_>>() };
         COUNTS.with(|v| {
             let mut n = v.get();
-            if site as u32 == proof.exit && op == GlobalHelper::MapDictionaryEnd.raw() {
+            if site as u32 == proof.exit && matches!(op, value if value == GlobalHelper::MapDictionaryEnd.raw() || value == GlobalHelper::MapOwnerEnd.raw()) {
                 if ctx.state.map_owners.has_dictionary(proof.result.get()) {
                     n[0] += 1
                 }
@@ -385,6 +385,228 @@ fn generic_dictionary_images_rederive_exact_native_sources_and_public_escapes_st
                 .generic_dictionary
                 .regions
                 .is_empty()
+        );
+    }
+}
+
+fn guarded_source(inverted: bool, failing_bypass: bool) -> String {
+    let lookup = "[index{tag} | tag <- tags]";
+    let bypass = if failing_bypass {
+        "[1u64 / divisor<u64> | tag <- tags]"
+    } else {
+        "[0u64 | tag <- tags]"
+    };
+    let (yes, no) = if inverted {
+        (bypass, lookup)
+    } else {
+        (lookup, bypass)
+    };
+    source(false).replace("ids := [index{tag} | tag <- tags]\nids\n",&format!(
+        "allowed := (end >= 3u64) && (end <= 64u64)\nids := (allowed? | true => {yes} | false => {no})\nids\n"
+    ))
+}
+#[test]
+fn guarded_dictionary_native_prediction_keeps_original_exit_publication_both_paths_and_retry() {
+    for inverted in [false, true] {
+        for a in artifacts(&guarded_source(inverted, false)) {
+            let cat = mech_stdlib::source_catalog();
+            let native = JitProgramArtifact::compile(&a, &cat).unwrap();
+            let ordinary =
+                JitProgramArtifact::compile_for_test(&a, &cat, OptimizationPass::GenericDictionary)
+                    .unwrap();
+            let regions = &native.descriptor().metadata().generic_dictionary.regions;
+            assert_eq!(regions.len(), 1);
+            assert!(regions[0].guard.is_some());
+            for restored in [false, true] {
+                let memory = NativeProgramLimitMode::NoLimits.memory_budget();
+                for keys in [vec!["z", "a", "é", "z"], vec!["z", "z"], vec![""]] {
+                    let selected = (keys
+                        .iter()
+                        .copied()
+                        .collect::<std::collections::BTreeSet<_>>()
+                        .len()
+                        >= 3)
+                        != inverted;
+                    let args = arguments(&a, &memory, &keys, &[]);
+                    let aliases = args.clone();
+                    let before = contents(&args);
+                    let held = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let mut expected_values = vec![None; a.outputs().len()];
+                    ordinary
+                        .evaluate_into(
+                            &args,
+                            &mut expected_values,
+                            NativeProgramLimitMode::NoLimits.execution(),
+                            &memory,
+                        )
+                        .unwrap();
+                    let expected = data(&expected_values);
+                    drop(expected_values);
+                    for fault in [Fault::None, Fault::RefusePrepare, Fault::RefuseFinish] {
+                        let mut output = vec![None; a.outputs().len()];
+                        let (result, counts) =
+                            run(&native, &args, &mut output, &memory, restored, fault);
+                        result.unwrap_or_else(|e| {
+                            panic!("{inverted}/{selected}/{restored}/{fault:?}: {e:?}")
+                        });
+                        assert_eq!(data(&output), expected);
+                        assert_eq!(
+                            counts[0],
+                            u64::from(selected),
+                            "a bypass installs no virtual owner"
+                        );
+                        assert_eq!(
+                            counts[1],
+                            u64::from(!selected),
+                            "canonical bypass publication occurs at original exit"
+                        );
+                        assert_eq!(
+                            counts[2],
+                            u64::from(selected && !matches!(fault, Fault::RefusePrepare))
+                        );
+                        if !selected {
+                            assert_eq!(counts[3], 0);
+                        }
+                        assert_eq!(contents(&args), before);
+                        assert_eq!(contents(&aliases), before);
+                        drop(output);
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            held
+                        );
+                    }
+                    drop((args, aliases));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+            }
+        }
+    }
+}
+#[test]
+fn guarded_dictionary_bypass_checked_error_stays_after_original_canonical_publication() {
+    for a in artifacts(&guarded_source(false, true)) {
+        let cat = mech_stdlib::source_catalog();
+        let native = JitProgramArtifact::compile(&a, &cat).unwrap();
+        let ordinary =
+            JitProgramArtifact::compile_for_test(&a, &cat, OptimizationPass::GenericDictionary)
+                .unwrap();
+        assert!(
+            native.descriptor().metadata().generic_dictionary.regions[0]
+                .guard
+                .is_some()
+        );
+        for restored in [false, true] {
+            let memory = NativeProgramLimitMode::NoLimits.memory_budget();
+            let args = inputs(
+                &a,
+                &[
+                    ("tags", Data::Matrix(vec![Data::String("z".into())].into())),
+                    ("divisor", Data::U64(0)),
+                ],
+                &memory,
+            );
+            let held = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            let mut out = vec![None; a.outputs().len()];
+            let mut expected = out.clone();
+            let (result, counts) = run(&native, &args, &mut out, &memory, restored, Fault::None);
+            let expected_error = ordinary
+                .evaluate_into(
+                    &args,
+                    &mut expected,
+                    NativeProgramLimitMode::NoLimits.execution(),
+                    &memory,
+                )
+                .unwrap_err();
+            assert_eq!(
+                format!("{:?}", result.unwrap_err()),
+                format!("{expected_error:?}")
+            );
+            assert_eq!(counts, [0, 1, 0, 0]);
+            assert_eq!(data(&out), data(&expected));
+            assert!(out.iter().all(Option::is_none));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                held
+            );
+        }
+    }
+}
+#[test]
+fn guarded_dictionary_finite_boundaries_cover_lookup_and_canonical_bypass() {
+    let source = guarded_source(false, false);
+    for keys in [vec!["b", "a", "é", "b"], vec!["a", "a"]] {
+        resources::finite_boundaries(&source, |artifact, memory| {
+            arguments(artifact, memory, &keys, &[])
+        });
+    }
+}
+#[test]
+fn guarded_dictionary_images_rederive_prediction_and_reject_underfunded_exit() {
+    use crate::native_artifact::{NativeProgramDescriptor, emit_program_object};
+    use serde::Deserialize;
+    for artifact in artifacts(&guarded_source(false, false)) {
+        let catalog = mech_stdlib::source_catalog();
+        let object = emit_program_object(&artifact, &catalog).unwrap();
+        let descriptor = object.descriptor();
+        let expected = &descriptor.metadata().generic_dictionary;
+        let proof = &expected.regions[0];
+        assert!(proof.guard.is_some());
+        let image = object.native_metadata();
+        let independent =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(image, &catalog) }.unwrap();
+        let bound = unsafe {
+            NativeProgramDescriptor::decode_object_bound_image(
+                image,
+                &catalog,
+                object.identity().bytes(),
+                object.native_metadata_binding().bytes(),
+            )
+        }
+        .unwrap();
+        assert_eq!(&independent.metadata().generic_dictionary, expected);
+        assert_eq!(&bound.metadata().generic_dictionary, expected);
+        let site = proof.exit as usize;
+        let base = crate::native_artifact::iteration_abi::control_visits(
+            descriptor.plan().blocks(),
+            descriptor.plan().iterations().iter().map(Into::into),
+            0,
+        )
+        .unwrap();
+        let required = base[site].work
+            + crate::native_artifact::program::prepare::map_owner::extra_work(
+                descriptor.metadata().map_owner_words.as_ref().unwrap(),
+                site,
+            )
+            .unwrap()
+            + expected.extra_work(site);
+        assert!(descriptor.metadata().visits[site].work >= required);
+        let mut reader =
+            mech_engine::native_artifact::BuildOwnedImageReader::from_image(image).unwrap();
+        let mut wire = serde_json::Value::deserialize(&mut reader).unwrap();
+        reader.end().unwrap();
+        let prices = wire["descriptor"]["visit_work"].as_array_mut().unwrap();
+        for (slot, byte) in prices[site * 8..site * 8 + 8]
+            .iter_mut()
+            .zip((required - 1).to_le_bytes())
+        {
+            *slot = byte.into();
+        }
+        let forged = mech_engine::native_artifact::encode_native_metadata_image(
+            &serde_json::to_vec(&wire).unwrap(),
+        )
+        .unwrap();
+        let reason =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(&forged, &catalog) }
+                .err()
+                .unwrap();
+        assert!(
+            reason
+                .to_string()
+                .contains("guarded dictionary publication template is not funded"),
+            "{reason}"
         );
     }
 }

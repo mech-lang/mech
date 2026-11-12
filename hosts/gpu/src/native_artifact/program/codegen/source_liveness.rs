@@ -233,4 +233,76 @@ mod tests {
         );
         assert_eq!(result, [set(&[1, 2]), set(&[1]), set(&[2])]);
     }
+    #[test]
+    fn guarded_dictionary_prediction_leaves_are_current_source_homes_at_original_exit() {
+        use mech_engine::CanonicalSourceFrontend;
+        use mech_syntax::document::{
+            AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
+            parse_canonical_document,
+        };
+        let source = r#"+> map
++> sequence
+renumber(keys<[string]>,at<u64>,end<u64>,index<{string:u64}>) => (out<{string:u64}>) :=
+  more := at < end
+  next := (more? | true => map/insert(index,keys[at + 1u64],at) | false => index)
+  out := (more? | true => renumber(keys,at + 1u64,end,next) | false => index).
+tags := tags<[string]>
+histogram := map/histogram(tags)
+keys := map/keys(histogram)
+end := sequence/length(keys)
+index := renumber(keys,0u64,end,histogram)
+allowed := (end >= 3u64) && (end <= 64u64)
+ids := (allowed? | true => [index{tag} | tag <- tags] | false => [0u64 | tag <- tags])
+ids
+"#;
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x4755415244484f4d), Revision(1), source).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let catalog = mech_stdlib::source_catalog();
+        let original = CanonicalSourceFrontend
+            .compile_document_with_catalog(
+                &DocumentSyntax::cast(parsed.syntax()).unwrap(),
+                catalog.clone(),
+            )
+            .unwrap()
+            .compile_artifact()
+            .unwrap();
+        let decoded = mech_engine::decode_program_artifact_bytecode_v1(
+            &mech_engine::encode_program_artifact_bytecode_v1(&original).unwrap(),
+        )
+        .unwrap();
+        for artifact in [original, decoded] {
+            let plan =
+                mech_engine::native_artifact::lower_native_program_artifact(&artifact, &catalog)
+                    .unwrap();
+            let prepared = PreparedNativeProgram::prepare(&artifact, &catalog, plan).unwrap();
+            let [region] = prepared.metadata().generic_dictionary.regions.as_slice() else {
+                panic!("one guarded owner")
+            };
+            let guard = region.guard.as_ref().unwrap();
+            let homes = guard
+                .leaves
+                .iter()
+                .map(|v| v.get() as usize)
+                .collect::<BTreeSet<_>>();
+            assert!(!homes.is_empty());
+            let live = Liveness::derive(&prepared, &homes).unwrap();
+            assert!(
+                live.at(region.exit as usize).is_superset(&homes),
+                "anticipation must not read an unspilled future home"
+            );
+            for site in &guard.sites {
+                assert_eq!(
+                    prepared
+                        .metadata()
+                        .generic_dictionary
+                        .extra_work(*site as usize),
+                    0,
+                    "source guard fees remain at their original visits"
+                );
+            }
+        }
+    }
 }

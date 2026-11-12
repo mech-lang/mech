@@ -4,20 +4,21 @@ use super::{
     arrays::Arrays,
     collections::Collections,
     flow::Flow,
-    layout::{Kind, Layout, Type},
+    layout::{Kind, Layout},
     map_index, packed,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::program::prepare::{PreparedNativeProgram, utf8_reads::Region};
 use crate::native_artifact::{
     NativeCompileError,
-    compiler::{backend, guard},
+    compiler::{backend, guard, primitive},
 };
 use cranelift_codegen::ir::{
     Block, Endianness, InstBuilder, MemFlags, StackSlot, StackSlotData, StackSlotKind, Value,
     condcodes::IntCC, types,
 };
 use cranelift_frontend::FunctionBuilder;
+use mech_engine::native_artifact::NativeScalarOp;
 use std::collections::BTreeMap;
 
 #[derive(Clone)]
@@ -58,7 +59,7 @@ impl Proof {
         groups.into_values().collect()
     }
     pub fn summary(&self) -> serde_json::Value {
-        serde_json::json!({"producer":self.producer,"immutable_input":self.source,"lookups":self.regions.iter().map(|r|serde_json::json!({"header":r.header,"read_site":r.read_site})).collect::<Vec<_>>()})
+        serde_json::json!({"producer":self.producer,"immutable_input":self.source,"lookups":self.regions.iter().map(|r|serde_json::json!({"header":r.header,"read_site":r.read_site,"conversion_site":r.conversion_site,"output_width":r.output_width})).collect::<Vec<_>>()})
     }
 }
 pub(super) struct State {
@@ -138,9 +139,35 @@ impl State {
         let value_offset = fields[1]
             .packed_offset
             .ok_or_else(|| backend("classified native lookup has no U64 value offset"))?;
-        let scalar = Type::derive(&mech_core::SchemaBody::UnsignedInteger(
-            mech_core::IntegerWidth::W64,
-        ))?;
+        // The same sealed source proof serves both native contracts. Its
+        // checked cast is part of the result, not an optional representation.
+        let scalar = layout.ty(region.output).element()?;
+        let width = match scalar.kind {
+            Kind::Scalar {
+                bytes,
+                signed: false,
+                float: false,
+            } if bytes == region.output_width && scalar.words == 1 => bytes,
+            _ => {
+                return Err(backend(
+                    "classified native lookup output is not its unsigned source type",
+                ));
+            }
+        };
+        let conversion = match (width, region.conversion_site) {
+            (1, Some(site)) => Some((NativeScalarOp::U64ToU8, site)),
+            (2, Some(site)) => Some((NativeScalarOp::U64ToU16, site)),
+            (4, Some(site)) => Some((NativeScalarOp::U64ToU32, site)),
+            (8, None) => None,
+            _ => {
+                return Err(backend(
+                    "classified native lookup lost its checked source conversion",
+                ));
+            }
+        };
+        let stride = scalar
+            .packed_bytes
+            .ok_or_else(|| backend("classified native lookup output has no packed stride"))?;
         let (index, count) = collections.parallel_cursor(b, region.iteration)?;
         let classes = b.ins().stack_load(types::I64, self.slots, 0);
         let initial = b.ins().icmp_imm(IntCC::Equal, index, 0);
@@ -150,7 +177,7 @@ impl State {
         let ordinary = b.create_block();
         b.ins().brif(valid, fast, &[], ordinary, &[]);
         b.switch_to_block(fast);
-        let mut output = arrays.allocate(b, count, &scalar, false, error)?;
+        let mut output = arrays.allocate(b, count, scalar, false, error)?;
         let zero = b.ins().iconst(types::I64, 0);
         let one = b.ins().iconst(types::I64, 1);
         let head = b.create_block();
@@ -164,6 +191,12 @@ impl State {
         let read_error = b.create_block();
         b.append_block_param(read_error, types::I64);
         b.set_cold_block(read_error);
+        let conversion_error = conversion.map(|(_, site)| {
+            let error = b.create_block();
+            b.append_block_param(error, types::I64);
+            b.set_cold_block(error);
+            (error, site)
+        });
         b.ins().jump(head, &[zero.into()]);
         b.switch_to_block(head);
         let at = b.block_params(head)[0];
@@ -180,11 +213,11 @@ impl State {
         let previous = b.ins().icmp(IntCC::UnsignedLessThan, representative, at);
         b.ins().brif(previous, reuse, &[], lookup, &[]);
         b.switch_to_block(reuse);
-        let offset = b.ins().imul_imm(representative, 8);
+        let offset = b.ins().imul_imm(representative, stride as i64);
         let pointer = b.ins().iadd(output[0], offset);
         // The native classifier points only to the first equal row at/before
         // this one. A prior first row was fully written in this invocation.
-        let value = b.ins().load(types::I64, MemFlags::new(), pointer, 0);
+        let value = packed::load(b, pointer, scalar)?[0];
         b.ins().jump(store, &[value.into()]);
         b.switch_to_block(lookup);
         let offset = b.ins().imul_imm(at, 16);
@@ -206,12 +239,19 @@ impl State {
         let value = b
             .ins()
             .load(types::I64, MemFlags::new(), pointer, value_offset as i32);
+        // A duplicate reuses an earlier already checked result. First rows
+        // perform the original checked conversion before any narrowed write.
+        let value = if let Some((op, _)) = conversion {
+            primitive(b, op, &[value], conversion_error.unwrap().0)
+        } else {
+            value
+        };
         b.ins().jump(store, &[value.into()]);
         b.switch_to_block(store);
         let value = b.block_params(store)[0];
-        let offset = b.ins().imul_imm(at, 8);
+        let offset = b.ins().imul_imm(at, stride as i64);
         let pointer = b.ins().iadd(output[0], offset);
-        b.ins().store(MemFlags::new(), value, pointer, 0);
+        packed::store(b, pointer, scalar, &[value])?;
         let at = b.ins().iadd_imm(at, 1);
         b.ins().jump(head, &[at.into()]);
         b.switch_to_block(done);
@@ -235,6 +275,12 @@ impl State {
         let status = b.block_params(read_error)[0];
         let origin = b.ins().iconst(types::I64, region.read_site as i64);
         b.ins().return_(&[status, origin]);
+        if let Some((error, site)) = conversion_error {
+            b.switch_to_block(error);
+            let status = b.block_params(error)[0];
+            let origin = b.ins().iconst(types::I64, site as i64);
+            b.ins().return_(&[status, origin]);
+        }
         b.switch_to_block(ordinary);
         Ok(())
     }
@@ -301,6 +347,205 @@ mod tests {
         ] {
             for artifact in artifacts(source) {
                 assert!(proofs(&artifact).is_empty());
+            }
+        }
+    }
+    struct CompactKernel {
+        entry: unsafe extern "C" fn(
+            *mut crate::native_artifact::compact_runtime::Heap,
+            *const u64,
+            *mut u64,
+        )
+            -> crate::native_artifact::compact_runtime::NativeStatus,
+        metadata: serde_json::Value,
+        conversion_site: Option<u32>,
+        _module: cranelift_jit::JITModule,
+    }
+    impl CompactKernel {
+        fn new(artifact: &ProgramArtifact, classified: bool, width: u8) -> Self {
+            use crate::native_artifact::compact_runtime as runtime;
+            use cranelift_module::{FuncOrDataId, Module, default_libcall_names};
+            let catalog = mech_stdlib::source_catalog();
+            let plan =
+                mech_engine::native_artifact::lower_native_program_artifact(artifact, &catalog)
+                    .unwrap();
+            let prepared = PreparedNativeProgram::prepare(artifact, &catalog, plan).unwrap();
+            let regions = &prepared.metadata().utf8_reads.regions;
+            assert_eq!(regions.len(), 1);
+            assert_eq!(regions[0].output_width, width);
+            assert_eq!(regions[0].classification_site.is_some(), classified);
+            let conversion_site = regions[0].conversion_site;
+            let mut builder = cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed")],
+                default_libcall_names(),
+            )
+            .unwrap();
+            builder.symbol(
+                "mech_compact_allocate",
+                runtime::mech_compact_allocate as *const u8,
+            );
+            builder.symbol(
+                "mech_compact_writable",
+                runtime::mech_compact_writable as *const u8,
+            );
+            builder.symbol("mech_compact_free", runtime::mech_compact_free as *const u8);
+            let mut module = cranelift_jit::JITModule::new(builder);
+            let metadata = super::super::define(&mut module, &prepared, false).unwrap();
+            assert_eq!(
+                metadata["native_string_classes"].as_array().unwrap().len(),
+                usize::from(classified)
+            );
+            if classified {
+                assert_eq!(
+                    metadata["native_string_classes"][0]["lookups"][0]["output_width"],
+                    width
+                );
+            }
+            let output_types = metadata["output_types"].as_array().unwrap();
+            assert_eq!(
+                output_types.last().unwrap()["kind"]["array_element"]["kind"]["scalar_bytes"],
+                width
+            );
+            let Some(FuncOrDataId::Func(id)) =
+                module.get_name(metadata["symbol"].as_str().unwrap())
+            else {
+                panic!("native compact entry")
+            };
+            module.finalize_definitions().unwrap();
+            // The generated ABI is Heap,input packet,output packet -> two u64 lanes.
+            let entry = unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+            Self {
+                entry,
+                metadata,
+                conversion_site,
+                _module: module,
+            }
+        }
+        fn run(
+            &self,
+            tags: &[&str],
+            key: &str,
+            replacement: u64,
+            width: u8,
+        ) -> (u64, u64, Vec<u64>) {
+            use crate::native_artifact::compact_runtime::Heap;
+            let spans = tags
+                .iter()
+                .map(|tag| [tag.as_ptr() as u64, tag.len() as u64])
+                .collect::<Vec<_>>();
+            let count = tags.len() as u64;
+            let mut inputs = vec![0u64; self.metadata["input_words"].as_u64().unwrap() as usize];
+            for port in self.metadata["inputs"].as_array().unwrap() {
+                let at = port["input_offset"].as_u64().unwrap() as usize;
+                match mech_engine::decode_source_input_name(port["name"].as_str().unwrap())
+                    .unwrap()
+                    .as_str()
+                {
+                    "tags" | "other-tags" => inputs[at..at + 6].copy_from_slice(&[
+                        spans.as_ptr() as u64,
+                        count,
+                        count,
+                        1,
+                        count,
+                        0,
+                    ]),
+                    "key" => {
+                        inputs[at..at + 2].copy_from_slice(&[key.as_ptr() as u64, key.len() as u64])
+                    }
+                    "replacement" => inputs[at] = replacement,
+                    name => panic!("unexpected native input {name}"),
+                }
+            }
+            let mut heap = Heap::new();
+            let mut output =
+                vec![0xa5a5a5a5a5a5a5a5; self.metadata["output_words"].as_u64().unwrap() as usize];
+            let prior = output.clone();
+            // All borrowed UTF8 spans and packets outlive this synchronous native call.
+            let status = unsafe { (self.entry)(&mut heap, inputs.as_ptr(), output.as_mut_ptr()) };
+            let values = if status.status == 0 {
+                let view = &output[output.len() - 6..];
+                assert_eq!(view[1], count);
+                assert_eq!(view[3], 1);
+                assert_eq!(view[4], count);
+                assert!(view[2] >= count);
+                (0..tags.len())
+                    .map(|at| {
+                        let pointer = (view[0] as *const u8).wrapping_add(at * usize::from(width));
+                        // The native output layout and initialized extent were checked above.
+                        unsafe {
+                            match width {
+                                1 => u64::from(pointer.read()),
+                                2 => u64::from(pointer.cast::<u16>().read_unaligned()),
+                                4 => u64::from(pointer.cast::<u32>().read_unaligned()),
+                                8 => pointer.cast::<u64>().read_unaligned(),
+                                _ => unreachable!(),
+                            }
+                        }
+                    })
+                    .collect()
+            } else {
+                assert_eq!(
+                    output, prior,
+                    "a failed native cast must not publish a partial packet"
+                );
+                Vec::new()
+            };
+            heap.discard_private();
+            assert_eq!(heap.counters.live_payload_bytes, 0);
+            (status.status, status.origin, values)
+        }
+    }
+    #[test]
+    fn compact_typed_classes_match_ordinary_packed_results_checked_origins_and_retry() {
+        for (width, maximum) in [(1, 255u64), (2, 65535), (4, u32::MAX as u64), (8, u64::MAX)] {
+            for classified in [false, true] {
+                let conversion = if width == 8 {
+                    String::new()
+                } else {
+                    format!(
+                        "narrow-tag(value<u64>) => (out<u{}>) :=\n  narrowed<u{}> := value\n  out := narrowed.\n",
+                        width * 8,
+                        width * 8,
+                    )
+                };
+                let histogram = if classified {
+                    "tags"
+                } else {
+                    "other-tags<[string]>"
+                };
+                let value = if width == 8 {
+                    "changed{tag}"
+                } else {
+                    "narrow-tag(changed{tag})"
+                };
+                let source = format!(
+                    "+> map\n{conversion}tags := tags<[string]>\nh := map/histogram({histogram})\nchanged := map/insert(h,key<string>,replacement<u64>)\nanswer := [{value} | tag <- tags]\nanswer\n"
+                );
+                for artifact in artifacts(&source) {
+                    let kernel = CompactKernel::new(&artifact, classified, width);
+                    let (status, _, values) =
+                        kernel.run(&["z", "é", "z", "", "é"], "z", maximum, width);
+                    assert_eq!(status, 0);
+                    assert_eq!(values, vec![maximum, 2, maximum, 1, 2]);
+                    let (status, _, values) = kernel.run(&[], "z", maximum, width);
+                    assert_eq!(status, 0);
+                    assert!(values.is_empty());
+                    if width < 8 {
+                        let tags = ["a", "é", "🦀", "", "last"];
+                        for key in tags {
+                            let (status, origin, _) = kernel.run(&tags, key, maximum + 1, width);
+                            assert_eq!(status, crate::native_artifact::abi::STATUS_ARITHMETIC);
+                            assert_eq!(origin, u64::from(kernel.conversion_site.unwrap()));
+                            let (status, _, values) = kernel.run(&tags, key, maximum, width);
+                            assert_eq!(status, 0, "successful retry after each failed row");
+                            assert_eq!(
+                                values,
+                                tags.map(|tag| if tag == key { maximum } else { 1 })
+                                    .to_vec()
+                            );
+                        }
+                    }
+                }
             }
         }
     }

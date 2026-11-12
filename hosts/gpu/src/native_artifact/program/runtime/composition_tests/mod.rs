@@ -130,7 +130,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                126
+                127
             );
             // Policy125 adds tree first-write alias checks; this fixture keeps exact work.
             // Policies107/108/110/111 add fills, recursive frames, worker
@@ -634,7 +634,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                126
+                127
             );
             assert_eq!(
                 report.work, 41_515_826,
