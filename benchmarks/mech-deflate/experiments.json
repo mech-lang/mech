@@ -70131,6 +70131,458 @@
         }
       },
       "complete_goal": false
+    },
+    "345": {
+      "campaign_round": 345,
+      "git_parent": "111baac8428e6681113b75268dda9d913cefffb7",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "111baac8428e6681113b75268dda9d913cefffb7",
+      "retained_compiler": "R343",
+      "retained_source_packet_round": 343,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Keep the prior compiler after the converging branch experiment.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "c772f496ad40badc0836d87b3c5fc6a52957e1017f13a50cfb45cb6a485c7d10",
+        "compiler_parent_round": 343,
+        "prior_source_packet_commit": "f33d8c1b0e92208b0592964339dc5dabdc78069d",
+        "baseline_object_sha256": "81a8c384df1ac5ffde825061bb4d1171fa9895371866f2f796cf62f9dcd58d97",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/identity_routes/mod.rs": {
+            "before": "951eeec89106be38216cc0014688e83ee31f6c6ada5d9b8743d965e89b00421f",
+            "after": "7aee5b915d1d9de661e7c9069159bb07ab02b331e8fad2109f666eb0e23ecfe9"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "8791c90b5b3a252efca619d9cf35174486b044a609e7a020d6a6870dec8d6a3a",
+            "after": "36a7cddf0c7dd47433aed44aa747fad0e603e7edd5e0d55ccc9b99aedf9911e2"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "shared_timing_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "0e171fb2fcef79a5912ed2508054cbc949cb116570dcf3569000819e5665caeb",
+        "worker_sha256": "dcb4dbd4519038a100a66b2ba296e521aff8b0b1b390be69a09b51cbf24fbdd7"
+      },
+      "summary": {
+        "round": 345,
+        "candidate_compiler_round": 345,
+        "published_parent": "111baac8428e6681113b75268dda9d913cefffb7",
+        "measured_parent": "111baac8428e6681113b75268dda9d913cefffb7",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": false,
+        "retained_source_packet_round": 343,
+        "retained_runtime_packet_round": 272,
+        "selected_mode": "converging-routes",
+        "source_program_changed": false,
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "all81_paired_after_over_before": 0.9984699555825599,
+        "primary_cohort_geomeans": {
+          "primary-a": 0.9994885187320819,
+          "primary-b": 0.997452430434846
+        },
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "cohort_block_gate_misses": [],
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "matched_wins": {
+          "roc": {
+            "mech-r343": 46,
+            "mech-candidate": 46
+          },
+          "libdeflate": {
+            "mech-r343": 3,
+            "mech-candidate": 3
+          },
+          "both": {
+            "mech-r343": 0,
+            "mech-candidate": 0
+          }
+        },
+        "matched_crossings": {
+          "roc": {
+            "below": [],
+            "above": []
+          },
+          "libdeflate": {
+            "below": [],
+            "above": []
+          }
+        },
+        "roc_faster_than_libdeflate": 17,
+        "heap_families_identical": true,
+        "heap_mismatches": [],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.998296534238195,
+            "primary_cohorts": {
+              "primary-a": 0.9983015558897228,
+              "primary-b": 0.9982915126119271
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9974322563874256,
+              "primary-b": 0.9997391212827119
+            },
+            "matched": 1.0022931103516628
+          },
+          "prefix-natural-32769": {
+            "primary": 1.0005305213356837,
+            "primary_cohorts": {
+              "primary-a": 1.000827940734084,
+              "primary-b": 1.0002331903224042
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9999416326907816,
+              "primary-b": 1.000183027117163
+            },
+            "matched": 0.9977213474507323
+          },
+          "prefix-natural-33027": {
+            "primary": 0.9980235355520475,
+            "primary_cohorts": {
+              "primary-a": 0.9965115378757177,
+              "primary-b": 0.999537827368371
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9991980476295123,
+              "primary-b": 0.9992919119854078
+            },
+            "matched": 1.0022689065307002
+          },
+          "prefix-natural-32768": {
+            "primary": 1.000661172754398,
+            "primary_cohorts": {
+              "primary-a": 1.0018402078650193,
+              "primary-b": 0.9994835252141505
+            },
+            "primary_block_medians": {
+              "primary-a": 1.0004501044811602,
+              "primary-b": 1.0002732362301496
+            },
+            "matched": 0.9936462273274481
+          },
+          "heldout-window-32768": {
+            "primary": 0.9992025785687453,
+            "primary_cohorts": {
+              "primary-a": 0.9989987284938637,
+              "primary-b": 0.9994064702401292
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9993821607480143,
+              "primary-b": 0.9994453110223017
+            },
+            "matched": 1.002194322550865
+          },
+          "heldout-window-32767": {
+            "primary": 0.9994575765836682,
+            "primary_cohorts": {
+              "primary-a": 0.9993113856250396,
+              "primary-b": 0.9996037889288201
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9989724921992119,
+              "primary-b": 0.9994774387967857
+            },
+            "matched": 1.0037847477118533
+          },
+          "prefix-natural-65537": {
+            "primary": 0.9991874887628682,
+            "primary_cohorts": {
+              "primary-a": 0.9984759368295928,
+              "primary-b": 0.9998995477751178
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9976114497747958,
+              "primary-b": 0.9995116322396697
+            },
+            "matched": 0.998692846960507
+          },
+          "prefix-natural-32767": {
+            "primary": 1.000068912022205,
+            "primary_cohorts": {
+              "primary-a": 1.0001560140953922,
+              "primary-b": 0.9999818175346056
+            },
+            "primary_block_medians": {
+              "primary-a": 1.0001367529261325,
+              "primary-b": 1.00119595255886
+            },
+            "matched": 1.003215071707231
+          },
+          "prefix-natural-65535": {
+            "primary": 1.0008775771297573,
+            "primary_cohorts": {
+              "primary-a": 0.9991903634095494,
+              "primary-b": 1.002567639846755
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9994137952975758,
+              "primary-b": 1.0019320000244556
+            },
+            "matched": 1.0013197523331996
+          },
+          "prefix-natural-131072": {
+            "primary": 1.000249190042481,
+            "primary_cohorts": {
+              "primary-a": 0.9996997788908675,
+              "primary-b": 1.000798903137358
+            },
+            "primary_block_medians": {
+              "primary-a": 1.0006314503028222,
+              "primary-b": 1.0007354336082523
+            },
+            "matched": 1.0040345872783898
+          },
+          "prefix-natural-65536": {
+            "primary": 1.0031728781740754,
+            "primary_cohorts": {
+              "primary-a": 1.0046191521283254,
+              "primary-b": 1.0017286863106818
+            },
+            "primary_block_medians": {
+              "primary-a": 1.0037559257796456,
+              "primary-b": 1.0006131886652603
+            },
+            "matched": 1.0003954689452117
+          },
+          "prefix-natural-262144": {
+            "primary": 1.0027897042072134,
+            "primary_cohorts": {
+              "primary-a": 1.0001868615943914,
+              "primary-b": 1.0053993203439906
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9997022486343718,
+              "primary-b": 1.0025056410341824
+            },
+            "matched": 1.0012614554630264
+          },
+          "prefix-natural-1048576": {
+            "primary": 1.0012651353708195,
+            "primary_cohorts": {
+              "primary-a": 1.0021870756403886,
+              "primary-b": 1.0003440432202106
+            },
+            "primary_block_medians": {
+              "primary-a": 1.0008893696885235,
+              "primary-b": 1.0003355097782103
+            },
+            "matched": 0.9998504208773834
+          },
+          "heldout-slides-65537": {
+            "primary": 0.9982493822278448,
+            "primary_cohorts": {
+              "primary-a": 0.9980635619048884,
+              "primary-b": 0.9984352371469868
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9982098223333109,
+              "primary-b": 0.9983620716749437
+            },
+            "matched": 0.9999467423463194
+          },
+          "one-stored": {
+            "primary": 0.9886474984503132,
+            "primary_cohorts": {
+              "primary-a": 0.9838155163083677,
+              "primary-b": 0.9935032127361749
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9869681870448449,
+              "primary-b": 0.9928885705515195
+            },
+            "matched": 1.0407731713106325
+          },
+          "empty": {
+            "primary": 0.9984374688137777,
+            "primary_cohorts": {
+              "primary-a": 1.0033951057275448,
+              "primary-b": 0.9935043269006624
+            },
+            "primary_block_medians": {
+              "primary-a": 1.0085510425053448,
+              "primary-b": 0.9970761839396016
+            },
+            "matched": 1.0477357858620655
+          },
+          "seven-stored-prefix": {
+            "primary": 0.9925015589560667,
+            "primary_cohorts": {
+              "primary-a": 0.9946190581700366,
+              "primary-b": 0.9903885678026296
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9955111176702086,
+              "primary-b": 0.9858997694454557
+            },
+            "matched": 0.9948703550276857
+          }
+        },
+        "priority_geomeans": {
+          "primary": 0.9989128315731496,
+          "matched": 1.0054278526101303
+        },
+        "retention_witnesses": [
+          "reymont-prefix-32769",
+          "prefix-natural-262144"
+        ],
+        "retention_witnesses_improved": false,
+        "witness_failures": {
+          "reymont-prefix-32769": {
+            "matched": 1.0022931103516628
+          },
+          "prefix-natural-262144": {
+            "combined primary": 1.0027897042072134,
+            "matched": 1.0012614554630264,
+            "primary-a": 1.0001868615943914,
+            "primary-b": 1.0053993203439906,
+            "primary-b block median": 1.0025056410341824
+          }
+        },
+        "highest_paired_ratio": {
+          "case": "prefix-repeated-32769",
+          "ratio": 1.0039028456091075
+        },
+        "highest_matched_ratio": {
+          "case": "empty",
+          "ratio": 1.0477357858620655
+        },
+        "primary_frontier": [
+          "prefix-random-16384",
+          "prefix-natural-8192",
+          "prefix-natural-16384",
+          "reymont-prefix-16384",
+          "prefix-natural-32767",
+          "heldout-window-32767",
+          "prefix-natural-32768",
+          "reymont-prefix-32769"
+        ],
+        "matched_libdeflate_frontier": [
+          "prefix-natural-262144",
+          "prefix-natural-1048576",
+          "prefix-natural-131072",
+          "prefix-natural-65537",
+          "prefix-natural-65535",
+          "prefix-natural-65536",
+          "heldout-slides-65537",
+          "heldout-window-32767"
+        ],
+        "dual_peer_frontier": [
+          "heldout-window-32768",
+          "heldout-window-32767",
+          "reymont-prefix-32769",
+          "prefix-natural-32769",
+          "prefix-natural-65537",
+          "prefix-natural-33027",
+          "prefix-natural-32767",
+          "prefix-natural-65536"
+        ],
+        "primary_timed_calls": 368496,
+        "matched_timed_calls": 245664
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "0e171fb2fcef79a5912ed2508054cbc949cb116570dcf3569000819e5665caeb",
+            "metadata.json": "9c8ce4f7cfabda622ec44c8fe4c5e7551953df24a41e7d71c844739538cd4f11"
+          },
+          "decoded": {
+            "object.o": "0e171fb2fcef79a5912ed2508054cbc949cb116570dcf3569000819e5665caeb",
+            "metadata.json": "9c8ce4f7cfabda622ec44c8fe4c5e7551953df24a41e7d71c844739538cd4f11"
+          }
+        },
+        "worker_sha256": "dcb4dbd4519038a100a66b2ba296e521aff8b0b1b390be69a09b51cbf24fbdd7",
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "warnings_as_errors": true,
+        "linked_native_offset_results": 262144,
+        "exhaustive_symbolic_offsets": 65536,
+        "identity_route_tests": 5,
+        "restored_inherited_test_files": 5,
+        "folded_branches_per_phase": 2
+      },
+      "report": "docs/design/native-converging-empty-routes.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r345-converging-empty-routes-f84a262e63b2.tar.gz",
+        "bytes": 6051952,
+        "sha256": "f84a262e63b2011900a95fe044fe1d92de8458891fc5e67def7d33103b52e862",
+        "files": 1131,
+        "reports_replayed": 16,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "aa3330e886144d5ee1768c0aa2f67e65713c2abb86f5a725fb3f322d26389019",
+            "pilot-counters.json": "e31af03e8778e718240fa5f04b79634e0d8b95b0ad8cd0664555484d99543597",
+            "result-decision.json": "b064fe431597b91a3daf08c8ca135be0db69b8a6adbe13db462bf7248cf1aebe",
+            "screen-result.json": "a22c8ce89647b9caab1be4b2fc452805577023982c85a7a34d2e0e4045a66a6e",
+            "screen-disposition.json": "825a31159ea854402d7712608f37cdf9a3e924d18f4a6d3973b115a91ae36bf3",
+            "candidate-profile-summary.json": "eb9a83b133a9a29d48c1a692eed5c1baf810ad9c71d25b7c3f60e2ffb8ec3a31",
+            "screen-report.md": "aefff7eb4f2fd2cc7dac79b05c908e6fb9d7ad72a3f51b9fbf3b54df8204f28e",
+            "primary-results.json": "eb9654c0bb522acb99d5390bb7b29d0e571b53b8feb7d290466ce9a0c27dc36b",
+            "counter-results.json": "d6e248628a6704b13e2c468a1f96873326d5b7550d5bf844e617cd33d9e8d398",
+            "full-heap-match.json": "58d672368e864c9e864c27327a95252233f2e5322e5e768bd746921371f0d424",
+            "library-results.json": "20ce4d99107c853d8c5d786b9073882827f766f44deba8eab646ef141182c1f2",
+            "dual-peer-frontier.json": "0caea816e5254440b2378776d885bf7fb00e426702780dac9af6475c1d676793",
+            "scoreboard-metrics.json": "dbe95ebc4a2bce5e2664a4fb30a9b3579fcf6fc6efd7ba69f50b3fb61abefaa0",
+            "scoreboard-current.md": "755226cf4c0f5aeea0cdee855b69d5c5c3a83b7090f75419596be5b2ab2ee428",
+            "full-candidate-profile-summary.json": "f145ee91091ef2d2f84fd2a88d8f7a3bdbf0167b406f27d2921811c286457920",
+            "empty-gate-layout.json": "9849f1b2dd6c8b328c13926fc560130807a8d34c42420c58e48a7a30cf55ef11"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
