@@ -1,7 +1,9 @@
 //! Widen an admitted pure equality recurrence through its own loop header.
 //! A mismatch re-enters the scalar header with the exact current position.
 //! This experiment applies only to compact phases, never ordinary work debits.
-use super::{numeric_loop_windows::Version, numeric_read_packs::Pack};
+use super::{
+    cfg_cleanup::masked_integer_comparison, numeric_loop_windows::Version, numeric_read_packs::Pack,
+};
 use crate::native_artifact::program::prepare::readonly_numeric::Proof;
 use cranelift_codegen::Context;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
@@ -166,6 +168,11 @@ impl Resolve<'_> {
             _ => false,
         }
     }
+    fn comparison_mask(&self, inst: Inst) -> Option<Value> {
+        let f = &self.context.func;
+        masked_integer_comparison(f, &f.dfg.insts[inst], |value| self.value(value))
+    }
+
     fn predicate(&self, mut value: Value, mut yes: bool) -> Option<(IntCC, Value, Value)> {
         let f = &self.context.func;
         let mut seen = BTreeSet::new();
@@ -174,7 +181,8 @@ impl Resolve<'_> {
             if !seen.insert(value) {
                 return None;
             }
-            match f.dfg.insts[self.inst(value)?] {
+            let inst = self.inst(value)?;
+            match f.dfg.insts[inst] {
                 Data::Unary {
                     opcode: Opcode::Uextend,
                     arg,
@@ -214,7 +222,7 @@ impl Resolve<'_> {
                         self.value(args[1])?,
                     ));
                 }
-                _ => return None,
+                _ => value = self.comparison_mask(inst)?,
             }
         }
     }
@@ -395,7 +403,8 @@ fn candidate(context: &Context, cert: &Certificate) -> Option<Change> {
                 | Opcode::Uextend
                 | Opcode::Bxor
                 | Opcode::Load
-        ) {
+        ) && r.comparison_mask(*inst).is_none()
+        {
             return None;
         }
         if f.dfg.insts[*inst].opcode() == Opcode::Load && !body.instructions.contains(inst) {

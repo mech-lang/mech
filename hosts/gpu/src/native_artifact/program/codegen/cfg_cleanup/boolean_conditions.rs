@@ -4,11 +4,54 @@
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::ir::{
     Function, InstBuilder, InstructionData as D, Opcode as O, Value, ValueDef, condcodes::IntCC,
+    types,
 };
 use std::collections::VecDeque;
 
 const MAX_VALUES: usize = 131_072;
 const MAX_EDGES: usize = 524_288;
+
+/// Resolve the operand of `& 1` to an integer comparison. Unsigned
+/// extensions preserve the logical zero/one result. The caller supplies
+/// any incoming-edge resolution, so a proof cannot borrow another path's
+/// block arguments.
+pub(in super::super) fn masked_integer_comparison(
+    f: &Function,
+    instruction: &D,
+    mut resolve: impl FnMut(Value) -> Option<Value>,
+) -> Option<Value> {
+    let D::BinaryImm64 {
+        opcode: O::BandImm,
+        arg,
+        imm,
+    } = *instruction
+    else {
+        return None;
+    };
+    if imm.bits() != 1 {
+        return None;
+    }
+    let mut value = arg;
+    for _ in 0..8 {
+        value = resolve(value)?;
+        let ValueDef::Result(definition, 0) = f.dfg.value_def(value) else {
+            return None;
+        };
+        match f.dfg.insts[definition] {
+            D::Unary {
+                opcode: O::Uextend,
+                arg,
+            } => value = arg,
+            D::IntCompare { .. } | D::IntCompareImm { .. }
+                if f.dfg.value_type(value) == types::I8 =>
+            {
+                return Some(value);
+            }
+            _ => return None,
+        }
+    }
+    None
+}
 
 fn literal(f: &Function, value: Value) -> Option<u64> {
     let value = f.dfg.resolve_aliases(value);
