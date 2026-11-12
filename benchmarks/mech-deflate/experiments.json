@@ -65895,6 +65895,357 @@
         }
       },
       "complete_goal": false
+    },
+    "333": {
+      "git_parent": "67d7562bc4efda7b3ec8cacb0c346c4e15f4e2e5",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+      "retained_compiler": "R333",
+      "retained_source_packet_round": 333,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Compose two checked read-only lookups in the current phase.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "7c8f33ebfb98f88844b8acb48bb4b14bedd938be9a7dfc201458c5f1eedb35b0",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs": {
+            "before": null,
+            "after": "a1ad7eec73361cc1b1fb6717ac43934a1e882545f2d36286aa2647b706a2e959"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "ec1e3c6618c12448621a18133ec96ba57a2bbb83b80980db936513cf9051802e",
+            "after": "d5764a10ac6c7de5e7f30319b8f36e1417a6fbab0723e6bf5d8f4082fbd50f69"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/word_ranges/mod.rs": {
+            "before": "44d64fa1392ace2a8a64ea27365f422bb44c818e3f2ca4929a288884f6ecfa8a",
+            "after": "c451d5e65ba81f10c021f11e4dc5fff16af64f928bd6fd44ed37721deea7b170"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+            "before": "e2b34201017033e6f76e3188ccae20b12594ec79fe679b531cd94a10d89081bf",
+            "after": "0a5db4312610695a2048284dae4904468924d070e8b3167f968270a974e20812"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs": {
+            "before": null,
+            "after": "88db8c5210989987da588cc15360a91215c1df4d725895c50c22da5a57b3c029"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/mod.rs": {
+            "before": "74689daf48f4e724e7f1cc668e3cf698693b464f309d2a6532170341258d7d26",
+            "after": "1b4bce4336df98402ff939847e73c39f6212f04891786850dd623d3f4eb6740a"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "14b9734cdb56b236503f1e60f5eb672392394c129912aa4ce736ff1829f840a1",
+            "after": "242dca92551020713e191ad377dd24f75a9afe0c1c6635eae076efb2a44e4f9d"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": {
+            "before": "59ec37de804c64bfe4e6eb0e6815696406c7e738947a83779bf472871ff1d209",
+            "after": "2ec1834176a91dee787ff1948d06967d54b494ca8a7b13d7dc29a708ee939438"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+            "before": "b545946d9d2a99a1711011886c42ec8983b97856d3bbe19e8af1b78e5ec92859",
+            "after": "eb40445a9af9370dd375bdf453022bfe0a33deaced46ee86fb6e5af68d298f57"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "fba250d4234fee7204d6acfda7ce1de1b93df271be822c59dd73d20c87c56428",
+        "worker_sha256": "cdfaccb7ee2dcda33873f59459fcd1b6a7076cc1a1e098c272850ae7510e3f6c"
+      },
+      "summary": {
+        "round": 333,
+        "published_parent": "67d7562bc4efda7b3ec8cacb0c346c4e15f4e2e5",
+        "measured_parent": "ba8f02f61b3735a2160cc6177e76c6f7cc59cf7b",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 333,
+        "retained_runtime_packet_round": 272,
+        "selected_mode": "native-composed-cost",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.9944856472109408,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "cohort_block_gate_misses": [],
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r327": 46,
+          "mech-candidate": 46
+        },
+        "faster_than_libdeflate": {
+          "mech-r327": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_both_in_peer_cohort": {
+          "mech-r327": 0,
+          "mech-candidate": 0
+        },
+        "roc_faster_than_libdeflate": 17,
+        "crossed_below": [],
+        "crossed_above": [],
+        "libdeflate_crossed_below": [],
+        "libdeflate_crossed_above": [],
+        "heap_families_identical": true,
+        "heap_mismatches": [],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.9712732243696993,
+            "primary_block_means": {
+              "primary-a": 0.9529442599542024,
+              "primary-b": 0.9784480103438599
+            },
+            "matched": 0.9812748861329856
+          },
+          "prefix-natural-32769": {
+            "primary": 0.978338499618261,
+            "primary_block_means": {
+              "primary-a": 0.9768380456085268,
+              "primary-b": 0.9809326784339394
+            },
+            "matched": 0.9785672854454054
+          },
+          "prefix-natural-33027": {
+            "primary": 0.9786552948028513,
+            "primary_block_means": {
+              "primary-a": 0.9788644103190509,
+              "primary-b": 0.979940095873051
+            },
+            "matched": 0.9789180139837809
+          },
+          "prefix-natural-32768": {
+            "primary": 0.9793721115336177,
+            "primary_block_means": {
+              "primary-a": 0.9763752028211238,
+              "primary-b": 0.9788954998871651
+            },
+            "matched": 0.9788413091917342
+          },
+          "heldout-window-32768": {
+            "primary": 0.9801488706000215,
+            "primary_block_means": {
+              "primary-a": 0.9745222800019084,
+              "primary-b": 0.9778389463113397
+            },
+            "matched": 0.9775056925611382
+          },
+          "heldout-window-32767": {
+            "primary": 0.9783845876808454,
+            "primary_block_means": {
+              "primary-a": 0.9781444989535174,
+              "primary-b": 0.9800544559563176
+            },
+            "matched": 0.9796667911626847
+          },
+          "prefix-natural-65537": {
+            "primary": 0.9783557571469269,
+            "primary_block_means": {
+              "primary-a": 0.9787588473523656,
+              "primary-b": 0.9783632059883253
+            },
+            "matched": 0.9791291857761222
+          },
+          "prefix-natural-32767": {
+            "primary": 0.9789477353247161,
+            "primary_block_means": {
+              "primary-a": 0.9787099285091694,
+              "primary-b": 0.979638814852491
+            },
+            "matched": 0.9796386183963691
+          },
+          "prefix-natural-65535": {
+            "primary": 0.9793000111864122,
+            "primary_block_means": {
+              "primary-a": 0.977231596675927,
+              "primary-b": 0.9772218333342441
+            },
+            "matched": 0.9773236283556311
+          },
+          "prefix-natural-131072": {
+            "primary": 0.9737534549491083,
+            "primary_block_means": {
+              "primary-a": 0.9755117030495546,
+              "primary-b": 0.9784315910673821
+            },
+            "matched": 0.9773488761400095
+          },
+          "prefix-natural-65536": {
+            "primary": 0.9763749673813347,
+            "primary_block_means": {
+              "primary-a": 0.9790584535767552,
+              "primary-b": 0.9758297262706148
+            },
+            "matched": 0.9750757097451921
+          },
+          "prefix-natural-262144": {
+            "primary": 0.9757495611616525,
+            "primary_block_means": {
+              "primary-a": 0.9754650897880187,
+              "primary-b": 0.9740983285060726
+            },
+            "matched": 0.9872627319149273
+          },
+          "prefix-natural-1048576": {
+            "primary": 0.978496632457522,
+            "primary_block_means": {
+              "primary-a": 0.9783353861281244,
+              "primary-b": 0.9795053404249863
+            },
+            "matched": 0.9786033652631366
+          },
+          "heldout-slides-65537": {
+            "primary": 0.9807331963998401,
+            "primary_block_means": {
+              "primary-a": 0.9820779147768435,
+              "primary-b": 0.9831811931890809
+            },
+            "matched": 0.9807055179563611
+          },
+          "one-stored": {
+            "primary": 1.0566831515221486,
+            "primary_block_means": {
+              "primary-a": 1.0135106299345247,
+              "primary-b": 1.0090166744980507
+            },
+            "matched": 0.980676386160711
+          },
+          "empty": {
+            "primary": 1.0135120771491868,
+            "primary_block_means": {
+              "primary-a": 0.9929488313845065,
+              "primary-b": 1.019560272934041
+            },
+            "matched": 1.0004607976174469
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0051570629175266,
+            "primary_block_means": {
+              "primary-a": 0.9804311356341455,
+              "primary-b": 1.010628864201788
+            },
+            "matched": 0.983776856381716
+          }
+        },
+        "priority_geomeans": {
+          "primary": 0.9858659343339673,
+          "matched": 0.980853485907428,
+          "primary-a": 0.9793321421537803,
+          "primary-b": 0.9847097754253893
+        },
+        "retention_witnesses": [
+          "reymont-prefix-32769",
+          "prefix-natural-262144"
+        ],
+        "retention_witnesses_improved": true,
+        "highest_paired_ratio": {
+          "case": "one-stored",
+          "ratio": 1.0566831515221486
+        },
+        "candidate_frontier": {
+          "case": "prefix-random-16384",
+          "x_reference": 1.0636313256388132
+        },
+        "dual_peer_frontier": "prefix-natural-131072",
+        "matched_libdeflate_frontier": "prefix-natural-1048576",
+        "primary_timed_calls": 368496,
+        "matched_timed_calls": 245664
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "original": {
+          "object.o": "fba250d4234fee7204d6acfda7ce1de1b93df271be822c59dd73d20c87c56428",
+          "metadata.json": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953"
+        },
+        "worker_sha256": "cdfaccb7ee2dcda33873f59459fcd1b6a7076cc1a1e098c272850ae7510e3f6c",
+        "linked_capture_controls": 240,
+        "selected_capture_controls": 0,
+        "warnings_as_errors": true,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "fba250d4234fee7204d6acfda7ce1de1b93df271be822c59dd73d20c87c56428",
+            "metadata.json": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953"
+          },
+          "decoded": {
+            "object.o": "fba250d4234fee7204d6acfda7ce1de1b93df271be822c59dd73d20c87c56428",
+            "metadata.json": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953"
+          }
+        },
+        "decoded_worker_sha256": "67841b1ffe2b2fb00f5c97ccb201724f6f8b93c4a6c6b5e770ee301dd9293e4b",
+        "native_phase_offset_results": 262144,
+        "identical_parser_clif_vcode": true
+      },
+      "report": "docs/design/native-composed-readonly-lookups.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r333-native-composed-cost-c9a1a0928434.tar.gz",
+        "bytes": 5889757,
+        "sha256": "c9a1a0928434cc0c2030bffdf3f22e26d426bbb544e3c7695827fd67a9f045bf",
+        "files": 1119,
+        "reports_replayed": 9,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "0fc4f44b168258179f70f1ef41379f4b0dca214552fd648acde8d4e8ddb8475b",
+            "counter-results.json": "85421ef58fcb9409dd36c54675b2428471efd01a38256e8eaa3e71c5a20f5685",
+            "REPORT.md": "e7b11ef9ca147856696fe3270fa119e8d4e9993832b296d5c61604a947c72d95",
+            "library-results.json": "2f151677e37c7522b607d9b17cb600ec52d42237eae2bc477fa4136fc32521b1",
+            "result-decision.json": "f887e9c3761b780a9eb1f1c3fc23e056b8db9be44145123244c79208d55fa86c",
+            "screen-disposition.json": "2ddb17cc602be96e4f26d1e51ea5dedfbcfcf68d3b269cffdfd74f2da58f1bb2",
+            "profile-summary.json": "c515972da3b3fe70c021a77090976ed8204776c7af6be7144931debb1c1e9ff4",
+            "dual-peer-frontier.json": "982cdf2167c4690d46d34fd2c66704e4ea25e6aaf87cf778ecbd976b2cd0cacb",
+            "scoreboard-current.md": "70043147b1f500045cd483c101a41538eabe414e0870915d8f89333723926041"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
