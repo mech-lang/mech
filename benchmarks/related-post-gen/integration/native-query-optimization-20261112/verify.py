@@ -337,6 +337,54 @@ for row in read('comparison-chain-machine-audit-v3/audit.json')['records']:
  for gate in row['five_predicate_filter_copies']:assert gate['counts']=={'cmp':1,'ccmp':4,'branch':1}and len(gate['instructions'])==6
 for row in read('comparison-chain-machine-audit-v3/audit.json')['pressure_register_allocation']:
  assert row['stack_load_store_count']>0 and row['no_intervening_flag_clobber_or_operand_materialization']is True
+# Decode the six flag-chain instructions directly from retained Mach-O text.
+# This needs no disassembler or native execution and binds the assembly audit
+# to actual emitted Object words, including NZCV/gate conditions/registers.
+import struct
+
+def text_section(raw):
+ assert raw[:4]==b'\xcf\xfa\xed\xfe';count=struct.unpack_from('<I',raw,16)[0];at=32
+ for _ in range(count):
+  cmd,size=struct.unpack_from('<II',raw,at)
+  if cmd==0x19:
+   sections=struct.unpack_from('<I',raw,at+64)[0]
+   for i in range(sections):
+    p=at+72+i*80
+    if raw[p:p+16].split(b'\0')[0]==b'__text':
+     address,extent=struct.unpack_from('<QQ',raw,p+32);offset=struct.unpack_from('<I',raw,p+48)[0];assert offset+extent<=len(raw);return address,offset,extent
+  at+=size
+ raise AssertionError('missing Mach-O text')
+
+binary_gates=0
+for audit_name in ['comparison-chain-machine-audit-v3/audit.json','comparison-compositions-machine-audit-v1/audit.json']:
+ for row in read(audit_name)['records']:
+  raw=pinned(row['object']);assembly=pinned(row.get('assembly',row.get('query_assembly'))).decode();address,offset,extent=text_section(raw)
+  for gate in row['five_predicate_filter_copies']:
+   lines=gate['instructions'];assert len(lines)==6 and all(line in assembly for line in lines)
+   pcs=[int(line.split(':',1)[0].strip(),16)for line in lines];assert pcs==list(range(pcs[0],pcs[0]+24,4));assert all(address<=pc<address+extent for pc in pcs)
+   words=[struct.unpack_from('<I',raw,offset+pc-address)[0]for pc in pcs]
+   assert words[0]&0x7fe0fc1f==0x6b00001f
+   candidate=(words[0]>>5)&31
+   for i,word in enumerate(words[1:5]):
+    assert word&0x7fe00c10==0x7a400000
+    assert (word>>5)&31==candidate
+    assert word&15==4 and (word>>12)&15==(8 if i==0 else 1)
+   assert words[5]&0xff000010==0x54000000 and words[5]&15==1
+   binary_gates+=1
+  if 'indirect_mask_guard_versions'in row:
+   expected=0 if row['identity']==343 and row['variant']=='key-u32'else 2
+   assert len(row['indirect_mask_guard_versions'])==expected
+   assert len(row['first_target_guard_retained'])==1
+   for block in row['indirect_mask_guard_versions']+row['first_target_guard_retained']:
+    assert all(line in assembly for line in block['publication'])
+    for branch in block['branch_blocks']:assert all(line in assembly for line in branch)
+assert binary_gates==12
+for prefix in ['producer-element-qualified-v1','dense-producer-qualified-v1']:
+ audit=read(prefix+'/machine-audit/audit.json')
+ assert audit['before_actual_indirect_guard_versions']==2 and audit['after_actual_indirect_guard_versions']==0
+ assert audit['before_1716_source_immediates']==4 and audit['after_1716_source_immediates']==0
+ assert audit['retained_independent_1657_source_immediates']>0
+
 # Fresh sampled profiles retain the failed first sampler and retry; their
 # arithmetic averages are diagnostics, never entered into timing authority.
 profile=read('dense-worker-fullpath-profile-v1/complete.json');analysis=read('dense-worker-fullpath-profile-v1/analysis.json');assert profile and analysis
