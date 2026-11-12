@@ -30,4 +30,15 @@ The compact IR353 U16 source gain versus its own IR353 U32 control is independen
 
 Exact355 compiler validation has 79 focused GPU passes; broad coverage has 1,108 passes and the same 16 inherited failures, 11 ignored and 35 filtered. Core lazy Map paths passed 403 tests. Arithmetic/index checks, finite limits, admission/error order, alias/ownership boundaries, unchanged publication and retry contracts remain checked. IR356 geometry work is frozen unbuilt/unselected research and is not included in production or these results.
 
-The complete IR350–355 compiler, source, qualification and failure archive is being prepared separately. This fixed-target packet publishes the result and provenance immediately; it does not claim that pending archive is already published.
+Native code and complete-process costs remain higher. Managed IR355 U16 has 1,117,996 native code bytes and a 1,696-byte reported root frame, versus IR334's 1,021,740 bytes and 1,568-byte frame. Ordinary executable size rises from 17,095,936 to 18,164,960 bytes; primary whole-process peak RSS rises from 27,017,216 to 30,015,488 bytes. These are distinct from the requested-heap measurements above.
+
+| Independent confirmation, launch through exit | Time |
+| --- | ---: |
+| Original repository `rust_con` | 17.980292 ms |
+| Managed IR334 | 40.379292 ms |
+| Managed IR355 U16 | 48.851250 ms |
+| Compact IR353 U16 | 19.878875 ms |
+
+The whole-process comparison includes JSON IO and restoration and remains visible without becoming an acceptance gate. Compact native Object and managed module/root-frame counters have different scopes; no stack equivalence is inferred.
+
+The [complete IR350–355 compiler, source, qualification and failure archive](../u16-host-source-20261112/REPORT.md) retains all 5,063 observations across six cohorts and 3,040 separately scoped qualification outputs, plus original failures and offline reconstruction checks. This fixed-target packet was published first at `3df2faffda6e31a7cc15af53f5f22ced184314e9`; that commit preserves its initial publication state.
