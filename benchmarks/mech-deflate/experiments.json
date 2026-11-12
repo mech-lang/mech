@@ -71544,6 +71544,459 @@
         }
       },
       "complete_goal": false
+    },
+    "349": {
+      "campaign_round": 349,
+      "git_parent": "a1916515a8e8adbf8497cb0f04861b77dbed1e1f",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "a1916515a8e8adbf8497cb0f04861b77dbed1e1f",
+      "retained_compiler": "R349",
+      "retained_source_packet_round": 349,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Reuse current array length floors.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "backend_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "93cf250372cc9442d236c3e9184f26af0f4608468f00d8ce0466262b88366e75",
+        "compiler_parent_round": 343,
+        "prior_source_packet_commit": "f33d8c1b0e92208b0592964339dc5dabdc78069d",
+        "baseline_object_sha256": "81a8c384df1ac5ffde825061bb4d1171fa9895371866f2f796cf62f9dcd58d97",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs": {
+            "before": "b7c424d82f43f02e7825838256eb8920fb35ab2170ed5c8c2e0c322e34113a4e",
+            "after": "d2d73d6a0894ef3ebc406f636234b9ea0313d2c29d697cc5bf6bb7ade4e0e0ad"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+            "before": "0a5db4312610695a2048284dae4904468924d070e8b3167f968270a974e20812",
+            "after": "f26efe4c2e1f04a1e027fc5c78806f5758d54d1142b15e5848e52182acf69d54"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+            "before": "7cdb93f67bc37c16ea5c15bcc0b7bd8c58876c93db2c8650bd4b7a2931c1d49a",
+            "after": "8822b4610f110580efc94c297853d80e0229360f1ff24b928efe59b3ff20c992"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "211c7e6bd249ac6e155cb024ae22c35921fe26e4b5aa2a4812d70599ead76853",
+            "after": "c7cceb113be15e805e35cc3e5251c69b5270ca498547ac0c6823bc0595f26d33"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "8791c90b5b3a252efca619d9cf35174486b044a609e7a020d6a6870dec8d6a3a",
+            "after": "0b8d4a7d08e253ca41b9d2fe8bc7d83a3a9726d189965946a974dddbbdc5833b"
+          }
+        },
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "shared_timing_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "pinned_source_bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "original_decoded_object_sha256": "db281281c1ed36968d1b66c62c1e1852a59283e173f3f40069375856ad70a4a2",
+        "worker_sha256": "5010ec5f1834a436e021c5323af7ec6ae4ec2b68ef4ac0973252944785e4fd5d"
+      },
+      "summary": {
+        "round": 349,
+        "candidate_compiler_round": 349,
+        "published_parent": "a1916515a8e8adbf8497cb0f04861b77dbed1e1f",
+        "measured_parent": "a1916515a8e8adbf8497cb0f04861b77dbed1e1f",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 349,
+        "retained_runtime_packet_round": 272,
+        "selected_mode": "constructed-view-lengths",
+        "source_program_changed": false,
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "all81_paired_after_over_before": 0.980692602482366,
+        "primary_cohort_geomeans": {
+          "primary-a": 0.9795546484404849,
+          "primary-b": 0.9818318784917388
+        },
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "cohort_block_gate_misses": [],
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "matched_wins": {
+          "roc": {
+            "mech-r343": 46,
+            "mech-candidate": 46
+          },
+          "libdeflate": {
+            "mech-r343": 4,
+            "mech-candidate": 4
+          },
+          "both": {
+            "mech-r343": 0,
+            "mech-candidate": 0
+          }
+        },
+        "matched_crossings": {
+          "roc": {
+            "below": [],
+            "above": []
+          },
+          "libdeflate": {
+            "below": [],
+            "above": []
+          }
+        },
+        "roc_faster_than_libdeflate": 17,
+        "heap_families_identical": true,
+        "heap_mismatches": [],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.9956153207636083,
+            "primary_cohorts": {
+              "primary-a": 0.9943934822584578,
+              "primary-b": 0.9968386605751925
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9954306955379609,
+              "primary-b": 0.9962320617832905
+            },
+            "matched": 0.9964398548498062
+          },
+          "prefix-natural-32769": {
+            "primary": 0.9964753992853339,
+            "primary_cohorts": {
+              "primary-a": 0.9957659264407056,
+              "primary-b": 0.9971853776219697
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9947350509217162,
+              "primary-b": 0.9961244408577661
+            },
+            "matched": 0.9985576456273033
+          },
+          "prefix-natural-33027": {
+            "primary": 0.9964617691455449,
+            "primary_cohorts": {
+              "primary-a": 0.9953423804058142,
+              "primary-b": 0.9975824167798782
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9952127742173061,
+              "primary-b": 0.9972702085785263
+            },
+            "matched": 0.9993057050998728
+          },
+          "prefix-natural-32768": {
+            "primary": 0.9956561247016447,
+            "primary_cohorts": {
+              "primary-a": 0.9944630575098093,
+              "primary-b": 0.9968506232280213
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9943960845177565,
+              "primary-b": 0.9963527190420904
+            },
+            "matched": 0.9972423527915331
+          },
+          "heldout-window-32768": {
+            "primary": 0.9962295289955154,
+            "primary_cohorts": {
+              "primary-a": 0.9951505048420032,
+              "primary-b": 0.9973097231159003
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9948808396982335,
+              "primary-b": 0.9961224101703271
+            },
+            "matched": 0.9953228054518257
+          },
+          "heldout-window-32767": {
+            "primary": 0.9962423929366714,
+            "primary_cohorts": {
+              "primary-a": 0.9946673940890571,
+              "primary-b": 0.9978198857047506
+            },
+            "primary_block_medians": {
+              "primary-a": 0.995868142758917,
+              "primary-b": 0.9978848506025028
+            },
+            "matched": 0.996386586133099
+          },
+          "prefix-natural-65537": {
+            "primary": 0.997328164529865,
+            "primary_cohorts": {
+              "primary-a": 0.9966845309887669,
+              "primary-b": 0.997972213713147
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9965299724490103,
+              "primary-b": 0.9980563611035282
+            },
+            "matched": 0.9965016553110142
+          },
+          "prefix-natural-32767": {
+            "primary": 0.9965698806182092,
+            "primary_cohorts": {
+              "primary-a": 0.9949383498798845,
+              "primary-b": 0.9982040867911982
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9949806881034968,
+              "primary-b": 0.9981638494356537
+            },
+            "matched": 0.9988724108198568
+          },
+          "prefix-natural-65535": {
+            "primary": 0.9957063511676258,
+            "primary_cohorts": {
+              "primary-a": 0.9954596072355008,
+              "primary-b": 0.9959531562600107
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9939748203720249,
+              "primary-b": 0.994523394731195
+            },
+            "matched": 0.9968157845482466
+          },
+          "prefix-natural-131072": {
+            "primary": 0.9973105560854385,
+            "primary_cohorts": {
+              "primary-a": 0.9953905397795986,
+              "primary-b": 0.9992342759251854
+            },
+            "primary_block_medians": {
+              "primary-a": 0.995064096524738,
+              "primary-b": 0.999882989013551
+            },
+            "matched": 0.993858192273449
+          },
+          "prefix-natural-65536": {
+            "primary": 0.9943859157103162,
+            "primary_cohorts": {
+              "primary-a": 0.9938747447353877,
+              "primary-b": 0.9948973495913774
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9967837955425685,
+              "primary-b": 0.9953272778989286
+            },
+            "matched": 0.9977604644079309
+          },
+          "prefix-natural-262144": {
+            "primary": 0.9970816554624977,
+            "primary_cohorts": {
+              "primary-a": 0.9961707771686583,
+              "primary-b": 0.9979933666449192
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9960771745374655,
+              "primary-b": 0.9975484684348159
+            },
+            "matched": 0.9993404670753541
+          },
+          "prefix-natural-1048576": {
+            "primary": 0.9966240326317414,
+            "primary_cohorts": {
+              "primary-a": 0.9964521484765734,
+              "primary-b": 0.9967959464362637
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9963012643854272,
+              "primary-b": 0.9964946882562873
+            },
+            "matched": 0.9972524129040929
+          },
+          "heldout-slides-65537": {
+            "primary": 0.9959455951871599,
+            "primary_cohorts": {
+              "primary-a": 0.9953030386120754,
+              "primary-b": 0.9965885665896246
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9954155782087252,
+              "primary-b": 0.9972127419623878
+            },
+            "matched": 0.9945558166338119
+          },
+          "one-stored": {
+            "primary": 0.9929623238192752,
+            "primary_cohorts": {
+              "primary-a": 0.9985413857438223,
+              "primary-b": 0.987414433293733
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9990922765703613,
+              "primary-b": 0.991665918736297
+            },
+            "matched": 0.9869250383200925
+          },
+          "empty": {
+            "primary": 0.9822425098858301,
+            "primary_cohorts": {
+              "primary-a": 0.9883087829502069,
+              "primary-b": 0.9762134718127096
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9799939417304618,
+              "primary-b": 0.9802346706006094
+            },
+            "matched": 0.9842268995152984
+          },
+          "seven-stored-prefix": {
+            "primary": 0.991219864436627,
+            "primary_cohorts": {
+              "primary-a": 0.98886400247278,
+              "primary-b": 0.9935813389878256
+            },
+            "primary_block_medians": {
+              "primary-a": 0.9885378705801242,
+              "primary-b": 0.9918626889671218
+            },
+            "matched": 0.9822387949829257
+          }
+        },
+        "priority_geomeans": {
+          "primary": 0.9949382652488573,
+          "matched": 0.9947871742652973
+        },
+        "retention_witnesses": [
+          "reymont-prefix-32769",
+          "prefix-natural-262144"
+        ],
+        "retention_witnesses_improved": true,
+        "highest_paired_ratio": {
+          "case": "eight-literals-prefix",
+          "ratio": 1.0075818108254744
+        },
+        "highest_matched_ratio": {
+          "case": "prefix-repeated-4096",
+          "ratio": 1.0028646200255076
+        },
+        "primary_frontier": [
+          "prefix-random-16384",
+          "prefix-natural-8192",
+          "prefix-natural-16384",
+          "reymont-prefix-16384",
+          "reymont-prefix-32769",
+          "prefix-natural-33027",
+          "heldout-window-32768",
+          "prefix-natural-32767"
+        ],
+        "matched_libdeflate_frontier": [
+          "prefix-natural-1048576",
+          "prefix-natural-131072",
+          "prefix-natural-65537",
+          "prefix-natural-65535",
+          "prefix-natural-65536",
+          "prefix-repeated-1048576",
+          "heldout-slides-65537",
+          "reymont-prefix-32769"
+        ],
+        "dual_peer_frontier": [
+          "reymont-prefix-32769",
+          "heldout-window-32768",
+          "prefix-natural-32769",
+          "prefix-natural-33027",
+          "prefix-natural-32768",
+          "prefix-natural-65537",
+          "heldout-window-32767",
+          "prefix-natural-65535"
+        ],
+        "primary_timed_calls": 368496,
+        "matched_timed_calls": 245664
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "db281281c1ed36968d1b66c62c1e1852a59283e173f3f40069375856ad70a4a2",
+            "metadata.json": "65111d020b41fdde437ba654a8010c514b94037a211237e994f58d7a8b49ac69"
+          },
+          "decoded": {
+            "object.o": "db281281c1ed36968d1b66c62c1e1852a59283e173f3f40069375856ad70a4a2",
+            "metadata.json": "65111d020b41fdde437ba654a8010c514b94037a211237e994f58d7a8b49ac69"
+          }
+        },
+        "worker_sha256": "5010ec5f1834a436e021c5323af7ec6ae4ec2b68ef4ac0973252944785e4fd5d",
+        "shared_metadata_sha256": "ad172fe23740bb2439b2bbaab26a0c53ff1b0bccff4906ac4c707fc60631c953",
+        "warnings_as_errors": true,
+        "cfg_tests": 54,
+        "literal_view_tests": 6,
+        "focused_jit_invocations": 30720,
+        "unchanged_root_object": false,
+        "unchanged_vector_selection": true
+      },
+      "report": "docs/design/native-current-array-length-floors.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r349-current-array-length-floors-d10c1fe04c89.tar.gz",
+        "bytes": 6084573,
+        "sha256": "d10c1fe04c899b96ad1e350691b8b5c8e9dceff80d9463bd44a5079c2b184a61",
+        "files": 1141,
+        "reports_replayed": 17,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "REPORT.md": "c363ddaa874122139aba04a747c5ef97c48229a08bd7e7617e09a73a2a31e110",
+            "pilot-counters.json": "c4b713a0d5f2f16ca2dab63ec08de778db0eeeaa880373de01314d5fc971fddd",
+            "result-decision.json": "62a7df38a933573334573649c561ac53cc43154edf824b041b0151f497a5ff0d",
+            "screen-result.json": "3c9913e7d15ed70c4fe3db398d4aab1fb5dc75f95861282420cbe1875ca16395",
+            "screen-disposition.json": "869964b2e593e9c028a37c84e3641d6492990508a4cb9a5fcf424ba4cb571a8f",
+            "candidate-profile-summary.json": "f4f6d91ab11e016597ddc56867025e7f8fb93db64b78420040f557a1de2c8b17",
+            "screen-report.md": "608072d278ca1c93565db45f165416740117af0b0fcdef6286197bf8eea9e6b1",
+            "reference-tally-routes.json": "400718656dd38b7ba2725fa46e180988d3f839b2c43cc416d8c2abf23d5e93d9",
+            "primary-results.json": "1236faca4366a3a580b8779b5bc82ea03066d6257cfa6012b3be9c8f5a9cf091",
+            "counter-results.json": "ceafd7de57da1eca8aa083e36c491a3b3f204e5fc19ab8aa0fb43a876cf365b5",
+            "full-heap-match.json": "58d672368e864c9e864c27327a95252233f2e5322e5e768bd746921371f0d424",
+            "library-results.json": "3e6c7fa918712b1d7512eaa38ad04896750166c1bb50ecb11275aba114165ed9",
+            "dual-peer-frontier.json": "e221f22bd810d7b43ba1e8485a3e344b8c1f4777b7e89593f7d61ff3378257ab",
+            "scoreboard-metrics.json": "cc08a6175562074f2d9a49d722944d906c542d84ba5969005c8a3345736bc341",
+            "scoreboard-current.md": "e6ea9aa984ed1265e89292f8634d83abb4825051f4603f7fd10e180f6098881f",
+            "full-candidate-profile-summary.json": "2a9eb00e5d7e5565fa5c232d1dc1862d6848c603705ddb653ce3d2bea7f3dfcf",
+            "empty-gate-layout.json": "85738ce6465da693e60a73970a2fae2d96e4e39db8c53f09f9a944c8babcf43a"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
