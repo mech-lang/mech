@@ -64435,6 +64435,353 @@
         }
       },
       "complete_goal": false
+    },
+    "327": {
+      "git_parent": "95ecc963343d64b6d57950ecfd3a3d26cd1c2f16",
+      "base": "92f75db84e2523693648084bea16cd52ad60777a",
+      "measured_parent": "ace28a0a938bdca0fcb2b91fbd5f8b48f5408034",
+      "retained_compiler": "R327",
+      "retained_source_packet_round": 327,
+      "retained_runtime": "R272",
+      "retained_runtime_packet_round": 272,
+      "decision": "Reuse the selected readable offset in subsequent checks.",
+      "source": {
+        "source_program_changed": false,
+        "runtime_changed": false,
+        "IR_work_ABI_bytecode": [
+          215,
+          107,
+          39,
+          14
+        ],
+        "compiler_base": "8830db78789aee692d89583d25458bcc32f300b3",
+        "compiler_patch_sha256": "2b8cc8ab1bc8d3ffb9ae13e36936cf5b95ca0146446e3d826952d498117281ef",
+        "changed_sources": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/scalar_spans.rs": {
+            "before": "cce18aa71a4fa8cba09feb02d5a01ded1e44d69d3c8d0d3becf4407bae758a8d",
+            "after": "38ea7a42e67c5038512a747d1f3e7541f86aeab7f73b80accd7181ec866cbf38"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": {
+            "before": "aaa190d92996808a69d62b7fa369119acaeae954f3cb7e39ee74e1d9db7e0a8e",
+            "after": "ec1e3c6618c12448621a18133ec96ba57a2bbb83b80980db936513cf9051802e"
+          },
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+            "before": "937bba39a98c757da76fbc93fb2136fbae8cc9bdc0c496e39674703bd56ff8ea",
+            "after": "14b9734cdb56b236503f1e60f5eb672392394c129912aa4ce736ff1829f840a1"
+          },
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/scalar_spans/tests.rs": {
+            "before": "fa70b7208a4b805177d8f46ffdbeb2339b7595e48205d806e99d92c31943d241",
+            "after": "f7dfcc70e6f74e0fdbbc0311af117cac5344360e55183c14eab359671ebfa39e",
+            "test_only": true
+          }
+        },
+        "backend_changed": false,
+        "backend_patch_sha256": "2479ec48aa92a49f17112d70fa7636b1496772f0e9b3ed87763878872537f6ac",
+        "backend": {
+          "source_files": 200,
+          "changed": {
+            "src/isa/aarch64/inst/compare_reuse.rs": {
+              "before": "9f91fc10f26e3e12f5ea545c07b175bee6d6a031b719a6e716df8818d628b36b",
+              "after": "f2aa9f3967cacb3f691db94aaff701ea92df67e301eca91de43645da07013445"
+            },
+            "src/isa/aarch64/inst/emit.rs": {
+              "before": "49f41d041a5280416abb224e8072c62045239f122833103a75f8d7d87ad32dd9",
+              "after": "13c08cd8e2091944cd4644d88a24e5760b7d70e8deabf93d03131e3d242d7698"
+            }
+          },
+          "backend_source_round": 264,
+          "generated_definitions_manifest": "b565011afb4989b61cda7a4fefcb7be223c23b100f33974d7b616fff3575966b",
+          "patch_sha256": "42b4e3c459d9c8f02a983d03b30279db5185fd787c7ea289ca5cd472addfde09"
+        },
+        "allocator": {
+          "package_sha256": "757712e8e61590d6d4f5d563483755538b5aa13467837a3b41cd9832509a7f85",
+          "source_files": 45,
+          "changes": {
+            "src/ion/moves.rs": {
+              "before": "9d2c864b3b72e268db580f5c0b6c74244c4e1cb25e73e93008d39a68f3d2ff1b",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "incremental_changes": {
+            "src/ion/moves.rs": {
+              "before": "bf5044b943835150005730ae80bf85f1ade735b6fada965fa9134ac819555435",
+              "after": "f80f42e587424a646f76fd9c70c564af534705ff86fab16b4826800ec2747f84"
+            },
+            "src/ion/redundant_moves.rs": {
+              "before": "6e5ca6d1936083ad11f258373809d77e38cb58854deb3ca187414dbcdd4f00c9",
+              "after": "b8151a60fdb1973f4ba7566898a054a04413ba5034d875e79776e04d6f388d92"
+            }
+          },
+          "patch_sha256": "3d6f7cd62ccfa8d9a064f1e41a972bda5cae32e5123bdcae3da1ebe159996cdc",
+          "library_sha256": "a66564517e99eb4bb965813bde89ebc91e11ea1e16572b928545c0243eb0c525"
+        },
+        "benchmark_source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "original_decoded_object_sha256": "61264ca36f0ad819cc163dd6d74d519914428bd9efa19095890df3ea1adc77f6",
+        "worker_sha256": "7272dca082572088c7215be84817dcbe279cd019c835ce7521279f56b7907006"
+      },
+      "summary": {
+        "published_parent": "95ecc963343d64b6d57950ecfd3a3d26cd1c2f16",
+        "measured_parent": "ace28a0a938bdca0fcb2b91fbd5f8b48f5408034",
+        "pr_base": "92f75db84e2523693648084bea16cd52ad60777a",
+        "retain_experimental_compiler": true,
+        "retained_source_packet_round": 327,
+        "retained_runtime_packet_round": 272,
+        "candidate_compiler_round": 327,
+        "selected_mode": "selected-readable-bound",
+        "source_program_changed": false,
+        "all81_paired_after_over_before": 0.993660980884565,
+        "original_1_05_gates_passed": 81,
+        "blockmean_1_05_gates_passed": 81,
+        "faster_than_reference": {
+          "case_inventory": "Fixed 81 complete compression cases, unchanged from R270",
+          "criterion": "Paired geometric elapsed ratio within the same fresh balanced blocks is strictly below 1.0; ties do not count",
+          "goal_percent": 100.0,
+          "before_count": 46,
+          "after_count": 46,
+          "denominator": 81,
+          "before_percent": 56.79012345679013,
+          "after_percent": 56.79012345679013,
+          "change_percentage_points": 0.0
+        },
+        "faster_than_libdeflate": {
+          "mech-r325": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc_in_peer_cohort": {
+          "mech-r325": 46,
+          "mech-candidate": 46
+        },
+        "faster_than_both_in_peer_cohort": {
+          "mech-r325": 0,
+          "mech-candidate": 0
+        },
+        "roc_faster_than_libdeflate": 17,
+        "crossed_below": [],
+        "crossed_above": [],
+        "gate_misses": {
+          "original_1_05_gate": [],
+          "blockmean_1_05_gate": []
+        },
+        "cohort_block_gate_misses": [],
+        "priority_witnesses": {
+          "reymont-prefix-32769": {
+            "primary": 0.9863010489604751,
+            "primary_block_means": {
+              "primary-a": 0.9875334183477894,
+              "primary-b": 0.9866222939800322
+            },
+            "matched": 0.990729662632907
+          },
+          "prefix-natural-32769": {
+            "primary": 0.9859305627105599,
+            "primary_block_means": {
+              "primary-a": 0.986774427333777,
+              "primary-b": 0.9867585296628438
+            },
+            "matched": 0.9886781636066772
+          },
+          "prefix-natural-33027": {
+            "primary": 0.9962968756515058,
+            "primary_block_means": {
+              "primary-a": 0.9870309858507822,
+              "primary-b": 0.9942255099543454
+            },
+            "matched": 0.9893727749966157
+          },
+          "prefix-natural-32768": {
+            "primary": 0.9878863432537299,
+            "primary_block_means": {
+              "primary-a": 0.988047940547455,
+              "primary-b": 0.9872268569021159
+            },
+            "matched": 0.992562783225407
+          },
+          "heldout-window-32768": {
+            "primary": 0.9890272183723257,
+            "primary_block_means": {
+              "primary-a": 0.9867241551731102,
+              "primary-b": 0.9882638496033994
+            },
+            "matched": 0.9926133526968348
+          },
+          "heldout-window-32767": {
+            "primary": 0.9871464357927325,
+            "primary_block_means": {
+              "primary-a": 0.9889821755841721,
+              "primary-b": 0.986603773052487
+            },
+            "matched": 0.990366498501872
+          },
+          "prefix-natural-65537": {
+            "primary": 0.9891525673674276,
+            "primary_block_means": {
+              "primary-a": 0.9894788094353444,
+              "primary-b": 0.9890045130961391
+            },
+            "matched": 0.9879680553979793
+          },
+          "prefix-natural-32767": {
+            "primary": 0.9870107800911733,
+            "primary_block_means": {
+              "primary-a": 0.9882753837658752,
+              "primary-b": 0.9869191429980395
+            },
+            "matched": 0.9989409181368581
+          },
+          "prefix-natural-65535": {
+            "primary": 0.9900650783368842,
+            "primary_block_means": {
+              "primary-a": 0.9928230339518361,
+              "primary-b": 0.9865211982356815
+            },
+            "matched": 0.9986382050490125
+          },
+          "prefix-natural-131072": {
+            "primary": 0.9901113227498436,
+            "primary_block_means": {
+              "primary-a": 0.9885822867795461,
+              "primary-b": 0.9898614120408836
+            },
+            "matched": 0.9895525459574115
+          },
+          "prefix-natural-65536": {
+            "primary": 0.9903244536035971,
+            "primary_block_means": {
+              "primary-a": 0.9916268552146147,
+              "primary-b": 0.9879675462664047
+            },
+            "matched": 0.986349562808711
+          },
+          "prefix-natural-262144": {
+            "primary": 0.9895028017998563,
+            "primary_block_means": {
+              "primary-a": 0.9928167824216799,
+              "primary-b": 0.9862239469344248
+            },
+            "matched": 0.9896406361137567
+          },
+          "prefix-natural-1048576": {
+            "primary": 0.9868523285202481,
+            "primary_block_means": {
+              "primary-a": 0.9879903537350264,
+              "primary-b": 0.9884319320380901
+            },
+            "matched": 0.9896241933490629
+          },
+          "heldout-slides-65537": {
+            "primary": 0.9870559234127692,
+            "primary_block_means": {
+              "primary-a": 0.9886855759721462,
+              "primary-b": 0.9877527805611788
+            },
+            "matched": 0.9878625001264631
+          },
+          "one-stored": {
+            "primary": 1.0178981269481993,
+            "primary_block_means": {
+              "primary-a": 1.008575155295546,
+              "primary-b": 1.0214212632587776
+            },
+            "matched": 1.012968519762297
+          },
+          "empty": {
+            "primary": 1.0086796867186558,
+            "primary_block_means": {
+              "primary-a": 0.9982716902868993,
+              "primary-b": 1.0112108562413618
+            },
+            "matched": 1.0092092284066139
+          },
+          "seven-stored-prefix": {
+            "primary": 1.0017222317197851,
+            "primary_block_means": {
+              "primary-a": 1.0088346707870208,
+              "primary-b": 1.0087080549508296
+            },
+            "matched": 1.0048267529978998
+          }
+        },
+        "priority_geomeans": {
+          "primary": 0.9923721580802592,
+          "matched": 0.994081974183756,
+          "primary-a": 0.9918036815551583,
+          "primary-b": 0.9925197098517187
+        },
+        "retention_witnesses": [
+          "reymont-prefix-32769",
+          "prefix-natural-262144"
+        ],
+        "retention_reason": "Both combined timing gates pass, all heap families agree, and both established natural-text witnesses improve in each primary cohort and the matched comparison.",
+        "highest_paired_ratio": {
+          "case": "one-stored",
+          "ratio": 1.0178981269481993
+        },
+        "candidate_frontier": {
+          "case": "prefix-random-16384",
+          "x_reference": 1.0725629224082684
+        },
+        "dual_peer_frontier": "prefix-natural-32769",
+        "heap_families_identical": true
+      },
+      "qualification": {
+        "verified": true,
+        "complete_smokes": 324,
+        "exact_original_decoded": {
+          "original": {
+            "object.o": "61264ca36f0ad819cc163dd6d74d519914428bd9efa19095890df3ea1adc77f6",
+            "metadata.json": "0ec38f305a9766c48d9e46f1e854b582eeb39a1c7c3122a6af02474176dc0578"
+          },
+          "decoded": {
+            "object.o": "61264ca36f0ad819cc163dd6d74d519914428bd9efa19095890df3ea1adc77f6",
+            "metadata.json": "0ec38f305a9766c48d9e46f1e854b582eeb39a1c7c3122a6af02474176dc0578"
+          }
+        },
+        "worker_sha256": "7272dca082572088c7215be84817dcbe279cd019c835ce7521279f56b7907006",
+        "cfg_cleanup_tests": 59,
+        "selected_read_jit_pairs": 96,
+        "warnings_as_errors": true,
+        "decoded_worker_sha256": "1e2e13a7f069eb2feb466f68dccee02c1fcda257d9dd5fb9d3956ccd94f82679",
+        "matcher_ir_and_vcode_identical": true
+      },
+      "libdeflate_comparison": {
+        "cases": 81,
+        "timed_calls": 245664,
+        "faster_than_libdeflate": {
+          "mech-r325": 3,
+          "mech-candidate": 3
+        },
+        "faster_than_roc": {
+          "mech-r325": 46,
+          "mech-candidate": 46
+        }
+      },
+      "report": "docs/design/native-selected-readable-bounds.md",
+      "review_packet": {
+        "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r327-selected-readable-bound-55f8b7038a84.tar.gz",
+        "bytes": 6122863,
+        "sha256": "55f8b7038a845d9ce07df8407d1eccbf01371b0c3c1eb7af4b59ac990c56ea5d",
+        "files": 1049,
+        "reports_replayed": 8,
+        "fresh_public_verification": true,
+        "replay": {
+          "script": "replay.py",
+          "expected_outputs": {
+            "primary-results.json": "acac4b8eaeca794dc8ae0613961d689d8cefe202181bab02ee9e4561f563a19a",
+            "counter-results.json": "ec6f3e87a9b44e5414ce8519cae7200eb3a9dcacbba10b08f35bf8dee6e57eb6",
+            "REPORT.md": "bddf305328f7918b55b64d143576d24cc044dd2192009881da42e33d165068fe",
+            "library-results.json": "d4398704d95a7eae8980833de363e285dc9782305c4f7403a459e3279519d24b",
+            "result-decision.json": "5364e66c627030bbe3fea99ceee10a507d79578c41b22f8970b390be44aaeaec",
+            "screen-disposition.json": "3542429f82258ba8587663efac5965fa60acb6618213fc7f4631a6a4ad6a262c",
+            "profile-summary.json": "2a6627f61732f615d6c4a1c5606dc2a7d862581502d757c35fbf96685f522235",
+            "dual-peer-frontier.json": "9764ddd5f1bbb088712eacc67067beb4d62b6bedae7dd48c274b719064e0c6cd"
+          }
+        }
+      },
+      "complete_goal": false
     }
   },
   "repository": "mech-lang/mech",
