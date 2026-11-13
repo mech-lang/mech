@@ -1,0 +1,180 @@
+{
+  "archive_receipt": "compile-under-minute-apple-m3-20261113.archive.json",
+  "boundary": "Fresh complete level-12 source to native compact diagnostic Object, including canonical bytecode encoding; excludes Rust tool build and host linking",
+  "canonical_decoded_reencoding_exact": true,
+  "comparison_scope": "Individual source compiles; no statistical timing or fresh runtime performance campaign",
+  "configuration": {
+    "current": "50 MECH flags sealed in archive current-worker-reference/flags.json",
+    "default": "all inherited MECH_ environment variables removed"
+  },
+  "current_configuration_reduction_percent": 8.85167358486817,
+  "current_sha256": {
+    "metadata.json": "3853c59375d650dc66486a80d931ddf39736b070c4370198a425daa162e3606a",
+    "program.mecb": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "program.o": "cf5e9f1e4de43a7b3211f0def6fac0f0d0e0cdc2111efb14e04ec1876e4fd378",
+    "source.mec": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+  },
+  "default": {
+    "cleanup": 5.449614667100832,
+    "guard_owner": 0.7092273330781609,
+    "instructions": 874207662797,
+    "maximum_rss_bytes": 7501381632,
+    "phases": {
+      "artifact": 0.02991475,
+      "catalog": 0.068894542,
+      "encode": 0.011014084,
+      "frontend": 9.176062792,
+      "native": 36.340868,
+      "parse": 10.076695667
+    },
+    "preparation": 13.892601707950234,
+    "process_seconds": 55.84880612487905,
+    "sampling": 0,
+    "sampling_error": null,
+    "seconds": 55.704114958,
+    "source_ssa": 8.41322816698812
+  },
+  "default_reduction_percent": 61.20840540600882,
+  "default_sha256": {
+    "metadata.json": "a63abffb005718010b043783b345c607fe7d0de4c47d89057526d58a8b41ab19",
+    "program.mecb": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "program.o": "2a5cf7742a71959b288b40a7f1e5dfc3ca1a2b7502dee4304329fce1508896ff",
+    "source.mec": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+  },
+  "focused_tests_passed": 56,
+  "format": 1,
+  "machine": {
+    "cores": 8,
+    "cpu": "Apple M3",
+    "os": "macOS 26.2",
+    "ram": "16 GB"
+  },
+  "packed_baseline": {
+    "cleanup": 8.537387415999547,
+    "guard_owner": 47.04527987493202,
+    "instructions": 2423726020113,
+    "maximum_rss_bytes": 7680933888,
+    "phases": {
+      "artifact": 0.029175292,
+      "catalog": 0.037576167,
+      "encode": 0.0103075,
+      "frontend": 23.9918095,
+      "native": 109.602434208,
+      "parse": 9.926450875
+    },
+    "preparation": 24.76011454197578,
+    "process_seconds": 143.75764408311807,
+    "sampling": 0,
+    "sampling_error": null,
+    "seconds": 143.598414917,
+    "source_ssa": 19.77852962492034
+  },
+  "parser_tests_passed": 484,
+  "production_base": "4ab19cd765",
+  "qualified_current_object_exact": true,
+  "runs": {
+    "current-control-clean": {
+      "cleanup": 4.930835500126705,
+      "guard_owner": 0.7095824999269098,
+      "instructions": 1010966446028,
+      "maximum_rss_bytes": 7613530112,
+      "phases": {
+        "artifact": 0.030717875,
+        "catalog": 0.070639125,
+        "encode": 0.01147225,
+        "frontend": 8.428891875,
+        "native": 45.143007417,
+        "parse": 10.013149041
+      },
+      "preparation": 20.2398077910766,
+      "process_seconds": 63.8304510419257,
+      "sampling": 0,
+      "sampling_error": null,
+      "seconds": 63.698756709,
+      "source_ssa": 8.080111125018448
+    },
+    "current-worker-profile": {
+      "cleanup": 4.949023250024766,
+      "guard_owner": 0.7223342079669237,
+      "instructions": 1011691499194,
+      "maximum_rss_bytes": 7447461888,
+      "phases": {
+        "artifact": 0.029027292,
+        "catalog": 0.043670875,
+        "encode": 0.010100125,
+        "frontend": 9.119104042,
+        "native": 44.790132792,
+        "parse": 10.046701583
+      },
+      "preparation": 19.87541679199785,
+      "process_seconds": 65.3075441669207,
+      "sampling": 5,
+      "sampling_error": "sample attempt 5 exited 255",
+      "seconds": 64.039381,
+      "source_ssa": 8.09518733411096
+    },
+    "leaf-reuse-current-clean": {
+      "cleanup": 4.915948166046292,
+      "guard_owner": 0.7157268340233713,
+      "instructions": 933807596341,
+      "maximum_rss_bytes": 7444332544,
+      "phases": {
+        "artifact": 0.028585375,
+        "catalog": 0.040491208,
+        "encode": 0.009846583,
+        "frontend": 8.886942416,
+        "native": 39.242029041,
+        "parse": 9.979519417
+      },
+      "preparation": 14.161095124902204,
+      "process_seconds": 59.40474100015126,
+      "sampling": 0,
+      "sampling_error": null,
+      "seconds": 58.188131875,
+      "source_ssa": 8.288604999892414
+    },
+    "leaf-reuse-current-confirm": {
+      "cleanup": 5.046268792124465,
+      "guard_owner": 0.7222986249253154,
+      "instructions": 933425620478,
+      "maximum_rss_bytes": 7600701440,
+      "phases": {
+        "artifact": 0.028415583,
+        "catalog": 0.037561208,
+        "encode": 0.00965925,
+        "frontend": 8.406299333,
+        "native": 39.392798584,
+        "parse": 10.057189041
+      },
+      "preparation": 13.993391124997288,
+      "process_seconds": 58.16834579198621,
+      "sampling": 0,
+      "sampling_error": null,
+      "seconds": 57.9325695,
+      "source_ssa": 8.454839166020975
+    },
+    "shared-facts-current-profile": {
+      "cleanup": 4.832572542130947,
+      "guard_owner": 0.7080387498717755,
+      "instructions": 992384529984,
+      "maximum_rss_bytes": 7369588736,
+      "phases": {
+        "artifact": 0.028841584,
+        "catalog": 0.043354959,
+        "encode": 0.009793166,
+        "frontend": 8.983968167,
+        "native": 42.978896625,
+        "parse": 9.99834575
+      },
+      "preparation": 18.23163616610691,
+      "process_seconds": 63.29073537513614,
+      "sampling": 5,
+      "sampling_error": "sample attempt 5 exited 255",
+      "seconds": 62.043923458,
+      "source_ssa": 8.007977125002071
+    }
+  },
+  "runtime_campaign_rerun": false,
+  "small_controls_exact": 7,
+  "source_commit": "64eda4ca6330e7a8112ab27409acc2fc7816ab39"
+}

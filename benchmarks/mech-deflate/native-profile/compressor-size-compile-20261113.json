@@ -1,0 +1,36 @@
+{
+  "libdeflate_encoder_seconds": 0.37298254179768264,
+  "libdeflate_library_seconds": 1.4997879171278328,
+  "matched_machine_and_build_boundary": false,
+  "mech_m3_current_seconds": [
+    58.188131875,
+    57.9325695
+  ],
+  "mech_m3_default_seconds": 55.704114958,
+  "origins": {
+    "compiler_builds_and_downloads_excluded": true,
+    "counting": "Physical source lines, including comments and blanks, excluding benchmark harnesses. C: encoder, all matchfinders, ARM specialization and deflate constants/internal header. Roc: all compression package modules, excluding Inflate.roc and one-line package declaration. Mech: assembled level-12 source minus one entry call, retaining its 25 assembly separators. C and Roc support other compression levels; Mech supports level 12 only. Shared library/runtime headers are not an exhaustive transitive source count.",
+    "libdeflate_build_machine": {
+      "cpu": "Apple M3",
+      "identity_source": "Existing local Mech source-compile cohort; sysctl queries denied by sandbox",
+      "os": "macOS26.2",
+      "ram": "16 GB"
+    },
+    "libdeflate_revision": "92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+    "mech_compiler_revision": "64eda4ca6330e7a8112ab27409acc2fc7816ab39",
+    "roc_build_origin": "Git object 6ab75037bc5d4ec138d735c7dcfe1c4b653d31fa:benchmarks/mech-deflate/results/2026-10-28-compressor-comparison/build.json; source-to-executable with --no-cache --opt=speed, runtime level and embedded inputs, Apple M1 macOS15.6.1; historical, not a fresh M3 or matched runtime-input build",
+    "roc_compiler_revision": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+    "roc_source_revision": "671077457ff7ef3a3d44caf715a3fc595addf379",
+    "statistical_timing_campaign": false
+  },
+  "physical_lines": {
+    "libdeflate": 5485,
+    "mech": 1930,
+    "roc": 6187
+  },
+  "roc_historical_m1_seconds": {
+    "builds": 12,
+    "maximum": 6.433704458991997,
+    "minimum": 6.101452416041866
+  }
+}

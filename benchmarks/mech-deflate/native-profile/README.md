@@ -98,3 +98,7 @@ CARGO_TARGET_DIR=/tmp/mech-native-profile-target CARGO_INCREMENTAL=0 \
 The [Apple M3 compile-time report](../../../docs/design/native-compile-time-profile.md)
 records the measured before/after work and exact output checks. Raw evidence is
 archived under ignored `.experiments/`; only its compact receipt belongs in source Git.
+
+The [sub-minute follow-up](../../../docs/design/native-compile-under-minute-profile.md)
+records the guard/ownership and preparation optimizations, two fresh compiles of
+the current qualified worker, unchanged native output and offline replay.
