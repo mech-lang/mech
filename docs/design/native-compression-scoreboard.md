@@ -1,5 +1,27 @@
 # Current compression scoreboard
 
+The matcher reuses the checked input extent to remove one packed-read comparison. Its first and repeat 81-case matrices take **0.998878×** and **0.998260×** paired control. Both 1.05 gates pass throughout. The repeat has 76 cases faster than at least one peer.
+
+| Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
+| --- | ---: | ---: | ---: | ---: |
+| Faster than Roc | **59/81 (72.8%)** | 59 | 58 | 59 |
+| Faster than libdeflate | **29/81 (35.8%)** | 28 | 27 | 28 |
+| Faster than both | **12/81 (14.8%)** | 12 | 10 | 11 |
+| Faster than at least one | **76/81 (93.8%)** | 75 | 75 | 76 |
+
+| Input | First full / Roc | Confirmation / Roc | Repeat / Roc | Repeat / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| Eight literals | 0.161068× | 0.160473× | 0.161389× | 2.049723× |
+| Random 128 KiB | **1.005455×** | **1.005001×** | 1.034138× | 1.588859× |
+| Random 256 KiB | 1.029658× | 1.029785× | 1.052528× | 1.555393× |
+| Random 1 MiB | 1.029766× | 1.033187× | 1.032715× | 1.461085× |
+| Natural 16 KiB | 1.042593× | 1.036071× | 1.040481× | 1.048482× |
+| Reymont 16 KiB | 1.034597× | 1.035262× | 1.073839× | 1.085303× |
+
+Random 128 KiB improves 0.51%, 0.60%, and 1.23% against its paired control in those runs. Its repeat control also rises to 1.046984× Roc. Natural 16 KiB is effectively flat in both full matrices. [Machine evidence, both full matrices, and adverse observations](native-packed-base-span-qualification.md).
+
+## Prefetch a second private write range
+
 The AArch64 matcher prefetches the next entries in two disjoint ranges of the same admitted private vector. The compiler-generated worker takes **0.996545×** and **0.995305×** paired control in two full 81-case runs. Both 1.05 gates pass throughout, and the same 76 cases beat at least one peer in each run.
 
 | Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
