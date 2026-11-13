@@ -23,7 +23,7 @@ The compiler prefetches a proved next private table write. The normally linked e
 | Random 1 MiB | 1.074295× | 1.518749× | 0.970199× |
 | Repeated 32,769 bytes | **0.516725×** | 1.005793× | 1.008418× |
 
-The three random crossings recur in both confirmation cohorts. Repeated 32,769 bytes returns to 0.993915× libdeflate in confirmation. [Compiler qualification](native-private-write-prefetch.md) · [Full measurements and profiles](native-returning-cache-hint-trial.md).
+The three random crossings recur in both confirmation cohorts. Repeated 32,769 bytes returns to 0.993915× libdeflate in confirmation. [Compiler qualification](native-private-write-prefetch-qualification.md) · [Full measurements and profiles](native-returning-cache-hint-trial.md).
 
 ## Forward exhausted reduction entries
 
