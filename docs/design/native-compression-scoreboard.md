@@ -1,5 +1,32 @@
 # Current compression scoreboard
 
+The compiler sends a proved zero-trip reduction directly to its existing typed completion. The normally linked executable takes **0.997296×** the paired control across all 81 cases. Both 1.05 gates pass throughout. Held-out mixed crosses below Roc in the full run and confirmation.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **55/81 (67.9%)** | 54 |
+| Faster than libdeflate | **28/81 (34.6%)** | 28 |
+| Faster than both | **11/81 (13.6%)** | 11 |
+| Faster than at least one | **72/81 (88.9%)** | 71 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.171315×** | 2.186214× | 0.998988× |
+| Natural 8 KiB | **0.978042×** | 1.219986× | 0.998133× |
+| Natural 32,769 bytes | 1.079402× | **0.982355×** | 0.986069× |
+| Natural 33,027 bytes | 1.078709× | **0.984800×** | 0.987036× |
+| Held-out random, 65,537 bytes | **0.985829×** | 1.665710× | 1.000622× |
+| Held-out mixed, 131,073 bytes | **0.993448×** | 1.149819× | 0.992255× |
+| Random 65,535 bytes | 1.012148× | 1.713476× | 0.999006× |
+| Random 65,536 bytes | 1.011291× | 1.715241× | 0.997359× |
+| Random 65,537 bytes | 1.010457× | 1.714213× | 1.002627× |
+| Random 1 MiB | 1.105207× | 1.568549× | 0.998169× |
+| Periodic 256 KiB | **0.556275×** | **0.981794×** | 0.998882× |
+
+Held-out mixed repeats at 0.990378× Roc, held-out random at 0.987074× Roc and natural 33,027 bytes at 0.984302× libdeflate. The adverse cohort takes 1.001775× control and passes both gates on all ten cases. [Benchmark and compiler qualification](native-zero-trip-parser-qualification.md).
+
+## Short-circuit comparisons
+
 The compiler short-circuits a branch-only chain of integer comparisons after its shared stop decision. The normally linked executable takes **0.997813×** the paired control across all 81 cases. Both 1.05 gates pass throughout. The original and decoded compiler paths reproduce the exact timed Object and executable.
 
 | Peer result | Mech wins | Paired control wins |
