@@ -1,5 +1,31 @@
 # Current compression scoreboard
 
+The compiler reuses the fixed view length admitted by the caller, combines adjacent private halfword reads, and shares the decision for two successive clamps. The normally linked executable takes **0.992946×** the paired control across all 81 cases. Both 1.05 gates pass throughout. Source and decoded bytecode reproduce the timed Object and worker.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **53/81 (65.4%)** | 53 |
+| Faster than libdeflate | **27/81 (33.3%)** | 22 |
+| Faster than both | **12/81 (14.8%)** | 9 |
+| Faster than at least one | **68/81 (84.0%)** | 66 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.169477× | 2.182011× | 0.999386× |
+| Natural 8 KiB | **0.989113×** | 1.235215× | 1.000729× |
+| Natural 32,767 bytes | 1.102468× | **0.999730×** | 0.997098× |
+| Natural 32,769 bytes | 1.099165× | 1.000773× | 0.999725× |
+| Natural 33,027 bytes | 1.098150× | 1.001481× | 0.998961× |
+| Held-out window, 32 KiB | 1.095286× | **0.992312×** | 0.992040× |
+| Held-out random, 65,537 bytes | 1.010857× | 1.708618× | 0.992497× |
+| Held-out mixed, 131,073 bytes | 1.011405× | 1.172901× | 0.998259× |
+| Periodic 256 KiB | **0.556697×** | **0.981786×** | 0.981534× |
+| Random 1 MiB | 1.136827× | 1.602088× | 0.984201× |
+
+Natural 33,027 bytes is 0.999536× libdeflate in confirmation and 0.997248× in the stored-case repeat. The full cohort remains above parity. The full paired estimate for seven stored bytes is +7.07%, with both 1.05 gates passing and a −0.64% paired repeat. Periodic 8 KiB is +1.22% full and −0.64% adverse. The separate fixed-address candidate scored 70/81. [Normally linked measurements and qualification](native-shared-clamp-qualification.md).
+
+## Shared branch flags
+
 Normalizing the branch-only loop decision takes **0.997359×** the paired continuation-forwarding control over all 81 cases. Both 1.05 gates pass throughout. Source and decoded bytecode reproduce the timed Object and executable. The five new libdeflate wins all recur in confirmation.
 
 | Peer result | Mech wins | Paired control wins |
