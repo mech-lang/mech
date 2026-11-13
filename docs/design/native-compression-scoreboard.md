@@ -1,5 +1,31 @@
 # Current compression scoreboard
 
+Normalizing the branch-only loop decision takes **0.997359×** the paired continuation-forwarding control over all 81 cases. Both 1.05 gates pass throughout. Source and decoded bytecode reproduce the timed Object and executable. The five new libdeflate wins all recur in confirmation.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **53/81 (65.4%)** | 53 |
+| Faster than libdeflate | **24/81 (29.6%)** | 19 |
+| Faster than both | 9/81 | 9 |
+| Faster than either | **68/81 (84.0%)** | 63 |
+
+| Input | Mech/Roc | Mech/libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.172431× | 2.172041× | 1.002311× |
+| Natural 8 KiB | **0.989697×** | 1.229915× | 0.996410× |
+| Natural 32,767 bytes | 1.096678× | **0.999698×** | 0.996595× |
+| Natural 32 KiB | 1.096860× | **0.999072×** | 0.995592× |
+| Natural 32,769 bytes | 1.097267× | **0.998910×** | 0.996184× |
+| Held-out window, 32 KiB | 1.096814× | **0.996401×** | 0.996396× |
+| Reymont prefix, 32,769 bytes | 1.096453× | **0.997077×** | 0.993289× |
+| Held-out slides, 65,537 bytes | 1.122327× | 0.981078× | 0.994555× |
+| Held-out mixed, 131,073 bytes | **1.010960×** | 1.171059× | 0.994772× |
+| Held-out random, 65,537 bytes | **1.019332×** | 1.716335× | 0.993150× |
+
+Natural 8 KiB also beats Roc in the paired control. Periodic 8 KiB is +1.89% in the full run and +0.64% in the adverse check. The 32-byte stored outlier changes from +6.45% on the paired estimator to −0.60% on retest. Periodic 256 KiB remains at the boundary, 1.000423× libdeflate in the full run and 0.999814× in confirmation. [All matched observations, counters, executable profiles and compiler qualification](native-shared-state-branch-flags.md).
+
+## Selected loop continuations
+
 Forwarding selected loop continuations takes **0.996746×** the paired packed-read control across 81 cases. Both 1.05 timing gates pass throughout. The ordinary compiler reproduces the exact timed Object and executable from source and decoded bytecode.
 
 | Peer result | Mech wins | Paired control wins |

@@ -643,6 +643,24 @@ fn optimize_phase(
         if forwarded != 0 {
             context.compute_cfg();
             context.compute_domtree();
+            if cfg!(target_arch = "aarch64")
+                && std::env::var_os("MECH_NORMALIZE_SELECTED_LOOP_TEST").is_some()
+            {
+                context.eliminate_unreachable_code(isa).map_err(backend)?;
+                context.compute_cfg();
+                context.compute_domtree();
+                let normalized = cfg_cleanup::selected_continuations::branch_form::optimize(
+                    &mut context.func,
+                    &context.domtree,
+                );
+                if normalized != 0 {
+                    context.compute_cfg();
+                    context.compute_domtree();
+                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                        eprintln!("{symbol} normalized selected loop tests: {normalized}");
+                    }
+                }
+            }
             context.verify(isa).map_err(backend)?;
             if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("{symbol} forwarded selected continuations: {forwarded}");
