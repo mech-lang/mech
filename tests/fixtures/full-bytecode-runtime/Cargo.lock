@@ -778,6 +778,7 @@ dependencies = [
  "paste",
  "serde",
  "serde_derive",
+ "smallvec",
  "tabled",
  "unicode-segmentation",
 ]
