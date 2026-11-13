@@ -13,6 +13,8 @@ enum Shape {
     WideNext,
     ConditionalEdge,
     LoopLocalBase,
+    IndependentRanges,
+    OverlappingRanges,
 }
 
 fn fixture(module: &JITModule, shape: Shape) -> (Context, [Write; 2]) {
@@ -30,7 +32,7 @@ fn fixture(module: &JITModule, shape: Shape) -> (Context, [Write; 2]) {
     let failure = b.create_block();
     b.append_block_params_for_function_params(entry);
     for block in [header, relay] {
-        for _ in 0..2 {
+        for _ in 0..3 {
             b.append_block_param(block, types::I64);
         }
     }
@@ -38,14 +40,24 @@ fn fixture(module: &JITModule, shape: Shape) -> (Context, [Write; 2]) {
     let [base, length, count, seed, reject] = b.block_params(entry)[..] else {
         unreachable!()
     };
+    let minimum = if matches!(shape, Shape::IndependentRanges) {
+        856
+    } else {
+        600
+    };
     let enough = b
         .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, length, 600);
-    b.ins()
-        .brif(enough, header, &[seed.into(), count.into()], failure, &[]);
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, length, minimum);
+    b.ins().brif(
+        enough,
+        header,
+        &[seed.into(), count.into(), seed.into()],
+        failure,
+        &[],
+    );
 
     b.switch_to_block(header);
-    let [index, remaining] = b.block_params(header)[..] else {
+    let [index, remaining, other] = b.block_params(header)[..] else {
         unreachable!()
     };
     let more = b.ins().icmp_imm(IntCC::NotEqual, remaining, 0);
@@ -60,13 +72,19 @@ fn fixture(module: &JITModule, shape: Shape) -> (Context, [Write; 2]) {
     b.ins().return_(&[error]);
 
     b.switch_to_block(update);
-    let masked = b.ins().band_imm(index, 255);
     let base = if matches!(shape, Shape::LoopLocalBase) {
         b.ins().iadd_imm(base, 0)
     } else {
         base
     };
-    let mut make_write = |stride, bias, site| {
+    let distinct = matches!(shape, Shape::IndependentRanges | Shape::OverlappingRanges);
+    let bias = if matches!(shape, Shape::IndependentRanges) {
+        601
+    } else {
+        301
+    };
+    let mut make_write = |selector, stride, bias, site| {
+        let masked = b.ins().band_imm(selector, 255);
         let scaled = b.ins().imul_imm(masked, stride);
         let one_based = b.ins().iadd_imm(scaled, bias);
         let ordinal = b.ins().iadd_imm(one_based, -1);
@@ -81,7 +99,10 @@ fn fixture(module: &JITModule, shape: Shape) -> (Context, [Write; 2]) {
             width: 2,
         }
     };
-    let writes = [make_write(2, 1, 1), make_write(1, 301, 2)];
+    let writes = [
+        make_write(index, 2, 1, 1),
+        make_write(if distinct { other } else { index }, 1, bias, 2),
+    ];
     let product = b.ins().imul_imm(index, 109);
     let next = if matches!(shape, Shape::WideNext) {
         product
@@ -94,17 +115,25 @@ fn fixture(module: &JITModule, shape: Shape) -> (Context, [Write; 2]) {
         b.ins().ushr(low, shift)
     };
     let left = b.ins().iadd_imm(remaining, -1);
+    let next_other = b.ins().band_imm(remaining, 255);
     if matches!(shape, Shape::ConditionalEdge) {
-        b.ins()
-            .brif(more, relay, &[next.into(), left.into()], done, &[]);
+        b.ins().brif(
+            more,
+            relay,
+            &[next.into(), left.into(), next_other.into()],
+            done,
+            &[],
+        );
     } else {
-        b.ins().jump(relay, &[next.into(), left.into()]);
+        b.ins()
+            .jump(relay, &[next.into(), left.into(), next_other.into()]);
     }
     b.switch_to_block(relay);
-    let [next, left] = b.block_params(relay)[..] else {
+    let [next, left, next_other] = b.block_params(relay)[..] else {
         unreachable!()
     };
-    b.ins().jump(header, &[next.into(), left.into()]);
+    b.ins()
+        .jump(header, &[next.into(), left.into(), next_other.into()]);
     b.seal_all_blocks();
     b.finalize();
     (context, writes)
@@ -123,13 +152,16 @@ fn define(module: &mut JITModule, context: &mut Context, name: &str) -> Entry {
 
 fn apply(context: &mut Context, writes: &[Write], lengths: &[(usize, u64)]) -> Option<Hint> {
     context.flowgraph();
-    insert(
+    let mut hints = insert(
         &mut context.func,
         &context.cfg,
         &context.domtree,
         writes,
         lengths,
-    )
+        false,
+    );
+    assert!(hints.len() <= 1);
+    hints.pop()
 }
 
 #[test]
@@ -182,4 +214,67 @@ fn future_store_declines_unbounded_or_unadmitted_addresses() {
         ..writes[1]
     };
     assert!(apply(&mut context, &[wrong_width], &[(0, 600)]).is_none());
+}
+
+#[test]
+fn future_store_selects_two_bounded_disjoint_returning_writes() {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    for (shape, length, sites) in [
+        (Shape::Ordinary, 856, &[2][..]),
+        (Shape::OverlappingRanges, 856, &[2][..]),
+        (Shape::IndependentRanges, 855, &[1][..]),
+        (Shape::IndependentRanges, 856, &[2, 1][..]),
+    ] {
+        let (mut context, writes) = fixture(&module, shape);
+        context.flowgraph();
+        let hints = insert(
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+            &writes,
+            &[(0, length)],
+            true,
+        );
+        assert_eq!(
+            hints
+                .iter()
+                .map(|hint| hint.source_write)
+                .collect::<Vec<_>>(),
+            sites
+        );
+        context.verify(module.isa()).unwrap();
+    }
+    let (mut before, _) = fixture(&module, Shape::IndependentRanges);
+    let (mut after, writes) = fixture(&module, Shape::IndependentRanges);
+    after.flowgraph();
+    assert_eq!(
+        insert(
+            &mut after.func,
+            &after.cfg,
+            &after.domtree,
+            &writes,
+            &[(0, 856)],
+            true
+        )
+        .len(),
+        2
+    );
+    let before = define(&mut module, &mut before, "future_store_pair_before");
+    let after = define(&mut module, &mut after, "future_store_pair_after");
+    for seed in [0, 1, 127, 255, 256, u64::MAX] {
+        let mut expected = [0xface; 856];
+        let mut actual = expected;
+        for (length, count, reject) in [
+            (856, 0, 0),
+            (856, 1, 0),
+            (856, 8, 0),
+            (855, 8, 0),
+            (856, 8, 1),
+            (856, 300, 0),
+        ] {
+            let a = unsafe { before(expected.as_mut_ptr(), length, count, seed, reject) };
+            let b = unsafe { after(actual.as_mut_ptr(), length, count, seed, reject) };
+            assert_eq!((a, expected), (b, actual));
+        }
+    }
 }
