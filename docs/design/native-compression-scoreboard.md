@@ -30,6 +30,8 @@ Selecting two ARM64 horizontal minima removed five instructions from vector comp
 
 Entering the scalar countdown directly shrank each composed parser by 64 bytes and retired 0.21–0.25% fewer instructions on natural text. Natural 256 KiB and 1 MiB slowed with or without the original function placement. The full trial added no Roc wins and lost one libdeflate win. [Direct countdown timings and placement control](native-direct-short-countdown-pilot.md).
 
+ARM64 conditional comparisons followed by a selection cut repeated-input instructions by about 1.9%. The full trial took 0.995219× control, kept 52 Roc wins and raised libdeflate wins from 16 to 18. The two repeated-input crossings held at fixed function addresses. Natural 8 KiB slowed there by 1.35%, crossing from 0.997531× to 1.011014× Roc. The broader rule is not active. [Conditional selection timings and isolated vector matcher](native-conditional-select-pilot.md).
+
 ## Grouped histogram comparison
 
 The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
