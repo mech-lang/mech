@@ -26,6 +26,8 @@ Folding two identical routes in each composed parser reduced natural-text instru
 
 Reusing the remaining span after the first short visit improved natural 256 KiB by 0.46–0.73% across three cohorts. Natural 8 KiB reached 0.998938× Roc in the screen, 1.008855× in the full matrix and 1.004024× in confirmation. The all-case win sets were unchanged. [Short-entry timing and linked code](native-short-reduction-entry-pilot.md).
 
+Selecting two ARM64 horizontal minima removed five instructions from vector completion. The full matrix took 1.000126× control time and kept 52 Roc wins. Repeated 65,535 bytes lost its libdeflate win in the screen and full run. [Horizontal minimum timing and linked code](native-horizontal-minimum-pilot.md).
+
 ## Grouped histogram comparison
 
 The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
