@@ -1,0 +1,104 @@
+{
+  "baseline_head": "cb8dfa790dd6e1eb043f76885f7d65c9c9abe00e",
+  "comparisons": {
+    "clean": {
+      "elapsed_reduction_percent": 16.505528285667094,
+      "instructions_reduction_percent": 8.551876877530795,
+      "preparation_reduction_percent": 52.8334471875306,
+      "speedup": 1.197684085506151
+    },
+    "profile": {
+      "elapsed_reduction_percent": 14.386988469980732,
+      "instructions_reduction_percent": 8.669776972156363,
+      "preparation_reduction_percent": 51.40957066413989,
+      "speedup": 1.1680467514559523
+    }
+  },
+  "compressor_images_exact": 4,
+  "focused_tests_passed": 18,
+  "production_commit": "84b6c076e2a0635df6fb101fa760b8b507d7dab5",
+  "runs": {
+    "baseline-clean": {
+      "cycles_elapsed": 653179936368,
+      "guard_owner_seconds": 46.45468133292161,
+      "instructions_retired": 2650383558848,
+      "maximum_rss_bytes": 7720206336,
+      "native_seconds": 137.146881208,
+      "preparation_seconds": 52.49506920808926,
+      "process_seconds": 172.1008896669373,
+      "samples_attempted": 0,
+      "sampling_error": null,
+      "source_to_object_seconds": 171.98553625
+    },
+    "baseline-profile": {
+      "cycles_elapsed": 654398559402,
+      "guard_owner_seconds": 45.95580541691743,
+      "instructions_retired": 2654653523270,
+      "maximum_rss_bytes": 7540523008,
+      "native_seconds": 133.575480334,
+      "preparation_seconds": 50.569628375116736,
+      "process_seconds": 168.97386995889246,
+      "samples_attempted": 10,
+      "sampling_error": "sample attempt 10 exited 255",
+      "source_to_object_seconds": 167.853134625
+    },
+    "packed-clean": {
+      "cycles_elapsed": 549595691326,
+      "guard_owner_seconds": 47.04527987493202,
+      "instructions_retired": 2423726020113,
+      "maximum_rss_bytes": 7680933888,
+      "native_seconds": 109.602434208,
+      "preparation_seconds": 24.76011454197578,
+      "process_seconds": 143.75764408311807,
+      "samples_attempted": 0,
+      "sampling_error": null,
+      "source_to_object_seconds": 143.598414917
+    },
+    "packed-profile": {
+      "cycles_elapsed": 549369506810,
+      "guard_owner_seconds": 47.23228258290328,
+      "instructions_retired": 2424500983419,
+      "maximum_rss_bytes": 7533690880,
+      "native_seconds": 108.92744175,
+      "preparation_seconds": 24.571999541018158,
+      "process_seconds": 144.94578616600484,
+      "samples_attempted": 9,
+      "sampling_error": "sample attempt 9 exited 255",
+      "source_to_object_seconds": 143.7041235
+    }
+  },
+  "runtime_timing_campaign_rerun": false,
+  "seeded_oracle_graphs": 256,
+  "small_controls_exact": 7,
+  "compile_boundary": "fresh pinned level-12 source to compact diagnostic native Object; excludes building Rust, host linking, and compression runtime",
+  "machine": {
+    "chip": "Apple M3",
+    "cores": 8,
+    "memory_bytes": 17179869184,
+    "macOS": "26.2 (25C56)"
+  },
+  "archive": {
+    "archive_name": "level12-liveness-apple-m3-20261113.tar.gz",
+    "bytes": 5542065,
+    "evidence_files": 205,
+    "files": 205,
+    "format": 1,
+    "manifest_sha256": "56e275ee89ab20b219c869af7805bc09ddd4cd165117ae700ba7789dd0130b94",
+    "sha256": "405f72872051ed62c8e57101326ab5f5a0d8d3ca58038fbf50dfaf1a4be24190",
+    "source_revision": "cb8dfa790dd6e1eb043f76885f7d65c9c9abe00e",
+    "uncompressed_bytes": 42437135,
+    "repository": "mech-lang/mech",
+    "release_tag": "evidence-native-compression-experiments-6",
+    "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-liveness-apple-m3-20261113.tar.gz",
+    "publication": "published",
+    "replay_sha256": "3e1a99bc52b727d26dc126ca8876fa14dcf473ad397d5164fbc46c37410d3c0f",
+    "source_state": "source_revision is the public baseline; production.patch and before/after snapshots pin the local production change",
+    "verification": {
+      "archive_sha256": "405f72872051ed62c8e57101326ab5f5a0d8d3ca58038fbf50dfaf1a4be24190",
+      "source_revision": "cb8dfa790dd6e1eb043f76885f7d65c9c9abe00e",
+      "verified_files": 205,
+      "verified_bytes": 42437135,
+      "all_git_blobs_match": true
+    }
+  }
+}
