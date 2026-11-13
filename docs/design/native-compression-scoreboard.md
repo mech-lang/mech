@@ -28,6 +28,8 @@ Reusing the remaining span after the first short visit improved natural 256 KiB 
 
 Selecting two ARM64 horizontal minima removed five instructions from vector completion. The full matrix took 1.000126× control time and kept 52 Roc wins. Repeated 65,535 bytes lost its libdeflate win in the screen and full run. [Horizontal minimum timing and linked code](native-horizontal-minimum-pilot.md).
 
+Entering the scalar countdown directly shrank each composed parser by 64 bytes and retired 0.21–0.25% fewer instructions on natural text. Natural 256 KiB and 1 MiB slowed with or without the original function placement. The full trial added no Roc wins and lost one libdeflate win. [Direct countdown timings and placement control](native-direct-short-countdown-pilot.md).
+
 ## Grouped histogram comparison
 
 The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
