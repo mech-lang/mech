@@ -23,8 +23,47 @@ struct Address {
     base: Value,
     selector: Value,
     offset: u64,
+    end: u64,
     stride: u64,
     mask: u64,
+}
+
+struct Candidate {
+    write: Write,
+    address: Address,
+    before: Inst,
+    next: Value,
+}
+
+impl Candidate {
+    fn rank(&self) -> (u64, usize, Inst) {
+        (self.address.stride, self.write.site, self.before)
+    }
+
+    fn independent_of(&self, other: &Self) -> bool {
+        self.before == other.before
+            && self.write.array == other.write.array
+            && self.address.base == other.address.base
+            && self.next != other.next
+            && (self.address.end <= other.address.offset
+                || other.address.end <= self.address.offset)
+    }
+
+    fn insert(&self, function: &mut Function) -> Hint {
+        let address = self.address;
+        let mut cursor = FuncCursor::new(function);
+        cursor.goto_inst(self.before);
+        let base = cursor.ins().iadd_imm(address.base, address.offset as i64);
+        let bytes = cursor.ins().imul_imm(self.next, address.stride as i64);
+        let pointer = cursor.ins().iadd(base, bytes);
+        cursor.ins().prefetch_write(pointer);
+        Hint {
+            source_write: self.write.site,
+            byte_offset: address.offset,
+            byte_stride: address.stride,
+            selector_mask: address.mask,
+        }
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -111,6 +150,7 @@ fn address(function: &Function, write: Write, minimum_length: u64) -> Option<Add
         base: function.dfg.resolve_aliases(base),
         selector,
         offset,
+        end,
         stride,
         mask,
     })
@@ -218,11 +258,12 @@ pub(in crate::native_artifact) fn insert(
     dom: &DominatorTree,
     writes: &[Write],
     fixed_lengths: &[(usize, u64)],
-) -> Option<Hint> {
+    allow_second: bool,
+) -> Vec<Hint> {
     let mut loops = LoopAnalysis::new();
     loops.compute(function, cfg, dom);
     let mut facts = Facts::new(function);
-    let mut selected = None;
+    let mut candidates = Vec::new();
     for &write in writes {
         let Some(&(_, minimum)) = fixed_lengths
             .iter()
@@ -256,27 +297,29 @@ pub(in crate::native_artifact) fn insert(
             {
                 continue;
             }
-            // Limit the pass to one hint per phase. Prefer the denser address
-            // range, then stable source order for equally dense accesses.
-            let rank = (address.stride, write.site, before);
-            if selected.as_ref().is_none_or(|(old, _, _)| rank < *old) {
-                selected = Some((rank, next, address));
-            }
+            candidates.push(Candidate {
+                write,
+                address,
+                before,
+                next,
+            });
         }
     }
-    let ((_, source_write, before), next, address) = selected?;
-    let mut cursor = FuncCursor::new(function);
-    cursor.goto_inst(before);
-    let base = cursor.ins().iadd_imm(address.base, address.offset as i64);
-    let bytes = cursor.ins().imul_imm(next, address.stride as i64);
-    let pointer = cursor.ins().iadd(base, bytes);
-    cursor.ins().prefetch_write(pointer);
-    Some(Hint {
-        source_write,
-        byte_offset: address.offset,
-        byte_stride: address.stride,
-        selector_mask: address.mask,
-    })
+    // Prefer the denser address range, then stable source order. A second
+    // hint may cover a disjoint region of that same fixed view on the same edge.
+    let Some(primary) = candidates.iter().min_by_key(|candidate| candidate.rank()) else {
+        return Vec::new();
+    };
+    let mut hints = vec![primary.insert(function)];
+    if allow_second
+        && let Some(secondary) = candidates
+            .iter()
+            .filter(|candidate| candidate.independent_of(primary))
+            .min_by_key(|candidate| candidate.rank())
+    {
+        hints.push(secondary.insert(function));
+    }
+    hints
 }
 
 #[cfg(all(test, feature = "jit"))]

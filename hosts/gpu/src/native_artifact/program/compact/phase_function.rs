@@ -194,7 +194,7 @@ pub(super) fn define<M: Module>(
             }
         }
     }
-    let mut future_write_hint = None;
+    let mut future_write_hints = Vec::new();
     if !observe
         && cleanup.enabled
         && module.isa().name() == "aarch64"
@@ -203,15 +203,16 @@ pub(super) fn define<M: Module>(
     {
         context.flowgraph();
         if std::env::var_os("MECH_PREFETCH_PRIVATE_WRITES").is_some() {
-            future_write_hint = cfg_cleanup::future_store::insert(
+            future_write_hints = cfg_cleanup::future_store::insert(
                 &mut context.func,
                 &context.cfg,
                 &context.domtree,
                 &report.fixed_view_writes,
                 &vectors.admitted_lengths,
+                std::env::var_os("MECH_PREFETCH_SECOND_PRIVATE_WRITE").is_some(),
             );
         }
-        if future_write_hint.is_some() {
+        if !future_write_hints.is_empty() {
             context.verify(module.isa()).map_err(backend)?;
         }
     }
@@ -538,8 +539,11 @@ pub(super) fn define<M: Module>(
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":no_growth.is_none(),"unique_writable_owner_gate":true,"cleanup":cleanup});
     summary["bit_counts"] = serde_json::json!(bit_counts);
-    if let Some(hint) = future_write_hint {
+    if let Some(hint) = future_write_hints.first() {
         summary["future_write_hint"] = serde_json::json!(hint);
+    }
+    if let Some(hint) = future_write_hints.get(1) {
+        summary["second_future_write_hint"] = serde_json::json!(hint);
     }
     if let Some(report) = vector_predicates {
         summary["private_vector_predicates"] = serde_json::json!(report);
