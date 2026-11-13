@@ -34,6 +34,8 @@ Entering the scalar countdown directly shrank each composed parser by 64 bytes a
 
 ARM64 conditional comparisons followed by a selection cut repeated-input instructions by about 1.9%. The full trial took 0.995219× control, kept 52 Roc wins and raised libdeflate wins from 16 to 18. The two repeated-input crossings held at fixed function addresses. Natural 8 KiB slowed there by 1.35%, crossing from 0.997531× to 1.011014× Roc. The broader rule is not active. [Conditional selection timings and isolated vector matcher](native-conditional-select-pilot.md).
 
+Sharing adjacent extending-load addresses cut random 1 MiB instructions by 1.55% in a separate fixed-address trial. Held-out random 65,537 bytes went from 1.033159× to 1.025149× Roc, while natural 8 KiB and larger natural cases slowed. The 16-case screen took 0.999682× control; the rule is not active. [Address sharing measurements and profiles](native-adjacent-extended-loads-pilot.md).
+
 
 ## Grouped histogram comparison
 
