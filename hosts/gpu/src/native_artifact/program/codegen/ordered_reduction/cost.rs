@@ -18,6 +18,15 @@ pub(super) struct Inputs {
     words: BTreeMap<usize, Value>,
     bases: BTreeMap<Window, Value>,
 }
+
+/// An address for the current admitted element. The wide form reads all of
+/// a packed U64 cell and projects its low word on little-endian targets.
+#[derive(Clone, Copy)]
+pub(super) enum ScalarRead {
+    LowWord(Value),
+    PackedWord(Value),
+}
+
 impl Inputs {
     pub fn new(
         b: &mut FunctionBuilder<'_>,
@@ -180,19 +189,28 @@ impl Inputs {
         proof: &Proof,
         cost: &Cost,
         k: Value,
-        pointers: &[(Window, Value)],
+        pointers: &[(Window, ScalarRead)],
     ) -> Value {
         match cost {
             Cost::Constant(value) => b.ins().iconst(types::I32, i64::from(*value)),
             Cost::Word(slot) => self.words[slot],
             Cost::Index => b.ins().ireduce(types::I32, k),
             Cost::Read(w) => {
-                let pointer = pointers
+                let address = pointers
                     .iter()
                     .find_map(|(window, pointer)| (*window == *w).then_some(*pointer))
-                    .unwrap_or_else(|| self.pointer(b, proof, *w, k));
-                b.ins()
-                    .load(types::I32, MemFlags::new().with_notrap(), pointer, 0)
+                    .unwrap_or_else(|| ScalarRead::LowWord(self.pointer(b, proof, *w, k)));
+                let flags = MemFlags::new().with_notrap();
+                match address {
+                    ScalarRead::LowWord(pointer) => b.ins().load(types::I32, flags, pointer, 0),
+                    ScalarRead::PackedWord(pointer) => {
+                        debug_assert!(
+                            cfg!(target_endian = "little") && proof.arrays[w.array].width == 8
+                        );
+                        let packed = b.ins().load(types::I64, flags, pointer, 0);
+                        b.ins().ireduce(types::I32, packed)
+                    }
+                }
             }
             Cost::Add(a, c) | Cost::And(a, c) | Cost::Or(a, c) | Cost::Xor(a, c) => {
                 let a = self.scalar(b, proof, a, k, pointers);

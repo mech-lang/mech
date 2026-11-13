@@ -1,30 +1,32 @@
 # Current compression scoreboard
 
-The retained branch-fed selection takes **0.995253×** the paired composed-countdown control time. Both 1.05 timing gates pass on all 81 cases. The compiler reproduces the measured Object and pinned-runtime executable from both original and decoded artifacts.
+The retained opt-in first packed reverse read takes **1.000810×** the paired branch-fed selection time across all 81 cases. The 20-case screen, eight-case confirmation and ten-case adverse check take 0.998183×, 0.995486× and 0.997340×. Both 1.05 gates pass throughout. Source and decoded bytecode produce the exact timed Object and executable.
 
-| Peer result | Mech wins |
-| --- | ---: |
-| Faster than Roc | **52/81 (64.2%)** |
-| Faster than libdeflate | **19/81 (23.5%)** |
-| Faster than both | 10/81 |
-| Faster than either | 61/81 (75.3%) |
-
-| Input | Mech/Roc | Mech/libdeflate |
+| Peer result | Mech wins | Paired control wins |
 | --- | ---: | ---: |
-| Eight literals | 0.172761× | 2.191633× |
-| Natural 8 KiB | **1.006805×** | 1.254806× |
-| Natural 256 KiB | 1.145246× | 0.928244× |
-| Natural 1 MiB | 1.154660× | 0.932239× |
-| Repeated 65,535 bytes | 0.557960× | **0.992261×** |
-| Repeated 65,536 bytes | 0.561880× | **0.997956×** |
-| Repeated 65,537 bytes | 0.559060× | **0.991145×** |
-| Periodic 256 KiB | 0.568019× | **0.998774×** |
+| Faster than Roc | **52/81 (64.2%)** | 52 |
+| Faster than libdeflate | **20/81 (24.7%)** | 18 |
+| Faster than both | 10/81 | 9 |
+| Faster than either | 62/81 (76.5%) | 61 |
 
-The matched control wins 52 cases against Roc and 15 against libdeflate. The three repeated lengths and periodic 256 KiB above cross below libdeflate in this cohort. Natural 8 KiB takes 1.002495× paired control and remains above Roc; in confirmation it takes 0.999453× paired control and 1.003916× Roc. [Compiler qualification and timing receipts](native-branch-fed-selection-pilot.md).
+| Input | Mech/Roc | Mech/libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.172446× | 2.184845× | 1.008677× |
+| Natural 8 KiB | **1.009695×** | 1.257854× | 1.004197× |
+| Natural 32 KiB | 1.116304× | 1.015999× | 0.992172× |
+| Held-out slides, 65,537 bytes | 1.142990× | **0.999027×** | 0.989249× |
+| Held-out mixed, 131,073 bytes | 1.022496× | 1.184215× | 0.992072× |
+| Natural 256 KiB | 1.133146× | 0.918982× | 0.988291× |
+| Natural 1 MiB | 1.145485× | 0.922673× | 0.992217× |
+| Periodic 256 KiB | 0.567149× | **0.999458×** | 0.997661× |
+
+Held-out slides is consistently 0.78–1.08% faster than the paired Mech control, but ranges from 0.998062× to 1.003214× libdeflate. Periodic 256 KiB returns to 1.003013× libdeflate in the adverse check. Natural 8 KiB reaches 1.000663× Roc in that check and 1.002529× in confirmation. The largest full-matrix slowdown was periodic 8 KiB at +2.97%; it was +0.73% when retested. [All measurements, qualification and exact executable profiles](native-first-packed-reverse-qualification.md).
+
+The preceding [branch-fed selection](native-branch-fed-selection-pilot.md) takes 0.995253× its paired composed-countdown control and records 52 Roc wins, 19 libdeflate wins, ten both and 61 either. Its historical peer measurements are a separate cohort.
 
 The preceding [composed ordered reduction](native-composed-countdown-qualification.md) takes 0.993395× its paired grouped-histogram control. That cohort records 52 Roc wins and 16 libdeflate wins. Repeated 32 KiB crosses below libdeflate and natural 8 KiB reaches 1.001108× Roc in that separate measurement.
 
-Folding two identical routes in each composed parser reduced natural-text instructions by 0.88–1.04%. The 81-case trial took 0.998186× control time, with natural 8 KiB slower by 0.67% and the same peer win sets. The composed countdown remains the active compiler. [Trial timings, counters and linked code](native-composed-route-folding.md).
+Folding two identical routes in each composed parser reduced natural-text instructions by 0.88–1.04%. The 81-case trial took 0.998186× control time, with natural 8 KiB slower by 0.67% and the same peer win sets. The folding rule was not retained. [Trial timings, counters and linked code](native-composed-route-folding.md).
 
 Reusing the remaining span after the first short visit improved natural 256 KiB by 0.46–0.73% across three cohorts. Natural 8 KiB reached 0.998938× Roc in the screen, 1.008855× in the full matrix and 1.004024× in confirmation. The all-case win sets were unchanged. [Short-entry timing and linked code](native-short-reduction-entry-pilot.md).
 
