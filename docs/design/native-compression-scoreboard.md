@@ -32,6 +32,8 @@ Entering the scalar countdown directly shrank each composed parser by 64 bytes a
 
 ARM64 conditional comparisons followed by a selection cut repeated-input instructions by about 1.9%. The full trial took 0.995219× control, kept 52 Roc wins and raised libdeflate wins from 16 to 18. The two repeated-input crossings held at fixed function addresses. Natural 8 KiB slowed there by 1.35%, crossing from 0.997531× to 1.011014× Roc. The broader rule is not active. [Conditional selection timings and isolated vector matcher](native-conditional-select-pilot.md).
 
+Narrowing the rule to selections immediately tested by a branch improved the fixed-address trial's libdeflate tally from 15 to 19 and kept 52 Roc wins across 81 cases. Repeated inputs retired about 2.2% fewer instructions. Natural 8 KiB varied from 0.999453× to 1.002962× control over three cohorts. The experiment is a single-body diagnostic, pending whole-compiler reproduction. [Branch-fed selection measurements](native-branch-fed-selection-pilot.md).
+
 ## Grouped histogram comparison
 
 The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
