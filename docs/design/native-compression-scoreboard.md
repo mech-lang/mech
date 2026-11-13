@@ -1,5 +1,28 @@
 # Current compression scoreboard
 
+The compiler schedules two proved independent reads from a fixed private view together. The normally linked worker reproduces the timed Object and executable byte for byte. The first complete matrix takes **0.997551×** paired control and the full repeat takes **0.998381×**. Both 1.05 gates pass throughout.
+
+| Peer result | Mech wins, full repeat | Paired control wins | Previous published |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **58/81 (71.6%)** | 58 | 58 |
+| Faster than libdeflate | **28/81 (34.6%)** | 28 | 27 |
+| Faster than both | **11/81 (13.6%)** | 11 | 10 |
+| Faster than at least one | **75/81 (92.6%)** | 75 | 75 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.171119×** | 2.196541× | 1.006523× |
+| Distribution change, 16 KiB | 1.019519× | 1.748760× | 0.999096× |
+| Natural 16 KiB | 1.043937× | 1.050029× | 0.996404× |
+| Reymont 16 KiB | 1.048250× | 1.049870× | 0.997746× |
+| Random 128 KiB | 1.033987× | 1.609464× | 0.990257× |
+| Random 256 KiB | 1.052619× | 1.565655× | 0.987213× |
+| Random 1 MiB | 1.059833× | 1.497692× | 0.971743× |
+
+The first full comparison scored 74 wins against at least one peer. It includes an elevated random 65,535-byte reading in both Mech arms, with the candidate still faster than its paired control. That input beats Roc in the full repeat and the targeted repeat. Both arms share the same 75 winning inputs in the full repeat. The separate adverse cohort takes 1.001877× paired control. [Compiler qualification](native-independent-private-read-qualification.md) · [Both complete matrices and the profiles](native-independent-private-read-trial.md).
+
+## Prefetch bounded private writes
+
 The compiler prefetches a proved next private table write. The normally linked executable reproduces the measured worker byte for byte and takes **0.992619×** the paired control across all 81 cases. Both 1.05 gates pass throughout.
 
 | Peer result | Mech wins | Paired control wins |
