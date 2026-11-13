@@ -2,6 +2,7 @@
 //! Selected arms still execute their original effects before entering the route.
 
 pub(in crate::native_artifact) mod branch_form;
+pub(in crate::native_artifact) mod comparison_chain;
 
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;

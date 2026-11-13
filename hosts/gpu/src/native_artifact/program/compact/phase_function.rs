@@ -174,6 +174,26 @@ pub(super) fn define<M: Module>(
             }
         }
     }
+    if cfg!(target_arch = "aarch64")
+        && !observe
+        && cleanup.enabled
+        && vectors.is_some()
+        && std::env::var_os("MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES").is_some()
+    {
+        context.flowgraph();
+        let changed = cfg_cleanup::selected_continuations::comparison_chain::fold(
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+        );
+        if changed != 0 {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} short-circuited comparison branches: {changed}");
+            }
+        }
+    }
     let word_loops = &report;
     let pack_sites = word_loops.read_pack_sites.clone();
     let read_guards = word_loops.proven_scalar_read_guards.clone();
