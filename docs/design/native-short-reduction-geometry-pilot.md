@@ -1,0 +1,17 @@
+# Reuse the current short reduction's span and index
+
+The admitted short route calculates its first biased ordinal for the price load and calculates the same ordinal again for the selected item. The fixed-address trial uses the first value for both. It also shares the span subtraction with the unsigned zero-trip branch and decrements that span when the reduction continues. The reverse load uses the original scale-eight ordinal. Its byte address is materialized only when a further visit needs it. The first visit, strict U32 cost comparison, original memory effects, vector path and typed completion retain their order. The trial executes four fewer instructions on the singleton route and five fewer before the first continuation. The eleven-instruction continuing body is byte-identical.
+
+| Input | Screen control → trial / Roc | Confirmation control → trial / Roc | Confirmation control → trial / libdeflate |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.161584× → 0.161931× | 0.161112× → 0.162505× | 2.062247× → 2.080070× |
+| Natural 16 KiB | 1.031657× → 1.017897× | 1.038368× → 1.024822× | 1.046312× → 1.032662× |
+| Reymont 16 KiB | 1.034832× → 1.020548× | 1.037025× → 1.023181× | 1.041819× → 1.027912× |
+| Reymont 32,769 bytes | 1.064233× → 1.050103× | 1.060048× → 1.046112× | 0.964518× → 0.951838× |
+| Natural 256 KiB | 1.081121× → 1.063518× | 1.082001× → 1.067047× | 0.874168× → 0.862085× |
+
+The screen and confirmation take 0.994729× and 0.994085× paired control. Both timing gates pass on all 18 and eight cases. Natural 16 KiB improves by 1.33% and 1.30%, and both order halves improve in both runs. Reymont 16 KiB improves by 1.38% and 1.33%. Eight literals takes 1.002146× and 1.008643× paired control. Both 16 KiB fixtures remain above both peers. No win count changes within either cohort.
+
+The baseline compiler is `170401d69aaeded4304b2992763dd5dfd7e9aabf` with source and bytecode hashes starting `331e659e9218` and `51de51658c1d`. One 104-byte ARM64 instruction range changes inside the 1,216-byte body. The same 224-byte frame, table relocations and all 1,276 linked symbol addresses are preserved. The trial Object is `5debe8b932c271a9a7394b8e1eb970e12299d3684f0e1d78680071736f1eff57`; the linked worker is `a676527dfb37e6a5f3b3c34f37fc19a30bfe03cfdff0cd88c144da210c9be3d1`. The machine audit first expected the vector instruction under a different disassembler mnemonic. The corrected test checks its exact encoding. The direct oracle agrees on 68,096 positions per image across the ordinary and composed phases and 288 boundary pairs. It covers ties, wrapping, short and vector spans, unchanged cache and previous output, rejection origin 15525 and retry. All 162 complete linked checks and 14,592 timed calls preserve the exact streams, independent inflate, capacities, aliases and the existing cleanup checks.
+
+The trial parser accounts for 2,176/4,583 running timer PCs at natural 16 KiB, 2,564/5,265 at Reymont 32,769 bytes and 2,988/5,361 at natural 256 KiB. These exact-worker profiles include validation. The trial is a fixed-address diagnostic. Its independent profile, timing and correctness receipts replay from the public download. The 130-file archive SHA-256 is `9941845739a3d30c3b93f079f8fbb1f21edb76b6b2968a335174ddf9e70dfe9e`. [Linked code, timing observations and direct witnesses](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/mech-922503c653-second-private-write-composed-short-geometry.tar.gz).
