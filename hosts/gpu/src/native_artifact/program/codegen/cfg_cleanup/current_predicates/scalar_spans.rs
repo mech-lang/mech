@@ -1,7 +1,10 @@
 //! Use a checked full extent to prove that a smaller current byte offset
 //! fits. The comparisons are about scalar SSA values and do not move reads.
-use super::super::word_ranges::literal;
-use super::super::{ScalarSpanProof, window_bounds::comparison};
+use super::super::{
+    ScalarSpanProof,
+    window_bounds::{comparison, shared_limit},
+    word_ranges::literal,
+};
 use super::incoming;
 use super::relations::replace_proved;
 use cranelift_codegen::dominator_tree::DominatorTree;
@@ -275,6 +278,44 @@ impl Proof<'_> {
         }
         false
     }
+
+    fn packed_base_fits(&self, base: Value, limit: Value, block: Block) -> bool {
+        let Some((length, width)) = shared_limit(self.f, self.current(limit)) else {
+            return false;
+        };
+        let length = self.current(length);
+        let base = self.current(base);
+        let orders = self.selected_orders(block);
+        // A nonwrapping end at or below length and an extent at least
+        // as wide as the access imply base < length - (width - 1).
+        for &Order {
+            lower: end, upper, ..
+        } in &orders
+        {
+            if upper != length {
+                continue;
+            }
+            let Some([a, b]) = self.sum(end) else {
+                continue;
+            };
+            for (checked_base, extent) in [(a, b), (b, a)] {
+                if checked_base != base || !contains(&orders, base, end, false) {
+                    continue;
+                }
+                let known_minimum = literal(self.f, extent).is_some_and(|n| n >= width);
+                if known_minimum
+                    || orders.iter().any(|fact| {
+                        fact.upper == extent
+                            && literal(self.f, fact.lower)
+                                .is_some_and(|minimum| minimum >= width - u64::from(fact.strict))
+                    })
+                {
+                    return true;
+                }
+            }
+        }
+        false
+    }
 }
 
 fn contains(orders: &[Order], lower: Value, upper: Value, strict: bool) -> bool {
@@ -305,6 +346,9 @@ pub(in super::super) fn fold(
                     proof.fits(test.lower, test.upper, block).then_some(inst)
                 }
                 ScalarSpanProof::SelectedRead => proof.selected_read_guard(test, block),
+                ScalarSpanProof::PackedBase => proof
+                    .packed_base_fits(test.lower, test.upper, block)
+                    .then_some(inst),
             };
             if let Some(guard) = guard {
                 readable.insert(guard);

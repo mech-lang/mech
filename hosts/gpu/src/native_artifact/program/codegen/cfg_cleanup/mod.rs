@@ -510,6 +510,7 @@ pub(in crate::native_artifact) fn reuse_dominating_window_facts(
 enum ScalarSpanProof {
     CheckedWindow,
     SelectedRead,
+    PackedBase,
 }
 
 pub(in crate::native_artifact) fn prove_scalar_spans(
@@ -518,6 +519,14 @@ pub(in crate::native_artifact) fn prove_scalar_spans(
     isa: &dyn TargetIsa,
 ) -> Result<usize, NativeCompileError> {
     fold_scalar_span_guards(controls, context, isa, ScalarSpanProof::CheckedWindow)
+}
+
+pub(in crate::native_artifact) fn prove_packed_bases(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    fold_scalar_span_guards(controls, context, isa, ScalarSpanProof::PackedBase)
 }
 
 pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
