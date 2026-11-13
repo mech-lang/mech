@@ -38,6 +38,8 @@ Sharing adjacent extending-load addresses cut random 1 MiB instructions by 1.55%
 
 A separate masked equality rule shortened two matcher branches at fixed addresses. Its 16-case screen took 1.001666× control with no new peer wins, and natural 8 KiB slowed from 1.002010× to 1.004792× Roc. [Masked comparison trial and profile](native-masked-equality-pilot.md).
 
+Sharing the first ordered-reduction ordinal changed its address calculation but saved no machine instructions. The 20-case screen took 1.000384× control with no new peer wins. Natural 8 KiB went from 1.005867× to 1.008611× Roc. [Short-reduction address trial and profiles](native-first-biased-index-pilot.md).
+
 
 ## Grouped histogram comparison
 
