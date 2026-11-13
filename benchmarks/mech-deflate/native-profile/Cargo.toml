@@ -45,6 +45,9 @@ path = "artifact_review.rs"
 debug = false
 
 [patch.crates-io]
+cranelift-codegen = { path = "../../../vendor/cranelift-codegen" }
+cranelift-frontend = { path = "../../../vendor/cranelift-frontend" }
+regalloc2 = { path = "../../../vendor/regalloc2" }
 mech-math = { path = "../../../machines/math" }
 mech-compare = { path = "../../../machines/compare" }
 mech-logic = { path = "../../../machines/logic" }
@@ -54,3 +57,11 @@ mech-set = { path = "../../../machines/set" }
 mech-string = { path = "../../../machines/string" }
 mech-stats = { path = "../../../machines/stats" }
 mech-combinatorics = { path = "../../../machines/combinatorics" }
+
+[[bin]]
+name = "compile_profile"
+path = "compile_profile.rs"
+
+[[test]]
+name = "guard_state"
+path = "guard_state_tests.rs"

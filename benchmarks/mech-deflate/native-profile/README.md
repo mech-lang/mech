@@ -48,3 +48,49 @@ scalar controls. It is not part of the timing feature configuration.
 `unit-qualification` additionally enables the runtime's compiler interface needed
 by existing GPU unit-test helpers. It retains the selected operation catalog;
 it does not activate the GPU package's full-catalog dev dependencies.
+
+## Compile-time profiling
+
+`compile_profile` measures parsing, the source catalog, checked source compilation,
+canonical artifact construction/encoding and native Object emission separately.
+The `benchmark` source is reconstructed from the maintained compressor components
+with the exact two-input entry used by the complete level-12 comparison. Its
+SHA-256 is checked before compilation. `fixture` selects the public application
+entry, and a source filename selects another program. The output directory keeps
+source, canonical bytecode, Object, metadata and the phase receipt.
+
+```sh
+CARGO_TARGET_DIR=/tmp/mech-native-profile-target CARGO_INCREMENTAL=0 \
+  cargo build --locked --offline --release -j2 \
+  --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml \
+  --bin compile_profile
+
+python3 benchmarks/mech-deflate/native-profile/profile_compile.py \
+  /tmp/mech-native-profile-target/release/compile_profile \
+  benchmark /tmp/level12-compile compact sample
+```
+
+The optional final `sample` argument records consecutive 20-second macOS CPU
+samples at 5 ms intervals. Omit it for a compile without sampling. Stage logs are
+stamped independently of the compiler's phase timers. Process time includes
+startup, final output writes and teardown; the compile receipt ends after native
+emission and before final output writes. `compact` selects the same diagnostic
+Object API as the compression benchmark. `managed` selects the ordinary Object
+API, while `frontend` stops after canonical encoding. These modes have different
+compilation boundaries; do not pool their timings. Rust tool builds and linking
+a generated host application are separate from every measured source compile.
+
+The pure guard dataflow state has a focused test target. It compares updates and
+joins against the original analysis, including contradictory paths, tuple
+projections, redefinition, shared-state independence and packed word boundaries:
+
+```sh
+CARGO_TARGET_DIR=/tmp/mech-native-profile-target CARGO_INCREMENTAL=0 \
+  cargo test --locked --offline --release \
+  --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml \
+  --test guard_state
+```
+
+The [Apple M3 compile-time report](../../../docs/design/native-compile-time-profile.md)
+records the measured before/after work and exact output checks. Raw evidence is
+archived under ignored `.experiments/`; only its compact receipt belongs in source Git.
