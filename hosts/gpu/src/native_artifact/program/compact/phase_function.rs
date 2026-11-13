@@ -285,6 +285,86 @@ pub(super) fn define<M: Module>(
     }
     // Late forwarding may expose a complete idiom without crossing a phase.
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+    let mut histogram = None;
+    if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
+        && !observe
+        && no_growth.is_none()
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && proof.arrays.iter().all(|array| !array.appends)
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let word_at = |word| packet.iter().position(|&at| at == word);
+        let mut nodes = Vec::new();
+        let mut bins = Vec::new();
+        for (array, definition) in proof.arrays.iter().enumerate() {
+            let destination = match (definition.width, definition.writable) {
+                (8, false) => &mut nodes,
+                (4, true) => &mut bins,
+                _ => continue,
+            };
+            if let (Some(pointer_word), Some(length_word)) =
+                (word_at(proof.view(array)), word_at(proof.view(array) + 1))
+            {
+                destination.push(View {
+                    array,
+                    pointer_word,
+                    length_word,
+                    width: definition.width,
+                    literal: None,
+                });
+            }
+        }
+        if !nodes.is_empty() && !bins.is_empty() {
+            let mut grouped = module.make_context();
+            grouped.func = context.func.clone();
+            if let Some(admission) = cfg_cleanup::grouped_histogram::optimize(
+                &mut grouped,
+                word_loops.machine_header,
+                &loads,
+                &nodes,
+                &bins,
+            ) {
+                let name = format!("{symbol}_grouped");
+                let grouped_id = module
+                    .declare_function(&name, Linkage::Local, &signature)
+                    .map_err(backend)?;
+                grouped.verify(module.isa()).map_err(backend)?;
+                let inspection = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
+                    .map(std::path::PathBuf::from)
+                    .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
+                if let Some(path) = &inspection {
+                    std::fs::write(path, grouped.func.display().to_string()).map_err(backend)?;
+                    grouped.set_disasm(true);
+                }
+                module
+                    .define_function(grouped_id, &mut grouped)
+                    .map_err(backend)?;
+                let machine = grouped
+                    .compiled_code()
+                    .ok_or_else(|| backend("grouped phase lacks code"))?;
+                if let Some(path) = inspection {
+                    let vcode = machine
+                        .vcode
+                        .as_ref()
+                        .ok_or_else(|| backend("grouped phase VCode was not emitted"))?;
+                    std::fs::write(path.with_extension("vcode"), vcode).map_err(backend)?;
+                }
+                histogram = Some(serde_json::json!({
+                    "symbol": name,
+                    "admission": admission,
+                    "code_bytes": machine.code_info().total_size,
+                    "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
+                }));
+                let fast = module.declare_func_in_func(grouped_id, &mut context.func);
+                cfg_cleanup::grouped_histogram::guard_entry(&mut context, admission, fast);
+                context.verify(module.isa()).map_err(backend)?;
+            }
+        }
+    }
     let mut composed = None;
     if let Some(contract) = no_growth
         && !literal_views.is_empty()
@@ -432,6 +512,9 @@ pub(super) fn define<M: Module>(
     }
     if !reused_operands.is_empty() {
         summary["reused_scalar_operands"] = serde_json::json!(reused_operands);
+    }
+    if let Some(histogram) = histogram {
+        summary["grouped_histogram"] = histogram;
     }
 
     Ok(Compiled {

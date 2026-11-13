@@ -114,12 +114,12 @@ impl DenseTables {
     }
 }
 #[derive(Clone)]
-struct Read {
+pub(super) struct Read {
     branch: Inst,
-    index: Value,
-    view: View,
-    join: Block,
-    result: Value,
+    pub(super) index: Value,
+    pub(super) view: View,
+    pub(super) join: Block,
+    pub(super) result: Value,
     arms: Vec<Block>,
 }
 
@@ -154,10 +154,10 @@ fn incoming(
 
 // Invariant packet fields can pass through a self edge or be reloaded by an
 // alternate entry. All external definitions must identify the same word.
-fn packet_word(
+pub(super) fn packet_word(
     f: &Function,
     cfg: &ControlFlowGraph,
-    capture: &Capture<'_>,
+    loads: &BTreeMap<Value, (Inst, usize)>,
     value: Value,
 ) -> Option<usize> {
     let mut pending = vec![value];
@@ -168,7 +168,7 @@ fn packet_word(
         if !seen.insert(value) {
             continue;
         }
-        if let Some(&(_, word)) = capture.packet_loads.get(&value) {
+        if let Some(&(_, word)) = loads.get(&value) {
             if result.is_some_and(|old| old != word) {
                 return None;
             }
@@ -189,7 +189,7 @@ fn packet_word(
     result
 }
 
-fn scalar(op: Op) -> bool {
+pub(super) fn scalar(op: Op) -> bool {
     matches!(
         op,
         Op::Iconst
@@ -270,10 +270,11 @@ fn read_comparison(f: &Function, condition: Value) -> Option<Inst> {
     matches!(data, Data::IntCompare { .. }).then_some(inner)
 }
 
-fn read(
+pub(super) fn defaulted_read(
     f: &Function,
     cfg: &ControlFlowGraph,
-    capture: &Capture<'_>,
+    packet_loads: &BTreeMap<Value, (Inst, usize)>,
+    views: &[View],
     branch: Inst,
     endianness: Endianness,
 ) -> Option<Read> {
@@ -289,9 +290,8 @@ fn read(
     else {
         return None;
     };
-    let length = packet_word(f, cfg, capture, length)?;
-    let view = capture
-        .views
+    let length = packet_word(f, cfg, packet_loads, length)?;
+    let view = views
         .iter()
         .find(|view| view.length_word == length)?
         .clone();
@@ -328,6 +328,7 @@ fn read(
     let returned = f.dfg.resolve_aliases(yes);
     let same_result = match (view.width, opcode) {
         (1, Op::Uload8) | (4, Op::Uload32) => loaded == returned,
+        (8, Op::Load) => loaded == returned && flags == MemFlags::new(),
         (width @ (1 | 4), Op::Load) => {
             let expected = if width == 1 { types::I8 } else { types::I32 };
             f.dfg.value_type(loaded) == expected
@@ -352,7 +353,7 @@ fn read(
     };
     let expected = (f.dfg.resolve_aliases(index), 0);
     let matches = |pointer: Value, bytes: Value| {
-        if packet_word(f, cfg, capture, pointer) != Some(view.pointer_word) {
+        if packet_word(f, cfg, packet_loads, pointer) != Some(view.pointer_word) {
             return false;
         }
         match definition(f, bytes) {
@@ -391,7 +392,11 @@ fn read(
     })
 }
 
-fn between(f: &Function, cfg: &ControlFlowGraph, mut block: Block) -> Option<(Inst, Vec<Block>)> {
+pub(super) fn between(
+    f: &Function,
+    cfg: &ControlFlowGraph,
+    mut block: Block,
+) -> Option<(Inst, Vec<Block>)> {
     let mut blocks = Vec::new();
     loop {
         if blocks.contains(&block) || (!blocks.is_empty() && cfg.pred_iter(block).count() != 1) {
@@ -645,7 +650,7 @@ fn dependencies(
             }
             continue;
         }
-        if cache.is_some() && packet_word(f, cfg, capture, value).is_some() {
+        if cache.is_some() && packet_word(f, cfg, capture.packet_loads, value).is_some() {
             continue;
         }
         match f.dfg.value_def(value) {
@@ -681,7 +686,7 @@ fn seed_word(
         if dom.block_dominates(block, predecessor) {
             continue;
         }
-        let word = packet_word(f, cfg, capture, argument)?;
+        let word = packet_word(f, cfg, capture.packet_loads, argument)?;
         if result.is_some_and(|old| old != word) {
             return None;
         }
@@ -1022,7 +1027,16 @@ pub(super) fn compose<M: Module>(
         .blocks()
         .filter_map(|block| {
             let branch = f.layout.last_inst(block)?;
-            read(f, cfg, capture, branch, endianness).map(|read| (branch, read))
+            defaulted_read(
+                f,
+                cfg,
+                capture.packet_loads,
+                capture.views,
+                branch,
+                endianness,
+            )
+            .filter(|read| matches!(read.view.width, 1 | 4))
+            .map(|read| (branch, read))
         })
         .collect::<BTreeMap<_, _>>();
     let results = reads
