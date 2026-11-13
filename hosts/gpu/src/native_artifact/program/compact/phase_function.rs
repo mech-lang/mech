@@ -628,6 +628,27 @@ fn optimize_phase(
             eprintln!("{symbol} merged equal block arguments: {removed}");
         }
     }
+    if private.is_some()
+        && vectors.is_some()
+        && cleanup.enabled
+        && std::env::var_os("MECH_FORWARD_SELECTED_CONTINUATIONS").is_some()
+    {
+        context.compute_cfg();
+        context.compute_domtree();
+        let forwarded = cfg_cleanup::selected_continuations::optimize(
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+        );
+        if forwarded != 0 {
+            context.compute_cfg();
+            context.compute_domtree();
+            context.verify(isa).map_err(backend)?;
+            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} forwarded selected continuations: {forwarded}");
+            }
+        }
+    }
     // Late forwarding may expose a complete idiom without crossing a phase.
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
     let threaded = threaded

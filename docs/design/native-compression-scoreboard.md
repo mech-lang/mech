@@ -1,6 +1,29 @@
 # Current compression scoreboard
 
-The retained opt-in first packed reverse read takes **1.000810×** the paired branch-fed selection time across all 81 cases. The 20-case screen, eight-case confirmation and ten-case adverse check take 0.998183×, 0.995486× and 0.997340×. Both 1.05 gates pass throughout. Source and decoded bytecode produce the exact timed Object and executable.
+Forwarding selected loop continuations takes **0.996746×** the paired packed-read control across 81 cases. Both 1.05 timing gates pass throughout. The ordinary compiler reproduces the exact timed Object and executable from source and decoded bytecode.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **52/81 (64.2%)** | 52 |
+| Faster than libdeflate | **20/81 (24.7%)** | 20 |
+| Faster than both | 10/81 | 10 |
+| Faster than either | 62/81 (76.5%) | 62 |
+
+| Input | Mech/Roc | Mech/libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.172433× | 2.200984× | 0.994541× |
+| Natural 8 KiB | **1.000490×** | 1.240994× | 0.998791× |
+| Natural 32 KiB | 1.103885× | **1.004790×** | 0.988645× |
+| Held-out slides, 65,537 bytes | 1.129954× | **0.988504×** | 0.988651× |
+| Held-out mixed, 131,073 bytes | 1.015927× | 1.176235× | 0.991495× |
+| Natural 256 KiB | 1.116967× | 0.906274× | 0.982609× |
+| Natural 1 MiB | 1.129484× | 0.910495× | 0.986223× |
+
+Natural 8 KiB reaches 0.997146× Roc in confirmation and 1.000275× in the adverse check. Slides remains below libdeflate in all four cohorts. The largest full-matrix slowdown is periodic 8 KiB at +1.29%, rising to +1.83% in the adverse check. [Complete matched observations, counters, executable profiles and compiler qualification](native-selected-loop-continuations.md). The two preceding [prefix minimum diagnostics](native-matcher-prefix-minimum-pilots.md) did not change the compiler.
+
+## First packed reverse read
+
+The preceding opt-in first packed reverse read takes **1.000810×** the paired branch-fed selection time across all 81 cases. The 20-case screen, eight-case confirmation and ten-case adverse check take 0.998183×, 0.995486× and 0.997340×. Both 1.05 gates pass throughout. Source and decoded bytecode produce the exact timed Object and executable.
 
 | Peer result | Mech wins | Paired control wins |
 | --- | ---: | ---: |
