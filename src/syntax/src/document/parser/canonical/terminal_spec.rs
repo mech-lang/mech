@@ -30,6 +30,15 @@ macro_rules! fixed_terminal_specs {
         },
       )+
     ];
+    #[inline]
+    pub fn fixed_terminal_spec(rule: RuleId) -> Option<&'static FixedTerminalSpec> {
+        match rule {
+            $(rules::$rule => Some(
+                &FIXED_TERMINALS[const { fixed_terminal_index(rules::$rule) }]
+            ),)+
+            _ => None,
+        }
+    }
   };
 }
 
@@ -146,8 +155,16 @@ fixed_terminal_specs! {
 
 pub const FIXED_TERMINAL_COUNT: usize = 108;
 
-pub fn fixed_terminal_spec(rule: RuleId) -> Option<&'static FixedTerminalSpec> {
-    FIXED_TERMINALS.iter().find(|spec| spec.rule == rule)
+// Resolve indices at compile time from the same specification used by the public table.
+const fn fixed_terminal_index(rule: RuleId) -> usize {
+    let mut index = 0;
+    while index < FIXED_TERMINALS.len() {
+        if FIXED_TERMINALS[index].rule.0 == rule.0 {
+            return index;
+        }
+        index += 1;
+    }
+    panic!("fixed terminal missing from specification");
 }
 
 #[cfg(test)]
@@ -175,6 +192,20 @@ mod tests {
                 spec.rule,
             );
             assert_eq!(fixed_terminal_spec(spec.rule), Some(spec));
+            assert!(core::ptr::eq(fixed_terminal_spec(spec.rule).unwrap(), spec));
+        }
+    }
+
+    #[test]
+    fn dispatch_preserves_the_closed_terminal_rule_set() {
+        for (_, rule) in super::super::super::rule::CANONICAL_RULES {
+            assert_eq!(
+                fixed_terminal_spec(*rule),
+                FIXED_TERMINALS.iter().find(|spec| spec.rule == *rule)
+            );
+        }
+        for rule in [RuleId(0), RuleId(u32::MAX)] {
+            assert!(fixed_terminal_spec(rule).is_none());
         }
     }
 

@@ -11,7 +11,19 @@ use super::terminal_spec::{FixedTerminalSpec, TerminalSpacing, fixed_terminal_sp
 #[cfg(test)]
 pub(crate) const SUPPORTED_RULE_COUNT: usize = 149;
 
-const NON_FIXED_RULES: &[RuleId] = &[
+macro_rules! non_fixed_rules {
+    ($($rule:path),+ $(,)?) => {
+        #[cfg(test)]
+        const NON_FIXED_RULES: &[RuleId] = &[$($rule),+];
+
+        #[inline]
+        fn non_fixed_rule(rule: RuleId) -> bool {
+            matches!(rule, $($rule)|+)
+        }
+    };
+}
+
+non_fixed_rules! {
     rules::TRANSITION_OPERATOR,
     rules::OUTPUT_OPERATOR,
     rules::EMOJI_GRAPHEME,
@@ -53,7 +65,7 @@ const NON_FIXED_RULES: &[RuleId] = &[
     rules::BOX_DRAWING_CHAR,
     rules::BOX_DRAWING_EMOJI,
     rules::TAG,
-];
+}
 
 const FORBIDDEN_EMOJI_RULES: &[RuleId] = &[
     rules::BOX_DRAWING_EMOJI,
@@ -198,8 +210,9 @@ const BOX_DRAWING_EMOJI_RULES: &[RuleId] = &[
     rules::BOX_T_BOTTOM,
 ];
 
+#[cfg(test)]
 pub(crate) fn supports(rule: RuleId) -> bool {
-    fixed_terminal_spec(rule).is_some() || NON_FIXED_RULES.contains(&rule)
+    fixed_terminal_spec(rule).is_some() || non_fixed_rule(rule)
 }
 
 #[cfg(test)]

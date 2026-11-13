@@ -53,6 +53,23 @@ impl<T: Measured> Node<T> {
             allocations,
         )
     }
+    fn push(root: &mut Arc<Self>, leaf: Arc<Self>, allocations: &mut u64) {
+        if root.len().is_power_of_two() {
+            *root = Self::branch(root.clone(), leaf, allocations);
+        } else if let Some(Self::Branch {
+            right,
+            len,
+            measure,
+            ..
+        }) = Arc::get_mut(root)
+        {
+            *len += 1;
+            *measure += leaf.measure();
+            Self::push(right, leaf, allocations);
+        } else {
+            *root = Self::append(root, leaf, allocations);
+        }
+    }
     fn replace_last(old: &Arc<Self>, leaf: Arc<Self>, allocations: &mut u64) -> Arc<Self> {
         match old.as_ref() {
             Self::Leaf(_) => leaf,
@@ -78,6 +95,30 @@ impl<T: Measured> Node<T> {
                 Self::truncate(right, len - left.len(), allocations),
                 allocations,
             )
+        }
+    }
+    fn truncate_in_place(root: &mut Arc<Self>, len: usize, allocations: &mut u64) {
+        if len >= root.len() {
+            return;
+        }
+        let Self::Branch { left, .. } = root.as_ref() else {
+            unreachable!("nonempty retained prefix")
+        };
+        if len <= left.len() {
+            *root = left.clone();
+            Self::truncate_in_place(root, len, allocations);
+        } else if let Some(Self::Branch {
+            left,
+            right,
+            len: size,
+            measure,
+        }) = Arc::get_mut(root)
+        {
+            Self::truncate_in_place(right, len - left.len(), allocations);
+            *size = left.len() + right.len();
+            *measure = left.measure() + right.measure();
+        } else {
+            *root = Self::truncate(root, len, allocations);
         }
     }
     fn get(&self, index: usize) -> Option<&T> {
@@ -181,6 +222,16 @@ impl<T: Measured> RetainedSequence<T> {
         };
         (Self { root: Some(root) }, allocations)
     }
+    /// Reuse unpublished nodes; shared snapshots retain their original path.
+    pub(crate) fn push(&mut self, value: T) -> u64 {
+        let leaf = Arc::new(Node::Leaf(value));
+        let mut allocations = 1;
+        match &mut self.root {
+            None => self.root = Some(leaf),
+            Some(root) => Node::push(root, leaf, &mut allocations),
+        }
+        allocations
+    }
     pub(crate) fn replacing_last(&self, value: T) -> (Self, u64) {
         let leaf = Arc::new(Node::Leaf(value));
         let mut allocations = 1;
@@ -210,16 +261,14 @@ impl<T: Measured> RetainedSequence<T> {
         }
         steps
     }
-    pub(crate) fn truncated(&self, len: usize) -> (Self, u64) {
-        if len == 0 {
-            return (Self::default(), 0);
-        }
+    pub(crate) fn truncate(&mut self, len: usize) -> u64 {
         let mut allocations = 0;
-        let root = self
-            .root
-            .as_ref()
-            .map(|root| Node::truncate(root, len, &mut allocations));
-        (Self { root }, allocations)
+        if len == 0 {
+            self.root = None;
+        } else if let Some(root) = &mut self.root {
+            Node::truncate_in_place(root, len, &mut allocations);
+        }
+        allocations
     }
     pub(crate) fn into_values(self) -> impl Iterator<Item = T>
     where
@@ -333,6 +382,75 @@ impl<'a, T> SequenceIter<'a, T> {
     fn push(&mut self, node: &'a Node<T>) {
         self.stack[self.len] = Some(node);
         self.len += 1;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::vec::Vec;
+
+    #[derive(Clone, Debug, Eq, PartialEq)]
+    struct Weighted(u32);
+    impl Measured for Weighted {
+        fn measure(&self) -> usize {
+            self.0 as usize % 3 + 1
+        }
+    }
+
+    fn check(sequence: &RetainedSequence<Weighted>, expected: &[Weighted]) {
+        assert_eq!(sequence.len(), expected.len());
+        assert_eq!(
+            sequence.iter().collect::<Vec<_>>(),
+            expected.iter().collect::<Vec<_>>()
+        );
+        let mut offset = 0;
+        for value in expected {
+            for at in offset..offset + value.measure() {
+                assert_eq!(sequence.at_measure_with_work(at).0, Some((offset, value)));
+            }
+            offset += value.measure();
+        }
+        assert_eq!(sequence.at_measure_with_work(offset).0, None);
+    }
+
+    #[test]
+    fn mutable_paths_preserve_retained_snapshots_and_weighted_offsets() {
+        let mut sequence = RetainedSequence::default();
+        let mut expected = Vec::new();
+        let mut snapshots = Vec::new();
+        for value in 0..1024 {
+            if value % 17 == 0 {
+                snapshots.push((sequence.clone(), expected.clone()));
+            }
+            if value % 29 == 0 && !expected.is_empty() {
+                let len = expected.len() / 2;
+                sequence.truncate(len);
+                expected.truncate(len);
+            }
+            sequence.push(Weighted(value));
+            expected.push(Weighted(value));
+            check(&sequence, &expected);
+        }
+        for (snapshot, values) in snapshots {
+            check(&snapshot, &values);
+        }
+        sequence.truncate(0);
+        check(&sequence, &[]);
+    }
+
+    #[test]
+    fn unpublished_appends_allocate_linear_storage_and_rewinds_reuse_it() {
+        let mut sequence = RetainedSequence::default();
+        let mut allocations = 0;
+        for value in 0..4096 {
+            allocations += sequence.push(Weighted(value));
+        }
+        assert!(allocations <= 2 * 4096);
+        for len in (0..4096).rev() {
+            assert_eq!(sequence.truncate(len), 0);
+            assert_eq!(sequence.len(), len);
+        }
     }
 }
 impl<'a, T> Iterator for SequenceIter<'a, T> {

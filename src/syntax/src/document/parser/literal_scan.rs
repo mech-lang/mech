@@ -148,6 +148,114 @@ impl<'l> LiteralScan<'l> {
     }
 }
 
+// This cache belongs to one ParserState. Source appends preserve its prefix;
+// bounds participate in every key. An edit discards the owning state, just as
+// it discards retained Unicode cursors. Only sealed, complete scans are cached.
+const CACHE_CAPACITY: usize = 4096;
+
+#[derive(Clone, Copy)]
+struct CacheEntry {
+    literal: &'static str,
+    start: TextSize,
+    consume_end: TextSize,
+    context_end: TextSize,
+    result: Option<TextSize>,
+    work: u64,
+}
+#[derive(Default)]
+pub(crate) struct LiteralCache {
+    slots: alloc::vec::Vec<Option<CacheEntry>>,
+}
+impl LiteralCache {
+    // Reserve Fixed, LiteralResult, and Exit in addition to the exact scanner
+    // work. A smaller allowance follows the original resumable phases instead.
+    pub fn replay(
+        &mut self,
+        literal: &'static str,
+        start: TextSize,
+        consume_end: TextSize,
+        context_end: TextSize,
+        allowance: u64,
+    ) -> Option<(Option<TextSize>, u64)> {
+        let index = Self::slot(literal, start);
+        let entry = self.slots.get(index)?.as_ref()?;
+        if entry.literal != literal
+            || entry.start != start
+            || entry.consume_end != consume_end
+            || entry.context_end != context_end
+            || entry
+                .work
+                .checked_add(3)
+                .is_none_or(|work| work > allowance)
+        {
+            return None;
+        }
+        let result = entry.result;
+        let work = entry.work;
+        Some((result, work))
+    }
+    fn slot(literal: &str, start: TextSize) -> usize {
+        let mut hash = 0x811c9dc5_u32;
+        for byte in literal.bytes() {
+            hash = (hash ^ u32::from(byte)).wrapping_mul(0x01000193);
+        }
+        let hash = hash ^ (start.0.wrapping_mul(0x9e3779b9));
+        ((hash ^ (hash >> 16)) as usize) & (CACHE_CAPACITY - 1)
+    }
+}
+impl LiteralScan<'static> {
+    pub fn advance_cached<S: ScanSource + ?Sized>(
+        &mut self,
+        source: &S,
+        consume_end: TextSize,
+        context_end: TextSize,
+        final_input: bool,
+        allowance: &mut u64,
+        cache: &mut LiteralCache,
+    ) -> LiteralProgress {
+        // Partially advanced scanners keep their retained Unicode state. Replay
+        // is allowed only when the original complete scan fits in this poll.
+        let initial = self.result.is_none()
+            && self.expected.work.calls == 0
+            && self.actual.work.calls == 0
+            && self.prefix_bytes == 0
+            && self.comparison_bytes == 0;
+        if !initial || !final_input || self.final_context != Some(context_end) {
+            return self.advance(source, consume_end, context_end, final_input, allowance);
+        }
+        let start = self.matched_end;
+        let index = LiteralCache::slot(self.literal, start);
+        if let Some(Some(entry)) = cache.slots.get(index)
+            && entry.literal == self.literal
+            && entry.start == start
+            && entry.consume_end == consume_end
+            && entry.context_end == context_end
+            && entry.work <= *allowance
+        {
+            let work = entry.work;
+            let result = entry.result;
+            *allowance -= work;
+            return self.complete(result);
+        }
+        let before = *allowance;
+        let result = self.advance(source, consume_end, context_end, final_input, allowance);
+        if let LiteralProgress::Complete(result) = result {
+            if cache.slots.is_empty() {
+                cache.slots.resize(CACHE_CAPACITY, None);
+            }
+            cache.slots[index] = Some(CacheEntry {
+                literal: self.literal,
+                start,
+                consume_end,
+                context_end,
+                result,
+                work: before - *allowance,
+            });
+        }
+        result
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,6 +309,120 @@ mod tests {
             end = at + found.len();
         }
         Some(TextSize(end as u32))
+    }
+
+    #[test]
+    fn cached_scans_preserve_unicode_results_and_every_allowance_boundary() {
+        for (literal, text) in [
+            (":", ":="),
+            (":=", ":"),
+            ("true", "true!"),
+            ("false", "true!"),
+            ("x", ""),
+            ("e", "e\u{301}x"),
+            ("e\u{301}", "e\u{301}x"),
+            ("\r", "\r\nx"),
+            ("\r\n", "\r\nx"),
+            ("👩\u{200d}💻", "👩\u{200d}💻!"),
+            ("🇦🇧", "🇦🇧🇨"),
+        ] {
+            let source = TextSnapshot::new(DocumentId(826), Revision(0), text).unwrap();
+            let end = source.byte_len();
+            let mut cache = LiteralCache::default();
+            let mut warm = LiteralScan::new(literal, TextSize::ZERO, Some(end)).unwrap();
+            let mut allowance = u64::MAX;
+            assert_eq!(
+                warm.advance_cached(&source, end, end, true, &mut allowance, &mut cache),
+                LiteralProgress::Complete(expected(literal, text))
+            );
+            let scan_work = u64::MAX - allowance;
+            assert_eq!(
+                cache.replay(literal, TextSize::ZERO, end, end, scan_work + 3),
+                Some((expected(literal, text), scan_work))
+            );
+            assert!(
+                cache
+                    .replay(literal, TextSize::ZERO, end, end, scan_work + 2)
+                    .is_none()
+            );
+            for budget in 1..=scan_work + 2 {
+                let mut reference = LiteralScan::new(literal, TextSize::ZERO, Some(end)).unwrap();
+                let mut cached = LiteralScan::new(literal, TextSize::ZERO, Some(end)).unwrap();
+                loop {
+                    let mut reference_left = budget;
+                    let mut cached_left = budget;
+                    let expected = reference.advance(&source, end, end, true, &mut reference_left);
+                    let actual = cached.advance_cached(
+                        &source,
+                        end,
+                        end,
+                        true,
+                        &mut cached_left,
+                        &mut cache,
+                    );
+                    assert_eq!((actual, cached_left), (expected, reference_left));
+                    if actual != LiteralProgress::NeedsProcessing {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn cache_bounds_and_unsealed_frontiers_cannot_reuse_a_different_scan() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "\r\nx").unwrap();
+        let end = source.byte_len();
+        let mut cache = LiteralCache::default();
+        for (consume, context, expected) in [(1, 1, Some(TextSize(1))), (1, 3, None), (2, 3, None)]
+        {
+            let mut scan = LiteralScan::new("\r", TextSize::ZERO, Some(TextSize(context))).unwrap();
+            let mut allowance = u64::MAX;
+            assert_eq!(
+                scan.advance_cached(
+                    &source,
+                    TextSize(consume),
+                    TextSize(context),
+                    true,
+                    &mut allowance,
+                    &mut cache,
+                ),
+                LiteralProgress::Complete(expected)
+            );
+        }
+        let mut unsealed = LiteralScan::new("\r", TextSize::ZERO, None).unwrap();
+        let mut allowance = u64::MAX;
+        assert_eq!(
+            unsealed.advance_cached(
+                &source,
+                TextSize(1),
+                TextSize(1),
+                false,
+                &mut allowance,
+                &mut cache,
+            ),
+            LiteralProgress::NeedInput
+        );
+        assert_eq!(
+            unsealed.advance_cached(&source, end, end, true, &mut allowance, &mut cache),
+            LiteralProgress::Complete(None)
+        );
+    }
+
+    #[test]
+    fn literal_cache_storage_is_bounded_as_source_offsets_grow() {
+        let source = "x".repeat(CACHE_CAPACITY * 4);
+        let end = TextSize(source.len() as u32);
+        let mut cache = LiteralCache::default();
+        for offset in 0..end.0 {
+            let mut scan = LiteralScan::new("x", TextSize(offset), Some(end)).unwrap();
+            let mut allowance = u64::MAX;
+            assert_eq!(
+                scan.advance_cached(source.as_str(), end, end, true, &mut allowance, &mut cache,),
+                LiteralProgress::Complete(Some(TextSize(offset + 1)))
+            );
+            assert_eq!(cache.slots.len(), CACHE_CAPACITY);
+        }
     }
 
     #[test]

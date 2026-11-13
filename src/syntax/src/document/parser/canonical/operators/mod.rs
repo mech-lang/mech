@@ -426,3 +426,5 @@ pub(crate) fn parse_not_element_of(parser: &mut Parser<'_>) -> Attempt {
 pub(crate) fn parse_symmetric_difference(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SYMMETRIC_DIFFERENCE)
 }
+
+pub(crate) use continuation::FrameStorage;
