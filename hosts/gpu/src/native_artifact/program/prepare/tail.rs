@@ -4,7 +4,7 @@ use crate::native_artifact::iteration_abi::NativeIterationVisit;
 use crate::native_artifact::program::prepare::borrowed as program_borrowed_layout;
 use mech_engine::native_artifact::{
     NativeBorrowedStringAction as View, NativeControlLoop, NativeIterationAction as Action,
-    NativeMatchAction as Scalar, NativeProgramArtifactPlan, NativeTailLoop,
+    NativeMatchAction as Scalar, NativeProgramArtifactPlan, NativeProgramFacts, NativeTailLoop,
 };
 
 pub(in crate::native_artifact) const OVERHEAD: u64 = 512;
@@ -73,7 +73,7 @@ pub(in crate::native_artifact) struct Layout {
 }
 impl Layout {
     pub fn derive(
-        plan: &NativeProgramArtifactPlan,
+        facts: &NativeProgramFacts<'_>,
         borrowed: &program_borrowed_layout::Layout,
         visits: &[NativeIterationVisit],
         aggregates: &mech_engine::native_artifact::NativeScalarAggregates,
@@ -82,6 +82,7 @@ impl Layout {
         calls: &[Option<mech_engine::native_artifact::NativePreparedLibraryCall>],
         fixed_keys: &super::fixed_key_loops::Layout,
     ) -> Result<Self, &'static str> {
+        let plan = facts.plan();
         let discovery = super::numeric_tree::Discovery::new(plan)?;
         let mut layout = Self {
             sites: vec![None; plan.blocks().len()],
@@ -159,13 +160,23 @@ impl Layout {
             // managed-frame initializer here would strand their array reads
             // on the ordinary callback path. The proof itself rejects loops
             // without arrays, preserving the established scalar-only entry.
-            let phase = (map.is_none())
+            let candidate = (map.is_none())
                 .then(|| {
-                    super::readonly_numeric::derive(plan, tail, frames, aggregates, calls, visits)
-                        .ok()
+                    super::readonly_numeric::derive_with_facts(
+                        facts, tail, frames, aggregates, calls, visits,
+                    )
+                    .ok()
                 })
-                .flatten()
-                .filter(|proof| proof.phase.is_some() || !proof.exits.is_empty());
+                .flatten();
+            // A leaf proof is retained for the fallback below. The immutable
+            // plan, frames, calls and visits are identical there; rerunning the
+            // same derivation after tree discovery cannot change its result.
+            let (phase, leaf) = match candidate {
+                Some(proof) if proof.phase.is_some() || !proof.exits.is_empty() => {
+                    (Some(proof), None)
+                }
+                leaf => (None, leaf),
+            };
             // A readonly partial phase may escape to an ordinary child on
             // every visit. A complete readonly tree can share one loan without
             // adding first-change ownership or publication state. Mutable and
@@ -181,28 +192,18 @@ impl Layout {
                 phase
             } else if map.is_none() {
                 if let Ok(tree) = discovery.discover(tail) {
-                    match super::readonly_numeric::derive_tree(
-                        plan, tail, frames, aggregates, calls, &tree,
+                    match super::readonly_numeric::derive_tree_with_facts(
+                        facts, tail, frames, aggregates, calls, &tree,
                     ) {
                         Ok(proof) if !partial_phase || !proof.writes() => {
                             numeric_tree = Some(tree);
                             Some(proof)
                         }
                         Ok(_) => phase,
-                        Err(_) => phase.or_else(|| {
-                            super::readonly_numeric::derive(
-                                plan, tail, frames, aggregates, calls, visits,
-                            )
-                            .ok()
-                        }),
+                        Err(_) => phase.or(leaf),
                     }
                 } else {
-                    phase.or_else(|| {
-                        super::readonly_numeric::derive(
-                            plan, tail, frames, aggregates, calls, visits,
-                        )
-                        .ok()
-                    })
+                    phase.or(leaf)
                 }
             } else {
                 None
@@ -725,7 +726,7 @@ pub(in crate::native_artifact) fn validate_image(
             .ok_or("restored closed-tail price overflows")?;
     }
     let proved = Layout::derive(
-        plan,
+        &facts,
         &borrowed,
         &visits,
         &aggregates,

@@ -62,7 +62,7 @@ fn parts(
     )
     .unwrap();
     let closed = crate::native_artifact::program::prepare::tail::Layout::derive(
-        &plan,
+        &plan.facts(),
         &borrowed,
         &visits,
         &plan.scalar_aggregates(),
