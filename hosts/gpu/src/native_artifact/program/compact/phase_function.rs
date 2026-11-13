@@ -158,6 +158,22 @@ pub(super) fn define<M: Module>(
             }
         }
     }
+    if !observe
+        && cleanup.enabled
+        && vectors.is_some()
+        && std::env::var_os("MECH_SHARE_CLAMP_DECISIONS").is_some()
+    {
+        context.flowgraph();
+        let reused =
+            cfg_cleanup::shared_clamp::fold(&mut context.func, &context.cfg, &context.domtree);
+        if reused != 0 {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} shared clamp decisions: {reused}");
+            }
+        }
+    }
     let word_loops = &report;
     let pack_sites = word_loops.read_pack_sites.clone();
     let read_guards = word_loops.proven_scalar_read_guards.clone();

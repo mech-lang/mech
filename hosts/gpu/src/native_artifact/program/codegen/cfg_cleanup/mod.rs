@@ -18,6 +18,7 @@ pub(in crate::native_artifact) mod selected_continuations;
 mod selected_homes;
 mod selected_increments;
 mod selected_ranges;
+pub(in crate::native_artifact) mod shared_clamp;
 mod threaded_edges;
 mod unsigned_intervals;
 mod window_bounds;
