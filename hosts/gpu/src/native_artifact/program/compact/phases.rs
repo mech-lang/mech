@@ -33,6 +33,8 @@ pub(in crate::native_artifact) use private::{HANDOFF as PRIVATE_HANDOFF, Private
 // General matrices retain the original native body, not a weakened index rule.
 pub(in crate::native_artifact) struct VectorContract {
     guards: Vec<(usize, bool)>,
+    // The caller tests these exact fixed-view lengths before either body.
+    admitted_lengths: Vec<(usize, u64)>,
 }
 impl VectorContract {
     fn additional(
@@ -52,7 +54,13 @@ impl VectorContract {
             .filter(|array| !existing.iter().any(|&(old, _, _)| old == *array))
             .map(|array| (array, proof.arrays[array].appends))
             .collect::<Vec<_>>();
-        (!guards.is_empty()).then_some(Self { guards })
+        (!guards.is_empty()).then(|| Self {
+            guards,
+            admitted_lengths: existing
+                .iter()
+                .filter_map(|&(array, length, grows)| (!grows).then_some((array, length)))
+                .collect(),
+        })
     }
     pub(in crate::native_artifact) fn arrays(&self) -> impl Iterator<Item = usize> + '_ {
         self.guards.iter().map(|&(array, _)| array)

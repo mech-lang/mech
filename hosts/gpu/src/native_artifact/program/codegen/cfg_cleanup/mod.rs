@@ -10,6 +10,7 @@ pub(in crate::native_artifact) mod grouped_histogram;
 mod identity_routes;
 mod known_widths;
 mod local_phis;
+pub(in crate::native_artifact) mod packed_halfword_reads;
 mod preheaders;
 mod repeated_bounds;
 pub(in crate::native_artifact) mod selected_continuations;
