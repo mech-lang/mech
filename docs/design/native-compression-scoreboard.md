@@ -1,5 +1,28 @@
 # Current compression scoreboard
 
+The compact compiler reuses the current header ordinal and narrows the guarded previous-node read. **All 81 level-12 cases beat at least one peer in three full comparisons.** The final compiler build takes **0.990152×** paired control across the suite. Both timing gates pass on all 81 cases in the final and repeat runs. The first run's empty-input pooled gate miss is preserved in the qualification.
+
+| Peer result | Mech wins, final | Previous published | Full repeat |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **64/81 (79.0%)** | 62 | 64 |
+| Faster than libdeflate | **35/81 (43.2%)** | 33 | 32 |
+| Faster than both | **18/81 (22.2%)** | 16 | 15 |
+| Faster than at least one | **81/81 (100%)** | 79 | 81 |
+
+| Input | Final control → Mech / Roc | Mech / libdeflate |
+| --- | ---: | ---: |
+| Eight literals | 0.161196× → 0.161213× | 2.051159× |
+| Natural 16 KiB | 1.034124× → **0.997890×** | 1.007176× |
+| Reymont 16 KiB | 1.029963× → **0.992628×** | 1.006790× |
+| Reymont 32,769 bytes | 1.060096× → 1.035645× | 0.945749× |
+| Natural 256 KiB | 1.080465× → 1.055083× | 0.855102× |
+| Natural 1 MiB | 1.092606× → 1.058501× | 0.854026× |
+| Random 1 MiB | 0.985462× → 0.990721× | 1.399015× |
+
+Natural and Reymont 16 KiB use identical input bytes and beat Roc in all three full runs. The earlier focused natural 16 KiB confirmation measures 1.001617× Roc. [Exact artifact qualification, three full matrices, and independent hardware profiles](native-defaulted-read-setup-qualification.md).
+
+## Pair two empty append visits
+
 The compiler pairs two proved empty append visits in the sparse parser. The first and repeat full matrices take **0.979019×** and **0.980157×** paired control. Both 1.05 gates pass on all 81 cases in both runs.
 
 | Peer result | Mech wins, first full | Full repeat | Previous published |

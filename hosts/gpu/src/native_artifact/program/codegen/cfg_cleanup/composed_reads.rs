@@ -123,7 +123,7 @@ pub(super) struct Read {
     arms: Vec<Block>,
 }
 
-fn definition(f: &Function, value: Value) -> Option<(Inst, Data)> {
+pub(super) fn definition(f: &Function, value: Value) -> Option<(Inst, Data)> {
     let ValueDef::Result(inst, 0) = f.dfg.value_def(f.dfg.resolve_aliases(value)) else {
         return None;
     };
@@ -212,7 +212,7 @@ pub(super) fn scalar(op: Op) -> bool {
 
 // Follow a single-entry arm to its merge. Exactly one typed load is allowed
 // in the selected arm and no effects are allowed in the default arm.
-fn arm(
+pub(super) fn arm(
     f: &Function,
     cfg: &ControlFlowGraph,
     mut block: Block,
@@ -251,7 +251,7 @@ fn arm(
     }
 }
 
-fn read_comparison(f: &Function, condition: Value) -> Option<Inst> {
+pub(super) fn read_comparison(f: &Function, condition: Value) -> Option<Inst> {
     let compare = comparison(f, condition)?;
     let Data::BinaryImm64 {
         opcode: Op::BandImm,
@@ -671,7 +671,7 @@ fn dependencies(
     Some(roots)
 }
 
-fn seed_word(
+pub(super) fn seed_word(
     f: &Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
