@@ -22,6 +22,8 @@ The composed ordered reduction takes **0.993395×** the paired grouped-histogram
 
 The matched control wins 52 cases against Roc and 15 against libdeflate. Repeated 32 KiB crosses below libdeflate in the same cohort. Natural 8 KiB is the closest remaining Roc case. [Compiler qualification and timing receipts](native-composed-countdown-qualification.md).
 
+Folding two identical routes in each composed parser reduced natural-text instructions by 0.88–1.04%. The 81-case trial took 0.998186× control time, with natural 8 KiB slower by 0.67% and the same peer win sets. The composed countdown remains the active compiler. [Trial timings, counters and linked code](native-composed-route-folding.md).
+
 ## Grouped histogram comparison
 
 The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
