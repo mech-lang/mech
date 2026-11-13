@@ -6,6 +6,10 @@ Fresh source-to-Object compilation falls from **57.89–58.56 seconds to
 50.84–51.00 seconds**, a 12.55% reduction in the mean compiler phase total.
 The sub-10-second compilation goal remains open.
 
+The [execution-work follow-up](native-parser-work-amplification.md) counts
+129 million base/operator continuation phases for this source and identifies
+failed alternatives and transactional bookkeeping as the next parser targets.
+
 Source change `47a500d758d1273dbd8ab73f6b61d25ae7bdca7f` preserves the existing
 canonical grammar. Terminal dispatch is generated from the same specification,
 with references into the original public terminal table. Base and operator
