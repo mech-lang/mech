@@ -24,6 +24,8 @@ The matched control wins 52 cases against Roc and 15 against libdeflate. Repeate
 
 Folding two identical routes in each composed parser reduced natural-text instructions by 0.88–1.04%. The 81-case trial took 0.998186× control time, with natural 8 KiB slower by 0.67% and the same peer win sets. The composed countdown remains the active compiler. [Trial timings, counters and linked code](native-composed-route-folding.md).
 
+Reusing the remaining span after the first short visit improved natural 256 KiB by 0.46–0.73% across three cohorts. Natural 8 KiB reached 0.998938× Roc in the screen, 1.008855× in the full matrix and 1.004024× in confirmation. The all-case win sets were unchanged. [Short-entry timing and linked code](native-short-reduction-entry-pilot.md).
+
 ## Grouped histogram comparison
 
 The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
