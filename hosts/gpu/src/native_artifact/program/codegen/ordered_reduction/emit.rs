@@ -1,4 +1,5 @@
 //! Compact ordered reduction; long current intervals also use four-lane costs.
+use super::cost::ScalarRead;
 use super::*;
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::compiler::primitive;
@@ -110,20 +111,55 @@ impl Reduction {
             b.switch_to_block(short);
             // Do the first admitted visit directly. Only the continuing
             // route constructs the next cursor and enters the scalar loop.
-            let reverse_cursor =
-                reverse.map(|window| (window, inputs.pointer(b, proof, window, start)));
-            let cost = inputs.scalar(b, proof, &self.cost, start, reverse_cursor.as_slice());
+            let wide = reverse.zip(biased).filter(|(back, (front, _))| {
+                cfg!(target_endian = "little")
+                    && back.delta == front.delta
+                    && proof.arrays[back.array].width == 8
+                    && proof.arrays[front.array].width == 4
+                    && std::env::var_os("MECH_FIRST_PACKED_REVERSE_READ").is_some()
+            });
+            let mut reads = Vec::new();
+            let cursor = if let Some((back, (front, other))) = wide {
+                let index = b.ins().iadd_imm(start, front.delta as i64);
+                let base = words.read(b, shadow + proof.view(front.array));
+                let offset = b.ins().ishl_imm(index, 2);
+                reads.push((front, ScalarRead::LowWord(b.ins().iadd(base, offset))));
+                let view = shadow + proof.view(back.array);
+                let base = words.read(b, view);
+                let length = words.read(b, view + 1);
+                let ordinal = b.ins().isub(length, index);
+                let offset = b.ins().ishl_imm(ordinal, 3);
+                let pointer = b.ins().iadd(base, offset);
+                // The complete-child witness admits this initialized element,
+                // including both halves of the U64. Only its low cost is used.
+                reads.push((back, ScalarRead::PackedWord(pointer)));
+                Some((base, offset, index, other))
+            } else {
+                if let Some(window) = reverse {
+                    let pointer = inputs.pointer(b, proof, window, start);
+                    reads.push((window, ScalarRead::LowWord(pointer)));
+                }
+                None
+            };
+            let cost = inputs.scalar(b, proof, &self.cost, start, &reads);
             let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
-            let selected = emit_item(
-                b,
-                words,
-                proof,
-                shadow,
-                &self.selected,
-                start,
-                ordinary,
-                true,
-            );
+            let selected = if let Some((_, _, index, other)) = cursor {
+                let other = emit_item_low32(b, words, proof, shadow, other, start, ordinary);
+                let index = b.ins().ireduce(types::I32, index);
+                let item = b.ins().bor(index, other);
+                b.ins().uextend(types::I64, item)
+            } else {
+                emit_item(
+                    b,
+                    words,
+                    proof,
+                    shadow,
+                    &self.selected,
+                    start,
+                    ordinary,
+                    true,
+                )
+            };
             let minimum = b.ins().select(less, cost, best);
             let item = b.ins().select(less, selected, old_item);
             let one = b.ins().icmp_imm(IntCC::Equal, remaining, 1);
@@ -137,9 +173,18 @@ impl Reduction {
             );
             b.switch_to_block(advance);
             let next = b.ins().iadd_imm(start, 1);
-            let pointer = reverse_cursor.map_or(next, |(_, pointer)| pointer);
             let mut args = vec![next.into(), minimum.into(), item.into()];
-            if reverse.is_some() {
+            if let Some(window) = reverse {
+                let pointer = if let Some((base, offset, _, _)) = cursor {
+                    b.ins().iadd(base, offset)
+                } else {
+                    let (_, ScalarRead::LowWord(pointer)) =
+                        reads.iter().find(|(read, _)| *read == window).unwrap()
+                    else {
+                        unreachable!("ordinary reverse cursor is a low-word address")
+                    };
+                    *pointer
+                };
                 args.push(pointer.into());
             }
             if let Some(window) = forward {
@@ -259,7 +304,10 @@ impl Reduction {
             let stride = i64::from(proof.arrays[window.array].width);
             (window, b.ins().iadd_imm(params[3], -stride))
         });
-        let mut pointers = reverse_cursor.into_iter().collect::<Vec<_>>();
+        let mut pointers = reverse_cursor
+            .into_iter()
+            .map(|(w, p)| (w, ScalarRead::LowWord(p)))
+            .collect::<Vec<_>>();
         if let Some(window) = forward {
             // This index is already biased by the original forward access's
             // delta. Both entries have a nonempty range and the same admitted
@@ -269,7 +317,7 @@ impl Reduction {
                 .ins()
                 .imul_imm(params[0], i64::from(proof.arrays[window.array].width));
             let pointer = b.ins().iadd(base, offset);
-            pointers.push((window, pointer));
+            pointers.push((window, ScalarRead::LowWord(pointer)));
         }
         let cost = inputs.scalar(b, proof, &self.cost, params[0], &pointers);
         let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
