@@ -36,6 +36,8 @@ ARM64 conditional comparisons followed by a selection cut repeated-input instruc
 
 Sharing adjacent extending-load addresses cut random 1 MiB instructions by 1.55% in a separate fixed-address trial. Held-out random 65,537 bytes went from 1.033159× to 1.025149× Roc, while natural 8 KiB and larger natural cases slowed. The 16-case screen took 0.999682× control; the rule is not active. [Address sharing measurements and profiles](native-adjacent-extended-loads-pilot.md).
 
+A separate masked equality rule shortened two matcher branches at fixed addresses. Its 16-case screen took 1.001666× control with no new peer wins, and natural 8 KiB slowed from 1.002010× to 1.004792× Roc. [Masked comparison trial and profile](native-masked-equality-pilot.md).
+
 
 ## Grouped histogram comparison
 
