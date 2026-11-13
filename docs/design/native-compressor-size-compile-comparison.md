@@ -1,57 +1,73 @@
 # Compressor source size and compilation
 
-These counts exclude benchmark harnesses and count physical lines, including
-comments and blanks. They describe the compression implementations, rather than
-the compiler repositories or entire libraries.
+The compression implementations contain **5,485 physical lines in libdeflate,
+6,187 in Roc and 1,930 in Mech**, including comments and blanks, with benchmark
+wrappers excluded. All three now have fresh compilation measurements on this
+Apple M3 Air, using native Object/archive output and excluding host linking,
+compiler bootstrap and source/tool downloads.
 
-| Implementation | Physical lines | Compile elapsed | Machine and boundary |
+| Implementation | Physical lines | Fresh whole-process compile | Boundary |
 | --- | ---: | ---: | --- |
-| libdeflate 1.26 | 5,485 | 0.373 s | M3, encoder source to Object, Clang O2 |
-| Roc, pinned reference | 6,187 | 6.101–6.434 s | Historical M1, 12 source-to-executable builds, `--no-cache --opt=speed` |
-| Mech, current benchmark flags | 1,930 | 57.933–58.188 s | M3, fresh source to Object, including canonical encoding |
+| libdeflate 1.26 | 5,485 | 0.557 s | Encoder translation unit to Object, Clang O2 |
+| Roc, pinned reference | 6,187 | 2.249 s | Fixed level 12 with runtime input, `--no-cache --opt=speed --jobs=1`, static archive |
+| Mech, latest qualified flags | 1,930 | 51.226 s | Fresh source through canonical encoding to Object, compact compiler |
 
-The full libdeflate static library also builds in **1.500 s** on this M3. It
-includes decompression, checksums and zlib/gzip wrappers; the 0.373-second
-measurement compiles only the raw DEFLATE encoder translation unit. Tool builds,
-source downloads and host/application builds are excluded from the M3 timings.
-These are individual builds, not a statistical timing campaign.
+The Mech compiler's own phase total is **51.113 seconds**. Its parser optimization
+is [qualified separately](native-parser-compile-profile.md): parsing falls from
+10.13–10.29 seconds to 3.47–3.48 seconds with identical program output. The full
+libdeflate static library also builds in **1.500 seconds**; it includes
+decompression, checksums and zlib/gzip wrappers. Earlier individual encoder
+measurements ranged from 0.373 to 0.557 seconds. These are individual builds,
+with different implementation scopes and optimization strategies.
+
+| Compiler | Where measured compilation time goes |
+| --- | --- |
+| Clang | Frontend 55 ms; LLVM optimization 197 ms and code-generation passes 234 ms within a 432 ms backend |
+| Roc | Type checking 65 ms, including 6 ms parsing; shared lowering/evaluation 333 ms; specialization 1,235 ms, including 1,164 ms LIR passes; LLVM optimize/emit 642 ms |
+| Mech | Parsing 3.48 s; frontend 8.37 s; native compilation 39.19 s. Within native compilation, preparation is about 13.8 s, source CFG/SSA 7.9 s and final machine-code emission 1.9 s |
+
+Nested entries in this table must not be added twice. Clang's instrumented
+process takes 0.549 seconds; Roc's takes 2.313 seconds. Profiled and unprofiled
+outputs match byte-for-byte for both peers. Roc's short CPU sample includes
+`use_order` and `range_prove` paths; its built-in timings establish the complete
+phase costs. Mech's samples show substantial schema canonicalization/cloning,
+reachability and SSA work before machine-code emission.
+
+The emitted `__text` sizes are **41,112 bytes for C**, **57,696 for Roc** and
+**1,101,332 for the latest Mech configuration**. Maximum resident memory in the
+clean process measurements is **75,038,720 bytes**, **445,988,864 bytes** and
+**7,760,019,456 bytes**, respectively. Mech's expanded native work and retained
+compiler data deserve attention; fewer source lines do not imply less compiler
+work. Runtime speed comparisons retain their own linked-worker qualification.
 
 The source scopes differ. C and Roc support other compression levels, while
-this Mech implementation is level 12 only. The C count covers
-`deflate_compress.c`, its three matchfinders, common and ARM matchfinder helpers,
-and the internal DEFLATE header/constants: eight files. Roc counts its twelve
-compression package modules, excluding `Inflate.roc` and the one-line package
-declaration. Shared public interfaces can contain a small decompression wrapper;
-the decoder implementation is excluded. Neither is a complete transitive count
-of compiler builtins, generic library headers or runtime code.
+this Mech implementation is level 12 only. The C count covers the encoder,
+three matchfinders, common and ARM matchfinder helpers, and internal DEFLATE
+headers/constants: eight files. Roc counts twelve compression modules, excluding
+`Inflate.roc` and the one-line package declaration. The shared `Deflate` API also
+imports the decoder, so the measured Roc frontend checks `Inflate` even though
+the emitted entry compresses at level 12. Transitive compiler builtins, generic
+library headers, platform code and benchmark wrappers are outside the counts.
 
-Mech's 25 component files have **1,905 lines**. Their assembled source has
-25 additional separators and one benchmark entry call: **1,931 lines** total,
-or **1,930** excluding that call. This explains the 1,931-line count used in the
-[earlier C comparison](native-libdeflate-comparison.md), whose narrower C count
-was 4,779 lines for the encoder and level-12 matchfinder headers. Line counts are
-sensitive to formatting and are not a normalized measure of algorithm complexity.
+Mech's 25 component files have **1,905 lines**. Assembly adds 25 separators and
+one benchmark entry call: **1,931 lines** supplied to the compiler, or **1,930**
+excluding that call. The [earlier C comparison](native-libdeflate-comparison.md)
+used a narrower 4,779-line C scope. Formatting and source scope make these counts
+unsuitable as a normalized measure of algorithm complexity.
 
-The Roc timings were recovered from the original checked build receipt at Git
-snapshot `6ab75037bc5d4ec138d735c7dcfe1c4b653d31fa`, using source
-`671077457ff7ef3a3d44caf715a3fc595addf379` and release-fast compiler
-`d99c7b838fb05bb1047eb0c18d4d06d0f86f345d`. Those applications embed the inputs
-and select the level at runtime. They are not fresh M3 timings of the later
-fixed-level, runtime-input worker. The exact compiler is absent on this M3 and
-its successful CI run exposes no compiler artifact; a current release was not
-substituted. Machine and compilation boundaries therefore prevent a controlled
-language-speed ratio.
+Pins are unchanged: libdeflate
+`92e6a0db9fa848d742f9eb286c92afc60f2c3dda`, Roc compression source
+`671077457ff7ef3a3d44caf715a3fc595addf379`, and release-fast Roc compiler
+`d99c7b838fb05bb1047eb0c18d4d06d0f86f345d`. The exact Roc compiler was built
+locally with Zig 0.17.0; its SHA-256 is
+`fafc7e230a14f7165be49fdd46dec10a98373e39acd4e484d95424e16a5426bf`.
+The static archive excludes the Rust host and allocator inputs used by the linked
+runtime benchmark. Compiler build time is recorded outside program timings.
 
-The M3 libdeflate build uses the unchanged benchmark's pinned upstream source
-`92e6a0db9fa848d742f9eb286c92afc60f2c3dda`, Apple Clang, ARM64, O2 and NDEBUG.
-All fourteen Roc package hashes agree with the maintained reference pins. The
-[Mech compile study](native-compile-under-minute-profile.md) records exact native
-output preservation, qualifications and the separately measured 55.704-second
-default configuration.
-
-The [compact result](../../benchmarks/mech-deflate/native-profile/compressor-size-compile-20261113.json)
-and [archive receipt](../../benchmarks/mech-deflate/native-profile/compressor-size-compile-20261113.archive.json)
-pin [the counted sources, build commands, historical receipt and offline replay](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compressor-size-compile-20261113.tar.gz):
-38 files, SHA-256 `f337bdddcd215bb053855675b7c99c9cf96c54a16f17e1168a011a2d669aafd1`.
-No compiler or application executable is included. The packet's `replay.py`
-checks every counted source and reconstructs the table without compiling.
+The [current compact result](../../benchmarks/mech-deflate/native-profile/parser-peer-compile-apple-m3-20261113.json)
+and [receipt](../../benchmarks/mech-deflate/native-profile/parser-peer-compile-apple-m3-20261113.archive.json)
+pin the commands, sources, traces, phase reports, samples and offline replay.
+The [original count receipt](../../benchmarks/mech-deflate/native-profile/compressor-size-compile-20261113.archive.json)
+retains the earlier 6.101–6.434-second M1 Roc source-to-executable builds and their
+different embedded-input/runtime-level entry. Those historical values do not
+measure hardware speedup against this runtime-input, fixed-level M3 archive.
