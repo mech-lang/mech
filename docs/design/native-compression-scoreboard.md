@@ -1,5 +1,74 @@
 # Current compression scoreboard
 
+The AArch64 matcher prefetches the next entries in two disjoint ranges of the same admitted private vector. The compiler-generated worker takes **0.996545×** and **0.995305×** paired control in two full 81-case runs. Both 1.05 gates pass throughout, and the same 76 cases beat at least one peer in each run.
+
+| Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
+| --- | ---: | ---: | ---: | ---: |
+| Faster than Roc | **59/81 (72.8%)** | 59 | 59 | 59 |
+| Faster than libdeflate | **28/81 (34.6%)** | 29 | 28 | 27 |
+| Faster than both | **11/81 (13.6%)** | 12 | 11 | 10 |
+| Faster than at least one | **76/81 (93.8%)** | 76 | 76 | 76 |
+
+| Input | Control / Roc | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: | ---: |
+| Eight literals | 0.162489× | 0.162425× | 2.054379× | 0.999604× |
+| Distribution change, 16 KiB | 0.985732× | 0.979901× | 1.690786× | 0.994085× |
+| Natural 16 KiB | 1.038524× | 1.032789× | 1.045128× | 0.994478× |
+| Reymont 16 KiB | 1.039083× | 1.035769× | 1.043142× | 0.996811× |
+| Random 128 KiB | 1.033289× | **1.014270×** | 1.576134× | 0.981594× |
+| Random 256 KiB | 1.050704× | 1.033266× | 1.536958× | 0.983404× |
+| Random 1 MiB | 1.057268× | 1.040641× | 1.473601× | 0.984274× |
+
+The random cases improve by 1.6–1.8% in the repeat. The same-layout NOP control confirms the benefit of the hint itself. The largest adverse comparison in the repeat is periodic 4 KiB at 1.021623× control and 0.360677× Roc. [Qualification, both full matrices and machine evidence](native-second-private-write-qualification.md).
+
+## Borrow short checked reads
+
+The compiler borrows short checked-read copies from an already held array. It changes one generated body, reduces the root by 126,096 code bytes, and takes **0.985225×** and **0.985569×** paired control in the two 81-case comparisons. Both comparisons reach 76 wins against at least one peer.
+
+| Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
+| --- | ---: | ---: | ---: | ---: |
+| Faster than Roc | **59/81 (72.8%)** | 59 | 58 | 58 |
+| Faster than libdeflate | **27/81 (33.3%)** | 29 | 27 | 28 |
+| Faster than both | **10/81 (12.3%)** | 12 | 10 | 11 |
+| Faster than at least one | **76/81 (93.8%)** | 76 | 75 | 75 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.160836× | 2.045308× | 0.939151× |
+| Distribution change, 16 KiB | 0.989398× | 1.702020× | 0.971009× |
+| Natural 16 KiB | 1.047735× | 1.054706× | 0.998035× |
+| Reymont 16 KiB | 1.041353× | 1.047238× | 0.995754× |
+| Random 128 KiB | 1.028799× | 1.597988× | 0.994897× |
+| Random 256 KiB | 1.049924× | 1.561856× | 0.996645× |
+| Random 1 MiB | 1.074620× | 1.502176× | 0.976880× |
+
+Distribution change improves to 0.984453× and 0.989398× Roc in the two full runs. Both 1.05 gates pass 81/81 in the first run. The repeat misses both gates on repeated 16 KiB during a period when all four workers slow markedly. The focused repeat passes both gates and measures 0.979838× control on that case. All observations remain in the evidence. [Compiler qualification, exact binary profiles and both timing matrices](native-checked-read-borrowing.md).
+
+## Schedule independent reads from fixed private views
+
+The compiler schedules two proved independent reads from a fixed private view together. The normally linked worker reproduces the timed Object and executable byte for byte. The first complete matrix takes **0.997551×** paired control and the full repeat takes **0.998381×**. Both 1.05 gates pass throughout.
+
+| Peer result | Mech wins, full repeat | Paired control wins | Previous published |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **58/81 (71.6%)** | 58 | 58 |
+| Faster than libdeflate | **28/81 (34.6%)** | 28 | 27 |
+| Faster than both | **11/81 (13.6%)** | 11 | 10 |
+| Faster than at least one | **75/81 (92.6%)** | 75 | 75 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.171119×** | 2.196541× | 1.006523× |
+| Distribution change, 16 KiB | 1.019519× | 1.748760× | 0.999096× |
+| Natural 16 KiB | 1.043937× | 1.050029× | 0.996404× |
+| Reymont 16 KiB | 1.048250× | 1.049870× | 0.997746× |
+| Random 128 KiB | 1.033987× | 1.609464× | 0.990257× |
+| Random 256 KiB | 1.052619× | 1.565655× | 0.987213× |
+| Random 1 MiB | 1.059833× | 1.497692× | 0.971743× |
+
+The first full comparison scored 74 wins against at least one peer. It includes an elevated random 65,535-byte reading in both Mech arms, with the candidate still faster than its paired control. That input beats Roc in the full repeat and the targeted repeat. Both arms share the same 75 winning inputs in the full repeat. The separate adverse cohort takes 1.001877× paired control. [Compiler qualification](native-independent-private-read-qualification.md) · [Both complete matrices and the profiles](native-independent-private-read-trial.md).
+
+## Prefetch bounded private writes
+
 The compiler prefetches a proved next private table write. The normally linked executable reproduces the measured worker byte for byte and takes **0.992619×** the paired control across all 81 cases. Both 1.05 gates pass throughout.
 
 | Peer result | Mech wins | Paired control wins |
