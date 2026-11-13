@@ -89,6 +89,7 @@ pub(in crate::native_artifact) fn emit(
     no_growth: Option<&crate::native_artifact::program::compact::NoGrowth>,
     done: Block,
     error: Block,
+    countdown: bool,
 ) -> Result<Report, NativeCompileError> {
     let proof = region
         .numeric
@@ -730,6 +731,7 @@ pub(in crate::native_artifact) fn emit(
                 target(window.header as u32),
                 false,
                 carry_item,
+                countdown,
             ) {
                 report.reduction_completions.push(completed);
             }

@@ -17,6 +17,7 @@ impl Reduction {
         facts: &super::super::traversal_facts::Proof,
         initialize: usize,
         carry_item: bool,
+        countdown: bool,
     ) -> Block {
         let c = &self.candidate;
         let start = words.read(b, c.induction);
@@ -73,10 +74,27 @@ impl Reduction {
         } else {
             None
         };
+        let biased = reverse.and_then(|_| {
+            if !countdown
+                || std::env::var_os("MECH_NARROW_ORDERED_ITEM").is_none()
+                || super::cost::Inputs::uses_index(&self.cost)
+            {
+                return None;
+            }
+            let window = self
+                .reads
+                .iter()
+                .copied()
+                .find(|read| !read.reverse && read.delta <= i32::MAX as u64)?;
+            Some((window, split_shifted_item(&self.selected, window.delta)?))
+        });
+        let forward = biased.map(|(window, _)| window);
         if reverse.is_some() {
             b.append_block_param(scalar_body, types::I64);
         }
-        let scalar_arity = 3 + usize::from(reverse.is_some());
+        if forward.is_some() {
+            b.append_block_param(scalar_body, types::I64);
+        }
         let scalar_finish = b.create_block();
         b.append_block_param(scalar_finish, types::I32);
         b.append_block_param(scalar_finish, carried);
@@ -94,7 +112,7 @@ impl Reduction {
             // route constructs the next cursor and enters the scalar loop.
             let reverse_cursor =
                 reverse.map(|window| (window, inputs.pointer(b, proof, window, start)));
-            let cost = inputs.scalar(b, proof, &self.cost, start, reverse_cursor);
+            let cost = inputs.scalar(b, proof, &self.cost, start, reverse_cursor.as_slice());
             let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
             let selected = emit_item(
                 b,
@@ -120,8 +138,17 @@ impl Reduction {
             b.switch_to_block(advance);
             let next = b.ins().iadd_imm(start, 1);
             let pointer = reverse_cursor.map_or(next, |(_, pointer)| pointer);
-            let args = [next.into(), minimum.into(), item.into(), pointer.into()];
-            b.ins().jump(scalar_body, &args[..scalar_arity]);
+            let mut args = vec![next.into(), minimum.into(), item.into()];
+            if reverse.is_some() {
+                args.push(pointer.into());
+            }
+            if let Some(window) = forward {
+                let index = b.ins().iadd_imm(next, window.delta as i64);
+                let left = b.ins().isub(stop, next);
+                args[0] = index.into();
+                args.push(left.into());
+            }
+            b.ins().jump(scalar_body, &args);
         } else {
             b.ins().brif(
                 long,
@@ -202,15 +229,19 @@ impl Reduction {
             // vector candidate's low word, without loading it again.
             let previous = b.ins().iadd_imm(end, -1);
             let pointer = inputs.pointer(b, proof, window, previous);
-            b.ins().jump(
-                scalar_body,
-                &[
-                    end.into(),
-                    minimum.into(),
-                    carried_value.into(),
-                    pointer.into(),
-                ],
-            );
+            let mut args = vec![
+                end.into(),
+                minimum.into(),
+                carried_value.into(),
+                pointer.into(),
+            ];
+            if let Some(window) = forward {
+                let index = b.ins().iadd_imm(end, window.delta as i64);
+                let left = b.ins().isub(stop, end);
+                args[0] = index.into();
+                args.push(left.into());
+            }
+            b.ins().jump(scalar_body, &args);
         } else {
             b.ins().brif(
                 more,
@@ -228,10 +259,31 @@ impl Reduction {
             let stride = i64::from(proof.arrays[window.array].width);
             (window, b.ins().iadd_imm(params[3], -stride))
         });
-        let cost = inputs.scalar(b, proof, &self.cost, params[0], reverse_cursor);
+        let mut pointers = reverse_cursor.into_iter().collect::<Vec<_>>();
+        if let Some(window) = forward {
+            // This index is already biased by the original forward access's
+            // delta. Both entries have a nonempty range and the same admitted
+            // immutable windows as the original scalar continuation.
+            let base = words.read(b, shadow + proof.view(window.array));
+            let offset = b
+                .ins()
+                .imul_imm(params[0], i64::from(proof.arrays[window.array].width));
+            let pointer = b.ins().iadd(base, offset);
+            pointers.push((window, pointer));
+        }
+        let cost = inputs.scalar(b, proof, &self.cost, params[0], &pointers);
         let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
-        let minimum = b.ins().umin(cost, params[1]);
-        let selected = if carry_item {
+        let minimum = if forward.is_some() {
+            b.ins().select(less, cost, params[1])
+        } else {
+            b.ins().umin(cost, params[1])
+        };
+        let selected = if let Some((_, other)) = biased {
+            let other = emit_item_low32(b, words, proof, shadow, other, params[0], ordinary);
+            let index = b.ins().ireduce(types::I32, params[0]);
+            let low = b.ins().bor(index, other);
+            b.ins().uextend(types::I64, low)
+        } else if carry_item {
             emit_item(
                 b,
                 words,
@@ -247,13 +299,21 @@ impl Reduction {
         };
         let choice = b.ins().select(less, selected, params[2]);
         let next = b.ins().iadd_imm(params[0], 1);
-        let more = b.ins().icmp(IntCC::UnsignedLessThan, next, stop);
-        let pointer = reverse_cursor.map_or(next, |(_, pointer)| pointer);
-        let next_args = [next.into(), minimum.into(), choice.into(), pointer.into()];
+        let mut next_args = vec![next.into(), minimum.into(), choice.into()];
+        if let Some((_, pointer)) = reverse_cursor {
+            next_args.push(pointer.into());
+        }
+        let more = if forward.is_some() {
+            let left = b.ins().iadd_imm(params[4], -1);
+            next_args.push(left.into());
+            b.ins().icmp_imm(IntCC::NotEqual, left, 0)
+        } else {
+            b.ins().icmp(IntCC::UnsignedLessThan, next, stop)
+        };
         b.ins().brif(
             more,
             scalar_body,
-            &next_args[..scalar_arity],
+            &next_args,
             scalar_finish,
             &[minimum.into(), choice.into()],
         );
@@ -440,4 +500,71 @@ fn emit_item_low32(
     }
     let full = emit_item(b, words, proof, shadow, item, index, error, true);
     b.ins().ireduce(types::I32, full)
+}
+
+fn biased_index(item: &Item, delta: u64) -> bool {
+    matches!(item, Item::Scalar(Op::U64Add | Op::U64WrappingAdd, args)
+        if matches!(args.as_slice(),
+            [Item::Index, Item::Constant(value)] | [Item::Constant(value), Item::Index]
+                if *value == delta))
+}
+
+fn split_shifted_item(mut item: &Item, delta: u64) -> Option<&Item> {
+    // The carried value must have exactly the current U32 representation.
+    // Source may express this as a conversion, a low-word mask, or both.
+    let mut narrow = false;
+    loop {
+        match item {
+            Item::Scalar(Op::U64ToU32, args) => {
+                let [inner] = args.as_slice() else {
+                    return None;
+                };
+                item = inner;
+                narrow = true;
+            }
+            Item::Scalar(Op::U32ToU64, args) => {
+                let [inner] = args.as_slice() else {
+                    return None;
+                };
+                item = inner;
+            }
+            Item::Scalar(Op::U64BitAnd, args) => {
+                let ([Item::Constant(mask), inner] | [inner, Item::Constant(mask)]) =
+                    args.as_slice()
+                else {
+                    return None;
+                };
+                if *mask != u64::from(u32::MAX) {
+                    return None;
+                }
+                item = inner;
+                narrow = true;
+            }
+            _ => break,
+        }
+    }
+    let Item::Scalar(Op::U64BitOr, args) = item else {
+        return None;
+    };
+    let [left, right] = args.as_slice() else {
+        return None;
+    };
+    if !narrow {
+        return None;
+    }
+    if biased_index(left, delta) && !uses_index(right) {
+        Some(right)
+    } else if biased_index(right, delta) && !uses_index(left) {
+        Some(left)
+    } else {
+        None
+    }
+}
+
+fn uses_index(item: &Item) -> bool {
+    match item {
+        Item::Index => true,
+        Item::Scalar(_, children) => children.iter().any(uses_index),
+        _ => false,
+    }
 }

@@ -39,7 +39,7 @@ pub(in crate::native_artifact) struct Capture<'a> {
     pub header: Block,
     pub countdown_word: usize,
 }
-#[derive(Clone, Copy, serde::Serialize)]
+#[derive(Clone, Copy, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) struct Admission {
     pub cache: usize,
     pub cursor_word: usize,

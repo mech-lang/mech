@@ -163,29 +163,40 @@ impl Inputs {
         )
     }
 
+    pub(super) fn uses_index(cost: &Cost) -> bool {
+        match cost {
+            Cost::Index => true,
+            Cost::Add(left, right)
+            | Cost::And(left, right)
+            | Cost::Or(left, right)
+            | Cost::Xor(left, right) => Self::uses_index(left) || Self::uses_index(right),
+            _ => false,
+        }
+    }
+
     pub fn scalar(
         &self,
         b: &mut FunctionBuilder<'_>,
         proof: &Proof,
         cost: &Cost,
         k: Value,
-        reverse_cursor: Option<(Window, Value)>,
+        pointers: &[(Window, Value)],
     ) -> Value {
         match cost {
             Cost::Constant(value) => b.ins().iconst(types::I32, i64::from(*value)),
             Cost::Word(slot) => self.words[slot],
             Cost::Index => b.ins().ireduce(types::I32, k),
             Cost::Read(w) => {
-                let pointer = match reverse_cursor {
-                    Some((window, pointer)) if window == *w => pointer,
-                    _ => self.pointer(b, proof, *w, k),
-                };
+                let pointer = pointers
+                    .iter()
+                    .find_map(|(window, pointer)| (*window == *w).then_some(*pointer))
+                    .unwrap_or_else(|| self.pointer(b, proof, *w, k));
                 b.ins()
                     .load(types::I32, MemFlags::new().with_notrap(), pointer, 0)
             }
             Cost::Add(a, c) | Cost::And(a, c) | Cost::Or(a, c) | Cost::Xor(a, c) => {
-                let a = self.scalar(b, proof, a, k, reverse_cursor);
-                let c = self.scalar(b, proof, c, k, reverse_cursor);
+                let a = self.scalar(b, proof, a, k, pointers);
+                let c = self.scalar(b, proof, c, k, pointers);
                 match cost {
                     Cost::Add(..) => b.ins().iadd(a, c),
                     Cost::And(..) => b.ins().band(a, c),

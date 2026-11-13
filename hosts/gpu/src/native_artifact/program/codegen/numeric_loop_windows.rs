@@ -298,6 +298,7 @@ impl Version {
         checked: Block,
         accounted: bool,
         carry_item: bool,
+        countdown: bool,
     ) -> Option<Block> {
         if !self.geometry.is_empty() {
             geometry::gate(self, b, words, shadow, proof, checked);
@@ -367,6 +368,7 @@ impl Version {
                     facts,
                     self.initialize,
                     carry_item,
+                    countdown,
                 );
                 return carry_item.then_some(completed);
             }

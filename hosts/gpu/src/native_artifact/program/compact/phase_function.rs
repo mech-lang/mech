@@ -1,6 +1,11 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
 use super::*;
+use crate::native_artifact::{
+    codegen::control::CfgCleanup,
+    program::codegen::{numeric_compact, wide_equal},
+};
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
+use cranelift_codegen::{Context, ir::Signature, isa::TargetIsa};
 
 pub(super) struct Composed {
     pub function: FuncId,
@@ -39,47 +44,13 @@ pub(super) fn define<M: Module>(
         .as_ref()
         .ok_or_else(|| backend("phase lacks checked numeric proof"))?;
     let controls = CompilationControls::new(OptimizationOptions::default());
-    let report;
     let symbol = format!("mech_compact_numeric_{header}{suffix}");
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); 3];
     signature.returns = vec![AbiParam::new(types::I64); 2];
-    let mut context = module.make_context();
-    context.func.signature = signature.clone();
-    let mut fb = FunctionBuilderContext::new();
-    {
-        let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
-        let begin = b.create_block();
-        b.append_block_params_for_function_params(begin);
-        b.switch_to_block(begin);
-        let args = b.block_params(begin).to_vec();
-        let zero = b.ins().iconst(types::I64, 0);
-        let error = b.create_block();
-        b.append_block_param(error, types::I64);
-        b.set_cold_block(error);
-        let done = b.create_block();
-        let storage = Arrays::new(module, &mut b, args[0], observe)?;
-        let native = numeric_minimal::Boundary::new(
-            &mut b,
-            args[1],
-            args[2],
-            region,
-            Some(&storage),
-            private,
-            no_growth,
-        )?;
-        report = crate::native_artifact::program::codegen::numeric_compact::emit(
-            &controls, &mut b, code, region, &native, vectors, private, no_growth, done, error,
-        )?;
-        b.switch_to_block(done);
-        b.ins().return_(&[zero, zero]);
-        b.switch_to_block(error);
-        let status = b.block_params(error)[0];
-        let at = b.ins().load(types::I64, MemFlags::new(), args[2], 0);
-        b.ins().return_(&[status, at]);
-        b.seal_all_blocks();
-        b.finalize();
-    }
+    let (mut context, report) = phase_ir(
+        module, code, region, &signature, &controls, observe, vectors, private, no_growth, false,
+    )?;
     let function = module
         .declare_function(&symbol, Linkage::Local, &signature)
         .map_err(backend)?;
@@ -98,193 +69,33 @@ pub(super) fn define<M: Module>(
         }
         return Err(backend(format!("{symbol}: {error:?}")));
     }
-    // Numeric phases have their own sealed SSA; never match through packets.
-    let mut bit_counts =
-        crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
-    let cleanup = cfg_cleanup::optimize(&controls, &mut context, module.isa())?;
-    let word_loops = &report;
-    // Resolve literal admission flags before allocating the already selected
-    // capacity-proved reduction. Keep other native routines on the usual pass.
-    if no_growth.is_some()
-        && !word_loops.reduction_completions.is_empty()
-        && cfg_cleanup::fold_bitwise_constants(&controls, &mut context.func) != 0
-    {
-        cfg_cleanup::optimize(&controls, &mut context, module.isa())?;
-    }
-    let equality = crate::native_artifact::program::codegen::wide_equal::optimize(
+    let PhaseCleanup {
+        bit_counts,
+        cleanup,
+        equality,
+        threaded,
+        vector_predicates,
+        width_guards,
+        window_bounds,
+    } = optimize_phase(
         &mut context,
-        &word_loops.compact_word_loops,
-        private.is_some()
-            && vectors.is_some()
-            && std::env::var_os("MECH_REUSE_EQUALITY_PREFIX").is_some(),
-    );
-    // Named experimental condition: growth state is absent from this callee.
-    let threaded = if no_growth.is_some()
-        && std::env::var_os("MECH_THREAD_AFTER_GROWTH_ISOLATION").is_some()
-    {
-        Some(cfg_cleanup::thread_loop_edges(
-            &controls,
-            &mut context,
-            module.isa(),
-        )?)
-    } else {
-        None
-    };
+        &controls,
+        module.isa(),
+        &report,
+        &symbol,
+        input_words,
+        output_words,
+        vectors,
+        private,
+        no_growth,
+        true,
+    )?;
+    let word_loops = &report;
     let pack_sites = word_loops.read_pack_sites.clone();
     let read_guards = word_loops.proven_scalar_read_guards.clone();
     let write_guards = word_loops.proven_scalar_write_guards.clone();
     let reused_reads = word_loops.reused_scalar_reads.clone();
     let reused_operands = word_loops.reused_scalar_operands.clone();
-    if no_growth.is_some() && std::env::var_os("MECH_CHECKED_APPEND_RUN").is_some() {
-        let outcome = crate::native_artifact::program::codegen::append_run::optimize(
-            &mut context,
-            word_loops.machine_header,
-            std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
-                .map(|value| (input_words, value == "all")),
-        );
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} checked append run: {outcome:?}");
-        }
-    }
-    if no_growth.is_some() && std::env::var_os("MECH_NARROW_MASKED_ARITHMETIC").is_some() {
-        let narrowed =
-            crate::native_artifact::program::codegen::low_word::narrow(&mut context.func);
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} low-word operations: {narrowed}");
-        }
-    }
-    // A completed ordered reduction names its own selected continuation.
-    // Only those edges enter the existing acyclic forwarding proof.
-    if no_growth.is_some() && !word_loops.reduction_completions.is_empty() {
-        let report = cfg_cleanup::forward_identity_routes_from(
-            &controls,
-            &mut context,
-            module.isa(),
-            Some(&word_loops.reduction_completions),
-        )?;
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!(
-                "{symbol} completed reduction routes: {}",
-                serde_json::to_string(&report).unwrap()
-            );
-        }
-    }
-    let vector_predicates = if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_PRIVATE_VECTOR_PREDICATES").is_some()
-    {
-        let report = cfg_cleanup::refine_current_predicates(&controls, &mut context, module.isa())?;
-        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() && report.removed_branches != 0 {
-            eprintln!(
-                "{symbol} selected-edge predicates: {} branches",
-                report.removed_branches
-            );
-        }
-        Some(report)
-    } else {
-        None
-    };
-    let width_guards = if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_PRIVATE_VECTOR_WIDTHS").is_some()
-    {
-        let removed = cfg_cleanup::fold_proved_widths(&controls, &mut context, module.isa())?;
-        if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} proved-width guards: {removed}");
-        }
-        removed
-    } else {
-        0
-    };
-    let window_bounds = if private.is_some() && vectors.is_some() {
-        cfg_cleanup::combine_window_bounds(&controls, &mut context, module.isa())?
-    } else {
-        0
-    };
-    let paired_spans = if private.is_some()
-        && vectors.is_some()
-        && !equality.reused.is_empty()
-        && std::env::var_os("MECH_ORDERED_CAPTURE_SPANS").is_some()
-    {
-        cfg_cleanup::fold_ordered_capture_spans(&controls, &mut context, module.isa())?
-    } else {
-        0
-    };
-    if paired_spans != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-        eprintln!("{symbol} ordered capture spans: {paired_spans}");
-    }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_ADJACENT_ADDRESSES").is_some()
-    {
-        let changed = cfg_cleanup::reuse_adjacent_addresses(&controls, &mut context, module.isa())?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} adjacent typed accesses: {changed}");
-        }
-    }
-    if std::env::var_os("MECH_SHARE_REPEATED_BOUNDS").is_some() {
-        let changed = cfg_cleanup::share_repeated_bounds(&controls, &mut context, module.isa())?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} repeated bounds checks: {changed}");
-        }
-    }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS").is_some()
-    {
-        let changed = super::phase_storage::sink_exit_packet_words(
-            &mut context.func,
-            input_words,
-            output_words,
-        );
-        if changed != 0 {
-            context.verify(module.isa()).map_err(backend)?;
-            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-                eprintln!("{symbol} deferred exit packet words: {changed}");
-            }
-        }
-    }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_REUSE_DOMINATING_WINDOW_FACTS").is_some()
-    {
-        let changed =
-            cfg_cleanup::reuse_dominating_window_facts(&controls, &mut context, module.isa())?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} reused dominating window facts: {changed}");
-        }
-    }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_PROVE_SCALAR_SPANS").is_some()
-    {
-        let changed = cfg_cleanup::prove_scalar_spans(&controls, &mut context, module.isa())?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} proved scalar spans: {changed}");
-        }
-    }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_REUSE_SELECTED_READ_BOUND").is_some()
-    {
-        let changed =
-            cfg_cleanup::reuse_selected_read_bounds(&controls, &mut context, module.isa())?;
-        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} reused selected readable bounds: {changed}");
-        }
-    }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_COALESCE_EQUAL_JOIN_ARGUMENTS").is_some()
-    {
-        let removed =
-            cfg_cleanup::coalesce_equal_join_arguments(&controls, &mut context, module.isa())?;
-        if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} merged equal block arguments: {removed}");
-        }
-    }
-    // Late forwarding may expose a complete idiom without crossing a phase.
-    bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
     let mut histogram = None;
     if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
         && !observe
@@ -408,6 +219,48 @@ pub(super) fn define<M: Module>(
                 dense_tables,
                 &capture,
             )? {
+                // Select the countdown only for this independently admitted
+                // immutable lookup variant. Re-emit from the same numeric
+                // proof and verify its own composition before substitution.
+                if admission.immutable_code_bytes.is_some()
+                    && !word_loops.reduction_completions.is_empty()
+                    && std::env::var_os("MECH_REDUCTION_COUNTDOWN").is_some()
+                {
+                    let (mut fast, fast_report) = phase_ir(
+                        module, code, region, &signature, &controls, observe, vectors, private,
+                        no_growth, true,
+                    )?;
+                    optimize_phase(
+                        &mut fast,
+                        &controls,
+                        module.isa(),
+                        &fast_report,
+                        &symbol,
+                        input_words,
+                        output_words,
+                        vectors,
+                        private,
+                        no_growth,
+                        false,
+                    )?;
+                    if let Some(loads) = phase_storage::input_word_loads(&fast.func, input_words) {
+                        let fast_capture = Capture {
+                            packet_loads: &loads,
+                            header: fast_report.machine_header,
+                            ..capture
+                        };
+                        if let Some(fast_admission) = cfg_cleanup::compose_readonly_lookups(
+                            &controls,
+                            &mut fast,
+                            module,
+                            dense_tables,
+                            &fast_capture,
+                        )? && fast_admission == admission
+                        {
+                            candidate = fast;
+                        }
+                    }
+                }
                 let name = format!("{symbol}_composed");
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
@@ -483,7 +336,7 @@ pub(super) fn define<M: Module>(
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":no_growth.is_none(),"unique_writable_owner_gate":true,"cleanup":cleanup});
     summary["bit_counts"] = serde_json::json!(bit_counts);
-    if let Some(report) = vector_predicates.filter(|report| report.removed_branches != 0) {
+    if let Some(report) = vector_predicates {
         summary["private_vector_predicates"] = serde_json::json!(report);
     }
     if width_guards != 0 {
@@ -523,5 +376,273 @@ pub(super) fn define<M: Module>(
         summary,
         code: compiled.buffer.data().to_vec(),
         composed,
+    })
+}
+
+fn phase_ir<M: Module>(
+    module: &mut M,
+    code: CodePlan<'_>,
+    region: &crate::native_artifact::program::prepare::tail::Region,
+    signature: &Signature,
+    controls: &CompilationControls,
+    observe: bool,
+    vectors: Option<&VectorContract>,
+    private: Option<&PrivatePhase>,
+    no_growth: Option<&NoGrowth>,
+    countdown: bool,
+) -> Result<(Context, numeric_compact::Report), NativeCompileError> {
+    let report;
+    let mut context = module.make_context();
+    context.func.signature = signature.clone();
+    let mut fb = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
+        let begin = b.create_block();
+        b.append_block_params_for_function_params(begin);
+        b.switch_to_block(begin);
+        let args = b.block_params(begin).to_vec();
+        let zero = b.ins().iconst(types::I64, 0);
+        let error = b.create_block();
+        b.append_block_param(error, types::I64);
+        b.set_cold_block(error);
+        let done = b.create_block();
+        let storage = Arrays::new(module, &mut b, args[0], observe)?;
+        let native = numeric_minimal::Boundary::new(
+            &mut b,
+            args[1],
+            args[2],
+            region,
+            Some(&storage),
+            private,
+            no_growth,
+        )?;
+        report = numeric_compact::emit(
+            controls, &mut b, code, region, &native, vectors, private, no_growth, done, error,
+            countdown,
+        )?;
+        b.switch_to_block(done);
+        b.ins().return_(&[zero, zero]);
+        b.switch_to_block(error);
+        let status = b.block_params(error)[0];
+        let at = b.ins().load(types::I64, MemFlags::new(), args[2], 0);
+        b.ins().return_(&[status, at]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    Ok((context, report))
+}
+
+struct PhaseCleanup {
+    bit_counts: usize,
+    cleanup: CfgCleanup,
+    equality: wide_equal::Outcome,
+    threaded: Option<serde_json::Value>,
+    vector_predicates: Option<serde_json::Value>,
+    width_guards: usize,
+    window_bounds: usize,
+}
+
+fn optimize_phase(
+    context: &mut Context,
+    controls: &CompilationControls,
+    isa: &dyn TargetIsa,
+    report: &numeric_compact::Report,
+    symbol: &str,
+    input_words: usize,
+    output_words: usize,
+    vectors: Option<&VectorContract>,
+    private: Option<&PrivatePhase>,
+    no_growth: Option<&NoGrowth>,
+    report_diagnostics: bool,
+) -> Result<PhaseCleanup, NativeCompileError> {
+    // Numeric phases have their own sealed SSA; never match through packets.
+    let mut bit_counts =
+        crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+    let cleanup = cfg_cleanup::optimize(controls, context, isa)?;
+    let word_loops = report;
+    // Resolve literal admission flags before allocating the already selected
+    // capacity-proved reduction. Keep other native routines on the usual pass.
+    if no_growth.is_some()
+        && !word_loops.reduction_completions.is_empty()
+        && cfg_cleanup::fold_bitwise_constants(controls, &mut context.func) != 0
+    {
+        cfg_cleanup::optimize(controls, context, isa)?;
+    }
+    let equality = crate::native_artifact::program::codegen::wide_equal::optimize(
+        context,
+        &word_loops.compact_word_loops,
+        private.is_some()
+            && vectors.is_some()
+            && std::env::var_os("MECH_REUSE_EQUALITY_PREFIX").is_some(),
+    );
+    // Named experimental condition: growth state is absent from this callee.
+    let threaded = if no_growth.is_some()
+        && std::env::var_os("MECH_THREAD_AFTER_GROWTH_ISOLATION").is_some()
+    {
+        Some(cfg_cleanup::thread_loop_edges(controls, context, isa)?)
+    } else {
+        None
+    };
+    if no_growth.is_some() && std::env::var_os("MECH_CHECKED_APPEND_RUN").is_some() {
+        let outcome = crate::native_artifact::program::codegen::append_run::optimize(
+            context,
+            word_loops.machine_header,
+            std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
+                .map(|value| (input_words, value == "all")),
+        );
+        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} checked append run: {outcome:?}");
+        }
+    }
+    if no_growth.is_some() && std::env::var_os("MECH_NARROW_MASKED_ARITHMETIC").is_some() {
+        let narrowed =
+            crate::native_artifact::program::codegen::low_word::narrow(&mut context.func);
+        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} low-word operations: {narrowed}");
+        }
+    }
+    // A completed ordered reduction names its own selected continuation.
+    // Only those edges enter the existing acyclic forwarding proof.
+    if no_growth.is_some() && !word_loops.reduction_completions.is_empty() {
+        let report = cfg_cleanup::forward_identity_routes_from(
+            controls,
+            context,
+            isa,
+            Some(&word_loops.reduction_completions),
+        )?;
+        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!(
+                "{symbol} completed reduction routes: {}",
+                serde_json::to_string(&report).unwrap()
+            );
+        }
+    }
+    let vector_predicates = if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_PRIVATE_VECTOR_PREDICATES").is_some()
+    {
+        let report = cfg_cleanup::refine_current_predicates(controls, context, isa)?;
+        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() && report.removed_branches != 0 {
+            eprintln!(
+                "{symbol} selected-edge predicates: {} branches",
+                report.removed_branches
+            );
+        }
+        Some(report)
+    } else {
+        None
+    };
+    let width_guards = if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_PRIVATE_VECTOR_WIDTHS").is_some()
+    {
+        let removed = cfg_cleanup::fold_proved_widths(controls, context, isa)?;
+        if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} proved-width guards: {removed}");
+        }
+        removed
+    } else {
+        0
+    };
+    let window_bounds = if private.is_some() && vectors.is_some() {
+        cfg_cleanup::combine_window_bounds(controls, context, isa)?
+    } else {
+        0
+    };
+    let paired_spans = if private.is_some()
+        && vectors.is_some()
+        && !equality.reused.is_empty()
+        && std::env::var_os("MECH_ORDERED_CAPTURE_SPANS").is_some()
+    {
+        cfg_cleanup::fold_ordered_capture_spans(controls, context, isa)?
+    } else {
+        0
+    };
+    if paired_spans != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        eprintln!("{symbol} ordered capture spans: {paired_spans}");
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_ADJACENT_ADDRESSES").is_some()
+    {
+        let changed = cfg_cleanup::reuse_adjacent_addresses(controls, context, isa)?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} adjacent typed accesses: {changed}");
+        }
+    }
+    if std::env::var_os("MECH_SHARE_REPEATED_BOUNDS").is_some() {
+        let changed = cfg_cleanup::share_repeated_bounds(controls, context, isa)?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} repeated bounds checks: {changed}");
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS").is_some()
+    {
+        let changed = super::phase_storage::sink_exit_packet_words(
+            &mut context.func,
+            input_words,
+            output_words,
+        );
+        if changed != 0 {
+            context.verify(isa).map_err(backend)?;
+            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} deferred exit packet words: {changed}");
+            }
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_REUSE_DOMINATING_WINDOW_FACTS").is_some()
+    {
+        let changed = cfg_cleanup::reuse_dominating_window_facts(controls, context, isa)?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} reused dominating window facts: {changed}");
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_PROVE_SCALAR_SPANS").is_some()
+    {
+        let changed = cfg_cleanup::prove_scalar_spans(controls, context, isa)?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} proved scalar spans: {changed}");
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_REUSE_SELECTED_READ_BOUND").is_some()
+    {
+        let changed = cfg_cleanup::reuse_selected_read_bounds(controls, context, isa)?;
+        if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} reused selected readable bounds: {changed}");
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COALESCE_EQUAL_JOIN_ARGUMENTS").is_some()
+    {
+        let removed = cfg_cleanup::coalesce_equal_join_arguments(controls, context, isa)?;
+        if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} merged equal block arguments: {removed}");
+        }
+    }
+    // Late forwarding may expose a complete idiom without crossing a phase.
+    bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+    let threaded = threaded
+        .filter(|_| report_diagnostics)
+        .map(|report| serde_json::json!(report));
+    let vector_predicates = vector_predicates
+        .filter(|report| report_diagnostics && report.removed_branches != 0)
+        .map(|report| serde_json::json!(report));
+    Ok(PhaseCleanup {
+        bit_counts,
+        cleanup,
+        equality,
+        threaded,
+        vector_predicates,
+        width_guards,
+        window_bounds,
     })
 }

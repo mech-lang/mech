@@ -936,7 +936,21 @@ fn aarch64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
 //=============================================================================
 // Instructions: misc functions and external interface
 
+#[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+mod loop_live_ranges;
+
 impl MachInst for Inst {
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    fn preallocation_rewrite_enabled(flags: &settings::Flags) -> bool {
+        flags.opt_level() != settings::OptLevel::None
+            && std::env::var_os("MECH_ARM64_LOOP_LIVE_RANGES").is_some()
+    }
+
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    fn preallocation_rewrite(block: &mut [Self], canonical: impl Fn(Reg) -> Reg) {
+        loop_live_ranges::rewrite(block, canonical);
+    }
+
     type ABIMachineSpec = AArch64MachineDeps;
     type LabelUse = LabelUse;
 
