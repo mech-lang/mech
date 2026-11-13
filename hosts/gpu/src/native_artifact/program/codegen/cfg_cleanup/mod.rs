@@ -10,6 +10,7 @@ mod dead_values;
 pub(in crate::native_artifact) mod future_store;
 pub(in crate::native_artifact) mod grouped_histogram;
 pub(in crate::native_artifact) mod identity_routes;
+pub(in crate::native_artifact) mod independent_private_read;
 mod known_widths;
 mod local_phis;
 pub(in crate::native_artifact) mod packed_halfword_reads;

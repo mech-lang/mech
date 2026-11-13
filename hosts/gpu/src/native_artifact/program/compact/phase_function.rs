@@ -198,20 +198,82 @@ pub(super) fn define<M: Module>(
     if !observe
         && cleanup.enabled
         && module.isa().name() == "aarch64"
-        && !report.prefetch_writes.is_empty()
+        && !report.fixed_view_writes.is_empty()
         && let Some(vectors) = vectors
-        && !vectors.admitted_lengths.is_empty()
     {
         context.flowgraph();
-        future_write_hint = cfg_cleanup::future_store::insert(
+        if std::env::var_os("MECH_PREFETCH_PRIVATE_WRITES").is_some() {
+            future_write_hint = cfg_cleanup::future_store::insert(
+                &mut context.func,
+                &context.cfg,
+                &context.domtree,
+                &report.fixed_view_writes,
+                &vectors.admitted_lengths,
+            );
+        }
+        if future_write_hint.is_some() {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
+    if !observe
+        && cleanup.enabled
+        && pack_halfwords
+        && std::env::var_os("MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS").is_some()
+        && let Some(vectors) = vectors
+        && private.is_some_and(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let mut views = Vec::new();
+        let mut bases = BTreeMap::new();
+        for (array, definition) in proof.arrays.iter().enumerate() {
+            if !definition.writable || definition.appends {
+                continue;
+            }
+            let Some(at) = packet.binary_search(&proof.view(array)).ok() else {
+                continue;
+            };
+            let mut matches = loads.iter().filter(|(_, pair)| pair.1 == at);
+            let Some((&base, _)) = matches.next() else {
+                continue;
+            };
+            if matches.next().is_some() {
+                continue;
+            }
+            let width = definition.width;
+            let minimum_bytes = vectors
+                .admitted_lengths
+                .iter()
+                .find_map(|&(at, length)| {
+                    (at == array)
+                        .then(|| length.checked_mul(u64::from(width)))
+                        .flatten()
+                })
+                .unwrap_or(0);
+            bases.insert(array, base);
+            views.push(cfg_cleanup::independent_private_read::View {
+                base,
+                element_bytes: width,
+                minimum_bytes,
+            });
+        }
+        let writes = report
+            .fixed_view_writes
+            .iter()
+            .filter_map(|write| bases.get(&write.array).map(|&base| (write.store, base)))
+            .collect();
+        context.flowgraph();
+        if cfg_cleanup::independent_private_read::schedule(
             &mut context.func,
             &context.cfg,
             &context.domtree,
-            &report.prefetch_writes,
-            &vectors.admitted_lengths,
-        );
-        if future_write_hint.is_some() {
+            &views,
+            &writes,
+        ) {
             context.verify(module.isa()).map_err(backend)?;
+            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} scheduled independent private read");
+            }
         }
     }
     let word_loops = &report;
