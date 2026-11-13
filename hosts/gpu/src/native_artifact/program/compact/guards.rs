@@ -9,6 +9,7 @@ use mech_engine::native_artifact::{
     NativeStructuralObservation as Observation, NativeStructuralStep as Step,
 };
 use std::collections::{BTreeMap, VecDeque};
+use std::rc::Rc;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Expression {
@@ -29,24 +30,47 @@ impl Expression {
 }
 #[derive(Clone, Default, Debug, Eq, PartialEq)]
 pub(super) struct State {
-    known: BTreeMap<u32, bool>,
-    expressions: BTreeMap<u32, Expression>,
+    known: Rc<BTreeMap<u32, bool>>,
+    expressions: Rc<BTreeMap<u32, Expression>>,
+    dirty: bool,
 }
 impl State {
     pub fn is_empty(&self) -> bool {
         self.known.is_empty()
     }
     pub fn merge(&mut self, other: &Self) -> bool {
-        let before = (self.known.len(), self.expressions.len());
-        self.known.retain(|v, t| other.known.get(v) == Some(t));
-        self.expressions
-            .retain(|v, e| other.expressions.get(v) == Some(e));
-        before != (self.known.len(), self.expressions.len())
+        fn intersect<T: Clone + PartialEq>(
+            local: &mut Rc<BTreeMap<u32, T>>,
+            incoming: &Rc<BTreeMap<u32, T>>,
+        ) -> bool {
+            if Rc::ptr_eq(local, incoming)
+                || local
+                    .iter()
+                    .all(|(key, value)| incoming.get(key) == Some(value))
+            {
+                return false;
+            }
+            Rc::make_mut(local).retain(|key, value| incoming.get(key) == Some(value));
+            true
+        }
+        let changed = intersect(&mut self.known, &other.known)
+            | intersect(&mut self.expressions, &other.expressions);
+        self.dirty |= changed;
+        changed
+    }
+    fn record(&mut self, value: u32, truth: bool) {
+        if self.known.get(&value) != Some(&truth) {
+            Rc::make_mut(&mut self.known).insert(value, truth);
+            self.dirty = true;
+        }
     }
     fn close(&mut self) {
+        if !self.dirty {
+            return;
+        }
         loop {
             let mut inferred = Vec::new();
-            for (&out, e) in &self.expressions {
+            for (&out, e) in self.expressions.iter() {
                 let truth = self.known.get(&out).copied();
                 match *e {
                     Expression::Copy(a) | Expression::Not(a) => {
@@ -80,7 +104,7 @@ impl State {
                     }
                     Expression::Project { .. } => {
                         if let Some(t) = truth {
-                            for (&peer, expression) in &self.expressions {
+                            for (&peer, expression) in self.expressions.iter() {
                                 if expression == e {
                                     inferred.push((peer, t));
                                 }
@@ -91,24 +115,35 @@ impl State {
             }
             let before = self.known.len();
             for (value, truth) in inferred {
-                self.known.entry(value).or_insert(truth);
+                if !self.known.contains_key(&value) {
+                    Rc::make_mut(&mut self.known).insert(value, truth);
+                }
             }
             if self.known.len() == before {
+                self.dirty = false;
                 break;
             }
         }
     }
     fn define(&mut self, defs: &[u32], expression: Option<&(u32, Expression)>) {
         for value in defs {
-            self.known.remove(value);
+            if self.known.contains_key(value) {
+                Rc::make_mut(&mut self.known).remove(value);
+                self.dirty = true;
+            }
         }
-        self.expressions
-            .retain(|out, e| !defs.contains(out) && !defs.iter().any(|&v| e.reads(v)));
+        let stale =
+            |out: &u32, e: &Expression| defs.contains(out) || defs.iter().any(|&v| e.reads(v));
+        if !defs.is_empty() && self.expressions.iter().any(|(out, e)| stale(out, e)) {
+            Rc::make_mut(&mut self.expressions).retain(|out, e| !stale(out, e));
+            self.dirty = true;
+        }
         if let Some((output, e)) = expression {
             // An in-place definition reads the preceding version. It cannot
             // establish an equation about the new input home without a phi.
-            if !defs.iter().any(|&v| e.reads(v)) {
-                self.expressions.insert(*output, e.clone());
+            if !defs.iter().any(|&v| e.reads(v)) && self.expressions.get(output) != Some(e) {
+                Rc::make_mut(&mut self.expressions).insert(*output, e.clone());
+                self.dirty = true;
             }
         }
         self.close();
@@ -196,7 +231,7 @@ impl Guards {
         let mut initial = State::default();
         for constant in plan.constants() {
             if let mech_core::ValueData::Bool(t) = constant.constant().data() {
-                initial.known.insert(constant.value().get(), *t);
+                initial.record(constant.value().get(), *t);
             }
         }
         let mut states = vec![None::<State>; plan.blocks().len()];
@@ -235,10 +270,10 @@ impl Guards {
         let mut edge = state.clone();
         if let Some((value, no, yes)) = self.branches[site] {
             if next == no {
-                edge.known.insert(value, false);
+                edge.record(value, false);
             }
             if next == yes {
-                edge.known.insert(value, true);
+                edge.record(value, true);
             }
         }
         edge.close();
@@ -268,7 +303,7 @@ mod tests {
         let mut s = State::default();
         s.define(&[2], Some(&(2, projection(1, 1))));
         s.define(&[4], Some(&(4, Expression::And(2, 3))));
-        s.known.insert(4, true);
+        s.record(4, true);
         s.close();
         assert_eq!(s.known.get(&2), Some(&true));
         assert_eq!(s.known.get(&3), Some(&true));
@@ -281,7 +316,7 @@ mod tests {
     fn redefining_a_tuple_keeps_old_boolean_truth_but_expires_its_relation() {
         let mut s = State::default();
         s.define(&[2], Some(&(2, projection(1, 1))));
-        s.known.insert(2, true);
+        s.record(2, true);
         s.close();
         s.define(&[1], None);
         s.define(&[3], Some(&(3, projection(1, 1))));
@@ -293,13 +328,13 @@ mod tests {
         let mut s = State::default();
         s.define(&[2], Some(&(2, Expression::Copy(1))));
         s.define(&[1], None);
-        s.known.insert(2, true);
+        s.record(2, true);
         s.close();
         assert!(!s.known.contains_key(&1));
         s.define(&[2], None);
         assert!(!s.known.contains_key(&2));
         s.define(&[1], Some(&(1, Expression::Not(1))));
-        s.known.insert(1, true);
+        s.record(1, true);
         s.close();
         assert!(!s.expressions.contains_key(&1));
     }
@@ -308,11 +343,11 @@ mod tests {
         for (e, t) in [(Expression::And(1, 2), false), (Expression::Or(1, 2), true)] {
             let mut s = State::default();
             s.define(&[3], Some(&(3, e)));
-            s.known.insert(3, t);
+            s.record(3, t);
             s.close();
             assert!(!s.known.contains_key(&1));
             assert!(!s.known.contains_key(&2));
-            s.known.insert(1, !t);
+            s.record(1, !t);
             s.close();
             assert_eq!(s.known.get(&2), Some(&t));
         }
@@ -324,7 +359,7 @@ mod tests {
             s.define(&[3], Some(&(3, e)));
             s.define(&[4], Some(&(4, Expression::Not(3))));
             s.define(&[5], Some(&(5, Expression::Copy(4))));
-            s.known.insert(5, !t);
+            s.record(5, !t);
             s.close();
             assert_eq!(s.known.get(&1), Some(&t));
             assert_eq!(s.known.get(&2), Some(&t));
@@ -334,14 +369,48 @@ mod tests {
     fn joins_keep_only_relations_true_on_every_incoming_path() {
         let mut left = State::default();
         left.define(&[2], Some(&(2, projection(1, 1))));
-        left.known.insert(2, true);
+        left.record(2, true);
         let mut right = left.clone();
         right.define(&[1], None);
         assert!(left.merge(&right));
         left.define(&[3], Some(&(3, projection(1, 1))));
         assert!(!left.known.contains_key(&3));
-        right.known.insert(2, false);
+        right.record(2, false);
         assert!(left.merge(&right));
         assert!(!left.known.contains_key(&2));
+    }
+
+    #[test]
+    fn sibling_paths_close_with_their_own_truths_and_rejoin_on_common_facts() {
+        let mut entry = State::default();
+        entry.record(4, true);
+        entry.define(&[2], Some(&(2, projection(1, 1))));
+        entry.define(&[3], Some(&(3, Expression::Not(2))));
+
+        let mut left = entry.clone();
+        let mut right = entry.clone();
+        left.record(3, true);
+        left.close();
+        right.record(3, false);
+        right.close();
+        assert_eq!(left.known.get(&2), Some(&false));
+        assert_eq!(right.known.get(&2), Some(&true));
+        assert_eq!(entry.known.get(&2), None);
+        assert_eq!(entry.known.get(&3), None);
+
+        assert!(!left.merge(&left.clone()));
+        assert!(left.merge(&right));
+        left.define(&[], None);
+        assert_eq!(left.known.get(&2), None);
+        assert_eq!(left.known.get(&3), None);
+        assert_eq!(left.known.get(&4), Some(&true));
+
+        left.define(&[1], None);
+        left.define(&[5], Some(&(5, projection(1, 1))));
+        left.record(3, true);
+        left.close();
+        assert_eq!(left.known.get(&2), Some(&false));
+        assert_eq!(left.known.get(&5), None);
+        assert_eq!(right.known.get(&2), Some(&true));
     }
 }
