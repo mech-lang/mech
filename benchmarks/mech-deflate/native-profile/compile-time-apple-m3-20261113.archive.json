@@ -9,7 +9,7 @@
   "source_revision": "4fff511238df193562e976dfa34fc3c354c60256",
   "uncompressed_bytes": 39670749,
   "archive_local_path": "benchmarks/mech-deflate/.experiments/compile-time-apple-m3-20261113/level12-compile-apple-m3-20261113.tar.gz",
-  "publication": "local-only; not uploaded",
+  "publication": "published",
   "source_state": "source_revision is the baseline; final modified source snapshots and their hashes are sealed in final-source/ and summary.json",
   "verification": {
     "all_git_blobs_match": true,
@@ -18,5 +18,8 @@
     "verified_bytes": 39670749,
     "verified_files": 309
   },
-  "replay_sha256": "145352f551bccb1106dcd3b931922d6e2bee048154430af1e0f830a048317690"
+  "replay_sha256": "145352f551bccb1106dcd3b931922d6e2bee048154430af1e0f830a048317690",
+  "repository": "mech-lang/mech",
+  "release_tag": "evidence-native-compression-experiments-6",
+  "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compile-apple-m3-20261113.tar.gz"
 }

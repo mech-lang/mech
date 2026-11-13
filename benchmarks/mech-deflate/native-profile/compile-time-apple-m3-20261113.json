@@ -374,7 +374,7 @@
     "benchmarks/mech-deflate/native-profile/profile_compile.py": "67d5f117bc85f3e90318edec82f0b780c92bb671a0fe266271e638b64f21ff7a",
     "actual_capture_driver_sha256": "818f16dcc7168a0b83b1d08a03e8ba2f1bc7b544c630f4baa88a6134f1fac34c"
   },
-  "source_status": "Local changes on codex/level12-compile-profile; baseline commit is the archive source_revision; actual final source files and hashes are included.",
+  "source_status": "The five-run cohort uses modified source over baseline 4fff511238; its actual measured source files and hashes are sealed in the primary archive. Integration over eb006ab94e and the restored seventh upstream regression test are pinned separately below.",
   "archive": {
     "archive_name": "level12-compile-apple-m3-20261113.tar.gz",
     "bytes": 7429089,
@@ -386,7 +386,7 @@
     "source_revision": "4fff511238df193562e976dfa34fc3c354c60256",
     "uncompressed_bytes": 39670749,
     "archive_local_path": "benchmarks/mech-deflate/.experiments/compile-time-apple-m3-20261113/level12-compile-apple-m3-20261113.tar.gz",
-    "publication": "local-only; not uploaded",
+    "publication": "published",
     "source_state": "source_revision is the baseline; final modified source snapshots and their hashes are sealed in final-source/ and summary.json",
     "verification": {
       "all_git_blobs_match": true,
@@ -395,7 +395,10 @@
       "verified_bytes": 39670749,
       "verified_files": 309
     },
-    "replay_sha256": "145352f551bccb1106dcd3b931922d6e2bee048154430af1e0f830a048317690"
+    "replay_sha256": "145352f551bccb1106dcd3b931922d6e2bee048154430af1e0f830a048317690",
+    "repository": "mech-lang/mech",
+    "release_tag": "evidence-native-compression-experiments-6",
+    "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compile-apple-m3-20261113.tar.gz"
   },
   "replay": {
     "baseline_seconds": 480.542209583,
@@ -406,5 +409,41 @@
     "profiled_after_seconds": 172.567415583,
     "profiled_speedup": 2.7846636513593315,
     "small_controls_exact": 7
+  },
+  "integration": {
+    "exact_upstream_reference_update_join_steps": 64000,
+    "focused_tests_passed": 10,
+    "integration_base": "eb006ab94e2880fa67ed67821c4da9d1b30601a1",
+    "process_counter_capture_succeeded": false,
+    "process_seconds": 172.50733258319087,
+    "runtime_timing_campaign_rerun": false,
+    "source_bytecode_object_metadata_match_pinned_baseline": true,
+    "source_revision": "63bb43573054cf4315a78ef11bd379055970a51e",
+    "source_to_object_seconds": 171.451009583,
+    "timing_disposition": "Compiler phase receipt complete; outer process counter wrapper failed after emission; no successful process-counter cohort claimed",
+    "compiler_binary_sha256": "a67a69a8c14939b3158796fe828d5ada6948dd151afd66e9a5699c857a677e83",
+    "archive": {
+      "archive_name": "level12-compile-apple-m3-20261113-integration.tar.gz",
+      "bytes": 1111257,
+      "evidence_files": 23,
+      "files": 23,
+      "format": 1,
+      "manifest_sha256": "fc3349d08ce050a6f1d295677a46494cac0c5f4b68f9a09d1c2f9131594a43ff",
+      "sha256": "566608b8d4285950b29196e0202ef53649fd1e0f747904ee30fe7500c6ca9bae",
+      "source_revision": "63bb43573054cf4315a78ef11bd379055970a51e",
+      "uncompressed_bytes": 7575417,
+      "repository": "mech-lang/mech",
+      "release_tag": "evidence-native-compression-experiments-6",
+      "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compile-apple-m3-20261113-integration.tar.gz",
+      "publication": "published",
+      "replay_sha256": "804cb265a77f7b4d8d23ee547e2f1a1be3f2633db0881c7b083c8176c071789d",
+      "verification": {
+        "archive_sha256": "566608b8d4285950b29196e0202ef53649fd1e0f747904ee30fe7500c6ca9bae",
+        "source_revision": "63bb43573054cf4315a78ef11bd379055970a51e",
+        "verified_files": 23,
+        "verified_bytes": 7575417,
+        "all_git_blobs_match": true
+      }
+    }
   }
 }
