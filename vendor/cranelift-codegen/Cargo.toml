@@ -223,6 +223,7 @@ version = "2.1.0"
 
 [build-dependencies.cranelift-codegen-meta]
 version = "0.131.3"
+path = "../cranelift-codegen-meta"
 
 [build-dependencies.cranelift-isle]
 version = "=0.131.3"

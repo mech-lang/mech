@@ -104,6 +104,11 @@ fn assert_standalone_resolution(
             "vendor/cranelift-codegen",
             Some("experimental-cmp-reuse"),
         ),
+        (
+            "cranelift-codegen-meta",
+            "vendor/cranelift-codegen-meta",
+            None,
+        ),
         ("cranelift-frontend", "vendor/cranelift-frontend", None),
         ("regalloc2", "vendor/regalloc2", None),
         ("mech-gpu", "hosts/gpu", Some(expected_feature)),

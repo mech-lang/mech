@@ -2521,6 +2521,10 @@
 (rule (lower (fence))
       (side_effect (aarch64_fence)))
 
+;;;; Rules for `prefetch_write`
+(rule (lower (prefetch_write address))
+      (side_effect (SideEffectNoResult.Inst (MInst.PrefetchWrite address))))
+
 ;;;; Rules for `Debugtrap` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rule (lower (debugtrap))

@@ -515,6 +515,7 @@ fn aarch64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
             collector.reg_use(rt);
         }
         Inst::Fence {} | Inst::Csdb {} => {}
+        Inst::PrefetchWrite { rn } => collector.reg_use(rn),
         Inst::FpuMove32 { rd, rn } => {
             collector.reg_def(rd);
             collector.reg_use(rn);
@@ -1701,6 +1702,10 @@ impl Inst {
             }
             &Inst::Fence {} => {
                 format!("dmb ish")
+            }
+            &Inst::PrefetchWrite { rn } => {
+                let rn = pretty_print_ireg(rn, OperandSize::Size64);
+                format!("prfm pstl1keep, [{rn}]")
             }
             &Inst::Csdb {} => {
                 format!("csdb")

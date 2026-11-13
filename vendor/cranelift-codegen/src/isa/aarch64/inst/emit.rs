@@ -1829,6 +1829,9 @@ impl Inst {
             &Inst::Fence {} => {
                 sink.put4(enc_dmb_ish()); // dmb ish
             }
+            &Inst::PrefetchWrite { rn } => {
+                sink.put4(0xf9800010 | (machreg_to_gpr(rn) << 5));
+            }
             &Inst::Csdb {} => {
                 sink.put4(0xd503229f);
             }

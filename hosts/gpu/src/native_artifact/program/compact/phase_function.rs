@@ -194,6 +194,26 @@ pub(super) fn define<M: Module>(
             }
         }
     }
+    let mut future_write_hint = None;
+    if !observe
+        && cleanup.enabled
+        && module.isa().name() == "aarch64"
+        && !report.prefetch_writes.is_empty()
+        && let Some(vectors) = vectors
+        && !vectors.admitted_lengths.is_empty()
+    {
+        context.flowgraph();
+        future_write_hint = cfg_cleanup::future_store::insert(
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+            &report.prefetch_writes,
+            &vectors.admitted_lengths,
+        );
+        if future_write_hint.is_some() {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
     let word_loops = &report;
     let pack_sites = word_loops.read_pack_sites.clone();
     let read_guards = word_loops.proven_scalar_read_guards.clone();
@@ -456,6 +476,9 @@ pub(super) fn define<M: Module>(
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":no_growth.is_none(),"unique_writable_owner_gate":true,"cleanup":cleanup});
     summary["bit_counts"] = serde_json::json!(bit_counts);
+    if let Some(hint) = future_write_hint {
+        summary["future_write_hint"] = serde_json::json!(hint);
+    }
     if let Some(report) = vector_predicates {
         summary["private_vector_predicates"] = serde_json::json!(report);
     }
