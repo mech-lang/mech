@@ -21,6 +21,8 @@ The grouped histogram runs in the compact native phase. Its complete 81-case com
 
 The matched control won 47 Roc cases and 17 libdeflate cases. The grouped tally gains five random Roc cases and loses the narrow repeated 65,537-byte libdeflate comparison. [Grouped histogram proof, qualification and complete matched results](native-grouped-histogram-qualification.md).
 
+The subsequent countdown and register-allocation trial takes 0.994941× control across all 81 cases and reaches 1.008016× Roc on natural 8 KiB. It keeps 52 Roc wins and loses one libdeflate win in the matched run. The grouped tally remains the retained build. [Countdown machine code, compilation stages, and matched results](native-reduction-loop-registers-pilot.md).
+
 ## Equal join argument comparison
 
 The branch cleanup after equal join arguments was qualified on top of the reverse cursor. The complete 81-case comparison takes **0.994529×** the paired control time.
