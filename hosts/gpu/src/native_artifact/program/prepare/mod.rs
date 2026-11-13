@@ -300,7 +300,7 @@ impl PreparedNativeProgram {
         )
         .map_err(str::to_owned)?;
         let closed_tails = native::program::prepare::tail::Layout::derive(
-            &plan,
+            &facts,
             &borrowed_strings,
             &analysis_visits,
             &scalar_aggregates,

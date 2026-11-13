@@ -576,12 +576,13 @@ pub(in crate::native_artifact) fn derive_complete_for_diagnostic(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
+    let facts = plan.facts();
     from_phase(
         plan,
         tail,
         frames,
         aggregates,
-        super::phase_numeric::derive_complete(plan, tail, frames, aggregates, calls, visits)?,
+        super::phase_numeric::derive_complete(&facts, tail, frames, aggregates, calls, visits)?,
     )
 }
 
@@ -593,9 +594,22 @@ pub(in crate::native_artifact) fn derive(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
-    super::phase_numeric::derive(plan, tail, frames, aggregates, calls, visits)
+    let facts = plan.facts();
+    derive_with_facts(&facts, tail, frames, aggregates, calls, visits)
+}
+
+pub(in crate::native_artifact) fn derive_with_facts(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+) -> Result<Proof, &'static str> {
+    let plan = facts.plan();
+    super::phase_numeric::derive(facts, tail, frames, aggregates, calls, visits)
         .and_then(|phase| from_phase(plan, tail, frames, aggregates, phase))
-        .or_else(|_| derive_leaf(plan, tail, frames, aggregates, calls))
+        .or_else(|_| derive_leaf(facts, tail, frames, aggregates, calls))
 }
 
 #[cfg(test)]
@@ -607,12 +621,13 @@ pub(in crate::native_artifact) fn derive_fueled(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
+    let facts = plan.facts();
     from_phase(
         plan,
         tail,
         frames,
         aggregates,
-        super::phase_numeric::derive_fueled(plan, tail, frames, aggregates, calls, visits)?,
+        super::phase_numeric::derive_fueled(&facts, tail, frames, aggregates, calls, visits)?,
     )
 }
 #[cfg(test)]
@@ -624,12 +639,13 @@ pub(in crate::native_artifact) fn derive_hybrid(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
+    let facts = plan.facts();
     from_phase(
         plan,
         tail,
         frames,
         aggregates,
-        super::phase_numeric::derive_hybrid(plan, tail, frames, aggregates, calls, visits)?,
+        super::phase_numeric::derive_hybrid(&facts, tail, frames, aggregates, calls, visits)?,
     )
 }
 #[cfg(test)]
@@ -641,12 +657,13 @@ pub(in crate::native_artifact) fn derive_interval(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
+    let facts = plan.facts();
     from_phase(
         plan,
         tail,
         frames,
         aggregates,
-        super::phase_numeric::derive_interval(plan, tail, frames, aggregates, calls, visits)?,
+        super::phase_numeric::derive_interval(&facts, tail, frames, aggregates, calls, visits)?,
     )
 }
 
@@ -771,13 +788,13 @@ fn from_phase(
 }
 
 fn derive_leaf(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
 ) -> Result<Proof, &'static str> {
-    derive_inner(plan, tail, frames, aggregates, calls, None)
+    derive_inner(facts, tail, frames, aggregates, calls, None)
 }
 
 pub(in crate::native_artifact) fn derive_tree(
@@ -788,17 +805,30 @@ pub(in crate::native_artifact) fn derive_tree(
     calls: &[Option<NativePreparedLibraryCall>],
     tree: &super::numeric_tree::Proof,
 ) -> Result<Proof, &'static str> {
-    derive_inner(plan, tail, frames, aggregates, calls, Some(tree))
+    let facts = plan.facts();
+    derive_tree_with_facts(&facts, tail, frames, aggregates, calls, tree)
+}
+
+pub(in crate::native_artifact) fn derive_tree_with_facts(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    tree: &super::numeric_tree::Proof,
+) -> Result<Proof, &'static str> {
+    derive_inner(facts, tail, frames, aggregates, calls, Some(tree))
 }
 
 fn derive_inner(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
     tree: Option<&super::numeric_tree::Proof>,
 ) -> Result<Proof, &'static str> {
+    let plan = facts.plan();
     let fields = match numeric_fields::at(frames, tail.carrier().get()) {
         Some(fields) => fields,
         None if aggregates.slot(tail.carrier()).is_some()
@@ -842,9 +872,8 @@ fn derive_inner(
     if !sites.contains(&(tail.latch() as usize)) || !sites.contains(&(tail.finish() as usize)) {
         return Err("incomplete leaf boundaries");
     }
-    let facts = plan.facts();
     let mut provenance = Provenance {
-        facts: &facts,
+        facts,
         frames,
         tail,
         calls,

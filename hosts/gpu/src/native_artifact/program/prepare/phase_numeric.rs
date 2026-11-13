@@ -180,15 +180,16 @@ impl Provenance<'_, '_> {
 }
 
 pub(in crate::native_artifact) fn derive(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
+    let plan = facts.plan();
     derive_with_children(
-        plan,
+        facts,
         tail,
         frames,
         aggregates,
@@ -199,7 +200,7 @@ pub(in crate::native_artifact) fn derive(
     .or_else(|reason| {
         let cold = || {
             derive_with_children(
-                plan,
+                facts,
                 tail,
                 frames,
                 aggregates,
@@ -208,7 +209,7 @@ pub(in crate::native_artifact) fn derive(
                 Coverage::ScalarCold,
             )
         };
-        let fueled = || derive_fueled(plan, tail, frames, aggregates, calls, visits);
+        let fueled = || derive_fueled(facts, tail, frames, aggregates, calls, visits);
         // A scalar enum state carries no buffer owner for a standalone numeric
         // leaf. Keep its captured reads in the enclosing phase when exact
         // per-visit funding can replace a missing static trip envelope. Other
@@ -229,14 +230,14 @@ pub(in crate::native_artifact) fn derive(
             cold().or_else(|_| fueled())
         };
         selected
-            .or_else(|_| derive_hybrid(plan, tail, frames, aggregates, calls, visits))
-            .or_else(|_| derive_interval(plan, tail, frames, aggregates, calls, visits))
+            .or_else(|_| derive_hybrid(facts, tail, frames, aggregates, calls, visits))
+            .or_else(|_| derive_interval(facts, tail, frames, aggregates, calls, visits))
             .map_err(|_| reason)
     })
 }
 
 pub(in crate::native_artifact) fn derive_fueled(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
@@ -244,7 +245,7 @@ pub(in crate::native_artifact) fn derive_fueled(
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
     derive_with_children(
-        plan,
+        facts,
         tail,
         frames,
         aggregates,
@@ -255,7 +256,7 @@ pub(in crate::native_artifact) fn derive_fueled(
 }
 
 pub(in crate::native_artifact) fn derive_hybrid(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
@@ -263,7 +264,7 @@ pub(in crate::native_artifact) fn derive_hybrid(
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
     derive_with_children(
-        plan,
+        facts,
         tail,
         frames,
         aggregates,
@@ -274,7 +275,7 @@ pub(in crate::native_artifact) fn derive_hybrid(
 }
 
 pub(in crate::native_artifact) fn derive_interval(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
@@ -282,7 +283,7 @@ pub(in crate::native_artifact) fn derive_interval(
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
     derive_with_children(
-        plan,
+        facts,
         tail,
         frames,
         aggregates,
@@ -294,7 +295,7 @@ pub(in crate::native_artifact) fn derive_interval(
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) fn derive_complete(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
@@ -302,7 +303,7 @@ pub(in crate::native_artifact) fn derive_complete(
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
     derive_with_children(
-        plan,
+        facts,
         tail,
         frames,
         aggregates,
@@ -313,7 +314,7 @@ pub(in crate::native_artifact) fn derive_complete(
 }
 
 fn derive_with_children(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
@@ -321,6 +322,7 @@ fn derive_with_children(
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
     mode: Coverage,
 ) -> Result<Proof, &'static str> {
+    let plan = facts.plan();
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
@@ -359,9 +361,8 @@ fn derive_with_children(
         Vec::new()
     };
     let sites = forest.sites.clone();
-    let facts = plan.facts();
     let mut provenance = Provenance {
-        facts: &facts,
+        facts,
         frames,
         tail,
         calls,
