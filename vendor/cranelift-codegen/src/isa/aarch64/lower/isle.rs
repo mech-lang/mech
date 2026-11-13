@@ -57,6 +57,10 @@ pub(crate) fn lower(
         return Some(output);
     }
     let mut isle_ctx = IsleContext { lower_ctx, backend };
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    if let Some(output) = isle_ctx.lower_conjoined_select(inst) {
+        return Some(output);
+    }
     generated_code::constructor_lower(&mut isle_ctx, inst)
 }
 
@@ -142,26 +146,91 @@ pub struct ExtendedValue {
     extend: ExtendOp,
 }
 
-impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
-    isle_lower_prelude_methods!();
+type ComparisonInstructions =
+    smallvec::SmallVec<[MInst; super::boolean_conjunction::MAX_COMPARISONS + 2]>;
 
-    fn icmp_conjunction(&mut self, value: Value) -> Option<ComparisonChain> {
-        // This is the pure ISLE preflight. It does not normalize operands,
-        // lower instructions, sink values or emit machine code.
-        super::boolean_conjunction::derive(self.lower_ctx.dfg(), value, |value| {
-            matches!(
-                self.lower_ctx.get_value_as_source_or_const(value).inst,
-                InputSourceInst::UniqueUse(_, 0)
-            )
-        })
+impl IsleContext<'_, '_, MInst, AArch64Backend> {
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    fn lower_conjoined_select(&mut self, inst: Inst) -> Option<InstOutput> {
+        let lower = &self.lower_ctx;
+        let dfg = lower.dfg();
+        let InstructionData::Ternary {
+            opcode: Opcode::Select,
+            args: [condition, yes, no],
+        } = dfg.insts[inst]
+        else {
+            return None;
+        };
+        if lower.output_ty(inst, 0) != I64
+            || std::env::var_os("MECH_ARM64_CCMP_BRANCH_SELECT").is_none()
+        {
+            return None;
+        }
+        // A value that immediately controls a branch has a known next use.
+        // Keep other selections out of this narrow scheduling experiment.
+        let result = dfg.inst_results(inst)[0];
+        let branch = lower.f.layout.next_inst(inst)?;
+        if dfg.insts[branch].opcode() != Opcode::Brif
+            || dfg.resolve_aliases(dfg.inst_args(branch)[0]) != result
+        {
+            return None;
+        }
+        // The selection's value can be shared. Its condition must be a
+        // single-use tree inside the select's block. Reuse the same pure
+        // preflight as branch lowering, allowing a shared *result* without
+        // counting that result's consumers as direct condition users.
+        let block = lower.f.layout.inst_block(inst)?;
+        let mut tree = smallvec::SmallVec::<[Value; 16]>::new();
+        let chain = super::boolean_conjunction::derive(dfg, condition, |value| {
+            if tree.contains(&value)
+                || dfg
+                    .value_def(value)
+                    .inst()
+                    .and_then(|def| lower.f.layout.inst_block(def))
+                    != Some(block)
+            {
+                return false;
+            }
+            tree.push(value);
+            true
+        })?;
+        let mut counts = smallvec::SmallVec::<[u8; 16]>::from_elem(0, tree.len());
+        // Use the direct SSA occurrences, including edge arguments. A shared
+        // selection result does not make the condition tree shared, but a
+        // separately forwarded condition would duplicate its comparisons.
+        for user in lower
+            .f
+            .layout
+            .blocks()
+            .flat_map(|b| lower.f.layout.block_insts(b))
+        {
+            for value in dfg.inst_values(user) {
+                if let Some(index) = tree.iter().position(|&v| v == dfg.resolve_aliases(value)) {
+                    counts[index] += 1;
+                    if counts[index] != 1 {
+                        return None;
+                    }
+                }
+            }
+        }
+        if counts.iter().any(|&count| count != 1) {
+            return None;
+        }
+        let rn = self.put_in_reg(yes);
+        let rm = self.put_in_reg(no);
+        let rd = self.lower_ctx.alloc_tmp(I64).only_reg().unwrap();
+        let (mut instructions, cond) = self.prepare_icmp_conjunction(chain);
+        instructions.push(MInst::CSel { rd, rn, rm, cond });
+        for inst in instructions {
+            self.lower_ctx.emit(inst);
+        }
+        Some(smallvec::smallvec![ValueRegs::one(rd.to_reg())])
     }
 
-    fn emit_icmp_conjunction_branch(
+    fn prepare_icmp_conjunction(
         &mut self,
         chain: ComparisonChain,
-        taken: MachLabel,
-        not_taken: MachLabel,
-    ) {
+    ) -> (ComparisonInstructions, Cond) {
         // Total impure RHS constructor. Complete preflight has already proved
         // the bounded integer tree. Materialize every later operand BEFORE
         // asking for the first flags producer; nothing can clobber its NZCV
@@ -210,9 +279,7 @@ impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
                 first.right,
                 first.ty,
             );
-        const MAX_INSTRUCTIONS: usize = super::boolean_conjunction::MAX_COMPARISONS + 2;
-        let mut instructions: smallvec::SmallVec<[MInst; MAX_INSTRUCTIONS]> =
-            smallvec::SmallVec::new();
+        let mut instructions = ComparisonInstructions::new();
         match flags {
             generated_code::ProducesFlags::AlreadyExistingFlags => {}
             generated_code::ProducesFlags::ProducesFlagsSideEffect { inst }
@@ -235,17 +302,37 @@ impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
             });
             cc = next_cc;
         }
+        (instructions, lower_condcode(cc))
+    }
+}
+
+impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
+    isle_lower_prelude_methods!();
+
+    fn icmp_conjunction(&mut self, value: Value) -> Option<ComparisonChain> {
+        // This is the pure ISLE preflight. It does not normalize operands,
+        // lower instructions, sink values or emit machine code.
+        super::boolean_conjunction::derive(self.lower_ctx.dfg(), value, |value| {
+            matches!(
+                self.lower_ctx.get_value_as_source_or_const(value).inst,
+                InputSourceInst::UniqueUse(_, 0)
+            )
+        })
+    }
+
+    fn emit_icmp_conjunction_branch(
+        &mut self,
+        chain: ComparisonChain,
+        taken: MachLabel,
+        not_taken: MachLabel,
+    ) {
+        let (mut instructions, cond) = self.prepare_icmp_conjunction(chain);
         instructions.push(MInst::CondBr {
             taken: BranchTarget::Label(taken),
             not_taken: BranchTarget::Label(not_taken),
-            kind: CondBrKind::Cond(lower_condcode(cc)),
+            kind: CondBrKind::Cond(cond),
         });
-        // Mirror with_flags: emit producers and consumer back-to-back. The
-        // shared facade represents at most two producers; this private list
-        // holds at most two prefix instructions, seven CCMPs and one branch.
-        // No lowering, put-in-reg, callback or instruction construction occurs
-        // inside this loop. AArch64 regalloc moves/spills/reloads (including
-        // their non-S address materialization) preserve NZCV.
+        // Keep all NZCV producers and their consumer adjacent.
         for inst in instructions {
             self.lower_ctx.emit(inst);
         }

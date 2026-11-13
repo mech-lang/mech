@@ -1,26 +1,28 @@
 # Current compression scoreboard
 
-The composed ordered reduction takes **0.993395×** the paired grouped-histogram control time. Both 1.05 timing gates pass on all 81 cases. The compiler reproduces the measured Object and pinned-runtime executable from both original and decoded artifacts.
+The retained branch-fed selection takes **0.995253×** the paired composed-countdown control time. Both 1.05 timing gates pass on all 81 cases. The compiler reproduces the measured Object and pinned-runtime executable from both original and decoded artifacts.
 
 | Peer result | Mech wins |
 | --- | ---: |
 | Faster than Roc | **52/81 (64.2%)** |
-| Faster than libdeflate | 16/81 (19.8%) |
-| Faster than both | 7/81 |
+| Faster than libdeflate | **19/81 (23.5%)** |
+| Faster than both | 10/81 |
 | Faster than either | 61/81 (75.3%) |
 
 | Input | Mech/Roc | Mech/libdeflate |
 | --- | ---: | ---: |
-| Eight literals | 0.170546× | 2.188515× |
-| Natural 8 KiB | **1.001108×** | 1.245266× |
-| Held-out mixed 131,073 bytes | 1.028083× | 1.192535× |
-| Held-out random 65,537 bytes | 1.030555× | 1.733853× |
-| Natural 256 KiB | 1.148857× | 0.931645× |
-| Repeated 32 KiB | 0.507890× | 0.997728× |
-| Repeated 65,535 bytes | 0.565938× | 0.999640× |
-| Repeated 65,537 bytes | 0.570395× | **1.008592×** |
+| Eight literals | 0.172761× | 2.191633× |
+| Natural 8 KiB | **1.006805×** | 1.254806× |
+| Natural 256 KiB | 1.145246× | 0.928244× |
+| Natural 1 MiB | 1.154660× | 0.932239× |
+| Repeated 65,535 bytes | 0.557960× | **0.992261×** |
+| Repeated 65,536 bytes | 0.561880× | **0.997956×** |
+| Repeated 65,537 bytes | 0.559060× | **0.991145×** |
+| Periodic 256 KiB | 0.568019× | **0.998774×** |
 
-The matched control wins 52 cases against Roc and 15 against libdeflate. Repeated 32 KiB crosses below libdeflate in the same cohort. Natural 8 KiB is the closest remaining Roc case. [Compiler qualification and timing receipts](native-composed-countdown-qualification.md).
+The matched control wins 52 cases against Roc and 15 against libdeflate. The three repeated lengths and periodic 256 KiB above cross below libdeflate in this cohort. Natural 8 KiB takes 1.002495× paired control and remains above Roc; in confirmation it takes 0.999453× paired control and 1.003916× Roc. [Compiler qualification and timing receipts](native-branch-fed-selection-pilot.md).
+
+The preceding [composed ordered reduction](native-composed-countdown-qualification.md) takes 0.993395× its paired grouped-histogram control. That cohort records 52 Roc wins and 16 libdeflate wins. Repeated 32 KiB crosses below libdeflate and natural 8 KiB reaches 1.001108× Roc in that separate measurement.
 
 Folding two identical routes in each composed parser reduced natural-text instructions by 0.88–1.04%. The 81-case trial took 0.998186× control time, with natural 8 KiB slower by 0.67% and the same peer win sets. The composed countdown remains the active compiler. [Trial timings, counters and linked code](native-composed-route-folding.md).
 
@@ -32,7 +34,6 @@ Entering the scalar countdown directly shrank each composed parser by 64 bytes a
 
 ARM64 conditional comparisons followed by a selection cut repeated-input instructions by about 1.9%. The full trial took 0.995219× control, kept 52 Roc wins and raised libdeflate wins from 16 to 18. The two repeated-input crossings held at fixed function addresses. Natural 8 KiB slowed there by 1.35%, crossing from 0.997531× to 1.011014× Roc. The broader rule is not active. [Conditional selection timings and isolated vector matcher](native-conditional-select-pilot.md).
 
-Narrowing the rule to selections immediately tested by a branch improved the fixed-address trial's libdeflate tally from 15 to 19 and kept 52 Roc wins across 81 cases. Repeated inputs retired about 2.2% fewer instructions. Natural 8 KiB varied from 0.999453× to 1.002962× control over three cohorts. The experiment is a single-body diagnostic, pending whole-compiler reproduction. [Branch-fed selection measurements](native-branch-fed-selection-pilot.md).
 
 ## Grouped histogram comparison
 
