@@ -13,12 +13,15 @@ use mech_engine::native_artifact::{
 };
 use std::collections::BTreeMap;
 
+#[path = "owner_reads.rs"]
+mod owner_reads;
 mod transfers;
 
 pub(super) struct OwnerFlow {
     slots: Vec<usize>,
     ids: BTreeMap<usize, usize>,
     live_in: Vec<Vec<u64>>,
+    guard_read_reachable: Vec<Vec<u64>>,
     definitions: Vec<Vec<usize>>,
     successors: Vec<Vec<usize>>,
     reads: Vec<Vec<usize>>,
@@ -266,11 +269,14 @@ impl OwnerFlow {
                 all.dedup();
                 all
             })
-            .collect();
+            .collect::<Vec<_>>();
+        let guard_read_reachable =
+            owner_reads::derive(&flow.successors, &definitions, &reads, &post_uses, width);
         Ok(Self {
             slots,
             ids,
             live_in,
+            guard_read_reachable,
             definitions,
             successors: flow.successors.clone(),
             reads,
@@ -363,6 +369,12 @@ impl OwnerFlow {
             .collect::<Vec<_>>();
         let mut states = vec![None::<super::guards::State>; flow.reachable.len()];
         while let Some((site, state)) = pending.pop() {
+            // No syntactic continuation reads this old owner before a fresh
+            // definition. Guarded edges are a subset of that graph, so this
+            // subtree cannot affect the answer or any relevant join state.
+            if !contains(&self.guard_read_reachable[site], id) {
+                continue;
+            }
             if let Some(existing) = &mut states[site] {
                 if !existing.merge(&state) {
                     continue;

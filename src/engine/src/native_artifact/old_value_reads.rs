@@ -98,11 +98,15 @@ impl NativeProgramFacts<'_> {
                 return Ok(true);
             }
         }
+        // Repeated graph probes must not scan every descriptive read. The
+        // role validation above retains its original order and opaque cases.
+        reads.sort_unstable();
+        reads.dedup();
         self.old_value_read_before_redefinition(
             value,
             frontier,
-            |site| reads.contains(&(site, false)),
-            |site| reads.contains(&(site, true)),
+            |site| reads.binary_search(&(site, false)).is_ok(),
+            |site| reads.binary_search(&(site, true)).is_ok(),
         )
     }
 
@@ -224,5 +228,49 @@ mod tests {
         assert_eq!(query(&graph, &[2], &[], &[]), Ok(false));
         graph[3] = [Some(4), None];
         assert!(query(&graph, &[], &[], &[]).is_err());
+    }
+    #[test]
+    fn indexed_read_membership_preserves_paths_and_graph_errors() {
+        for seed in 0..256_u32 {
+            let graph = (0..12)
+                .map(|site| {
+                    [
+                        Some((site + seed + 1) % 12),
+                        (site % 3 == 0).then_some((site * 3 + seed) % 13),
+                    ]
+                })
+                .collect::<Vec<_>>();
+            let reads = (0..30)
+                .map(|n| ((n * 7 + seed) % 14, n % 3 == 0))
+                .collect::<Vec<_>>();
+            let mut indexed = reads.clone();
+            indexed.sort_unstable();
+            indexed.dedup();
+            for frontier in 0..14 {
+                let query = |indexed_membership: bool| {
+                    reachable_read(
+                        graph.len(),
+                        frontier,
+                        |site| graph.get(site as usize).copied().ok_or("missing edge"),
+                        |site| (site + seed) % 5 == 0,
+                        |site| {
+                            if indexed_membership {
+                                indexed.binary_search(&(site, false)).is_ok()
+                            } else {
+                                reads.contains(&(site, false))
+                            }
+                        },
+                        |site| {
+                            if indexed_membership {
+                                indexed.binary_search(&(site, true)).is_ok()
+                            } else {
+                                reads.contains(&(site, true))
+                            }
+                        },
+                    )
+                };
+                assert_eq!(query(true), query(false));
+            }
+        }
     }
 }

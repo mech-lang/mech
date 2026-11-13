@@ -3,9 +3,9 @@
 use crate::{DimensionParameterId, SemanticIdentityKind, SemanticModelError};
 
 #[cfg(feature = "no_std")]
-use alloc::{boxed::Box, collections::BTreeSet, vec, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, collections::BTreeSet, vec, vec::Vec};
+use std::{boxed::Box, vec, vec::Vec};
 
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -241,19 +241,18 @@ pub(crate) fn canonicalize_dimension_environment(
             &mut occurrence,
         )?;
     }
-    let reachable = occurrence.iter().copied().collect::<BTreeSet<_>>();
     let mut retained = declarations
         .iter()
         .enumerate()
         .filter_map(|(index, declaration)| {
-            (declaration.origin == DimensionParameterOrigin::Explicit && reachable.contains(&index))
+            (declaration.origin == DimensionParameterOrigin::Explicit && state[index] == 2)
                 .then_some(index)
         })
         .collect::<Vec<_>>();
     for old in occurrence {
-        if declarations[old].origin == DimensionParameterOrigin::Inferred
-            && !retained.contains(&old)
-        {
+        // DFS appends each reachable parameter once. The initial prefix
+        // contains only explicit parameters, so inferred entries are new.
+        if declarations[old].origin == DimensionParameterOrigin::Inferred {
             retained.push(old);
         }
     }
@@ -304,12 +303,15 @@ pub(crate) fn canonicalize_dimension_environment(
 pub(crate) fn validate_declaration_ids(
     declarations: &[DimensionParameterDeclaration],
 ) -> Result<(), SemanticModelError> {
-    let mut seen = BTreeSet::new();
     for (index, declaration) in declarations.iter().enumerate() {
-        if !seen.insert(declaration.id) {
+        // Every accepted prefix has IDs 0..index. A smaller ID is therefore
+        // a duplicate; a larger ID is the first unknown ordinal. Preserve
+        // that error priority without allocating an ordered set.
+        let ordinal = declaration.id.get() as usize;
+        if ordinal < index {
             return Err(SemanticModelError::DuplicateDimensionParameter { id: declaration.id });
         }
-        if declaration.id.get() as usize != index {
+        if ordinal != index {
             return Err(SemanticModelError::UnknownDimensionParameterV1 { id: declaration.id });
         }
     }
@@ -577,6 +579,7 @@ pub fn extent_evolution(parameters: &[DimensionParameter]) -> ExtentEvolution {
 #[cfg(test)]
 mod vector_tests {
     use super::*;
+    use std::collections::BTreeSet;
 
     fn boxed(values: impl IntoIterator<Item = DimensionExpr>) -> Box<[DimensionExpr]> {
         values.into_iter().collect::<Vec<_>>().into_boxed_slice()
@@ -692,5 +695,208 @@ mod vector_tests {
             })
         ));
         assert!(builder.declarations().is_empty());
+    }
+
+    fn declaration(id: u32) -> DimensionParameterDeclaration {
+        DimensionParameterDeclaration {
+            id: DimensionParameterId::new(id),
+            origin: DimensionParameterOrigin::Inferred,
+            lifetime: DimensionLifetime::Turn,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        }
+    }
+
+    #[test]
+    fn dense_validation_preserves_first_error_for_every_short_id_sequence() {
+        for count in 0..=6 {
+            for mut sequence in 0_u32..8_u32.pow(count) {
+                let declarations = (0..count)
+                    .map(|_| {
+                        let id = sequence % 8;
+                        sequence /= 8;
+                        declaration(id)
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(
+                    validate_declaration_ids(&declarations),
+                    reference_validate_declaration_ids(&declarations),
+                );
+            }
+        }
+        let mut sparse = vec![declaration(0), declaration(u32::MAX)];
+        assert_eq!(
+            validate_declaration_ids(&sparse),
+            reference_validate_declaration_ids(&sparse)
+        );
+        sparse[1].id = DimensionParameterId::new(0);
+        assert_eq!(
+            validate_declaration_ids(&sparse),
+            reference_validate_declaration_ids(&sparse)
+        );
+    }
+
+    #[test]
+    fn canonical_environment_matches_ordered_set_reference() {
+        // Repeated roots, mixed explicit/inferred origins, unreachable invalid
+        // bounds, forward references and cycles must retain exact identities
+        // and the original first error, including empty root sets.
+        for seed in 0..16_384_u64 {
+            let mut random = seed + 1;
+            let mut next = || {
+                random = random
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                random >> 32
+            };
+            let count = (next() % 9) as usize;
+            let mut declarations = Vec::new();
+            for index in 0..count {
+                let mut value = declaration(index as u32);
+                if next() % 2 == 0 {
+                    value.origin = DimensionParameterOrigin::Explicit;
+                }
+                let limit = if seed % 2 == 0 { index + 1 } else { count + 2 };
+                if next() % 2 == 0 {
+                    let id = DimensionParameterId::new((next() % limit as u64) as u32);
+                    value.lower_bound = DimensionExpr::Parameter(id);
+                }
+                if next() % 3 == 0 {
+                    value.upper_bound = Some(DimensionExpr::Constant(next() % 100));
+                }
+                if seed % 7 == 0 && next() % 4 == 0 {
+                    value.lifetime = DimensionLifetime::CompileTime;
+                }
+                declarations.push(value);
+            }
+            let roots = (0..next() % 12)
+                .map(|_| DimensionParameterId::new((next() % (count + 1) as u64) as u32))
+                .collect::<Vec<_>>();
+            match (
+                canonicalize_dimension_environment(&declarations, &roots),
+                reference_canonicalize_dimension_environment(&declarations, &roots),
+            ) {
+                (Ok(actual), Ok(expected)) => {
+                    assert_eq!(actual.parameters, expected.parameters, "seed {seed}");
+                    assert_eq!(actual.old_to_new, expected.old_to_new, "seed {seed}");
+                }
+                (Err(actual), Err(expected)) => assert_eq!(actual, expected, "seed {seed}"),
+                _ => panic!("canonicalization result changed at seed {seed}"),
+            }
+        }
+    }
+
+    fn reference_canonicalize_dimension_environment(
+        declarations: &[DimensionParameterDeclaration],
+        root_references: &[DimensionParameterId],
+    ) -> Result<CanonicalDimensionEnvironment, SemanticModelError> {
+        reference_validate_declaration_ids(declarations)?;
+        let count = declarations.len();
+        let mut normalized_bounds = Vec::with_capacity(count);
+        let mut dependencies = Vec::with_capacity(count);
+        for declaration in declarations {
+            if declaration.lifetime == DimensionLifetime::CompileTime {
+                return Err(SemanticModelError::CompileTimeDimensionParameterV1);
+            }
+            let lower = normalize_dimension(&declaration.lower_bound, count)?;
+            let upper = declaration
+                .upper_bound
+                .as_ref()
+                .map(|value| normalize_dimension(value, count))
+                .transpose()?;
+            let mut references = Vec::new();
+            collect_dimension_references(&lower, &mut references);
+            if let Some(upper) = &upper {
+                collect_dimension_references(upper, &mut references);
+            }
+            normalized_bounds.push((lower, upper));
+            dependencies.push(references);
+        }
+        ensure_known_references(root_references, count)?;
+
+        let mut state = vec![0_u8; count];
+        let mut occurrence = Vec::new();
+        for id in root_references {
+            visit_parameter(
+                id.get() as usize,
+                &dependencies,
+                &mut state,
+                &mut occurrence,
+            )?;
+        }
+        let reachable = occurrence.iter().copied().collect::<BTreeSet<_>>();
+        let mut retained = declarations
+            .iter()
+            .enumerate()
+            .filter_map(|(index, declaration)| {
+                (declaration.origin == DimensionParameterOrigin::Explicit
+                    && reachable.contains(&index))
+                .then_some(index)
+            })
+            .collect::<Vec<_>>();
+        for old in occurrence {
+            if declarations[old].origin == DimensionParameterOrigin::Inferred
+                && !retained.contains(&old)
+            {
+                retained.push(old);
+            }
+        }
+
+        let mut old_to_new = vec![None; count];
+        for (new, old) in retained.iter().copied().enumerate() {
+            old_to_new[old] = Some(DimensionParameterId::new(new as u32));
+        }
+        for old in retained.iter().copied() {
+            let parameter = old_to_new[old].expect("retained parameter has an ordinal");
+            for referenced in dependencies[old].iter().copied() {
+                let referenced_new = old_to_new[referenced.get() as usize]
+                    .expect("reachable dependency has an ordinal");
+                if referenced_new.get() >= parameter.get() {
+                    return Err(SemanticModelError::ForwardDimensionParameterReferenceV1 {
+                        parameter,
+                        referenced: referenced_new,
+                    });
+                }
+            }
+        }
+
+        let retained_count = retained.len();
+        let mut parameters = Vec::with_capacity(retained_count);
+        for old in retained {
+            let declaration = &declarations[old];
+            let (normalized_lower, normalized_upper) = &normalized_bounds[old];
+            let lower = rewrite_dimension_references(normalized_lower, &old_to_new)?;
+            let upper = normalized_upper
+                .as_ref()
+                .map(|value| rewrite_dimension_references(value, &old_to_new))
+                .transpose()?;
+            parameters.push(DimensionParameter {
+                lifetime: declaration.lifetime,
+                lower_bound: normalize_dimension(&lower, retained_count)?,
+                upper_bound: upper
+                    .as_ref()
+                    .map(|value| normalize_dimension(value, retained_count))
+                    .transpose()?,
+            });
+        }
+        Ok(CanonicalDimensionEnvironment {
+            parameters: parameters.into_boxed_slice(),
+            old_to_new,
+        })
+    }
+
+    fn reference_validate_declaration_ids(
+        declarations: &[DimensionParameterDeclaration],
+    ) -> Result<(), SemanticModelError> {
+        let mut seen = BTreeSet::new();
+        for (index, declaration) in declarations.iter().enumerate() {
+            if !seen.insert(declaration.id) {
+                return Err(SemanticModelError::DuplicateDimensionParameter { id: declaration.id });
+            }
+            if declaration.id.get() as usize != index {
+                return Err(SemanticModelError::UnknownDimensionParameterV1 { id: declaration.id });
+            }
+        }
+        Ok(())
     }
 }

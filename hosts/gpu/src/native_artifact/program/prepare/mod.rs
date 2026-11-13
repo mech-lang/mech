@@ -145,6 +145,8 @@ pub(in crate::native_artifact) struct PreparedNativeProgram {
     // Never serialized or moved into runtime ProgramMetadata.
     #[cfg(feature = "canonical-native-program")]
     producer_element_reads: std::cell::OnceCell<std::collections::BTreeSet<(usize, u32)>>,
+    #[cfg(feature = "canonical-native-program")]
+    boolean_branch_targets: std::cell::OnceCell<Vec<Option<u32>>>,
 }
 impl PreparedNativeProgram {
     pub(in crate::native_artifact) fn prepare(
@@ -518,6 +520,17 @@ impl PreparedNativeProgram {
             complete_frontiers: line_retention_frontiers.into_boxed_slice(),
             #[cfg(feature = "canonical-native-program")]
             producer_element_reads: std::cell::OnceCell::new(),
+            #[cfg(feature = "canonical-native-program")]
+            boolean_branch_targets: std::cell::OnceCell::new(),
+        })
+    }
+
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn boolean_branch_targets(&self) -> &[Option<u32>] {
+        self.boolean_branch_targets.get_or_init(|| {
+            crate::native_artifact::codegen::common::boolean_branches::derive(
+                crate::native_artifact::codegen::control::plan::CodePlan::Program(self),
+            )
         })
     }
 
