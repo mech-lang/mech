@@ -1,5 +1,32 @@
 # Current compression scoreboard
 
+The compiler prefetches a proved next private table write. The normally linked executable reproduces the measured worker byte for byte and takes **0.992619×** the paired control across all 81 cases. Both 1.05 gates pass throughout.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **58/81 (71.6%)** | 55 |
+| Faster than libdeflate | **27/81 (33.3%)** | 28 |
+| Faster than both | **10/81 (12.3%)** | 11 |
+| Faster than at least one | **75/81 (92.6%)** | 72 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.172535×** | 2.192125× | 0.992786× |
+| Random 65,535 bytes | **0.991931×** | 1.688452× | 0.977117× |
+| Random 65,536 bytes | **0.988731×** | 1.677902× | 0.973130× |
+| Random 65,537 bytes | **0.989788×** | 1.674206× | 0.980264× |
+| Distribution change, 16 KiB | 1.015022× | 1.761947× | 0.983398× |
+| Reymont 16 KiB | 1.045821× | 1.050675× | 0.988761× |
+| Natural 16 KiB | 1.047558× | 1.053377× | 0.992488× |
+| Random 128 KiB | 1.048261× | 1.629751× | 0.972953× |
+| Random 256 KiB | 1.068322× | 1.586215× | 0.970810× |
+| Random 1 MiB | 1.074295× | 1.518749× | 0.970199× |
+| Repeated 32,769 bytes | **0.516725×** | 1.005793× | 1.008418× |
+
+The three random crossings recur in both confirmation cohorts. Repeated 32,769 bytes returns to 0.993915× libdeflate in confirmation. [Compiler qualification](native-private-write-prefetch.md) · [Full measurements and profiles](native-returning-cache-hint-trial.md).
+
+## Forward exhausted reduction entries
+
 The compiler sends a proved zero-trip reduction directly to its existing typed completion. The normally linked executable takes **0.997296×** the paired control across all 81 cases. Both 1.05 gates pass throughout. Held-out mixed crosses below Roc in the full run and confirmation.
 
 | Peer result | Mech wins | Paired control wins |
