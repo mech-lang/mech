@@ -90,6 +90,52 @@ pub(super) fn define<M: Module>(
         no_growth,
         true,
     )?;
+    let pack_halfwords = cfg!(target_arch = "aarch64")
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+        && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
+    if pack_halfwords
+        && !observe
+        && cleanup.enabled
+        && let Some(vectors) = vectors
+        && !vectors.admitted_lengths.is_empty()
+        && private.is_some_and(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let input_word = |word| {
+            let at = packet.binary_search(&word).ok()?;
+            let mut values = loads.iter().filter(|(_, pair)| pair.1 == at);
+            let (&value, _) = values.next()?;
+            values.next().is_none().then_some(value)
+        };
+        let mut floors = BTreeMap::new();
+        for &(array, minimum) in &vectors.admitted_lengths {
+            let view = &proof.arrays[array];
+            if view.width != 2 || !view.writable {
+                continue;
+            }
+            if let (Some(pointer), Some(bytes)) =
+                (input_word(proof.view(array)), minimum.checked_mul(2))
+            {
+                floors.insert(pointer, bytes);
+            }
+        }
+        if !floors.is_empty() {
+            context.flowgraph();
+            let packed = cfg_cleanup::packed_halfword_reads::fold(
+                &mut context.func,
+                &context.cfg,
+                &context.domtree,
+                &floors,
+            );
+            if packed != 0 {
+                context.verify(module.isa()).map_err(backend)?;
+                if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                    eprintln!("{symbol} packed private halfword loads: {packed}");
+                }
+            }
+        }
+    }
     let word_loops = &report;
     let pack_sites = word_loops.read_pack_sites.clone();
     let read_guards = word_loops.proven_scalar_read_guards.clone();
