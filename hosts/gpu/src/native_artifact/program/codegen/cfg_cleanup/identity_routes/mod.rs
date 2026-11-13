@@ -2,6 +2,7 @@
 //! Dominated live-outs gain explicit phis; shared merges conservatively refuse.
 mod route;
 mod values;
+pub(in crate::native_artifact) mod zero_trip;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;

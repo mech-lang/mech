@@ -22,7 +22,7 @@ pub(super) struct Plan {
     pub conditions: usize,
 }
 
-fn pure(f: &Function, block: Block, last: Inst) -> bool {
+pub(super) fn pure(f: &Function, block: Block, last: Inst) -> bool {
     f.layout
         .block_insts(block)
         .take_while(|&i| i != last)

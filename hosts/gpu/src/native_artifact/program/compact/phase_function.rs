@@ -366,6 +366,22 @@ pub(super) fn define<M: Module>(
                     }
                 }
                 let name = format!("{symbol}_composed");
+                if admission.immutable_code_bytes.is_some()
+                    && std::env::var_os("MECH_FORWARD_ZERO_TRIP_REDUCTIONS").is_some()
+                {
+                    candidate.flowgraph();
+                    if cfg_cleanup::identity_routes::zero_trip::fold(
+                        &mut candidate.func,
+                        &candidate.cfg,
+                        &candidate.domtree,
+                    ) {
+                        candidate.flowgraph();
+                        candidate.verify(module.isa()).map_err(backend)?;
+                        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                            eprintln!("{name} forwarded zero-trip reduction");
+                        }
+                    }
+                }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;

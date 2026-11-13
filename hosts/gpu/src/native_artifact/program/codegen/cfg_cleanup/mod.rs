@@ -8,7 +8,7 @@ pub(in crate::native_artifact) mod composed_reads;
 mod current_predicates;
 mod dead_values;
 pub(in crate::native_artifact) mod grouped_histogram;
-mod identity_routes;
+pub(in crate::native_artifact) mod identity_routes;
 mod known_widths;
 mod local_phis;
 pub(in crate::native_artifact) mod packed_halfword_reads;
