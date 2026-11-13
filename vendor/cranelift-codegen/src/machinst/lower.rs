@@ -1224,7 +1224,7 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             "built vcode:\n{:?}Backwards {:?}",
             &self.vregs, &self.vcode.vcode
         );
-        let vcode = self.vcode.build(self.vregs);
+        let vcode = self.vcode.build(self.vregs, &self.flags);
 
         Ok(vcode)
     }

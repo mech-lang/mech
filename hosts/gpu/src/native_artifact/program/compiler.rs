@@ -930,7 +930,7 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
             let native =
                 numeric_minimal::Boundary::new(&mut b, input, output, region, None, None, None)?;
             let report = numeric_compact::emit(
-                &controls, &mut b, code, region, &native, None, None, None, done, error,
+                &controls, &mut b, code, region, &native, None, None, None, done, error, false,
             )?;
             reports.push(report);
             b.switch_to_block(done);

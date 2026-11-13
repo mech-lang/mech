@@ -1,5 +1,29 @@
 # Current compression scoreboard
 
+The composed ordered reduction takes **0.993395×** the paired grouped-histogram control time. Both 1.05 timing gates pass on all 81 cases. The compiler reproduces the measured Object and pinned-runtime executable from both original and decoded artifacts.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **52/81 (64.2%)** |
+| Faster than libdeflate | 16/81 (19.8%) |
+| Faster than both | 7/81 |
+| Faster than either | 61/81 (75.3%) |
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Eight literals | 0.170546× | 2.188515× |
+| Natural 8 KiB | **1.001108×** | 1.245266× |
+| Held-out mixed 131,073 bytes | 1.028083× | 1.192535× |
+| Held-out random 65,537 bytes | 1.030555× | 1.733853× |
+| Natural 256 KiB | 1.148857× | 0.931645× |
+| Repeated 32 KiB | 0.507890× | 0.997728× |
+| Repeated 65,535 bytes | 0.565938× | 0.999640× |
+| Repeated 65,537 bytes | 0.570395× | **1.008592×** |
+
+The matched control wins 52 cases against Roc and 15 against libdeflate. Repeated 32 KiB crosses below libdeflate in the same cohort. Natural 8 KiB is the closest remaining Roc case. [Compiler qualification and timing receipts](native-composed-countdown-qualification.md).
+
+## Grouped histogram comparison
+
 The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
 
 | Peer result | Mech wins |
@@ -21,7 +45,7 @@ The grouped histogram runs in the compact native phase. Its complete 81-case com
 
 The matched control won 47 Roc cases and 17 libdeflate cases. The grouped tally gains five random Roc cases and loses the narrow repeated 65,537-byte libdeflate comparison. [Grouped histogram proof, qualification and complete matched results](native-grouped-histogram-qualification.md).
 
-The subsequent countdown and register-allocation trial takes 0.994941× control across all 81 cases and reaches 1.008016× Roc on natural 8 KiB. It keeps 52 Roc wins and loses one libdeflate win in the matched run. The grouped tally remains the retained build. [Countdown machine code, compilation stages, and matched results](native-reduction-loop-registers-pilot.md).
+The subsequent countdown and register-allocation trial takes 0.994941× control across all 81 cases and reaches 1.008016× Roc on natural 8 KiB. It keeps 52 Roc wins and loses one libdeflate win in the matched run. That trial led to the composed-only selection above. [Countdown machine code, compilation stages, and matched results](native-reduction-loop-registers-pilot.md).
 
 ## Equal join argument comparison
 

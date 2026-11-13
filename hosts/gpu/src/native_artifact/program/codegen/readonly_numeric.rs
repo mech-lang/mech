@@ -1559,6 +1559,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 target(window.header as u32),
                 true,
                 false,
+                false,
             );
         } else {
             terminators::emit_source_terminator(

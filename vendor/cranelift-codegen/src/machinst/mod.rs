@@ -116,6 +116,14 @@ pub trait MachInst: Clone + Debug {
     /// for tail calls that don't return to the caller.
     fn call_type(&self) -> CallType;
 
+    /// Whether the backend requests a local VCode rewrite before allocation.
+    fn preallocation_rewrite_enabled(_flags: &settings::Flags) -> bool {
+        false
+    }
+
+    /// Rewrite a loop block without changing its instruction or successor ranges.
+    fn preallocation_rewrite(_block: &mut [Self], _canonical: impl Fn(Reg) -> Reg) {}
+
     /// Should this instruction's clobber-list be included in the
     /// clobber-set?
     fn is_included_in_clobbers(&self) -> bool;

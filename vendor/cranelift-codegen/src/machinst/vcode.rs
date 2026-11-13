@@ -560,11 +560,34 @@ impl<I: VCodeInst> VCodeBuilder<I> {
     }
 
     /// Build the final VCode.
-    pub fn build(mut self, mut vregs: VRegAllocator<I>) -> VCode<I> {
+    pub fn build(mut self, mut vregs: VRegAllocator<I>, flags: &settings::Flags) -> VCode<I> {
         self.vcode.vreg_types = take(&mut vregs.vreg_types);
 
         if self.direction == VCodeBuildDirection::Backward {
             self.reverse_and_finalize(&vregs);
+        }
+        if I::preallocation_rewrite_enabled(flags)
+            && self.vcode.debug_value_labels.is_empty()
+            && self.vcode.user_stack_maps.is_empty()
+        {
+            for (index, range) in self.vcode.block_ranges.iter() {
+                let block = BlockIndex::new(index);
+                let successors = self.vcode.block_succ_range.get(index);
+                let backedge = self.vcode.block_succs[successors].iter().any(|&edge| {
+                    edge == block
+                        || self.vcode.block_succs[self.vcode.block_succ_range.get(edge.index())]
+                            == [block]
+                });
+                if backedge
+                    && self.vcode.srclocs[range.clone()]
+                        .windows(2)
+                        .all(|locs| locs[0] == locs[1])
+                {
+                    I::preallocation_rewrite(&mut self.vcode.insts[range], |reg| {
+                        Reg::from(vregs.resolve_vreg_alias(reg.into()))
+                    });
+                }
+            }
         }
         self.collect_operands(&vregs);
 
