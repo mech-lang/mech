@@ -51,20 +51,55 @@ The compiler still expires relations on redefinition, keeps copied truths for th
 - Fresh source compilation also reproduces the measured canonical artifact exactly, and decoded re-encoding preserves all 4,138,627 bytes.
 - This is focused compiler qualification plus emitted-image equivalence. The full repository suite and the 81-input compression runtime campaign were not rerun. No new runtime-compression speedup is claimed.
 
+## Integration with later #973 work
+
+The fix is integrated over `eb006ab94e2880fa67ed67821c4da9d1b30601a1`.
+That branch already includes [shared proof states](native-ownership-proof-sharing.md).
+The integrated state retains sharing, copy-on-write updates and cached closure,
+then adds packed Boolean facts, sorted intersections and indexed projection peers.
+All seven existing regression tests remain, including the sibling-path test
+moved into the pure state module. The integrated focused target passes **10 tests**.
+A second differential harness compares 64,000 updates and joins with the exact
+shared-state implementation on that branch, in addition to the original-map oracle.
+
+The earlier 2.78× result uses the pinned `4fff511238` baseline; it does not measure
+an additional 2.78× improvement over the branch's intervening shared-state work.
+The independent timing comparisons are not multiplied.
+
+The integrated compiler's fresh source-to-Object receipt is **171.451 seconds**
+(2m 51s), with the same source, bytecode, Object and metadata hashes as the
+original baseline above. This is a single additional diagnostic compile. The
+outer `/usr/bin/time -lp` wrapper exits 1 after printing real/user/system time
+because macOS denies `sysctl kern.clockrate`; the compiler reaches its final
+receipt and writes every image. The wrapper failure is preserved, and this run
+is not counted as a successful whole-process counter capture. No runtime timing
+campaign was repeated.
+
+The [integration archive receipt](../../benchmarks/mech-deflate/native-profile/compile-time-apple-m3-20261113.integration.archive.json)
+pins the [final images, exact upstream oracle, preserved tests and failure record](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compile-apple-m3-20261113-integration.tar.gz).
+It records production source commit `63bb43573054cf4315a78ef11bd379055970a51e`.
+After fetching and verifying that packet with `experiment.py`, its `replay.py`
+rechecks all image pins and receipts without compiling or compressing. Its
+`generate_equivalence.py` reproduces the archived upstream oracle harness exactly.
+
 ## Reproduction and next work
 
-The [focused profile README](../../benchmarks/mech-deflate/native-profile/README.md#compile-time-profiling) gives build, profiling and test commands. `compile_profile benchmark OUTPUT compact` reconstructs and verifies the exact source locally. Raw captures, phase receipts, all program images, validation logs and source snapshots are sealed with `experiment.py pack` under ignored `benchmarks/mech-deflate/.experiments/compile-time-apple-m3-20261113`. The compact JSON pins the archive and manifest; `experiment.py verify` checks every entry, and the packet includes a compiler-free replay. The archive is local and has not been published to a release. Rust compiler executables stay outside the packet, with their hashes recorded.
+The [focused profile README](../../benchmarks/mech-deflate/native-profile/README.md#compile-time-profiling) gives build, profiling and test commands. `compile_profile benchmark OUTPUT compact` reconstructs and verifies the exact source locally. Raw captures, phase receipts, all program images, validation logs and source snapshots are sealed with `experiment.py pack` and [published to the evidence release](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compile-apple-m3-20261113.tar.gz). The compact JSON pins the archive and manifest; `experiment.py verify` checks every entry, and the packet includes a compiler-free replay. Rust compiler executables stay outside the packet, with their hashes recorded.
 
 Preparation/liveness, checked source compilation and parsing remain substantial. The next bounded study should isolate `phase_numeric::exits::live_query` and repeated same-context graph queries, retaining exact root, stop and predicate contexts. The frontend's allocation/definition work and parser need their own phase-specific study. Overall compile time and peak RSS remain usability costs.
 
 Archive verification checks **309 files / 39,670,749 uncompressed bytes** against
 all SHA-256 and Git blob hashes. The extracted compiler-free replay reproduces
 the exact comparison and all before/after image checks. The [archive receipt](../../benchmarks/mech-deflate/native-profile/compile-time-apple-m3-20261113.archive.json)
-pins the local 7,429,089-byte packet.
+pins the 7,429,089-byte published packet. An independent download passes all
+archive, manifest and entry checks.
 
 ```sh
+python3 benchmarks/mech-deflate/experiment.py fetch \
+  --receipt benchmarks/mech-deflate/native-profile/compile-time-apple-m3-20261113.archive.json \
+  --output /tmp/level12-compile-download
 python3 benchmarks/mech-deflate/experiment.py verify \
-  benchmarks/mech-deflate/.experiments/compile-time-apple-m3-20261113/level12-compile-apple-m3-20261113.tar.gz \
+  /tmp/level12-compile-download/level12-compile-apple-m3-20261113.tar.gz \
   --receipt benchmarks/mech-deflate/native-profile/compile-time-apple-m3-20261113.archive.json \
   --extract /tmp/level12-compile-replay
 python3 /tmp/level12-compile-replay/replay.py
