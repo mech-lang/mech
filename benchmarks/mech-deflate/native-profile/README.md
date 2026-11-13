@@ -80,15 +80,16 @@ API, while `frontend` stops after canonical encoding. These modes have different
 compilation boundaries; do not pool their timings. Rust tool builds and linking
 a generated host application are separate from every measured source compile.
 
-The pure guard dataflow state has a focused test target. It compares updates and
-joins against the original analysis, including contradictory paths, tuple
-projections, redefinition, shared-state independence and packed word boundaries:
+The pure guard state and numeric liveness solver have focused test targets. They
+compare against the original analyses and independent read-before-definition
+paths, including contradictory guards, joins, redefinition, cycles, sparse IDs,
+shared-state independence and packed word boundaries:
 
 ```sh
 CARGO_TARGET_DIR=/tmp/mech-native-profile-target CARGO_INCREMENTAL=0 \
   cargo test --locked --offline --release \
   --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml \
-  --test guard_state
+  --test guard_state --test numeric_liveness
 ```
 
 The [Apple M3 compile-time report](../../../docs/design/native-compile-time-profile.md)

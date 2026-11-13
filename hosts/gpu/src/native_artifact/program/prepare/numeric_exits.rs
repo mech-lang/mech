@@ -204,62 +204,11 @@ fn live_query(
             }
         }
     }
-    let (mut live, _, _) = solve_liveness(&next, &reads, &definitions);
-    Ok(live.remove(&start).unwrap())
+    Ok(liveness::live_before(&next, &reads, &definitions, start))
 }
 
-fn solve_liveness(
-    next: &BTreeMap<usize, Vec<usize>>,
-    reads: &BTreeMap<usize, BTreeSet<u32>>,
-    definitions: &BTreeMap<usize, BTreeSet<u32>>,
-) -> (BTreeMap<usize, BTreeSet<u32>>, usize, usize) {
-    // Seed each local read, then propagate only newly live facts through the
-    // same graph. Definitions kill incoming successor facts, never local reads.
-    let mut live = reads.clone();
-    let mut differences = reads.clone();
-    let mut predecessors = next
-        .keys()
-        .map(|&site| (site, Vec::new()))
-        .collect::<BTreeMap<_, _>>();
-    for (&site, successors) in next {
-        for successor in successors {
-            predecessors.get_mut(successor).unwrap().push(site);
-        }
-    }
-    let mut queued = next.keys().copied().collect::<BTreeSet<_>>();
-    let mut pending = next
-        .keys()
-        .rev()
-        .copied()
-        .collect::<std::collections::VecDeque<_>>();
-    let mut visits = 0usize;
-    let mut propagated_facts = 0usize;
-    while let Some(site) = pending.pop_front() {
-        queued.remove(&site);
-        visits = visits.saturating_add(1);
-        let values = std::mem::take(differences.get_mut(&site).unwrap());
-        propagated_facts = propagated_facts.saturating_add(values.len());
-        for &predecessor in &predecessors[&site] {
-            let kills = definitions.get(&predecessor);
-            let destination = live.get_mut(&predecessor).unwrap();
-            let mut changed = false;
-            for &value in &values {
-                if !kills.is_some_and(|kills| kills.contains(&value)) && destination.insert(value) {
-                    differences.get_mut(&predecessor).unwrap().insert(value);
-                    changed = true;
-                }
-            }
-            if changed && queued.insert(predecessor) {
-                pending.push_back(predecessor);
-            }
-        }
-    }
-    (live, visits, propagated_facts)
-}
-
-#[cfg(test)]
-#[path = "numeric_liveness_tests.rs"]
-mod liveness_tests;
+#[path = "numeric_liveness.rs"]
+mod liveness;
 
 pub(super) fn derive(
     plan: &Plan,

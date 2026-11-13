@@ -65,3 +65,7 @@ path = "compile_profile.rs"
 [[test]]
 name = "guard_state"
 path = "guard_state_tests.rs"
+
+[[test]]
+name = "numeric_liveness"
+path = "numeric_liveness_tests.rs"
