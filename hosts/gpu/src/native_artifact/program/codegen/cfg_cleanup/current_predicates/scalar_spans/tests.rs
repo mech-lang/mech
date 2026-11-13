@@ -1,6 +1,6 @@
 use crate::native_artifact::codegen::options::{CompilationControls, OptimizationOptions};
 use crate::native_artifact::program::codegen::cfg_cleanup::{
-    prove_scalar_spans, reuse_selected_read_bounds,
+    prove_packed_bases, prove_scalar_spans, reuse_selected_read_bounds,
 };
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
@@ -195,6 +195,149 @@ fn scalar_spans_keep_the_zero_default_when_the_proof_is_missing() {
                 };
                 assert_eq!(want, got, "{shape:?}");
             }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PackedSpan {
+    Exact,
+    Bypass,
+    Wrapping,
+    Short,
+    OtherLength,
+    NextPosition,
+}
+
+type PackedEntry = unsafe extern "C" fn(*const u8, u64, u64, u64, u64, u64) -> u64;
+
+fn compile_packed_span(
+    shape: PackedSpan,
+    optimize: bool,
+) -> (cranelift_jit::JITModule, PackedEntry) {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64); 6];
+    context.func.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut fb = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
+    let entry = b.create_block();
+    let extent_check = b.create_block();
+    let add = b.create_block();
+    let length_check = b.create_block();
+    let packed_check = b.create_block();
+    let read = b.create_block();
+    let default = b.create_block();
+    let rejected = b.create_block();
+    b.append_block_params_for_function_params(entry);
+    b.switch_to_block(entry);
+    let [input, base, extent, length, other, bypass] = b.block_params(entry).try_into().unwrap();
+    let read_length = if shape == PackedSpan::OtherLength {
+        other
+    } else {
+        length
+    };
+    let enough = b
+        .ins()
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, read_length, 3);
+    let available = b.ins().iadd_imm(read_length, -3);
+    let zero = b.ins().iconst(types::I64, 0);
+    let limit = b.ins().select(enough, available, zero);
+    if shape == PackedSpan::Bypass {
+        b.ins().brif(bypass, packed_check, &[], extent_check, &[]);
+    } else {
+        b.ins().jump(extent_check, &[]);
+    }
+    b.switch_to_block(extent_check);
+    let minimum = b
+        .ins()
+        .iconst(types::I64, if shape == PackedSpan::Short { 3 } else { 4 });
+    let wide = b
+        .ins()
+        .icmp(IntCC::UnsignedGreaterThanOrEqual, extent, minimum);
+    b.ins().brif(wide, add, &[], rejected, &[]);
+    b.switch_to_block(add);
+    let end = b.ins().iadd(base, extent);
+    if shape == PackedSpan::Wrapping {
+        b.ins().jump(length_check, &[]);
+    } else {
+        let nonwrapping = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, end, base);
+        b.ins().brif(nonwrapping, length_check, &[], rejected, &[]);
+    }
+    b.switch_to_block(length_check);
+    let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
+    b.ins().brif(fits, packed_check, &[], rejected, &[]);
+    b.switch_to_block(packed_check);
+    let start = if shape == PackedSpan::NextPosition {
+        b.ins().iadd_imm(base, 1)
+    } else {
+        base
+    };
+    let fits = b.ins().icmp(IntCC::UnsignedLessThan, start, limit);
+    b.ins().brif(fits, read, &[], default, &[]);
+    b.switch_to_block(read);
+    let address = b.ins().iadd(input, start);
+    let result = b.ins().uload32(MemFlags::new(), address, 0);
+    b.ins().return_(&[result]);
+    b.switch_to_block(default);
+    b.ins().return_(&[zero]);
+    b.switch_to_block(rejected);
+    let rejected_value = b.ins().iconst(types::I64, -1);
+    b.ins().return_(&[rejected_value]);
+    b.seal_all_blocks();
+    b.finalize();
+    if optimize {
+        let controls = CompilationControls::new(OptimizationOptions::default());
+        assert_eq!(
+            prove_packed_bases(&controls, &mut context, module.isa()).unwrap(),
+            usize::from(shape == PackedSpan::Exact),
+            "{shape:?}"
+        );
+    }
+    context.verify(module.isa()).unwrap();
+    let id = module
+        .declare_function("packed_base_span", Linkage::Local, &context.func.signature)
+        .unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    let call = unsafe {
+        core::mem::transmute::<*const u8, PackedEntry>(module.get_finalized_function(id))
+    };
+    (module, call)
+}
+
+#[test]
+fn checked_extent_proves_only_its_current_packed_base() {
+    let input = [2u8, 4, 9, 13, 17, 29, 33, 41];
+    for shape in [
+        PackedSpan::Exact,
+        PackedSpan::Bypass,
+        PackedSpan::Wrapping,
+        PackedSpan::Short,
+        PackedSpan::OtherLength,
+        PackedSpan::NextPosition,
+    ] {
+        let (_before, baseline) = compile_packed_span(shape, false);
+        let (_after, optimized) = compile_packed_span(shape, true);
+        for (base, extent, length, other, bypass) in [
+            (0, 4, 4, 4, 0),
+            (4, 4, 8, 3, 0),
+            (5, 3, 8, 8, 0),
+            (5, 4, 8, 8, 0),
+            (4, 4, 8, 8, 0),
+            (0, 5, 8, 0, 1),
+            (5, 2, 8, 8, 1),
+            (u64::MAX, 4, 8, 8, 0),
+            (0, 4, 0, 8, 0),
+        ] {
+            let ptr = input.as_ptr();
+            // Each selected access has a complete four-byte window in input.
+            let expected = unsafe { baseline(ptr, base, extent, length, other, bypass) };
+            let actual = unsafe { optimized(ptr, base, extent, length, other, bypass) };
+            assert_eq!(expected, actual, "{shape:?}, {base}, {extent}, {length}");
         }
     }
 }

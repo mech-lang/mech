@@ -821,6 +821,15 @@ fn optimize_phase(
     }
     if private.is_some()
         && vectors.is_some()
+        && std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS").is_some()
+    {
+        let proved = cfg_cleanup::prove_packed_bases(controls, context, isa)?;
+        if proved != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} proved packed base spans: {proved}");
+        }
+    }
+    if private.is_some()
+        && vectors.is_some()
         && std::env::var_os("MECH_REUSE_SELECTED_READ_BOUND").is_some()
     {
         let changed = cfg_cleanup::reuse_selected_read_bounds(controls, context, isa)?;
