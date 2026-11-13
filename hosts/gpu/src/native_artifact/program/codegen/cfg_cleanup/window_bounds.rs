@@ -316,6 +316,35 @@ fn limit(f: &mut Function, length: Value, width: u64) -> Value {
     cursor.ins().select(enough, end, zero)
 }
 
+pub(super) fn shared_limit(f: &Function, value: Value) -> Option<(Value, u64)> {
+    let ValueDef::Result(select, 0) = f.dfg.value_def(f.dfg.resolve_aliases(value)) else {
+        return None;
+    };
+    let Data::Ternary {
+        opcode: Opcode::Select,
+        args: [enough, end, zero],
+    } = f.dfg.insts[select]
+    else {
+        return None;
+    };
+    let (length, delta) = length_test(f, enough)?;
+    let ValueDef::Result(subtract, 0) = f.dfg.value_def(f.dfg.resolve_aliases(end)) else {
+        return None;
+    };
+    let Data::BinaryImm64 {
+        opcode: Opcode::IaddImm,
+        arg,
+        imm,
+    } = f.dfg.insts[subtract]
+    else {
+        return None;
+    };
+    (f.dfg.resolve_aliases(arg) == length
+        && imm.bits() as u64 == delta.wrapping_neg()
+        && literal(f, zero) == Some(0))
+    .then_some((length, delta.checked_add(1)?))
+}
+
 pub(super) fn combine(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> usize {
     let mut groups: BTreeMap<_, Vec<Window>> = BTreeMap::new();
     let mut used = BTreeSet::new();
