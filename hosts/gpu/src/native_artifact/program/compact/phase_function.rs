@@ -93,7 +93,8 @@ pub(super) fn define<M: Module>(
     let pack_halfwords = cfg!(target_arch = "aarch64")
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
         && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
-    if pack_halfwords
+    let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
+    if (pack_halfwords || reuse_lengths)
         && !observe
         && cleanup.enabled
         && let Some(vectors) = vectors
@@ -108,30 +109,51 @@ pub(super) fn define<M: Module>(
             let (&value, _) = values.next()?;
             values.next().is_none().then_some(value)
         };
-        let mut floors = BTreeMap::new();
-        for &(array, minimum) in &vectors.admitted_lengths {
-            let view = &proof.arrays[array];
-            if view.width != 2 || !view.writable {
-                continue;
+        if pack_halfwords {
+            let mut floors = BTreeMap::new();
+            for &(array, minimum) in &vectors.admitted_lengths {
+                let view = &proof.arrays[array];
+                if view.width != 2 || !view.writable {
+                    continue;
+                }
+                if let (Some(pointer), Some(bytes)) =
+                    (input_word(proof.view(array)), minimum.checked_mul(2))
+                {
+                    floors.insert(pointer, bytes);
+                }
             }
-            if let (Some(pointer), Some(bytes)) =
-                (input_word(proof.view(array)), minimum.checked_mul(2))
-            {
-                floors.insert(pointer, bytes);
+            if !floors.is_empty() {
+                context.flowgraph();
+                let packed = cfg_cleanup::packed_halfword_reads::fold(
+                    &mut context.func,
+                    &context.cfg,
+                    &context.domtree,
+                    &floors,
+                );
+                if packed != 0 {
+                    context.verify(module.isa()).map_err(backend)?;
+                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                        eprintln!("{symbol} packed private halfword loads: {packed}");
+                    }
+                }
             }
         }
-        if !floors.is_empty() {
-            context.flowgraph();
-            let packed = cfg_cleanup::packed_halfword_reads::fold(
-                &mut context.func,
-                &context.cfg,
-                &context.domtree,
-                &floors,
-            );
-            if packed != 0 {
-                context.verify(module.isa()).map_err(backend)?;
-                if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-                    eprintln!("{symbol} packed private halfword loads: {packed}");
+        if reuse_lengths {
+            let floors: BTreeMap<_, _> = vectors
+                .admitted_lengths
+                .iter()
+                .filter_map(|&(array, minimum)| {
+                    input_word(proof.view(array) + 1).map(|length| (length, minimum))
+                })
+                .collect();
+            if !floors.is_empty() {
+                let folded = cfg_cleanup::admitted_lengths::fold(&mut context.func, &floors);
+                if folded != 0 {
+                    context.flowgraph();
+                    context.verify(module.isa()).map_err(backend)?;
+                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                        eprintln!("{symbol} reused admitted view lengths: {folded}");
+                    }
                 }
             }
         }
