@@ -74,7 +74,7 @@ struct VectorAlternative {
 // Only the compact caller can construct this contract. Its current owner
 // must pass the existing uniqueness gate before the additional capacity gate.
 pub(in crate::native_artifact) struct NoGrowth {
-    array: usize,
+    pub(super) array: usize,
     countdown: usize,
 }
 impl NoGrowth {

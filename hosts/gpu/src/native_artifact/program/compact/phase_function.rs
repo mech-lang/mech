@@ -406,6 +406,7 @@ pub(super) fn define<M: Module>(
                 dense_tables,
                 &capture,
             )? {
+                let mut composed_header = capture.header;
                 // Select the countdown only for this independently admitted
                 // immutable lookup variant. Re-emit from the same numeric
                 // proof and verify its own composition before substitution.
@@ -444,6 +445,7 @@ pub(super) fn define<M: Module>(
                             &fast_capture,
                         )? && fast_admission == admission
                         {
+                            composed_header = fast_capture.header;
                             candidate = fast;
                         }
                     }
@@ -463,6 +465,35 @@ pub(super) fn define<M: Module>(
                         if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                             eprintln!("{name} forwarded zero-trip reduction");
                         }
+                    }
+                }
+                if admission.immutable_code_bytes.is_some()
+                    && module.isa().name() == "aarch64"
+                    && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+                    && std::env::var_os("MECH_NORMALIZE_DEFAULTED_READ_SETUP").is_some()
+                    && proof.arrays[contract.array].width == 8
+                    && let Some(output_base) = word_at(proof.view(contract.array))
+                    && let Some(loads) =
+                        phase_storage::input_word_loads(&candidate.func, input_words)
+                {
+                    candidate.flowgraph();
+                    let capture = Capture {
+                        packet_loads: &loads,
+                        header: composed_header,
+                        ..capture
+                    };
+                    let changes = cfg_cleanup::defaulted_read_setup::optimize(
+                        &mut candidate.func,
+                        &candidate.cfg,
+                        &candidate.domtree,
+                        &capture,
+                        admission.cursor_word,
+                        output_base,
+                    );
+                    candidate.flowgraph();
+                    candidate.verify(module.isa()).map_err(backend)?;
+                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                        eprintln!("{name} defaulted read setup: {changes:?}");
                     }
                 }
                 let id = module
