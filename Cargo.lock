@@ -800,8 +800,6 @@ dependencies = [
 [[package]]
 name = "cranelift-codegen-meta"
 version = "0.131.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3063e5363dc5ee6ee8edd930314582c08eb91c209b9564da1cd667f6424b9b3"
 dependencies = [
  "cranelift-assembler-x64-meta",
  "cranelift-codegen-shared",

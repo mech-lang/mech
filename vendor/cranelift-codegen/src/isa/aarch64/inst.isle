@@ -335,6 +335,9 @@
        ;; ish".  This instruction is sequentially consistent.
        (Fence)
 
+       ;; L1 cache hint for a future store.
+       (PrefetchWrite (rn Reg))
+
        ;; Consumption of speculative data barrier.
        (Csdb)
 

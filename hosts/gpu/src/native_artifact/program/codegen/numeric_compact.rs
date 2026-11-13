@@ -44,6 +44,8 @@ pub(in crate::native_artifact) struct Report {
     pub proven_scalar_arithmetic: Vec<usize>,
     pub proven_changed_writes: Vec<(usize, usize, u32, u32, u8)>,
     pub private_write_sites: Vec<(usize, usize, u8)>,
+    #[serde(skip)]
+    pub prefetch_writes: Vec<super::cfg_cleanup::future_store::Write>,
     pub guarded_loop_windows: Vec<super::numeric_loop_windows::Report>,
     #[serde(skip)]
     pub compact_word_loops: Vec<super::wide_equal::Certificate>,
@@ -165,6 +167,9 @@ pub(in crate::native_artifact) fn emit(
     });
     let phase_entry_bounds =
         super::numeric_phase_bounds::derive(code, proof, &versions, &initial, terminal_fallbacks);
+    let collect_prefetch = vectors.is_some()
+        && private.is_some_and(|contract| contract.permits(proof))
+        && std::env::var_os("MECH_PREFETCH_PRIVATE_WRITES").is_some();
     let mut phase_indices = super::numeric_phase_bounds::Indices::new(code);
     let mut traversal = if phase_entry_bounds.is_empty() {
         initial
@@ -205,6 +210,7 @@ pub(in crate::native_artifact) fn emit(
         proven_scalar_arithmetic: Vec::new(),
         proven_changed_writes: Vec::new(),
         private_write_sites: Vec::new(),
+        prefetch_writes: Vec::new(),
         guarded_loop_windows: versions.iter().map(|v| v.report(proof)).collect(),
         compact_word_loops: {
             versions
@@ -625,7 +631,17 @@ pub(in crate::native_artifact) fn emit(
                         } else {
                             incoming
                         };
-                        b.ins().store(MemFlags::new(), narrowed, address, 0);
+                        let store = b.ins().store(MemFlags::new(), narrowed, address, 0);
+                        if collect_prefetch && !proof.arrays[*array].appends {
+                            report
+                                .prefetch_writes
+                                .push(super::cfg_cleanup::future_store::Write {
+                                    store,
+                                    array: *array,
+                                    site,
+                                    width,
+                                });
+                        }
                         b.ins().jump(done, &[]);
                         b.switch_to_block(done);
                         report.private_write_sites.push((site, *array, width));

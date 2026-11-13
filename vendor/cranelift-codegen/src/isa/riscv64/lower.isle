@@ -4,6 +4,9 @@
 ;; register(s) within which the lowered instruction's result values live.
 (decl partial lower (Inst) InstOutput)
 
+;; This target does not use the optional write cache hint.
+(rule (lower (prefetch_write _)) (output_none))
+
 ;;;; Rules for `iconst` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (rule (lower (has_type ty (iconst _ (u64_from_imm64 n))))
