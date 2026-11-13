@@ -1,5 +1,28 @@
 # Current compression scoreboard
 
+The compiler pairs two proved empty append visits in the sparse parser. The first and repeat full matrices take **0.979019×** and **0.980157×** paired control. Both 1.05 gates pass on all 81 cases in both runs.
+
+| Peer result | Mech wins, first full | Full repeat | Previous published |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **62/81 (76.5%)** | 62 | 59 |
+| Faster than libdeflate | **33/81 (40.7%)** | 32 | 29 |
+| Faster than both | **16/81 (19.8%)** | 16 | 12 |
+| Faster than at least one | **79/81 (97.5%)** | 78 | 76 |
+
+| Input | First full / Roc | Full repeat / Roc | First / libdeflate | Full repeat / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| Eight literals | 0.159891× | 0.161206× | 2.045681× | 2.060078× |
+| Random 128 KiB | 0.966177× | 0.965980× | 1.501933× | 1.502023× |
+| Random 256 KiB | 0.984984× | 0.989045× | 1.469998× | 1.469216× |
+| Random 1 MiB | 0.988962× | 0.987815× | 1.397278× | 1.397416× |
+| Natural 16 KiB | 1.033878× | 1.035183× | 1.042094× | 1.042788× |
+| Reymont 16 KiB | 1.038522× | 1.029408× | 1.045745× | 1.039911× |
+| Reymont 32,769 bytes | 1.065094× | 1.095294× | 0.968197× | 1.063610× |
+
+The two 16 KiB cases use identical input bytes and remain above both peers. Reymont 32,769 bytes returns to 0.971485× libdeflate in the focused repeat. [Machine code, both full matrices, adverse repeat and qualification](native-sparse-append-pairs-qualification.md).
+
+## Reuse the checked input extent
+
 The matcher reuses the checked input extent to remove one packed-read comparison. Its first and repeat 81-case matrices take **0.998878×** and **0.998260×** paired control. Both 1.05 gates pass throughout. The repeat has 76 cases faster than at least one peer.
 
 | Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
