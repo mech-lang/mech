@@ -698,6 +698,10 @@ fn optimize_phase(
             word_loops.machine_header,
             std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
                 .map(|value| (input_words, value == "all")),
+            report_diagnostics
+                && isa.name() == "aarch64"
+                && isa.endianness() == cranelift_codegen::ir::Endianness::Little
+                && std::env::var_os("MECH_PAIR_CHECKED_APPENDS").is_some(),
         );
         if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} checked append run: {outcome:?}");

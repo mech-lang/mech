@@ -7,25 +7,25 @@ use cranelift_codegen::ir::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
-struct Walk<'a> {
-    function: &'a Function,
-    aliases: BTreeMap<Value, Value>,
+pub(super) struct Walk<'a> {
+    pub(super) function: &'a Function,
+    pub(super) aliases: BTreeMap<Value, Value>,
 }
 
 impl Walk<'_> {
-    fn value(&self, value: Value) -> Value {
+    pub(super) fn value(&self, value: Value) -> Value {
         let value = self.function.dfg.resolve_aliases(value);
         self.aliases.get(&value).copied().unwrap_or(value)
     }
 
-    fn result(&self, value: Value) -> Option<&Data> {
+    pub(super) fn result(&self, value: Value) -> Option<&Data> {
         let ValueDef::Result(inst, _) = self.function.dfg.value_def(self.value(value)) else {
             return None;
         };
         Some(&self.function.dfg.insts[inst])
     }
 
-    fn word(&self, value: Value) -> Word {
+    pub(super) fn word(&self, value: Value) -> Word {
         let value = self.value(value);
         match self.result(value) {
             Some(Data::UnaryImm {
@@ -36,7 +36,7 @@ impl Walk<'_> {
         }
     }
 
-    fn pair(&self, value: Value, opcode: Opcode) -> Option<[Value; 2]> {
+    pub(super) fn pair(&self, value: Value, opcode: Opcode) -> Option<[Value; 2]> {
         let Data::Binary { opcode: op, args } = self.result(value)? else {
             return None;
         };
@@ -118,7 +118,7 @@ impl Walk<'_> {
         Some((Compare::new(cc, left, right), None))
     }
 
-    fn addend(&self, value: Value) -> (Value, i64) {
+    pub(super) fn addend(&self, value: Value) -> (Value, i64) {
         self.addend_with_zero(value, None)
     }
 
@@ -155,6 +155,14 @@ impl Walk<'_> {
     }
 
     fn vector_address(&self, address: Value) -> Option<(Value, Value, i64)> {
+        self.scaled_address(address, 8)
+    }
+
+    pub(super) fn scaled_address(
+        &self,
+        address: Value,
+        stride: i64,
+    ) -> Option<(Value, Value, i64)> {
         let [left, right] = self.pair(address, Opcode::Iadd)?;
         for (base, scaled) in [(left, right), (right, left)] {
             if let Some(Data::BinaryImm64 {
@@ -163,7 +171,7 @@ impl Walk<'_> {
                 imm,
             }) = self.result(scaled)
             {
-                if i64::from(*imm) == 8 {
+                if i64::from(*imm) == stride {
                     let (index, delta) = self.addend(*arg);
                     return Some((base, index, delta));
                 }
@@ -662,7 +670,7 @@ mod tests {
         ExtraAfter,
     }
 
-    type Outcome = Result<(usize, usize, usize), &'static str>;
+    type Outcome = Result<(usize, usize, usize, bool), &'static str>;
     type ClonedRead = (Opcode, MemFlags, i32, Type);
 
     // A checked append recurrence fed by the shared physical-word loader.
@@ -751,7 +759,7 @@ mod tests {
             .blocks()
             .flat_map(|block| context.func.layout.block_insts(block))
             .collect::<BTreeSet<_>>();
-        let result = super::super::optimize(&mut context, header, None);
+        let result = super::super::optimize(&mut context, header, None, true);
         let settings =
             cranelift_codegen::settings::Flags::new(cranelift_codegen::settings::builder());
         context.verify(&settings).unwrap();
@@ -785,8 +793,8 @@ mod tests {
     #[test]
     fn fused_cache_reads_clone_in_order_without_changing_width_or_flags() {
         let (result, cloned) = witness(Reads::Fused);
-        assert_eq!(witness(Reads::Plain).0, Ok((4, 0, 0)));
-        assert_eq!(result, Ok((4, 0, 0)));
+        assert_eq!(witness(Reads::Plain).0, Ok((4, 0, 0, false)));
+        assert_eq!(result, Ok((4, 0, 0, false)));
         let flags = MemFlags::new().with_endianness(Endianness::Little);
         assert_eq!(
             cloned,
