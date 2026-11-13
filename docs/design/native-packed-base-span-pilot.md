@@ -11,7 +11,7 @@ The prototype verifies the three dominating selections in the actual emitted CFG
 | Current-position read | 9,936 | 405 | 0.996489× | 1.008104× |
 | Both reads | 9,916 | 413 | 0.995707× | 1.009306× |
 
-The current-position variant has the better random frontier and repeats the improvement in the eight-case confirmation. It improves random 128 KiB by 0.79%, random 256 KiB by 0.63%, and random 1 MiB by 0.82%. Both 16 KiB text cases improve by about 0.5%. Eight literals slow to 1.033030× their paired control in confirmation and remain 0.166389× Roc. Every screen and confirmation case passes both 1.05 gates. The retained score remains 59/81 against Roc and 76/81 against at least one peer pending the compiler-generated comparison.
+The current-position variant has the better random frontier and repeats the improvement in the eight-case confirmation. It improves random 128 KiB by 0.79%, random 256 KiB by 0.63%, and random 1 MiB by 0.82%. Both 16 KiB text cases improve by about 0.5%. Eight literals slow to 1.033030× their paired control in confirmation and remain 0.166389× Roc. Every screen and confirmation case passes both 1.05 gates. [Compiler-generated comparison](native-packed-base-span-qualification.md).
 
 | Confirmation input | Candidate / Roc | Candidate / libdeflate | Candidate / control |
 | --- | ---: | ---: | ---: |
