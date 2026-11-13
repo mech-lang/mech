@@ -2,6 +2,7 @@
 //! with no path to control or effects before the single backend data pass.
 //! Trapping loads, source failures and work debits retain their ordering.
 mod adjacent_addresses;
+pub(in crate::native_artifact) mod admitted_lengths;
 mod boolean_words;
 pub(in crate::native_artifact) mod composed_reads;
 mod current_predicates;
