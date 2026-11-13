@@ -1,5 +1,28 @@
 # Current compression scoreboard
 
+The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **52/81 (64.2%)** |
+| Faster than libdeflate | 16/81 (19.8%) |
+| Faster than both | 7/81 |
+| Faster than either | 61/81 (75.3%) |
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Eight literals | 0.175010× | 2.174522× |
+| Natural 8 KiB | 1.028615× | 1.278145× |
+| Held-out random 65,537 bytes | 1.029302× | 1.741928× |
+| Natural 256 KiB | 1.170262× | 0.949264× |
+| Random 1 MiB | 1.165518× | 1.650990× |
+| Repeated 65,537 bytes | 0.567892× | 1.002452× |
+| Periodic 1 MiB | 0.579914× | 0.984346× |
+
+The matched control won 47 Roc cases and 17 libdeflate cases. The grouped tally gains five random Roc cases and loses the narrow repeated 65,537-byte libdeflate comparison. [Grouped histogram proof, qualification and complete matched results](native-grouped-histogram-qualification.md).
+
+## Equal join argument comparison
+
 The branch cleanup after equal join arguments was qualified on top of the reverse cursor. The complete 81-case comparison takes **0.994529×** the paired control time.
 
 | Peer result | Mech wins |

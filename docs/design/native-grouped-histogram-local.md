@@ -1,5 +1,7 @@
 # Grouped histogram dispatch inside the phase
 
+This report records the original descriptor and placement cohorts. The subsequent [shared-descriptor qualification](native-grouped-histogram-qualification.md) isolates the startup effect and verifies the retained compiler patch.
+
 The phase-local variant preserves the [first pilot’s](native-grouped-histogram-pilot.md) random-input gain. Its default link misses the empty-input timing gate. The independently relinked control also misses the stored-case block gates. The equal-join compiler remains the retained build.
 
 | Default link input | Candidate / control | Candidate / Roc | Candidate / libdeflate |
