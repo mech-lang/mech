@@ -102,3 +102,5 @@ archived under ignored `.experiments/`; only its compact receipt belongs in sour
 The [sub-minute follow-up](../../../docs/design/native-compile-under-minute-profile.md)
 records the guard/ownership and preparation optimizations, two fresh compiles of
 the current qualified worker, unchanged native output and offline replay.
+
+The [canonical parser profile](../../../docs/design/native-parser-compile-profile.md) records the grammar-preserving parser speedup and the fresh pinned C/Roc comparison.
