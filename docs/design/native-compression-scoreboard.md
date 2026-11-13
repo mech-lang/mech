@@ -1,5 +1,33 @@
 # Current compression scoreboard
 
+The compiler short-circuits a branch-only chain of integer comparisons after its shared stop decision. The normally linked executable takes **0.997813×** the paired control across all 81 cases. Both 1.05 gates pass throughout. The original and decoded compiler paths reproduce the exact timed Object and executable.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **54/81 (66.7%)** | 53 |
+| Faster than libdeflate | **28/81 (34.6%)** | 28 |
+| Faster than both | **11/81 (13.6%)** | 11 |
+| Faster than at least one | **71/81 (87.7%)** | 70 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.171109×** | 2.178995× | 0.999990× |
+| Natural 8 KiB | **0.988609×** | 1.226353× | 1.003307× |
+| Natural 32,769 bytes | 1.099334× | **0.998754×** | 1.001062× |
+| Natural 33,027 bytes | 1.102226× | **0.997193×** | 1.000067× |
+| Held-out window, 32,767 bytes | 1.092552× | **0.996566×** | 0.998231× |
+| Held-out random, 65,537 bytes | **0.992046×** | 1.678024× | 0.980329× |
+| Held-out mixed, 131,073 bytes | 1.003434× | 1.163015× | 0.991590× |
+| Random 65,535 bytes | 1.011493× | 1.715026× | 0.974803× |
+| Random 65,536 bytes | 1.014891× | 1.721789× | 0.977485× |
+| Random 65,537 bytes | 1.012785× | 1.718556× | 0.979249× |
+| Random 1 MiB | 1.106722× | 1.564527× | 0.969906× |
+| Periodic 256 KiB | **0.553947×** | **0.978766×** | 0.998744× |
+
+Held-out random repeats at 0.989139× Roc. Natural 33,027 bytes repeats at 0.999341× libdeflate. Held-out mixed is 1.000604× Roc in confirmation. The fresh paired comparison adds one case against Roc and against either peer. The preceding published count of cases faster than both was 12/81. The fresh control and candidate each have 11/81. [Benchmark and compiler qualification](native-comparison-branch-qualification.md).
+
+## Shared clamp decisions and buffer views
+
 The compiler reuses the fixed view length admitted by the caller, combines adjacent private halfword reads, and shares the decision for two successive clamps. The normally linked executable takes **0.992946×** the paired control across all 81 cases. Both 1.05 gates pass throughout. Source and decoded bytecode reproduce the timed Object and worker.
 
 | Peer result | Mech wins | Paired control wins |
