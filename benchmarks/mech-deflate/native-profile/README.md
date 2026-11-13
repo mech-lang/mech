@@ -104,3 +104,5 @@ records the guard/ownership and preparation optimizations, two fresh compiles of
 the current qualified worker, unchanged native output and offline replay.
 
 The [canonical parser profile](../../../docs/design/native-parser-compile-profile.md) records the grammar-preserving parser speedup and the fresh pinned C/Roc comparison.
+
+The [parser execution-work follow-up](../../../docs/design/native-parser-work-amplification.md) records continuation/checkpoint counts and two rejected frontend schema screens.
