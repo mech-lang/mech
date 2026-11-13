@@ -1,99 +1,24 @@
-# R282 — Prefetch a proved future private write
+# Prefetch bounded private vector writes
 
-**Retain R280.** The 27-case screen changes paired elapsed +0.208% overall. The pooled gate passes 27/27 and the block gate passes 26/27. The block miss is seven-stored-prefix. The candidate and retained compiler each beat Roc on 18/27 screened cases. The retained full-suite score remains 45/81 below Roc and 3/81 below libdeflate.
+The compiler emits a write-prefetch hint for a fixed private vector when a proved returning edge carries the next bounded selector. The original typed store supplies the width and address form. The caller supplies the checked current length and flat geometry, and the exclusive loan fixes the backing throughout the synchronous phase. Checked affine arithmetic bounds the whole element. A selected store dominates the returning transfer, and the fresh unsigned update fits the original mask. The base dominates the loop from outside it. The pass chooses one candidate per phase, preferring the denser byte stride.
 
-1 MiB random improves -3.474%. Its hint-enabled executable is 0.961116× the elapsed time of the fixed-placement no-hint copy. Several repetitive cases slow about 1%. The matching control keeps the changed address calculations, register assignments and layout, so the comparison isolates the hint instructions with those other changes held fixed.
+The AArch64 backend lowers the hint to `prfm pstl1keep`. The other target rules ignore the hint. The compiler leaves actual accesses, fallbacks, assertion order, work charges, ownership and publication in their existing paths. This pass is opt-in through `MECH_PREFETCH_PRIVATE_WRITES=1` with the measured compact settings. The pinned Cranelift 0.131.3 generator adds the opcode and remains a build dependency of the existing vendored backend. Its registry archive SHA-256 is `b3063e5363dc5ee6ee8edd930314582c08eb91c209b9564da1cd667f6424b9b3`. The imported license drops one trailing blank line.
 
-Published parent 1f388ba572d4d0e767e50e54aebd92090468ac16. Measured parent 74205739c757a23c01994b902649a765589cf364. PR base 92f75db84e2523693648084bea16cd52ad60777a. Pinned Mech source, MBC14, level 12, capacities, tables, limits, allocation sites, R272 runtime, exact streams and timing boundaries stay fixed. Apple ARM64, Cranelift 0.131.3 with the inherited R264 patch and five prefetch backend files, regalloc2 0.15.2.
+Compiler revision `241e01883a6000d9b78f407be94d50d0ed860ee7`, source parent `3849b501f4a2be2d29a5fdcf5620eccacb8281c5`, and measured control `72c4c5555786b28082077c06cfabfa7ff0c74922`. The maintained emitter produces the exact Object `0da4f468a0d64d862bcefb474916c7729dbbd986480c438cf42e63c4097b3fe8` and normally linked executable `1bfd044d1218b68549bfbfd4e3a6b25d150762108dfdbb0ca3d680b9fed903f8` used in the 81-case trial. One of 357 recorded routines grows from 9,956 to 9,960 bytes and retains its 576-byte frame. All 1,276 named addresses match. The source and decoded descriptors differ only in the input-form tag. Disabling the flag reproduces the prior Object, descriptor and bytecode.
 
-## Proof and machine code
+The exact executable takes **0.992619×** the paired control and beats at least one peer on **75/81**. The three new Roc wins repeat. Both 1.05 gates pass on all 81 cases. Repeated 32,769 bytes moves above libdeflate in the primary cohort and back below in confirmation. The same-layout NOP comparison isolates a 1.96% elapsed improvement on 1 MiB random in its first screen and 1.65% in its repeat. At 1 MiB random the full candidate retires 0.30% more instructions and uses 3.03% fewer cycles in the separate counter cohort. [Timings, adverse cohorts and peer machine code](native-returning-cache-hint-trial.md).
 
-The compiler collects exact typed writes from a compact private phase with an existing current flat-view length floor. It follows a masked affine one-based selector to its loop parameter and walks the incoming SSA arguments dominated by that header. A fresh bounded definition receives a hint only when the same fixed base dominates the loop and the entire byte address range fits the current initialized view. A fallible operation, changed base or unbounded update supplies no such certificate. The emitted hint is an ARM64 cache operation. Existing loads, stores, checks, short-window defaults and failure branches keep their source meaning.
+## Qualification
 
-Five static hints appear in one vector matcher among 347 compared bodies. The matcher changes 42,052 to 42,020 code bytes and 992 to 1,024 frame bytes. The root, general matrix body, parser and remaining generated bodies are byte-identical. The first search copy has a hint for one of its bucket indices. The second reaches its write through additional forwarding merges and the first rule declines it. Two subsequent copies get both hints.
+The optimized six-feature build uses nightly 2026-03-03 with `-D warnings` and `aot,canonical-native,canonical-native-program,canonical-native-program-runtime,canonical-native-runtime,jit`. Source emission took 283.11 seconds, including 62.48 seconds for the frontend. That run overlapped validation builds. The first decoded emission took 189.47 seconds. Those times are build receipts.
 
-The initial build required the additional vector contract to list the destination. The length floor already checks its flat geometry, and the caller excludes such arrays from the separate list. That build selected zero hints and reproduced R280 Object and metadata exactly. The measured build consumes the existing guarded length floor and canonical vector address instead.
+- Original and decoded pass 648 linked calls covering reference bytes, independent inflation, capacity, borrowed aliases and cleanup. The independent parser oracle covers 136,192 positions, the original rejection origin 15525 and retry. Two focused JIT tests exercise 280 calls plus bounded-address refusals.
+- Compiler planning, interactive architecture, production resident routing, native host catalog, source catalog, formatting and the Git whitespace check pass.
+- The separate managed guard reproduces all 13 bundle files and 88 outputs. Its measured ratios are 0.724996× and 0.719617× Rust.
+- Frozen Cargo resolution passes for the root and standalone profiling workspace. The external resolver selects the local backend and generator in all three generated project forms. The maintained `native_host_application` command with `native-build,native-io` hit disk exhaustion twice and the full math dependency received SIGKILL after space was reclaimed. The cached direct-link attempt also lacked compatible math metadata. The three full generated-application tests remain unexecuted at this revision. Ordinary CI follows the current cancellation instruction.
 
-## Fresh matched peer timings
+The focused runner initially imported unrelated tests due to its standalone module layout. The corrected runner loads the intended module. The managed runner required the same five declaration attributes as the retained diagnostic link. Both retries pass with warnings denied.
 
-| Input | R280 / Roc | Prefetch / Roc | R280 / libdeflate | Prefetch / libdeflate | Screen elapsed change |
-|---|---:|---:|---:|---:|---:|
-| eight-literals | 0.199537× | 0.199446× | 2.540260× | 2.539101× | -0.415% |
-| prefix-natural-4096 | 1.101704× | 1.093583× | 1.881540× | 1.867669× | -0.624% |
-| prefix-natural-1048576 | 1.523482× | 1.528735× | 1.229464× | 1.233703× | +0.358% |
-| prefix-random-8192 | 0.940963× | 0.922097× | 3.357569× | 3.290249× | -3.090% |
-| prefix-random-32768 | 1.564855× | 1.520039× | 3.191870× | 3.100458× | -2.183% |
-| prefix-random-1048576 | 1.919873× | 1.858858× | 2.709522× | 2.623412× | -3.474% |
-| prefix-periodic-1048576 | 0.934363× | 0.944784× | 1.584655× | 1.602329× | +1.153% |
-| prefix-repeated-1048576 | 0.919031× | 0.927715× | 1.442503× | 1.456134× | +1.076% |
+The separate exact-worker captures put 51.4% of mapped running samples in the composed parser on natural 16 KiB. Distribution change spends 27.9% in the matcher, 23.4% in composed parser routines, and 21.8% in the root. The matcher accounts for 69.0% on random 1 MiB. These timer profiles include validation.
 
-The 27-case screen includes 151,968 timed calls across all 24 orders of the retained, hint-enabled, fixed-placement control and Roc actors. The separate eight-case library cohort includes 6,816 timed calls with Mech control, Mech candidate, Roc and libdeflate. Timers include complete compression and the established allocation and cleanup boundaries. Both comparisons use the existing warmup, live output aliases and validation outside timing. Full 81-case adoption timing was skipped after the screen.
-
-## Independent hardware counters and profile
-
-| Input | R280 instructions | Prefetch instructions | Instruction change | Cycle change |
-|---|---:|---:|---:|---:|
-| eight-literals | 812,121.0 | 811,934.5 | -0.023% | +4.474% |
-| prefix-natural-1048576 | 3,489,528,832.5 | 3,486,351,742.5 | -0.091% | +0.266% |
-| prefix-natural-4096 | 11,238,360.0 | 11,199,882.0 | -0.342% | -0.435% |
-| prefix-periodic-1048576 | 664,964,363.5 | 673,227,573.5 | +1.243% | +1.016% |
-| prefix-random-1048576 | 814,560,496.5 | 808,189,175.5 | -0.782% | -3.466% |
-| prefix-random-32768 | 26,142,985.0 | 25,959,444.5 | -0.702% | -2.454% |
-| prefix-random-8192 | 6,939,558.0 | 6,898,357.0 | -0.594% | -1.025% |
-| prefix-repeated-1048576 | 672,525,547.5 | 680,760,544.5 | +1.224% | +1.032% |
-
-The tracked payload allocation, copy, zero and peak fields agree on 8/8 diagnostic cases. Process lifetime peak physical memory is reported separately in the counter receipt.
-
-| Input | Running samples | Vector matcher PCs | Matcher stack-transfer PCs | Prefetch instruction PCs |
-|---|---:|---:|---:|---:|
-| eight-literals | 5342 | 619 | 25 | 0 |
-| prefix-natural-1048576 | 5360 | 2394 | 1526 | 0 |
-| prefix-natural-32768 | 5360 | 2174 | 1318 | 0 |
-| prefix-natural-4096 | 5609 | 1785 | 960 | 0 |
-| prefix-periodic-1048576 | 5361 | 3898 | 2056 | 32 |
-| prefix-random-1048576 | 5360 | 3508 | 2295 | 0 |
-| prefix-repeated-1048576 | 5365 | 3624 | 1921 | 34 |
-
-These are sampled instruction locations in the exact linked candidate. They include harness and validation work and cannot allocate retired instructions or latency to individual operations.
-
-## Qualification and next experiment
-
-- 324 linked complete calls cover all 81 original and decoded streams, independent inflate, capacities, aliases and zero final private ownership. The Object and metadata match byte-for-byte.
-- 120 paired ARM64 JIT calls check live writes, loop values, zero visits, short-length rejection and identical resulting buffers. Four additional controls cover the first eligible slot, a smaller length floor, a loop-local base and an unsupported update.
-- Warnings-as-errors and the baseline-reproduction build passed. Initial compile and test setup errors are retained with the corrected receipts. Hosted CI is outside the measurement gate.
-
-The current checked vector body loads the same input length for a successful four-byte guard and its checked subtraction in the selected arm. The existing selected-edge predicate pass runs in the root only. The next standalone compiler test will apply that proof to the private vector phase and inspect the exact branch and recurring state before timing.
-
-## All screen observations
-
-| Input | R280 / Roc | Prefetch / Roc | Prefetch / R280 | Prefetch / no hint | Pooled and block gates |
-|---|---:|---:|---:|---:|---|
-| empty | 1.976190× | 1.976190× | 1.000000× | 1.000000× | pass/pass |
-| one-stored | 1.976190× | 1.976190× | 1.000000× | 1.000000× | pass/pass |
-| seven-stored-prefix | 1.976190× | 1.976190× | 1.000000× | 1.000000× | pass/miss |
-| eight-literals | 0.197174× | 0.196702× | 0.995845× | 0.993870× | pass/pass |
-| 33027-periodic-window | 0.816376× | 0.821438× | 1.004135× | 0.993358× | pass/pass |
-| prefix-natural-4096 | 1.114551× | 1.101468× | 0.993762× | 0.992027× | pass/pass |
-| prefix-natural-8192 | 1.313982× | 1.314199× | 0.998924× | 0.995023× | pass/pass |
-| prefix-natural-32768 | 1.493883× | 1.493150× | 1.000977× | 0.996000× | pass/pass |
-| prefix-natural-1048576 | 1.524348× | 1.529114× | 1.003577× | 0.999996× | pass/pass |
-| prefix-random-8192 | 0.950766× | 0.932320× | 0.969097× | 0.980584× | pass/pass |
-| prefix-random-32768 | 1.573555× | 1.540289× | 0.978171× | 0.976639× | pass/pass |
-| prefix-random-1048576 | 1.921459× | 1.853901× | 0.965264× | 0.961116× | pass/pass |
-| prefix-periodic-32767 | 0.795613× | 0.808797× | 1.013059× | 0.998591× | pass/pass |
-| prefix-periodic-32768 | 0.800779× | 0.809785× | 1.010351× | 1.000802× | pass/pass |
-| prefix-periodic-32769 | 0.808847× | 0.816994× | 1.010428× | 0.998291× | pass/pass |
-| prefix-periodic-33027 | 0.819802× | 0.825235× | 1.008280× | 0.999576× | pass/pass |
-| prefix-periodic-65536 | 0.875938× | 0.882692× | 1.008930× | 0.998974× | pass/pass |
-| prefix-periodic-131072 | 0.906548× | 0.915776× | 1.010309× | 0.996282× | pass/pass |
-| prefix-periodic-1048576 | 0.933123× | 0.944758× | 1.011530× | 0.999921× | pass/pass |
-| prefix-repeated-4096 | 0.444885× | 0.448686× | 1.012119× | 0.999470× | pass/pass |
-| prefix-repeated-32767 | 0.771255× | 0.779952× | 1.009575× | 0.997543× | pass/pass |
-| prefix-repeated-32768 | 0.769898× | 0.777925× | 1.007704× | 1.001417× | pass/pass |
-| prefix-repeated-32769 | 0.809557× | 0.822011× | 1.006728× | 1.000035× | pass/pass |
-| prefix-repeated-33027 | 0.812329× | 0.822102× | 1.011607× | 0.995113× | pass/pass |
-| prefix-repeated-65536 | 0.860944× | 0.869710× | 1.007759× | 0.999238× | pass/pass |
-| prefix-repeated-262144 | 0.915751× | 0.923581× | 1.009326× | 0.998407× | pass/pass |
-| prefix-repeated-1048576 | 0.916918× | 0.925782× | 1.010762× | 1.000261× | pass/pass |
-
-[Verified compiler patches, control and measurements](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r282-private-write-prefetch-86c770541636.tar.gz). SHA-256 86c770541636c52732288e2eb079a25b1a8f019a109c22ba5fdd6ba0dadb0e7e.
+The qualification archive replays 166 checksummed files. SHA-256 `46a7f1bb102ff1e13793a5eafa8c125ff3416f1196c3234840eed48a889acacf`. [Qualification archive](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/mech-241e01883a-private-write-prefetch-qualification.tar.gz).
