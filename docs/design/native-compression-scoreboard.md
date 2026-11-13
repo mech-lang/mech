@@ -1,5 +1,28 @@
 # Current compression scoreboard
 
+The compiler borrows short checked-read copies from an already held array. It changes one generated body, reduces the root by 126,096 code bytes, and takes **0.985225×** and **0.985569×** paired control in the two 81-case comparisons. Both comparisons reach 76 wins against at least one peer.
+
+| Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
+| --- | ---: | ---: | ---: | ---: |
+| Faster than Roc | **59/81 (72.8%)** | 59 | 58 | 58 |
+| Faster than libdeflate | **27/81 (33.3%)** | 29 | 27 | 28 |
+| Faster than both | **10/81 (12.3%)** | 12 | 10 | 11 |
+| Faster than at least one | **76/81 (93.8%)** | 76 | 75 | 75 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.160836× | 2.045308× | 0.939151× |
+| Distribution change, 16 KiB | 0.989398× | 1.702020× | 0.971009× |
+| Natural 16 KiB | 1.047735× | 1.054706× | 0.998035× |
+| Reymont 16 KiB | 1.041353× | 1.047238× | 0.995754× |
+| Random 128 KiB | 1.028799× | 1.597988× | 0.994897× |
+| Random 256 KiB | 1.049924× | 1.561856× | 0.996645× |
+| Random 1 MiB | 1.074620× | 1.502176× | 0.976880× |
+
+Distribution change improves to 0.984453× and 0.989398× Roc in the two full runs. Both 1.05 gates pass 81/81 in the first run. The repeat misses both gates on repeated 16 KiB during a period when all four workers slow markedly. The focused repeat passes both gates and measures 0.979838× control on that case. All observations remain in the evidence. [Compiler qualification, exact binary profiles and both timing matrices](native-checked-read-borrowing.md).
+
+## Schedule independent reads from fixed private views
+
 The compiler schedules two proved independent reads from a fixed private view together. The normally linked worker reproduces the timed Object and executable byte for byte. The first complete matrix takes **0.997551×** paired control and the full repeat takes **0.998381×**. Both 1.05 gates pass throughout.
 
 | Peer result | Mech wins, full repeat | Paired control wins | Previous published |
