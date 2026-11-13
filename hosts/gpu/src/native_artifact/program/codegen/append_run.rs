@@ -8,6 +8,8 @@ use std::collections::BTreeMap;
 
 #[path = "packet_reloads.rs"]
 mod packet_reloads;
+#[path = "append_run_pairs.rs"]
+mod pairs;
 #[path = "append_run_trace.rs"]
 mod trace;
 
@@ -149,6 +151,7 @@ fn emit(
     old_params: &[Value],
     trace: Trace,
     reloads: Option<packet_reloads::Reloads>,
+    paired: Option<pairs::Pair>,
 ) -> usize {
     let hot = block(f);
     let mut state = Vec::new();
@@ -204,7 +207,19 @@ fn emit(
         .chain([trace.stored])
         .map(BlockArg::Value)
         .collect::<Vec<_>>();
-    cursor.ins().jump(hot, &args);
+    if let (Some(pair), Some(window)) = (paired, window) {
+        pair.emit(
+            &mut cursor,
+            window,
+            &trace.next,
+            trace.stored,
+            &values,
+            hot,
+            &args,
+        );
+    } else {
+        cursor.ins().jump(hot, &args);
+    }
 
     let (fallback, fallback_args) = if let Some(reloads) = reloads {
         let restore = block(cursor.func);
@@ -274,7 +289,8 @@ pub(in crate::native_artifact) fn optimize(
     context: &mut Context,
     header: Block,
     packet: Option<(usize, bool)>,
-) -> Result<(usize, usize, usize), &'static str> {
+    pair_appends: bool,
+) -> Result<(usize, usize, usize, bool), &'static str> {
     context.compute_cfg();
     context.compute_domtree();
     let trace = trace::capture(context, header)?;
@@ -284,8 +300,28 @@ pub(in crate::native_artifact) fn optimize(
     });
     let count = reloads.as_ref().map_or(0, packet_reloads::Reloads::count);
     let entry_proved_guards = if trace.window.is_some() { 2 } else { 0 };
-    let words = emit(&mut context.func, header, &old_params, trace, reloads);
+    let paired = if pair_appends {
+        match pairs::Pair::derive(context, &trace, &old_params) {
+            Ok(pair) => Some(pair),
+            Err(reason) => {
+                if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                    eprintln!("checked pair append declined: {reason}");
+                }
+                None
+            }
+        }
+    } else {
+        None
+    };
+    let words = emit(
+        &mut context.func,
+        header,
+        &old_params,
+        trace,
+        reloads,
+        paired,
+    );
     context.compute_cfg();
     context.compute_domtree();
-    Ok((words, count, entry_proved_guards))
+    Ok((words, count, entry_proved_guards, paired.is_some()))
 }
