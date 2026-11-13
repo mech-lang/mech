@@ -137,6 +137,13 @@ fn packed_liveness_matches_the_original_solver_on_seeded_sparse_graphs() {
         let (expected, visits, facts) = reference_liveness(&next, &reads, &definitions);
         let (actual, actual_visits, actual_facts) = solve_liveness(&next, &reads, &definitions);
         assert_eq!(actual, expected, "seed={seed}");
+        for &site in &sites {
+            assert_eq!(
+                dense_live_before(&next, &reads, &definitions, site, MAX_DENSE_CELLS),
+                Some(expected[&site].clone()),
+                "dense seed={seed}, site={site}"
+            );
+        }
         assert_eq!(
             (actual_visits, actual_facts),
             (visits, facts),
@@ -283,4 +290,47 @@ fn reference_liveness(
         }
     }
     (live, visits, propagated_facts)
+}
+
+#[test]
+fn dense_scratch_limit_falls_back_without_using_raw_value_ordinals() {
+    let next = BTreeMap::from([(10, vec![20]), (20, vec![10])]);
+    let reads = BTreeMap::from([(10, BTreeSet::from([0])), (20, BTreeSet::from([u32::MAX]))]);
+    assert_eq!(
+        dense_live_before(&next, &reads, &BTreeMap::new(), 10, 1),
+        None
+    );
+    assert_eq!(
+        dense_live_before(&next, &reads, &BTreeMap::new(), 10, 2),
+        Some(BTreeSet::from([0, u32::MAX]))
+    );
+    assert_eq!(
+        live_before(&next, &reads, &BTreeMap::new(), 10),
+        BTreeSet::from([0, u32::MAX])
+    );
+}
+
+#[test]
+fn dense_local_ordinals_cross_word_boundaries_and_preserve_definition_kills() {
+    let next = BTreeMap::from([(0, vec![1]), (1, vec![0, 2]), (2, vec![1])]);
+    let reads = BTreeMap::from([
+        (0, (0..130).map(|v| u32::MAX - v * 127).collect()),
+        (1, BTreeSet::new()),
+        (2, BTreeSet::from([1, 2, 3])),
+    ]);
+    let definitions = BTreeMap::from([(
+        1,
+        (0..130)
+            .filter(|v| v % 2 == 0)
+            .map(|v| u32::MAX - v * 127)
+            .chain([1, 2])
+            .collect(),
+    )]);
+    let (expected, _, _) = reference_liveness(&next, &reads, &definitions);
+    for site in 0..3 {
+        assert_eq!(
+            live_before(&next, &reads, &definitions, site),
+            expected[&site]
+        );
+    }
 }

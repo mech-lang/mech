@@ -11,7 +11,7 @@ use crate::Variable;
 use alloc::{collections::BTreeMap, vec::Vec};
 use core::mem;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
-use cranelift_codegen::entity::{EntityList, EntitySet, ListPool, SecondaryMap};
+use cranelift_codegen::entity::{EntityList, ListPool, SecondaryMap};
 use cranelift_codegen::ir::immediates::{Ieee16, Ieee32, Ieee64, Ieee128};
 use cranelift_codegen::ir::types::{F16, F32, F64, F128, I64, I128};
 use cranelift_codegen::ir::{Block, Function, Inst, InstBuilder, Type, Value};
@@ -34,7 +34,7 @@ use cranelift_codegen::packed_option::PackedOption;
 pub struct SSABuilder {
     /// Records for every variable and for every relevant block, the last definition of
     /// the variable in the block.
-    variables: SecondaryMap<Variable, BTreeMap<Block, PackedOption<Value>>>,
+    variables: SecondaryMap<Variable, VariableDefs>,
 
     /// Records the position of the basic blocks and the list of values used but not defined in the
     /// block.
@@ -49,13 +49,105 @@ pub struct SSABuilder {
     side_effects: SideEffects,
 
     /// Reused storage for cycle-detection.
-    visited: EntitySet<Block>,
+    visited: VisitSet,
 
     /// Storage for pending variable definitions.
     variable_pool: ListPool<Variable>,
 
     /// Storage for predecessor definitions.
     inst_pool: ListPool<Inst>,
+}
+
+// Most variables have very few queried blocks. Only a sufficiently occupied
+// prefix gains direct storage; its size is bounded by four times the stored
+// facts. Sparse and high block IDs never allocate an entire block arena.
+#[derive(Clone, Default)]
+struct VariableDefs {
+    dense: Vec<Option<PackedOption<Value>>>,
+    sparse: BTreeMap<Block, PackedOption<Value>>,
+    len: usize,
+}
+impl VariableDefs {
+    fn get(&self, block: &Block) -> Option<&PackedOption<Value>> {
+        self.dense
+            .get(block.as_u32() as usize)
+            .and_then(Option::as_ref)
+            .or_else(|| self.sparse.get(block))
+    }
+    fn insert(&mut self, block: Block, value: PackedOption<Value>) -> Option<PackedOption<Value>> {
+        let index = block.as_u32() as usize;
+        let previous = if index < self.dense.len() {
+            self.dense[index].replace(value)
+        } else {
+            self.sparse.insert(block, value)
+        };
+        if previous.is_none() {
+            self.len += 1;
+        }
+        if self.len >= 64 {
+            if let Some(size) = index
+                .checked_add(1)
+                .and_then(usize::checked_next_power_of_two)
+                && size > self.dense.len()
+                && size <= self.len.saturating_mul(4)
+            {
+                self.dense.resize(size, None);
+                self.sparse.retain(|block, value| {
+                    let at = block.as_u32() as usize;
+                    if at < size {
+                        self.dense[at] = Some(*value);
+                        false
+                    } else {
+                        true
+                    }
+                });
+            }
+        }
+        previous
+    }
+    fn values(&self) -> impl Iterator<Item = &PackedOption<Value>> {
+        self.dense
+            .iter()
+            .filter_map(Option::as_ref)
+            .chain(self.sparse.values())
+    }
+    #[cfg(test)]
+    fn keys(&self) -> Vec<Block> {
+        use cranelift_codegen::entity::EntityRef;
+        self.dense
+            .iter()
+            .enumerate()
+            .filter_map(|(index, value)| value.is_some().then(|| Block::new(index)))
+            .chain(self.sparse.keys().copied())
+            .collect()
+    }
+}
+
+// Each lookup usually touches a short predecessor chain even in a function
+// with many blocks. Generations avoid clearing every preceding block bit for
+// every lookup. Storage remains bounded by the function's block arena.
+#[derive(Default)]
+struct VisitSet {
+    marks: SecondaryMap<Block, u32>,
+    generation: u32,
+}
+impl VisitSet {
+    fn begin(&mut self) {
+        self.generation = self.generation.wrapping_add(1);
+        if self.generation == 0 {
+            self.marks.clear();
+            self.generation = 1;
+        }
+    }
+    fn insert(&mut self, block: Block) -> bool {
+        let mark = &mut self.marks[block];
+        if *mark == self.generation {
+            false
+        } else {
+            *mark = self.generation;
+            true
+        }
+    }
 }
 
 /// Side effects of a `use_var` or a `seal_block` method call.
@@ -307,7 +399,7 @@ impl SSABuilder {
         mut block: Block,
     ) -> (Value, Block) {
         // Try to find an existing definition along single-predecessor edges first.
-        self.visited.clear();
+        self.visited.begin();
         let var_defs = &mut self.variables[var];
         while let Some(pred) = self.ssa_blocks[block].single_predecessor.expand() {
             if !self.visited.insert(block) {
@@ -628,6 +720,72 @@ mod tests {
     use cranelift_codegen::verify_function;
 
     #[test]
+    fn visit_generations_isolate_queries_and_reset_on_wrap() {
+        let mut visits = super::VisitSet::default();
+        let low = ir::Block::new(1);
+        let high = ir::Block::new(100_000);
+        visits.begin();
+        assert!(visits.insert(low));
+        assert!(!visits.insert(low));
+        assert!(visits.insert(high));
+        visits.begin();
+        assert!(visits.insert(high));
+        assert!(visits.insert(low));
+        // Old generation-one marks must not survive wraparound.
+        visits.marks[high] = 1;
+        visits.generation = u32::MAX;
+        visits.begin();
+        assert_eq!(visits.generation, 1);
+        assert!(visits.insert(high));
+        assert!(!visits.insert(high));
+        assert!(visits.insert(low));
+    }
+
+    #[test]
+    fn adaptive_variable_storage_matches_sparse_maps_without_a_block_product() {
+        let mut actual = super::VariableDefs::default();
+        let mut expected = alloc::collections::BTreeMap::new();
+        let mut random = 1_u64;
+        for step in 0..50_000 {
+            random = random.wrapping_mul(6364136223846793005).wrapping_add(1);
+            let index = match step % 4 {
+                0 => step / 4,
+                1 => (random >> 32) as usize % 4096,
+                2 => u32::MAX as usize - 1 - (random >> 32) as usize % 16,
+                _ => (random >> 32) as usize % 65_536,
+            };
+            let block = ir::Block::new(index);
+            let value = if step % 17 == 0 {
+                None.into()
+            } else {
+                Some(ir::Value::new(step)).into()
+            };
+            assert_eq!(actual.insert(block, value), expected.insert(block, value));
+            assert_eq!(actual.get(&block), expected.get(&block));
+            assert_eq!(actual.len, expected.len());
+            assert!(actual.dense.len() <= actual.len * 4);
+            if step % 256 == 0 {
+                assert!(
+                    actual
+                        .sparse
+                        .keys()
+                        .all(|block| block.as_u32() as usize >= actual.dense.len())
+                );
+            }
+        }
+        assert!(!actual.dense.is_empty());
+        assert_eq!(actual.keys(), expected.keys().copied().collect::<Vec<_>>());
+        assert_eq!(
+            actual.values().copied().collect::<Vec<_>>(),
+            expected.values().copied().collect::<Vec<_>>()
+        );
+        let mut rare = super::VariableDefs::default();
+        rare.insert(ir::Block::new(1_000_000), Some(ir::Value::new(0)).into());
+        assert!(rare.dense.is_empty());
+        assert_eq!(rare.len, 1);
+    }
+
+    #[test]
     fn simple_block() {
         let mut func = Function::new();
         let mut ssa = SSABuilder::default();
@@ -834,10 +992,7 @@ mod tests {
         }
 
         assert_eq!(ssa.use_var(&mut func, variable, I32, last).0, value);
-        assert_eq!(
-            ssa.variables[variable].keys().copied().collect::<Vec<_>>(),
-            [entry, last]
-        );
+        assert_eq!(ssa.variables[variable].keys(), [entry, last]);
         FuncCursor::new(&mut func)
             .at_bottom(last)
             .ins()

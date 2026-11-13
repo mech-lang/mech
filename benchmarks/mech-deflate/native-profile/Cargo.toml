@@ -8,6 +8,8 @@ publish = false
 [workspace]
 
 [features]
+# Recognized by the exact vendored SSA source in its focused test target.
+std = []
 linked-qualification = ["dep:mech-build"]
 unit-qualification = ["linked-qualification", "dep:mech-runtime"]
 
@@ -69,3 +71,19 @@ path = "guard_state_tests.rs"
 [[test]]
 name = "numeric_liveness"
 path = "numeric_liveness_tests.rs"
+
+[dev-dependencies]
+cranelift-codegen = { version = "0.131.3", default-features = false, features = ["std", "unwind"] }
+cranelift-frontend = { version = "0.131.3", default-features = false, features = ["std"] }
+
+[[test]]
+name = "ssa_builder"
+path = "ssa_builder_tests.rs"
+
+[[test]]
+name = "dimension_remap"
+path = "dimension_remap_tests.rs"
+
+[[test]]
+name = "old_value_reads"
+path = "old_value_reads_tests.rs"

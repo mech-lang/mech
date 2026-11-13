@@ -1,6 +1,9 @@
 //! Boolean guard facts shared across unchanged CFG edges. This contains only
 //! the compiler's pure dataflow state; it grants no runtime permissions.
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::BTreeMap,
+    sync::{Arc, OnceLock},
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum Expression {
@@ -118,14 +121,72 @@ impl Known {
     }
 }
 
-#[derive(Clone, Default, Debug, Eq, PartialEq)]
+// Derived solely from one immutable relation set. Truths remain in each State;
+// this shared index contains no conclusions or runtime ownership permission.
+#[derive(Debug)]
+struct RelationIndex {
+    rows: Vec<(u32, Expression)>,
+    related: Vec<u32>,
+    projection_group: Vec<usize>,
+    groups: Vec<Vec<u32>>,
+}
+impl RelationIndex {
+    fn new(expressions: &BTreeMap<u32, Expression>) -> Self {
+        let rows = expressions
+            .iter()
+            .map(|(&out, expression)| (out, expression.clone()))
+            .collect::<Vec<_>>();
+        let mut related = Vec::new();
+        let mut projection_group = vec![usize::MAX; rows.len()];
+        let mut groups = Vec::<Vec<u32>>::new();
+        let mut group_ids = BTreeMap::new();
+        for (position, (out, expression)) in rows.iter().enumerate() {
+            related.push(*out);
+            match expression {
+                Expression::Copy(a) | Expression::Not(a) => related.push(*a),
+                Expression::And(a, b) | Expression::Or(a, b) => related.extend([*a, *b]),
+                Expression::Project { source, path } => {
+                    related.push(*source);
+                    let group = *group_ids
+                        .entry((*source, path.as_slice()))
+                        .or_insert_with(|| {
+                            groups.push(Vec::new());
+                            groups.len() - 1
+                        });
+                    projection_group[position] = group;
+                    groups[group].push(*out);
+                }
+            }
+        }
+        drop(group_ids);
+        related.sort_unstable();
+        related.dedup();
+        Self {
+            rows,
+            related,
+            projection_group,
+            groups,
+        }
+    }
+}
+
+#[derive(Clone, Default, Debug)]
 pub(crate) struct State {
     // Most CFG edges preserve both maps. A state forks its storage only when
     // a fact or relation actually changes.
     known: Known,
     expressions: Arc<BTreeMap<u32, Expression>>,
+    index: Arc<OnceLock<RelationIndex>>,
     closed: bool,
 }
+impl PartialEq for State {
+    fn eq(&self, other: &Self) -> bool {
+        self.known == other.known
+            && self.expressions == other.expressions
+            && self.closed == other.closed
+    }
+}
+impl Eq for State {}
 impl State {
     pub(super) fn truth(&self, value: u32) -> Option<bool> {
         self.known.get(&value).copied()
@@ -135,13 +196,29 @@ impl State {
     }
     pub(super) fn assume(&mut self, value: u32, truth: bool) {
         if self.known.get(&value) != Some(&truth) {
+            // A fact outside every equation cannot enable another inference.
+            // Keep any already pending closure pending, even for such a fact.
+            let requires_closure = !self.closed
+                || self
+                    .index
+                    .get_or_init(|| RelationIndex::new(&self.expressions))
+                    .related
+                    .binary_search(&value)
+                    .is_ok();
             self.known.insert(value, truth);
-            self.closed = false;
+            self.closed &= !requires_closure;
         }
     }
     pub fn merge(&mut self, other: &Self) -> bool {
         let known_changed = self.known.intersect(&other.known);
         let expressions_changed = intersect(&mut self.expressions, &other.expressions);
+        if expressions_changed {
+            self.index = if Arc::ptr_eq(&self.expressions, &other.expressions) {
+                other.index.clone()
+            } else {
+                Arc::default()
+            };
+        }
         let changed = known_changed || expressions_changed;
         // An intersection can require closure even when neither predecessor
         // changes again, including contradictory syntactic branch paths.
@@ -154,30 +231,29 @@ impl State {
         if self.closed {
             return;
         }
-        // Projection peers do not change while closing this state. Index them
-        // once, retaining the original output/peer order for contradictory
-        // syntactic paths as well as consistent ones.
-        let mut projections = BTreeMap::<(u32, &[(u8, u32)]), Vec<u32>>::new();
-        for (&out, expression) in self.expressions.iter() {
-            if let Expression::Project { source, path } = expression {
-                projections
-                    .entry((*source, path.as_slice()))
-                    .or_default()
-                    .push(out);
-            }
-        }
+        // Rows and projection peers retain the original ascending-output order,
+        // including first-inference priority on contradictory syntactic paths.
+        let index = self
+            .index
+            .get_or_init(|| RelationIndex::new(&self.expressions));
         loop {
             let mut inferred = Vec::new();
-            for (&out, e) in self.expressions.iter() {
+            let mut infer = |value, truth| {
+                if !self.known.contains_key(&value) {
+                    inferred.push((value, truth));
+                }
+            };
+            for (position, (out, e)) in index.rows.iter().enumerate() {
+                let out = *out;
                 let truth = self.known.get(&out).copied();
                 match *e {
                     Expression::Copy(a) | Expression::Not(a) => {
                         let invert = matches!(e, Expression::Not(_));
                         if let Some(t) = truth {
-                            inferred.push((a, t ^ invert));
+                            infer(a, t ^ invert);
                         }
                         if let Some(&t) = self.known.get(&a) {
-                            inferred.push((out, t ^ invert));
+                            infer(out, t ^ invert);
                         }
                     }
                     Expression::And(a, b) | Expression::Or(a, b) => {
@@ -185,25 +261,26 @@ impl State {
                         let left = self.known.get(&a).copied();
                         let right = self.known.get(&b).copied();
                         if truth == Some(conjunction) {
-                            inferred.extend([(a, conjunction), (b, conjunction)]);
+                            infer(a, conjunction);
+                            infer(b, conjunction);
                         } else if truth == Some(!conjunction) {
                             if left == Some(conjunction) {
-                                inferred.push((b, !conjunction));
+                                infer(b, !conjunction);
                             }
                             if right == Some(conjunction) {
-                                inferred.push((a, !conjunction));
+                                infer(a, !conjunction);
                             }
                         }
                         if left == Some(!conjunction) || right == Some(!conjunction) {
-                            inferred.push((out, !conjunction));
+                            infer(out, !conjunction);
                         } else if left == Some(conjunction) && right == Some(conjunction) {
-                            inferred.push((out, conjunction));
+                            infer(out, conjunction);
                         }
                     }
-                    Expression::Project { source, ref path } => {
+                    Expression::Project { .. } => {
                         if let Some(t) = truth {
-                            for &peer in &projections[&(source, path.as_slice())] {
-                                inferred.push((peer, t));
+                            for &peer in &index.groups[index.projection_group[position]] {
+                                infer(peer, t);
                             }
                         }
                     }
@@ -226,20 +303,29 @@ impl State {
             self.close();
             return;
         }
+        // Expiration removes each defined fact and every relation that mentions
+        // it. Remaining equations keep exactly the same inputs; deleting an
+        // equation cannot add a new inference. Preserve an already closed state,
+        // while leaving a pending closure pending. New equations below still
+        // invalidate closure.
+        let mut relations_changed = false;
         for value in defs {
             if self.known.contains_key(value) {
                 self.known.remove(value);
-                self.closed = false;
             }
         }
-        if self
-            .expressions
-            .iter()
-            .any(|(out, e)| defs.contains(out) || defs.iter().any(|&v| e.reads(v)))
-        {
+        let expires_relation = if let Some(index) = self.index.get() {
+            defs.iter()
+                .any(|value| index.related.binary_search(value).is_ok())
+        } else {
+            self.expressions
+                .iter()
+                .any(|(out, e)| defs.contains(out) || defs.iter().any(|&v| e.reads(v)))
+        };
+        if expires_relation {
             Arc::make_mut(&mut self.expressions)
                 .retain(|out, e| !defs.contains(out) && !defs.iter().any(|&v| e.reads(v)));
-            self.closed = false;
+            relations_changed = true;
         }
         if let Some((output, e)) = expression {
             // An in-place definition reads the preceding version. It cannot
@@ -247,9 +333,13 @@ impl State {
             if !defs.iter().any(|&v| e.reads(v)) {
                 if self.expressions.get(output) != Some(e) {
                     Arc::make_mut(&mut self.expressions).insert(*output, e.clone());
+                    relations_changed = true;
                     self.closed = false;
                 }
             }
+        }
+        if relations_changed {
+            self.index = Arc::default();
         }
         self.close();
     }
@@ -566,6 +656,189 @@ mod tests {
         Expression::Project {
             source,
             path: vec![(0, ordinal)],
+        }
+    }
+
+    #[test]
+    fn expiration_keeps_pending_inferences_and_new_relations_require_closure() {
+        let mut state = State::default();
+        state.define(&[2], Some(&(2, Expression::Copy(1))));
+        state.assume(2, true);
+        // Expiring an unrelated home must not discard the pending assumption.
+        state.define(&[9], None);
+        assert_eq!(state.truth(1), Some(true));
+        state.define(&[1], None);
+        assert_eq!(state.truth(1), None);
+        assert_eq!(state.truth(2), Some(true));
+        state.define(&[3], Some(&(3, Expression::Not(2))));
+        assert_eq!(state.truth(3), Some(false));
+    }
+
+    #[test]
+    fn filtering_known_candidates_preserves_first_inference_on_conflicting_paths() {
+        let mut state = State::default();
+        for output in [2, 3, 4] {
+            state.define(&[output], Some(&(output, projection(1, 0))));
+        }
+        state.assume(2, true);
+        state.assume(3, false);
+        state.close();
+        assert_eq!(state.truth(2), Some(true));
+        assert_eq!(state.truth(3), Some(false));
+        assert_eq!(state.truth(4), Some(true));
+    }
+
+    #[test]
+    fn unrelated_assumptions_keep_closure_and_later_relations_use_their_current_truth() {
+        let mut state = State::default();
+        state.define(&[2], Some(&(2, Expression::Copy(1))));
+        state.assume(9, true);
+        assert!(state.closed);
+        state.assume(2, true);
+        assert!(!state.closed);
+        state.assume(9, false);
+        assert!(!state.closed);
+        state.close();
+        assert_eq!(state.truth(1), Some(true));
+        state.define(&[3], Some(&(3, Expression::Copy(9))));
+        assert_eq!(state.truth(3), Some(false));
+    }
+
+    #[test]
+    fn shared_relation_index_expires_without_resurrecting_old_projection_peers() {
+        let mut parent = State::default();
+        for output in [2, 3] {
+            parent.define(&[output], Some(&(output, projection(1, 0))));
+        }
+        parent.assume(2, true);
+        parent.close();
+        let mut child = parent.clone();
+        assert!(Arc::ptr_eq(&parent.index, &child.index));
+        child.define(&[1, 2, 3], None);
+        assert!(!Arc::ptr_eq(&parent.index, &child.index));
+        child.assume(2, true);
+        child.close();
+        assert_eq!(child.truth(3), None);
+        child.define(&[4], Some(&(4, Expression::Copy(2))));
+        assert_eq!(child.truth(4), Some(true));
+        assert_eq!(parent.truth(3), Some(true));
+        assert_eq!(parent.truth(4), None);
+    }
+
+    #[test]
+    fn joined_relation_indexes_follow_exact_and_partial_intersections() {
+        for partial in [false, true] {
+            let mut left = State::default();
+            for output in [2, 3] {
+                left.define(&[output], Some(&(output, projection(1, 0))));
+            }
+            left.define(&[4], Some(&(4, Expression::Copy(5))));
+            left.assume(2, true);
+            left.close();
+            let mut right = left.clone();
+            if partial {
+                right.define(&[3, 4], None);
+                right.define(&[6], Some(&(6, Expression::Copy(7))));
+            } else {
+                right.define(&[1], None);
+            }
+            assert!(left.merge(&right));
+            left.define(&[3], None);
+            left.close();
+            assert_eq!(left.truth(3), None, "partial={partial}");
+            left.define(&[1, 2], None);
+            left.assume(2, true);
+            left.close();
+            assert_eq!(left.truth(3), None, "partial={partial}");
+        }
+    }
+
+    #[test]
+    fn initializing_a_relation_index_does_not_change_logical_state_equality() {
+        let mut state = State::default();
+        state.define(&[2], Some(&(2, Expression::Copy(1))));
+        let cold = State {
+            known: state.known.clone(),
+            expressions: state.expressions.clone(),
+            closed: state.closed,
+            index: Arc::default(),
+        };
+        assert!(state.index.get().is_some());
+        assert!(cold.index.get().is_none());
+        assert_eq!(state, cold);
+    }
+
+    #[test]
+    fn expiration_matches_full_reclosure_for_every_small_truth_and_definition_subset() {
+        for network in 0..12u32 {
+            let expressions = Arc::new(
+                (0..6u32)
+                    .map(|output| {
+                        let a = (output * 3 + network + 1) % 6;
+                        let b = (output + network + 2) % 6;
+                        let expression = match (output + network) % 5 {
+                            0 => Expression::Copy(a),
+                            1 => Expression::Not(a),
+                            2 => Expression::And(a, b),
+                            3 => Expression::Or(a, b),
+                            _ => projection(a, network % 2),
+                        };
+                        (output, expression)
+                    })
+                    .collect::<BTreeMap<_, _>>(),
+            );
+            for pattern in 0..729usize {
+                let mut state = State {
+                    expressions: expressions.clone(),
+                    ..State::default()
+                };
+                let mut reference = ReferenceState {
+                    known: BTreeMap::new(),
+                    expressions: expressions.as_ref().clone(),
+                };
+                let mut digits = pattern;
+                for value in 0..6 {
+                    if digits % 3 != 0 {
+                        let truth = digits % 3 == 2;
+                        state.assume(value, truth);
+                        reference.known.insert(value, truth);
+                    }
+                    digits /= 3;
+                }
+                state.close();
+                reference.close();
+                assert_eq!(state.known.to_map(), reference.known);
+                for value in 0..8 {
+                    for truth in [false, true] {
+                        let mut actual = state.clone();
+                        let mut expected = reference.clone();
+                        actual.assume(value, truth);
+                        expected.known.insert(value, truth);
+                        actual.close();
+                        expected.close();
+                        assert_eq!(
+                            actual.known.to_map(),
+                            expected.known,
+                            "network={network} pattern={pattern} assumption=({value},{truth})"
+                        );
+                    }
+                }
+                for mask in 0..64 {
+                    let defs = (0..6)
+                        .filter(|value| mask & (1 << value) != 0)
+                        .collect::<Vec<_>>();
+                    let mut actual = state.clone();
+                    let mut expected = reference.clone();
+                    actual.define(&defs, None);
+                    expected.define(&defs, None);
+                    assert_eq!(
+                        actual.known.to_map(),
+                        expected.known,
+                        "network={network} pattern={pattern} defs={defs:?}"
+                    );
+                    assert_eq!(actual.expressions.as_ref(), &expected.expressions);
+                }
+            }
         }
     }
     #[test]

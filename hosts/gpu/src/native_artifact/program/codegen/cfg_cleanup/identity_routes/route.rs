@@ -4,7 +4,12 @@ use super::super::word_ranges::{Facts, Range};
 use super::values::{self, Word};
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::ir::{Block, Function, Inst, InstructionData as Data, Opcode, Value};
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
+#[path = "reach.rs"]
+mod reach;
 
 pub(super) struct Edge {
     pub inst: Inst,
@@ -158,26 +163,20 @@ pub(super) fn find(
         })
         .collect::<BTreeSet<_>>();
     let mut repairs = BTreeMap::new();
-    let mut reach = BTreeMap::<Block, Vec<bool>>::new();
+    let mut reach = BTreeMap::<Block, Arc<Vec<bool>>>::new();
     for value in definitions {
         let owner = values::owner(f, value)?;
+        // A fresh visit to the defining block ends this reachability query.
+        // Values used only there (or unused) cannot require a repair.
+        if uses.values[value.as_u32() as usize]
+            .iter()
+            .all(|&block| block == owner)
+        {
+            continue;
+        }
         let reachable = reach.entry(owner).or_insert_with(|| {
-            let mut seen = vec![false; uses.blocks];
-            let mut pending = vec![target];
-            while let Some(block) = pending.pop() {
-                if block == owner || core::mem::replace(&mut seen[block.as_u32() as usize], true) {
-                    continue;
-                }
-                if let Some(last) = f.layout.last_inst(block) {
-                    pending.extend(
-                        f.dfg.insts[last]
-                            .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
-                            .iter()
-                            .map(|call| call.block(&f.dfg.value_lists)),
-                    );
-                }
-            }
-            seen
+            uses.reach
+                .reachable(target.as_u32() as usize, owner.as_u32() as usize)
         });
         let mut used = false;
         for &block in &uses.values[value.as_u32() as usize] {
@@ -210,7 +209,9 @@ pub(super) fn find(
 // the same block, stopping at a fresh visit to that defining block.
 pub(super) struct Uses {
     values: Vec<Vec<Block>>,
-    blocks: usize,
+    // Captured with the immutable use inventory before any selected route is
+    // applied. Discovery never rescans branch argument storage per definition.
+    reach: reach::Reachability,
 }
 impl Uses {
     pub fn new(f: &Function) -> Self {
@@ -221,7 +222,16 @@ impl Uses {
             .map(|b| b.as_u32() as usize + 1)
             .max()
             .unwrap_or(0);
+        let mut successors = vec![Vec::new(); blocks];
         for block in f.layout.blocks() {
+            if let Some(last) = f.layout.last_inst(block) {
+                successors[block.as_u32() as usize].extend(
+                    f.dfg.insts[last]
+                        .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
+                        .iter()
+                        .map(|call| call.block(&f.dfg.value_lists).as_u32() as usize),
+                );
+            }
             for inst in f.layout.block_insts(block) {
                 let mut add = |value: Value| {
                     let value = f.dfg.resolve_aliases(value);
@@ -244,6 +254,9 @@ impl Uses {
                 }
             }
         }
-        Self { values, blocks }
+        Self {
+            values,
+            reach: reach::Reachability::new(successors),
+        }
     }
 }

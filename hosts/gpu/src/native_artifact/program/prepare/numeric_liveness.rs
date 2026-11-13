@@ -50,10 +50,115 @@ pub(super) fn live_before(
     definitions: &BTreeMap<usize, BTreeSet<u32>>,
     start: usize,
 ) -> BTreeSet<u32> {
+    if let Some(live) = dense_live_before(next, reads, definitions, start, MAX_DENSE_CELLS) {
+        return live;
+    }
     let (live, _, _) = solve(next, reads, definitions);
     // Only the requested entry escapes the query. Do not expand the packed
     // facts at every other reachable block into separately allocated sets.
     live.at(start)
+}
+
+// Two flat word planes use at most 256 MiB. Larger products retain the sparse
+// solver below. Value ordinals are local to this query, never raw source IDs.
+const MAX_DENSE_CELLS: usize = 16 * 1024 * 1024;
+
+fn dense_live_before(
+    next: &BTreeMap<usize, Vec<usize>>,
+    reads: &BTreeMap<usize, BTreeSet<u32>>,
+    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+    start: usize,
+    max_cells: usize,
+) -> Option<BTreeSet<u32>> {
+    let sites = next.keys().copied().collect::<Vec<_>>();
+    let mut values = sites
+        .iter()
+        .flat_map(|site| reads[site].iter().copied())
+        .collect::<Vec<_>>();
+    values.sort_unstable();
+    values.dedup();
+    let width = values.len().div_ceil(64);
+    let cells = sites.len().checked_mul(width)?;
+    if cells > max_cells {
+        return None;
+    }
+    if width == 0 {
+        return Some(BTreeSet::new());
+    }
+    let mut parents = vec![Vec::new(); sites.len()];
+    for (index, successors) in next.values().enumerate() {
+        for successor in successors {
+            parents[sites.binary_search(successor).unwrap()].push(index);
+        }
+    }
+    let mut live = vec![0_u64; cells];
+    let mut kills = vec![Vec::<(usize, u64)>::new(); sites.len()];
+    for (index, site) in sites.iter().enumerate() {
+        for value in &reads[site] {
+            let id = values.binary_search(value).unwrap();
+            live[index * width + id / 64] |= 1_u64 << (id % 64);
+        }
+        if let Some(definitions) = definitions.get(site) {
+            for value in definitions {
+                // A value never read in this selected graph cannot be live.
+                let Ok(id) = values.binary_search(value) else {
+                    continue;
+                };
+                let word = id / 64;
+                let bit = 1_u64 << (id % 64);
+                if let Some((last, bits)) = kills[index].last_mut()
+                    && *last == word
+                {
+                    *bits |= bit;
+                } else {
+                    kills[index].push((word, bit));
+                }
+            }
+        }
+    }
+    let mut changes = live.clone();
+    let mut queued = changes
+        .chunks_exact(width)
+        .map(|row| row.iter().any(|&bits| bits != 0))
+        .collect::<Vec<_>>();
+    let mut pending = (0..sites.len())
+        .rev()
+        .filter(|&site| queued[site])
+        .collect::<VecDeque<_>>();
+    while let Some(site) = pending.pop_front() {
+        queued[site] = false;
+        for word in 0..width {
+            let added = core::mem::take(&mut changes[site * width + word]);
+            if added == 0 {
+                continue;
+            }
+            for &parent in &parents[site] {
+                let kill = kills[parent]
+                    .binary_search_by_key(&word, |&(word, _)| word)
+                    .map(|at| kills[parent][at].1)
+                    .unwrap_or(0);
+                let at = parent * width + word;
+                let added = added & !kill & !live[at];
+                if added != 0 {
+                    live[at] |= added;
+                    changes[at] |= added;
+                    if !core::mem::replace(&mut queued[parent], true) {
+                        pending.push_back(parent);
+                    }
+                }
+            }
+        }
+    }
+    let offset = sites.binary_search(&start).unwrap() * width;
+    Some(
+        values
+            .iter()
+            .enumerate()
+            .filter_map(|(id, &value)| {
+                (live[offset + id / 64] & (1_u64 << (id % 64)) != 0).then_some(value)
+            })
+            .collect(),
+    )
 }
 
 fn solve(

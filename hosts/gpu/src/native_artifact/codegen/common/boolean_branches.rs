@@ -1,6 +1,8 @@
 //! Fold repeated Boolean tests only along an unchanged, sole-predecessor edge.
 //! This retains every source visit/action and all unknown-value error paths.
 use super::super::control::plan::CodePlan;
+#[path = "boolean_predecessors.rs"]
+mod predecessors;
 use crate::native_artifact::codegen::options::{OptimizationOptions, OptimizationPass};
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Term,
@@ -34,28 +36,25 @@ fn native_boolean(
     if depth == 0 || code.kind(value) != Some(Kind::Bool) {
         return false;
     }
-    if facts
-        .definition_sites(value.get())
-        .map_or(true, |sites| sites.len() != 1)
-    {
+    let Ok([definition]) = facts.definition_sites(value.get()) else {
         return false;
-    }
+    };
     if boolean_constant(code, value).is_some() {
         return true;
     }
-    let mut definitions = code
-        .blocks()
-        .iter()
-        .filter_map(|block| match block.action() {
-            Action::Scalar(
-                action @ (Scalar::Primitive { output, .. } | Scalar::Copy { output, .. }),
-            ) if *output == value => Some(action),
-            _ => None,
-        });
-    let Some(definition) = definitions.next() else {
+    let Some(site) = definition.site() else {
         return false;
     };
-    if definitions.next().is_some() {
+    let Some(block) = code.blocks().get(site as usize) else {
+        return false;
+    };
+    let Action::Scalar(
+        definition @ (Scalar::Primitive { output, .. } | Scalar::Copy { output, .. }),
+    ) = block.action()
+    else {
+        return false;
+    };
+    if *output != value {
         return false;
     }
     match definition {
@@ -125,7 +124,37 @@ pub(in crate::native_artifact) fn target(
     let CodePlan::Program(prepared) = code else {
         return None;
     };
+    prepared
+        .boolean_branch_targets()
+        .get(site)
+        .copied()
+        .flatten()
+}
+
+// One immutable source plan, one definition inventory and one predecessor
+// index. The sole-predecessor, definition and 32-visit policies stay unchanged.
+pub(in crate::native_artifact) fn derive(code: CodePlan<'_>) -> Vec<Option<u32>> {
+    let CodePlan::Program(prepared) = code else {
+        return vec![None; code.blocks().len()];
+    };
     let facts = prepared.plan().facts();
+    let predecessors = predecessors::derive(
+        code.blocks().len(),
+        code.blocks().iter().map(|block| {
+            mech_engine::native_artifact::NativeProgramFacts::control_successors(block.terminator())
+        }),
+    );
+    (0..code.blocks().len())
+        .map(|site| target_indexed(code, site, &facts, &predecessors))
+        .collect()
+}
+
+fn target_indexed(
+    code: CodePlan<'_>,
+    site: usize,
+    facts: &mech_engine::native_artifact::NativeProgramFacts<'_>,
+    predecessors: &[(u8, usize)],
+) -> Option<u32> {
     let block = code.blocks().get(site)?;
     if !matches!(block.action(), Action::Scalar(Scalar::None)) {
         return None;
@@ -143,7 +172,7 @@ pub(in crate::native_artifact) fn target(
         Term::Scalar(Branch::Branch { condition, yes, no }) => (condition, true, yes, no),
         _ => return None,
     };
-    if !native_boolean(code, &facts, condition, 32) {
+    if !native_boolean(code, facts, condition, 32) {
         return None;
     }
     let mut current = site as u32;
@@ -152,14 +181,11 @@ pub(in crate::native_artifact) fn target(
         if !seen.insert(current) {
             return None;
         }
-        let mut predecessors = code.blocks().iter().enumerate().filter(|(_, block)| {
-            mech_engine::native_artifact::NativeProgramFacts::control_successors(block.terminator())
-                .contains(&Some(current))
-        });
-        let (at, prior) = predecessors.next()?;
-        if predecessors.next().is_some() {
+        let &(count, at) = predecessors.get(current as usize)?;
+        if count != 1 {
             return None;
         }
+        let prior = &code.blocks()[at];
         match prior.terminator() {
             Term::Scalar(Branch::LiteralBranch {
                 left,

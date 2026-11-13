@@ -1,3 +1,6 @@
+#[path = "dimension_remap.rs"]
+mod dimension_remap;
+use dimension_remap::Remapping as DimensionRemapping;
 #[path = "selected_matrix_result.rs"]
 mod selected_matrix_result;
 use selected_matrix_result::selected_matrix_result_schema;
@@ -2168,7 +2171,7 @@ fn embed_schema_draft(
             "table schema dimension identity space was exhausted".to_owned(),
         )
     })?;
-    let mut replacements = BTreeMap::new();
+    let mut replacements = DimensionRemapping::new();
     for (ordinal, declaration) in draft.dimension_parameters.iter().enumerate() {
         let ordinal = u32::try_from(ordinal).map_err(|_| {
             internal(
@@ -2220,7 +2223,7 @@ fn embed_schema_draft(
 
 fn remap_dimension_expr(
     expression: &DimensionExpr,
-    replacements: &BTreeMap<DimensionParameterId, DimensionParameterId>,
+    replacements: &DimensionRemapping,
 ) -> Result<DimensionExpr, ()> {
     Ok(match expression {
         DimensionExpr::Hole => DimensionExpr::Hole,
@@ -2259,7 +2262,7 @@ fn remap_dimension_expr(
 
 fn remap_cardinality(
     cardinality: &CardinalitySpec,
-    replacements: &BTreeMap<DimensionParameterId, DimensionParameterId>,
+    replacements: &DimensionRemapping,
 ) -> Result<CardinalitySpec, ()> {
     Ok(match cardinality {
         CardinalitySpec::Exact(value) => {
@@ -2276,7 +2279,7 @@ fn remap_cardinality(
 
 fn remap_schema_body(
     body: &SchemaBody,
-    replacements: &BTreeMap<DimensionParameterId, DimensionParameterId>,
+    replacements: &DimensionRemapping,
 ) -> Result<SchemaBody, ()> {
     Ok(match body {
         SchemaBody::Option(payload) => {
@@ -2538,7 +2541,7 @@ fn materialize_source_output_draft(
                 .map(|(index, declaration)| {
                     (declaration.id, DimensionParameterId::new(index as u32))
                 })
-                .collect::<BTreeMap<_, _>>();
+                .collect::<DimensionRemapping>();
             let error = || internal(anchor, "map output dimensions are not closed".to_owned());
             let parameters = draft
                 .dimension_parameters
@@ -2618,7 +2621,7 @@ fn materialize_source_output_draft(
                         "set output references an unknown dimension".to_owned(),
                     )
                 })?;
-            let mut replacements = BTreeMap::new();
+            let mut replacements = DimensionRemapping::new();
             for declaration in draft
                 .dimension_parameters
                 .iter()
