@@ -1,6 +1,6 @@
 //! Shared same-Object launcher; production is capability-secured.
 //! No source parsing, JIT, resident graph execution or source-native fallback.
-use crate::native_artifact::launch::program::BuildOwnedHostedBinding;
+use crate::native_artifact::launch::{policy::LibraryLimits, program::BuildOwnedHostedBinding};
 use crate::native_artifact::{NativeExecutionLimits, NativeProgramExecutionLimits};
 use mech_core::{ManagedMemoryBudget, ManagedMemoryReservation, Value};
 use mech_runtime::{
@@ -22,17 +22,6 @@ struct Grant {
     target: String,
     operations: Vec<String>,
     paths: Vec<String>,
-}
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct LibraryLimits {
-    output_elements: u64,
-    output_bytes: u64,
-    temporary_bytes: u64,
-    cloned_bytes: u64,
-    retained_nodes: u64,
-    compute_work: u64,
-    comparison_work: u64,
 }
 // Separate flat schemas retain strict secured/benchmark field acceptance even
 // when Cargo unifies both optional feature sets in an embedding application.
@@ -331,16 +320,7 @@ fn run<P: LaunchPolicy>(
     if !linked.descriptor().plan().inputs().is_empty() {
         return Err("hosted application has unbound ordinary turn inputs".into());
     }
-    let mut library = mech_core::TargetMemoryProfile::current_resident_cpu()
-        .map_err(diagnostic)?
-        .limits;
-    library.max_output_elements = Some(launch.library.output_elements);
-    library.max_output_bytes = Some(launch.library.output_bytes);
-    library.max_temporary_bytes = Some(launch.library.temporary_bytes);
-    library.max_cloned_bytes = Some(launch.library.cloned_bytes);
-    library.max_retained_nodes = Some(launch.library.retained_nodes);
-    library.max_compute_work = Some(launch.library.compute_work);
-    library.max_comparison_work = Some(launch.library.comparison_work);
+    let library = launch.library.limits().map_err(diagnostic)?;
     let limits = NativeProgramExecutionLimits {
         execution: NativeExecutionLimits {
             max_work: launch.work,

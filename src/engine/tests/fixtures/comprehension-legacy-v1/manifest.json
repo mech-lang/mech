@@ -6,7 +6,7 @@
       "kind_tag": 0,
       "nested_element": false,
       "program_revision": "2b33efb8cfe6607da6780bb6fb7e5671b1feca30fb80b000d89215b6dc65024d",
-      "sha256": "419be1ec178c0b0cbdf25e5e1a07930a280a83d56d16386680ad850b308f250e"
+      "sha256": "ffe9794e186f7c960cc536f0f610a9106d72297dc7a3f815e9f6b2d7930c8d53"
     },
     {
       "bytes": 1848,
@@ -14,7 +14,7 @@
       "kind_tag": 0,
       "nested_element": true,
       "program_revision": "343ec04328a3e66403abb5d43724c10a60530bffad53626ee410033e6bbfe769",
-      "sha256": "5994a5af70d0e2d4ed369abc5042a3b26a3a9762f38e7e942256794d5c179a73"
+      "sha256": "011f60703bebf40051d324515da7d8d9c5eda3890c61a29f090658be9fa9895d"
     },
     {
       "bytes": 1688,
@@ -22,7 +22,7 @@
       "kind_tag": 1,
       "nested_element": false,
       "program_revision": "eefcd32688b814cdbcc1e61bda76b2a83f6bb7b779530002504a7c8562ba70ef",
-      "sha256": "085cda96816de718b5bcb3e700fc12ba9a2bcdfbbf83be62334967213aefa99d"
+      "sha256": "b3019e8aded0957fabb36539f2a0c5cc4608aca00fc597439e289564489372df"
     },
     {
       "bytes": 1640,
@@ -30,7 +30,7 @@
       "kind_tag": 2,
       "nested_element": false,
       "program_revision": "6a40ef8c0569515ce3a198e2f73165e18fba39f2399711b3299d2b67cfd90ec1",
-      "sha256": "7c6f878b10081335c43fb4a7ba437915397a3bec9e0d044aff28a04da9960d99"
+      "sha256": "56b2628821f4b13c8fd0710141e5bf822fc5d7aa81e0f134908b75bb72596a9b"
     }
   ],
   "origin": "ordinary-source-program-compiler",

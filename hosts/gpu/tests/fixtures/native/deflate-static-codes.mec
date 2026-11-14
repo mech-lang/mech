@@ -1,0 +1,26 @@
+// Fixed code tables from CompressLazy.roc:214-251 at
+// 671077457ff7ef3a3d44caf715a3fc595addf379; reachable from level 12.
+// Include the qualified Huffman component first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<block-codes> := <{litlen-lens<[u8]> litlen-codewords<[u32]> offset-lens<[u8]> offset-codewords<[u32]>}>
+block-static-width(sym<u64>) => (out<u8>) :=
+  out := ((sym < 144u64)? | true => 8u8 | false => ((sym < 256u64)? | true => 9u8 | false => ((sym < 280u64)? | true => 7u8 | false => 8u8))).
+block-static-word(sym<u64>, reversed<[u8]>) => (out<u32>) :=
+  word := ((sym < 144u64)? | true => 48u64 + sym | false => ((sym < 256u64)? | true => 400u64 + sym - 144u64 | false => ((sym < 280u64)? | true => sym - 256u64 | false => 192u64 + sym - 280u64)))
+  width<u64> := block-static-width(sym)
+  out := huff-reverse-codeword(huff-packed(word), width, reversed).
+block-static-lens(lens<[u8]>, sym<u64>) => <[u8]>
+  | (lens, sym) => ((sym < 288u64)? | true => block-static-lens(huff-set8(lens, sym, block-static-width(sym)), sym + 1u64) | false => lens).
+block-static-litlen-words(words<[u32]>, sym<u64>, reversed<[u8]>) => <[u32]>
+  | (words, sym, reversed) => ((sym < 288u64)? | true => block-static-litlen-words(huff-set32(words, sym, block-static-word(sym, reversed)), sym + 1u64, reversed) | false => words).
+block-static-offset-words(words<[u32]>, sym<u64>, reversed<[u8]>) => <[u32]>
+  | (words, sym, reversed) => ((sym < 32u64)? | true => block-static-offset-words(huff-set32(words, sym, huff-reverse-codeword(huff-packed(sym), 5u64, reversed)), sym + 1u64, reversed) | false => words).
+block-build-static-codes(reversed<[u8]>) => (out<block-codes>) :=
+  litlen-lens0 := [0u8 | i <- 0u64..=288u64, i < 288u64]
+  litlen-lens := block-static-lens(litlen-lens0, 0u64)
+  litlen-words0 := [0u32 | i <- 0u64..=288u64, i < 288u64]
+  litlen-words := block-static-litlen-words(litlen-words0, 0u64, reversed)
+  offset-lens := [5u8 | i <- 0u64..=32u64, i < 32u64]
+  offset-words0 := [0u32 | i <- 0u64..=32u64, i < 32u64]
+  offset-words := block-static-offset-words(offset-words0, 0u64, reversed)
+  out := {litlen-lens: litlen-lens, litlen-codewords: litlen-words, offset-lens: offset-lens, offset-codewords: offset-words}.

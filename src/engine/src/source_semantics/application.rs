@@ -53,6 +53,7 @@ impl PendingIteration {
                 PendingControlOperationBody::Operation { .. }
                 | PendingControlOperationBody::Recur(_)
                 | PendingControlOperationBody::Suspend
+                | PendingControlOperationBody::Assert
                 | PendingControlOperationBody::Publish => {}
             }
         }
@@ -242,8 +243,8 @@ impl SemanticBuilder {
             match &callable {
                 ApplicationCallable::Document(name) => {
                     let parameter = self.unary_document_parameter_schema(name, syntax)?;
-                    let seed_type = seed_schema.clone().finalize().map_err(|_| error())?;
-                    let parameter_type = parameter.clone().finalize().map_err(|_| error())?;
+                    let seed_type = seed_schema.finalize_ref().map_err(|_| error())?;
+                    let parameter_type = parameter.finalize_ref().map_err(|_| error())?;
                     if crate::iteration_carrier_compatible(&seed_type, &parameter_type) {
                         parameter
                     } else {
@@ -256,8 +257,8 @@ impl SemanticBuilder {
                 ApplicationCallable::Catalog { .. } => generalized_carrier(&seed_schema),
             }
         };
-        let seed_type = seed_schema.clone().finalize().map_err(|_| error())?;
-        let carrier_type = carrier.clone().finalize().map_err(|_| error())?;
+        let seed_type = seed_schema.finalize_ref().map_err(|_| error())?;
+        let carrier_type = carrier.finalize_ref().map_err(|_| error())?;
         if !crate::is_iteration_carrier_schema(&carrier_type)
             || (!elementwise && !crate::iteration_carrier_compatible(&seed_type, &carrier_type))
             || (elementwise && !crate::is_iteration_carrier_schema(&seed_type))
@@ -356,8 +357,7 @@ impl SemanticBuilder {
                     _ => {
                         let schema = self.schema_draft_of(value)?;
                         if !schema
-                            .clone()
-                            .finalize()
+                            .finalize_ref()
                             .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
                         {
                             return Err(error());
@@ -387,6 +387,7 @@ impl SemanticBuilder {
                 return Err(error());
             }
             let body = match node.body {
+                PendingNodeBody::LocalAssert => PendingControlOperationBody::Assert,
                 PendingNodeBody::Operation {
                     operation,
                     contract: Some(contract),
@@ -461,8 +462,7 @@ pub(super) fn resolve_iteration(
         schemas
             .find_by_key(
                 draft
-                    .clone()
-                    .finalize()
+                    .finalize_ref()
                     .expect("validated iteration schema")
                     .key(),
             )

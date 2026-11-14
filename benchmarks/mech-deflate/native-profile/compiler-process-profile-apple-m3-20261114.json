@@ -1,0 +1,725 @@
+{
+  "clang_diagnostic_phase_seconds_nested": {
+    "Backend": 0.461203,
+    "CodeGenPasses": 0.249942,
+    "ExecuteCompiler": 0.509565,
+    "Frontend": 0.047008,
+    "Optimizer": 0.210238
+  },
+  "compiler_binary_sha256": "736b0fc0facdf7ed30d42ac501fe2fdee84a1d2fc9a511cd0676559b97184430",
+  "compiler_source_commit": "6d7390e59616e52c5d1dce30f7514cf89167731a",
+  "compression_implementation_physical_lines": {
+    "libdeflate": 5485,
+    "mech": 1930,
+    "roc": 6187
+  },
+  "decision": "Profile complete; prioritize immutable lexical-site indexing, demand-driven semantic dimensions, and preventing transient SSA/CFG expansion, with exact parser work preserved. No unmeasured optimization gain claimed.",
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "main_entry_alias_census": {
+    "alias_lines": 19546177,
+    "duplicate_alias_value_ids": 0,
+    "maximum_alias_value_id": 20787564,
+    "root_classes": {
+      "block_parameter": 17041123,
+      "integer_zero": 2466524,
+      "other_instruction_result": 36455,
+      "other_integer_literal": 2075,
+      "unclassified": 0
+    },
+    "source_sha256": "a2420a9cbce5dbd34bba0c5cbb7f5233eb810d3c85b667943dfd7ca829dfba24",
+    "unique_alias_value_ids": 19546177
+  },
+  "main_entry_cleanup_reduction_fractions": {
+    "block_parameter_declarations": 0.9135060008868122,
+    "blocks": 0.8404015361536674,
+    "edge_value_arguments": 0.9305824598646677,
+    "instructions": 0.8881859645124738
+  },
+  "main_entry_ir_census": {
+    "after-cleanup.clif": {
+      "alias_lines": 0,
+      "block_parameter_declarations": 46426,
+      "blocks": 73516,
+      "bytes": 7277566,
+      "edge_value_arguments": 75864,
+      "file": "after-cleanup.clif",
+      "instruction_value_references": 242821,
+      "instructions": 141307,
+      "opcodes": {
+        "band": 1964,
+        "band_imm": 461,
+        "bnot": 2,
+        "bor": 739,
+        "brif": 16875,
+        "bxor": 9,
+        "bxor_imm": 6,
+        "call": 3112,
+        "clz": 2,
+        "ctz": 9,
+        "global_value": 14,
+        "iadd": 5161,
+        "iadd_imm": 5161,
+        "icmp": 8384,
+        "icmp_imm": 2682,
+        "iconst": 11875,
+        "imul": 568,
+        "imul_imm": 1129,
+        "ireduce": 569,
+        "ishl": 315,
+        "isub": 852,
+        "jump": 52314,
+        "load": 4423,
+        "return": 4327,
+        "sadd_overflow": 2,
+        "select": 1280,
+        "smul_overflow": 2,
+        "ssub_overflow": 2,
+        "stack_addr": 1582,
+        "stack_load": 3594,
+        "stack_store": 5820,
+        "store": 4044,
+        "uadd_overflow": 362,
+        "udiv": 254,
+        "uextend": 1632,
+        "uload16": 60,
+        "uload32": 816,
+        "uload8": 449,
+        "umax": 52,
+        "umin": 4,
+        "umulhi": 105,
+        "ushr": 148,
+        "ushr_imm": 146
+      },
+      "sha256": "b0bd8b7b26472112c285f625e050ecd0a7cbfcf9c8038644cf7831e40112bf89"
+    },
+    "before-cleanup.clif": {
+      "alias_lines": 19546177,
+      "block_parameter_declarations": 536754,
+      "blocks": 460631,
+      "bytes": 584030150,
+      "edge_value_arguments": 1092865,
+      "file": "before-cleanup.clif",
+      "instruction_value_references": 2787472,
+      "instructions": 1263768,
+      "opcodes": {
+        "band": 2123,
+        "band_imm": 461,
+        "bnot": 2,
+        "bor": 741,
+        "brif": 285422,
+        "bxor": 9,
+        "bxor_imm": 6,
+        "call": 91597,
+        "clz": 2,
+        "ctz": 9,
+        "global_value": 14,
+        "iadd": 5588,
+        "iadd_imm": 93965,
+        "icmp": 9811,
+        "icmp_imm": 4248,
+        "iconst": 384866,
+        "imul": 604,
+        "imul_imm": 1746,
+        "ireduce": 696,
+        "ishl": 315,
+        "isub": 977,
+        "jump": 135063,
+        "load": 93148,
+        "return": 40146,
+        "sadd_overflow": 3,
+        "select": 1346,
+        "smul_overflow": 2,
+        "ssub_overflow": 3,
+        "stack_addr": 1818,
+        "stack_load": 4941,
+        "stack_store": 6528,
+        "store": 92804,
+        "uadd_overflow": 601,
+        "udiv": 290,
+        "uextend": 1903,
+        "uload16": 60,
+        "uload32": 816,
+        "uload8": 449,
+        "umax": 170,
+        "umin": 4,
+        "umulhi": 141,
+        "ushr": 148,
+        "ushr_imm": 182
+      },
+      "sha256": "a2420a9cbce5dbd34bba0c5cbb7f5233eb810d3c85b667943dfd7ca829dfba24"
+    }
+  },
+  "mech_clean_reused_qualified_observations": [
+    {
+      "compiler_seconds": 36.096560416,
+      "instructions_retired": 571864176114,
+      "maximum_rss_bytes": 7759708160,
+      "native_intervals_seconds": {
+        "canonical_lowering": 3.7642662078142166,
+        "cfg_cleanup": 4.981247417163104,
+        "finalize_ssa": 0.13965233298949897,
+        "flow_proof": 0.03377070790156722,
+        "main_machine_code": 1.9776177080348134,
+        "numeric_helpers_lower_opt_emit": 4.68131558294408,
+        "operation_recipes": 0.7107192080002278,
+        "preparation": 8.512557667214423,
+        "source_cfg": 2.452797041973099,
+        "typed_layout": 7.583992555737495e-06
+      },
+      "observation": "candidate-1",
+      "phases_seconds": {
+        "artifact": 0.028607583,
+        "catalog": 0.046199083,
+        "encode": 0.009912917,
+        "frontend": 6.248249,
+        "native": 27.280807375,
+        "parse": 2.48211025
+      },
+      "whole_process_seconds": 37.137534332927316
+    },
+    {
+      "compiler_seconds": 36.39398075,
+      "instructions_retired": 572131111827,
+      "maximum_rss_bytes": 7757414400,
+      "native_intervals_seconds": {
+        "canonical_lowering": 3.806047916878015,
+        "cfg_cleanup": 5.0844862090889364,
+        "finalize_ssa": 0.1406170828267932,
+        "flow_proof": 0.045747000025585294,
+        "main_machine_code": 2.0000389160122722,
+        "numeric_helpers_lower_opt_emit": 4.690956166945398,
+        "operation_recipes": 0.7257862088736147,
+        "preparation": 8.587148000020534,
+        "source_cfg": 2.546243208227679,
+        "typed_layout": 8.16606916487217e-06
+      },
+      "observation": "candidate-2",
+      "phases_seconds": {
+        "artifact": 0.028543084,
+        "catalog": 0.038118709,
+        "encode": 0.00959975,
+        "frontend": 6.172753333,
+        "native": 27.6942505,
+        "parse": 2.450058333
+      },
+      "whole_process_seconds": 36.52002925006673
+    }
+  ],
+  "mech_diagnostic_compiles_excluded_from_primary_timings": [
+    {
+      "all_four_outputs_match": true,
+      "campaign": "front",
+      "diagnostic_process_seconds": 37.55777733284049
+    },
+    {
+      "all_four_outputs_match": true,
+      "campaign": "native",
+      "diagnostic_process_seconds": 36.894072083057836
+    },
+    {
+      "all_four_outputs_match": true,
+      "campaign": "lowering",
+      "diagnostic_process_seconds": 36.52240004087798
+    },
+    {
+      "all_four_outputs_match": true,
+      "campaign": "ir",
+      "diagnostic_process_seconds": 38.39298733393662
+    }
+  ],
+  "mech_stage_cpu_samples": [
+    {
+      "coordinator_wait_self_samples": 764,
+      "label": "parse",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "candidate",
+          "self_samples": 93,
+          "symbol": "<mech_syntax::document::parser::canonical::base::continuation::Continuation>::advance"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 91,
+          "symbol": "<mech_syntax::document::parser::journal::Journal<mech_syntax::document::parser::event::Event>>::chunk_mut"
+        },
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 36,
+          "symbol": "_platform_memmove"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 29,
+          "symbol": "<mech_syntax::document::parser::tree_cache::Sink>::advance"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 28,
+          "symbol": "_xzm_xzone_malloc"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 27,
+          "symbol": "<mech_syntax::document::source::TextSnapshot>::byte_at"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 23,
+          "symbol": "_xzm_free"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 20,
+          "symbol": "<mech_syntax::document::parser::canonical::literals::continuation::Continuation>::advance"
+        }
+      ],
+      "requested_sample_seconds": 1
+    },
+    {
+      "coordinator_wait_self_samples": 2160,
+      "label": "frontend",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "candidate",
+          "self_samples": 594,
+          "symbol": "<alloc::boxed::Box<[mech_core::dimension::DimensionParameterDeclaration]> as core::clone::Clone>::clone"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 415,
+          "symbol": "mech_core::dimension::canonicalize_dimension_environment"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 186,
+          "symbol": "mech_core::dimension::normalize_dimension"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 113,
+          "symbol": "core::ptr::drop_in_place::<mech_core::dimension::DimensionExpr>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 89,
+          "symbol": "core::ptr::drop_in_place::<mech_core::dimension::DimensionExpr>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 89,
+          "symbol": "mech_core::dimension::collect_dimension_references"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 62,
+          "symbol": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<mech_core::dimension::DimensionParameterDeclaration>>, <mech_core::type_system::resolved::ResolvedType>::from_schema_body::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<mech_core::dimension::DimensionParameterDeclaration, <alloc::vec::Vec<mech_core::dimension::DimensionParameterDeclaration>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<mech_core::dimension::DimensionParameterDeclaration>>, <mech_core::type_system::resolved::ResolvedType>::from_schema_body::{closure#0}>>::{closure#0}>::{closure#0}>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 60,
+          "symbol": "<alloc::vec::Vec<usize> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<usize, core::iter::adapters::filter_map::FilterMap<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<mech_core::dimension::DimensionParameterDeclaration>>, mech_core::dimension::canonicalize_dimension_environment::{closure#1}>>>::from_iter"
+        }
+      ],
+      "requested_sample_seconds": 3
+    },
+    {
+      "coordinator_wait_self_samples": 3036,
+      "label": "preparation",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "candidate",
+          "self_samples": 433,
+          "symbol": "mech_gpu::native_artifact::program::prepare::phase_numeric::exits::liveness::live_before"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 303,
+          "symbol": "mech_gpu::native_artifact::program::prepare::phase_numeric::exits::live_query"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 241,
+          "symbol": "<deduplicated_symbol>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 195,
+          "symbol": "mech_engine::resident::general::native_collection_templates::control_source_schema"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 191,
+          "symbol": "_xzm_free"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 157,
+          "symbol": "<alloc::vec::Vec<mech_core::semantic_identity::SchemaId> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::semantic_identity::SchemaId, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_engine::artifact::control::ControlValue>, mech_engine::resident::general::native_collection_templates::native_collection_lexical_template::{closure#3}>, core::result::Result<core::convert::Infallible, mech_engine::resident::general::native_lowering::NativeArtifactLoweringError>>>>::from_iter"
+        },
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 98,
+          "symbol": "_platform_memmove"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 93,
+          "symbol": "_xzm_xzone_malloc"
+        }
+      ],
+      "requested_sample_seconds": 4
+    },
+    {
+      "coordinator_wait_self_samples": 1513,
+      "label": "numeric-helpers",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "candidate",
+          "self_samples": 372,
+          "symbol": "mech_gpu::native_artifact::program::codegen::numeric_traversal::analyze"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 138,
+          "symbol": "<alloc::collections::btree::map::BTreeMap<usize, alloc::collections::btree::set_val::SetValZST>>::insert"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 84,
+          "symbol": "_xzm_free"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 79,
+          "symbol": "mech_gpu::native_artifact::program::codegen::numeric_minimal::liveness::required"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 72,
+          "symbol": "<deduplicated_symbol>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 56,
+          "symbol": "<core::cell::once::OnceCell<core::result::Result<alloc::vec::Vec<alloc::vec::Vec<mech_engine::native_artifact::fusion_semantics::facts::NativeProgramDefinition>>, &str>>>::try_init::<<core::cell::once::OnceCell<core::result::Result<alloc::vec::Vec<alloc::vec::Vec<mech_engine::native_artifact::fusion_semantics::facts::NativeProgramDefinition>>, &str>>>::get_or_init<<mech_engine::native_artifact::fusion_semantics::facts::NativeProgramFacts>::definition_sites::{closure#0}>::{closure#0}, !>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 49,
+          "symbol": "<alloc::collections::btree::node::Handle<alloc::collections::btree::node::NodeRef<alloc::collections::btree::node::marker::Mut, usize, alloc::collections::btree::set_val::SetValZST, alloc::collections::btree::node::marker::Leaf>, alloc::collections::btree::node::marker::Edge>>::insert_recursing::<alloc::alloc::Global, <alloc::collections::btree::map::entry::VacantEntry<usize, alloc::collections::btree::set_val::SetValZST>>::insert_entry::{closure#0}>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 47,
+          "symbol": "<cranelift_bforest::path::Path<cranelift_bforest::map::MapTypes<cranelift_codegen::ir::entities::Inst, cranelift_codegen::ir::entities::Block>>>::next"
+        }
+      ],
+      "requested_sample_seconds": 2
+    },
+    {
+      "coordinator_wait_self_samples": 758,
+      "label": "source-cfg",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "candidate",
+          "self_samples": 301,
+          "symbol": "<cranelift_frontend::ssa::SSABuilder>::use_var_nonlocal"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 86,
+          "symbol": "<hashbrown::raw::RawTable<(cranelift_codegen::ir::entities::Block, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::Value>)>>::reserve_rehash::<hashbrown::map::make_hasher<cranelift_codegen::ir::entities::Block, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::Value>, rustc_hash::FxBuildHasher>::{closure#0}>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 75,
+          "symbol": "<cranelift_frontend::ssa::VariableDefs>::insert"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 47,
+          "symbol": "<hashbrown::map::HashMap<cranelift_codegen::ir::entities::Block, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::Value>, rustc_hash::FxBuildHasher>>::insert"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 38,
+          "symbol": "<cranelift_frontend::ssa::SSABuilder>::run_state_machine"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 33,
+          "symbol": "cranelift_codegen::ir::dfg::maybe_resolve_aliases"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 18,
+          "symbol": "<cranelift_codegen::ir::dfg::DataFlowGraph>::remove_block_param"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 16,
+          "symbol": "<cranelift_codegen::ir::layout::Layout>::inst_block"
+        }
+      ],
+      "requested_sample_seconds": 1
+    },
+    {
+      "coordinator_wait_self_samples": 2284,
+      "label": "cleanup",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "candidate",
+          "self_samples": 463,
+          "symbol": "<alloc::collections::btree::map::BTreeMap<cranelift_codegen::ir::entities::Block, alloc::collections::btree::set_val::SetValZST>>::insert"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 182,
+          "symbol": "<deduplicated_symbol>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 103,
+          "symbol": "<cranelift_codegen::ir::dfg::DataFlowGraph>::remove_block_param"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 100,
+          "symbol": "cranelift_codegen::remove_constant_phis::do_remove_constant_phis"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 88,
+          "symbol": "mech_gpu::native_artifact::program::codegen::cfg_cleanup::local_phis::simplify"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 83,
+          "symbol": "mech_gpu::native_artifact::program::codegen::cfg_cleanup::threaded_edges::route::find"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 83,
+          "symbol": "<cranelift_codegen::ir::layout::Insts as core::iter::traits::iterator::Iterator>::next"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 78,
+          "symbol": "<cranelift_codegen::ir::instructions::InstructionData>::arguments"
+        }
+      ],
+      "requested_sample_seconds": 3
+    },
+    {
+      "coordinator_wait_self_samples": 753,
+      "label": "machine-code",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 89,
+          "symbol": "_platform_memmove"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 68,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::init"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 45,
+          "symbol": "<regalloc2::indexset::IndexSet>::union_with"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 43,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::try_to_allocate_bundle_to_reg"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 36,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::add_liverange_to_vreg"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 21,
+          "symbol": "<cranelift_codegen::ir::dfg::DataFlowGraph>::resolve_all_aliases"
+        },
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 20,
+          "symbol": "_platform_memset"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 19,
+          "symbol": "<deduplicated_symbol>"
+        }
+      ],
+      "requested_sample_seconds": 1
+    },
+    {
+      "coordinator_wait_self_samples": 1485,
+      "label": "canonical-lowering",
+      "leading_self_symbols_excluding_coordinator_wait": [
+        {
+          "image": "candidate",
+          "self_samples": 325,
+          "symbol": "mech_engine::resident::general::native_collection_templates::control_source_schema"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 230,
+          "symbol": "<alloc::vec::Vec<mech_core::semantic_identity::SchemaId> as alloc::vec::spec_from_iter::SpecFromIter<mech_core::semantic_identity::SchemaId, core::iter::adapters::GenericShunt<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_engine::artifact::control::ControlValue>, mech_engine::resident::general::native_collection_templates::native_collection_lexical_template::{closure#3}>, core::result::Result<core::convert::Infallible, mech_engine::resident::general::native_lowering::NativeArtifactLoweringError>>>>::from_iter"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 194,
+          "symbol": "_xzm_free"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 101,
+          "symbol": "_malloc_zone_malloc"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 97,
+          "symbol": "mech_engine::resident::general::native_collection_templates::push_children"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 87,
+          "symbol": "_xzm_xzone_malloc"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 85,
+          "symbol": "mech_engine::resident::general::native_collection_templates::native_collection_lexical_template"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 84,
+          "symbol": "<deduplicated_symbol>"
+        }
+      ],
+      "requested_sample_seconds": 2
+    }
+  ],
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "parser_source_trees": {
+    "6d7390e59616e52c5d1dce30f7514cf89167731a": "b2e39dec2c80d4a2aa52f33e69fc8880fdcc910a",
+    "edd52ccbd53327635f8bfd12d8e2733c6100b87f": "b2e39dec2c80d4a2aa52f33e69fc8880fdcc910a"
+  },
+  "peer_clean_observations": {
+    "libdeflate": [
+      {
+        "bytes": 53000,
+        "maximum_rss_bytes": 75005952,
+        "name": "libdeflate-clean-1",
+        "process_seconds": 0.4843236671295017,
+        "sha256": "9d12352f391ad6ca003f795395a28579f4494bec71aa572edbbd552a14b54397"
+      },
+      {
+        "bytes": 53000,
+        "maximum_rss_bytes": 75087872,
+        "name": "libdeflate-clean-2",
+        "process_seconds": 0.4084008748177439,
+        "sha256": "9d12352f391ad6ca003f795395a28579f4494bec71aa572edbbd552a14b54397"
+      }
+    ],
+    "roc": [
+      {
+        "bytes": 88808,
+        "maximum_rss_bytes": 444645376,
+        "name": "roc-clean-1",
+        "process_seconds": 2.4998249581549317,
+        "sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+      },
+      {
+        "bytes": 88808,
+        "maximum_rss_bytes": 444252160,
+        "name": "roc-clean-2",
+        "process_seconds": 2.3471085000783205,
+        "sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+      }
+    ]
+  },
+  "peer_diagnostic_observations": {
+    "libdeflate": [
+      {
+        "bytes": 53000,
+        "maximum_rss_bytes": 75530240,
+        "name": "libdeflate-profile",
+        "process_seconds": 0.5736573748290539,
+        "sha256": "9d12352f391ad6ca003f795395a28579f4494bec71aa572edbbd552a14b54397"
+      }
+    ],
+    "roc": [
+      {
+        "bytes": 88808,
+        "maximum_rss_bytes": 444366848,
+        "name": "roc-profile",
+        "process_seconds": 2.371181500144303,
+        "sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+      }
+    ]
+  },
+  "peer_source_and_compiler_pins": {
+    "c_source_sha256": "a46dae12f2020b68d20c965ae43f9710e3e792bf77f3ca4611582f8d8d0c9541",
+    "clang_version": "Apple clang version 15.0.0 (clang-1500.3.9.4)\nTarget: arm64-apple-darwin25.2.0\nThread model: posix\nInstalledDir: /Library/Developer/CommandLineTools/usr/bin\n",
+    "libdeflate_source_commit": "92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+    "roc_app_sha256": "e2a7a543f4fb8863e1dd3f98d62a5a29a12d16cb3fa2db1960e8d55af0d0c2f1",
+    "roc_compiler_sha256": "fafc7e230a14f7165be49fdd46dec10a98373e39acd4e484d95424e16a5426bf",
+    "roc_compiler_source_commit": "d99c7b838fb05bb1047eb0c18d4d06d0f86f345d",
+    "roc_deflate_source_commit": "671077457ff7ef3a3d44caf715a3fc595addf379"
+  },
+  "roc_diagnostic_phase_seconds_nested_rounded": {
+    "arc": 0.019,
+    "linking": 0.0,
+    "lir_generation": 0.011,
+    "lir_passes": 1.188,
+    "llvm_ir_generation": 0.011,
+    "llvm_optimize_emit": 0.673,
+    "name_resolution_summed": 0.003,
+    "parsing_summed": 0.003,
+    "shared_lowering_evaluation": 0.343,
+    "specializing": 1.26,
+    "type_checking": 0.056,
+    "type_inference_summed": 0.049
+  },
+  "scope": [
+    "Full Mech source-to-Object goal remains open: clean compiler phase totals 36.10-36.39 seconds; complete processes 36.52-37.14 seconds.",
+    "Mech primary observations are both retained candidates from the qualified rootless-dimension cohort, not new uninstrumented observations on the profile date.",
+    "Two fresh clean peer builds each are individual observations, not a statistical timing population; all are retained, with separately recorded profiles excluded.",
+    "Compiler bootstrap, downloads and host linking are excluded. Source/work scopes and compiler optimization strategies differ.",
+    "Clang frontend is not parser-only. Roc parsing is rounded summed-module timing. Mech parses a lossless document tree; these boundaries do not support a precise parser speed ratio.",
+    "Native stages are nested. Numeric-helper generation includes lowering, optimization and machine-code emission; main machine-code timing covers the main entry only.",
+    "Eight Mech finite stage CPU windows across three compiles locate work, not full-phase or full-compiler percentages; coordinator wait is not useful CPU work.",
+    "Sample command end includes profiler postprocessing after the requested sampling duration. The complete command, observed trigger and latest stage are retained.",
+    "IR census covers the main entry. Serialized alias IDs are distinct, with no duplicates and no unknown roots; this establishes transient representation expansion, not that all such construction can safely be removed.",
+    "Parser tree identity is unchanged since the accepted prediction cohort; previous parser physical counters are prior evidence, not a fresh run.",
+    "Every diagnostic Mech compile preserves source, bytecode, native Object and complete metadata. Every peer diagnostic preserves its clean Object/archive bytes.",
+    "No generated-program runtime measurements are newly claimed. Grammar and language changes are excluded from the optimization scope.",
+    "Source counts include comments and blanks and exclude wrappers. C/Roc support other levels and Roc frontend also checks the shared API decoder. Counts do not normalize algorithm complexity.",
+    "The earlier rootless-dimension candidate has higher maximum RSS than both controls, with nonoverlapping ranges; its corrected v2 provenance is retained.",
+    "Original failed curation is disclosed; no measurements were omitted or repeated because of it. Compiler executables are represented by hashes and source/build pins."
+  ],
+  "source_flags_count": 52
+}

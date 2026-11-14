@@ -1,0 +1,2507 @@
+# Native compression milestone
+
+## R259: explicit-window ablation loses; R256 remains retained
+
+The requested matched comparison now includes R256, an explicit-window control,
+fullR257 and the pinned reference in the same two fixed24-order cohorts/all81.
+Paired geometric elapsed: control+2.8501%, fullR257−1.0201% versus R256.
+At1MiB, control/reference is text1.932734x, random2.253865x,
+periodic1.327850x, repeated1.279962x. FullR257 is1.885660x/2.103148x/
+1.277338x/1.231565x in that cohort. Retained historical R256 stays unchanged.
+
+Source inspection corrects the premise: these27 R256 sites already consume the
+source-window proof and dynamically check geometry. The control reuses geometry
+but withholds that proof from the adapter, adding an explicit enough/fits gate
+and retaining fallback. It is a conservative proof-use ablation, not a pure
+geometry-only deletion. Source checks and all algorithm/allocation pins remain.
+
+The control fails periodic/repeated262144 combined point/block gates(79/81).
+All individual misses remain; no allowances or observations change. FullR257's
+fresh81/81 combined gates do not erase its historical miss or imply adoption.
+All81 three-way heap/copy/zero/private peaks match. Root Object bytes and339
+other routines are exact;837_vector42604B/frame944B versus42800/928 retained.
+The specific scalar-tail base reload is gone, but primary elapsed worsens despite
+mixed favorable instruction/cycle readings. No complete causal budget is claimed.
+
+Fresh268800 original/decoded oracle calls,162 smokes,16848 independent counter/
+heap calls and12 current/reference captures pass. The maintained715-test/same7
+exclusions remain inherited, not relabelled fresh. Disabled/final annotated
+images reproduce R256/the timed image exactly. Environmental disk exhaustion
+preserves the first two observation hashes and recovers the complete third batch
+byte-identically to its written prefix; zero timing calls are repeated. Two
+storage-wrapper assertions are disclosed; no compressor/resource denial occurs.
+2425 public hashes, exact source and six offline replays verify. OrdinaryIR215
+and the additional omitted managed contract remain unchanged.
+
+Next establish the whole current empty outer path route and actual eligibility,
+keeping its already-decremented cursor. Then current-baseline fixed-placement
+R247 and short-completion/live-state evidence; no broad fact campaign or repeated
+old phase-only trial. [Full matched table, caveats, profiles and recovery](native-explicit-window-control.md).
+
+## R258: checked-path SSA isolation recorded; R256 remains retained
+
+The bounded follow-up retains new checked source definitions during SSA
+construction while reusing the same current-entry geometry. It does not yet
+supply the newly requested dynamic-readable-window three-way control. Preserve
+this component and the full source; retain R256 under the new brief.
+
+Within the48 balanced blocks, all81 geometric elapsed improves1.2245% against
+fresh R256. At1MiB, paired ratios/control effects are text1.880496x/−1.5147%,
+random2.102709x/−2.9981%, periodic1.294166x/+2.1049%,
+repeated1.234041x/+0.7183%. Eight is0.424178x in this paired cohort. Historical
+R256 ratios and legacy pooled summaries retain their original denominators;
+new tables lead with ratios formed inside each matched block.
+
+Both full cohorts and separate CPU/heap cohorts complete. Pooled point/balanced
+gates81/81; first cohort81/81, second81point/80balanced. Its empty+6.3515%
+miss remains, with raw83ns medians equal.43 instruction medians fall/35rise.
+All81 heap/copy/zero/private peaks stay equal. One of340 numeric definitions
+changes:42800→23384B, stack928→800B. Root/339others stay exact. The additional
+scalar-tail base reload still survives; smaller code has not removed that cost.
+
+715 maintained tests/same7 exclusions,268800 linked original/decoded oracle
+calls and162 all81 smokes pass. Disabled Object/metadata restores R256; final
+annotations match the timed image. Twelve fresh current/reference captures and
+narrow three-image machine windows are preserved. A copied relative harness
+path and scanner self-literal check were corrected; completed measurements were
+not rerun.2512 public hashes/source reconstruction/eight report replays verify.
+OrdinaryIR215 and the additional omitted managed contract remain unchanged.
+
+Next: exact R256/geometry-with-dynamic-window/fullR257 comparison; then current
+empty outer reduction with the decremented header cursor, fixed-placement R247,
+and short-completion/live-state evidence. No broad fact pass or repeated old
+phase-only trial. [All81 paired results, proof, evidence and disposition](native-packed-read-ssa.md).
+
+**Current retained experimental compiler: R256.** Consecutive positions stay in a guarded native region, with exact cold handoffs and unchanged ordinary funding. At 1 MiB: text1.908252x, random2.170161x, periodic1.267271x, repeated1.222946x reference. Eight0.414364x;22/81 cases beat reference, through 16 KiB. Large-input parity remains incomplete. [Current all 81 scoreboard](native-compression-scoreboard.md).
+
+## R257: preserve the geometry component and correct timing interpretation
+
+Tracing the R256 hot route narrows the earlier hypothesis: the repeated geometry test is in a packed-read adapter before the child version. Reusing the already checked parent geometry independently of source-window safety changes only one of340 numeric definitions. It shrinks42800→23588B and928→816B of stack; source, buffers, funding and ordinary extra-contract omissions stay fixed.
+
+Text32KiB instructions fall2.5112%, random4.1126%; periodic/repeated rise about1.45%. At1MiB, text/random instructions fall2.5431%/4.9512%, but periodic/repeated rise1.4784%/1.4620%. All81 heap/copy/zero/private-peak medians stay identical. The pooled empty timing gate fails(+5.6582%, with raw83ns medians unchanged), so **retain R256 and archive this component**. Small gains remain available for a narrower follow-up.
+
+The paired audit also exposes a pooled sign reversal: repeated32KiB is slower in both individual cohorts despite a pooled apparent win. Existing gates/raw observations are retained; within-block ratios are added. The historical R25618.3% gain survives the same audit with no reversals.715 maintained tests and268800 focused width2/4/8 source executions pass;12 new profiles, all81 two elapsed/CPU/heap cohorts and exact826→825→826 source reconstruction are verified. Environmental archive extraction failure is resolved and documented. [Design, complete numbers, failure disposition and verified evidence](native-entry-packed-geometry.md).
+
+Next isolate shape-only reuse from full checked-fallback removal and inspect the periodic skip loop's moves/spills before combining the component; then continue the remaining native path-scan work. R247 placement and empty outer reduction remain open.
+
+## R256: compose private fixed-buffer nested phases
+
+The shared numeric proof and source operations remain. A sealed same-proof private contract requires actual exclusive writable owners and fixed capacity, while ordinary checked visits/funding retain their original refusal and debits. Unsupported collection work receives exact current scalars/views before running in its original CFG. No source algorithm, allocation site or new primitive operation changes. The collector encloses 26 Tail loops and enters 35–36 times per1 MiB, with 31 window handoffs.
+
+Two confirmations show substantial larger-case gains: random 1 MiB3.069914x→2.170161x(-29.3087% elapsed,-31.2393% instructions); text2.182609x→1.908252x(-12.5701%,-14.9740%); periodic-25.0894%, repeated-22.7866% elapsed. All 81 pooled point/balanced gates pass. Primary B has 3 individual balanced misses(empty, one-stored, eight-literals-prefix); preserve them without changing thresholds. Heap/copy/zero medians stay identical, while root frame grows6528 B and worker216304 B.
+
+715 maintained tests/7 inherited exclusions pass, with3 new contract tests included.36864 current/parent original/decoded cold controls,3500 existing source controls,162 all 81 smokes and162 observed calls pass.4685 uncovered phase-count controls stay exact; fused-child boundary counts intentionally change. Default-off restores R255, final source restores the timed/profiled image, and all 825 source files reconstruct exactly from the822-file parent. Ordinary IR215/extra-contract omissions stay unchanged.
+
+Fresh six-case profiles of both executables move the remaining work inside native matching/path loops. The actual certified vector collector still repeats current geometry tests in a captured child version. Next prove only that same current geometry through supported descendants, verify the redundant machine instructions disappear, and measure all 81. Empty outer reduction and the single R247 placement control remain open. [Design, exact results, profiles and evidence](native-private-nested-phases.md).
+
+## R255: retain instruction reduction without claiming a large time gain
+
+The experimental backend reuses a current integer comparison across nonoverwriting selections/moves within one basic block. Different registers/width/order and all unknown instructions invalidate it; unknown multi-instruction expansions suppress tracking entirely. It changes only flags-preserving native instruction emission, with no new source, permission, arithmetic, ownership, funding or operation selection.
+
+The feature-disabled rebuilt compiler restores the entire R253 Object/metadata exactly. Final enabled annotations reproduce the measured image. Exactly four reduction bodies lose one comparison, while padding keeps their 2048-byte footprints. Root,132 other routines,seven vector bodies and all phase metadata remain exact. All142 linked function starts and linked root bytes match. The frame remains50560B and worker1884504B.
+
+Text1MiB retires31.8million fewer instructions (-0.6974%) but elapsed is flat/slightly worse:2.172846x->2.174604x reference(+0.0809%). Random1MiB is3.086275x->3.070799x(-0.5014% elapsed) with a much smaller independent instruction reduction; do not assign all elapsed change to this mechanism. All81 geometric elapsed is-0.1774%,56 improve/25 worsen; every unchanged point/balanced gate passes both. Eight stays0.434532x with equal instruction medians and contrary timings preserved. Heap/copy/zero medians stay exact.
+
+Fresh712 maintained tests/same7 exclusions,8 backend tests,58816 native probe calls,3500 original/decoded source calls/700 zero trips,162 complete smokes and162 observed calls/all81 exact phase counts pass. Three backend source files change; all822 Mech compiler files remain R253. Ordinary IR215/extra-contract omissions stay unchanged. The current profile still puts random mainly in root state transport and text mainly in existing numeric phases. Move the main effort to the enclosing recurrence funding/cold handoff and empty reduction path; the R247 placement control remains open. [Exact patch, all validation, current profile and evidence](native-shared-comparison.md).
+
+## R254: archive forwarding after predicate proof
+
+The same 822-file R253 compiler enables current-predicate proof followed by archived broad identity-route forwarding. Root code is 1,160 B smaller but the frame grows 1,600 B; 136 original and seven vector bodies and all corresponding metadata stay exact. The source, algorithm, buffers, allocation sites and timing boundary are unchanged.
+
+Both matched confirmations show larger random/text regressions. Random 1 MiB is 3.083508x -> 3.163219x reference (+2.5851% balanced elapsed, +3.1225% instructions); text 2.180404x -> 2.187823x (+0.3403%, +0.7747%). Repetitive cases improve slightly. Eight has contrary confirmations (+7.1242%, -0.4249%), with pooled elapsed +3.9367% and independent instructions -1.1652%. Preserve this contrary evidence. Pooled point gates pass 76/81 and balanced gates 77/81; no allowances change. Retain R253 with forwarding disabled.
+
+Fresh 3,500 original/decoded source calls/700 zero trips, 162 all-81 smokes and 162 observed all-81 calls pass. Phase counts, heap/copy/zero medians and private terminal cleanup remain exact. The unchanged compiler’s 712 maintained tests and seven exclusions are inherited, not rerun. Current-image annotations reproduce the complete measured Object/metadata. The old external-PC label error is corrected and replayed: all R253 native counts and measurements stay unchanged.
+
+The current profile locates the hot scalar reduction inside an already native/vector-capable path phase, distinct from its rare entry setup. Fresh C/Rust witnesses use one comparison for two selects, while the hot Mech window repeats the comparison. This identifies a generic code-generation opportunity, not a measured future speedup. Empty reduction, enclosing recurrence funding/cold handoff and the R247 placement control remain open. [Exact results, source provenance, current profile, exclusions and public evidence](native-predicate-forwarding-combination.md).
+
+## R253: current predicate proof removes impossible cleanup paths
+
+Retain the generic current-SSA range proof. On a selected false edge of a normalized 0/1 word’s comparison with one, the current word is zero. Scoped immutable facts survive unrelated effects, while new loads and shared paths inherit no memory or permission assumption. Existing effects, aliases and error order remain. Raw invalid values keep their fallback. No additional result-transport parameters, native operation class or ordinary contract change is introduced; the broad R252 forwarding flag stays disabled.
+
+Root code shrinks 5,623,612 -> 940,264 B; its frame shrinks 55,136 -> 50,560 B. The linked worker shrinks 6,640,168 -> 1,884,504 B. All 136 original routines, seven vector bodies and their metadata stay identical. A structural-cleanup-only compiler restores the entire R250 worker byte for byte. Final source/annotations reproduce the measured image, and disabling the flag restores the baseline Object/metadata.
+
+Random 64 KiB improves 2.948469x -> 2.797023x reference (-5.1365% elapsed). At 1 MiB: random 3.221790x -> 3.083160x (-4.3029%); text 2.240265x -> 2.174189x (-2.9495%); periodic 1.690930x; repeated 1.596171x. Eight improves 0.496470x -> 0.430586x (-12.4937% balanced elapsed). All 81 balanced elapsed and instruction/cycle medians improve, with every unchanged gate passing both cohorts. Heap, copying and zeroing figures are identical. Counter cohorts remain separate from elapsed claims.
+
+712 maintained tests pass with the same seven exclusions. Five new focused tests contain 3,942 native calls; 3,500 source calls include 700 zero trips across original/decoded forms. The 162 complete smokes and another 162 observed calls verify exact bytes/inflate/aliases/capacity/cleanup and unchanged all-81 native-phase counts. Current random 1 MiB samples remain root-heavy (3,383/5,552); text remains mostly numeric phases (4,444/5,361). These are not instruction or removable-time budgets.
+
+Empty outer path-reduction forwarding, enclosing multi-position cold handoff and the bounded R247 placement control remain outstanding. The inherited funding guard is not weakened. [Exact patch, all results, profiles, failure dispositions and verified public evidence](native-current-predicates.md).
+
+## R252: archive broad identity continuation forwarding
+
+Retain R250. The generic pure-SSA route experiment bypasses 1,909 selected edges and introduces 2,201 typed repair parameters. Most aggregate work was already virtual. Root code falls 32.97%, but its frame grows 960 B and the difficult random/text cases do more work. The exact final source reproduces the measured Object/metadata; disabled complete images restore R250. All 136 original routines and seven selected vector bodies are byte-identical.
+
+Both all 81 cohorts pass existing gates and preserve exact outputs/independent inflate/aliases/capacity/cleanup. Nevertheless, random 1 MiB worsens 3.221988x->3.293046x reference (+2.2054% elapsed,+2.5057% instructions), and natural 1MiB2.237932x->2.251347x (+0.5994%,+0.7189%). Eight improves 0.508766x->0.493174x; periodic 33 improves 2.0365%. Keep those useful components and all contrary evidence, without enabling the broad variant. The scoreboard uses the fresh R252 control denominator for retained R250.
+
+707 maintained tests pass with the same seven inherited exclusions; four focused tests contain 3,918 native calls. 3,500 fresh original/decoded source calls include 700 zero trips. Current 1 MiB random samples remain root-heavy (3,541/5,554); text is mostly numeric phases (4,394/5,352). Samples are not instruction or removable-time budgets. Payload and listed whole-heap fields stay equal on all 81 configurations.
+
+Next test current-interval predicate refinement without adding transport parameters, then inspect empty path-reduction transport. Enclosing multi-position cold handoff and the bounded R247 placement control remain separate outstanding work. No ordinary integration or new native operation class is claimed. [Exact patch, all 81 measurements, source, profiles and failure dispositions](native-identity-route-forwarding.md).
+
+## R251: identity-route and enclosing-region evidence
+
+Retain R250; the diagnostic compiler emits the same complete normal Object and metadata. The current zero-skip route executes 1,048,576 times on random 1 MiB and 1,048,572 times on natural 1 MiB. Four natural nonzero helper visits are near EOF and outside the earlier qualified matching-skip counter; all 81 route counts reconcile with cache headers. Most record construction is already virtual. A 22-instruction relay (21 stack loads/stores) and a separate 97-instruction continuation corridor (96 loads/stores) survive in the actual image. The latter has 455/5,470 random64 running samples, not an instruction or removable-time budget.
+
+Current header 2398 is the skip recurrence, 837 the enclosing collector. Their complete proofs reject non-Tail children and their selected partial proofs have 25/52 cold exports. A fixed-view writable-child witness separately reaches the current-account visit-funding guard; it must not be bypassed. 3,500 semantic controls (700 zero-trip visits) and 162 complete observed calls pass. The enclosing native-selection acceptance remains explicitly failing on the inherited boundary. Existing maintained qualification is inherited from R250, not rerun.
+
+Next implement generic identity-exit plus continuation forwarding only against the surviving machine relay, preserving logical aliases and error/evaluation order. Empty reduction, multi-position cold handoff and the separate R247 placement control remain outstanding. No new speedup or ordinary integration is claimed. [Exact evidence, refusals, all failure dispositions and remaining work](native-zero-trip-state.md).
+
+## R250: keep invariant current views across native returns
+
+Retain the one-file compiler change over R249. Existing numeric proofs establish that a non-appending writable view retains its exact six-word descriptor on successful phase return. Reuse those current input words; capture all result sources before parallel destination writes. Contents still change. Growing views, general matrix paths, aliases, errors, cleanup and owner checks stay. All 136 original routines and seven selected vector bodies remain byte-identical; root code shrinks 7,300 bytes and the frame 16 bytes. Disabled Object/metadata restore R249 exactly.
+
+Random 64 KiB improves 2.970036x to 2.940361x Roc (0.9991% lower balanced elapsed), favorable in both cohorts. Periodic33 improves 0.5010%; eight stays 0.502581x. All 81 point/block 1.05 gates pass in both cohorts. Twenty-five adverse block means remain. At 1 MiB, random improves to 3.217791x; text 2.244741x, periodic 1.774171x and repeated 1.659128x have small regressions. Allocation, copying, zeroing and private/heap peaks are unchanged. No parity claim.
+
+703 maintained tests pass with the same seven exclusions. 10,808 fresh dual-view source controls cover reordered results, held aliases and actual prior output, failure publication/cleanup/retry, plus shared fallback followed by native execution in one invocation. Fresh matrix native/resident, 416 boundary controls, 30 original/decoded image pairs, 162 normal smokes and 324 observed phase calls pass. Exact source and all commands accompany the verified 2,542-file public packet; five reports replay identically and all 815 compiler source files reconstruct. Ordinary IR215 and the compact entry's omitted additional contract remain unchanged.
+
+The updated review brief sets the next bounded task: paired zero-trip skip witnesses and source/CLIF/machine attribution of identity-result transport, before changing lowering. Then inspect empty path reduction, recover the current enclosing recurrence refusal and keep the R247 placement experiment separate. Large random/text throughput, all 81 cases and the eight-byte ceiling remain acceptance controls.
+
+[All results, exact patch, commands, profiles, limitations and public evidence](native-phase-view-identity.md).
+
+## R249: reuse private permission across a checked scalar read
+
+Retain the one-file extension over R245. Periodic33 improves1.577853x->1.535339x Roc (-2.6944% pooled, both cohorts favorable). Independent instructions fall1.7640%, cycles2.6635%. Eight remains0.493774x with contrary cohort observations preserved. All81 unchanged timing gates pass in both cohorts;8 pooled block means regress. Periodic4KiB improves1.014317x->0.977414x, below1x in both cohorts.
+
+The exact current-view scalar read between three skip-table stores no longer ends the existing private interval. It executes32854 times at33K and1044466 at1MiB. Bounds, lexical error order, current matrix indexing, aliases, cleanup and recovery stay with the shared emitter. Calls/growth/joins/changed views/owner-producing results still decline. No phase boundary or new source operation is selected. All136 original routines and7 selected vector bodies stay identical; root code shrinks32B while its frame grows16B. All81 allocation/copy/zero/private-peak and listed heap medians stay equal.
+
+703 maintained tests (same7 exclusions),48432 fresh normal/observed original/decoded read controls,1700 fresh existing matrix native/resident comparisons,416 boundary controls and37 image pairs pass.162 normal and162 observed complete-call controls verify exact streams/inflate/aliases/capacity/cleanup. Test-setup corrections and the recovered environmental disk failure remain explicit. No allowance or expected existing output changes.
+
+At1MiB random remains3.247617x, text2.241704x, periodic1.774457x, repeated1.658908x. Fresh random64 samples still favor the root3351/5437; text favors path15296. Next reduce repeated per-position state/view transport and checks on the large cases, with64KiB/1MiB throughput and instructions per byte as witnesses; keep all81 and the eight-byte ceiling. Sample shares are not removable-time or instruction partitions. Phase-success uniqueness propagation and direct Mech per-block offsets remain unimplemented. OrdinaryIR215/additional standalone omitted contracts remain unchanged.
+
+[All81 results, counters, profiles, exact source/patch, test commands, limitations and public evidence](native-private-read-intervals.md).
+
+## R248:81 configurations agree on measured work;1MiB scaling complete
+
+Retain R245. Opt-in counters restore its entire normal Object and metadata when
+disabled. All25 original and56 new same-stream prefixes independently agree on
+11 categories of search/skip/tree/cache/path/reduction work, including reason
+and span distributions.50 full Mech,162 filtered Mech and162 reference calls
+repeat exact counters/outputs. The filter matches the full25 censuses exactly.
+
+One unchanged normal executable handles every size through1MiB. New balanced
+primary/CPU/heap cohorts give retained1MiB text2.244033x (361.570ms), random
+3.235679x (93.101ms), periodic1.813792x (56.957ms), repeated1.690176x (58.054ms).
+Source/private memory peaks near10.55MB; initialized copies are8752–40676B.
+Random retires1450.463 instructions/byte versus305.360 in the reference. No new
+speedup is claimed. Original25 retain11 wins; the new56 include5 below-reference
+configurations, with duplicates and one near-parity point explicitly labeled.
+
+Old65K heldout text repeats the original32769-byte prefix; preserve it. New
+text uses the official continuation/checksum. No expected output, source
+algorithm, allowance, allocator or timing boundary changes. OrdinaryIR215 and
+standalone omitted managed contracts remain. Direct Mech per-block history and
+phase-success uniqueness propagation are not claimed. Five focused runtime/
+counter tests pass; the broad parent suite is inherited, not relabeled fresh.
+
+Next minimally reproduce the current private-interval refusal at scalar read
+2602 between skip head writes2596/2598 and2604. A read of the exact current
+buffer creates no alias; preserve the proof only if that is statically shown,
+then test errors/aliases/geometry/original-decoded and time all81 configurations.
+No gain or implementation of that extension is claimed here.
+
+[All numbers, work categories, memory, exact configurations, source/patch and public evidence](native-work-ledger-prefix-scaling.md).
+
+## R247: phase-only isolation preserves the natural gain and periodic penalty
+
+R245 stays retained, with all11 current wins listed in the [scoreboard](native-compression-scoreboard.md).
+The one-file policy change over R246 disables only root threading. Its root
+5630944B/frame55136B and all symbolic relocation targets match R245, while
+all270 original/map/vector bodies match R246. Four original path bodies shorten;
+all7 selected vector bodies remain identical. Disabled Object/metadata match R245.
+
+Same-cohort natural32 is2.248360x->2.145959x (-4.5545% block elapsed), periodic
+1.593197x->1.632102x (+2.4420%), repeated32 1.506688x->1.541355x (+2.3009%),
+random64 2.985697x->3.055233x (+2.3290%), and eight0.503905x->0.507425x (+0.8161%).
+Natural and periodic directions agree in both cohorts. All25 historical timing
+gates pass in both;16 pooled block means worsen. Preserve this useful natural
+component; the periodic-primary criterion still fails. All payload/heap/copy/
+zero/private-peak fields are identical. Root threading is not needed for the
+periodic penalty; phase execution and placement remain possible causes.
+
+710 maintained,7 proof and7076 fresh source controls pass;33 fresh original/
+decoded images match. All25 exact streams/inflate/aliases/capacities/final zero
+ownership pass. Fresh exact R245/random64 profiling places3431/5503 running
+samples in the generated root; no removable-time percentage is inferred.
+All6 natural fixtures through65537 are verified same-stream prefixes; random32
+and heldout random64 are not. Current logical-work comparison and the expanded
+prefix sweep remain next work before a bounded phase-success ownership/transport
+change. OrdinaryIR215 and omitted standalone contracts remain unchanged.
+
+[Full R247 results, every regression, exact commands/pins and verified public evidence](native-phase-only-loop-threading.md).
+
+## R246: preserve the combined natural-text gain; keep R245 for periodic input
+
+Archive the measured R237-threader/R245 combination. Natural32 improves
+2.239774x->2.141492x reference (-4.3880% block elapsed), with both cohorts
+favorable and5.6047% fewer instructions/4.1355% fewer cycles. The gain and full
+source remain available for the next isolated combination; they are not discarded.
+
+Periodic worsens1.599350x->1.660024x (+3.7937%) in both cohorts despite2.1247%
+fewer instructions; cycles rise3.1501%. Repeated32 rises1.509380x->1.561093x
+(+3.4261%); random32 rises2.747608x->2.805254x (+2.0981%). Eight is0.513988x->
+0.524576x (+3.0194% pooled block), and its adverse confirmation fails both
+historical1.05 gates while remaining below the user1x ceiling. Preserve the
+contrary initial pair. Pooled gates pass25/25, initial25/25, confirmation24/25;
+fifteen pooled block means worsen. All25 geometric elapsed rises0.1283%, while
+large11 falls1.0591%; neither average overrides the periodic acceptance rule.
+Both variants retain the same11 below-reference cases. All25 allocation/copy/
+zero/private-peak and heap fields remain exactly equal.
+
+The exact existing R237 proof pass is reused; R236 low-word narrowing and R238
+flag reuse remain uncombined. Nine root edges and twelve edges in four path
+bodies are threaded.132 other original kernels and all seven R245 vector bodies
+remain byte-identical; disabled full Object/metadata match R245. Current typed
+arguments, snapshot predicates, source checks, errors, aliases and recovery stay.
+Root/phase interaction is a hypothesis for the periodic loss, not an established
+cause. Fresh C/Rust checked-state-loop analogues show direct exits, not a new
+full-compression timing comparison.
+
+710 maintained tests and seven focused proof tests pass (same7 exclusions).
+7076 native source controls are freshly executed across normal/observed and
+original/decoded modes:4640 dispatch,320 actual path,1700 matrices and416
+boundaries.1160 dispatch/1700 matrix resident calls are fresh;1700 parent matrix
+rows and40 path resident rows are reused by hash.34 inherited path default-work
+denials remain explicit, without raising limits. All33 fresh small image pairs
+match.50 full smokes/every measured stream agree and independently inflate.
+The public download verifies2069 hashes/five numerical replays; the patch
+reconstructs all820 tested source files from R245. OrdinaryIR215 stays unchanged.
+[All25, source/patch, counters, profiles, exact commands and failure dispositions](native-loop-threading-combination.md).
+
+Next apply the same pass only inside outlined phases, leaving root threading
+disabled. Require R245 root code identity and the same four shortened path
+bodies before all25 timings. This control tests whether the root pass causes
+the periodic penalty; no phase-only implementation or speedup is claimed yet.
+
+## R245: reuse vector geometry across complete native matching phases
+
+Retain the six-file experimental compiler change. Periodic33 improves
+1.620851x->1.582628x reference, with2.22%/2.55% lower block elapsed in the two
+cohorts and2.3582% pooled. Independent instructions fall0.9039%, cycles2.2126%.
+All25 point/block1.05 gates pass; all25 descriptive geometric elapsed improves
+0.6306%, large11 improves0.2419%. Eight literals remains0.495073x, with its
+contrary initial pair and+0.2882% instructions preserved.
+
+Eleven pooled block means are adverse. Natural32 is2.230560x->2.240494x
+(+0.4454% elapsed despite-2.7654% instructions); mixed131073 is2.469678x->
+2.502989x (+1.3488%). Random256 is0.664982x->0.671579x (+1.3265% block
+elapsed). All11 below-reference cases remain. Heap requests/bytes, copied/
+zeroed bytes and private live peaks are exactly equal onall25; process
+footprints and emitted code grow and remain in the report.
+
+The caller checks actual current vector geometry once and selects a private
+vector body from the same checked emitter. Matrices keep their original native
+body; shared ownership retains the original root fallback. All136 existing
+numeric/map bodies and their original metadata records stay identical; seven
+extra vector versions execute. Matching2624 loses112 static conditional branches
+and shrinks10120->8228B. This is a general view-geometry optimization, not a
+compression-path selector. Static removed divides are not dynamic counts.
+
+703 maintained tests (same7 exclusions),7 unchanged-runtime ABI tests,3400
+matrix controls,416 boundary controls and208 frozen seed controls pass. All50
+small original/decoded pairs match. Actual dispatch records1372 general/100
+vector visits and52 shared-fallback->vector cases in the same invocation.
+50 full smokes and every measured stream agree exactly and independently inflate.
+The downloaded packet verifies2403 hashes and five numerical replays.
+
+The compiler patch and complete tested source closure are published as the
+R245 experimental compiler; they apply to archived R242, not directly to the
+maintained IR215 tree. OrdinaryIR215 and omitted standalone extra contracts
+remain unchanged. No new PR or branch is created. [All25, source/patch, code/stack costs, current profiles, exact commands and failure disposition](native-vector-phase-specialization.md).
+
+Next inspect the current path-scan/root hot PCs for one bounded proof or
+transport change. Natural32 is dominated by path15296; periodic still spends
+substantial time in its generated root. Preserve R245 and all11 wins.
+
+## R244: constant-only reuse recovers R243 cost; R242 stays
+
+The one-file policy restores all136 numeric/map bodies byte-for-byte to R242,
+keeping only1444B of root-text and16B of stack savings. Against R243 it recovers
+most of the large-case penalty; against retained R242 it does not establish a
+periodic win:1.617537x->1.625343x reference, +0.4826% pooled block elapsed,
++0.4971% instructions and+0.3563% cycles. Initial elapsed is adverse and
+confirmation nearly tied. Archive the component; keep R242 as the baseline.
+
+All25 are timed against R242, R243 and the reference in both fixed cohorts.
+All three variants beat the reference on the same11 cases. Nine candidate
+block means are adverse to R242; pooled point/block1.05 gates all pass while
+the primary acceptance still fails. All25 descriptive geometric elapsed
+improves0.2230%; large11 is effectively tied (-0.0014%). Preserve both cohorts
+and contrary timing/counter directions. Allocation/copy/heap/peak fields are
+exactly equal across all three variants.
+
+703 maintained,7 runtime ABI,3400 matrix and416 boundary controls pass;
+all42 small original/decoded pairs match and50 complete smokes independently
+inflate exactly. Compiler/test profiles, inherited exclusions and skipped
+coverage remain explicit. OrdinaryIR215 and omitted standalone contracts stay.
+
+The next useful target is constant proof after whole-loop SSA analysis, using
+exact helper/phase metadata identities without keeping unknown dynamic fields
+live across cold calls. Establish a fixed-buffer witness and negative shape,
+growth, alias and failure controls before the new proof pass. [All25, counters,
+current profiles, exact patches and disposition](native-constant-helper-geometry.md).
+
+## R243: helper geometry shrinks code but slows the periodic target
+
+Archive this one-file component; keep R242 as the periodic baseline. Reusing
+successful allocation/writable geometry cuts121184B of root text and3888B of
+entry stack, but dynamic metadata kept live through cold growth changes hot-loop
+register allocation. Periodic rises1.624810x->1.648663x reference (+1.4680% block
+elapsed), with both cohorts adverse; instructions rise1.3553%, cycles1.6650%.
+The disassembly confirms changed register assignment and additional scalar stack
+traffic, without claiming a complete per-function instruction attribution.
+
+The small-case wins are preserved: eight0.491448x->0.485602x, random256
+0.649137x->0.630132x. Both variants beat the reference on the same11 cases.
+All25 are timed:12 pooled block means worsen, all11 larger cases worsen, and
+the large-case geometric mean rises1.4080%. All historical1.05 gates pass in
+both cohorts and pooled, while the prospective primary acceptance fails.
+Allocation/copy/heap/peak fields remain equal. Smaller code is not a speed win
+on the target; the all25 descriptive average does not override that result.
+
+703 maintained tests (same7 inherited exclusions),7 runtime ABI tests,3400
+matrix controls,416 boundary controls and50 complete smokes pass; all42 small
+original/decoded image pairs match. Runtime cases include scalar/packed strides,
+2D views, aliases, growth, rejection and retry. Failed harness setup and exact
+fixes are retained. OrdinaryIR215 and standalone contract omissions stay.
+
+Next reuse only already-constant helper geometry, avoiding unknown dynamic-field
+lifetimes through cold calls; compare against both this component and R242.
+Keep fixed-view phase propagation separate. [All25, counters, profile, patch,
+commands and disposition](native-array-helper-geometry.md).
+
+## R242: successful phase exits transfer dead current owner tokens
+
+Periodic33,027B improves1.652601x->1.627365x reference,1.5270% in pooled
+balanced block means; both fixed cohorts improve. Eight regresses0.510449x
+->0.522129x. All25 inputs/sizes are timed after this change:11 pooled block
+means are slower, including random256 (+1.8336%) and distribution16 (+0.1814%).
+Initial eight block latency rises5.3197%, failing the old1.05 gate; confirmation
+falls0.3836%, and pooled gates pass25/25. Preserve these contrary outcomes.
+The user's prospective periodic-primary/eight<=1x rule retains the candidate.
+
+Existing exact current packet/word identity and successful-exit liveness permit
+one dead owner token to move into its result. The separate witness observes33205
+nonnull identical moves per periodic compression. Shared aliases and growth keep
+their current ownership behavior; failed calls leave the original path intact.
+Root text shrinks23336B, stack is unchanged, all136 numeric/map bodies match.
+Periodic instructions fall1.9581%, cycles2.3491%; all25 allocation/copy/peak fields
+are equal. This is an ownership-transport improvement, not an allocation win.
+
+703 maintained tests,5788 native matching controls,416 boundary controls and50
+complete smokes pass. The maintained test root uses opt1, compiler/producer opt3;
+seven inherited exclusions remain. Selected growth/live-alias controls execute
+the change; two fanout sources remain inherited unselected fallback controls.
+Exact source/observations, eleven adverse rows, setup failures and their fixes
+are retained. OrdinaryIR215/standalone contract omissions remain unchanged.
+
+Another38.55% of current periodic time must disappear. Next trace fixed array
+geometry through allocation and phase result transport; keep current pointers,
+general matrix fallback, all25 timings and every adverse row explicit.
+[All25, proof, commands, failures and evidence](native-phase-exit-owner-transfer.md).
+
+## R241: periodic input is now the primary parity target
+
+The user prioritizes periodic33,027B toward<=1x before moving to other cases;
+eight bytes may rise from about0.5x as far as1x. All25 remain correctness and
+timing controls. This prospective rule replaces portfolio-average selection.
+
+Grouping existing certified immutable equality loops into64-byte iterations
+improves periodic1.680619x->1.655346x reference,1.5038%, in both fixed cohorts.
+Eight is0.505430x. Periodic instructions fall3.2905%, cycles1.6140%; allocation,
+copy and peak fields stay equal. All25 exact streams/independent inflate agree;
+700 maintained tests,5,788 native source controls and5,346,432 focused machine
+checks per execution pass. Root is byte-identical; three matching bodies add1044B.
+
+Retain R241 as next periodic experimental control, preserving R237/R240 for
+measured combinations. Historical1.05 gates are not all green: pooled one-stored
+block mean rises5.8496%; all25 geometric elapsed rises1.0458%. Natural32 still
+favors preservedR237,2.141133x versus2.236146x. Both contrary cohorts remain.
+Eight stays within the explicitly authorized1x ceiling in both cohorts.
+
+Another39.59% of current periodic time must disappear. Current-PC shares remain
+root41.05%, matching32.47%, path12.82%; these are not removable-overhead shares.
+Next count/eliminate repeated same-owner settlement and view transport around
+phase returns on this same input. Deferred natural-terminal work stays parked.
+OrdinaryIR215 and its omitted standalone contracts remain unchanged.
+[All25, exact patch, tests and evidence](native-wide-equality-groups.md).
+
+## R240: private write intervals qualify; retained R237 stays
+
+The four-file R234-based experiment carries one currently proved-private view
+through12 two-write intervals, reusing checked indexing and owner settlement.
+Both fixed24-block cohorts and pooled48 pass all25 unchanged point/block1.05
+gates. The primary11 large-case geometric mean improves1.0771% against R234;
+all25 improve0.2291%. Natural32 is2.261704×→2.248339× reference, random32
+2.804555×→2.769391×, heldout random65 3.105705×→3.016150×. Eight regresses
+0.493649×→0.500856×. Preserve every adverse small row.
+
+Instructions fall all25; cycles fall20/rise5. Allocation/copy/heap fields stay
+equal. Root text grows4156B and stack64B; all136 numeric/map bodies stay identical.
+Additional equal-value stores are explicit: random32 predicts154594B, and its
+changed-only owner inspections can increase. This is no allocation win.
+
+700 maintained tests,8 focused proof tests and59028 native controls pass.
+Original/decoded/current-view/packed/alias/error/retry controls agree; all25 exact
+streams independently inflate. Full source/MBC Objects match; disabled complete
+Object matches R234. Fresh25468 wall/103717 PC calls complete. All1561 public
+hashes and seven numerical replays verify.
+
+Keep the component and evidence separately: it is0.2132% slower than R237 on the
+large portfolio, and R237 natural32 remains2.145702×. RetainedR237/ordinaryR215
+stay unchanged. Collector-wide continuity, direct completion, remaining census
+and ordinary integration remain open. [All25, proof, costs, failures and patch](native-private-write-intervals.md).
+
+## R239: collector and reduction census, implementation still open
+
+Actual native counts confirm the two proposed targets. Random32 has221,976
+root indexed attempts but only5 backing clones; all149,801 U16 tree attempts
+already arrive with a unique consumed owner.51,506 empty-child clears are all
+equal-value writes. Natural32 completes383,735 optimized reductions and replays
+terminal dispatch;80.5165% span only1–3 candidate lengths.
+
+The instrumented executable passes50 full calls over all25 cases, repeats its
+aggregate counts exactly, and preserves exact bytes, inflate, aliases, capacities,
+cleanup and every payload/copy field versus R234. Instrumentation-disabled
+Object is byte-identical to R234. Five focused controls pass. A proposed private
+chain witness passes3000 original/decoded clean-parent oracle controls before
+new functionality. All936 public evidence hashes and numerical replay verify.
+
+No new performance optimization or timing claim: retainedR237/ordinaryR215
+stay unchanged. Main future large-input control is R234. Private continuity,
+direct completion, remaining mismatch/recompute/stack census and the rest of
+the brief remain open. [All25 counts, acceptance witness and disposition](native-collector-reduction-census.md).
+
+## R238: shared comparison flags qualified, archived
+
+The two-file AArch64 backend experiment removes one redundant comparison in
+four path bodies; root and132 other routines remain byte-identical. Natural32
+instructions fall0.6594% and elapsed0.6062%; all25 pooled geometric elapsed
+improves0.6550%. First-cohort empty/one-stored block ratios1.06178/1.05567 fail
+the unchanged1.05 gates, so R237 remains retained. Confirmation/pooled gates
+pass, but do not override those failures. Heap/copy/code/stack sizes stay equal.
+
+703 maintained tests,10,680 native source controls,1,183 fresh resident calls,
+24 original/decoded image pairs,13 backend emitter tests and155,520 scalar
+oracle checks pass. Both interrupted disk-full captures retain all completed
+and partial data; no completed timing case is rerun. All2,370 public hashes and
+numerical replay verify. PR stays draft; prior external review had a service
+error and hosted CI is cancelled under standing instruction.
+
+The new brief now governs: diagnostic census, collector private-view continuity,
+then direct reduction completion, separately measured. R234 becomes the main
+prospective large-input control; report R237 separately. All11 large inputs are
+the primary portfolio, family regressions explicit, all25 gates retained.
+[All25 results, failures, patch and evidence](native-shared-comparison-evaluation.md).
+
+## R237: current-value loop dispatch threading retained
+
+The generic nine-file experiment over R236 shortens proved terminal routes
+through pure scalar dispatch and repairs current SSA arguments without cloning.
+Nine root/twelve phase edges qualify; four path bodies shrink 64 B each, with
+132 other routines byte-identical. Root text grows 1432 B; root stack falls 16 B.
+No compressor source, algorithm, allocations, limits or timing boundary changes.
+
+Both predeclared full cohorts and pooled 48 pass all 25 unchanged point/block
+1.05 gates. Pooled geometric elapsed improves **1.2134%**. Natural32 is
+**2.247351×→2.136610×** reference (−4.9276%); periodic **1.724336×**, repeated
+**1.633949×**, random32 **2.831896×**. Eight literals regresses
+**0.497427×→0.504507×** (+1.0590%). Preserve all ten adverse elapsed rows.
+Instructions/cycles fall on 22 inputs and rise on 3; heap/copy fields match.
+
+703 maintained tests, 10,680 native source controls and 1,183 fresh resident calls
+pass with the same profile, warnings denied and seven exclusions. All 25 exact
+streams independently inflate. Fresh 25,353 wall/104,361 PC calls finish; natural
+wall samples are 98.1206% generated/.5245% host. All 2,674 public hashes/replay verify.
+Normal R215 and omitted ordinary contracts remain. Next reproduce the verified
+paired compare/select in the current path before a generic flags/condition rule.
+[All 25, exact patch, measured tradeoffs and historical cutoffs](native-threaded-loop-dispatch.md).
+
+## R236: demanded low-word arithmetic, with mixed timing tradeoffs
+
+Retain the generic five-file experiment over R234 under the predeclared gates.
+Both full cohorts and pooled 48 pass all 25 unchanged point/block 1.05 gates;
+geometric gains are 0.0619%, 0.0727%, pooled **0.1793%**. Natural32
+**2.254849×→2.251962×** reference changes little; periodic
+**1.670354×→1.714871×**, repeated **1.581205×→1.622047×**, random
+**2.783315×→2.852892×** regress. Eight **0.499641×→0.481110×** improves.
+Preserve all ten adverse block means, eight adverse instruction and fifteen
+adverse cycle medians. This is not uniform larger-input progress.
+
+178 pure wrapping/mask sites narrow to 32 bits; 33 numeric bodies change.
+Root text falls 3,484 B while its stack rises 96 B; 103 other routines stay identical.
+696 maintained tests / 8,360 compiled source controls / 603 fresh resident calls
+pass. Allocation/copy fields match. Fresh 25,270 wall / 106,514 PC calls and 1,757
+public hashes/replay verify. Normal IR215 and omitted ordinary contracts remain.
+Natural32 is 97.6815% generated and 0.8311% host in wall samples; 2,570/5,362 PC
+samples lie in the path scans. Next reproduce remaining loop-state dispatch
+and inspect actual incoming edge facts before any pure-control threading.
+R235 packet flags and R225 source bindings stay uncombined.
+[All25, exact patch, tradeoffs and next witness](native-low-word-arithmetic.md).
+
+## R235: qualified argument-load experiment stays archived
+
+Keep R234 as the retained compiler. The six-file candidate removes 298 static
+input loads and 1,224 B across 89 bodies, but pooled geometric elapsed rises
+**0.827%**. Natural32 improves **2.255569×→2.239070×** reference; periodic
+regresses **1.670905×→1.703978×**, repeated **1.584578×→1.611664×**, random
+**2.787998×→2.835677×**. Eight **0.493009×→0.494791×** also regresses slightly.
+Both full cohorts and all 25 unchanged gates pass; twenty pooled block means
+rise. Eleven instruction medians fall / eleven rise / three tie. All adverse
+observations and the complete qualified patch remain recoverable.
+
+696 maintained / 7,064 native source controls pass, including four new packet
+proof tests and 279 fresh resident calls. Heap/copy/stack and source/algorithm
+stay unchanged; root Object and 47 other bodies stay identical. Fresh 25,184
+wall / 103,919 PC calls and 1,653 public hashes/replay verify. Inherited
+experimental layout debt / seven exclusions and normal IR215 remain explicit.
+A separate C/Rust/actual-retained-code audit establishes masked low32 wrapping
+arithmetic as the next target; no such compiler change or saving is claimed.
+Start it from R234, with its own witness and full matrix before combination.
+[All 25, proof, negative result and next audit](native-input-packet-evaluation.md).
+
+## R234: reuse already computed guarded scalar reads
+
+Retain the eight-file compiler experiment over R233. Both predeclared complete
+cohorts and pooled 48 pass all 25 unchanged point/block gates; geometric elapsed
+improves **0.813%**. Natural32 **2.306883×→2.248385×** reference (−2.536%),
+periodic **1.688313×→1.662209×**, repeated **1.591807×→1.567436×**, random
+**2.794810×→2.766237×**. Eight **0.514124×→0.505476×** stays faster, with only
+0.0275% fewer instructions. Preserve five adverse small block means and the
+second cohort's 0.0249% adverse geometric mean. 22 instruction medians decrease,
+three tie; 24 cycle medians decrease, one rises. All allocation/copy counts match.
+
+Four path bodies lose 192 B total; root and 132 other bodies stay byte-identical.
+Frames/full worker size stay equal. 692 maintained/7064 native source controls
+pass, including 279 fresh resident calls and six new proof tests. Fresh 25,529 wall/
+104,666 PC calls and 1,677 public hashes/replay verify. Natural32 is 97.855%
+generated exclusive/0.525% host-under-generated in wall samples. Maintained
+layout checks pass; a separate audit finds unchanged experimental owner_flow
+file/directory layout debt in both parent/candidate. Explicitly retain that
+inherited failure and the seven test exclusions. Normal IR215/additional ordinary
+contract, R225 separation and pinned algorithm/source remain. Next inspect
+unused current argument-packet lanes; existing path vectorization is complete.
+[All 25, proof, tradeoffs and exact evidence](native-reused-scalar-reads.md).
+
+## R233: enter the dedicated vector loop directly
+
+Retain the two-file compiler experiment over R231; R232's scalar-first alternative
+stays archived. Both predeclared complete cohorts and pooled48 pass all25
+unchanged point/block gates. Pooled geometric elapsed improves **0.282%**.
+Periodic **1.730610×→1.690612×** reference (−2.311%), repeated
+**1.636908×→1.604756×** (−1.964%); both retire about3.17% fewer instructions.
+Random **2.822516×→2.805143×**, distribution16 **2.789648×→2.769035×**.
+Keep natural32's **+0.160%**, the second cohort's **+0.0319%** geometric mean
+and11 adverse cycle medians. Eight **0.548447×→0.547064×** has essentially
+unchanged instructions; no additional tiny algorithmic saving is claimed.
+
+Same nine loops/three bodies; root and133 other Object bodies remain identical.
+Two frames shrink16B each; worker, root stack and all25 heap/copy fields stay equal.
+686 maintained tests,2,115,072 native value controls and5,788 fresh source controls
+pass. Unit admission/refusal counts and unchanged real-source errors/aliases/
+retry are explicit; focused resident data is reused without recounting it.
+Fresh25,395 wall/100,005 qualified actual-PC calls and all1,429 public hashes/
+replay verify. An OS disk-full failure repeats only the unfinished tiny profile;
+242 completed files stay hash-identical. About1.94GB of completed builds/logs
+were freed. NormalIR215/extra ordinary contract and R225 separation remain.
+Next target guarded packed-read reuse with a minimal alias/error/retry witness.
+[All25, proof, tradeoffs and exact evidence](native-vector-loop-entry.md).
+
+## R232: scalar-first loop measured, baseline stays R231
+
+Archive the qualified two-file candidate rather than adopt it. It removes
+1.399%/1.404% of periodic/repeated instructions, but pooled geometric elapsed
+rises **0.959%**. Natural32 improves0.584%; periodic/repeated regress0.537%/
+0.715%, and eight literals2.540%. The first cohort fails three tiny block-mean
+gates; the predeclared second and pooled48 pass all25 unchanged point/block
+gates. Both adverse cohorts and all failures remain. No extra retry or changed
+allowance. The current-cohort retained R231 ratios are natural32 **2.304793×**,
+periodic **1.730550×**, repeated **1.622129×**, random **2.832036×**, eight
+**0.485619×** reference. These fresh denominators do not imply a code change.
+
+686 maintained tests,2,115,072 native value-check executions and5,788 fresh
+native source controls pass. Eight original/decoded image pairs match. Same
+resident reuse provenance/seven inherited exclusions. Root/133 other bodies,
+heap/copy fields and full worker size stay equal; two frames shrink16B.
+Fresh25,160 wall/102,758 actual-PC calls and all1,434 public hashes/replay verify.
+Three setup errors are corrected and retained. NormalIR215, extra ordinary
+contract and R225 separation remain. Next measure the dedicated vector header
+without forcing a scalar first word; preserve this instruction-saving candidate.
+[All25, qualification, tradeoffs and exact evidence](native-scalar-peel-evaluation.md).
+
+## R231: branch directly on vector difference bits
+
+Retain the two-file compiler experiment. The same nine guarded vector probes
+extract and OR two U64 lanes, then branch on nonzero, avoiding canonical Bool
+materialization for a private branch. Actual ARM64 removes two instructions per
+probe, 18 instructions / 72 B in total. Root bytes, 133 other specialized bodies,
+all frames, heap/copy metrics and the 6,623,288 B worker remain unchanged.
+
+Both predeclared complete cohorts and all 48 pooled blocks pass every unchanged
+1.05 gate across all 25 inputs. Pooled geometric improvement is **1.550%**.
+Periodic **1.785572×→1.714551×** reference (−3.977%), repeated
+**1.680338×→1.617311×** (−3.751%), natural text
+**2.313231×→2.299463×** (−0.595%), random **2.804937×→2.787642×**.
+Eight bytes measures **0.513047×→0.499426×**, with essentially unchanged
+instructions; no additional tiny-case algorithmic saving is claimed. Keep the
+one-stored +0.413% block mean and five adverse cycle cases.
+
+686 maintained tests and 5,788 fresh native/oracle source controls pass. The
+149,760 distinct high/low-bit, alignment and tail combinations run twice across
+focused/full tests. Focused resident observations are explicitly reused from
+byte-pinned R230 source/engine records; they are not counted as newly executed.
+Fresh 25,338 wall / 103,556 current-PC calls and all 1,416 public file hashes /
+numerical replay verify. The exporter’s obsolete required-client check was
+corrected; its failed receipt remains. Normal IR215 / extra ordinary contract
+and R225 source separation stay unchanged. Next measure scalar peeling and a
+dedicated wider-loop header, preserving the original mismatch/tail state.
+[All 25 cases, proof, source, pins and receipts](native-direct-vector-branch.md).
+
+## R230: compare two proved immutable words at once
+
+Retain the general guarded loop-widening experiment over R229. Nine loops in
+three existing numeric bodies compare 16 readable bytes; an unequal vector
+returns to the original scalar mismatch/tail path. Source/algorithm and
+allocation sites stay unchanged; the complete root and 133 other specialized
+bodies remain byte-identical. Numeric text adds 500 B; two frames add 16 B each.
+Root stack 55,088 B and full worker 6,623,288 B stay equal.
+
+Both complete timing cohorts are preserved. The first fails three point gates
+and two block-mean gates on tiny inputs; it is not relabelled passing. Exactly
+one predeclared complete confirmation and all 48 pooled balanced blocks pass
+all 25 unchanged 1.05 gates. Pooled geometric block means improve **1.620%**.
+Repeated32 **1.933184×→1.680426×** reference (−13.075%),periodic33
+**2.043920×→1.786849×** (−12.577%),random32 **2.837147×→2.778717×**.
+Natural32 **2.281206×→2.303124×** regresses 0.961% and adds 0.893% instructions;
+keep this result. Eight **0.509812×→0.507485×** by point median, but block
+means rise 0.581%; no new tiny-case win claim.
+
+686 maintained tests, 74,880 native value checks and 5,788 compiled original/decoded
+source controls pass. Parent resident default compute denials remain counted;
+no allowance changes. All25 heap/copy/zero/peak fields match. Fresh 25,185 wall/
+103,766 actual-PC correct calls and 1,468 public hashes/numerical replay verify.
+Normal IR215 and extra ordinary contract stay unchanged; R225 is uncombined.
+Next reduce the verified vector branch's Boolean materialization or peel an
+original scalar word before speculative wider probing, each measured separately.
+[All25, both cohorts, proof, pins and failures](native-guarded-wide-equality.md).
+
+## R229: reuse synchronous phase argument/result storage
+
+Retain the four-file compiler experiment. Two disjoint invocation-local packets
+replace268 slots across134 phases. Root stack **86736→55088B**, root text
+**6781056→5649872B** and worker **7762616→6623288B**. All136 numeric/map bodies
+and metadata remain identical; native-call count stays50972. Smaller stack
+offsets remove147445 `mov`,130541 `movk` and4810 unconditional branch instructions,
+accounting for the complete1131184B text saving. Static stack access count stays
+441725. This changes caller transport, not source work or allocation sites.
+
+All25 unchanged gates pass; geometric block means improve **3.136%**. Natural32
+**2.344085×→2.279283×** reference,periodic **2.157944×→2.054242×**,repeated
+**2.020157×→1.933865×**,random **3.006009×→2.837767×**,distribution16
+**2.956251×→2.805722×**,eight **0.515418×→0.500720×**. Instructions/cycles fall
+onall25; random instructions−21.086%,natural−10.453%. Heap/copy/zero/peak fields
+match. Keep two adverse stored-only block means and one adverse point median.
+
+684 maintained,3800 compiled and2964 ordinary-native controls pass,including both
+packet-size orders,earlier scalar results live across a later call,late rejection,
+prior outputs/aliases and retry. Same seven inherited exclusions. Fresh24514 wall/
+102369 actual-PC calls and all2248 public hashes/numerical replay verify. The
+frozen parent rejects an invalid new test spelling; corrected existing syntax
+needs no parser change. NormalIR215 and source stay unchanged; R225 is separate.
+Next wider matching and a bounded inventory of remaining caller scratch.
+[Proof,source,pins,all25 results and evidence](native-shared-phase-storage.md).
+
+
+## R228: direct stores to existing private cells
+
+Retain the two-file compiler experiment over R227. Existing current-view private
+flags bypass redundant old-value loads/comparisons; shared/no-change and checked
+first-change behavior remain. All25 unchanged gates pass; geometric balanced
+block means improve **0.995%**. Natural32 is **2.358168×→2.351733×** reference,
+periodic **2.144714×→2.126537×**, repeated **2.015390×→2.009379×**, random
+**3.021212×→3.000196×**, distribution16 **2.958124×→2.929517×**, eight
+**0.519345×→0.507538×**. Preserve three adverse block means and six instruction
+increases; cycles fall onall25. Allocation/copy/zero/peak fields stay equal.
+
+684 maintained tests,3400 compiled and2652 ordinary-native controls pass with
+same seven inherited exclusions. New equal-write/alias witnesses actually select
+native after fallback.236 sites qualify;111 numeric bodies lose3100B, while root
+text/stack and full executable size stay equal. Fresh profiles and all2151 public
+file hashes plus two numerical replays verify. The packet also includes the
+requested eight-byte profile and reference initialization assembly. NormalIR215
+and source remain unchanged; R225 stays separate. Next prove/reuse synchronous
+phase-call packets: current268 slots total32168B versus512B maximum pair, with
+no implemented or promised saving yet. [Scope, results, pins and evidence](native-private-write-stores.md).
+
+
+## R227: current-element modular writes
+
+The original-source compiler experiment proves 51 writes must change their exact current element, retaining bounds, canonical matrix translation and shared first-change behavior. All 25 timing gates pass; geometric block means improve **1.085%**. Random32 improves **3.059630×→3.000583×** reference (−1.930%); distribution16 **2.975706×→2.941638×** (−1.145%); natural32 **2.361706×→2.346531×** (−0.643%); eight **0.529005×→0.519218×** (−1.317%). Keep three adverse small-case block means and five adverse cycle observations.
+
+Random32 removes **1.295m instructions (2.016%)**; 22 instruction medians fall/three tie. Allocation and payload fields match on all25 cases. The histogram body shrinks 812→704B, branches16→13; root text/stack stay equal. 684 maintained tests, 2304 compiled and 864 ordinary runtime controls pass, including finite clone denial/publication/aliases/retry. All1771 downloaded evidence hashes and numerical replay verify. A typed-input test-client lifetime failure and profiler/ENOSPC recovery are recorded; no primary/counter observation changed. Normal IR215 remains unchanged; R225 is not combined. Broader private writes, phase storage and wider matching remain separate. [Design, exact pins, all25 results and failures](native-current-element-write-proofs.md).
+
+
+## R226: retain guarded phase-level window facts
+
+On the original source, the compiler now carries checked match-count ranges into a generic current-phase length/geometry guard. Refusal retains checked execution; growing node buffers retain a lower bound while pointers refresh. The four path bodies shrink 2208→2096 B. No additional phase class or source algorithm is introduced; R225 bindings remain separate and normal IR215 remains unchanged.
+
+Natural32 improves **4.368%**, **2.463615×→2.356008×** reference. Repeated is **2.004979×**, random **3.070085×**, distribution16 **2.985862×**, eight **0.527454×**. Random/eight block means regress 0.860%/0.743%; retain both. All 25 gates pass; geometric block-mean gain is **0.780%**. Natural32 removes **11.80 million instructions (7.154%)**. All 25 allocation and payload fields match. Root text−656 B, stack−32 B.
+
+679 maintained tests, 21 focused proof tests, 160 linked path and 480 repaired matrix controls pass. The seven inherited exclusions and 136 default resident work denials in the new path controls remain explicit. Final DAG analysis visits each needed expression once and regenerates all 15 Objects/15 metadata files identically. Fifty instrumented full-stream calls record 264 guarded admissions/no refusals; current profiles and all 25 exact streams agree. All 1418 downloaded evidence hashes and numerical replay verify. [Design, all 25 results, pins, failures and remaining work](native-phase-window-facts.md).
+
+
+## R225: two immutable cache-word bindings measured separately
+
+Retain the isolated source variant: natural32 improves **2.291%** (2.475034×→2.418329× reference); periodic/repeated regress **2.097%/1.981%**. The 25-case geometric block-mean gain is **0.538%**, with all unchanged gates passing. Eight literals are 0.543362× by point median, but block means rise 0.663%, so no new tiny-case win is claimed.
+
+162222 primary calls, 3900 separate CPU/heap calls and fresh wall/current-PC profiles cover all 20 original plus five held-out cases through131073 bytes. Natural32 removes 3.95 million instructions; all 25 before/after allocator and payload fields match. Four path bodies each lose two U32 loads/two conditional branches; matching bodies stay identical. Root text−26660B,stack +16 B. All 396 downloaded evidence hashes and numerical replay verify.
+
+An actual disk-full interruption after 19 cases is preserved; only six missing cases resume, with the 19 originals hash-identical. A missing usage-reader link in the memory probe is recorded and corrected. Maintained normal IR215 and experimental compiler remain unchanged. Next: phase-level range/shape proof reuse on the original source, then combine separately qualified ideas. [All 25 results, tradeoffs, pins and failures](native-cache-word-source-control.md).
+
+
+## R224: fixed-level runtime-input comparison confirmed
+
+The reference now has level12 fixed at compile time and receives runtime input,matching Mech. Both workers persist, use the same pinned Rust Instant and miniz validation, warm up for200ms per case and alternate in24 balanced blocks. Both hold actual input and prepared-output aliases; original prefixes/capacities and distinct returned backing are checked. Complete scratch construction/compression/cleanup stay timed. Historical runtime-level/embedded-input/consumed-output reference denominators remain separately published. No compiler or algorithm change is included.
+
+The eight-byte win survives: **0.528194×** reference by median, **0.542406×** by block means. Natural32 is2.466172×,periodic2.117953×,repeated1.973199×,random3.018290×,distribution16 2.951727×. Ten original cases have lower block means. Natural1024 is borderline (median0.9994×,block mean1.0126×),not a clear eleventh win. The three stored-only reference medians are now nonzero; Mech is2.3–2.8× slower by block means there,at sub-microsecond times. Keep all20 cases.
+
+All20 original and five new held-out cases pass exact bytes,independent inflate and aliases through **131073 bytes**. Window boundaries32767/32768,slides at65537,random65537 and mixed131073 inputs are included.108148 primary calls/108048 retained observations,1168522 checked warmup calls and5120 historical reference calls are retained. All190 downloaded evidence files and numerical replay verify. The Mech compression Object is byte-identical to R223; maintained normalIR215 remains unchanged. No new compiler speedup or fresh matched-reference hardware-counter claim.
+
+The extra ordinary resource contract is not a prerequisite for this standalone comparison. Next:the brief's two duplicate cache/header bindings are compiled as an isolated source control; measure all25 cases before generic phase range/shape proof reuse. [Matched protocol,all25 distributions,exact pins and evidence](native-matched-compression-comparison.md).
+
+
+## R223: canonical matrix fallback indexing repaired
+
+The experimental root now shares the numeric emitter's logical-to-physical ordinal translation for packed reads and indexed replacement. Original bounds/error order, static-vector fast path, generic current shape, ownership/copy/unchanged behavior and genuine aliases remain. Frozen R222 original/decoded write probes fail the independent/resident oracle before the repair; both now pass. All134 numeric and2 word-map routines retain byte-identical machine code and metadata. Three archived compiler files change; maintained normalIR215 remains unchanged.
+
+Fresh480 multidimensional controls,1280 existing ownership controls and48 unchanged real-capacity buffer checks pass:1808 total, plus two corrected write probes. The232 resident default-work denials are inherited and unchanged. All26 small original/decoded Object/metadata pairs agree. Forty full strict-decoded-MBC14 stream smokes and every measurement call retain exact reference bytes, independent inflate, aliases and zero final private payload/owner records.
+
+All20 original1.05 and supplementary block-mean gates pass. This required correctness repair costs1.004% in geometric balanced block means (16 elapsed medians rise/three equal/one falls); retain the cost rather than advertising a speedup. Fresh matched experimental natural32 is2.473754×→2.485459× reference, periodic2.196971×→2.201556×, repeated2.035081×→2.045225×, random3.089453×→3.127000×, distribution16 3.225765×→3.258703×, eight0.510436×→0.508791×. The eight-byte block-mean pair is+0.796%, so its lower point median is not a new speedup claim.
+
+Instructions fall on7/rise on10/equal3; cycles fall on16/rise on4. All20 heap/request/copy/zero/peak fields match. Root text+19440B; root stack−16B. Fresh161832 primary,3120 independent CPU/heap,23978 wall-profile and99117 current-PC calls are retained. All1012 public evidence file hashes and four numerical analyses replay exactly. No fresh normal678-suite or completed hosted CI claim. Existing draft#973 only.
+
+The new review brief sets the next step: a fixed-level12/runtime-input reference in the same balanced timing order, equivalent warmup/validation and an explicit borrowed/consumed output contract. Then measure duplicate packed-cache bindings as a source control and phase-level range/shape fact reuse as the main compiler experiment. Full ordinary resource restoration is not a prerequisite. [Full results, source, failures and evidence](native-canonical-matrix-fallback.md).
+
+
+## R222: existing single-loop proofs select; inherited matrix fallback gap found
+
+The compact adapter now accepts complete non-appending indexed-update proofs without a nested schedule. Existing shared emission, checked errors, actual owner/geometry gates and fallback stay. The two target headers12868/15737 actually run.134 proofs are selected statically (7 nested/127 single);92 new headers actually select across the matrix. The prior seven numeric and two total-map functions retain byte-identical actual code and metadata.
+
+All20 original1.05 and block-mean gates pass. Balanced block means improve **17.150%** over R221. Experimental natural32 **2.657029×→2.456952× Roc**, periodic **2.418937×→2.189403×**, repeated **2.236612×→2.045910×**, random **3.977705×→3.073894×**, distribution16 **3.732273×→3.191886×**, eight literals **0.760708×→0.538732×**.17 elapsed medians fall/three equal. Instructions fall on13/rise on seven; natural/periodic/repeated instruction medians rise2.7–3.2%. Cycles fall on18/rise on two. All20 heap/copy/zero/peak metrics remain equal. Root code grows1150584B and stack25232B; keep these costs with the gain.
+
+3568 passing compiled vector/ownership/buffer controls,47 original/decoded small image pairs,40 stream smokes and40 full observer calls verify outputs and cleanup. Fresh161832 primary,3120 CPU/heap,24035 wall and96779 PC-profile calls are retained. Faster eight-byte profiling exposed a request/reply pipe deadlock: the first five captures stay; only the sixth resumes with concurrent delivery. Primary/counter measurements are unchanged, and the original failed profile receipt remains.
+
+**A newly added multidimensional test finds an inherited experimental fallback bug.** On a legal2×3 input the resident/oracle result is14; R221 returns13, and R222's shared alias path returns12 when a first root fallback precedes correct numeric entry. The private numeric path returns14. Eight original/decoded controlled probes establish the classification; the broad planned matrix suite stops at the clean-parent negative and is not claimed passing. Root Read directly scales the logical index. General compact qualification is withheld. NormalR215/IR215 remains unchanged and the full diagnostic still omits ordinary exact contracts.
+
+Next fix canonical indexing in the experimental fallback using the existing shared helper, with an executed indexed-write witness before expanding that repair. Then repeat multidimensional/native/fallback/error/alias/retry checks and all20 streams/timings/counters/profiles. Parity remains open. [Full scope, all20 results, exact source, failures and public evidence](native-single-loop-entry.md).
+
+
+## R221: hand ownership through successful buffer updates
+
+The existing held/dead source proof now permits one owned reference to move into a successful same-owner buffer result. All original checks, actual mutation uniqueness/capacity, fresh fallback, genuine aliases and old destination cleanup stay. Two archived compiler files change; source/runtime/allocator stay pinned.562 source sites qualify. Separate real-buffer census observes357738 handoffs per natural32 and440192 per random32, including shared backing. The change bypasses result-retain/source-retire memory updates rather than imposing uniqueness on reference moves.
+
+All20 original1.05 and supplementary block-mean gates pass; balanced block means improve **6.899%**. Experimental natural32 **2.744180×→2.648136× Roc**, periodic **2.618478×→2.412664×**, repeated **2.423684×→2.234148×**, random **4.461423×→3.976770×**, distribution16 **4.119779×→3.725016×**, eight literals **0.805750×→0.753081×**.18 medians fall/two equal. No threshold, expected bytes, real capacities or timer endpoints change.
+
+Instructions fall on19 cases/rise on one; cycles fall on17/rise on three stored-only short cases. All20 heap/copy/zero/peak measurements match R220. Root code grows7364B and stack256B. Fresh2560 ownership controls,48 unchanged buffer-family controls,38 original/decoded image pairs and40 full-stream smokes pass. Bool/U64/I64/F64 scalar Objects and all seven numeric-phase bodies are byte-identical to R220.161832 primary calls,3120 independent CPU/heap calls,80 before/after observed calls,23052 wall/72088 PC-profile calls verify actual output and cleanup.
+
+NormalR215/IR215 remains unchanged and qualified separately; diagnostic ordinary admission/accounting/publication/recovery is still omitted. No normal-performance or parity claim. The new profile remains94.29–97.16% generated code on large inputs. Existing prepared proofs expose a further bounded gap: hot root updates12928/15815 have complete non-appending single-loop numeric proofs, while compact selection currently requires nested phases. Next test their existing proof/emitter adapter with real selection, aliases, exact checks/fallback and all20 cases; do not infer all184 shallow proofs qualify. [Full results, source, tradeoffs and verified public evidence](native-buffer-result-handoff.md).
+
+
+## R220: omit unused copied owner references; small measured latency gain
+
+The existing field proof now omits an additional retain when a pure copied destination owner is never read. Scalar metadata and checked aggregate/error order remain. The complete experiment keeps the R217 owner-retirement work and omits73 static lanes. Fresh2560 original/decoded controls pass, including aliases, self/swap/overlap/fanout, metadata-only reads, predicate redefinition, errors/cleanup/retry. All20 exact streams/inflate and unchanged1.05 elapsed gates pass.
+
+Balanced block means improve1.022% geometrically. Experimental natural32 **2.743081×→2.723254× Roc**, eight **0.814024×→0.798199×**. Contrary results: periodic **2.590599×→2.613494×**, repeated **2.409801×→2.420679×**, random **4.479365×→4.484920×**; distribution **4.135232×→4.129329×**. Do not advertise the quantized seven-byte125→84ns median as32.8% faster: its block means improve2.310%. All raw observations remain.
+
+Instructions rise on18 cases/fall on one/equal one; cycles fall on18/rise on two. This is a small latency/cycle tradeoff. All20 heap/copy/zero/peak counts match R217. Root code−3712B/root stack−48B.161832 primary calls,3120 separate CPU/heap calls, fresh reference counters and22487 wall/67010 actual-PC profile calls verify outputs and cleanup. Current large profiles remain94.97–98.52% generated code. A missing-symbol analyzer error is corrected from the actual worker symbol table; raw samples and initial wrong classification stay preserved.
+
+Before this change, inert SourceLoc tags produced a byte-identical R217 Object, allowing exact current Plan/sample joins. Only45–63% of native timer samples have explicit source tags; backend gaps remain unknown, and those offsets are not reused for the changed candidate. Full source tags and replay tables are archived. A separate observer shows only13 nonnull removed copied references per natural32 compression, so this is not the main remaining ownership cost.
+
+Retain R220 experimentally; normalR215/IR215 and its ordinary contracts remain unchanged. No normal speedup or parity claim. Next count and minimize retain/retire traffic through successful consuming buffer updates: the actual reference list-set helper directly returns its owned view. Keep actual mutation exclusivity, fresh fallback ownership, same-site outputs, check/error order and recovery. [All20 results, code, exact scope and verified public evidence](native-unused-copy-owners.md).
+
+
+## R219: timing precision qualified; faster owner retirement retained
+
+**The earlier R217 owner-retirement strategy is now the retained experimental native baseline after precision qualification. Normal compilation remains R215/IR215.** The simpler R218 variant stays available as an alternative. Its code is smaller but its instruction counts are higher on17 inputs, equal on two and lower on one; the refined geometric elapsed point is0.184% higher than R217. All tradeoffs remain visible.
+
+The platform tick is125/3ns. A per-call median can jump a full tick across a5% bound even when the true change is near1%; a deterministic synthetic test reproduces that false failure and still rejects a genuine20% slowdown. Another complete20-case comparison batches requests OUTSIDE the unchanged per-call timer. A general tick/latency rule refines the three clock-limited cases with12288 retained calls per side. All20 original per-call-median1.05 checks pass on revalidation for BOTH variants, and all20 descriptive block-mean checks pass. All three short-case uncertainty intervals stay below1.05. No threshold, expected bytes, compiler work or timer endpoints change. The original19/20 point result is retained.
+
+The refined disjoint-case inventory gives R217/R211 geometric point0.985482 and R218/R2110.987298. Retained R217’s ordinary per-call reference multiples in the complete secondary cohort are natural32 **2.739571× Roc**, periodic33 **2.593667×**, repeated32 **2.392971×**, random32 **4.464336×**, distribution16 **4.164293×**, eight literals **0.799986×**. Normal R215 is separately **3.463383×/3.710663×/3.168207×/5.159893×/6.786630×/4.391781×**; diagnostic contracts remain different and no ordinary speedup is claimed. Zero-rounded reference cases still have unresolved multiples.
+
+Primary11488, secondary86752 and targeted147480 complete calls retain exact output/inflate. The640 R218 compiled controls pass; R217’s prior640 source controls remain historical, with its actual current executable exercised in all measurement cohorts. Both candidates have the same copy/request reductions. New retained-binary wall22499/PC66742 calls verify current hashes and cleanup. A copied descriptive profile label is corrected separately by actual binary/Object identity; no raw data is rewritten.
+
+The benchmark source/algorithm/real capacities/allocator stay pinned. Ordinary exact accounting/admission/recovery restoration and parity remain open. Next map the hottest retained native PCs to exact current Plan operations, with byte-identical text for debug-only mapping, before selecting another instruction/transport change. [Precision evidence, all20 inventory, original failures and retention decision](native-timing-precision.md).
+
+## R218: simpler source cleanup measured; precision issue isolated
+
+One diagnostic emitter file ends a guarded consumed source AFTER the checked indexed update succeeds, including unchanged results. The first real two-store sequence already has the required existing proof. No new family analysis/runtime/source algorithm changes. All640 new original/decoded controls and40 full-stream smokes pass; all20 payload/copy/zero/peak counts match R217, including natural32 requests5184→608.
+
+The original four-way cohort passes19/20 point gates; one-stored250→291ns fails, but its means283.625→285.391ns differ0.623%. The measured platform clock tick is41.667ns. A separate precision qualification follows; the original result is preserved.12 instruction medians fall/eight rise vs R211; R218 has higher instruction counts than R217 on17 inputs, two equal, one lower. Smaller code5589884B accompanies a larger61520B root stack.
+
+NormalR215/IR215 remains unchanged. This simpler variant is an alternative; its smaller patch does not justify losing the earlier strategy’s measured speed. [Compiler patch, all20 original results, controls and profiles](native-consumed-source-cleanup.md).
+
+## R217: retire proved-unused aliases before indexed changes; one gate remains
+
+The compiler already grants consume permission at every observed indexed copy, but two current references force copying. The new home/proof census identifies older array homes that the EXISTING current-path proof already marks dead. The candidate retires those homes only after bounds/value/unchanged checks, then keeps the original uniqueness/capacity gate. Source/algorithms, runtime, allocator, allocation sites and real capacities stay unchanged.
+
+Natural32 payload allocations fall2588→300, global requests5184→608 and tracked writable copying949428→14932B. Random32 global requests4262→276. Full20 exact streams/inflate and640 before/after original/decoded controls pass. Eighty queries identify34 already-proved-dead other homes;73 static retirement sites/744 small nonnull visits are separate counts.
+
+Elapsed improves1.090% geometrically: random32 **4.511857×→4.437717× Roc**, distribution16 **4.187816×→4.126050×**, eight literals **0.816021×→0.799138×**. Natural32 **2.742809×→2.738871×** and periodic33 **2.609824×→2.603523×** move less. These are DIAGNOSTIC candidates, not normal-entry speedups. Normal R215 is freshly3.437758×/3.668254×/3.112251×/5.061770×/6.613204×/4.429884× for natural/periodic/repeated/random/distribution/eight.
+
+**The candidate remains unretained:19/20 unchanged gates pass; empty209→250ns fails.**17 medians fall/one rises/two equal.16 instruction medians and17 cycle medians fall. Code grows10372B and root stack224B; no stack-probe cause is inferred from the actual entry assembly. NormalR215/IR215 and retained diagnosticR211 remain unchanged; no allowance is waived.
+
+8616 primary calls,3120 separate CPU/heap calls, fresh reference counters and six wall/six PC profiles preserve every adverse observation. The reference binary’s actual makeUnique helper confirms the same unique-return/shared-copy pattern; source permission is not being weakened. Next test finishing a guarded consumed source immediately after the earlier checked update, preventing the stale token rather than finding it at the next update. [Full results, source, exact failures and verified public evidence](native-indexed-owner-retirement.md).
+
+## R216: brief experiments addressed; allocation pool unretained
+
+**The brief’s requested work is addressed, including the separate allocation follow-up. Normal compilation remains R215/IR215 and the retained whole-native diagnostic remains R211.** The stable owner pool passes8 unit tests and640 freshly compiled original/decoded controls, and its source-site census attributes every payload request on all20 cases to151 exact Plan operations. Natural32 global requests fall5184→2625, with payload allocations/copies unchanged. This evaluates the pool; it does not adopt it.
+
+The candidate passes18/20 unchanged elapsed gates. Empty167→208ns and one-stored209→291ns fail, so the pool remains archived.17 medians fall/two rise/one equals; equal-case geometric elapsed rises1.664%. Larger improvements are small: natural32−0.156%,periodic33−0.337%,repeated32−0.266%,random32−0.155%,distribution16−0.805%,eight literals−0.279%. No gates or expected values change.
+
+Fresh normal R215 multiples: natural32 **3.453993× Roc**,periodic33 **3.657685×**,repeated32 **3.116981×**,random32 **5.093416×**,distribution16 **6.673419×**,eight literals **4.547004×**. The retained diagnostic is separately **2.746509×/2.598603×/2.392766×/4.495676×/4.202160×/0.837793×**. Its omitted ordinary guarantees remain explicit; no diagnostic-to-normal speedup is claimed.
+
+8616 primary calls,3120 separate Mech CPU/heap calls,1280 fresh reference counter windows,80 complete census calls and six wall/six PC profiles all preserve exact reference bytes and independent inflate.17 instruction medians fall/three rise;12 cycle medians fall/eight rise. Natural32 retained-owner peak rises384B; requested-byte reductions are not reductions in initialized copying. Largest input33027B. Historical R215678 maintained tests and seven exclusions are not claimed freshly rerun.
+
+Root transfers(R211), rejected boundary experiment(R212), ordinary qualification/home facts(R213/R214), maintained integration(R215), and pool evaluation/census(R216) now have dispositions. Parity and a fully qualified whole-native replacement remain open. The new census identifies indexed updates as2306/2588 natural32 payload requests, a bounded next ownership/copy target. [Full all20 table, source patches, failures, qualifications and verified evidence](native-owner-pool-census.md).
+
+## R215: qualified ordinary integration is now maintained
+
+**The normal compiler now uses IR215 and the qualified R214 dense phase/home-fact combination.** Public ABI39, work107 and MBC14 remain. The exact generated ARM64 text is byte-identical to R214; current image binding rejects an actual old IR214 Object. Metadata-only restoration remains compatible and grants no entry authority. No compressor source, algorithm, tables, allocation sites, buffer sizes, search/EOF limits or timing boundaries changed.
+
+Fresh integrated results: natural32 **3.486334× Roc**, periodic33 **3.813050×**, repeated32 **3.303768×**, random32 **5.270833×**, distribution16 **6.968631×**, eight literals **4.621795×**. These are normal-runtime results; retained R211 whole-native diagnostic remains separate. Geometric elapsed is0.469% lower vs R199 and0.496% higher vs frozen R214. All20 unchanged gates pass vs both. This is versioned integration, not a new speedup claim. All20 instruction medians remain higher than R199;11 cycle medians fall/nine rise; heap metrics match and native stack retains the disclosed4080B increase.
+
+All678 maintained tests, six focused checks,52 actual linked original/decoded before/after controls,40 full-stream smokes,15 architecture/catalog checks and132 workflow checks pass. Same seven inherited exclusions. Clean-parent CI inventory drift251→260 is repaired separately in `4d20781d403156b81b2fa7656d54e860523db01f`; integration adds one test and the exact261 guard. All790 clean-parent GPU source blobs are verified. Initial wrong-layer metadata probe, invalid manually reduced feature profile and missing Object linker argument are resolved harness errors retained in evidence; no production workaround was added.
+
+**The full brief remains unfinished.** Root transfers/transport experiments and ordinary phase integration are established; stable owner pooling and payload-site allocation census remain. Next finish that bounded allocation follow-up, preserving final-output payload layout, aliases, cleanup and retry. Duplicate canonical/packet transport remains a later ordinary instruction target. [Full source/revisions/results/profiles and verified public replay](native-integrated-phase-packets.md).
+
+## R214: combined ordinary interface and home facts; measured gain retained
+
+The R213 dense initializer now retains the existing canonical-home flags through the SAME SSA builder. Each full-compressor phase removes 242 loads (predicted 288; discrepancy preserved), and code shrinks 6128/6848→3888/3920 B. Packet storage retains its own default flags. Full source/resource/ownership/error/recovery contracts remain.
+
+Two predeclared complete timing cohorts pass all 20 original 1.05 gates. Pooled elapsed is **1.157% lower than normal production**, **0.219% lower than R213**; the individual production changes are −1.527% and −0.735%. This gain and the exact candidate are retained for versioned integration. Contrary evidence: all 20 instruction medians and 15 cycle medians rise vs production; all 20 heap metrics match; native stack grows 4080 B. 677 maintained tests / 52 linked checks / 40 full-stream smokes pass, with the same seven inherited exclusions. Production default remains R199 and the retained whole-native diagnostic remains R211 in this evidence checkpoint.
+
+Next: versioned integration and repeat acceptance, then remove duplicated canonical→packet→canonical transport using existing current-entry/exit and ownership facts. Stable owner pooling and payload-site census remain separate unimplemented follow-ups. [Both timing cohorts, exact source patch, counters, current profiles and verified public replay](native-combined-phase-facts.md).
+
+## R213: ordinary dense-interface qualification complete; default unchanged
+
+One generic existing nested numeric append class now has a dense internal input/result interface under ordinary ownership/admission/funding.677 maintained tests and52 real linked parent/candidate original/decoded cases pass; all20 full streams match bytes/inflate and exact production logical work, with all20 unchanged elapsed gates. The candidate is0.354% slower geometrically and17 instruction medians rise, so production remains R199 and diagnosticR211 remains retained. Native heap metrics match production; native stack rises16480→20560B. [Exact qualified checkpoint, evidence and profiles](native-managed-phase-packets.md).
+
+The current adapter loses the old nontrapping/disjoint private-home flags:288 load eliminations disappear. Restore those existing facts alongside dense initial values in the same SSA builder and measure that one controlled change next. Allocation pooling and payload-site census remain separately bounded follow-ups. This is qualification, not a production speedup or a completed full brief.
+
+## R212: effect-aware phase transport measured, R211 retained
+
+The candidate keeps fixed descriptors with the caller and uses the existing owner-transfer proof at phase returns. All20 exact outputs and semantic controls pass, but two unchanged elapsed gates fail: periodic and repeated regress about6.1%. Geometric elapsed improves0.74%; large-case separate instructions/cycles fall and all20 heap cohorts match R211. Preserve both contrary cohorts; do not adopt R212 as the default. Production remains R199 and the retained diagnostic remains R211. [Full four-variant results, controls and current profiles](native-compact-phase-transport.md).
+
+Explicit parallel assignment, metadata/predicate and shared-readonly phase witnesses now execute. Next: one compact interface inside ordinary admission/ownership/funding, with exact error/recovery and checked fallback. This does not wait for whole-diagnostic superiority. Owner pooling and payload-site allocation census remain separate follow-ups.
+
+## R211: dead-source ownership transfers in the complete diagnostic
+
+**Production remains R199 /IR214.** Existing field liveness and current-predicate facts now transfer one dead source reference into one aggregate destination after shared emission succeeds. Real aliases, additional duplicate destinations, previous target release, post-action outputs, errors and current mutation exclusivity remain. Three compiler files change from R210; the complete archived diagnostic has30 changed compiler files.
+
+Matched diagnostic natural32 **4.951098×→2.688841× Roc**, periodic33 **5.312800×→2.529616×**, repeated32 **5.117834×→2.462476×**, random32 **17.381165×→4.574694×**, distribution-change16 **15.416745×→4.178916×**, eight literals **2.214912×→0.836039×**. These use one current denominator per input. Fresh unchanged production is3.375661×/3.508200×/3.206685×/5.168768×/6.916824×/4.501242× respectively. Historical unmatched values are not substituted.
+
+Nineteen elapsed medians fall/one equals; geometric elapsed−57.017303%. All20 unchanged1.05 gates pass against both R210 and production. All20 separate instruction/cycle medians fall. Natural instructions−37.60%, random−64.59%, eight−61.09%. Natural allocator requests9192→5184, eight498→368;17 cases remove requests/bytes with15 equal incremental usable peaks and5 lower ones. Real live aliases continue to force copying. Tracked COW bytes are not all memory traffic. Generated text7,669,096→5,637,108B; static root-plus-largest-kernel stack85,056→61,504B.
+
+The timed hot ownership sequence is mapped to literal-observation pack2338 and copies2339/2340. Their three old cold owner-release error origins disappear from the actual new Object. An independent observer counts actual non-null transfers, with numeric/map/pack activations unchanged across all20. Fresh640 observation-record controls,1480 map,320 fixed-buffer,192 origin,48 phase,1724 matching,40 builder and120 complete smokes pass;41 original/decoded image pairs match. Same inherited resident caps/exclusions remain. Ordinary scalar/map Objects/metadata/descriptors match byte-for-byte; no fresh production-suite claim.
+
+8,616 primary complete calls,2,400 separate CPU/heap calls, fresh all20 reference counters,22,415 wall-profile calls and64,815 exact-PC calls preserve every source/table/buffer/timing pin. Profiles now expose native matching and selection plus remaining root transport. Full contract restoration and parity remain unachieved; eight below1× is a diagnostic result with the disclosed omissions.
+
+The newly received brief sets the next order: finish explicit self/swap/overlap/metadata-only/predicate-redefinition witnesses, measure fixed-buffer phase-boundary transport, then qualify one compact phase through ordinary admission/ownership/funding with fallback. Same-site overlap currently declines transfer. Do not wait for the entire diagnostic to win everywhere before that bounded production checkpoint. Stable owner pooling and payload-site census follow separately. [Optimization coverage](native-optimization-coverage.md) and [complete report/evidence](native-compact-owner-transfers.md).
+
+Keep every round on existing draft#973’s branch, one commit per measured round; no new branches or PRs. Cleanup removed90 surplus remote and54 local branches while preserving #990 separately, prerequisite PRs and unrelated/uncommitted work. Ordinary exact-head CI cancellation is requested under the standing instruction; review remains enabled and no green-CI/clean-review claim is made.
+
+
+## R210: existing total word collections retained in the diagnostic
+
+**Production remains R199 / IR214.** Two existing total pointwise proofs now use the same scalar/vector emitter with four dense current capture words and a fresh private sink. Result capacity/shape and checked fallback remain. No compressor algorithm, scratch capacity, allowance or timing boundary changes. The compiler folds physical collection growth into the single allocation already used by ordinary admitted maps; this is an external diagnostic prototype, not production adoption.
+
+Matched diagnostic natural32 **5.454456×→4.949050× Roc**, periodic33 **6.926624×→5.294152×**, repeated32 **6.403544×→4.889077×**, random32 **19.114018×→16.691392×**. Fresh unchanged production is3.364150×/3.456198×/2.944210×/5.152546× respectively. Eight literals remains about2.22× diagnostic versus4.49× production.
+
+Eight elapsed medians improve/twelve worsen; geometric elapsed−6.89%. All20 prior-diagnostic1.05 gates pass; only14 production gates pass. All20 instruction medians decrease, including about23–25% periodic/repeated and9.36% natural. Twelve cycle medians improve/eight worsen. Adverse small elapsed/cycle pairs stay explicit. Each of the four sliding inputs removes32 allocator requests /525,048 requestedB /262,192 incremental usable-peakB; the other16 heap cases stay equal. The real U16 map keeps capacity262144 while reducing17 payload requests→1 and524,280 initialized growth-copyB→0.
+
+1,480 new all-width/capture/vector-tail/shape/repeated-call/alias/error/cleanup/retry cases pass. Ordinary scalar and map Object/metadata/descriptor controls match byte-for-byte before/after and original/decoded. Fresh320 fixed-buffer/192 origin/48 phase/1,724 matching/40 builder/120 complete smoke controls pass; all33 image pairs match.8,616 primary calls,2,400 separate CPU/heap calls, fresh all20 reference counters,10,370 wall-profile calls and24,866 exact-PC calls preserve the pins. No introduced compiler/harness failure; the same resident cap denials and seven inherited exclusions remain. No fresh historical production-suite claim.
+
+Generated text grows808B to7,669,096B; static root-plus-kernel stack falls64B to85,056B. New six-family profiles show the selected maps are now small. Random/distribution share a hot root path with adjacent owner increments/decrements and stack reloads. Next is a minimal, traced aggregate-transport move proof using existing field liveness/path facts, preserving live aliases, old-target release and recovery. Ordinary guarantees and the production host/copy ledgers still need restoration; the full brief and parity remain open. [All20 timings, exact compiler patch, counters, actual C/Rust/reference code, failures and public replay](native-compact-word-collections.md). Existing draft#973 only.
+
+
+## R209: fixed-buffer nested matching phases; production unchanged
+
+**Production remains R199 / IR214.** Three additional complete disjoint matching proofs now execute through the same numeric emitter, beneath a correctly declined broad parent. Actual unique-owner and fixed length/capacity gates retain fallback; real capacities return unchanged. No compressor source, allocation site, table, allowance or timing boundary changes. The full prototype and four-file delta remain external, not adopted production.
+
+Matched diagnostic natural32 **6.927688×→5.454108× Roc**, periodic33 **12.365468×→6.959786×**, repeated32 **11.432981×→6.427938×**: elapsed−21.27%/−43.72%/−43.78%. Fresh unchanged production is3.368571×/3.521251×/2.952729× respectively. Eight literals stays about2.20× diagnostic versus4.50× production. These are current-cohort comparisons, not compounded improvements.
+
+Twelve medians fall/eight rise; equal-weight geometric elapsed−7.35%. Only17/20 unchanged gates pass versus R208: empty/one/seven-byte sub-microsecond cases regress and are preserved. Fourteen gates pass against production; the same six larger cases still fail. Separate matching instructions fall about56%, natural17%; eight instructions rise1.03%. All20 diagnostic heap-request/byte/reallocation/incremental-peak medians stay equal. Generated text grows7,534,880→7,668,288B and static root-plus-phase stack84,048→85,120B.
+
+320 new private/saved-alias, fixed U16/U32, original/decoded, exact-capacity/error/origin/publication/cleanup/retry controls pass. Fresh192 origin/48 phase/1,724 matching/40 builder/120 complete smoke calls pass, with13 byte-identical original/decoded pairs. The same resident default-cap denials and seven inherited native exclusions remain explicit.8,616 primary calls,2,400 separate CPU/heap calls, fresh all20 reference counters,9,296 wall-profile calls and22,297 exact-PC calls retain every adverse observation. No fresh historical production native-suite claim.
+
+Current periodic/repeated profiles put about80% of total timer weights in the outer generated root. Its hot tree-rebase/collection append path still rebuilds ownership/capacity state and reloads deep stack values; the matching word loop is compact. Next is one bounded same-Plan typed collection-builder lifetime, preceded by a minimal alias/error reproducer. Ordinary contract restoration, production exclusive-host/copy census and full-brief completion remain open. [All20 timings, exact source patch, failures, skipped coverage and verified public replay](native-fixed-nested-phases.md). Existing draft#973 only; no new PR.
+
+
+## R208: cold error origins give a small complete diagnostic win
+
+**Production remains R199 / IR214.** The diagnostic removes its shared mutable source-origin home and materializes exact locations on cold failure paths; outlined errors return the callee location directly. Natural32 **7.057284×→6.995653× Roc**, periodic33 **12.498903×→12.300961×**, repeated32 **11.721204×→11.469044×**, eight literals **2.265164×→2.235719×**. Fresh unchanged production is **3.393281× /3.513269× /3.021483× /4.616164×** respectively. This is an experimental-path gain, not a production speedup or a cost-of-contract floor.
+
+Sixteen elapsed medians fall, three rise and one is equal; equal-case-weight geometric elapsed **−3.039385%**. All 20 unchanged 1.05 gates pass against R207; only 14 pass against production. Separate natural/periodic/repeated instructions fall **2.85%/5.28%/5.71%**; random32 and distribution instructions rise **1.73%/3.09%** and their elapsed worsens. All 20 diagnostic heap-request/byte/reallocation/incremental-peak medians stay equal. Generated text falls **8,906,516→7,534,880 B**, static root-plus-phase stack grows **80,000→84,048 B**. Generation 86.95s versus recorded 199.90s is an unmatched build observation.
+
+192 new exact status/origin/resident/recovery controls, fresh48 phase cases,1,724 matching cases,40 builder cases and80 full original/decoded smoke calls pass. Nine original/decoded image pairs match exactly. The same142 resident default-cap denials, standalone no-pack fallback and seven inherited exclusions are explicit.8,616 primary complete calls,2,400 separate Mech CPU/heap calls, fresh reference1,280 events/10,240 compressions,8,729 wall-profile calls and20,937 exact-PC calls retain source/table/capacity/timing pins. Three harness staging failures are resolved and archived; successful Mech/primary cohorts were not repeated. No fresh production native-suite claim.
+
+Current large-input diagnostic profiles remain about99% native-exclusive, mostly in raw root code. An audit now pinpoints a larger candidate: the six-loop matching region2624 is hidden by declined parent837, and its fixed writable U16 tree lacks the append-capacity field required by the current diagnostic gate. Qualify nested selection and real fixed-buffer ownership/liveouts with a minimal witness before changing either gate. Ordinary guarantee restoration and production host-family/copy census remain unfinished. [All20 results, exact revisions, source delta, failures and verified public evidence](native-cold-error-origins.md). Existing draft#973 only; ordinary exact-head CI cancelled and review requested.
+
+
+## R207: shared phase and packed-read lowering cuts the complete diagnostic
+
+**Production remains R199 / IR214.** The complete diagnostic now keeps existing numeric proofs/emitters through four typed private-array phases and27 shared word-pack sites, including real reached append growth and current-owner fallback. Natural32 falls **14.451672×→7.053131× Roc**, periodic33 **24.794258×→12.563796×**, repeated32 **23.096531×→11.709860×**. This is an experimental-path improvement, not a new production checkpoint: fresh retained results are **3.359605× /3.554625× /3.055192×** respectively. Eight literals is adverse **2.169183×→2.193750×**, +1.13%, while retained is4.489941×.
+
+All 20 exact streams pass in original/decoded linked images. Seventeen diagnostic medians fall/three rise, geometric−22.164358%; all 20 unchanged 1.05 gates pass against the previous diagnostic, only 14/20 against production. Separate instructions fall45.39% natural /55.03% periodic /54.56% repeated; eight rises5.19%. All 20 diagnostic heap-request/byte/reallocation/incremental-peak medians stay equal. Generated text grows8.316→8.907MB and static native stack envelope78.160→80.000KB. Contrary observations and source/bytecode pins are retained.
+
+8,616 primary complete calls,2,400 separate Mech CPU/heap calls, fresh same-input reference counters across all 20 cases (1,280 events /10,240 verified compressions),8,669 wall-profile calls and20,790 exact-PC calls finish correctly. New diagnostic qualification passes48 real-growth/alias/error/retry controls,1,724 matching controls,40 original/decoded builder cases and 120 complete original/decoded/observed smoke calls.142 inherited resident default-cap denials and the standalone no-pack fallback are explicit; no limits/expected values change. Original/decoded Objects agree exactly. A formatter-only correction reproduces the exact timed Object byte-for-byte.
+
+Large-input diagnostic profiles are98.73–99.21% native-exclusive, yet repeated geometry loads, owner increments/decrements and hot error-origin stack writes survive in its much larger root. This is still slower than retained production on six cases and **not a cost-of-contract floor**. Ordinary exact accounting, precise canonical recovery/publication and external admission restoration remain unfinished, as do the production exclusive-host family ledger and complete initialized-copy census. R205/R206 production experiments stay rejected. No fresh production677-test/260-selection claim is made for this docs-only round; those R206 receipts remain historical.
+
+Next is one bounded current-assembly target: retain a proven last-use owner move or cold error-origin materialization in the diagnostic root, then repeat the same20-case witness before restoring contracts. The compiler source/evidence is archived externally; no production dependency or compiler change is adopted. [All 20 timings, counters, code, failures, skipped coverage, exact patch and verified public replay](native-compact-specializations.md). Existing draft #973 only; ordinary exact-head CI cancelled and automated review requested.
+
+
+
+## R206: exact exit visits shorten the real loop, but whole-call tradeoff is rejected
+
+**Production remains R199 / IR214.** The induction-derived candidate preserves current funded/checked behavior and removes the per-header counter as well as balance arithmetic. Actual admitted matching edge **15→11 instructions**, repeated/periodic whole-call instructions **−5.41%/−5.01%**. Yet natural32 instructions rise0.70%, sixteen of20 instruction medians rise, and complete elapsed is flat/slightly adverse (**+0.138561%** geometrically; ten lower/ten higher). All20 unchanged1.05 gates pass. This is a rejected mixed tradeoff, not a rejection of a demonstrated small win.
+
+Fresh retained/candidate elapsed multiples: natural32 **3.323912×/3.342472× Roc**, repeated32 **2.879536×/2.873670×**, periodic33 **3.392393×/3.390149×**, eight literals **4.428090×/4.407688×**. The candidate figures are not a new production checkpoint. All20 heap metrics stay equal. No unchanged favorable rerun replaces contrary evidence.
+
+The missing reference instruction/heap cohort is now complete for all20 cases:1,280 observations /10,240 verified compressions, exact recovered fourteen-file package and pinned compiler/allocator. Retained natural32 **4.382859× reference instructions**, repeated **3.495571×**, periodic **3.762729×**, eight **9.111289×**. These are fresh same-input raw window ratios, separate from elapsed. Natural32 allocation requests remain6,449 versus276 reference; eight3,354 versus95. Requested bytes, initialized-copy volume and peak heap remain distinct.
+
+Candidate and final restored compiler each pass **677 native tests /all260 actual CI selections**.1,998 matched policy observations and4,002 native invocations per side agree exactly; unchanged236/eight/one qualification,1,724 real matching controls,15 architecture checks and132 workflow tests pass. Retained stride8/12/16/24 controls cover changing starts, mismatch, original/decoded, resident/native, finite rejection, publication, cleanup and retry. Same seven inherited native exclusions;142 resident default-cap denials are disclosed without raising the cap.
+
+Fresh current profiles still identify phase15296 as natural text's main target. The next bounded step returns to the primary compact-native milestone: carry the already-qualified compact numeric phase and packed reads through complete emission. Ordinary guarantee restoration and the exclusive production host-family ledger remain open. [All20 results, exact patch, fresh reference counters, failures and verified review packet](native-matching-visit-accounting.md). Existing draft#973 only; no parity or full-brief completion claim.
+
+## R205: direct return is correct but its emitted tradeoff is rejected
+
+**Production remains R199 / IR214.** The direct reduction-to-parent candidate preserves the exercised semantics and exact reports, but complete elapsed is effectively flat: all20 gates pass,12 medians lower/eight higher, geometric−0.021549%. Natural32 **3.315320×→3.305045× Roc** is a small mixed-pair improvement; repeated32 **2.923119×→2.939770×**, periodic33 **3.431179×→3.494012×** and random32 **4.720156×→4.773982×** worsen. These are matched current-cohort readings, not compounded changes across rounds. No favorable unchanged rerun is substituted.
+
+Every larger-case instruction median rises. The actual inspected phase grows4,016→4,208B /368→400B stack, with static SP access sites29→47. All20 allocation/requested-byte/reallocation/incremental-peak medians stay equal. The experiment is rejected for the combined tradeoff; small measured wins remain eligible for retention.
+
+3,968 primary observations /4,048 complete calls,1,440 separate CPU/heap calls and6,677 fresh profile calls retain exact bytes, independent inflate, logical work, aliases, capacities and cleanup0. Candidate678 native tests/all261 actual CI selections,592 matched resource-policy observations per side, unchanged236/eight/one component qualification,15 architecture checks and132 workflow tests pass. The restored source freshly passes676 native tests/all259 actual CI selections and15 focused controls; independent terminal-result coverage is retained. Same seven inherited exclusions. [All20 results, exact patch, failure dispositions and verified external review packet](native-direct-reduction-return.md).
+
+Direct completion needs a solution to its parent-join/register-state cost before adoption. Next is induction-derived actual visits and exact exit accounting in the existing funded matching loop; R202's balance-only and R200's cutoff variants stay rejected. The compact diagnostic still needs retained numeric specialization and measured restoration of ordinary guarantees. The host-family ledger and fresh same-boundary reference instruction denominator remain open. No parity or full-brief completion claim; existing draft#973 only.
+
+## R204: whole diagnostic ownership improved; retained numeric lowering still missing
+
+**Production remains R199 / IR214.** The improved complete diagnostic produces the exact20 streams through original and independently decoded, separately linked images. The three-way matched natural32 result is retained **3.342× Roc**, R203 diagnostic **149.617×**, new diagnostic **14.445×**. Periodic33 is **3.519× /235.408× /24.942×**; repeated32 **3.019× /225.168× /23.178×**; eight literals **4.439× /2.400× /2.187×**. This is a large diagnostic improvement, still a large-input regression versus production. No adoption or parity claim.
+
+Field-only liveness fixes the focused witness but leaves almost all real copying. Actual helper tracing identifies163,845 unique, sufficiently capacious U64 path updates denied consumption by contradictory repeated-Bool paths. Exact current-predicate must-facts with definition kills remove every path-buffer fallback while retaining final runtime exclusivity and real aliases. Natural32 tracked copies16.398GB→2.178MB, full allocator requests515,206→9,224, requested bytes400.284GB→12.057MB, incremental usable peak15.263MB→10.013MB. These are different quantities.
+
+8,616 matched primary calls,2,400 separate CPU/heap calls,8,297 fresh stack-profile calls,973 fresh PC-profile calls,180 focused original/decoded cases, unchanged real-capacity builder controls and80 complete smoke calls pass.19 diagnostic medians fall and one is equal; only11/20 original production gates pass. Ordinary exact contracts remain omitted. Current large-case profiles are99% native-exclusive, yet natural instructions are649.6M versus208.3M retained. Actual code rebuilds words byte-by-byte and retains excess state/spills where production has packed loads and compact numeric phases. The raw lowering must retain those existing specializations before it provides a useful cost-of-contracts floor. [All20 data, patches, failures, code inspection, exact pins and public replay](native-compact-guarded-ownership.md).
+
+The full brief remains open: guarantee-restoration increments and the exclusive production host-family ledger are unfinished. Direct reduction completion into its parent remains the next retained-production target. Existing draft#973 only; no new PR or production dependency change.
+
+## R203: complete typed native diagnostic exposes repeated buffer copying
+
+The entire unchanged level-12 computation now produces exact streams for all20 cases, with independent inflate, input/prepared-output aliases, capacities and zero residual private cleanup. **Production remains R199 / IR214.** This first diagnostic is not adoptable: natural32 is **151.134× Roc versus retained3.328×**, periodic33 **235.224× versus3.394×**, repeated32 **223.671× versus2.899×**. Eight literals improve **4.458×→2.440×**, but larger cases copy gigabytes; no new cost-of-guarantees floor is established.
+
+Natural32 makes515,206 full allocator requests versus6,449 retained, requests400.3GB capacity, and tracks16.4GB initialized COW copies with15.0MB peak private payload. These measures are distinct. Fresh exact profiles put90–91% of large-case weights below native entry, mostly memmove. The generic canonical dispatcher is removed, but whole-record liveness retains obsolete array fields and defeats private ownership reuse. Next: owner-field liveness with true-alias controls, then repeat this whole20-case witness. Exact resource/import/publication/error-recovery restoration and direct reduction completion remain unfinished.
+
+An isolated sparse-SSA frontend change unblocks full emission:11 upstream SSA controls and four identical-CLIF probes pass; full build278.878s /2.98GB peak. No root dependency or production code is changed.3,856 matched primary calls,1,440 separate CPU/heap calls and7,214 fresh profile calls are retained. [All20 timings, counters, build blocker, source patches, exclusions and public replay](native-whole-compact-baseline.md). Existing draft#973 only.
+
+## R202: matching-loop balance settlement rejected; complete compact baseline next
+
+Production remains **R199 / IR214**. The candidate settles admitted matching-loop balances at all normal/error/handoff exits and shortens the real matching edge **15→12 instructions**. It retains the per-header visit counter. The targeted complete timings do not improve: natural32 **3.333338×→3.339373× Roc**, repeated32 **2.877338×→2.883134×**, periodic33 **3.388472×→3.387324×**. All20 unchanged1.05 gates pass (12 lower/eight higher; geometric elapsed−0.045791%), but that tiny mixed aggregate is not the intended large-input win. The candidate is rejected without an unchanged favorable rerun.
+
+Ten instruction medians fall and ten rise. Repeated/periodic instructions fall4.09%/3.79%, natural32 rises0.49%; five cycle medians rise. All20 heap metrics remain equal. Candidate code+4,028B and stack−16B are not production changes.675 candidate native tests/all258 actual CI selections, unchanged236/eight/one qualification,15 architecture/catalog checks and132 workflow tests pass with seven inherited exclusions. The initial handoff regression is repaired; an inherited debug-profile accounting difference is separately reproduced and unassigned. Final restored-source four focused controls pass. Only expanded per-header arithmetic-error/settlement/retry controls are retained. [All20 results, failures, exact compiler pins and public replay](native-matching-exit-settlement.md).
+
+**Primary milestone:** finish the whole compact-native compressor from R193/R194, including real construction/reserve/growth/copies/append/clear/output, then measure its complete-call cost and restore each ordinary guarantee separately. Direct reduction completion into the parent is the next bounded production target. No complete host-removed compression result exists yet; neither this experiment nor the complete brief is marked finished. Existing draft #973 only.
+
+## R201: optional backend comparison rejected; retained compiler unchanged
+
+The unchanged complete level-12 program runs correctly on all twenty inputs through the optional LLVM backend. The measured configuration uses O3 IR/machine emission with fast register allocation, peephole and machine LICM disabled. Against the matched experimental Cranelift control, seventeen elapsed medians and seventeen instruction medians rise; geometric elapsed is **77.109836% higher**, and only three original 1.05 gates pass. The ordinary optimized allocator remains unmeasured; this result does not establish its eventual performance.
+
+Retained production is still **R199 / IR214**. In this fresh shared-reference cohort, natural32 is **3.361839× Roc**, periodic33 **3.398392×**, repeated32 **2.893338×**, eight literals **4.520977×**. The LLVM trial is respectively10.238742×,13.987677×,12.693051× and8.670089×. Revision/control differences are explicitly separated from the pure backend effect. No LLVM code or dependency is adopted on this branch.
+
+8,928 primary observations /9,048 complete calls,3,120 separate counter/heap calls and7,922 fresh profile calls retain exact bytes, independent inflate, aliases, capacities and zero managed cleanup. Heap medians agree for all20 matched-backend cases; natural32 instructions rise216.8M→759.3M and the reported stack envelope17,808→481,792 bytes.14 Rust/native andeight real-object metadata tests pass; broader experimental-backend CI and optimized-allocator runtime remain unqualified. [All rows, revisions, actual emitted code, narrow isolated fixes and immutable evidence](native-llvm-compression-comparison.md).
+
+The next active work returns to the retained approximately **3.3×** cases: profile that exact executable, improve one demonstrated native-loop cost, and rerun all twenty unchanged gates. Existing draft #973 only; no new PR. Parity and the compact-computation brief remain incomplete.
+
+## R200: short reduction cutoff rejected; tests retained
+
+**Production remains R199 / IR214.** The candidate changes the four complete-group comparisons from sixteen to four, with no generated code-size or stack change. All20 original gates pass, but eleven elapsed medians rise and geometric elapsed worsens **0.066724%**. Natural32 **3.347987×→3.373958× Roc**, natural16 **4.047769×→4.081688×**, repeated32 **2.870054×→2.886755×**, and periodic33 **3.359533×→3.373970×** are adverse. These are paired candidate/control readings, not new retained-compiler gains or between-cohort regressions.
+
+Sixteen instruction medians improve, including natural32/16 about0.66%/0.67%; preserve those positive results separately. Four instruction and four cycle medians rise. All20 heap request/byte/reallocation/incremental-peak medians remain equal. The complete-program timing objective is unmet; no favorable unchanged rerun is substituted.
+
+Two existing independent-oracle controls are expanded to all short lengths, nonzero starts, width pairs, high halves, ties, tails and physical reverse-window endings. The candidate passes675 native tests and all258 actual CI selections; unchanged236/eight/one qualification, current generic state controls, architecture/catalog/workflow/runtime-only checks pass with the same seven inherited exclusions. After restoring both compiler files, the final test root freshly passes all14 focused controls. Fresh candidate profiles retain6,673 correct calls; a fresh exact-baseline PC profile completes832. [All twenty rows, counter evidence, source pins, limitations and replay](native-short-reduction-experiment.md). LLVM comparison requested next; no LLVM implementation or dependency is adopted here. #973 stays draft.
+
+## R199: ordered retirement visible at native boundaries
+
+A generic inline hint keeps the existing ordered cleanup loop visible to its sole production caller. Its function body, finite charges, errors, aliases and recovery remain unchanged. The independently rebuilt native image is byte-identical in all five files; IR/work/ABI/MBC remain **214/107/39/14**. The state-machine source stays experimental and the existing faster source remains retained.
+
+All 20 original gates pass: **17 lower / three higher elapsed medians**, geometric elapsed −0.531319%. Matched reference ratios include natural 32 KB **3.334151×→3.317883× Roc**, distribution change **6.286899×→6.179520×**, repeated **2.923528×→2.891057×**, and periodic **3.394935×→3.368267×**. Eight literals rise **4.512777×→4.535279×** (+0.50%); the two other adverse small cases remain explicit. Independent rounds are not compounded.
+
+**All 20 instruction medians fall**; eight literals decrease 1.40%, while natural 32 KB has the sole adverse cycle median (+0.11%). Heap requests/bytes/reallocations/incremental usable peaks are unchanged. Actual host disassembly removes the separate cleanup call; harness text shrinks 4,936 bytes. Generated code and reported stack stay unchanged. Capacity-level output reuse is checked; physical backing differs from the still-live borrowed argument on both sides and no zero-allocation reuse is claimed.
+
+675 native tests, 258 actually executed CI selections, eighteen cleanup controls within that suite, unchanged 236 components/eight compositions/one real-capacity control, generic original/decoded state recovery, fifteen architecture checks and 132 workflow tests pass. Same seven inherited exclusions. The 1,724 native match controls are explicitly reused from R198; no fresh execution is claimed. Fresh after profiles complete 6,274 correct calls; the exact baseline profile is reused. [Design, all twenty rows, counters, limitations and immutable evidence](native-retirement-inlining.md). Existing draft #973 only; parity remains incomplete.
+
+## R198: invariant addresses in captured native reads
+
+The retained compressor source now runs faster on repeated 32 KB (**3.197971×→2.923528× Roc**, −8.58%) and periodic 33 KB (**3.743487×→3.579081×**, −4.39%). The compiler stages current buffer/base addresses once per captured child activation. Its hot matching loop falls **19→15 instructions** and three stack reloads→zero; source checks, finite debits and recovery remain. IR/work/ABI/MBC: **214/107/39/14**. No source rewrite is adopted.
+
+All 20 unchanged gates pass, with nine lower/eleven higher elapsed medians and geometric elapsed −0.183679%. Eight literals rise **4.805842×→4.871062×** (+1.36%), and eight overlap rises 2.46%; these tradeoffs remain explicit. Separate whole-call instructions fall 5.52%/5.04% on repeated/periodic, but sixteen instruction medians and three cycle medians rise. Allocation requests/bytes/reallocations/incremental usable peak remain equal in all 20 cases. Text grows 188 bytes; reported stack falls 192 bytes.
+
+Fresh current profiles retain 6,472 correct complete calls; the baseline has the same count. Generated code remains 64.48% of periodic, 70.65% repeated, 79.42% natural and 8.94% eight-byte wall-stack weights. A separate disjoint root-entry diagnostic localizes the eight-byte increase to native execution with its callbacks; setup and cleanup fall slightly. This is not a per-function instruction ledger. The next investigation must distinguish emitted work from callback machine code before broadening the optimization.
+
+675 native tests, two new maintained tests, nine focused checks, all 258 CI selections, unchanged 236 components/eight compositions/one real-capacity control, 1,724 native match controls, fifteen architecture checks and 132 workflow tests pass. The same seven inherited native exclusions remain. [Design, all twenty timings, counters, failure dispositions and immutable evidence](native-captured-read-addresses.md). Existing draft #973 only; parity remains incomplete.
+
+## R197: immutable geometry survives enum-state loops
+
+The compiler now fully lowers12 word-pack occurrences in the three real424-block state machines, without requiring an affine trip proof. Source window checks, finite debits, checked arithmetic, publication, cleanup and retry remain. Native IR/work/ABI/bytecode213/107/39/14.
+
+The existing source keeps byte-identical native text and all20 timing gates pass; fresh current ratios include natural32 **3.343891× Roc**, repeated32 **3.148675×**, periodic33 **3.654774×**, and eight literals **4.466182×**. Its geometric elapsed control increases0.533317%; no speedup is claimed.
+
+The same state-source compiler comparison passes20/20 gates: repeated **12.020990×→9.338768× Roc**, periodic **22.944172×→20.005454×**, with30.38% and18.39% fewer instructions. Natural text executes5.28% more instructions and takes4.84% more time. The state source still fails seven adoption gates and stays experimental; the faster existing source is retained. Allocation requests and incremental usable heap are unchanged. State code shrinks19,856 bytes; stack is unchanged.
+
+673 native tests /256 executed CI selections /236 components /eight compositions /one real-capacity control /1724 native match controls and15 architecture checks pass, with the same seven inherited exclusions. [Design, all20 current rows, profile numbers, limitations and immutable evidence](native-state-read-windows.md). #973 remains draft; no new PR.
+
+## R196: native enum-state support, existing source retained
+
+States without payloads now use the existing native scalar representation, and exact child-fuel exits preserve current enum words. **670 native tests /253 actually executed CI selections /236 components /eight compositions /one real-capacity control pass**, with the same seven inherited exclusions. All1724 native match controls and candidate resident checks pass. IR/work/ABI/bytecode212/107/39/14.
+
+The existing source produces byte-identical machine instructions and passes all20 unchanged timing gates. Fresh retained ratios include natural32 **3.371926× Roc**, repeated32 **2.972509×**, periodic33 **3.521470×**, and eight literals **4.528874×**. Neutral timing fluctuations are not claimed as a speedup.
+
+The exact R195 state-source witness now completes every input, including natural32 in roughly16 ms, but fails eight performance gates: repeated32 is12.008249× Roc and periodic33 is22.972440× in its separate cohort. Source adoption remains rejected. Periodic instructions grow7.355854× with nearly unchanged allocation requests. The state loop loses existing specialization proofs (18 fully lowered read-pack occurrences→0 in the same outer loop), while guarded wide loads remain. Current captured buffer/limit fact preservation is the next bounded hypothesis; no per-function instruction attribution is claimed.
+
+[Design, matched ratios, failure dispositions and immutable evidence](native-nullary-state-lowering.md). #973 stays draft; no new PR or next semantic compiler expansion before review.
+
+## R195 — idiomatic source acceptance cases; production unchanged
+
+A source-only state-machine rewrite of match extension passes all1,724 native controls, but loses native qualification and severely fails its first whole-compressor timing witness. The twenty-case campaign was stopped; the variant is not retained. Production remains R191 and its published timings below remain authoritative. Small executable probes isolate nullary enum packing, direct vector operations, positive logical-selection shapes and dynamic machine payloads. The next bounded fix is zero-word nullary scalar-state packing, followed by the identical witness and a fresh full matrix. [Source experiment and evidence](../../benchmarks/mech-deflate/source-variants/idiomatic-source.md).
+
+
+## R193 — compact native phase; production unchanged
+
+Experiment B's first phase is complete. The shared Plan/scalar/array emitter generates all four real nested path phases with compact typed state: 1,632 bytes of code, 160 bytes of stack, no calls. Larger-case phase kernels are **1.30–1.46× faster than the existing phase**, with 33.72–51.91% fewer instructions in a separate cohort. All eight primary blocks improve. These diagnostic entries omit exact ordinary accounting and recovery; **no whole-compressor acceleration or new reference ratio is claimed**.
+
+13,116 measured phase calls, five focused real-buffer cases and 18 original/decoded error/Boolean/retry controls pass. Ten separate profiles retain 5,174,020 verified calls. Fifteen complete ordinary compression calls pass exact output, independent inflation, aliases, capacity and cleanup. Their callback census finds 3,248–9,741 root calls per compression, while all 5,181 static library sites reduce to 15 operation families.
+
+Production remains R191/IR211: independent ordinary generation repeats all five image files byte-for-byte. The next step extends typed native storage and real construction/allocation across the entire closed Plan, followed by measured contract restoration. The full brief and parity remain incomplete. [Diagnostic design, timings and evidence](native-compact-computation-baseline.md).
+
+## R192 — minimal typed adapter baseline; production unchanged
+
+Experiment A is complete: all four actual linked phase bodies remain byte-identical to R191. Five real typed-buffer witnesses pass680exact-node/scalar phase calls;15full-compressor capture calls preserve bytes, inflation, aliases, capacity and cleanup0. The real1,500,513-word cache and305,257-entry node reservation remain. This diagnostic supplies actual exit adaptation and settlement, with explicit unsupported failures, while ordinary canonical admission/publication and precise recovery contracts remain unqualified.
+
+No whole-compressor speedup or phase-versus-reference ratio is claimed. Timer/counter variation and three repaired diagnostic setup defects remain in evidence. Production timings below are unchanged R191 results. Next is compact native lowering from the same shared numeric Plan, then named contract restoration and whole-compressor qualification. [Scope, evidence and limitations](native-minimal-adapter-baseline.md).
+
+## R191 — complete numeric phases outlined
+
+**Production is R191/IR211.** Complete nested numeric phases execute through the same shared body in private native functions. Natural32 improves **3.630507×→3.346257×** reference (−7.829484%); natural16 **4.340731×→4.031470×** (−7.124627%), both in all8 blocks. The full20-case geometric elapsed gain is1.087154%; all original1.05gates pass. Seven compressor medians and all12scalar medians are adverse; scalar changes0.285–1.298% remain within unchanged gates.
+
+Natural32 instructions fall3.142543% and cycles7.833668% in separate cohorts. Heap metrics remain exactly equal; code−1,028B and cumulative stack+192B. Four complete three-loop phases are outlined. **668native tests / all251actually executed CI selections / five focused controls pass**, as do unchanged236/eight/one qualification,15architecture/catalog and132workflow checks. Same seven inherited exclusions; warnings denied remains.
+
+Five fresh exact-worker profiles complete17,813correct calls; independent source mapping repeats all five image files. A bounded census shows only267–276of22,461logical owner slots populated at peak. Setup/drop alone takes roughly0.13–0.15ms and cannot explain the large-input gap.
+
+The next fixed-source architecture experiment separates adapter costs from compact native computation. Phase-only results will not stand in for whole-compressor parity. [All20results, design and measured tradeoffs](native-numeric-phase-outlining.md). Existing draft973 only; hosted ordinary CI is cancelled without waiting.
+
+## R190 — duplicate join arguments rejected after full measurement
+
+**Production remains R186/IR206.** The candidate removes 142 exact duplicate private join arguments and shrinks generated text by 2,456 bytes, but reported stack grows 144 bytes. All 20 original gates pass with exact output, inflation, work, aliases, capacity and cleanup agreement. The measured tradeoff is unfavorable: 19 elapsed medians worsen, one improves, and geometric elapsed rises 0.783878%. Separate counters have 14 higher instruction medians and 13 higher cycle medians; all 12 scalar medians are adverse. Heap requests, bytes, reallocations and usable peaks remain equal.
+
+| Input | Retained compiler / Roc | Rejected candidate / Roc |
+|---|---:|---:|
+| Natural text 32 KB | 3.627365× | 3.651736× |
+| Random 32 KB | 4.738701× | 4.769069× |
+| Distribution change 16 KB | 6.312078× | 6.323377× |
+| Repeated 32 KB | 2.982935× | 3.005232× |
+| Periodic 33 KB | 3.469895× | 3.513236× |
+| Eight bytes | 4.480176× | 4.512758× |
+
+Candidate qualification passes 664 native tests, seven focused tests and all 247 actually executed CI selections, with the same seven inherited exclusions. Unchanged component/composition/real-capacity checks are 236/8/1. All 15 architecture/catalog checks, 132 workflow tests, runtime-only, formatting and warnings denied pass. Restored production reuses unchanged R186 qualification (663/246); no fresh candidate count is claimed for production.
+
+Five fresh profiles complete 17,748 correct calls. The independent source-map build repeats all five candidate image files byte-for-byte. Actual prologues show fixed stack storage 16,368→16,512 bytes with the same saved-register set. Fresh candidate unattributed stack accesses remain 21.16% of natural32 timer samples, 25.31% random32, 21.31% repeated32 and 16.45% distribution-change16. These are samples, not fully removable time or a per-function instruction ledger.
+
+The bounded next experiment should isolate a complete hot native loop from unrelated live state and measure the resulting register allocation. The source, algorithm, allocation sites, buffers and timing boundaries remain pinned. All eight candidate compiler/test/CI paths are restored.
+
+[Complete rejected candidate, all 20 timings, counters and reproducible evidence](native-private-join-arguments.md). The existing PR remains draft; no new PR is opened.
+
+## R189 — register-spill diagnosis; no production change
+
+The pass-order probe passes its focused regression and all 665 candidate native tests, including 248 actual CI selections. It removes no additional compressor state, and the entire instruction section is byte-for-byte identical. The five-file candidate is archived and declined. Production remains the qualified R186 compiler; no new timing is claimed.
+
+Independent diagnostic builds reproduce all five retained image files exactly. Only 8 bytes of the main frame are explicit storage. Allocator spill accesses account for 19.88% of natural32 timer samples, 23.32% random32, 19.31% repeated32 and 15.31% distribution-change16. These are sampled costs, not promised savings. Root pointers explain little of this traffic; exact numeric/phi labels retain the unresolved remainder.
+
+There are also 142 duplicate branch-join argument vectors in the maintained pre-backend graph. Direct sampled weight is small, so a separate candidate must establish its actual machine-code and complete-call effect.
+
+[Exact frame analysis, declined patch, tests and public replay](native-register-spill-diagnosis.md). The existing draft PR remains the only PR.
+
+## R188 — low-word scalar-cost experiment rejected
+
+**Production remains R186/IR206.** The actual scalar minimum path falls16→12 instructions, versus11 in the pinned reference, but the broader measured tradeoff does not justify retention. Complete source and all contrary evidence are preserved.
+
+Reject the current variant: the real scalar path improves16 to12 instructions and natural32 improves0.807595% in8/8 paired blocks, but aggregate elapsed improves only0.070110%;17 instruction medians,12 cycle medians and11 scalar-control medians rise. Code grows1236B and entry stack352B with unchanged heap. Preserve the complete experiment and return production to qualified R186; do not discard or repeat any sample.
+
+| Input | Retained compiler / Roc | Rejected candidate / Roc |
+|---|---:|---:|
+| reymont-prefix-32769 | 3.603628× | 3.574525× |
+| reymont-prefix-16384 | 4.345024× | 4.310893× |
+| random-32769 | 4.767305× | 4.781002× |
+| 16384-distribution-change | 6.287962× | 6.300231× |
+| repeated-32769 | 2.976170× | 2.978807× |
+| 33027-periodic-window | 3.462555× | 3.486903× |
+| eight-literals | 4.416522× | 4.427971× |
+
+All20 unchanged1.05 gates pass;10 faster/10 slower medians and aggregate−0.070110%. Natural32 improves0.807595% in8/8 blocks. Independent counters have17 higher instruction medians and12 higher cycle medians;11 scalar medians are adverse. Heap is exactly equal; rejected code+1236B/stack+352B are not production changes.
+
+**665 candidate native tests/all248 CI selections pass**, including11focused/77,088 compiled helper comparisons. The unchanged236/eight/one component qualification,15architecture/catalog checks,132workflow tests, runtime-only, formatting and warnings denied pass. Restored production reuses unchanged R186663/246 evidence; no fresh665-test production claim.
+
+Five exact-candidate profiles complete **17,838 correct calls**; independent compilation repeats all five image files byte-for-byte. Decoding the retained compiler's unattributed native sample PCs finds stack loads/stores at **19.92% of all natural32 timer samples,23.32% random32,19.33% repeated32 and15.33% distribution-change**. These include necessary homes and possible register spills; removability and retired-instruction attribution remain unproved. The next bounded investigation maps those accesses to their actual homes/liveness before changing lowering.
+
+Initial setup/harness errors and disk exhaustion are corrected with receipts preserved;339 obsolete reproducible binaries removed, about29GiB recovered. One redundant image producer ended by SIGKILL with cause unproved; the independent exact-current image build succeeds and repeats all image bytes. No failed command is relabeled passed.
+
+Fresh public replay verifies37 immutable packets, **4,970 file occurrences/1,080 paths**, retaining 10 multiversion paths. All38 receipts and three outputs match. No executables, bytecode or raw trace stores are uploaded.
+
+[Full experiment, all20 timings and stack census](native-low-word-costs.md). Existing draft973 only; review requested and ordinary exact-head CI cancelled by instruction. Parity remains incomplete.
+
+## R187 — coupled scalar choice experiment rejected
+
+**Production stays at R186/IR206.** The candidate improves the inspected steady scalar minimum path16→13 instructions (reference11), but its complete-call result is an unfavorable broader tradeoff. The complete tested source remains archived for refinement.
+
+Reject the current coupled scalar-choice variant: the local steady loop improves16 to13 instructions and natural text improves about0.7%, but random32 is2.070262% slower in all8 blocks,12 instruction medians rise and11 cycle medians rise. Overall elapsed is nearly flat(-0.055883%). Restore the qualified R186 compiler, preserve the complete candidate and use its concrete widening instruction for the next refinement. No sample is discarded or repeated.
+
+| Input | Before / Roc | Rejected candidate / Roc |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.624071× | 3.598057× |
+| reymont-prefix-16384 | 4.346250× | 4.314056× |
+| random-32769 | 5.267394× | 5.376443× |
+| 16384-distribution-change | 6.638034× | 6.411380× |
+| repeated-32769 | 2.998008× | 3.004170× |
+| 33027-periodic-window | 3.514017× | 3.526781× |
+| eight-literals | 4.581944× | 4.577412× |
+
+All20 original1.05 gates pass, but random32 is2.070262% slower in all8 paired blocks. Separate counters have8 lower/12higher instruction medians and11higher cycle medians. Allocation requests/bytes/reallocations/incremental peak are equal; fixed+16B usable-live offset remains unattributed. Candidate code−928B and stack+48B are not production changes. All contrary observations remain.
+
+**664 candidate native tests/all247 CI-selected names execute and pass**;10focused, unchanged236/8/1components,12scalar gates,15architecture/catalog,132workflow, runtime-only, formatting and warnings denied pass. No expected-value/allowance increases. Restored production reuses the already-qualified R186663/246 evidence; no fresh664-test claim for restored code.
+
+Five current-candidate profiles complete **17,430 calls**. The entire Object repeats byte-for-byte under independent source-location compilation. CPU-time samples remain distinct from hardware events. A R186 summary-hash/version-label error is corrected in baseline records after verifying the correct descriptors embedded in both actual executables; original receipts are preserved.
+
+Fresh public replay verifies38 immutable packets, **4,781 file occurrences/1,072 paths**, preserving 13 multiversion paths. All39 receipts and three output hashes match. No native binaries, bytecode or raw trace stores are uploaded; no new PR.
+
+[Full rejected candidate, all20 results and next hypothesis](native-coupled-scalar-choice.md). Existing draft973 only; ordinary exact-head CI cancelled and fresh review requested without waiting. Parity remains unproved.
+
+## Qualified production R186 — Boolean facts through loop arguments
+
+The compiler proves245 zero-or-one scalar loop arguments and removes eight additional branch sites. Unrestricted entry aliases, fresh loads, arithmetic changes and unknown seeds remain unknown. Current selected-edge facts consume this proof; source checks, work, errors and atomic publication remain. IR/work/ABI/MBC206/107/39/14.
+
+Retain the general Boolean-phi proof for19 lower instruction medians, all12 scalar medians lower and432B less reported stack. Primary elapsed is mixed and geometrically0.103379% adverse (8 faster/11 slower/1equal); this is not an overall latency win. All contrary observations preserved.
+
+| Input | Before / Roc | Current / Roc |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.612096× | 3.627353× |
+| reymont-prefix-16384 | 4.351896× | 4.351045× |
+| random-32769 | 4.807445× | 4.762072× |
+| 16384-distribution-change | 6.347301× | 6.337910× |
+| repeated-32769 | 3.025987× | 3.010009× |
+| 33027-periodic-window | 3.508801× | 3.484471× |
+| eight-literals | 4.548636× | 4.590889× |
+
+Separate counters show **19 lower /one higher instruction medians**, with **five cycle medians higher**. Natural32 instructions fall **1.722476%** despite worse elapsed/cycles. All12 scalar medians improve and pass unchanged gates. Code shrinks448B and reported stack432B. Allocation requests/bytes/reallocations and incremental peak heap are equal. A fixed−16B usable-live offset is unexplained; no heap/RSS saving is claimed.
+
+**663 native tests /all246 CI-selected names execute and pass**, with the same seven inherited exclusions. Three new maintained native tests, unchanged236/8/1 component qualification,15architecture/catalog checks,132workflow tests, runtime-only, formatting and warnings denied pass. The16-row original/decoded source control agrees with resident execution but activates zero new Boolean-phi proofs; no false coverage claim. Actual compressor and native execution tests establish the new mechanism.
+
+Five current profiles complete **17,761 calls**. The entire current Object is repeated byte-for-byte by independent source-location compilation. Natural32 is **79.52%** in main, with **34.11%** native without a fine tag. These are CPU-time shares, not retired-instruction counts or removable-host estimates.
+
+Fresh public replay verifies37 immutable packets, **5,352 file occurrences /1,099 paths**, preserving 12 multiversion paths. All38 receipts and three output hashes match. One container plus one receipt bundle in the existing release; no new PR.
+
+[All20 timings, design, receipts and limitations](native-boolean-phi-experiment.md). Existing draft#973 only; exact-head review requested and ordinary CI cancelled without waiting. Parity remains unproved.
+
+## Historical R185 — selected native ranges
+
+The compiler carries unsigned range facts from a unique selected edge through its dominated native code. Facts belong to immutable SSA words; fresh loads, joins with other predecessors and shared branch targets keep their checks. Source assertions, checked arithmetic, effects, prices, errors and publication remain. **8,721 proved branch sites** are removed (a static count). IR/work/ABI/MBC: **205/107/39/14**.
+
+All **20 original timing gates pass**: **16 faster / 4 slower medians**, geometric elapsed **-0.897836%**. Every contrary case and paired block is retained. Three zero reference medians stay unresolved. Pairs share the same fresh reference; independent rounds are not compounded.
+
+| Input | Before / Roc | After / Roc |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.678007× | 3.619007× |
+| reymont-prefix-16384 | 4.419504× | 4.337101× |
+| random-32769 | 4.872262× | 4.843413× |
+| 16384-distribution-change | 6.437103× | 6.393901× |
+| repeated-32769 | 3.090523× | 3.051817× |
+| 33027-periodic-window | 3.518398× | 3.529740× |
+| eight-literals | 4.613850× | 4.565803× |
+
+Separate counters have **14 lower / 6 higher instruction medians** and **5 higher cycle medians**. All five larger cases execute more instructions but use fewer cycles. Natural-text instructions rise **0.491944%** while cycles fall **2.882354%**. Eight-byte instructions fall **0.573894%** while cycles rise **1.819071%**. No broad instruction-count improvement is claimed. All seven measured allocation/live-heap metrics remain exactly equal in all twenty cases. Code shrinks **308,224 B**; stack falls **64 B**. No heap/RSS saving is claimed.
+
+All **660 native unit tests / 243 CI-selected names actually execute and pass**, with the same seven inherited exclusions. Four new native tests cover selected paths, word widths, loops, aliases, error order and recovery. A 16-row actual source witness proves original/decoded/native/resident agreement; the parent fails its new coverage assertion as expected and the candidate passes. The scalar-only control activates zero folds and is not optimization coverage. Unchanged **236 component / eight composition / one real-capacity path** tests, twelve scalar controls, fifteen architecture/catalog checks, runtime-only, formatting, warnings denied and 132 workflow tests pass. No allowance or expected-value increases. Five adverse scalar medians remain.
+
+Five current profiles complete **17,729 calls** with zero managed cleanup. Independent source-location compilation repeats the actual whole Object byte-for-byte. Natural text is **80.91%** inside main; **35.67%** of samples remain native without a fine tag. CPU sample shares are not retired-instruction counts or removable-host estimates. The inspected hot reduction body and gate instruction counts remain unchanged; the cause of the whole-call instruction increase is unproved.
+
+Public evidence verifies **37 immutable packets / 4,713 file occurrences / 1,106 paths**, preserving 13 paths with multiple versions. All **38** container/inner receipts and three replay outputs match. Two release assets use standing upload permission; no new release or PR.
+
+[Design, all twenty timings and complete limitations](native-selected-ranges.md). Existing draft #973 only; exact-head review is requested without waiting for hosted CI. Parity remains unproved.
+
+## Historical R184 — unsigned interval predicates
+
+The compiler combines unsigned bounds of the same immutable word into one exact interval predicate. Source assertions, checked arithmetic, effects, prices, errors and publication remain. Four real sites are simplified; all earlier numeric recipes and proof selections are unchanged. IR/work/ABI/MBC: **204/107/39/14**.
+
+All **20 original timing gates pass**, with **14 faster / six slower medians** and a **0.191492% geometric elapsed reduction**. This is a modest mixed result, not an established general instruction-count improvement. Every contrary case and paired block is retained.
+
+| Input | Before / Roc | After / Roc |
+|---|---:|---:|
+| reymont-prefix-32769 | 3.678092× | 3.670159× |
+| random-32769 | 4.840132× | 4.804452× |
+| 16384-distribution-change | 6.391936× | 6.391698× |
+| repeated-32769 | 3.016813× | 2.999579× |
+| 33027-periodic-window | 3.555805× | 3.509126× |
+| eight-literals | 4.577226× | 4.522629× |
+
+Separate counters have **six lower / fourteen higher instruction medians**, with **ten cycle medians higher**. Natural-text instructions fall **0.916410%**; eight-byte instructions rise **0.640178%**. All measured allocation and live-heap metrics are unchanged across all twenty cases. Code shrinks **6,196 B** and stack usage falls **32 B**; no measured heap/RSS saving is claimed.
+
+All **656 native unit tests / 239 CI-selected names actually execute and pass**, with the same seven inherited exclusions. Two new native predicate tests and an original/decoded source assertion/rejection/recovery test pass. The unchanged **236 component / eight composition / one real-capacity path** tests, twelve scalar controls, fifteen architecture/catalog checks, runtime-only, formatting, warnings denied and 132 workflow tests pass. No allowance or expected-value increases.
+
+Five current profiles complete **17,656 calls** with zero managed cleanup. Independent source-location compilation repeats the actual whole Object byte-for-byte. Natural text is **80.25%** inside main; **34.92%** of samples remain native without a fine tag. CPU sample shares are not retired-instruction counts or removable-host estimates.
+
+Public evidence verifies **37 immutable packets / 4,767 file occurrences / 1,103 paths**, preserving 14 paths with multiple versions. All **38** container/inner receipts and three replay outputs match. Two release assets are used under standing upload permission; no new release or PR.
+
+[Design, all twenty timings and complete limitations](native-unsigned-intervals.md). Existing draft #973 only; exact-head review is requested without waiting for hosted CI. Parity remains unproved.
+
+## Historical R183 checkpoint
+**R183 marks checked, initialized native source homes nontrapping.** The
+prepared invocation owns the initialized word bank throughout each synchronous
+entry. Ordinary source homes keep the default alias region and current callback
+barriers; no readonly, alignment or movement permission is added. Source checks,
+prices, ownership, funding, error order and publication contracts remain.
+
+Existing demand cleanup removes **15,420 additional unused IR loads**, for a
+total **24,298**, with **zero actual block parameters removed**. Text shrinks
+**120,784 B** to **8,468,144 B**; entry stack grows **176 B** to **17,008 B**.
+All previous recipes, windows and proof selections remain equal. IR/work/ABI/MBC
+are **203/107/39/14**. Independent mapping repeats the whole Object byte-for-byte.
+
+All **20 matched elapsed medians improve**, geometric **−1.760857%**. The original
+1.05 gates pass. Adverse paired blocks remain; independent rounds are not compounded.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.683358× | 3.666824× | -0.448882% |
+| reymont-prefix-16384 | 4.445398× | 4.403575× | -0.940824% |
+| random-32769 | 4.891825× | 4.846826× | -0.919892% |
+| 16384-distribution-change | 6.464518× | 6.397616× | -1.034909% |
+| repeated-32769 | 3.200119× | 3.037840× | -5.071014% |
+| 33027-periodic-window | 3.557204× | 3.536104× | -0.593160% |
+| eight-literals | 4.719190× | 4.635783× | -1.767394% |
+
+The independent hardware cohort has **17 lower / three higher instruction
+medians**, with **eleven cycle medians higher**. Natural32 instructions fall
+**1.188933%** (223,430,043.5 → 220,773,609.5); eight literals **0.284913%**
+(12,579,982 → 12,544,140). Seven scalar medians are adverse, but all twelve pass
+unchanged latency/allocation/no-slope gates. All contrary cohorts remain.
+
+Allocation counts, requested bytes, reallocations and incremental usable peak
+are unchanged across all twenty cases. A fixed **+16 B** live-heap offset has an
+unproved cause. Separate RSS/physical cohorts establish no memory saving.
+
+Five exact-current profiles complete **17,556 calls**, with all recorder exits
+and per-case/final session cleanup zero. Natural32 remains about **80.18%** in
+the generated main entry; random32 **70.36%**. Roughly **38.70%** of natural32
+samples are native without a fine numeric source tag. CPU samples are not retired
+events or an estimate of removable host cost. Resolving this attribution gap and
+investigating complete-phase outlining remain future research.
+
+**Four focused / 654 GPU / all 237 CI-selected names executed** pass, with the
+same seven inherited exclusions. Unchanged **236 component / eight composition /
+one real-capacity path**, twelve scalar, fifteen architecture/catalog, runtime-only,
+formatting, warnings-as-errors and 132 workflow checks pass. A twenty-row full-native
+original/decoded witness preserves work/results/errors/aliases/publication/retry;
+resident results agree. Actual parent coverage fails (100 loads), candidate passes
+(534). No expectation or allowance increases.
+
+The raw JIT regression is placed in the existing allowed test boundary after the
+architecture audit catches its initial location. The allowlist is unchanged, and
+the production library rebuild remains byte-identical after that test-only move.
+The missing historical counter binding is recovered from hash-verified public
+R125 evidence; the original baseline counter executable rebuilds byte-for-byte.
+
+A copied human-readable scope label in sealed timing rows still says R182/IR202.
+The actual source/Object/worker pins and version checks identify R183/IR203. An
+explicit erratum preserves and corrects that metadata without changing measurements
+or immutable packets. The final report includes it.
+
+Parent `65436c6b01d6939b9ad9cb3d479c1020c1c16287`; measured source
+`8fc62da7db473ba744b804af7a16cdb8d4dfb2ec`. All five compiler/test/CI files
+reconstruct from the published parent/patch and match qualification. Frozen R145
+dependencies, original source/MBC/algorithm/tables/search/EOF, source allocation
+sites, real scratch capacities, output capacity 13 clear/reuse, aliases, mimalloc
+and full API timing remain. Largest input is 33,027 B.
+
+[Full R183 report](native-initialized-local-homes.md) contains all twenty timing/
+counter rows, current profiles, machine spans, exact receipts, repairs and skipped
+coverage. Evidence remains outside source Git. One commit in existing draft #973;
+no new PR. The broader parent/child brief and 1× goal remain incomplete.
+
+The approved public container and independently retrieved receipt bundle match
+server hashes. Fresh public replay verifies **38 inner packets / 6,403 file
+occurrences / 1,219 paths**, preserving thirteen paths with multiple versions.
+REPORT.md, results.json and packet-replay.json reproduce byte-for-byte. All39
+container/inner receipts agree with the index. Only two new release assets are
+used; no new release is created.
+
+## Historical R182 checkpoint
+
+**R182 removes unused native IR values before lowering.** Demand starts at
+observable effects and control and follows each current block argument. Calls,
+stores, trapping reads/arithmetic, conditions, CFG edges, infinite loops and the
+entry ABI remain. Exceptions retain the conservative path. Source operations,
+funding, ownership and publication contracts are unchanged.
+
+The real compressor loses **10,647 unused IR instructions / 8,878 IR loads**,
+with **zero actual block parameters removed**. Text shrinks **70,700 B** and entry
+stack **320 B**. All previous numeric recipes, window selections and proofs remain.
+IR/work/ABI/MBC are **202/107/39/14**.
+
+All twenty matched cases complete: **16 faster / four slower**, geometric elapsed
+**−0.527064%**, with every original 1.05 gate retained and passing.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.719808× | 3.676693× | -1.159068% |
+| reymont-prefix-16384 | 4.452282× | 4.414359× | -0.851745% |
+| random-32769 | 4.878450× | 4.846793× | -0.648915% |
+| 16384-distribution-change | 6.413499× | 6.410778× | -0.042428% |
+| repeated-32769 | 3.049449× | 3.048212× | -0.040569% |
+| 33027-periodic-window | 3.769513× | 3.737136× | -0.858925% |
+| eight-literals | 4.619655× | 4.629116× | +0.204799% |
+
+The independent hardware cohort has **all twenty instruction medians higher**
+(+0.002923% to +0.735456%) and ten cycle medians higher. All twelve scalar-control
+medians also rise (0.0768–0.7804%), remaining within the original gate. These
+contrary measurements are retained. Smaller static code does not establish fewer
+executed instructions. Tagged tally/control spans can grow and spill more.
+
+Allocation requests, requested bytes, reallocations and incremental usable peak
+are unchanged across all twenty cases. The fixed −16 B live-heap offset has an
+unproved cause. Separate CPU/heap RSS and physical cohorts establish no memory
+saving. Five exact-current profiles complete **17,413 calls** with per-case and
+final session cleanup zero; natural32 remains about 80% in the native main entry.
+
+**Six focused / 653 GPU / all 236 CI-selected tests executed** pass, with the same
+seven inherited exclusions. Unchanged **236 component / eight composition / one
+real-capacity path**, twelve scalar, fifteen architecture/catalog, runtime-only,
+formatting, warnings-as-errors and 132 workflow checks pass. Twenty original/decoded
+full-native witness rows retain work/results/errors/aliases/publication/retry.
+The actual parent fails unused-load coverage; the candidate passes.
+
+Parent `65034db9ca9da4133355108e85784703cde7592b`; measured source
+`7f26d28e1dfa5b219c86f68736f3d7543a69b514`. All seven compiler/test/CI
+files reconstruct and match qualification. Independent map compilation repeats
+the whole Object byte-for-byte. Original source/MBC/algorithm/tables/search/EOF,
+real scratch capacities, allocation sites, output capacity13 clear/reuse, aliases,
+mimalloc and full API timing remain. Largest input is 33,027 B.
+
+[Full R182 report](native-demand-liveness.md) contains all20 timing/counter rows,
+contrary blocks, current profiles, machine spans, exact receipts, repaired wrapper
+failures and skipped coverage. Evidence is kept outside source Git and each sealed
+packet is hash-verified before numerical replay. One commit in existing draft #973;
+no new PR. Hosted ordinary CI is cancelled by instruction; exact-head review is
+requested. The broader parent/child brief remains partial at opaque returns and
+fresh captured handoffs. The 1× goal remains active.
+
+The approved public container and independently retrieved receipt bundle match
+server hashes. Fresh public replay verifies **38 inner packets / 5,458 file
+occurrences / 1,211 paths**, preserving thirteen paths with multiple versions.
+REPORT.md, results.json and packet-replay.json reproduce byte-for-byte. All39
+container/inner receipts agree with the index. Only two new release assets are
+used; no new release is created.
+
+## Historical R181 checkpoint
+
+**R181 retains selected compound predicates and reuses checked source windows.**
+The actual match-extension assertion was a conjunction. The shared fact engine
+previously treated it as an opaque Boolean, losing both successful conditions.
+Normalized true AND / false OR now supply their forced operands. A checked sum
+bounded by the current input length also bounds smaller current operands.
+Wrapping sums, changed words, unknown ordering and different views supply no
+permission. All eager source operations, lexical assertions, residual shape/view
+checks, ownership, source prices and current funding remain.
+
+All **20 matched medians improve**, geometric elapsed **−0.910814%**. The unchanged
+1.05 gates pass. Paired adverse blocks remain; independent rounds are not
+compounded. Current before/after ratios share the same fresh reference.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.712139× | 3.704116× | -0.216131% |
+| reymont-prefix-16384 | 4.457244× | 4.435999× | -0.476646% |
+| random-32769 | 5.084448× | 4.941659× | -2.808356% |
+| 16384-distribution-change | 6.446782× | 6.422283× | -0.380025% |
+| repeated-32769 | 3.047536× | 3.036298× | -0.368775% |
+| 33027-periodic-window | 3.562616× | 3.526867× | -1.003465% |
+| eight-literals | 4.647733× | 4.610088× | -0.809978% |
+
+Actual child predicates rise **12 → 60**. One inspected machine gate falls
+**29 → 17 instructions / three → one comparisons / five → zero SP accesses**.
+Two captured control gates grow to 41 and 38 instructions, with more tagged
+comparisons. These are source-tagged static spans; global layout/hoisting and
+register allocation also change. Forty-eight source predicates are not forty-eight
+removed machine compares. Text shrinks **1,864 B**, stack **64 B**.
+
+The separate hardware cohort has **seven lower / thirteen higher instruction
+medians**, with seven cycle medians higher. Natural32 instructions rise 0.284239%,
+random32 0.521470%; repeated32 and periodic33 fall about 0.27% and 0.25%.
+All contrary measurements remain. Allocation requests, requested bytes,
+reallocations and incremental usable peak are unchanged on all 20 cases.
+Live-before/live-after/peak have a fixed **+16 B** offset, cause unproved.
+CPU and heap-probe RSS/physical cohorts remain separate; no memory saving is claimed.
+
+Ten focused / **649 GPU** / all **232 CI-selected names executed** pass, with the
+same seven inherited exclusions. Unchanged **236 component / eight composition /
+one real-capacity path**, 12 scalar, 15 architecture/catalog, runtime-only,
+formatting, warnings-as-errors and 132 workflow checks pass. Twenty matched
+full-native original/decoded witness rows preserve work, results, error origins,
+aliases, publication and recovery; resident results/rejections agree.
+
+Five exact-current profiles retain **17,545 complete calls**. Disk exhaustion
+affects only the final XML export and its driver receipt after all five recordings
+complete. The existing trace exports recover without rerunning compression or
+recording. Every profile case reports managed cleanup zero; the interrupted
+combined session's final graceful-Q receipt is absent. Primary, counter and generic
+sessions independently close at zero. Cleanup frees about 2.1 GB of verified
+replay duplicates and obsolete builds while preserving source/evidence, both
+measurement compilers/workers/Objects and frozen dependencies.
+
+The pinned reference binary has eighteen hashed generated-function intervals
+spanning 122,456 B and 49 static calls to sixteen generated targets. Mech's Object
+has the main entry and two small word-collection symbols, with reported generated
+text 8,659,628 B. These static boundaries differ and do not establish an execution
+ratio. They identify phase outlining as a later structural research candidate.
+
+Parent `54280db43e2d26e2554ff2651f24e929e11571c4`; measured source
+`ebedd713669e8e2a424ac35163c2eb480c368be0`; IR/work/ABI/MBC **201/107/39/14**.
+All nine changed compiler/test/CI files reconstruct from the public parent and
+patch, matching compiled source bytes. Independent map compilation repeats the
+whole Object byte-for-byte. Frozen R145 dependencies, original source/MBC,
+algorithm/tables/depth/nice/near-EOF limits, real scratch capacities, allocation
+sites, output capacity 13 clear/reuse, aliases, mimalloc and full API timing remain.
+Largest input is 33,027 B; no full-scale run is used.
+
+[Full R181 report](native-conjoined-window-facts.md) contains all 20 timing/counter
+rows, machine spans, scalar/profile controls, exact commands, resource recovery
+and skipped coverage. All 38 public archives and their consolidated receipt bundle
+match server hashes. Fresh public replay verifies 4,879 file occurrences across
+1,159 paths and reproduces REPORT.md and results.json byte-for-byte. The downloaded
+bundle independently verifies all 38 receipts. Evidence remains outside source Git.
+One optimization commit in existing draft #973; no new PR. Ordinary hosted CI is cancelled by
+instruction and review automation preserved. The wider mutable-parent/child brief
+remains partial at opaque returns and fresh captured handoffs; the 1× goal is active.
+
+## Historical R180 checkpoint
+
+**R180 proves current-argument predicates at native child entry.** Twelve source
+predicates are established after the initializer transfers the current arguments.
+Checked mathematical addition supplies order and constant lower bounds; wrapping
+arithmetic supplies neither. Residual full input windows, shapes, views, ownership,
+source charges and current-account funding remain checked. Captured versions
+without a current proof retain their gates. The broader mutable-parent/child
+brief remains incomplete: full maximum-window facts do not yet cross fresh scopes.
+
+The six priority larger-input medians improve by 0.17–1.54%; eight literals slow
+by 0.69%. All 20 unchanged 1.05 gates pass: 11 faster / nine slower medians,
+geometric elapsed change −0.120611%. These are matched before/after measurements;
+separate rounds are not compounded.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| reymont-prefix-32769 | 3.727567× | 3.709717× | -0.478858% |
+| reymont-prefix-16384 | 4.441393× | 4.433969× | -0.167153% |
+| random-32769 | 4.877577× | 4.841599× | -0.737623% |
+| 16384-distribution-change | 6.460330× | 6.406631× | -0.831205% |
+| repeated-32769 | 3.077022× | 3.029730× | -1.536943% |
+| 33027-periodic-window | 3.567339× | 3.550296× | -0.477743% |
+| eight-literals | 4.649868× | 4.681850× | +0.687813% |
+
+Natural32 retired instructions fall 1.715509%, random32 0.610454%, repeated32
+0.545979%; eight bytes rise 0.053016%. Eleven instruction medians and eight cycle
+medians rise. All 20 allocation and usable-live-heap medians are unchanged.
+Initial RSS rises substantially; fresh ABBA confirmation does not reproduce it
+(RSS +0.035483%, physical +0.042100%). Both cohorts remain, cause unproved.
+Generated text grows **60,344 B**; entry stack shrinks **224 B**. Tagged gate spans
+contain fewer glue/spill instructions, but their comparison counts are unchanged;
+12 source predicates are not 12 removed machine comparisons.
+
+Five exact-current profiles cover 17,463 complete calls. Natural32 has 80.58%
+inside the main generated entry, with 38.70% unknown native attribution. Outside
+entry includes other generated helpers and useful runtime/validation work; samples
+are not retired-instruction counts or an exact removable-host split.
+
+Qualification: **644 GPU / five focused / all 227 CI-selected tests executed**,
+with the same seven inherited exclusions. Unchanged **236 component / eight
+composition / one real-capacity path**, 12 scalar, 15 architecture/catalog,
+132 workflow, runtime-only, formatting and warnings-as-errors checks pass.
+Original/decoded, direct/restored, fresh arguments, wrapping refusal, residual
+full-window, aliases, overflow, finite failure prefixes, unchanged publication,
+cleanup and retry controls remain. A matched full-native 14-row witness preserves
+work/results/errors before and after; all 20 primary work values agree.
+
+The report preserves early toy funding refusals, a corrected cross-strategy test
+assumption and repaired frozen-dependency paths. Closure found missing current
+format/workflow receipts and ran both checks before publication. No expected
+value, allowance, warning policy or funding rule was weakened. No unresolved
+introduced functional failure remains; inherited exclusions and optimization
+refusals are explicit.
+
+Parent `40bba44acd7a60e28e3378dab012ee9d50007c66`; measured clean source
+`bcec44b0c2dab03e228fbdec5fdaa142552ff1ed`; IR/work/ABI/MBC **200/107/39/14**.
+All 13 changed compiler/test/CI files reconstruct from the public parent and
+exact patch and match qualification. Frozen R145 dependencies, pinned original
+source/MBC/algorithm/tables, depth 300/nice 258, near-EOF limits, real scratch
+capacities, allocation sites, output capacity 13 clear/reuse, input aliases,
+mimalloc and full evaluate_into timing remain unchanged. Largest input 33,027 B.
+
+[Full R180 report](native-child-entry-facts.md) records all 20 rows, adverse
+observations, counter/heap/profile/scalar cohorts, exact commands and skipped
+coverage. Public evidence: **39 archives / 78 server hashes verified**. Fresh download
+checks 6,468 file occurrences across 1,287 paths, retaining
+15 paths with historical versions. Both indexed reports replay byte-for-byte.
+Evidence is hash-indexed outside the source tree.
+One optimization commit in existing draft #973; no new PR. Ordinary hosted CI is
+cancelled by instruction, review automation preserved. Fresh all-feature builds,
+another standalone AOT harness, large inputs and the separate ten-workload suite
+are skipped. The broader brief and 1× target remain active.
+
+## Historical R179 checkpoint
+
+**R179 retains local facts across checked fixed-size writes and before opaque
+boundaries.** The compiler removes 40 additional projection guards and 510 read
+guards from the unchanged complete compressor. The matched comparison improves
+natural32KB **4.183810× → 3.720143× Roc** (11.082413%), natural16KB
+**4.951733× → 4.435018×** (10.435046%), and random32KB
+**5.427371× → 4.874584×** (10.185168%). All 20 unchanged 1.05 gates pass:
+17 faster medians, three stored-only cases slower by 0.121355–0.358408%, geometric
+elapsed improvement 3.754262%. All eight paired blocks improve on each priority
+case. Reference medians of zero remain unresolved; no gain is compounded with
+another round or source variant.
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| Natural text, 32 KB | 4.183810× | 3.720143× | −11.082413% |
+| Natural text, 16 KB | 4.951733× | 4.435018× | −10.435046% |
+| Random, 32 KB | 5.427371× | 4.874584× | −10.185168% |
+| Distribution change, 16 KB | 6.970006× | 6.415489× | −7.955760% |
+| Repeated, 32 KB | 3.205891× | 3.076759× | −4.027966% |
+| Periodic, 33 KB | 3.728267× | 3.565564× | −4.364050% |
+| Eight literals | 4.709432× | 4.593000× | −2.472322% |
+
+The existing shared transfer engine now models a successful length-preserving
+replacement without losing immutable scalar/shape facts. Its closed supported
+prefix ends at unknown effects or child edges, and prunes continuations reached
+from outside. Partial scopes export no loop-wide windows. All original write
+checks, source operations, ownership, first-change behavior, current-view admission,
+charges and failure paths remain. Completion rejects replacement as totality
+permission. The canonical plan, prepared numeric regions, 22 guarded windows,
+reduction recipes and lowered packs remain exactly equal. Current child gates
+still check their own predicates; caller-to-child predicate transfer remains
+unfinished. No source, allocator or runtime ABI change is included.
+
+Actual before/after Object maps show four repeated compare/branch pairs and their
+error paths disappearing from one selected parent projection segment. The generic
+witness also emits 220 fewer bytes across a write, and 704 fewer around a child
+boundary. Text shrinks **354,076 B** to 8,601,148 B; entry stack grows **1,648 B**
+to 17,440 B. The larger stack is an explicit tradeoff. Natural32 instructions fall
+242.296M → 225.144M (7.079124%); random32 79.517M → 72.561M (8.748004%).
+Seventeen instruction medians fall and three rise; six cycle medians rise,
+including eight bytes and repeated32. All contrary observations remain.
+
+All 20 allocation/requested-byte/reallocation/live-heap medians are equal. Initial
+eight-byte RSS rises 49.45% with physical footprint +0.091274%. A separate fresh
+four-session ABBA check does not reproduce it: RSS −0.070895%, physical −0.010540%.
+Both cohorts and their memory maps remain; no cause or memory saving is asserted.
+Twelve scalar controls pass their old 1.05 gate, with unchanged allocations and no
+iteration-dependent allocation slope. Five exact-current profiles cover 17,559
+full calls; natural32 has 81.03% inside the generated main entry and 39.74% unknown
+native attribution. Samples are separate from retired instructions; outside-entry
+includes generated helpers and useful runtime work.
+
+Qualification passes **639 GPU tests / the same seven inherited exclusions**, all
+**222 selected CI names executed**, four new focused regressions, unchanged
+**236 components / eight composition / one real-capacity path**, 15 architecture
+checks, 132 workflow tests, runtime-only, formatting and warnings denied. New
+controls cover fresh invocations, original/decoded, direct/restored, aliases,
+unselected visits, failure order, overflow, exact finite boundaries, unchanged
+publication, cleanup and retry. The combined early-write/child witness retains
+its existing full-region funding refusal and checked fallback; no funding policy
+is widened. Early witness representation mistakes and a denied read-only
+measurement inventory are preserved; the latter produced no primary observations.
+No unresolved introduced functional failure remains.
+
+Public evidence: **39 archives / 78 server digests verified**. Fresh public
+numerical replay verifies 6,347 file occurrences across 1,231 paths, preserves
+20 paths with historical versions, and reconstructs both indexed outputs
+byte-for-byte. Native binaries, bytecode and raw trace containers are excluded.
+
+Parent `176d8134133befb8e35a6413fb8f98387bacebb3`; exact clean performance source
+`8f01da96d1203e60fc26078d19a9f8807cd6ffc6`; IR/work/ABI/MBC **199/107/39/14**.
+All twelve source files reconstruct from the public parent and patch. Unit source
+predates the Git commit but matches every final file; its tracked patch and the two
+then-untracked files are retained. Frozen R145 dependencies, original source/MBC,
+real 262144 U16 / 1500513 U32 / 305257 U64 buffers, output capacity 13 clear/reuse,
+input aliases, allocator and full API boundary remain pinned. Largest input 33,027 B.
+See the [R179 report](native-local-numeric-facts.md) for all 20 rows, exact commands,
+profiles, memory confirmation, limitations and skipped coverage. One optimization
+commit in existing draft #973; ordinary CI cancelled by instruction, review kept.
+The broader mutable-parent/child brief and 1× goal remain active.
+
+## Historical R178 checkpoint
+
+**R178 fixes exhausted payload transport in native reductions.** A valid source
+transition reset the final minimum to zero; optimized execution bypassed that
+update and returned 9. The maintained regression fails on the clean R177 parent.
+The compiler now requires identity transport of every bypassed payload on every
+exhausted path. Other cases use the existing checked native source loop. Original
+and decoded artifacts now return the resident result, including changed/conditional
+payloads, fresh invocations, finite failures, unchanged publication and retry.
+Completion, totality, funding and ownership remain separate proofs.
+
+The compressor's actual entry and entire text section are byte-identical to R177.
+This is a correctness repair, with **no speedup claim**. All 20 unchanged 1.05
+latency gates pass: nine medians faster, eleven slower, geometric change −0.105306%.
+These matched ratios retain the adverse observations:
+
+| Input | Before / Roc | After / Roc | Elapsed change |
+|---|---:|---:|---:|
+| Natural text, 32 KB | 4.174178× | 4.193258× | +0.457096% |
+| Natural text, 16 KB | 4.941493× | 4.959524× | +0.364893% |
+| Random, 32 KB | 5.370558× | 5.389583× | +0.354246% |
+| Distribution change, 16 KB | 6.974300× | 7.009917× | +0.510686% |
+| Repeated, 32 KB | 3.169128× | 3.199825× | +0.968629% |
+| Periodic, 33 KB | 3.710310× | 3.712902× | +0.069851% |
+| Eight literals | 4.557791× | 4.582620× | +0.544754% |
+
+All 20 allocation and usable-heap medians are equal. Eight instruction medians
+and eight cycle medians rise; eight-byte cycles rise 6.220448%. The initial
+~27.39% eight-byte RSS increase is retained. Fresh four-session ABBA diagnostics
+show +0.017729% RSS and −0.007032% physical footprint. No memory saving or cause
+for the initial discrepancy is claimed. Code remains 8,955,224 B; stack 15,792 B.
+
+Qualification: 17 focused / 635 GPU tests pass, with the same seven inherited
+exclusions; all 218 selected CI tests execute. Fresh 236 components, eight
+composition and one real-capacity path tests, 12 scalar controls, 15 architecture
+checks, 132 workflow tests, runtime-only, formatting and warnings denied pass.
+No allowance or expected value changed. The introduced test-syntax fault was
+repaired and qualification rerun. Disk exhaustion interrupted the initial profile
+export; successful timing/counter/scalar cohorts were preserved. Superseded build
+outputs were removed, then only profiling was rerun. Five fresh profiles cover
+16,705 complete calls with current byte-identical maps; unknown native attribution
+remains 36.35% on natural32. Samples are not retired-instruction partitions.
+
+Parent `369714775615e4adb85d67467b9e7409a69f92b4`; measured compiler
+`09c57a46a33fd7d5420a59f60b71e3abf373a3b7`; corrected test source
+`25a8fddfa354e2c36300476d9f36356ad219ebaa`. Production files are byte-identical
+across the test-only correction. IR/work/ABI/MBC **198/107/39/14**, frozen R145
+dependencies. Source/MBC/algorithm, real buffers, allocator and full API boundary
+remain pinned. Largest input 33,027 B. See the [R178 report](native-exhausted-payload-transport.md)
+for all 20 results, exact commands, negative-parent evidence, failures and skipped
+coverage. The first public replay exposed a missing YAML source snapshot; the
+packaging whitelist is corrected and an extra closure packet supplies it without
+changing qualified sources or repeating timing. Review finding 4489282114 is addressed by this patch; resolution follows
+publication of the fix and evidence. Ordinary hosted CI is cancelled by standing
+instruction; #973 stays draft pending green CI and clean review. Parity remains
+active. The mutable-parent fact project remains unfinished: next inspect current
+hot parent/child guard and state paths before extending the effect analysis.
+
+Publication verifies **40 public archives / 80 server digests**. Fresh public
+retrieval verifies **6,067 file occurrences / 1,140 paths / 15 historical versions**
+and reconstructs results.json and REPORT.md byte-for-byte, without compiling or
+compressing. The initial missing-YAML failure remains in the supplemental packet.
+
+## Historical R177 checkpoint
+
+**R177 retains current affine read-address geometry.** All 20 complete-call
+elapsed medians improve, with 1.255563% geometric improvement and unchanged
+1.05 gates. Natural32KB improves **4.242162× → 4.177357× Roc** (1.527657%),
+natural16KB **5.015910× → 4.955960×** (1.195194%), random32KB
+**5.428153× → 5.375515×** (0.969728%), and distribution16KB
+**7.034618× → 6.933858×** (1.432342%). Eight literals improve
+4.630497× → 4.619792× (0.231182%). Periodic33KB still has four improving/four
+adverse paired blocks. No contrary observation is discarded or gain compounded
+with another cohort or the optional R172 source variant.
+
+The emitter derives current forward/reverse bases from the existing admitted
+immutable windows, then adds/subtracts the current scaled induction. The inspected
+continuing scalar visit falls **19 → 16 instructions**, with its length stack
+reload **one → zero**. Four setup instructions run once; at N=1 this address
+segment is one instruction worse. The vector body falls 26 → 25 instructions,
+while its length reload remains. Reference scalar counterpart: 11 instructions.
+There is no dynamic activation census or whole-call saving inferred from samples.
+Code shrinks 512 B to 8,955,224 B; stack stays 15,792 B. The source algorithm,
+reads, threshold, ties, current proof, prices, fallbacks and allocation sites stay
+unchanged. No runtime ABI, ownership or source change is introduced.
+
+Natural32 instructions fall 1.289263%, natural16 1.235343%; 19 of 20 instruction
+medians fall. Ten cycle medians rise, including random32 and repeated32. All 20
+allocation/requested-byte/reallocation/usable-live-heap metrics stay equal. Initial
+CPU/heap cohorts have higher absolute RSS. A separate fresh-session ABBA check
+(40 full eight-byte calls, exact output/cleanup) does not reproduce the increase:
+RSS −0.017717%, physical footprint −0.070080%. Initial readings and memory maps
+remain available; their cause is not proved. No memory improvement is claimed.
+
+Five fresh exact-worker profiles cover 16,803 complete calls. Independently
+byte-identical compilation-only maps distinguish reduction phases. Natural32 has
+83.23% inside the main generated entry, with 37.27% unknown native attribution;
+eight bytes has 11.13% inside. Outside-entry includes other generated helpers and
+validation. These are CPU-time samples, separate from retired instructions.
+
+Corrected qualification passes 14 focused/632 GPU tests with the same seven
+inherited exclusions; all 215 selected CI names execute. The independent oracle
+now covers all U32/U64 forward/reverse width pairs, offsets 1/7, fresh current
+lengths/values, thresholds/tails, original/decoded, direct/restored and aliases.
+Fresh 236-component/eight-composition/one-real-capacity-path qualification,
+12 scalar controls, all 15 architecture/catalog checks, 132 workflow tests,
+runtime-only, formatting and warnings denied pass, with unchanged expectations
+and allowances. Some scalar medians worsen, up to 0.646576%, within the existing
+gate. The introduced test-module layout violation and provenance-attribute
+assertion are repaired and retained with their original failed receipts.
+
+**An inherited correctness finding remains open.** Review comment 4489282114
+identifies an exhausted active-to-terminal payload update that the reduction
+bypasses. The generic reproducer returns native (9,1,18) versus resident (0,1,18)
+on both retained R176 and this candidate, for original and decoded artifacts.
+All 20 pinned compression cases still match the reference. The finding blocks
+readiness; the next task is its bounded proof/transport fix with this reproducer,
+before another performance experiment. This address patch does not repair it.
+
+Parent `0bca6a54cdc2d69df71ca2763a6f36993448fe02`; measured compiler
+`379e7e140453265675df9230f4e3fedcc18290fa`; corrected test source
+`5276932c5eb76dadf95e1735acfdbb1d90dd9ebf`. Production files are byte-identical
+across the test-only layout correction. IR/work/ABI/MBC 197/107/39/14; frozen R145
+dependencies, source/MBC/real buffers/allocator/full API boundary pinned. Largest
+input 33,027 B. See the [complete R177 report](native-affine-read-addresses.md)
+for all results, exact commands/pins, failures, profiles, memory confirmation and
+skipped coverage. The broader mutable-parent fact project remains unfinished.
+One optimization commit in existing draft #973; ordinary CI cancelled by standing
+instruction and review preserved. Parity remains active.
+
+Publication verifies 39 public archives / 78 server digests. Fresh retrieval verifies
+5,124 file occurrences / 1,121 paths / 19 historical versions and reconstructs
+results.json and REPORT.md byte-for-byte without compiling or compressing.
+
+## Historical R176 checkpoint
+
+**R176 retains simpler scalar reduction entry and exit control.** Natural32KB
+improves **4.301808× → 4.220265× Roc** (1.895541%, all eight blocks improve),
+natural16KB **5.105361× → 5.011239×** (1.843595%), and repeated32KB
+**3.268479× → 3.199856×** (2.099534%). Across all 20 cases, 15 medians improve
+and five worsen; geometric elapsed improves 0.588763%. Random32KB worsens
+0.080022%; the three stored-only cases worsen 1.158304–1.277927%. All unchanged
+1.05 elapsed gates pass. Every contrary pair remains in the full report.
+
+The selected entry already proves a nonempty interval. Short intervals now enter
+the scalar body directly, and each reached body tests its backedge after advancing.
+An empty vector remainder goes directly to finish. The inspected continuing visit
+stays 19 instructions (reference 11); one physical short kernel saves six
+instructions per activation. No dynamic activation census or whole-call partition
+is inferred from that local count. The vector threshold, arithmetic, strict ties,
+source prices, checked fallback, current-window proof and allocation behavior
+remain unchanged. No source or runtime ABI change is introduced.
+
+Natural32 retired instructions fall 1.011277%, natural16 0.812969%; seven instruction
+medians and ten cycle medians rise across the full matrix. All 20 allocation and
+usable-live-heap metrics remain exactly equal. Eight literals still use 3,354
+requests and 15,279,752 B incremental peak usable heap. Code grows 3,952 B to
+8,955,736 B; entry stack stays 15,792 B. The optional R172 source variant and
+rejected R175 permutation are excluded from this compiler-only comparison.
+
+Five fresh exact-worker profiles cover 16,727 complete calls. A byte-identical
+Object with compilation-only labels distinguishes reduction phases in four source
+copies. Natural32 has 82.63% inside the generated entry, including 37.28% unknown
+native attribution. Outside-entry samples include other generated helpers and
+validation; they are not all removable runtime overhead. Sampling is independent
+of the retired-instruction cohort.
+
+All 14 focused and 632 GPU tests pass, with the same seven inherited exclusions;
+all 215 selected CI names execute. Fresh qualification passes 236 components,
+eight compositions and one real-capacity path, with unchanged values/allowances.
+All 12 scalar controls pass existing gates, but the eight pure scalar medians are
+0.44–1.10% slower. All 15 architecture/catalog checks, 132 workflow tests,
+runtime-only, formatting and warnings denied pass. Largest input 33,027 B;
+complete-call reference bytes, independent inflate, aliases, prefixes, real
+capacities and final cleanup zero pass on every case.
+
+Parent `1584097e757cecf1e3eaaff7e3eb18b9fbb8c31f`; measured compiler/test source
+`0996d5ef649029e2be5de49f150619a222ef26a5`. IR/work/ABI/MBC 196/107/39/14,
+frozen R145 dependencies. The final review commit adds docs/index with measured
+source hashes unchanged. See the [R176 design and all results](native-scalar-reduction-backedge.md)
+for exact commands, pins, profiles, tradeoffs and skipped coverage. Ordinary hosted
+CI is cancelled by instruction; review stays enabled and #973 stays draft.
+
+The requested mutable-parent fact project remains unfinished: this round uses
+an already available local entry fact. The previous child-setup audit did not meet
+the brief's research hurdle. A separate bounded address-geometry experiment is
+proposed from current assembly; no future saving is claimed. Parity remains active.
+
+Publication verifies 37 public archives / 74 server digests. Fresh retrieval verifies
+4,161 file occurrences / 1,024 paths / eight historical versions and reconstructs
+results.json and REPORT.md byte-for-byte without compiling or compressing.
+
+## Historical R175 checkpoint
+
+**R175 rejects a reverse-input permutation experiment.** Natural32KB improves
+4.327658× →4.303257× Roc (0.563841%) and natural16KB5.135407× →5.099904×
+(0.691339%), but all20 elapsed medians regress0.224967% geometrically:7 faster,
+13 slower. Eight literals worsen0.896254%, repeated32KB0.505027%; all contrary
+observations are retained. The production compiler remains exactly R174/IR194.
+Four lane-specific high-half/tie regression patterns remain; the rejected patch
+is exported for independent reuse rather than discarded.
+
+The actual vector body stays26 instructions: mask-load/TBL becomes UZP1/REV64.
+Four literal pools shrink code64B, stack unchanged;19 instruction medians rise,
+14 cycle medians rise. All20 heap/requested-byte/reallocation metrics remain equal.
+Five fresh exact-candidate profiles cover16587 complete calls without applying an
+old source map to changed code. All20 exact streams/inflate/source work/aliases/
+capacities/cleanup and existing1.05 gates pass.
+
+An address audit of the retained R174 baseline puts8.864469% of natural samples
+in one scalar condition/routing segment versus0.384615% in its vector body.
+Fresh inspection of the pinned reference finds an11-instruction scalar loop,
+versus19 on the selected Mech path. Next bounded target: consume the existing
+nonempty-entry fact and test the compact scalar loop at its bottom. This is
+proposed work, with no saving yet claimed.
+
+Final restored production passes14 focused/632 GPU tests with the same7 inherited
+exclusions; all215 selected CI names execute. All15 architecture/catalog checks,
+132 workflow tests, runtime-only, formatting and warnings denied pass. Existing
+236 components/8 composition/1 real-capacity path and12 scalar controls are explicitly
+reused from the identical R174 production. Largest input33027B. See the
+[R175 report](native-reverse-input-experiment.md) for exact pins, all20 results,
+candidate-versus-final coverage and replay. One experiment commit in draft #973;
+ordinary CI cancelled by instruction, review retained. Parity remains active.
+
+Publication verifies26 archives/52 server digests. Fresh public retrieval verifies
+2970 file occurrences/443 paths/11 historical versions and reconstructs results.json
+and REPORT.md byte-for-byte without compiling or compressing.
+
+**R174 retains one current funding gate for affine child loops.** Repeated32KB
+improves **3.682374× →3.241896× Roc** (11.961799%); periodic33KB
+**4.227835× →3.764477×** (10.959703%). All eight blocks improve in each case.
+Across all20 cases,13 medians improve/7 worsen; geometric elapsed improves1.427851%.
+Natural32KB regresses **4.247301× →4.305974×** (+1.381432%, all eight adverse).
+Eight literals4.830847× →4.762135×, with3 improving/5 adverse blocks. All20
+unchanged1.05 elapsed gates pass; contrary results remain retained.
+
+The selected steady matching-word path falls25 →19 machine instructions
+(reference10), with funding/visit machinery10 →4. Three stack reads remain.
+Repeated instructions fall7.174753%, periodic6.726526%. All20 allocation/requested
+byte/reallocation/usable-live-heap metrics remain equal. Initial adverse RSS readings
+do not reproduce in a fresh ABBA diagnostic (RSS+0.035486%, physical+0.010519%);
+both cohorts remain available. Generated text falls22532B and stack48B.
+
+All632 GPU tests pass with the same7 inherited exclusions; all215 CI-selected
+names execute. The unchanged236-component/8-composition/1-real-capacity-path
+qualification,12 scalar controls,15 architecture/catalog checks,132 workflow tests,
+runtime-only, formatting and warnings-as-errors pass. Five fresh current-executable
+profiles cover16506 complete calls. Natural32 remains84.12% inside the native entry;
+word extension is0.64%, with substantial unknown native attribution retained.
+
+The gate proves current maximum compute/comparison/counter space after visit one
+is already paid. Every actual visit still debits its original charge; fallible source
+operations, checked fallback, current windows, ownership and failure semantics remain.
+No source algorithm/allocation change, prepayment, deferred settlement or new ABI.
+The separate R172 source variant is not combined. Latest brief is partly addressed:
+early-exit funding is improved; mutation-aware parent facts remain unimplemented
+because the measured child-setup opportunity did not meet its research hurdle.
+
+Parent fb37ded7af3dd59bb6cd5f13f5044aa29e91833e; measured compiler/test source
+65021c3593137219762477ccde0f2d3ad7993977. IR/work/ABI/MBC194/107/39/14;
+frozen R145 dependencies, original source/MBC, capacities, aliases, allocator and
+full evaluate_into boundary. Largest input33027B. See the
+[R174 design and complete report](native-child-funding.md). Next bounded inquiry is
+the hot DP initializer/reduction continuation and its state/control transport.
+One optimization commit in draft #973; ordinary hosted CI cancelled by instruction.
+Compiler parity remains active.
+
+Publication verifies38 archives/76 server digests. Fresh public retrieval verifies
+5025 file occurrences/1147 paths/17 historical versions and reconstructs results.json
+and REPORT.md byte-for-byte without compilation or compression.
+
+**R173 rejects an empty-block compiler experiment.** It removes112720 empty
+intermediate blocks, but generated code grows47336B and every retired-instruction
+median increases. Twenty-case elapsed regresses0.943248% geometrically:5 faster,
+15 slower. Natural32KB4.260443× →4.308305× Roc; eight bytes4.649535× →4.692437×.
+All heap metrics remain equal. The production compiler is restored byte-for-byte
+to the previous GPU source; the rejected patch and complete evidence are retained.
+The separate R172 source variant below is unchanged. See the
+[R173 report](native-empty-block-experiment.md) for all20 results, five current
+profiles,631 candidate tests, exact pins, replay and skipped coverage. The next
+bounded compiler target is funding inside already admitted pure early-exit loops.
+
+**R172 retains a separate convergence-frequency source variant.** On unchanged
+R170 compiler libraries, eight literals improve **4.668385× → 4.279426× Roc**
+(8.331763%), distribution16KB **7.147809× → 6.830304×** (4.441991%), and
+random32KB6.102742× →5.972756× (2.129949%). All20 unchanged1.05 elapsed gates
+pass:19 faster/1 slower;5.297718% geometric improvement. Natural32KB rises0.319922%.
+This is optional source work, separate from the pinned source and compiler-only
+R171 results below. The gains are not combined or compounded.
+
+The reference diagnostic ledger finds56 dynamic passes across20 blocks, zero
+unchanged-model improvements,18 equal-frequency convergence passes across17 inputs,
+eight static replays and zero saved replays. The variant keeps every current path
+and tally, reusing prior deterministic codes/price only on exact frequency equality.
+The original combined tally remains for other callers. Code sizes, search/EOF/tie
+rules, real buffers, current ownership, input aliases, allocator and complete
+API timing stay fixed apart from the explicit source-work removal.
+
+Eight-byte instructions fall10.775886%, allocations3354 →3109. Distribution
+instructions fall4.671398%, allocations5679 →5086. Requests fall on all17 compression
+cases and stay equal on stored-only cases; reallocations stay equal. Peak live heap
+rises117168–122880B on all20 cases, up to3.598825% on stored-only input. This memory
+cost is retained. Generated text rises34800B; entry stack falls160B. Five fresh
+exact-binary CPU profiles cover16792 complete calls with no inherited source map.
+
+The proposed mutation-aware compiler project has **not** been implemented. Current
+R170 child-setup samples are0% random/distribution,1.034671% repeated and0.237140%
+natural; unknown native origins remain explicit. The requested approximately10%
+research hurdle is not established. Scope size, nested-child edges and terminal
+IntegrityFailure also obstruct these parents; supporting writes alone is insufficient.
+The [full source report](../../benchmarks/mech-deflate/source-variants/frequency-reuse.md)
+contains actual disassembly, the source ledger, all20 timings/counters, exact pins,
+remaining compiler work and every repaired setup fault.
+
+Qualification:3 new original/decoded tests, including rejection at half the observed work,
+unchanged publication/alias contents, immediate cleanup and successful retry;
+236 unchanged components/8 composition/1 real-capacity path rerun;15 architecture/
+catalog checks and132 workflow tests pass. Existing R170/R171 GPU/scalar/runtime
+qualification is explicitly reused with the same7 inherited exclusions. Source
+regeneration is byte-identical to the measured source. No expected value or
+existing allowance changes; no unresolved introduced functional failure remains.
+
+Base2364305438e87c0a3e19fb5964af6d98401ea288; measured source generator6b622d5700;
+compiler before/after3a3ae5dca4a (R170), IR/work/ABI/MBC191/107/39/14. Frozen R145
+Core/Engine/math/dependencies. Current pinned-source compiler remains R171/IR192.
+One optimization commit in #973, draft kept; ordinary hosted CI cancelled by
+instruction. Largest timed input33027B. Compiler parity is not achieved.
+
+Publication:29 archives/58 server digests verified. Fresh public retrieval verifies
+2916 file occurrences/593 paths/10 historical versions and reproduces
+results.json and REPORT.md byte-for-byte without compilation or compression.
+
+## Pinned-source R171 checkpoint
+
+**R171 retains generic vector clamped-subtraction maps.** Random32KB improves
+**6.103196× → 5.411240× Roc** (11.337597%); repeated32KB
+**3.899690× → 3.678737×** (5.665892%); periodic33KB
+**4.418974× → 4.203054×** (4.886192%). Natural32KB improves
+4.336329× → 4.271206× (1.501793%); eight literals4.696510× →4.657510×.
+All20 unchanged1.05 gates pass:15 faster/5 slower medians,1.774875% geometric
+improvement. Natural16KB rises0.278163% and eight-literals-prefix2.092883%;
+all contrary observations remain. The matched comparison is retained R170.
+
+An exact proof over the already admitted total scalar collection selects a64-byte
+vector prefix and the existing checked scalar tail. Actual ARM64 helpers use four
+UQSUB.8H operations per32 U16 entries, as does the inspected reference tree slide.
+Diagnostic calls verify the full262144-entry tree in four large cases; small cases
+without those helpers have no loop-specific saving claim. Main entry machine bytes
+are identical to R170. Generated accounted text grows232B; entry stack stays15840B.
+
+Nineteen instruction medians fall; empty rises14 instructions. Three adverse cycle
+medians remain. All20 allocation-request/byte/reallocation/incremental heap-peak
+metrics are exactly equal. Five exact-binary profiles execute16277 complete calls;
+unknown native attribution and generated helpers outside entry remain explicit.
+A separate60-call diagnostic counts current runtime callbacks:4303 random32KB,
+3248 repeated32KB,9741 natural32KB,8074 distribution16KB,4466 eight literals.
+These are frequencies, not a partition of execution time or hardware instructions.
+
+Qualification:3 focused width/tail/current-capture/finite-failure tests;629 GPU
+passes with the same7 inherited exclusions; all212 CI-selected names execute and
+pass;236 unchanged components/8 composition/1 real-capacity path;12 original/
+decoded scalar controls;132 workflow tests;15 architecture/catalog checks,
+runtime-only, formatting and warnings denied. Streams, independent inflate,
+source work, input aliases, capacities and managed cleanup zero hold in all cases.
+Largest input33027B. No unresolved introduced functional failure remains.
+
+Parent9035d3ab3c34e802a652f2154c8d19ba0fae5597; measured compiler
+9a0fb83a20ae9ce12f4251d209c03b754dbc82da; comparison3a3ae5dca4a (R170).
+IR/work/ABI/MBC192/107/39/14. Frozen dependencies, source/MBC, allocator,
+algorithm/tables/search/EOF/real scratch capacities and complete evaluate_into
+stay pinned; the separate R165 source experiment is excluded. See the
+[full report](native-vector-clamps-experiment.md) for all20 results, exact pins,
+commands, adverse cohorts, repaired setup faults and skipped coverage.
+
+The new brief's next step is a bounded investigation of lost facts through mutable
+parent loops and redundant current child admission. Establish actual dynamic
+weight before extending the existing analysis. Model-stability/frequency/replay
+counts are a separate source investigation. Minimum-reduction tuning is deferred.
+One optimization commit in #973; the PR remains draft. Ordinary hosted CI is
+cancelled by standing instruction. Parity is not achieved.
+
+Publication:39 public archives/78 server digests verified. Fresh retrieval verifies
+4875 file occurrences/1132 paths/26 historical versions and reconstructs
+results.json and REPORT.md byte-for-byte without compilation or compression.
+
+## Historical R170 checkpoint
+
+**R170 retains corrected vector minimum selection.** Natural32KB improves
+**4.430760× → 4.347484× Roc** (1.879497%), and natural16KB
+**5.165119× → 5.088877×** (1.476092%). All20 unchanged1.05 gates pass:
+11 faster/9 slower medians,0.226285% geometric improvement. Repeated32KB rises
+0.477787%, periodic33KB0.172251%, and eight literals0.264176%. These costs remain.
+
+The first vector version is rejected (+0.400464% geometric elapsed). Actual
+machine code revealed TBL with literal masks for a same-input rotation. A minimal
+independent Object proves equivalent concatenated indices select one EXT instead;
+the corrected full compressor confirms the EXT sequence. Incoming-best and global
+earliest-index ties, the scalar remainder, threshold, prices and admission stay
+on the existing proof/path. This is compiler lowering, with the pinned source and
+separate histogram source experiment excluded from the comparison.
+
+Hardware work remains a tradeoff:11 instruction medians rise, including about0.8%
+on natural32KB despite its elapsed win. All20 heap request/byte/realloc/incremental
+peak metrics remain equal. Corrected text grows53,088B and entry stack112B;
+correcting the first masks removes864B of that version's frame growth. The
+[full report](native-vector-minimum-experiment.md) retains both complete cohorts,
+all adverse counters, six exact-binary profiles across the two sources, C/NEON
+and Cranelift instruction witnesses and replayable observations.
+
+Qualification:626 GPU tests with the same7 inherited exclusions; all209 selected
+CI names actually pass;3 focused ordered-reduction tests;236 unchanged components/
+8 composition/1 real-capacity path;12 original/decoded scalar controls;132 workflow
+tests;15 architecture/catalog checks, runtime-only, formatting and warnings denied.
+Fixture/dependency setup faults and replay assumptions are corrected and recorded.
+No unresolved introduced functional failure remains. Every compression case has
+exact reference bytes, independent inflate, aliases/capacities/work preserved and
+zero final managed bytes/nodes. Largest input33027B.
+
+Parent86dc8106cfa571b56c5a0ae0485cef1f68c49ea9; corrected measured source
+3a3ae5dca4aa4eda77b928a9073110949295770d; comparison fdb1c5c4e7 (retained R169).
+IR/work/ABI/MBC191/107/39/14. Source/MBC/allocator/algorithm/real buffers and
+complete evaluate_into remain fixed; frozen R145 dependencies avoid a math rebuild.
+#973 stays draft, ordinary hosted CI cancelled by instruction. Parity is not achieved.
+
+Publication:58 archives/116 server digests verified in evidence release5. Fresh
+retrieval verifies5132 file occurrences/1201 paths/20 historical versions and
+reconstructs both variant results and REPORT.md byte-for-byte without compiling
+or compressing. The archive scan additionally checks58 manifest files, accounting
+for5190 total archived files.
+
+## Historical R169 checkpoint
+
+**R169 retains current affine-window admission with general native loop-entry normalization.**
+Repeated32KB improves **5.415459× → 3.845247× Roc** (28.995002%);
+periodic33KB **6.123566× → 4.424907×** (27.739703%). Natural32KB rises
+4.371874× → 4.449700× (+1.780137%); eight literals4.727993× → 4.768340×
+(+0.853361%). The confirmation has6 faster/14 slower medians and2.690497%
+geometric improvement; all20 unchanged1.05 gates pass.
+
+The initial full20 cohort failed the32B high-entropy gate (+5.679977%). A single
+predeclared full20 confirmation uses identical binaries/counts/gates and passes.
+Both cohorts remain separate; timing variation has no established cause. The
+window-only prototype is rejected (+69%/+66% repeated/periodic). Merging distinct
+activation entries once before the loop makes its current arguments invariant
+within that activation, enabling the existing SSA cleanup.32 preheaders permit
+16,298 redundant phi removals; the identified matching path falls70 to25 machine
+instructions and19 to3 stack accesses, with the same2 input loads. These are
+static counts, not hardware instructions retired by a complete compression.
+
+Separate retired-instruction medians fall35.923226% repeated and34.472107%
+periodic;15 other instruction medians rise. All20 allocation-request/byte/realloc/
+incremental live-heap metrics are equal. Text shrinks5480B and entry stack64B.
+Six fresh current-Object profiles execute73,481 complete calls. Word extension
+still consumes21.445390% of repeated running-timer samples; other native scopes
+dominate natural text. Samples are not an exact host/native instruction split.
+
+Validation:626 compatible GPU tests with the same7 inherited exclusions; all209
+selected CI names actually pass;6 focused phi and5 current captured-window tests;
+236 unchanged components/8 composition/1 real-capacity path;12 original/decoded
+scalar controls with unchanged gates;132 workflow tests;15 architecture/catalog
+checks, runtime-only, formatting and warnings denied. All timings preserve exact
+reference bytes, independent inflate, aliases, capacities, logical work and zero
+final managed bytes/nodes. Largest input33027B. No full multi-megabyte claim.
+
+Parent4ab701de9b4ca994a1ae151259d5a697132f1210; measured effective compiler
+fdb1c5c4e738ad3bb69233ef92448efcf075aa81; comparison is retained R168, not the
+failed window-only variant. IR/work/ABI/MBC189/107/39/14. Frozen R145 dependencies,
+source/MBC/allocator/algorithm/tables/real buffers and evaluate_into stay pinned.
+The separate R165 histogram source gain is excluded. The [full report](native-affine-loop-windows.md)
+records20 results, all cohorts, errors, exact pins and skipped coverage. #973 stays
+draft; ordinary hosted CI is cancelled by instruction. Parity is not achieved.
+
+The selected path-cost milestone and separate source experiment are complete.
+Word-loop funding/paid-flag work and bounded wider comparison remain candidates;
+neither is an established new saving. Finish publication before another compiler
+implementation.
+
+Publication:67 archives/134 server digests verified in evidence release5. Fresh
+retrieval verifies5603 file occurrences/1255 paths/22 historical versions and
+reconstructs results.json and REPORT.md byte-for-byte, without native execution.
+
+## Historical R168 checkpoint
+
+**R168 retains dominance-scoped invariant phi cleanup in native loops.**
+All20 final-source matched cases and unchanged1.05 gates pass:19 faster/1 slower,
+**2.639531% geometric elapsed improvement**. Natural32KB improves
+**4.574977× →4.352844× Roc** (4.855392%); repeated32KB5.748624× →5.416119×
+(5.784078%); periodic33KB6.443533× →6.105817× (5.241168%); natural16KB
+5.254551× →5.031433×; eight bytes4.721208× →4.650969× (1.487746%).
+Random64 is the contrary elapsed case, +1.341991%, preserved within the existing
+5% gate. These are fresh matched cohorts, not replacements for historical results.
+
+The pass treats changing outer SSA values as fixed current atoms during a child
+activation. It aliases phi-only local chains to one dominating outside value,
+removing10,180 redundant parameters across the actual compressor. The identified
+word-loop header falls78 to5 parameters before/after backend optimization;73 is
+an actual formal-parameter reduction, not a measured memory-copy count. Multiple
+seeds, true changes, effects, type mismatches and non-dominating entries retain
+the maintained path. No source operation, charge, CFG edge or error is removed.
+
+All20 retired-instruction medians fall. Repeated instructions fall141.125M to
+129.786M (8.034527%); periodic147.350M to135.869M (7.791342%); natural32KB
+259.835M to247.776M (4.640900%). Seven separate cycle medians rise; contrary
+cohorts remain. All20 allocation counts/bytes/reallocations/incremental heap peaks
+are equal. Text grows22,564B; entry stack shrinks688B. One outside-timer image
+restoration is36.839s before/37.549s after, with no startup speed claim.
+
+The final matrix has3968 primary/4048 total complete calls and exact streams,
+independent inflate, aliases, prefixes, capacities and cleanup zero. Initial and
+pre-layout cohorts remain separate, including a contrary eight-byte observation.
+Required Rust module relocation leaves the entire compressor Object identical
+but changes linked host text, so the authoritative20-case cohort was rerun on the
+final binary. Five current exact-Object profiles and18 hot-PC disassembly windows
+are retained. CPU-time samples do not partition retired instructions.
+
+Validation:4 focused JIT tests;619 compatible GPU tests with the same7 inherited
+exclusions; all202 CI-selected names actually passed in that suite;236 unchanged
+components/8 composition/1 real-capacity path;12 balanced original/decoded scalar
+controls under unchanged latency/allocation gates;132 workflow tests;15 architecture/
+catalog checks, runtime-only, formatting and warnings denied. Module path/layout
+and exact test-only unsafe registration failures are repaired without weakening
+checks. No unresolved introduced functional failure remains.
+
+Optimization parent4967229cd93b8acd7bd6f26fffa5d79f10e576d2; effective measured
+compilerf1c4b67e774f55255e2c72ea4422e27d36b6be3c; baseline compiler9017ab40d1
+(published8364514bd5). IR/work/ABI/MBC187/107/39/14. Frozen R145 Core/Engine/math/
+dependencies, pinned source/MBC/allocator/algorithm/real buffers and evaluate_into
+remain unchanged. The separate histogram source variant is excluded. The
+[full report](native-local-phi-cleanup.md) records exact pins,20 results, failures,
+skipped coverage and numerical replay. #973 stays draft; ordinary hosted CI is
+cancelled by standing instruction. Parity is not achieved.
+
+The brief's selected path-cost proof/scalar/funding/four-lane experiment and one
+separate source experiment are complete. Match-extension bounded unroll/wider
+comparison remains open. R168 removes demonstrated invariant state transport
+before another bounded experiment; no further implementation starts this round.
+
+Publication:61 public archives/122 server digests verified. Fresh retrieval
+verifies5840 file occurrences/1276 paths/22 historical versions and reconstructs
+results.json and REPORT.md byte-for-byte. Replay uses archived receipts only.
+Invariant IR is published once; transparent compaction preserves measured payload
+hashes and every superseded unpublished archive manifest/receipt, saving1.016GB.
+
+## Historical R167 checkpoint
+
+**R167 closes the direct-comparison experiment and identifies invariant nested phi state.**
+No compiler change is retained. All20 exact streams and unchanged1.05 gates pass,
+but the universal XOR-zero rewrite slows repeated32KB5.743583x to5.896412x
+and periodic33KB6.529916x to6.695008x. Natural32KB improves4.585363x to4.514501x
+(1.545377%), and natural16KB5.284359x to5.184130x (1.896709%); these gains remain
+archived. Fourteen medians improve/six worsen; geometric elapsed improves only
+0.095938%. Repeated/periodic instructions fall about0.9–1.0% while elapsed rises.
+All20 heap metrics stay equal. Code grows51148B; entry stack shrinks144B.
+
+Fresh current-binary profiling still finds guarded word reads, visit/balance work
+and stack accesses hot. A byte-identical retained-binary diagnostic maps78 word-
+loop header arguments and identifies74 invariant local phi chains anchored by
+one dominating outside phi. The four changing fields remain separate. A minimal
+JIT reproducer passes6 actual executions while retaining16 redundant child phi
+fields through the existing backend. This is a concrete general compiler target;
+no saved-copy count or speedup is yet claimed for phi simplification.
+
+The three prototype unit tests,20 measured restored compression cases, separate
+all20 instruction/heap cohorts and current profile are archived. Full GPU/scalar/
+component/architecture qualification was not repeated for the rejected candidate.
+Production and CI are restored byte-for-byte toad32f9a1ff; maintained versions
+remain184/107/39/14 (candidate186 is experimental). See the
+[R167 report](native-xor-comparison-experiment.md) for every timing, contrary
+counter cohort, repaired harness error, exact pins and next acceptance witness.
+#973 remains draft; ordinary CI is cancelled by instruction. Parity is not achieved.
+Publication:29 public archives/58 server digests verified. Fresh retrieval verifies
+1638 file occurrences/311 paths/13 historical versions and reproduces both reports
+byte-for-byte. The initially omitted replay entrypoint/output hashes are corrected
+in the index; replay succeeds in the required fresh directory. No compiler or
+compression execution is involved in replay.
+
+## Historical R166 rejected experiments
+
+**R166 rejects the captured-window prototypes and preserves the reviewed compiler.**
+The source and compiler checkpoints below remain retained. Fresh target screens
+of three compiler variants all regress on repeated and periodic input. The last
+screen is repeated5.737719x to18.922838x reference and periodic6.434306x to20.524145x;
+these failed candidates are archived and removed from maintained code. Natural
+text also regresses about2%; the contrary small-input observations remain.
+
+Current binary profiles expose extensive native stack transport despite removal
+of access checks. An explicit steady matching-word path has246 instructions,
+including222 stack loads/stores around2 input loads. A scalar reference pattern
+has10 instructions. These are static path counts, not retired counters. Dead-child
+SSA resets leave the whole compressor Object identical and are also rejected.
+The next diagnostic must identify which block parameters cause these transfers.
+
+All1536 primary/1596 total screen calls have exact streams, independent inflate,
+unchanged logical work, real buffers/allocator/timing and zero final managed
+storage. Five development cases were measured per variant; a failed target
+screen did not advance to full20/scalar/component qualification. Focused original/
+decoded/current-limit/handoff/finite-error tests pass. Production and CI inventory
+are restored byte-for-byte to49e280b056; retained IR/work/ABI/MBC184/107/39/14.
+See the [R166 rejected-experiment report](native-captured-window-experiment.md)
+for every timing, source/Object pins, failure dispositions and skipped coverage.
+Parity remains unachieved. #973 stays draft; ordinary CI is cancelled by request.
+Publication:20 archives/40 server digests verified. Fresh public retrieval verifies
+1761 file occurrences/434 paths/25 historical versions and reconstructs both
+R166 reports byte-for-byte, without compiling or compressing.
+
+## R165 retained source experiment
+
+**R165 completes the separately measured histogram-reuse source experiment.**
+The compiler remains byte-identical to R164 and the pinned source stays the
+default. In this fresh matched cohort, the explicit variant improves natural32KB
+**4.577225× → 4.445344× Roc** (2.881238%), repeated32KB5.729042× →5.460320×
+(4.690520%), periodic33KB6.451039× →6.147931× (4.698585%), and eight bytes
+4.719510× →4.690838× (0.607531%). These are source gains, kept separate from the
+compiler gains below. All20 gates and exact streams pass:17 faster/3 slower,
+1.878198% geometric elapsed improvement; worst stored-only regression1.077931%.
+
+Block planning reuses the all-literal histogram instead of counting the same
+input bytes again. The original default-cost entry is unchanged. Search/pass
+limits, ties, block decisions, tables, real scratch capacities, EOF rules,
+allocator, input aliases, output reservation/clear/reuse and evaluate_into remain
+fixed. Source/MBC have their own pins and per-case work values. Neither earlier
+zero-trip nor independent-cost-table variants are combined.
+
+The actual source variant retains four vector cost reductions. Fifteen instruction
+medians fall/five rise, including repeated and periodic +about0.8% despite faster
+elapsed; nineteen cycle medians fall/one rises. Requests fall10 or20 on optimal
+paths, requested bytes fall6920–11608B, and incremental heap peaks fall16384–17832B.
+Text grows37188B and entry stack shrinks320B. Fresh large-case samples remain
+80–83% generated code. No instruction-partition, input-streaming or total-copy
+claim is made. See the [R165 source report](../../benchmarks/mech-deflate/source-variants/histogram-reuse.md)
+for all20 timings, contrary cohorts, exact source/compiler pins and commands.
+
+Fresh R165 validation:7 focused tests (including shifted slices and original/
+decoded failure/retry),236 unchanged components/8 composition/1 real-capacity
+path, all20 actual restored linked cases, warnings denied and formatting.
+R164's compiler/scalar/architecture receipts apply to the identical library and
+are explicitly reused, not rerun. Source revisionc0ea51478d3dcfa66a361fe0c979695b04a1c3c3;
+compiler9017ab40d19047f39bf1832c5c85d05f00accb5d; IR/work/ABI/MBC184/107/39/14.
+One source optimization commit in #973; draft pending green CI and clean review.
+Ordinary CI is cancelled by instruction. Parity is not achieved.
+
+The brief's selected compiler experiment and one separate source experiment are
+implemented and measured. Match-extension unroll/wider comparison remains an
+unimplemented alternative and the next compiler candidate. Keep the pinned
+source baseline for compiler attribution; do not fold this source win into it.
+
+Publication:25 public archives/50 server SHA256 digests verified. Fresh downloads
+verify1703 file occurrences/274 paths/10 preserved historical versions and
+reproduce results.json and REPORT.md byte-for-byte. Replay round165 with the
+maintained experiment.py entry and experiments.json index.
+
+## R164 pinned-source compiler checkpoint
+
+**R164 completes the selected compact scalar/SIMD cost-loop experiment.**
+Natural32KB improves **5.242043× → 4.596870× Roc**
+(22.839583 → 20.028563 ms, **12.307670%**); natural16KB improves
+5.903462× → 5.250235× (**11.065162%**). Repeated32KB is
+5.855326× → 5.740210× and periodic33KB is6.588496× → 6.479518×.
+Eight bytes rises4.719225× → 4.731433× (+0.258703%). These are fresh
+matched cohorts, not replacements for the historical observations below.
+
+All20 exact-output and unchanged1.05 gates pass:17 faster/3 slower medians,
+**1.725622% geometric elapsed improvement**. The worst adverse case is
+eight-overlap (+1.157951%). All12 scalar controls pass without larger allowances.
+Source/MBC/algorithm/tables/search limits/real scratch capacities/allocation
+sites/allocator/input aliases/output clear-reuse and evaluate_into stay pinned.
+No compressor source change is included.
+
+The compiler uses the existing complete-child proof and current array windows
+to recognize a generic ordered U32 minimum with an associated item. It emits
+compact scalar costs for short intervals and remainders, with four-lane costs
+for intervals of at least16 candidates. Incoming best and earliest improving
+ties, U32 wrapping, exact item encoding, original terminal construction,
+finite prices/error prefixes, aliases, publication and retry are preserved.
+The actual complete-compressor Object contains four `umin.4s` bodies and real
+vector loads/shuffles. The first vector-only screen was insufficient on natural
+text and is preserved separately; its results are not pooled with this cohort.
+
+Natural32 instructions fall274.605M → 260.132M (−5.270371%), with cycles
+−11.395186%. Eleven case instruction medians fall/nine rise; fourteen cycle
+medians fall/six rise. All20 heap requests/bytes/reallocations/incremental peaks
+are exactly equal. Generated text grows9,248B and entry stack256B. Fresh
+profiles sample82.48% generated execution on natural32,83.62% repeated and
+80.89% periodic; these CPU-time contexts do not partition retired instructions.
+The [full R164 report](native-ordered-reduction.md) retains all contrary results.
+
+Measured compiler9017ab40d19047f39bf1832c5c85d05f00accb5d, parent
+209193766599c1b125665b6063e9edf50d8a7997; IR/work/ABI/MBC184/107/39/14.
+Final docs/evidence and cfg(test) module ordering are folded into the same
+optimization commit in **#973 only**, with production file hashes unchanged.
+Passing receipts:615 compatible GPU (same7 exclusions),27 focused,198 CI-selected
+and executed,236 unchanged components/8 composition/1 real-capacity path,
+132 workflow/15 architecture/runtime-only/format/warnings,12 scalar controls.
+Ordinary hosted CI is cancelled by instruction; #973 remains draft pending
+green CI and clean exact-head review. Parity is not achieved.
+
+Brief steps1–4 and the selected path-cost experiment/qualification in steps5–6
+are complete. The alternative match-extension unroll/wider comparison was not
+implemented. Step7 remains: inventory previous source variants and select one
+separately pinned, measured source experiment. Compiler and source gains must
+remain separate.
+
+Publication:41 public archives/82 server SHA256 digests verified. Fresh retrieval
+validates5,785 file occurrences/1,026 paths/21 preserved historical versions and
+reproduces results.json and REPORT.md byte-for-byte. Replay with
+`python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 164 --output /tmp/r164-replay`.
+
+## Historical R163 checkpoint
+
+**R163 settles exact visits once for proved complete native children.** All20
+matched medians improve; geometric elapsed falls1.559354%, and the unchanged1.05
+case and scalar gates pass. Natural32KB moves5.350369× to5.255555× reference
+(23.274105→22.861667ms); natural16KB6.025953× to5.899914×. Repeated32KB is
+5.955420× to5.876018×, periodic33KB6.612460× to6.514746×, and eight bytes
+4.710214× to4.642000× (1.356542→1.336896ms). These are fresh matched cohorts.
+
+The parent phase was already fully funded. The new source proof establishes a
+complete, total two-tag unit-step child under current immutable windows and
+charges its unchanged traversal prices and exact header visits once. Refusal
+keeps the original child. Four static copies qualify; actual machine inspection
+confirms removal of the repeated debit/counter update. Existing helper, read and
+narrowing simplifications remain. Source/MBC, work prices, capacities, algorithm,
+allocator, aliases and timing boundary stay pinned. Core/Engine/math are frozen.
+
+Separate counters show16 instruction reductions and4 increases;11 cycle medians
+rise. Natural32KB instructions fall1.634155%; eight-byte instructions fall0.027074%
+while cycles rise2.418798%. All20 heap request/byte/reallocation/incremental peak
+measurements remain equal. Text shrinks60,624B and entry stack grows16B. The
+contrary cohorts are retained in the [full R163 report](native-child-visit-settlement.md).
+
+Exact-PC profiles attribute at least13.284% of natural32KB time to path-length
+selection and12.675% of repeated32KB to word extension. Native origins remain
+unattributed for42.570% and54.883%, respectively. These CPU-time samples do not
+partition instructions. Fresh reference disassembly shows an eleven-instruction
+scalar cost loop; Mech still has duplicate control, masks and spills. Ordered
+reduction/SIMD and one separately pinned source experiment remain unfinished.
+
+Measured compiler19cebb4ca84a611c149ba9ac5d652156cf4042a5; consolidated parent
+27081b4000d1f1764c14df32245bd3938984ed3f; retained R162 emitter
+3ef813384ab5a1df7a90818ea89506c62ad03375. IR/work/ABI/MBC184/107/39/14.
+Final formatting/tests/CI/docs/evidence are folded into the same optimization
+commit on **#973 only**, with byte-identical diagnostic Object proof after
+formatting. Passing receipts:609 GPU with the same7 exclusions;21 focused;
+192 CI-selected and executed;236 components/8 composition/1 real-capacity path;
+132 workflow;15 architecture; runtime-only, formatting and warnings denied;
+12 scalar controls. Hosted ordinary CI is cancelled by request. #973 stays draft
+pending green hosted CI and clean exact-head review. Parity is not achieved.
+
+Publication:38 public archives and76 server SHA256 digests verified. Fresh
+public retrieval verifies4548 file occurrences/1056 paths/15 preserved historical
+versions and reproduces results.json and REPORT.md byte-for-byte. Replay with
+`python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 163 --output /tmp/r163-replay`.
+
+## Historical R162 checkpoint
+
+**R162 retains unsigned word proofs together with the guarded child windows.**
+Against qualified R160, natural32KB improves6.223658x to5.341214x reference
+(-14.178867%) and natural16KB6.964642x to6.004294x (-13.788912%). Repeated32KB
+is6.037883x to5.895288x; periodic33KB6.792514x to6.636364x. Eight cases improve,
+twelve worsen; geometric elapsed improves1.165633%, and every unchanged1.05
+case/scalar gate passes. Eight bytes worsens4.613971x to4.689157x (+1.629548%);
+the contrary observation remains. These fresh matched ratios do not replace
+earlier cohorts or explain R161's failed biased128 result.
+
+The existing early native branch cleanup now reuses unsigned SSA word bounds
+to remove602 statically proved branches, including all three repeated masked
+width checks in the guarded path loop. All20 retired-instruction counts fall;
+natural32KB309.933474M to279.098834M (-9.948793%), with cycles-13.313405%.
+All20 allocation requests, requested bytes, reallocations and incremental live
+heap peaks stay equal. Text shrinks69,480B against R160; entry stack grows400B.
+Actual current profiles place84.39% of natural32KB samples in generated code,
+versus13.27% for eight bytes. Samples are not instruction partitions.
+
+The [R162 report](native-word-range-cleanup.md) gives all20 timings, independent
+counter/heap cohorts, exact source/bytecode pins and repaired build/check
+failures. Compiler3ef813384ab5a1df7a90818ea89506c62ad03375; published base #988
+d597f5468c83f6547013e0007e4ab3bd380969e0; IR184/work107/ABI39/MBC14. Passing
+controls:602 compatible GPU tests (same7 exclusions),22 focused,185 scheduled
+and executed,236 components/8 composition/1 real-capacity path,132 workflow,
+15 architecture, runtime-only/format/warnings,12 scalar. Source, algorithms,
+capacities, allocator and timing boundaries remain unchanged. Whole-body
+totality, exact existing-loan settlement, ordered reduction/SIMD and the separate
+source variant remain unfinished. Parity is not achieved. Ordinary hosted CI
+is cancelled by request; the change remains draft pending green CI and review.
+
+## Historical R160 and standalone R161 checkpoints
+
+**R160 retains current immutable-array read facts in native numeric loops.** The matched comparison against reviewed #986 removes109 static duplicate read guards, including both path-loop loads in each clone. Natural32KB improves6.470792x to6.225117x reference time (-3.796679%); repeated6.422834x to6.109911x (-4.872034%); periodic7.131085x to6.836043x (-4.137400%). Fourteen of20 medians improve, six worsen (worst+0.949648%); geometric elapsed improves0.935680%, with all unchanged1.05 gates passing. Eight bytes is4.854203x to4.842748x (-0.235988% in this matched cohort). Every case's retired instructions fall, with natural32KB -4.199070%. Heap counts/bytes/reallocations/incremental live peaks stay equal. Generated text shrinks85,520 bytes and entry stack64 bytes.
+
+The [current report](native-array-read-facts.md) contains exact compiler/source/bytecode pins, all20 times and independent counter cohorts,595 GPU/174 CI-selected tests, original/decoded/error/finite controls and corrected validation paths. The current compiler is4fe3888f4d98d1ea159cd3186a8bc0f3b81ef773, IR182/work107/ABI39/MBC14; base #986 is8ef1693a558b9a46544ce425ca2f222e10e3dddc. The [R159 report](native-u32-case-facts.md) remains historical evidence. Whole-loop entry windows, masked narrowing/totality, exact funding settlement, ordered reduction/SIMD and the separate source variant remain unfinished. Parity is not achieved; earlier published heads remain frozen.
+
+R161's complete-child window prototype is **not retained standalone**: natural32KB improves6.218368x to5.975507x reference (-3.905553%), but128-biased regresses7.169355% and fails the unchanged1.05 gate. Five of20 medians improve,15 worsen, geometric elapsed+0.725321%. Eight bytes regresses2.186978%. The guarded loop emits correctly in all four path copies and natural32KB instructions fall2.711783%; all20 correctness checks and unchanged heap counts pass. See [prototype, failure and next proof target](native-loop-read-windows.md). Keep R160/#987 as the retained checkpoint while a combined candidate addresses remaining masked narrowing in the existing CFG cleanup. Source, algorithms, capacities and timing boundaries remain pinned.
+
+The R154 checkpoint below remains as historical context for the reviewed base.
+
+| Checkpoint | Revision |
+|---|---|
+| Published base | #983 at `5b77cb413648ac5fb245d64c62eaf7cb489cbf03` |
+| Before production compiler | `2d27e4cc44261a02c6858a232960d8999ac712eb` |
+| Actual retained before executable emitter | `2b6953e9a8532bae417588d607a553f9c8d86a6d` |
+| Current production compiler | `58690b58dfc4ccdf44b074c15d3c140a28603866` |
+| Final focused tests | `9f750d5ed41553840884b24f96a588a48a217153` |
+| IR / work / ABI / bytecode | **178 / 107 / 39 / 14**; old IR177 rejected |
+
+The selected operation is the already-native word-read comparison in match extension. Fresh exact-PC diagnosis on the retained R153 binary found the same hot windows for periodic and repeated inputs. The source already checked `available >= width`, executed checked `available - width`, and selected the `at <= available - width` arm. Native packed-read emission then recomputed the same window condition. This patch reuses the freshly executed source fact and removes that duplicate emitter check. Original source arithmetic, comparisons, errors, visits and funding remain; the current row/column-vector test and complete scalar fallback remain. No compressor source changes or new host-to-native coverage are included.
+
+The private emission fact requires a positive first offset, the exact same current array view, one fresh checked subtraction of the exact pack end, and a fresh unsigned comparison whose true arm alone reaches the pack. The whole slice has one predecessor at each step, stays in the same selected iteration, and crosses no array/frame/helper, source loop, funding or cold-exit boundary. Joins, different arrays, short windows, wrapping subtraction and false arms decline. This is generic source/CFG recognition, without function names, benchmark names or site IDs. Independent image reconstruction derives it again; no saved permission is serialized.
+
+The actual ARM64 Objects and both linked executable windows agree. Following the retained subtraction error identifies source origin **2823**, followed by pack **2829**. The source window is `0x6a9f4..0x6aa88` before and `0x67e5c..0x67ed4` after. Its successful vector path has **34→27 static instructions**, removing duplicate enough/fits booleans and their combination. The source arithmetic error, source selection, two geometry comparisons and word load survive. The earlier selection note uses pack1488 as another source example, rather than the exact hot copy. **45 static guarded pack emissions in four existing regions are not dynamic visit counts.** Whole-call counters below are measured independently.
+
+The final matched 20-case cohort has **3,968 primary / 4,048 total complete calls**, exact reference bytes, independent inflate, input aliases, prefixes, capacities and zero final managed storage. Elapsed improves **0.442337% geometrically**: **13 faster / 7 slower** medians, worst **+0.879027%**, all unchanged **1.05** gates pass. Source plans, complete numeric recipes, source prices and logical work are **exactly equal across all 20 cases**. The separate development screen retains its eight-byte +0.771339% observation; it is not pooled with the final matrix.
+
+| Input | Current ms | Mech / Roc before→after | Change |
+|---|---:|---:|---:|
+|eight-literals|1.343917|4.618822×→4.634197×|+0.332858%|
+|16384-distribution-change|6.210417|7.827752×→7.811845×|-0.203212%|
+|33027-periodic-window|8.754792|7.134098×→7.015057×|-1.668613%|
+|random-32769|6.744604|6.448414×→6.435691×|-0.197301%|
+|repeated-32769|8.325416|6.357938×→6.226938×|-2.060411%|
+|reymont-prefix-32769|33.594437|7.719281×→7.708682×|-0.137298%|
+|reymont-prefix-16384|18.292958|8.539848×→8.538137×|-0.020042%|
+|random-1024|1.245229|4.107684×→4.123275×|+0.379558%|
+|repeated-1024|1.517312|4.673782×→4.625951×|-1.023385%|
+|reymont-prefix-1024|1.909958|5.782739×→5.805343×|+0.390902%|
+|320-overlap|1.323917|4.495629×→4.480261×|-0.341862%|
+|random-256|1.303313|4.432223×→4.403084×|-0.657424%|
+|128-biased-dynamic|1.137125|4.010161×→3.989914×|-0.504902%|
+|random-64|1.246833|4.458993×→4.390257×|-1.541512%|
+|32-high-entropy-stored|1.225104|4.308698×→4.298611×|-0.234125%|
+|eight-overlap|1.304166|4.458835×→4.481670×|+0.512130%|
+|eight-literals-prefix|1.370041|4.955791×→4.773664×|-3.675038%|
+|seven-stored-prefix|0.120875|clock-limited reference|+0.659125%|
+|one-stored|0.120437|clock-limited reference|+0.382150%|
+|empty|0.117230|clock-limited reference|+0.879027%|
+
+Hardware counters and heap probes are separate complete-call cohorts for all 20 cases. Periodic instructions **167,090,877.5→152,459,187 (−8.756726%)** and cycles **28,549,642→28,105,331 (−1.556275%)** fall. Repeated instructions **160,750,824→146,208,298 (−9.046626%)** and cycles **27,107,437→26,756,702 (−1.293870%)** fall. Eight-byte instructions fall 0.028534% while its primary elapsed median rises 0.332858%. The much smaller timing gains are retained alongside the instruction reductions; static instructions, visits, samples and retired instructions remain separate quantities.
+
+All 20 cases have identical allocation requests, requested bytes, reallocations, relocation-copy upper bounds and usable-heap measurements on both sides. Periodic remains **3,679 requests / 15,798,298 requested B / 15,314,928 incremental peak usable B**. Eight-byte remains **3,354 requests / 17,643,969 requested B / 15,279,752 incremental peak usable B**. The separate OS cohort observes 524,288 B less lifetime physical footprint and roughly 770–803 KB less resident storage; these are not claimed as copied-byte or live-heap reductions. The heap-instrumented cycle medians for periodic and repeated rise, while the separate uninstrumented CPU-counter cycles fall; no mixing of these cohorts is used to establish elapsed gains.
+
+| Fresh current CPU-time samples | Generated code | Host callbacks/cleanup | Outside |
+|---|---:|---:|---:|
+|16384-distribution-change|58.05%|39.51%|2.43%|
+|reymont-prefix-16384|83.70%|14.98%|1.33%|
+|repeated-32769|85.29%|12.57%|2.14%|
+|33027-periodic-window|81.15%|16.26%|2.59%|
+
+Samples describe time contexts, not source operation coverage or retired-instruction shares. The earlier exact-PC diagnosis uses R153 Object `4f56f4bb…`, whereas these after profiles use current Object `2cfd693c…`. The `pc-analysis` data archive was anchored after the compiler snapshot advanced; its binary maps and records still explicitly identify the before binary. No new coverage or causal host-share improvement is claimed from this instruction-only patch.
+
+The code tradeoff is **9,118,504→9,045,788 B generated text (−72,716)** and **15,872→15,984 B entry stack (+112)**. Cold restoration, outside `evaluate_into`, is **37.388→37.528 s** in the development screen and **37.379→37.402 s** in the final cohort. These are two descriptive setup pairs, not a repeated matched startup experiment or a whole-command speedup. Fresh Object generation took 130.585 s; the earlier R153 build took 143.475 s in a different build cohort, so that difference is not attributed as a compile-time gain.
+
+Qualification: **585 GPU pass / same 7 exclusions**, six focused tests, **160 CI tests listed/equality-guarded/executed**, 132 workflow checks, 15 architecture checks, runtime-only and formatting pass. Unchanged **236 component / 8 composition / 1 real-capacity path** controls pass. **12 scalar** controls pass the fixed 1.05 gate, with all 12 adverse medians (maximum 1.008775 after/before), no allocation increase and no 0→64 iteration allocation slope. **8 frame** controls pass with no request/byte/work increase. Nightly 2026-03-03/aarch64, warnings denied, library opt3 and unit/component roots opt1; Core/Engine/math/dependencies frozen and rehashed. CI inventory 155→160 is separately committed.
+
+The new source controls cover widths2/4/8, both literal orders, row/column/rectangular geometry, short and near-EOF inputs, empty dimensions, zero iterations at U64MAX, repeated current visits, original/decoded and direct/restored execution. Failure controls compare ordinary and native origins/errors for retained source underflow, tail overflow and an arithmetic failure after a successful packed prefix; prior published output, aliases, cleanup and retry are preserved. Six finite resource dimensions use the existing boundary helper; no claim is made that all six zero limits deny this zero-comparison witness. Selection mutations refuse missing members, both cold endpoints and five funding frontiers. The clean parent passes source semantics but fails the new native coverage assertion (0 versus1), as expected.
+
+No unresolved introduced functional failure remains. The same seven GPU exclusions, full dependency/all-features rebuild, multi-MB timing and separate ten-workload suite remain skipped. Ordinary hosted CI is cancelled under standing instruction; **draft until green hosted CI and clean external review**. R153 was externally reviewed at its frozen head with no findings before this work.
+
+The next brief starts with a focused current-binary cost check for `OptimalPathLengths` versus match extension. Select one materially hot bounded loop with a plausible route to roughly a 10% important-large-case improvement; then separately measure loop-wide window/arithmetic simplification, a total-body funding envelope, and any unroll/SIMD experiment. Preserve current array versions, original finite-error prefixes and incremental fallback. Source variants stay separate. This next semantic change begins only after this patch is reviewed.
+
+R152 remains rejected/reverted after its eight-byte +5.821563% failure of the unchanged gate; IR176 stays reserved. R150 remains rejected for byte-identical generated code. Earlier retained/rejected results and immutable contrary observations remain in the [experiment index](../../benchmarks/mech-deflate/experiments.json). Raw evidence is external; this status file is the current bounded report.
+
+Publication: **49 public archives / 98 server digests verified**. A fresh public download verifies **4,664 file occurrences / 1,033 paths**, retains **19 paths with historical versions**, and reproduces `results.json` and `REPORT.md` byte-for-byte. Replay with `python3 benchmarks/mech-deflate/experiment.py replay-round --index benchmarks/mech-deflate/experiments.json --round 154 --output /tmp/r154-replay`; this replays numerical receipts without compiling or compressing.
+
+R155 completes the new brief's focused selection check: the current path-length loop has **23.347639%** of natural32KB source-attributed CPU weights, versus about3% on periodic/repeated inputs. The existing packed-loop edge-fact engine and shared aggregate guard policy have not reached its numeric projection path. Its funding is already prepaid, though visit/debit/state bookkeeping remains. No new compiler change or primary timing result is claimed; see the [bounded-loop study](native-loop-cost-study.md) for exact current addresses, attribution gaps and the next acceptance witness.

@@ -381,6 +381,7 @@ impl BindingRelocation<'_> {
                 crate::ControlOperationBody::Operation { .. }
                 | crate::ControlOperationBody::Recur(_)
                 | crate::ControlOperationBody::Suspend
+                | crate::ControlOperationBody::Assert
                 | crate::ControlOperationBody::Publish => {}
             }
         }
@@ -511,6 +512,7 @@ impl BindingRelocation<'_> {
                         crate::ControlOperationBody::Operation { .. }
                         | crate::ControlOperationBody::Recur(_)
                         | crate::ControlOperationBody::Suspend
+                        | crate::ControlOperationBody::Assert
                         | crate::ControlOperationBody::Publish => {}
                         crate::ControlOperationBody::Match(declaration) => {
                             self.match_declaration(declaration)

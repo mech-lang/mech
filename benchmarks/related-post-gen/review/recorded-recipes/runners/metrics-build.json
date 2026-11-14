@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/comparison-config.json",
+    "--out",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/metrics",
+    "--variant",
+    "mech-after-4",
+    "--variant",
+    "mech-after-8",
+    "--variant",
+    "mech-u8-ids-u32-4",
+    "--variant",
+    "mech-u8-ids-u32-8"
+  ],
+  "exit": 0,
+  "seconds": 8.194783375132829,
+  "stdout": "{\"variant\": \"mech-after-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-after-8\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-u8-ids-u32-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-u8-ids-u32-8\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

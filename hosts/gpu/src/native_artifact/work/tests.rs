@@ -288,3 +288,50 @@ fn a_different_shared_ledger_cannot_replace_a_live_library_caller() {
         .unwrap();
     assert_eq!(caller.used(), 65);
 }
+
+#[test]
+fn native_ceiling_and_overflow_precede_foreign_account_and_library_caps() {
+    let memory = ManagedMemoryBudget::new(8192);
+    for ceiling in [100, u64::MAX] {
+        let mut meter = NativeWorkMeter::new(ceiling).unwrap();
+        let owner = meter
+            .shared_library_budget(NativeExecutionPhase::Setup, 10, &memory)
+            .unwrap();
+        let foreign = NativeLibraryWorkBudget::new(1000, 10, &memory).unwrap();
+        let amount = if ceiling == 100 { 37 } else { u64::MAX };
+        foreign
+            .with_scope(|| {
+                assert_eq!(
+                    meter.charge(NativeExecutionPhase::Completion, amount),
+                    Err(NativeExecutionError::WorkLimit {
+                        phase: NativeExecutionPhase::Completion,
+                        required: if ceiling == 100 { 101 } else { u64::MAX },
+                        limit: ceiling,
+                    })
+                );
+                assert!(matches!(
+                    meter.charge(NativeExecutionPhase::Completion, 1),
+                    Err(NativeExecutionError::LibraryWork {
+                        error: ResidentKernelError::InvalidInput,
+                        ..
+                    })
+                ));
+                assert_eq!(owner.used(), (64, 0));
+                assert_eq!(foreign.used(), (0, 0));
+            })
+            .unwrap();
+        owner.restrict(90, 10).unwrap();
+        assert_eq!(
+            meter.charge(NativeExecutionPhase::Completion, 27),
+            Err(NativeExecutionError::WorkLimit {
+                phase: NativeExecutionPhase::Completion,
+                required: 91,
+                limit: 90,
+            })
+        );
+        assert_eq!(owner.used(), (64, 0));
+        meter.charge(NativeExecutionPhase::Completion, 26).unwrap();
+        assert_eq!(meter.used(), 90);
+    }
+    assert_eq!(memory.used_bytes(), 0);
+}

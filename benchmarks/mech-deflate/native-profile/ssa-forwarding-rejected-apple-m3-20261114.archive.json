@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-ssa-forwarding-rejected-20261114.tar.gz",
+  "bytes": 23953326,
+  "evidence_files": 4114,
+  "files": 4114,
+  "format": 1,
+  "manifest_sha256": "f43f8eddda6c3781dc8d21417dca362d9a49ba9f2f5a8043f69d070618da100d",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "2750c8652a8d9ee32cd92cd97e0254e83df0a2e0b185727300e61f646473edb6",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-forwarding-rejected-20261114.tar.gz",
+  "sha256": "bb011cbff565ddd491602157251d64ff2cbf5018e7cb8c9542a03ab7a4c5e8ad",
+  "source_revision": "d4efd4465c5a8689016abd5b42e16f73e475af63",
+  "uncompressed_bytes": 299780316,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "bb011cbff565ddd491602157251d64ff2cbf5018e7cb8c9542a03ab7a4c5e8ad",
+    "source_revision": "d4efd4465c5a8689016abd5b42e16f73e475af63",
+    "verified_bytes": 299780316,
+    "verified_files": 4114
+  }
+}

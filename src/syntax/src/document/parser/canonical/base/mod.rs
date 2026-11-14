@@ -1,6 +1,8 @@
 use crate::document::{RuleId, SyntaxKind};
 
 pub(crate) mod continuation;
+mod spec;
+pub(super) use spec::{Spec, specification};
 mod exact_tag;
 pub(crate) use exact_tag::ExactTag;
 
@@ -11,7 +13,23 @@ use super::terminal_spec::{FixedTerminalSpec, TerminalSpacing, fixed_terminal_sp
 #[cfg(test)]
 pub(crate) const SUPPORTED_RULE_COUNT: usize = 149;
 
-const NON_FIXED_RULES: &[RuleId] = &[
+macro_rules! non_fixed_rules {
+    ($($rule:path),+ $(,)?) => {
+        pub(super) const NON_FIXED_RULES: &[RuleId] = &[$($rule),+];
+
+        const fn non_fixed_index_const(rule:RuleId)->usize {
+            let mut index=0;while index<NON_FIXED_RULES.len(){if NON_FIXED_RULES[index].0==rule.0{return index;}index+=1;}panic!("missing base rule");
+        }
+        #[inline]
+        fn non_fixed_index(rule:RuleId)->Option<usize> {match rule {$($rule=>Some(const {non_fixed_index_const($rule)}),)+_=>None}}
+        #[inline]
+        fn non_fixed_rule(rule: RuleId) -> bool {
+            matches!(rule, $($rule)|+)
+        }
+    };
+}
+
+non_fixed_rules! {
     rules::TRANSITION_OPERATOR,
     rules::OUTPUT_OPERATOR,
     rules::EMOJI_GRAPHEME,
@@ -53,7 +71,7 @@ const NON_FIXED_RULES: &[RuleId] = &[
     rules::BOX_DRAWING_CHAR,
     rules::BOX_DRAWING_EMOJI,
     rules::TAG,
-];
+}
 
 const FORBIDDEN_EMOJI_RULES: &[RuleId] = &[
     rules::BOX_DRAWING_EMOJI,
@@ -198,8 +216,9 @@ const BOX_DRAWING_EMOJI_RULES: &[RuleId] = &[
     rules::BOX_T_BOTTOM,
 ];
 
+#[cfg(test)]
 pub(crate) fn supports(rule: RuleId) -> bool {
-    fixed_terminal_spec(rule).is_some() || NON_FIXED_RULES.contains(&rule)
+    fixed_terminal_spec(rule).is_some() || non_fixed_rule(rule)
 }
 
 #[cfg(test)]
@@ -257,3 +276,11 @@ mod tests {
         }
     }
 }
+
+const SPACE_TAB_RULES: &[RuleId] = &[rules::SPACE, rules::TAB, rules::NBSP, rules::THIN_SPACE];
+const WHITESPACE_RULES: &[RuleId] = &[rules::SPACE, rules::TAB, rules::NEW_LINE];
+const NEW_LINE_RULES: &[RuleId] = &[
+    rules::CARRIAGE_RETURN_NEW_LINE,
+    rules::NEW_LINE_CHAR,
+    rules::CARRIAGE_RETURN,
+];

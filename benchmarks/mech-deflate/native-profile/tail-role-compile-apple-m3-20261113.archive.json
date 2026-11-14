@@ -1,0 +1,31 @@
+{
+  "archive_name": "level12-tail-role-compile-apple-m3-20261113.tar.gz",
+  "bytes": 5848379,
+  "evidence_files": 212,
+  "files": 212,
+  "format": 1,
+  "manifest_sha256": "8026b611cb70115101d47fc4c49dd8748f171a3de2d8cf1084f61ab4cc61ccac",
+  "sha256": "574728a392649890045c9e00825be46701781b5760dddae5f75aad00c6c79170",
+  "source_revision": "b0b9b9a2f4f4ec87e87287ac7b4f17cc7974f249",
+  "uncompressed_bytes": 40997154,
+  "repository": "mech-lang/mech",
+  "release_tag": "evidence-native-compression-experiments-6",
+  "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-tail-role-compile-apple-m3-20261113.tar.gz",
+  "publication": "published",
+  "replay_sha256": "92c9084946010c24841df6b0d27cc24faa65faa1a155772deedbc2771b2e91a4",
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "574728a392649890045c9e00825be46701781b5760dddae5f75aad00c6c79170",
+    "source_revision": "b0b9b9a2f4f4ec87e87287ac7b4f17cc7974f249",
+    "verified_bytes": 40997154,
+    "verified_files": 212
+  },
+  "public_verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "574728a392649890045c9e00825be46701781b5760dddae5f75aad00c6c79170",
+    "source_revision": "b0b9b9a2f4f4ec87e87287ac7b4f17cc7974f249",
+    "verified_bytes": 40997154,
+    "verified_files": 212,
+    "replay_sha256": "92c9084946010c24841df6b0d27cc24faa65faa1a155772deedbc2771b2e91a4"
+  }
+}

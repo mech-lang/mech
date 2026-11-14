@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-compact-native-development-20261111/benchmarks/related-post-gen/integration/managed-dense-storage-20261112/verify.py"
+  ],
+  "exit": 0,
+  "seconds": 6.725738999899477,
+  "stdout": "{\n  \"verified_records\": 7260,\n  \"unique_blobs\": 3958,\n  \"compressed_bytes\": 21639419,\n  \"required_IR338_base\": \"b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164\",\n  \"required_IR340_source\": \"1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622\",\n  \"full_source_inventory_entries\": 2818,\n  \"literal_includes\": 164,\n  \"source_overlay_files\": 10,\n  \"primary_exact_outputs\": 1271,\n  \"resource_exact_outputs\": 273,\n  \"confirmation_exact_outputs\": 351,\n  \"new_timed_resource_exact_outputs\": 1895,\n  \"separate_qualification_exact_outputs\": 384,\n  \"adapters_qualified\": 12,\n  \"focused_passes\": 33,\n  \"broad_passed\": 1084,\n  \"broad_failures\": 16,\n  \"all_broad_failures_inherited\": true,\n  \"managed_IR334_still_selected\": true,\n  \"IR340_U32_same_source_parent_gain_confirmed\": true,\n  \"fastest_Rust_target_met\": false,\n  \"native_executions_by_verifier\": 0\n}\n",
+  "stderr": "",
+  "verifier_sha256": "4e428925602a8488b88709fd3e7a86e6e816af35748538d20a7fcec2e1662752",
+  "report_sha256": "c9efbc31a004f4e3069b4f4f8b172ca4aed6beb3c1a4380bf677626afe86c8b7",
+  "manifest_sha256": "e345f0011a747c87cda139864242f226bd29784505c8fdda38c673fabeb0ff83",
+  "independent_root_review": true
+}

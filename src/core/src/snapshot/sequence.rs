@@ -10,10 +10,10 @@ use std::{boxed::Box, vec::Vec};
 
 #[derive(Clone, Debug)]
 pub(super) enum SequenceStorage {
-    U8(Box<[u8]>),
-    U16(Box<[u16]>),
-    U32(Box<[u32]>),
-    U64(Box<[u64]>),
+    U8(Vec<u8>),
+    U16(Vec<u16>),
+    U32(Vec<u32>),
+    U64(Vec<u64>),
     U128(Box<[u128]>),
     I8(Box<[i8]>),
     I16(Box<[i16]>),
@@ -252,7 +252,7 @@ impl SequenceStorage {
                     };
                     packed.push(value);
                 }
-                Self::$target(packed.into_boxed_slice())
+                Self::$target(packed.into())
             }};
         }
 

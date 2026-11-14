@@ -20,6 +20,8 @@ use mech_engine::native_artifact::{
 
 mod allocation;
 mod ascii_facts;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod optional_metadata_tests;
 pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     values: Vec<T>,
     count: usize,
@@ -28,6 +30,11 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     allocation::exact_capacity(values, count, reason)
 }
 mod data;
+pub(in crate::native_artifact) mod numeric_map;
+mod row_blocks;
+pub(in crate::native_artifact) mod uniform_words;
+pub(in crate::native_artifact::program::runtime) mod utf8_read;
+mod word_collections;
 pub(in crate::native_artifact::program::runtime) fn source_count(
     value: &Value,
 ) -> Result<u64, Error> {
@@ -95,7 +102,7 @@ struct PreparedRange {
 }
 struct Builder {
     // Owned drafts and their backing are released before their reservation.
-    values: Vec<ValueDataDraft>,
+    values: data::CollectedValues,
     join: Option<text_join::Builder>,
     query: Option<histogram_query::Builder>,
     histogram: Option<histogram::Builder>,
@@ -113,6 +120,9 @@ pub(in crate::native_artifact::program::runtime) struct State {
     string_spans: Vec<Option<string_span::Lane>>,
     string_maps: Vec<Option<string_map_entry::Lane>>,
     current: Option<u32>,
+    native_read: Option<Box<utf8_read::Storage>>,
+    native_fill: Option<Box<uniform_words::Loan>>,
+    native_map: Option<Box<numeric_map::Loan>>,
     live_bytes: u64,
     // Genuine query scalar roots stay in the arena after token cleanup.
     // Keep their complete bound in every later collection workspace peak.
@@ -210,10 +220,9 @@ impl State {
         // metadata, not collection payloads. Its capacity bounds those nodes.
         let mut nodes = add(self._metadata.capacity_bytes(), self.retained_nodes()?)?;
         for builder in self.builders.iter().flatten() {
-            // CollectionPush accepts only scalar/Index/String drafts. Each
-            // draft contributes at most one node, plus the flat carrier/root.
-            // Bodies and input payloads are never traversed here.
-            nodes = add(nodes, add(builder.values.len() as u64, 2)?)?;
+            // Packed words share one backing; remaining scalar/Index/String
+            // drafts contribute at most one node apiece. No payload traversal.
+            nodes = add(nodes, builder.values.retained_nodes()?)?;
             if let Some(join) = &builder.join {
                 nodes = add(nodes, join.caller_retained_nodes())?;
             }
@@ -245,7 +254,19 @@ impl State {
             return Ok(0);
         }
         add(
-            (size_of::<[u64; 6]>()
+            (if descriptor.metadata().utf8_reads.regions.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<utf8_read::Loan>>>()
+            } + if descriptor.metadata().uniform_word_collections.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<uniform_words::Loan>>>()
+            } + if descriptor.metadata().numeric_maps.regions.is_empty() {
+                0
+            } else {
+                size_of::<Option<Box<numeric_map::Loan>>>()
+            } + size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
                 + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
                 + if descriptor.metadata().window_regions.is_empty() {
@@ -297,10 +318,33 @@ impl State {
             plan.collections().len(),
             "collection builder metadata allocation",
         )?;
-        let string_spans =
-            allocation::metadata(plan.collections().len(), "String span metadata allocation")?;
+        // Absent projection categories have no executable selector/element
+        // action in this checked plan. Keep their original logical byte/node
+        // envelope and setup charge above, but construct no unused carriers.
+        // A present category keeps the complete collection-indexed lane;
+        // neither generated coordinates nor current-visit checks change.
+        let string_spans = allocation::metadata(
+            if plan
+                .collections()
+                .iter()
+                .any(|collection| collection.string_span_projection().is_some())
+            {
+                plan.collections().len()
+            } else {
+                0
+            },
+            "String span metadata allocation",
+        )?;
         let string_maps = allocation::metadata(
-            plan.collections().len(),
+            if plan
+                .collections()
+                .iter()
+                .any(|collection| collection.string_element_map_projection().is_some())
+            {
+                plan.collections().len()
+            } else {
+                0
+            },
             "String map projection metadata allocation",
         )?;
         Ok(Some(Self {
@@ -310,6 +354,9 @@ impl State {
             string_spans,
             string_maps,
             current: None,
+            native_read: None,
+            native_fill: None,
+            native_map: None,
             live_bytes: bytes,
             query_scalar_bytes: 0,
             query_scalar_nodes: 0,
@@ -323,6 +370,9 @@ impl State {
         }))
     }
     pub(in crate::native_artifact::program::runtime) fn is_complete(&self) -> bool {
+        if self.has_utf8_read() || self.native_fill.is_some() {
+            return false;
+        }
         self.current.is_none()
             && self.sources.iter().all(Option::is_none)
             && self.prepared_ranges.iter().all(Option::is_none)
@@ -502,7 +552,11 @@ impl State {
                 charge(&mut ctx.work(), 64)?;
                 let nodes = ctx.library().memory_budget().reserve_nodes(2)?;
                 self.builders[*collection as usize] = Some(Builder {
-                    values: Vec::new(),
+                    values: data::CollectedValues::new(
+                        plan.values()[definition.output().get() as usize]
+                            .definition()
+                            .body(),
+                    ),
                     join: None,
                     query: None,
                     histogram: None,
@@ -661,10 +715,18 @@ impl State {
                     ),
                 };
                 let bytes = element.bytes();
+                // A selected range cursor computes this scalar from start and
+                // index; it has no materialized source element to clone. Keep
+                // its arithmetic/transport work debit and source checks.
+                let cloned = if matches!(backing, SourceBacking::U64Range { .. }) {
+                    0
+                } else {
+                    bytes
+                };
                 self.account(
                     ctx,
                     definition.collection(),
-                    bytes,
+                    cloned,
                     add(mul(bytes, 16)?, 128)?,
                 )?;
                 let result = match (plan.values()[output.get() as usize].scalar_kind(), element) {
@@ -743,6 +805,16 @@ impl State {
             }
             Action::CollectionPush { collection, value } => {
                 if matches!(
+                    plan.collections()[*collection as usize].kind(),
+                    ComprehensionKind::MatrixHorizontalBlocks { .. }
+                ) {
+                    if words != [0; 2] {
+                        return Err(invalid("row-block yield has an unexpected scalar payload"));
+                    }
+                    self.push_row_block(ctx, *collection, *value)?;
+                    return Ok(None);
+                }
+                if matches!(
                     plan.collections()[*collection as usize].result(),
                     mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(_)
                 ) {
@@ -776,7 +848,9 @@ impl State {
                     None
                 };
                 let payload = match (ty.scalar_kind(), owned.as_ref().map(Value::data)) {
-                    (Some(NativeScalarKind::Bool), _) => 1,
+                    (Some(NativeScalarKind::Bool | NativeScalarKind::U8), _) => 1,
+                    (Some(NativeScalarKind::U16), _) => 2,
+                    (Some(NativeScalarKind::U32), _) => 4,
                     (Some(_), _) => 8,
                     (None, Some(ValueData::Index(_))) => 8,
                     (None, Some(ValueData::String(text))) => text.len() as u64,
@@ -814,10 +888,18 @@ impl State {
                     builder.values.capacity()
                 };
                 let payload_bytes = add(builder.payload_bytes, payload)?;
-                let backing = add(
-                    mul(capacity as u64, size_of::<ValueDataDraft>() as u64)?,
-                    payload_bytes,
-                )?;
+                let backing = builder.values.backing_bytes(capacity, payload_bytes)?;
+                let growing = capacity > builder.values.capacity();
+                // A relocating packed allocation can coexist with its old
+                // backing until reallocation succeeds. Fund that peak first.
+                let growth_scratch = if growing && builder.values.packed_width().is_some() {
+                    mul(
+                        builder.values.capacity() as u64,
+                        builder.values.element_bytes(),
+                    )?
+                } else {
+                    0
+                };
                 let extra = backing
                     .checked_sub(builder.reservation.capacity_bytes())
                     .ok_or_else(|| invalid("collection capacity moved backwards"))?;
@@ -830,7 +912,16 @@ impl State {
                 check(
                     origin,
                     Dimension::OutputBytes,
-                    add(add(payload_bytes, mul(count as u64, 32)?)?, 256)?,
+                    builder.values.output_bytes(
+                        payload_bytes,
+                        count as u64,
+                        capacity,
+                        plan.values()
+                            [plan.collections()[*collection as usize].output().get() as usize]
+                            .definition()
+                            .dimension_parameters()
+                            .len(),
+                    )?,
                     ctx.limits().max_output_bytes,
                 )?;
                 check(
@@ -851,14 +942,14 @@ impl State {
                 check(
                     origin,
                     Dimension::TemporaryBytes,
-                    add(add(old_live, extra)?, untracked_yield)?,
+                    add(add(add(old_live, extra)?, untracked_yield)?, growth_scratch)?,
                     ctx.limits().max_temporary_bytes,
                 )?;
                 // Covers relocation, eventual destruction and scalar/String packing.
-                let moved = if capacity > builder.values.capacity() {
+                let moved = if growing {
                     mul(
                         builder.values.capacity() as u64,
-                        size_of::<ValueDataDraft>() as u64,
+                        builder.values.element_bytes(),
                     )?
                 } else {
                     0
@@ -870,23 +961,30 @@ impl State {
                 // The pending draft and replacement carrier coexist with the
                 // original builder until every fallible allocation succeeds.
                 let memory = ctx.library().memory_budget();
-                let pending_node = memory.reserve_nodes(1)?;
-                let _replacement_node =
-                    memory.reserve_nodes(u64::from(capacity > builder.values.capacity()))?;
+                let pending_node =
+                    memory.reserve_nodes(u64::from(builder.values.packed_width().is_none()))?;
+                let _replacement_node = memory.reserve_nodes(u64::from(growing))?;
+                let _growth = (growth_scratch != 0)
+                    .then(|| memory.reserve_capacity(growth_scratch))
+                    .transpose()?;
                 builder.reservation.resize_capacity(backing)?;
-                if capacity > builder.values.capacity() {
-                    builder
-                        .values
-                        .try_reserve_exact(capacity - builder.values.len())
-                        .map_err(|_| invalid("collection draft allocation"))?;
-                    builder.values = allocation::exact_capacity(
-                        core::mem::take(&mut builder.values),
-                        capacity,
-                        "collection draft exceeds admitted capacity",
-                    )?;
+                if growing {
+                    builder.values.reserve(capacity)?;
                 }
                 let data = match ty.scalar_kind() {
                     Some(NativeScalarKind::Bool) if word <= 1 => ValueDataDraft::Bool(word != 0),
+                    Some(NativeScalarKind::U8) => ValueDataDraft::U8(
+                        u8::try_from(word)
+                            .map_err(|_| invalid("narrow collected word exceeds its type"))?,
+                    ),
+                    Some(NativeScalarKind::U16) => ValueDataDraft::U16(
+                        u16::try_from(word)
+                            .map_err(|_| invalid("narrow collected word exceeds its type"))?,
+                    ),
+                    Some(NativeScalarKind::U32) => ValueDataDraft::U32(
+                        u32::try_from(word)
+                            .map_err(|_| invalid("narrow collected word exceeds its type"))?,
+                    ),
                     Some(NativeScalarKind::U64) => ValueDataDraft::U64(word),
                     Some(NativeScalarKind::I64) => ValueDataDraft::I64(word as i64),
                     Some(NativeScalarKind::F64) => {
@@ -899,7 +997,7 @@ impl State {
                         .map_err(Error::Snapshot)?,
                     _ => return Err(invalid("invalid collected scalar word")),
                 };
-                builder.values.push(data);
+                builder.values.push(data)?;
                 builder.nodes.merge(pending_node)?;
                 builder.payload_bytes = payload_bytes;
                 self.live_bytes = add(old_live, extra)?;
@@ -961,11 +1059,24 @@ impl State {
         let builder = self.builder(id)?;
         let count = builder.values.len() as u64;
         let payload = builder.payload_bytes;
+        let cloned = if builder.values.packed_width().is_some() {
+            0
+        } else {
+            payload
+        };
+        let output_bytes = builder.values.output_bytes(
+            payload,
+            count,
+            builder.values.capacity(),
+            output.definition().dimension_parameters().len(),
+        )?;
         let envelope = add(
             descriptor.metadata().scalar_bytes,
             add(mul(builder.reservation.capacity_bytes(), 4)?, 4096)?,
         )?;
-        self.account(ctx, id, payload, add(mul(envelope, 16)?, 256)?)?;
+        // Packed finalization takes the existing allocation; the draft path
+        // still constructs a second payload and keeps its original copy debit.
+        self.account(ctx, id, cloned, add(mul(envelope, 16)?, 256)?)?;
         check(
             definition.origin(),
             Dimension::TemporaryBytes,
@@ -975,7 +1086,7 @@ impl State {
         check(
             definition.origin(),
             Dimension::OutputBytes,
-            add(add(payload, mul(count, 32)?)?, 256)?,
+            output_bytes,
             ctx.limits().max_output_bytes,
         )?;
         check(
@@ -1036,17 +1147,13 @@ impl State {
         let shape = mech_core::shape_for_resolved_extents(output.definition(), &extents)
             .map_err(|_| invalid("collected output shape"))?;
         let builder = self.builders[id as usize].as_mut().unwrap();
-        let data = core::mem::take(&mut builder.values).into_boxed_slice();
-        let value = ValueDraft {
-            schema: output.schema(),
-            shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
-            data: ValueDataDraft::Matrix(data),
-        }
-        .finalize(&SnapshotValidationContext::with_shared_schemas(
-            &descriptor.metadata().schemas,
-        ))
-        .map_err(Error::Snapshot)?
-        .into_memory_budget(&mut reservation)?;
+        let value = core::mem::take(&mut builder.values)
+            .finalize(
+                output.schema(),
+                shape,
+                std::sync::Arc::clone(&descriptor.metadata().schemas),
+            )?
+            .into_memory_budget(&mut reservation)?;
         ctx.arena_put(definition.output().get(), &value)?;
         let builder = self.builders[id as usize].take().unwrap();
         self.live_bytes = self
@@ -1057,3 +1164,8 @@ impl State {
         Ok(())
     }
 }
+
+// Fallible exact-layout storage; each selecting owner prepays its layout.
+pub(in crate::native_artifact::program::runtime) use utf8_read::{
+    boxed as fixed_box, fixed as fixed_slice,
+};

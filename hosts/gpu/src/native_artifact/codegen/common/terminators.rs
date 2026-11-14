@@ -11,10 +11,16 @@ pub(in crate::native_artifact) fn emit_source_terminator(
     b: &mut FunctionBuilder<'_>,
     words: &Words,
     code: CodePlan<'_>,
+    site: usize,
+    options: crate::native_artifact::codegen::options::OptimizationOptions,
     terminator: Term,
     fail_at: Block,
     target: impl Fn(u32) -> Block,
 ) {
+    if let Some(next) = super::boolean_branches::target(code, site, options) {
+        b.ins().jump(target(next), &[]);
+        return;
+    }
     match terminator {
         Term::TailHeader { body, .. } | Term::Scalar(Branch::Jump(body)) => {
             b.ins().jump(target(body), &[]);
@@ -40,6 +46,13 @@ pub(in crate::native_artifact) fn emit_source_terminator(
                 b.ins().icmp(IntCC::Equal, left, right)
             };
             b.ins().brif(equal, target(yes), &[], target(no), &[]);
+        }
+        Term::Scalar(Branch::IntegrityFailure) => {
+            let status = b.ins().iconst(
+                types::I64,
+                crate::native_artifact::abi::STATUS_INTEGRITY as i64,
+            );
+            b.ins().jump(fail_at, &[status.into()]);
         }
         Term::Scalar(Branch::Reject) => {
             // Exhaustive source matches retain their fail-closed default

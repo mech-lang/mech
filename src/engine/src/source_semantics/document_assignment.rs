@@ -3,6 +3,63 @@
 use super::*;
 
 impl SemanticBuilder {
+    /// A transition-local mutable binding is an SSA value, not retained
+    /// document state. Each write consumes the preceding local version.
+    pub(super) fn document_local_assignment(
+        &mut self,
+        name: &str,
+        current: PendingValue,
+        target: &SliceRefSyntax,
+        expression: &ExpressionSyntax,
+        arithmetic: Option<&str>,
+        statement: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let expected = self.schema_draft_of(current)?;
+        let mut value = if arithmetic.is_none() && target.subscripts().is_none() {
+            self.expression_with_expected(expression, Some(ExpectedSchema::Value(&expected)))?
+                .0
+        } else {
+            self.expression(expression)?.0
+        };
+        if let Some(subscripts) = target.subscripts() {
+            value = self.document_selected_update(
+                current,
+                &subscripts.items(),
+                value,
+                arithmetic,
+                statement,
+                expression.syntax(),
+            )?;
+        } else if let Some(operation) = arithmetic {
+            let Some((inputs, schema)) =
+                self.resolve_maintained_call(operation, vec![current, value], statement)?
+            else {
+                return Err(internal(
+                    SourceSemanticAnchor::for_node(statement),
+                    format!("assignment operation {operation} has no maintained type declaration"),
+                ));
+            };
+            value = self.emit_with_schema_draft(
+                operation,
+                inputs,
+                schema,
+                statement,
+                "local-update",
+                None,
+            );
+        }
+        value = self.conform_schema_draft(
+            value,
+            &expected,
+            expression.syntax(),
+            "source-semantics/incompatible-assignment-kind",
+            "assignment value does not satisfy the local binding's schema",
+        )?;
+        self.bindings
+            .insert(name.to_owned(), PendingBinding::MutableLocal(value));
+        Ok(value)
+    }
+
     pub(super) fn document_selected_update(
         &mut self,
         base: PendingValue,

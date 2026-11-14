@@ -1,0 +1,21 @@
+# Idiomatic source experiment (R195)
+
+
+R196 follow-up: the nullary layout/constant fix and enum-specific child-fuel snapshots now keep the real machine inside the maintained native numeric computation. All20 complete cases agree exactly, all1724 match controls pass, but eight performance gates fail. The source remains an acceptance witness. See [native enum-state lowering](../../../docs/design/native-nullary-state-lowering.md) for the final compiler patch, complete ratios and the lost loop-versioning proofs. The historical R195 failure below remains evidence of the original compiler gap.
+
+The source variant replaces three recursive match-extension helpers with one Mech state machine. Input and limits are captures; only the current cursor and word difference travel between states. The original three phases, checks, load order and early exits remain. Tables, buffer capacities, allocations, search effort and output reuse are unchanged. This is an acceptance witness, **not the production source**.
+
+All 1,724 native controls pass across both source versions and original/decoded artifacts. All 862 candidate controls also agree with resident execution; the old source has 71 disclosed resident default-work denials per form. Native generation from original/decoded candidate artifacts produces identical images.
+
+The full timing campaign was stopped in its first case. The pilot completes exact 32,769-byte natural-text compression in 14.6115 ms for the current source and 19.8113 s for the candidate: 3.35435× and 4548.04082× the fresh reference. This severe candidate regression is not retained. No complete twenty-case result or hardware/heap saving is claimed; production remains R191.
+
+The compiler loses native parent-loop qualification. Every candidate machine carrier lacks a scalar aggregate slot. A minimal nullary `:Start` state gets no scalar storage; an artificial payload makes the control qualify. The next bounded fix treats an absent payload as zero words in the existing enum layout/constant packer, preserving the real source. The artificial payload is only a diagnostic control.
+
+The accompanying [small programs](idiomatic-probes/) establish other specific gaps: direct vector arithmetic declines native lowering, positive logical selections reject resident shapes, and dynamically sized state payloads reject source compilation. Scalar-function broadcasting already passes both pipelines and is used by the current tree rebase. Each further compiler change needs its own operation witness and acceptance test; these failures are not passing qualifications.
+
+Compiler/source base `ee1146428eb873687bee8d28c850a2cd6193b9e5`; production compiler `cadaabefcf7dfb64b1b32a724e53c300f7c1fca1`; IR/work/ABI/MBC 211/107/39/14. [Public evidence](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/r195-idiomatic-source-54ae0b145f5f.tar.gz), SHA-256 `54ae0b145f5f3b275e24ef910f74469e1472af1ce609f40ae7e609a69f8a80fc`, contains all source transforms, observations, commands, failed attempts, inventories and the full report. `analyze.py` replays the receipts without compiling or timing. No binaries, bytecode, executable descriptors or raw traces are uploaded.
+
+
+## R197: independent current geometry
+
+The unchanged state-source pin now selects12 fully lowered word packs across its three424-block enum children. The affine analyzer retains its256-site allowance; immutable geometry does not need that counter proof. Both source forms pass all20 compiler-change timing gates. Repeated state-source time improves12.020990×→9.338768× Roc; periodic22.944172×→20.005454×. Natural text remains an adverse+4.84% timing /+5.28% instruction pair. Source adoption passes13/20 gates and remains rejected. No source/table/capacity/effort change is adopted. [Full current results and evidence](../../../docs/design/native-state-read-windows.md).

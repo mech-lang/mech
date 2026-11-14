@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v2/compiler",
+    "/private/tmp/mech-related-native-frozen-type-descriptors-runners-20261106-v2/after-4/build/source.mec",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/after-4/build"
+  ],
+  "exit": 0,
+  "seconds": 6.497057958040386,
+  "stdout": "{\"code_bytes\":916908,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1584}\n",
+  "stderr": ""
+}

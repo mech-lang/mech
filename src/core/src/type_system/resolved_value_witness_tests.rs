@@ -89,6 +89,212 @@ fn matrix(
     .unwrap()
 }
 
+// Retain the independently supplied type path as the original constructor
+// oracle. It still checks the full contract, including evidence and shape.
+fn independently_checked_descriptor(
+    schema: &Schema,
+    shape: crate::ShapeInstance,
+) -> Result<super::ResolvedValueDescriptor, TypeResolutionError> {
+    let resolved = crate::ResolvedType::from_schema(schema, &shape)?;
+    super::ResolvedValueDescriptor::new(resolved, schema.clone(), shape)
+}
+
+#[test]
+fn schema_authoritative_constructor_matches_full_type_and_nested_shape_validation() {
+    let leaf = SchemaBody::Matrix {
+        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+        dimensions: vec![DimensionExpr::Constant(1), parameter(0)].into_boxed_slice(),
+    };
+    for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+        for body in [
+            leaf.clone(),
+            SchemaBody::Tuple(vec![SchemaBody::Bool, leaf.clone()].into_boxed_slice()),
+            SchemaBody::Record(
+                vec![crate::SchemaField {
+                    name: "payload".into(),
+                    schema: leaf.clone(),
+                }]
+                .into_boxed_slice(),
+            ),
+            SchemaBody::Map {
+                key: Box::new(SchemaBody::String),
+                value: Box::new(leaf.clone()),
+                cardinality: crate::CardinalitySpec::Dynamic {
+                    upper_bound: Some(DimensionExpr::Constant(12)),
+                },
+            },
+        ] {
+            let mut parameter = declaration(
+                0,
+                DimensionExpr::Constant(0),
+                Some(DimensionExpr::Constant(8)),
+            );
+            parameter.lifetime = lifetime;
+            let schema = SchemaDraft {
+                dimension_parameters: vec![parameter].into_boxed_slice(),
+                body,
+            }
+            .finalize()
+            .unwrap();
+            for extent in [0, 1, 3, 8] {
+                let shape = schema.instantiate_shape([extent].into()).unwrap();
+                let expected = independently_checked_descriptor(&schema, shape.clone()).unwrap();
+                let actual =
+                    super::ResolvedValueDescriptor::from_schema(schema.clone(), shape).unwrap();
+                assert_eq!(actual, expected);
+                // ResolvedType equality intentionally ignores predicate
+                // evidence. Check its complete immutable representation too.
+                assert_eq!(
+                    format!("{:?}", actual.resolved_type()),
+                    format!("{:?}", expected.resolved_type())
+                );
+            }
+        }
+    }
+    for body in [
+        SchemaBody::Bool,
+        SchemaBody::String,
+        SchemaBody::UnsignedInteger(IntegerWidth::W32),
+        SchemaBody::Tuple(vec![SchemaBody::Bool, SchemaBody::String].into_boxed_slice()),
+    ] {
+        let schema = SchemaDraft {
+            dimension_parameters: Box::new([]),
+            body,
+        }
+        .finalize()
+        .unwrap();
+        let shape = schema.instantiate_shape(Box::new([])).unwrap();
+        assert_eq!(
+            super::ResolvedValueDescriptor::from_schema(schema.clone(), shape.clone()),
+            independently_checked_descriptor(&schema, shape),
+        );
+    }
+}
+
+#[test]
+fn schema_authoritative_constructor_keeps_foreign_shape_errors_and_retry() {
+    let schema = matrix(
+        vec![DimensionExpr::Constant(1), parameter(0)],
+        vec![declaration(
+            0,
+            DimensionExpr::Constant(2),
+            Some(DimensionExpr::Constant(8)),
+        )],
+    );
+    let loose = matrix(
+        vec![DimensionExpr::Constant(1), parameter(0)],
+        vec![declaration(0, DimensionExpr::Constant(0), None)],
+    );
+    let empty = SchemaDraft {
+        dimension_parameters: Box::new([]),
+        body: SchemaBody::Bool,
+    }
+    .finalize()
+    .unwrap();
+    for invalid in [
+        empty.instantiate_shape(Box::new([])).unwrap(),
+        loose.instantiate_shape([0].into()).unwrap(),
+        loose.instantiate_shape([9].into()).unwrap(),
+        loose.instantiate_shape([u64::MAX].into()).unwrap(),
+    ] {
+        let expected = independently_checked_descriptor(&schema, invalid.clone());
+        assert!(expected.is_err());
+        assert_eq!(
+            super::ResolvedValueDescriptor::from_schema(schema.clone(), invalid),
+            expected
+        );
+        let retry = schema.instantiate_shape([3].into()).unwrap();
+        assert_eq!(
+            super::ResolvedValueDescriptor::from_schema(schema.clone(), retry.clone()),
+            independently_checked_descriptor(&schema, retry),
+        );
+    }
+}
+
+#[test]
+fn prepared_descriptor_semantics_keep_current_shape_checks_and_retry() {
+    let schema = matrix(
+        vec![DimensionExpr::Constant(1), parameter(0)],
+        vec![declaration(
+            0,
+            DimensionExpr::Constant(2),
+            Some(DimensionExpr::Constant(4)),
+        )],
+    );
+    let prototype = super::ResolvedValueDescriptor::from_schema(
+        schema.clone(),
+        schema.instantiate_shape([2].into()).unwrap(),
+    )
+    .unwrap();
+    let original = prototype.clone();
+    let loose = matrix(
+        vec![DimensionExpr::Constant(1), parameter(0)],
+        vec![declaration(0, DimensionExpr::Constant(0), None)],
+    );
+    for extent in [2, 4, 3] {
+        let current = prototype
+            .with_current_shape(loose.instantiate_shape([extent].into()).unwrap())
+            .unwrap();
+        let independently_derived = super::ResolvedValueDescriptor::from_schema(
+            schema.clone(),
+            schema.instantiate_shape([extent].into()).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(current, independently_derived);
+        assert_eq!(current.current_extents().unwrap().as_ref(), &[1, extent]);
+        assert_eq!(prototype, original);
+        assert_eq!(prototype.shape().parameter_values(), &[2]);
+        assert_eq!(
+            prototype.with_current_shape(loose.instantiate_shape([5].into()).unwrap()),
+            Err(TypeResolutionError::semantic(
+                SemanticModelError::ShapeBoundViolationV1 {
+                    parameter: DimensionParameterId::new(0),
+                    value: 5,
+                    lower: 2,
+                    upper: Some(4),
+                }
+            ))
+        );
+        assert_eq!(prototype, original);
+    }
+    let survivor = prototype
+        .with_current_shape(schema.instantiate_shape([3].into()).unwrap())
+        .unwrap();
+    drop((prototype, original, schema));
+    assert_eq!(survivor.current_extents().unwrap().as_ref(), &[1, 3]);
+}
+
+#[test]
+fn shared_descriptor_semantics_do_not_share_current_lifetime_witnesses() {
+    for lifetime in [DimensionLifetime::Turn, DimensionLifetime::Activation] {
+        let mut dimension = declaration(0, DimensionExpr::Constant(0), None);
+        dimension.lifetime = lifetime;
+        let schema = matrix(
+            vec![DimensionExpr::Constant(1), parameter(0)],
+            vec![dimension],
+        );
+        let first = super::ResolvedValueDescriptor::from_schema(
+            schema.clone(),
+            schema.instantiate_shape([2].into()).unwrap(),
+        )
+        .unwrap();
+        let second = first
+            .with_current_shape(schema.instantiate_shape([3].into()).unwrap())
+            .unwrap();
+        assert_eq!(first.schema(), second.schema());
+        assert_eq!(first.resolved_type(), second.resolved_type());
+        assert_ne!(first, second);
+        assert_eq!(
+            first.has_same_type_contract(&second),
+            lifetime == DimensionLifetime::Turn
+        );
+        let retained = first.clone();
+        drop(first);
+        assert_eq!(retained.shape().parameter_values(), &[2]);
+        assert_eq!(second.shape().parameter_values(), &[3]);
+    }
+}
+
 #[test]
 fn direct_parameter_matches_old_search_for_zero_max_and_binary_boundaries() {
     let mut targets = vec![0, 1, 2, 3, u64::MAX];

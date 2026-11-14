@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/qualify-new-source-loaders.py"
+  ],
+  "exit": 0,
+  "seconds": 26.75945962499827,
+  "stdout": "reuse-4-decoded-compile.json passed\nhost-build-run.json passed\naudit-run.json passed\nedge-run.json passed\nhost-build-run.json passed\naudit-run.json passed\nedge-run.json passed\nhost-build-run.json passed\naudit-run.json passed\nedge-run.json passed\nNew source has13 exact decoded files and93 more independent/image/catalog output fixtures\n",
+  "stderr": ""
+}

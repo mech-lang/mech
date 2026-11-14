@@ -152,3 +152,67 @@ fn nonterminating_native_tail_exhausts_fuel_without_refill_or_publication() {
         equal(&artifact, &output, &prior);
     }
 }
+
+#[test]
+fn closed_tail_assertion_failure_reconciles_before_atomic_exit() {
+    let source = "walk(left<u64>, stop<u64>) => (out<u64>) :=\n  visited! := left != stop\n  out := ((left > 0u64)? | true => walk(left - 1u64, stop) | false => 41u64).\nwalk(steps<u64>, stop<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        assert_eq!(
+            emit_program_object(&artifact, &catalog).unwrap().metadata()["closed_tail_regions"],
+            1
+        );
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let valid = inputs(
+            &artifact,
+            &[("steps", Data::U64(3)), ("stop", Data::U64(9))],
+            &memory,
+        );
+        let rejected = inputs(
+            &artifact,
+            &[("steps", Data::U64(3)), ("stop", Data::U64(2))],
+            &memory,
+        );
+        let aliases = rejected.clone();
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&valid, &mut output, limits(), &memory)
+            .unwrap();
+        let prior = output
+            .iter()
+            .map(|v| v.clone().unwrap())
+            .collect::<Vec<_>>();
+        let before = (memory.used_bytes(), memory.retained_snapshot_nodes());
+        for _ in 0..2 {
+            let error = jit
+                .evaluate_into(&rejected, &mut output, limits(), &memory)
+                .unwrap_err();
+            assert!(
+                matches!(
+                    error,
+                    NativeProgramExecutionError::Control(
+                        NativeIterationExecutionError::Integrity { .. }
+                    )
+                ),
+                "{error:?}"
+            );
+            equal(&artifact, &output, &prior);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                before
+            );
+            assert!(
+                rejected
+                    .iter()
+                    .zip(&aliases)
+                    .all(|(a, b)| a.shares_frozen_storage(b))
+            );
+        }
+        jit.evaluate_into(&valid, &mut output, limits(), &memory)
+            .unwrap();
+        equal(&artifact, &output, &reference(&artifact, &valid));
+        drop((valid, rejected, aliases, output, prior));
+        assert_eq!(memory.used_bytes(), 0);
+        assert_eq!(memory.retained_snapshot_nodes(), 0);
+    }
+}

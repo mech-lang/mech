@@ -1,0 +1,197 @@
+// Diagnostic-only own-process sampler. No compiler/runtime source changes.
+// ABI comes from the installed SDK's mach/arm/thread_status.h and pthread.h.
+#include <mach/mach.h>
+#include <mach/arm/thread_status.h>
+#include <pthread.h>
+#include <stdatomic.h>
+#include <stdint.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <dlfcn.h>
+
+#define FRAMES 64
+#define CAPACITY 30000
+typedef struct {
+    uint64_t at_ns, pc, lr, sp, fp;
+    uint32_t nframes, stop;
+    uint64_t frames[FRAMES];
+} Record;
+
+static Record *records;
+static size_t used;
+static pthread_t sampler;
+static thread_t target;
+static uintptr_t stack_low, stack_high;
+static _Atomic int enabled, finished, ready;
+static uint64_t attempts, suspended, got_state, resumed, dropped_disabled;
+static uint64_t suspend_failures, state_failures, resume_failures;
+static int last_suspend, last_state, last_resume;
+static uint64_t first_enabled_ns, last_capture_ns;
+static int started;
+
+static uint64_t now_ns(void) {
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (uint64_t)t.tv_sec * 1000000000ULL + (uint64_t)t.tv_nsec;
+}
+static int compare_address(const void *a,const void *b) {
+    uintptr_t x=*(const uintptr_t*)a,y=*(const uintptr_t*)b;
+    return (x>y)-(x<y);
+}
+
+// The only calls while target is suspended are thread_get_state and
+// thread_resume. SDK state accessors and bounded volatile loads are inline.
+// No heap access, allocation, libc formatting, dladdr, locks, or logging occurs.
+static int capture(Record *record, int require_enabled) {
+    arm_thread_state64_t state;
+    mach_msg_type_number_t count = ARM_THREAD_STATE64_COUNT;
+    uint64_t local_frames[FRAMES];
+    uint32_t n = 0, stop = 0;
+    uint64_t pc = 0, lr = 0, sp = 0, fp = 0;
+    int active = 0;
+    attempts++;
+    kern_return_t sk = thread_suspend(target);
+    last_suspend = sk;
+    if (sk != KERN_SUCCESS) { suspend_failures++; return 0; }
+    suspended++;
+    // SUSPENDED interval: fixed stack storage, lock-free atomic read, syscalls.
+    active = !require_enabled || atomic_load_explicit(&enabled, memory_order_acquire);
+    kern_return_t gk = KERN_FAILURE;
+    if (active) {
+        gk = thread_get_state(target, ARM_THREAD_STATE64,
+                              (thread_state_t)&state, &count);
+        if (gk == KERN_SUCCESS && count == ARM_THREAD_STATE64_COUNT) {
+            pc = arm_thread_state64_get_pc(state);
+            lr = arm_thread_state64_get_lr(state);
+            sp = arm_thread_state64_get_sp(state);
+            fp = arm_thread_state64_get_fp(state);
+            uintptr_t cursor = fp;
+            if (sp < stack_low || sp >= stack_high) stop = 1;
+            else {
+                while (n < FRAMES) {
+                    // Two pointer words must lie within [currentSP, stackTop).
+                    // Stack grows down; every next frame must strictly increase.
+                    if ((cursor & 15) || cursor < sp || cursor < stack_low ||
+                        cursor > stack_high - 2 * sizeof(uintptr_t)) {
+                        stop = 2; break;
+                    }
+                    volatile const uintptr_t *frame = (volatile const uintptr_t *)cursor;
+                    uintptr_t next = frame[0];
+                    uintptr_t saved_lr = frame[1];
+                    local_frames[n++] = saved_lr;
+                    if (next == 0) { stop = 3; break; }
+                    if (next <= cursor) { stop = 4; break; }
+                    cursor = next;
+                }
+                if (n == FRAMES) stop = 5;
+            }
+        }
+    }
+    // Every successful suspend has exactly one matching resume, also if state
+    // access fails or sampling was disabled after the initial eligibility read.
+    kern_return_t rk = thread_resume(target);
+    // RESUMED: all counters, heap writes and any later symbolication are safe.
+    last_state = gk;
+    last_resume = rk;
+    if (rk != KERN_SUCCESS) {
+        resume_failures++;
+        // Do not log, allocate or try to acquire another thread's locks after a
+        // failed resume. Exiting the diagnostic process prevents a stranded run.
+        _Exit(91);
+    }
+    resumed++;
+    if (!active) { dropped_disabled++; return 0; }
+    if (gk != KERN_SUCCESS || count != ARM_THREAD_STATE64_COUNT) {
+        state_failures++; return 0;
+    }
+    got_state++;
+    record->pc=pc; record->lr=lr; record->sp=sp; record->fp=fp;
+    record->nframes=n; record->stop=stop;
+    for (uint32_t i=0;i<n;i++) record->frames[i]=local_frames[i];
+    return 1;
+}
+
+static void *sample_main(void *ignored) {
+    (void)ignored;
+    // Warm all kernel stubs while the target only spins in sam_init; there is
+    // no target allocator/dyld operation to conflict with lazy binding here.
+    Record probe={0};
+    int warm_ok=capture(&probe,0);
+    atomic_store_explicit(&ready,1,memory_order_release);
+    const struct timespec interval={.tv_sec=0,.tv_nsec=1000000};
+    while (!atomic_load_explicit(&finished,memory_order_acquire)) {
+        nanosleep(&interval,NULL);
+        if (!warm_ok || !atomic_load_explicit(&enabled,memory_order_acquire)) continue;
+        uint64_t timestamp=now_ns();
+        if (!first_enabled_ns) first_enabled_ns=timestamp;
+        if (timestamp-first_enabled_ns>=15000000000ULL || used==CAPACITY) continue;
+        Record local={0};
+        if (capture(&local,1)) {
+            local.at_ns=timestamp;
+            records[used++]=local;
+            last_capture_ns=timestamp;
+        }
+    }
+    return NULL;
+}
+
+int sam_init(void) {
+    _Static_assert(ATOMIC_INT_LOCK_FREE == 2,"enable flags must never use a lock");
+    target=pthread_mach_thread_np(pthread_self());
+    stack_high=(uintptr_t)pthread_get_stackaddr_np(pthread_self());
+    size_t stack_size=pthread_get_stacksize_np(pthread_self());
+    if (!target || stack_size<16 || stack_high<stack_size) return -1;
+    stack_low=stack_high-stack_size;
+    records=calloc(CAPACITY,sizeof(Record));
+    if (!records) return -2;
+    // Touch preallocated storage before any sampling, not during suspension.
+    for (size_t i=0;i<CAPACITY;i++) records[i].nframes=0;
+    int pk=pthread_create(&sampler,NULL,sample_main,NULL);
+    if (pk) {free(records);records=NULL;return pk;}
+    started=1;
+    while (!atomic_load_explicit(&ready,memory_order_acquire)) { }
+    return last_suspend ? last_suspend : last_state;
+}
+void sam_enable(int value) { atomic_store_explicit(&enabled,value,memory_order_release); }
+
+int sam_finish(const char *binary_path,const char *stats_path,const char *symbols_path) {
+    sam_enable(0);
+    if (!started) return -1;
+    atomic_store_explicit(&finished,1,memory_order_release);
+    pthread_join(sampler,NULL);
+    FILE *binary=fopen(binary_path,"wb");
+    if (!binary) return -2;
+    size_t written=fwrite(records,sizeof(Record),used,binary);
+    fclose(binary);
+    FILE *stats=fopen(stats_path,"w");
+    if (!stats) return -3;
+    fprintf(stats,"{\"records\":%zu,\"record_bytes\":%zu,\"frames\":%d,\"capacity\":%d,\"stack_low\":%llu,\"stack_high\":%llu,\"target_mach_port\":%u,\"attempts\":%llu,\"suspended\":%llu,\"got_state\":%llu,\"resumed\":%llu,\"dropped_disabled\":%llu,\"suspend_failures\":%llu,\"state_failures\":%llu,\"resume_failures\":%llu,\"last_suspend\":%d,\"last_state\":%d,\"last_resume\":%d,\"first_enabled_ns\":%llu,\"last_capture_ns\":%llu,\"thread_state_bytes\":%zu,\"thread_state_count\":%u}\n",used,sizeof(Record),FRAMES,CAPACITY,(unsigned long long)stack_low,(unsigned long long)stack_high,target,(unsigned long long)attempts,(unsigned long long)suspended,(unsigned long long)got_state,(unsigned long long)resumed,(unsigned long long)dropped_disabled,(unsigned long long)suspend_failures,(unsigned long long)state_failures,(unsigned long long)resume_failures,last_suspend,last_state,last_resume,(unsigned long long)first_enabled_ns,(unsigned long long)last_capture_ns,sizeof(arm_thread_state64_t),ARM_THREAD_STATE64_COUNT);
+    fclose(stats);
+    // Symbolication is strictly after join. Tab-separated records use dladdr
+    // strings from this exact process's loaded images; no symbolication in pause.
+    FILE *symbols=fopen(symbols_path,"w");
+    if (!symbols) return -4;
+    uintptr_t *addresses=malloc((used?used:1)*(FRAMES+2)*sizeof(uintptr_t));
+    if (!addresses) {fclose(symbols);return -6;}
+    size_t address_count=0;
+    for (size_t i=0;i<used;i++) {
+        for (uint32_t j=0;j<records[i].nframes+2;j++) {
+            uintptr_t address=j==0?records[i].pc:j==1?records[i].lr:records[i].frames[j-2];
+            addresses[address_count++]=address;
+        }
+    }
+    qsort(addresses,address_count,sizeof(uintptr_t),compare_address);
+    for (size_t i=0;i<address_count;i++) {
+        uintptr_t address=addresses[i];
+        if (i && address==addresses[i-1]) continue;
+        Dl_info info;
+        if (dladdr((void*)address,&info))
+            fprintf(symbols,"%llu\t%llu\t%llu\t%s\t%s\n",(unsigned long long)address,(unsigned long long)(uintptr_t)info.dli_fbase,(unsigned long long)(uintptr_t)info.dli_saddr,info.dli_sname?info.dli_sname:"",info.dli_fname?info.dli_fname:"");
+    }
+    free(addresses);
+    fclose(symbols);
+    free(records);records=NULL;
+    return written==used?0:-5;
+}

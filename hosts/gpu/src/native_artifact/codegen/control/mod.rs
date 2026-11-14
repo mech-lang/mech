@@ -13,7 +13,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::{
     NativeIterationAction, NativeIterationTerminator, NativeMatchAction, NativeMatchTerminator,
-    NativeMatchValue, NativeScalarKind,
+    NativeMatchValue,
 };
 fn successors(term: NativeIterationTerminator) -> [Option<u32>; 2] {
     match term {
@@ -235,18 +235,40 @@ struct CfgDeclarations<'plan> {
         u64,
     )>,
     #[cfg(feature = "canonical-native-program")]
+    word_functions: Vec<(
+        &'plan crate::native_artifact::program::prepare::word_collections::Region,
+        FuncId,
+        u64,
+        u64,
+    )>,
+    #[cfg(feature = "canonical-native-program")]
     joined_functions: Vec<(u32, FuncId, u64, u64)>,
     #[cfg(feature = "canonical-native-program")]
     joined_maps: Vec<(u32, FuncId)>,
     #[cfg(feature = "canonical-native-program")]
+    histogram_function: Option<(FuncId, u64, u64)>,
+    #[cfg(feature = "canonical-native-program")]
+    classified_histogram_function: Option<(FuncId, u64, u64)>,
+    #[cfg(feature = "canonical-native-program")]
     packed_functions: Vec<(usize, FuncId, u64, u64)>,
     #[cfg(feature = "canonical-native-program")]
+    numeric_functions: Vec<NumericFunction>,
+    #[cfg(feature = "canonical-native-program")]
     bound_call_shim: Option<crate::native_artifact::program::codegen::bound_shim::Definition>,
+}
+#[cfg(feature = "canonical-native-program")]
+struct NumericFunction {
+    header: usize,
+    function: FuncId,
+    stack: u64,
+    code: u64,
+    phase_abi: bool,
 }
 struct CfgPrologue {
     frame: Value,
     error: cranelift_codegen::ir::Block,
     locals: Value,
+    locals_home: Option<cranelift_codegen::ir::StackSlot>,
     outputs: Value,
     user_context: Value,
     callback: Value,
@@ -280,6 +302,105 @@ impl<'plan> CfgDefinition<'plan> {
         let aggregates = self.aggregates;
         #[cfg(feature = "canonical-native-program")]
         let report = &mut self.report;
+        #[cfg(feature = "canonical-native-program")]
+        let histogram_function = if let plan::CodePlan::Program(program) = plan {
+            let metadata = program.metadata();
+            let sites = (0..metadata.plan.blocks().len())
+                .filter(|&site| {
+                    crate::native_artifact::program::codegen::utf8_histogram::selected(
+                        metadata, site,
+                    )
+                })
+                .collect::<Vec<_>>();
+            if sites.is_empty() {
+                None
+            } else {
+                // Emit only one leaf when every selected histogram records
+                // classes. An unreachable ordinary leaf must not inflate the
+                // Object or make its linked code inventory depend on stripping.
+                let shared_classified = controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses,
+                ) && sites.iter().all(|&site| {
+                    metadata
+                        .utf8_reads
+                        .regions
+                        .iter()
+                        .any(|region| region.classification_site == Some(site as u32))
+                });
+                let symbol = format!("{entry_symbol}_utf8_histogram");
+                let (id, stack, code) =
+                    crate::native_artifact::program::codegen::utf8_histogram::define(
+                        module, &symbol, true,
+                        crate::native_artifact::program::codegen::utf8_histogram::Funding::Prepaid,
+                        controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks),
+                        shared_classified,
+                    )?;
+                report.utf8_histogram = Some(
+                        crate::native_artifact::codegen::control::codegen_report::Utf8Histogram {
+                            classified: shared_classified.then(|| crate::native_artifact::codegen::control::codegen_report::ClassifiedHistogram {
+                                symbol: symbol.clone(), stack_bytes: stack, code_bytes: code,
+                                sites: sites.clone(), shared_primary: true,
+                            }),
+                            symbol,
+                            stack_bytes: stack,
+                            code_bytes: code,
+                            sites,
+                            funding: "complete_original_call_pass_prepayment",
+                            hash: "exact_short_word_or_bounded_word_mix",
+                            bank: "adaptive_three_quarter_occupancy",
+                            halfword_equality: controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks),
+                        },
+                    );
+                Some((id, stack, code))
+            }
+        } else {
+            None
+        };
+        #[cfg(feature = "canonical-native-program")]
+        let classified_histogram_function = if let plan::CodePlan::Program(program) = plan
+            && report
+                .utf8_histogram
+                .as_ref()
+                .is_some_and(|histogram| histogram.classified.is_none())
+            && controls.enabled(
+                crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses,
+            ) {
+            let metadata = program.metadata();
+            let sites = metadata
+                .utf8_reads
+                .regions
+                .iter()
+                .filter_map(|region| region.classification_site)
+                .map(|site| site as usize)
+                .filter(|&site| {
+                    crate::native_artifact::program::codegen::utf8_histogram::selected(
+                        metadata, site,
+                    )
+                })
+                .collect::<std::collections::BTreeSet<_>>();
+            if sites.is_empty() {
+                None
+            } else {
+                let symbol = format!("{entry_symbol}_utf8_classified_histogram");
+                let (id, stack, code) = crate::native_artifact::program::codegen::utf8_histogram::define(
+                    module, &symbol, true,
+                    crate::native_artifact::program::codegen::utf8_histogram::Funding::Prepaid,
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks), true,
+                )?;
+                report.utf8_histogram.as_mut().unwrap().classified = Some(
+                    crate::native_artifact::codegen::control::codegen_report::ClassifiedHistogram {
+                        symbol,
+                        stack_bytes: stack,
+                        code_bytes: code,
+                        sites: sites.into_iter().collect(),
+                        shared_primary: false,
+                    },
+                );
+                Some((id, stack, code))
+            }
+        } else {
+            None
+        };
         #[cfg(feature = "canonical-native-program")]
         let window_functions =
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan
@@ -318,6 +439,33 @@ impl<'plan> CfgDefinition<'plan> {
             } else {
                 Vec::new()
             };
+        #[cfg(feature = "canonical-native-program")]
+        let word_functions = if controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+        {
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan
+            {
+                program
+                    .metadata()
+                    .word_collections
+                    .iter()
+                    .map(|region| {
+                        let (function, stack, code) =
+                            crate::native_artifact::program::codegen::word_collections::define(
+                                module,
+                                plan,
+                                region,
+                                controls.options(),
+                            )?;
+                        Ok((region, function, stack, code))
+                    })
+                    .collect::<Result<Vec<_>, NativeCompileError>>()?
+            } else {
+                Vec::new()
+            }
+        } else {
+            Vec::new()
+        };
         #[cfg(feature = "canonical-native-program")]
         let joined_functions =
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = plan
@@ -388,6 +536,52 @@ impl<'plan> CfgDefinition<'plan> {
                 limits,
                 report,
             )?;
+        #[cfg(feature = "canonical-native-program")]
+        let mut numeric_functions =
+            crate::native_artifact::program::codegen::numeric_outlined::define_functions(
+                controls,
+                module,
+                entry_symbol,
+                plan,
+                closed,
+                limits,
+                report,
+            )?
+            .into_iter()
+            .map(|(header, function, stack, code)| NumericFunction {
+                header,
+                function,
+                stack,
+                code,
+                phase_abi: true,
+            })
+            .collect::<Vec<_>>();
+        #[cfg(feature = "canonical-native-program")]
+        let phase_headers = numeric_functions
+            .iter()
+            .map(|function| function.header)
+            .collect();
+        #[cfg(feature = "canonical-native-program")]
+        numeric_functions.extend(
+            crate::native_artifact::program::codegen::readonly_numeric::outlined::define_functions(
+                controls,
+                module,
+                entry_symbol,
+                plan,
+                closed,
+                &phase_headers,
+                limits,
+                report,
+            )?
+            .into_iter()
+            .map(|(header, function, stack, code)| NumericFunction {
+                header,
+                function,
+                stack,
+                code,
+                phase_abi: false,
+            }),
+        );
         let mut signature_entry = module.make_signature();
         signature_entry.params.push(AbiParam::new(types::I64));
         signature_entry.returns.push(AbiParam::new(types::I64));
@@ -407,11 +601,18 @@ impl<'plan> CfgDefinition<'plan> {
             #[cfg(feature = "canonical-native-program")]
             map_functions,
             #[cfg(feature = "canonical-native-program")]
+            word_functions,
+            #[cfg(feature = "canonical-native-program")]
             joined_functions,
             #[cfg(feature = "canonical-native-program")]
             joined_maps,
             #[cfg(feature = "canonical-native-program")]
+            histogram_function,
+            classified_histogram_function,
+            #[cfg(feature = "canonical-native-program")]
             packed_functions,
+            #[cfg(feature = "canonical-native-program")]
+            numeric_functions,
             #[cfg(feature = "canonical-native-program")]
             bound_call_shim,
         })
@@ -481,6 +682,20 @@ impl<'plan> CfgDefinition<'plan> {
                 guard(b, valid, error, STATUS_ABI);
             }
         }
+        // Keep the checked entry pointer in this invocation's own stack frame.
+        // Reload it at source-block boundaries instead of asking register
+        // allocation to retain one SSA value throughout the entire program.
+        // This is a snapshot, not a fresh read of mutable callback-visible ABI
+        // memory; neither callbacks nor nested entries can replace its value.
+        let locals_home = if plan.is_program() {
+            use cranelift_codegen::ir::{StackSlotData, StackSlotKind};
+            let slot =
+                b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
+            b.ins().stack_store(locals, slot, 0);
+            Some(slot)
+        } else {
+            None
+        };
         let hooks = crate::native_artifact::program::codegen::hooks::Hooks::load(
             plan.is_program(),
             b,
@@ -561,8 +776,13 @@ impl<'plan> CfgDefinition<'plan> {
             let word = b
                 .ins()
                 .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-            if plan.kind(value) == Some(NativeScalarKind::Bool) {
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
+            if let Some(maximum) = plan
+                .kind(value)
+                .and_then(crate::native_artifact::compiler::word_upper_bound)
+            {
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(b, valid, error, STATUS_ABI);
             }
             b.ins()
@@ -583,6 +803,7 @@ impl<'plan> CfgDefinition<'plan> {
             frame,
             error,
             locals,
+            locals_home,
             outputs,
             user_context,
             callback,
@@ -622,6 +843,10 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let prefix = self.prefix;
         #[cfg(feature = "canonical-native-program")]
+        crate::native_artifact::program::codegen::scalar_loop::select_captures(
+            controls, plan, closed, aggregates, borrowed,
+        );
+        #[cfg(feature = "canonical-native-program")]
         let map_admission = self.map_admission;
         #[cfg(feature = "canonical-native-program")]
         let parallel = self.parallel;
@@ -633,6 +858,7 @@ impl<'plan> CfgDefinition<'plan> {
             frame,
             error,
             locals,
+            locals_home,
             outputs,
             user_context,
             callback,
@@ -650,9 +876,13 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let map_functions = &declarations.map_functions;
         #[cfg(feature = "canonical-native-program")]
+        let word_functions = &declarations.word_functions;
+        #[cfg(feature = "canonical-native-program")]
         let joined_maps = &declarations.joined_maps;
         #[cfg(feature = "canonical-native-program")]
         let packed_functions = &declarations.packed_functions;
+        #[cfg(feature = "canonical-native-program")]
+        let numeric_functions = &declarations.numeric_functions;
         #[cfg(not(feature = "canonical-native-program"))]
         let _ = declarations;
         let mut reachable = vec![false; plan.blocks().len()];
@@ -775,6 +1005,9 @@ impl<'plan> CfgDefinition<'plan> {
                 continue;
             }
             b.switch_to_block(blocks[index].expect("reachable block"));
+            let locals = locals_home
+                .map(|slot| b.ins().stack_load(types::I64, slot, 0))
+                .unwrap_or(locals);
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 crate::native_artifact::program::codegen::scalar_loop::emit_entry(
@@ -792,6 +1025,41 @@ impl<'plan> CfgDefinition<'plan> {
                     hooks,
                     &blocks,
                     error,
+                    report,
+                )?;
+                let (numeric_function, phase) = numeric_functions
+                    .iter()
+                    .find(|function| function.header == index)
+                    .map_or((None, false), |function| {
+                        (
+                            Some(module.declare_func_in_func(function.function, b.func)),
+                            function.phase_abi,
+                        )
+                    });
+                let numeric_entry = if phase {
+                    numeric_function.map_or(
+                        crate::native_artifact::program::codegen::numeric_outlined::Entry::Inline,
+                        crate::native_artifact::program::codegen::numeric_outlined::Entry::Call,
+                    )
+                } else {
+                    crate::native_artifact::program::codegen::numeric_outlined::Entry::Inline
+                };
+                let numeric_function = if phase { None } else { numeric_function };
+                crate::native_artifact::program::codegen::readonly_numeric::emit_entry(
+                    &controls,
+                    b,
+                    frame,
+                    locals,
+                    user_context,
+                    numeric_function,
+                    false,
+                    plan,
+                    &closed,
+                    index,
+                    hooks,
+                    &blocks,
+                    error,
+                    numeric_entry,
                     report,
                 )?;
                 let outlined = packed_functions
@@ -879,6 +1147,7 @@ impl<'plan> CfgDefinition<'plan> {
                     owner.as_ref(),
                     &map_admission,
                     index,
+                    hooks.as_ref(),
                 )?;
             #[cfg(feature = "canonical-native-program")]
             if let Some(region) = &prefix
@@ -896,7 +1165,26 @@ impl<'plan> CfgDefinition<'plan> {
                     error,
                 )?;
             }
-            admit(b, callback_signature, callback, user_context, index, error);
+            #[cfg(feature = "canonical-native-program")]
+            let admitted_helper = if admission_join.is_none() && map_admission_join.is_none() {
+                crate::native_artifact::program::codegen::ordinary_helpers::selected(plan, index)
+            } else {
+                None
+            };
+            #[cfg(not(feature = "canonical-native-program"))]
+            let admitted_helper: Option<GlobalHelper> = None;
+            #[cfg(feature = "canonical-native-program")]
+            let fused_numeric_admission = controls
+                .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+                && admission_join.is_none()
+                && map_admission_join.is_none()
+                && matches!(plan, crate::native_artifact::codegen::control::plan::CodePlan::Program(program)
+                    if program.metadata().compositions.entry(index).is_some());
+            #[cfg(not(feature = "canonical-native-program"))]
+            let fused_numeric_admission = false;
+            if admitted_helper.is_none() && !fused_numeric_admission {
+                admit(b, callback_signature, callback, user_context, index, error);
+            }
             #[cfg(feature = "canonical-native-program")]
             if let Some(joined) = map_admission_join {
                 b.ins().jump(joined, &[]);
@@ -906,6 +1194,110 @@ impl<'plan> CfgDefinition<'plan> {
             if let Some(joined) = admission_join {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
+            }
+            #[cfg(feature = "canonical-native-program")]
+            let segment_ir = if let Some(hooks) = &hooks {
+                crate::native_artifact::program::codegen::numeric_segments::emit_entry(
+                    &controls,
+                    b,
+                    frame,
+                    locals,
+                    plan,
+                    index,
+                    hooks,
+                    &blocks,
+                    error,
+                    report,
+                    fused_numeric_admission,
+                )?
+            } else {
+                0
+            };
+            #[cfg(not(feature = "canonical-native-program"))]
+            let segment_ir = 0;
+            #[cfg(feature = "canonical-native-program")]
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && prepared.metadata().utf8_reads.at_header(index).is_some()
+            {
+                crate::native_artifact::program::codegen::utf8_lookup::emit_entry(
+                    b,
+                    locals,
+                    index,
+                    hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("native UTF8 collection lacks owner hooks"))?,
+                    plan.value_count() + iteration as usize,
+                    blocks[exit as usize].expect("reachable native UTF8 collection exit"),
+                    error,
+                    controls.enabled(
+                        crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks,
+                    ),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses)
+                        && prepared.metadata().utf8_reads.at_header(index).unwrap().classification_site.is_some(),
+                    prepared.metadata().utf8_reads.at_header(index).unwrap().output_width,
+                )?;
+                if controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::Utf8WordChunks,
+                ) {
+                    report.utf8_word_chunk_sites.push(index);
+                }
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::UniformWords,
+                )
+                && let Some(region) = prepared
+                    .metadata()
+                    .uniform_word_collections
+                    .iter()
+                    .find(|region| region.iteration() == iteration)
+            {
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("uniform collection has no owner hooks"))?
+                    .uniform_words(
+                        b,
+                        index,
+                        region,
+                        locals,
+                        plan.value_count() + iteration as usize,
+                        blocks[exit as usize].expect("reachable collection exit"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
+            if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::NumericCollections,
+                )
+                && let Some(region) = prepared.metadata().numeric_maps.at_header(index)
+            {
+                crate::native_artifact::program::codegen::numeric_map::emit_entry(
+                    b,
+                    locals,
+                    index,
+                    hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("numeric map lacks owner hooks"))?,
+                    region,
+                    prepared.plan(),
+                    plan.value_count() + iteration as usize,
+                    blocks[exit as usize].expect("reachable numeric map exit"),
+                    error,
+                )?;
             }
             #[cfg(feature = "canonical-native-program")]
             if let NativeIterationTerminator::Header {
@@ -982,6 +1374,11 @@ impl<'plan> CfgDefinition<'plan> {
                     hooks.as_ref(),
                     plan,
                     error,
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BorrowedMatrixMapKeys),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BorrowedMapKeys),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::GenericDictionary),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::DictionarySeedFrames),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BorrowedDictionaryValues),
                 )?;
             #[cfg(not(feature = "canonical-native-program"))]
             let owner_handled = false;
@@ -995,6 +1392,9 @@ impl<'plan> CfgDefinition<'plan> {
             )?;
             #[cfg(not(feature = "canonical-native-program"))]
             let aggregate = false;
+            if admitted_helper.is_some() && (segment_ir != 0 || owner_handled || aggregate) {
+                return Err(backend("composed helper overlaps a native action"));
+            }
             match block.action() {
                 _ if owner_handled => {}
                 _ if aggregate
@@ -1056,7 +1456,7 @@ impl<'plan> CfgDefinition<'plan> {
                     hooks.call(
                         b,
                         index,
-                        GlobalHelper::StructuralObservation,
+                        admitted_helper.unwrap_or(GlobalHelper::StructuralObservation),
                         [zero; 3],
                         error,
                     );
@@ -1084,9 +1484,73 @@ impl<'plan> CfgDefinition<'plan> {
                         let zero = b.ins().iconst(types::I64, 0);
                         b.ins().store(MemFlags::new(), zero, hooks.result, 0);
                     }
-                    hooks.library(
+                    #[cfg(feature = "canonical-native-program")]
+                    let operation = match plan {
+                        plan::CodePlan::Program(program)
+                            if program
+                                .metadata()
+                                .borrowed_record_maps
+                                .projects
+                                .get(index)
+                                .copied()
+                                .flatten()
+                                .is_some() =>
+                        {
+                            GlobalHelper::BorrowedRecordMapProject.raw()
+                        }
+                        plan::CodePlan::Program(program)
+                            if program
+                                .metadata()
+                                .borrowed_record_maps
+                                .reads
+                                .get(index)
+                                .copied()
+                                .flatten()
+                                .is_some() =>
+                        {
+                            GlobalHelper::BorrowedRecordMapRead.raw()
+                        }
+                        _ => GlobalHelper::Library.raw(),
+                    };
+                    #[cfg(not(feature = "canonical-native-program"))]
+                    let operation = 0;
+                    #[cfg(feature = "canonical-native-program")]
+                    let histogram_done = if let (
+                        Some((function, _, _)),
+                        plan::CodePlan::Program(program),
+                    ) = (declarations.histogram_function, plan)
+                    {
+                        if crate::native_artifact::program::codegen::utf8_histogram::selected(
+                            program.metadata(),
+                            index,
+                        ) {
+                            let classified = controls.enabled(
+                                    crate::native_artifact::codegen::options::OptimizationPass::ReuseStringClasses,
+                                ) && program.metadata().utf8_reads.regions.iter().any(|region| {
+                                    region.classification_site == Some(index as u32)
+                                });
+                            let function = if classified {
+                                declarations
+                                    .classified_histogram_function
+                                    .map_or(function, |(id, _, _)| id)
+                            } else {
+                                function
+                            };
+                            Some(
+                                crate::native_artifact::program::codegen::utf8_histogram::entry(
+                                    b, module, function, hooks, index, error, classified,
+                                ),
+                            )
+                        } else {
+                            None
+                        }
+                    } else {
+                        None
+                    };
+                    hooks.library_operation(
                         b,
                         index,
+                        operation,
                         operands,
                         locals,
                         |operand| plan.kind(operand).is_some(),
@@ -1122,6 +1586,11 @@ impl<'plan> CfgDefinition<'plan> {
                             b.switch_to_block(joined);
                         }
                     }
+                    #[cfg(feature = "canonical-native-program")]
+                    if let Some(done) = histogram_done {
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(done);
+                    }
                 }
                 NativeIterationAction::Scalar(action) => {
                     #[cfg(feature = "canonical-native-program")]
@@ -1149,7 +1618,13 @@ impl<'plan> CfgDefinition<'plan> {
                             .as_ref()
                             .ok_or_else(|| backend("missing managed move hook"))?;
                         let zero = b.ins().iconst(types::I64, 0);
-                        hooks.call(b, index, GlobalHelper::Move, [zero; 3], error);
+                        hooks.call(
+                            b,
+                            index,
+                            admitted_helper.unwrap_or(GlobalHelper::Move),
+                            [zero; 3],
+                            error,
+                        );
                     } else {
                         emit_scalar_action(b, locals, action, error)?;
                     }
@@ -1186,9 +1661,17 @@ impl<'plan> CfgDefinition<'plan> {
                             hooks.collection(b, index, [zero; 2], error)?;
                             b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
                         }
-                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_) => {
+                        mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) => {
                             let zero = b.ins().iconst(types::I64, 0);
-                            if !aggregate {
+                            if !aggregate && plan.kind(tail.carrier()).is_some() {
+                                let value = load(b, locals, tail.seed())?;
+                                b.ins().store(
+                                    MemFlags::new(),
+                                    value,
+                                    locals,
+                                    offset(tail.carrier().get() as usize)?,
+                                );
+                            } else if !aggregate {
                                 hooks
                                     .as_ref()
                                     .ok_or_else(|| backend("missing tail initializer hook"))?
@@ -1201,11 +1684,18 @@ impl<'plan> CfgDefinition<'plan> {
                     b.ins().store(MemFlags::new(), count, locals, offset(slot)?);
                 }
                 NativeIterationAction::Latch { iteration } => {
-                    if matches!(
-                        plan.iteration(*iteration as usize),
-                        mech_engine::native_artifact::NativeControlLoopRef::Tail(_)
-                    ) {
-                        if !aggregate {
+                    if let mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) =
+                        plan.iteration(*iteration as usize)
+                    {
+                        if !aggregate && plan.kind(tail.carrier()).is_some() {
+                            let value = load(b, locals, tail.next())?;
+                            b.ins().store(
+                                MemFlags::new(),
+                                value,
+                                locals,
+                                offset(tail.carrier().get() as usize)?,
+                            );
+                        } else if !aggregate {
                             let hooks = hooks
                                 .as_ref()
                                 .ok_or_else(|| backend("missing tail latch hook"))?;
@@ -1330,6 +1820,27 @@ impl<'plan> CfgDefinition<'plan> {
                 }
             }
             #[cfg(feature = "canonical-native-program")]
+            if let NativeIterationAction::Initialize { iteration } = block.action()
+                && let Some((region, function, _, _)) = word_functions
+                    .iter()
+                    .find(|(region, ..)| region.iteration == *iteration)
+            {
+                let function = module.declare_func_in_func(*function, b.func);
+                hooks
+                    .as_ref()
+                    .ok_or_else(|| backend("word collection has no owner hooks"))?
+                    .word_collection(
+                        b,
+                        index,
+                        region,
+                        function,
+                        locals,
+                        plan.value_count() + *iteration as usize,
+                        blocks[region.header as usize].expect("reachable collection header"),
+                        error,
+                    )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let Some(joined) = owner_join {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
@@ -1342,7 +1853,17 @@ impl<'plan> CfgDefinition<'plan> {
             #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 crate::native_artifact::program::codegen::tail::prepare(
-                    *options, b, locals, &closed, index, hooks, error,
+                    controls,
+                    b,
+                    locals,
+                    &closed,
+                    match plan {
+                        plan::CodePlan::Program(p) => Some(&p.metadata().fixed_key_loops),
+                        _ => None,
+                    },
+                    index,
+                    hooks,
+                    error,
                 )?;
             }
             #[cfg(feature = "canonical-native-program")]
@@ -1384,7 +1905,21 @@ impl<'plan> CfgDefinition<'plan> {
                     }
                     #[cfg(feature = "canonical-native-program")]
                     crate::native_artifact::codegen::control::plan::CodePlan::Program(_) => {
-                        if terminator == NativeMatchTerminator::Complete {
+                        if matches!(
+                            terminator,
+                            NativeMatchTerminator::Reject | NativeMatchTerminator::IntegrityFailure
+                        ) {
+                            // A checked source failure must unwind any active
+                            // closed-region fuel/owner loan before returning.
+                            let status = match terminator {
+                                NativeMatchTerminator::Reject => {
+                                    crate::native_artifact::control_abi::STATUS_REJECT
+                                }
+                                _ => crate::native_artifact::abi::STATUS_INTEGRITY,
+                            };
+                            let status = b.ins().iconst(types::I64, status as i64);
+                            b.ins().jump(error, &[status.into()]);
+                        } else if terminator == NativeMatchTerminator::Complete {
                             let hooks = hooks
                                 .as_ref()
                                 .ok_or_else(|| backend("missing typed completion hook"))?;
@@ -1434,7 +1969,13 @@ impl<'plan> CfgDefinition<'plan> {
                     );
                 }
             }
-            let emitted = (b.func.dfg.num_insts() - before) as u64;
+            // Selected acyclic parent bodies have their own independently
+            // derived, runtime-funded instruction envelope. Keep their fixed
+            // entry guard in this unchanged ordinary visit audit.
+            // The entry-pointer reload precedes specialized region emission;
+            // include it in this visit's unchanged conservative template.
+            let emitted = (b.func.dfg.num_insts() - before - segment_ir
+                + usize::from(locals_home.is_some())) as u64;
             let bound = emission_template_bound(plan, index)?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
                 return Err(NativeCompileError::InvalidPlan {
@@ -1483,13 +2024,25 @@ impl<'plan> CfgDefinition<'plan> {
         #[cfg(feature = "canonical-native-program")]
         let window_functions = declarations.window_functions;
         #[cfg(feature = "canonical-native-program")]
+        let histogram_function = declarations.histogram_function;
+        #[cfg(feature = "canonical-native-program")]
+        let classified_histogram_function = declarations.classified_histogram_function;
+        #[cfg(feature = "canonical-native-program")]
         let map_functions = declarations.map_functions;
+        #[cfg(feature = "canonical-native-program")]
+        let word_functions = declarations.word_functions;
         #[cfg(feature = "canonical-native-program")]
         let joined_functions = declarations.joined_functions;
         #[cfg(feature = "canonical-native-program")]
         let packed_functions = declarations.packed_functions;
         #[cfg(feature = "canonical-native-program")]
+        let numeric_functions = declarations.numeric_functions;
+        #[cfg(feature = "canonical-native-program")]
         let bound_call_shim = declarations.bound_call_shim;
+        #[cfg(feature = "canonical-native-program")]
+        if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BitCounts) {
+            crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+        }
         #[cfg(feature = "canonical-native-program")]
         if plan.is_program() {
             report.cfg_cleanup = Some(
@@ -1499,6 +2052,24 @@ impl<'plan> CfgDefinition<'plan> {
                     module.isa(),
                 )?,
             );
+        }
+        #[cfg(feature = "canonical-native-program")]
+        if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::BitCounts) {
+            crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+        }
+        #[cfg(feature = "canonical-native-program")]
+        if controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarSelects)
+        {
+            let selected = crate::native_artifact::codegen::common::scalar_selects::optimize(
+                &mut context.func,
+            );
+            report.scalar_selects += selected;
+            if selected > 0 {
+                // Raw CFG edits invalidate cached predecessor/dominance facts.
+                context.compute_cfg();
+                context.compute_domtree();
+            }
         }
         module
             .define_function(function, &mut context)
@@ -1518,8 +2089,16 @@ impl<'plan> CfgDefinition<'plan> {
                         .iter()
                         .map(|(_, _, stack, _)| *stack)
                         .chain(map_functions.iter().map(|(_, _, stack, _)| *stack))
+                        .chain(word_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(joined_functions.iter().map(|(_, _, stack, _)| *stack))
                         .chain(packed_functions.iter().map(|(_, _, stack, _)| *stack))
+                        .chain(numeric_functions.iter().map(|function| function.stack))
+                        .chain(histogram_function.iter().map(|(_, stack, _)| *stack))
+                        .chain(
+                            classified_histogram_function
+                                .iter()
+                                .map(|(_, stack, _)| *stack),
+                        )
                         .max()
                         .unwrap_or(0),
                 )
@@ -1528,8 +2107,16 @@ impl<'plan> CfgDefinition<'plan> {
                 .iter()
                 .map(|(_, _, _, code)| *code)
                 .chain(map_functions.iter().map(|(_, _, _, code)| *code))
+                .chain(word_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(joined_functions.iter().map(|(_, _, _, code)| *code))
                 .chain(packed_functions.iter().map(|(_, _, _, code)| *code))
+                .chain(numeric_functions.iter().map(|function| function.code))
+                .chain(histogram_function.iter().map(|(_, _, code)| *code))
+                .chain(
+                    classified_histogram_function
+                        .iter()
+                        .map(|(_, _, code)| *code),
+                )
                 .try_fold(
                     code + bound_call_shim.map_or(0, |shim| shim.code),
                     |total, code| total.checked_add(code),
@@ -1587,6 +2174,13 @@ fn emission_template_bound(
                         .map_err(backend)?,
                 )
                 .and_then(|n| n.checked_add(metadata.closed_tails.extra_work(index)))
+                .and_then(|n| {
+                    n.checked_add(if metadata.utf8_reads.at_header(index).is_some() {
+                        crate::native_artifact::program::prepare::utf8_reads::HEADER_WORK
+                    } else {
+                        0
+                    })
+                })
                 .and_then(|n| {
                     n.checked_add(
                         crate::native_artifact::program::prepare::prefix::extra_work(

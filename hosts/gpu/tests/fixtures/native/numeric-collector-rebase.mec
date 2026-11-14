@@ -1,0 +1,35 @@
+// Conditional collector rebase, using the pinned rebase-node operation.
+// See deflate-huffman-LICENSES.md for source attribution.
++> bits
+rebase-node(node<u16>) => (out<u16>) :=
+  wide<u64> := node
+  out<u16> := ((wide < 32768u64)? | true => 0u64 | false => wide - 32768u64).
+rebase-nodes(nodes<[u16]>) => (out<[u16]>) :=
+  out := rebase-node(nodes).
+poke(nodes<[u16]>) => (out<[u16]>) :=
+  old<u64> := nodes[1u64]
+  value<u16> := bits/and(old + 1u64, 65535u64)
+  ~next := nodes
+  next[1u64] = value
+  out := next.
+count(cache<[u32]>) => (out<[u32]>) :=
+  old<u64> := cache[1u64]
+  value<u32> := bits/and(old + 1u64, 4294967295u64)
+  ~next := cache
+  next[1u64] = value
+  out := next.
+walk(nodes<[u16]>, cache<[u32]>, at<u64>, end<u64>, checkpoint<u64>, reject<u64>) => (out<([u16],[u32],u64)>) :=
+  allowed! := at < reject
+  active := at < end
+  changed := (active? | true => poke(nodes) | false => nodes)
+  slide := active && (at == checkpoint)
+  current := (slide? | true => rebase-nodes(changed) | false => changed)
+  counted := (active? | true => count(cache) | false => cache)
+  out := (active?
+    | true => walk(current, counted, at + 1u64, end, checkpoint, reject)
+    | false => (current, counted, at)).
+bridge(nodes<[u16]>, cache<[u32]>, steps<u64>, checkpoint<u64>, reject<u64>) => (out<([u16],[u32],u64)>) :=
+  (tree, entries, position) := walk(nodes, cache, 0u64, steps, checkpoint, reject)
+  out := (tree, entries, position).
+answer := bridge(nodes<[u16]>, cache<[u32]>, steps<u64>, checkpoint<u64>, reject<u64>)
+answer

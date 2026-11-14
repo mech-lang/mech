@@ -1,0 +1,28 @@
+{
+  "rows": 5,
+  "all_nontiming_fields_equal_IR236": true,
+  "allocation_requests_and_bytes_never_regress": true,
+  "allocation_changes": [
+    {
+      "row": 0,
+      "metrics": {}
+    },
+    {
+      "row": 1,
+      "metrics": {}
+    },
+    {
+      "row": 2,
+      "metrics": {}
+    },
+    {
+      "row": 3,
+      "metrics": {}
+    },
+    {
+      "row": 4,
+      "metrics": {}
+    }
+  ],
+  "differences": []
+}

@@ -1,0 +1,11 @@
+#Walk(stop<u64>) => <u64>
+  | :Start
+  | :Walk(i<u64>)
+  | :Done(i<u64>).
+#Walk(stop) -> :Start
+  :Start -> :Walk(0u64)
+  :Walk(i)
+    | i < stop -> :Walk(i + 1u64)
+    | * -> :Done(i)
+  :Done(i) => i.
+#Walk(count<u64>)

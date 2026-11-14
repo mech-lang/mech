@@ -40,6 +40,9 @@ pub struct SchemaTable {
     // An arena is immutable after construction. Bindings and snapshots keep
     // the same IDs/bytes without copying every unrelated schema per leaf.
     entries: Arc<[SchemaEntry]>,
+    // Derived only from these immutable entries and the concrete table layout.
+    // This is a retained-size summary, never memory or execution authority.
+    clone_allocation_bound: Option<u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -88,26 +91,25 @@ impl SchemaTableBuilder {
     }
 
     pub fn finish(self) -> Result<SchemaTableBuild, SemanticModelError> {
-        self.finish_with(u32::MAX as usize, Schema::key)
+        self.finish_with(u32::MAX as usize, |_, key| key)
     }
 
     fn finish_with(
         self,
         unique_limit: usize,
-        key_for: impl Fn(&Schema) -> SchemaKey,
+        key_for: impl Fn(&Schema, SchemaKey) -> SchemaKey,
     ) -> Result<SchemaTableBuild, SemanticModelError> {
-        let handle_keys = self
-            .schemas
-            .iter()
-            .map(Schema::key)
-            .collect::<Vec<_>>()
-            .into_boxed_slice();
         let mut pending = self
             .schemas
             .into_iter()
             .enumerate()
             .map(|(handle, schema)| (schema.canonical_bytes(), handle, schema))
             .collect::<Vec<_>>();
+        let handle_keys = pending
+            .iter()
+            .map(|(bytes, _, _)| Schema::key_for_canonical_bytes(bytes))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
         pending.sort_by(|left, right| left.0.cmp(&right.0).then(left.1.cmp(&right.1)));
 
         let mut remap = vec![SchemaId::new(0); pending.len()];
@@ -127,7 +129,7 @@ impl SchemaTableBuilder {
             let id = u32::try_from(entries.len())
                 .map(SchemaId::new)
                 .map_err(|_| SemanticModelError::SchemaIdExhausted)?;
-            let key = key_for(&schema);
+            let key = key_for(&schema, handle_keys[handle]);
             if let Some(existing) = keys.get(&key) {
                 if existing.as_ref() != canonical_bytes.as_ref() {
                     return Err(SemanticModelError::SchemaKeyCollision { key });
@@ -142,9 +144,7 @@ impl SchemaTableBuilder {
             });
         }
         Ok(SchemaTableBuild {
-            table: SchemaTable {
-                entries: entries.into(),
-            },
+            table: SchemaTable::from_entries(entries.into()),
             remap: remap.into_boxed_slice(),
             handle_keys,
         })
@@ -175,7 +175,7 @@ mod tests {
             .insert(schema(SchemaBody::UnsignedInteger(IntegerWidth::W8)))
             .unwrap();
         assert!(matches!(
-            builder.finish_with(1, Schema::key),
+            builder.finish_with(1, |_, key| key),
             Err(SemanticModelError::SchemaIdExhausted)
         ));
     }
@@ -204,7 +204,7 @@ mod tests {
             .unwrap();
         let forced = SchemaKey::from_bytes([7; 32]);
         assert!(matches!(
-            builder.finish_with(u32::MAX as usize, |_| forced),
+            builder.finish_with(u32::MAX as usize, |_, _| forced),
             Err(SemanticModelError::SchemaKeyCollision { key }) if key == forced
         ));
     }
@@ -405,6 +405,80 @@ mod tests {
         assert!(closed.clone_allocation_bound_bytes().unwrap() <= retained);
         assert!(retained <= construction);
         assert!(closed.len() as u64 <= nodes);
+    }
+
+    #[test]
+    fn retained_layout_summary_follows_new_arenas_and_surviving_clones() {
+        fn check(table: &SchemaTable) -> u64 {
+            let mut contributions = Vec::new();
+            let walked = table
+                .clone_allocation_bound_bytes_with_precharge(|bytes| {
+                    contributions.push(bytes);
+                    Ok::<_, ()>(())
+                })
+                .unwrap();
+            assert_eq!(table.clone_allocation_bound_bytes(), Some(walked));
+            assert_eq!(contributions.iter().sum::<u64>(), walked);
+            assert!(walked >= SchemaTable::clone_metadata_allocation_bound_bytes());
+            walked
+        }
+
+        let empty = SchemaTableBuilder::new().finish().unwrap().table;
+        check(&empty);
+        let mut builder = SchemaTableBuilder::new();
+        let root = builder
+            .insert(schema(SchemaBody::Tuple(
+                vec![
+                    SchemaBody::Bool,
+                    SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W32)),
+                        dimensions: vec![DimensionExpr::Constant(7)].into_boxed_slice(),
+                    },
+                ]
+                .into_boxed_slice(),
+            )))
+            .unwrap();
+        let build = builder.finish().unwrap();
+        let root = build.resolve(root).unwrap();
+        let original = build.table;
+        let before = check(&original);
+        let bytes = original.entry(root).unwrap().canonical_bytes().to_vec();
+        let key = original.entry(root).unwrap().key();
+        let mut extra = SchemaTableBuilder::new();
+        extra
+            .insert(schema(SchemaBody::Tuple(
+                vec![SchemaBody::String; 128].into_boxed_slice(),
+            )))
+            .unwrap();
+        let extra = extra.finish().unwrap().table;
+        for grown in [
+            original.extend_preserving_ids(&extra).unwrap(),
+            original
+                .extend_many_preserving_ids([&extra, &extra])
+                .unwrap(),
+            original.extend_preserving_ids_preallocated(&extra).unwrap(),
+            original
+                .extend_with_component_closure_preserving_ids()
+                .unwrap(),
+        ] {
+            assert!(check(&grown) > before);
+            assert_eq!(grown.entry(root).unwrap().canonical_bytes(), bytes);
+            assert_eq!(grown.entry(root).unwrap().key(), key);
+            let retained = grown.clone();
+            drop(grown);
+            check(&retained);
+            check(&retained.component_closure_for_roots(&[root]).unwrap());
+            check(
+                &retained
+                    .component_closure_for_roots_with_capacity(&[root], 128)
+                    .unwrap(),
+            );
+        }
+        assert_eq!(
+            check(&original),
+            before,
+            "extensions must not alter aliases"
+        );
     }
 
     #[test]
@@ -701,6 +775,22 @@ impl SchemaTableBuild {
 }
 
 impl SchemaTable {
+    fn from_entries(entries: Arc<[SchemaEntry]>) -> Self {
+        let mut table = Self {
+            entries,
+            clone_allocation_bound: None,
+        };
+        // Preserve overflow as an unavailable bound instead of rejecting a
+        // previously constructible table. Include the summary's own storage
+        // through the ordinary visitor's size_of::<Self>() contribution.
+        table.clone_allocation_bound = table
+            .clone_allocation_bound_bytes_with_precharge(
+                |_| Ok::<(), core::convert::Infallible>(()),
+            )
+            .ok();
+        table
+    }
+
     pub fn len(&self) -> usize {
         self.entries.len()
     }
@@ -768,9 +858,7 @@ impl SchemaTable {
                 entries.push(entry.clone());
             }
         }
-        Ok(Self {
-            entries: entries.into(),
-        })
+        Ok(Self::from_entries(entries.into()))
     }
 
     /// Merge a rooted closure into a pre-sized entry allocation, without a
@@ -818,9 +906,7 @@ impl SchemaTable {
                 entries.push(entry.clone());
             }
         }
-        Ok(Self {
-            entries: entries.into(),
-        })
+        Ok(Self::from_entries(entries.into()))
     }
 
     /// Extends this arena with every canonical component schema reachable from
@@ -841,9 +927,7 @@ impl SchemaTable {
         for entry in self.entries.iter() {
             retain_component_children(&entry.schema, entry.schema.body(), &mut entries)?;
         }
-        Ok(Self {
-            entries: entries.into(),
-        })
+        Ok(Self::from_entries(entries.into()))
     }
 
     /// Builds the canonical component closure reachable only from the given
@@ -897,9 +981,7 @@ impl SchemaTable {
         if entries.len() > entry_capacity {
             return Err(SemanticModelError::SchemaIdExhausted);
         }
-        Ok(Self {
-            entries: entries.into(),
-        })
+        Ok(Self::from_entries(entries.into()))
     }
 
     /// Retained allocation upper bound for the component-closed arena.
@@ -962,10 +1044,7 @@ impl SchemaTable {
     /// each concrete cloned schema allocation and the retained canonical byte
     /// buffer. Compact encodings are not a bound on Rust enum/node layouts.
     pub fn clone_allocation_bound_bytes(&self) -> Option<u64> {
-        self.clone_allocation_bound_bytes_with_precharge(
-            |_| Ok::<(), core::convert::Infallible>(()),
-        )
-        .ok()
+        self.clone_allocation_bound
     }
 
     /// Computes the same full-arena retained-layout bound, prepaying every

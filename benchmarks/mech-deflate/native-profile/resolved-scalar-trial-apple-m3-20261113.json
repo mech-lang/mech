@@ -1,0 +1,194 @@
+{
+  "base_commit": "44c7222384945bb3c9fefe5a4ca6a4277f29e1e7",
+  "candidate_patch_sha256": "4d12731bfbee19ddd118221fc39534686c5a3c686f7f5caa34c8a02b12eca5dd",
+  "candidate_source": "uncommitted patch on base; rejected and fully removed",
+  "compiler_binary_sha256": {
+    "candidate": "f432fccb941c9ac11bbe39851c2668f3017c287b9c2dee8d78eb36646a5b5b20",
+    "control": "5d856d1d17fa39959580b786e065bc541fbc40092b1c0904f352df7925c8a876"
+  },
+  "compiler_bootstrap_seconds": 453.6911655419972,
+  "decision": "reject scalar-only constructor fast path; restore the retained compiler",
+  "diagnostic": {
+    "all_four_outputs_identical": true,
+    "binary_sha256": "5d856d1d17fa39959580b786e065bc541fbc40092b1c0904f352df7925c8a876",
+    "compiler_seconds": 40.015726208,
+    "sample_windows_seconds": [
+      3,
+      5,
+      4
+    ],
+    "subject": "retained control"
+  },
+  "flags_count": 52,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "observed": {
+    "cleanup_seconds": {
+      "candidate": [
+        5.0087506249547005,
+        5.044058334082365
+      ],
+      "control": [
+        5.0676377499476075,
+        5.047036957927048
+      ]
+    },
+    "compiler_seconds": {
+      "candidate": [
+        39.914371,
+        39.981982583
+      ],
+      "control": [
+        40.108127958,
+        39.183770875
+      ],
+      "mean_change_fraction": 0.007623158972054345
+    },
+    "frontend_seconds": {
+      "candidate": [
+        7.725822292,
+        7.786059
+      ],
+      "control": [
+        7.663783875,
+        6.991389625
+      ],
+      "mean_change_fraction": 0.05845770382725246
+    },
+    "instructions": {
+      "candidate": [
+        625958811181,
+        626628034086
+      ],
+      "control": [
+        616097084597,
+        615307055349
+      ],
+      "mean_change_fraction": 0.017202074147589785
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        7756365824,
+        7755235328
+      ],
+      "control": [
+        7459176448,
+        7749255168
+      ]
+    },
+    "native_seconds": {
+      "candidate": [
+        29.595682875,
+        29.676645459
+      ],
+      "control": [
+        29.880768208,
+        29.650198
+      ],
+      "mean_change_fraction": -0.004344593922704365
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        4.719384208088741,
+        4.713831750210375
+      ],
+      "control": [
+        4.696283917175606,
+        4.679267083061859
+      ],
+      "mean_change_fraction": 0.006150567370407423
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.50709875,
+        2.44122575
+      ],
+      "control": [
+        2.48054025,
+        2.438236083
+      ]
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        7725783544,
+        7724603848
+      ],
+      "control": [
+        7728388576,
+        7726684592
+      ]
+    },
+    "preparation_seconds": {
+      "candidate": [
+        10.702806459041312,
+        10.733662915881723
+      ],
+      "control": [
+        10.822526499861851,
+        10.786437083035707
+      ],
+      "mean_change_fraction": -0.007982530365826745
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.452102083945647,
+        2.452571500092745
+      ],
+      "control": [
+        2.5195466249715537,
+        2.4441076670773327
+      ]
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        41.12772141606547,
+        40.09263787488453
+      ],
+      "control": [
+        41.31787941697985,
+        39.2567208330147
+      ]
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "scope": [
+    "Four serial ABBA fresh source-to-Object processes with the same 52 flags; bootstrap excluded.",
+    "No builds, tests, fixtures or CPU sampling overlap primary timing.",
+    "One compiler-total pair improves and the other regresses. Four observations are not a statistical population.",
+    "Both candidate frontend intervals exceed both controls; mean frontend, total elapsed and instructions increase.",
+    "The candidate validates borrowed scalar bounds and also extracts the general canonicalizer bound loop into a helper. This combined trial does not isolate either change.",
+    "Every measured source, canonical bytecode, native Object and complete metadata byte matches the retained output.",
+    "Core unit and contract tests pass, including every builtin scalar and 4096 seeded dimension environments against the original constructor.",
+    "The initial offline no_std check fails to unpack a cached dependency under the filesystem sandbox; the permitted offline retry passes. All failure logs remain.",
+    "The production patch and new test file are removed. No additional fixture or runtime campaigns are performed after rejection.",
+    "A separate retained-control compile samples frontend, preparation and CFG cleanup. Its elapsed is diagnostic only.",
+    "The fresh preparation sample points to repeated reaches queries for immutable guard edges and repeated collapsed-successor iteration scans.",
+    "Sample top-of-stack rows are self counts; total-in-stack rows include callers. Main-thread waiting is excluded from CPU interpretations.",
+    "A next candidate can share exact edge-avoidance reachability within one immutable forest, with root/latch/avoid context preserved. It has not been implemented or timed.",
+    "Compiler executables stay local with hashes retained.",
+    "The retained compiler remains about 39\u201340 seconds; the sub-10-second goal is still open."
+  ],
+  "tests": {
+    "core_contracts": 81,
+    "core_unit": 190,
+    "format": "passed Rust 2024",
+    "no_std_check": "passed after permitted cached-dependency unpack",
+    "total": 271
+  }
+}

@@ -508,6 +508,9 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2026"
 
 [patch.crates-io]
+cranelift-codegen = { path = "vendor/cranelift-codegen" }
+cranelift-frontend = { path = "vendor/cranelift-frontend" }
+regalloc2 = { path = "vendor/regalloc2" }
 mech-combinatorics = { path = "machines/combinatorics" }
 mech-compare = { path = "machines/compare" }
 mech-logic = { path = "machines/logic" }

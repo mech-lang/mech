@@ -451,9 +451,17 @@ fn preflight_string_conversion(
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     super::set_conversion::install(builder)?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_conversion(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     builder.insert_resident_factory(
         ["convert"],
         "kind",
@@ -500,6 +508,18 @@ fn native_scalar_cast(
         return None;
     };
     Some(match (source, target) {
+        (K::U8, K::U16) => Op::U8ToU16,
+        (K::U8, K::U32) => Op::U8ToU32,
+        (K::U8, K::U64) => Op::U8ToU64,
+        (K::U16, K::U8) => Op::U16ToU8,
+        (K::U16, K::U32) => Op::U16ToU32,
+        (K::U16, K::U64) => Op::U16ToU64,
+        (K::U32, K::U8) => Op::U32ToU8,
+        (K::U32, K::U16) => Op::U32ToU16,
+        (K::U32, K::U64) => Op::U32ToU64,
+        (K::U64, K::U8) => Op::U64ToU8,
+        (K::U64, K::U16) => Op::U64ToU16,
+        (K::U64, K::U32) => Op::U64ToU32,
         (K::U64, K::I64) => Op::U64ToI64,
         (K::I64, K::U64) => Op::I64ToU64,
         (K::U64, K::F64) => Op::U64ToF64,
@@ -610,6 +630,45 @@ fn bind_conversion(
         &target
     };
     let conversion = plan_explicit_cast(&source, conversion_target)
+        .or_else(|error| {
+            // A selected matrix can reify a computed extent as a fresh free
+            // axis. Its source and destination axes then have different symbolic
+            // expressions but the same checked current geometry and element kind.
+            if wrap_present || !resolve_live_matrix_shape {
+                return Err(error);
+            }
+            let Ok(source_body) = source_schema.closed_body(&input.shape_instance) else {
+                return Err(error);
+            };
+            // Control-local layouts are seeded independently. Reified free
+            // axes may start at zero while a computed source axis starts at
+            // a positive constant. Bind against the source's current extents;
+            // execution still validates each live shape before publication.
+            let SchemaBody::Matrix { dimensions, .. } = source_schema.body() else {
+                return Err(error);
+            };
+            let extents = dimensions
+                .iter()
+                .map(|axis| input.shape_instance.resolve_dimension(axis))
+                .collect::<Result<Vec<_>, _>>();
+            let Ok(extents) = extents else {
+                return Err(error);
+            };
+            let Ok(target_shape) = mech_core::shape_for_resolved_extents(target_schema, &extents)
+            else {
+                return Err(error);
+            };
+            let Ok(target_body) = target_schema.closed_body(&target_shape) else {
+                return Err(error);
+            };
+            if source_body != target_body {
+                return Err(error);
+            }
+            let Ok(closed) = ResolvedType::from_schema_body(&source_body, &[]) else {
+                return Err(error);
+            };
+            plan_explicit_cast(&closed, &closed)
+        })
         .map_err(|_| ResidentKernelBindError::UnsupportedLayout)?;
     // Shape-changing collection conversion has its own admitted factory and
     // Declared-shape contract. Never run its sort under matrix-copy admission.
@@ -935,6 +994,41 @@ fn execute_kind_conversion(
     }
     if plan.wrap_present || conversion_presence_depth(&plan.conversion.step) != 0 {
         preflight_present_option(kernel, input, &output)?;
+    }
+    if plan.resolve_live_matrix_shape
+        && !plan.wrap_present
+        && plan.source != plan.target
+        && matches!(plan.conversion.step, mech_core::ConversionStep::Identity)
+    {
+        if let (ResidentValueRef::Snapshot([Some(value)]), ResidentValueMut::Snapshot([target])) =
+            (input, output)
+        {
+            let metadata = kernel
+                .snapshot_output()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            let schemas = kernel
+                .snapshot_schemas()
+                .ok_or(ResidentKernelError::InvalidOutput)?;
+            let shape = &live_shape
+                .as_ref()
+                .ok_or(ResidentKernelError::InvalidShape)?
+                .0;
+            let next = value
+                .rebind(metadata.schema, shape, schemas)
+                .map_err(|_| ResidentKernelError::InvalidOutput)?;
+            if next.schema_key() != metadata.schema_key {
+                return Err(ResidentKernelError::InvalidOutput);
+            }
+            let changed = match target.as_ref() {
+                Some(current) => !current
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map_err(|_| ResidentKernelError::InvalidOutput)?,
+                None => true,
+            };
+            *target = Some(next);
+            return Ok(changed);
+        }
+        return Err(ResidentKernelError::InvalidShape);
     }
     let source = if matches!(plan.source, SchemaBody::Matrix { .. })
         && !matches!(input, ResidentValueRef::Snapshot(_))

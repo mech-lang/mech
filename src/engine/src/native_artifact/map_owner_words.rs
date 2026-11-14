@@ -78,7 +78,11 @@ impl NativeMapKeySpan {
     }
 }
 
-#[cfg(any(feature = "pure_text", feature = "map_ops"))]
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 fn key_spans(
     plan: &Plan,
     regions: &[NativeMapOwnerRegion],
@@ -129,7 +133,11 @@ fn key_spans(
     }
     Ok(result)
 }
-#[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+#[cfg(not(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+)))]
 fn key_spans(_: &Plan, _: &[NativeMapOwnerRegion]) -> Result<Vec<NativeMapKeySpan>, &'static str> {
     Ok(Vec::new())
 }
@@ -215,6 +223,10 @@ fn width(schema: &Schema) -> Result<usize, &'static str> {
             n.checked_add(width(item)?)
                 .ok_or("map state width overflow")
         }),
+        Schema::Record(fields) => fields.iter().try_fold(0usize, |n, field| {
+            n.checked_add(width(&field.schema)?)
+                .ok_or("map state width overflow")
+        }),
         Schema::Enum { variants, .. } => variants
             .iter()
             .try_fold(0usize, |n, variant| -> Result<usize, &'static str> {
@@ -284,6 +296,33 @@ fn pack(plan: &Plan, action: &Action) -> Result<Option<Transport>, &'static str>
     }))
 }
 fn project(plan: &Plan, action: &Action) -> Result<Transport, &'static str> {
+    if let Some((source, ordinal, output)) = super::record_projection::constant_field(plan, action)
+    {
+        let Schema::Record(fields) = plan.values()[source.get() as usize].definition().body()
+        else {
+            return Err("map state record projection kind");
+        };
+        let offset = fields[..ordinal].iter().try_fold(0usize, |n, field| {
+            n.checked_add(width(&field.schema)?)
+                .ok_or("map state record projection overflow")
+        })?;
+        return if map(&fields[ordinal].schema) {
+            Ok(Transport::Project {
+                source,
+                offset,
+                guards: Box::new([]),
+                output,
+            })
+        } else {
+            Ok(Transport::Observe {
+                source,
+                offset,
+                ordinal: None,
+                guards: Box::new([]),
+                output,
+            })
+        };
+    }
     let Action::Structural {
         source,
         path,
@@ -442,7 +481,17 @@ pub(in crate::native_artifact) fn derive(
                     Some(project(plan, block.action())?)
                 }
                 Action::LibraryCall { output, .. } if selected(*output) => {
-                    pack(plan, block.action())?
+                    if super::record_projection::constant_field(plan, block.action()).is_some() {
+                        Some(project(plan, block.action())?)
+                    } else {
+                        pack(plan, block.action())?
+                    }
+                }
+                Action::LibraryCall { .. }
+                    if super::record_projection::constant_field(plan, block.action())
+                        .is_some_and(|(source, _, _)| selected(source)) =>
+                {
+                    Some(project(plan, block.action())?)
                 }
                 Action::Latch { iteration } if *iteration == region.iteration() => {
                     Some(Transport::Copy {

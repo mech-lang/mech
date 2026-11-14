@@ -1,0 +1,2242 @@
+{
+  "schema": "mech.related-post-gen.managed-worker-payments-negative.v1",
+  "base_source_commit": "f361f91f298b87ebb9bee880930951fdf79b0d5f",
+  "selected": "mech-managed-retire-overlap",
+  "unselected": [
+    "mech-managed-paid-cleanup",
+    "mech-managed-paid-alias-v2"
+  ],
+  "compiler_backend": "Cranelift",
+  "mandatory_dependency_added": false,
+  "source_closure": "publication-source-closure.json",
+  "overlay": "unselected-paid-workers-IR333/source.patch",
+  "overlay_receipt": "unselected-paid-workers-IR333/receipt.json",
+  "primary": {
+    "record": "first-paid-workers/latency.json",
+    "config": "first-paid-workers/config.json",
+    "paired_comparison": "first-paid-workers/paired-comparison.json",
+    "rounds": 31,
+    "implementations": 30,
+    "exact_outputs": 930,
+    "seed": 202611114600,
+    "current_fastest_Rust": {
+      "variant": "rust-ordered-mask-tables256-fresh4-apple-m3",
+      "median_seconds": 0.001215417,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32",
+        "rust-ordered-scan-only",
+        "rust-ordered-ordered",
+        "rust-ordered-mask-reuse",
+        "rust-ordered-ordered-mask",
+        "rust-ordered-ordered-mask-tables",
+        "rust-apple-m3",
+        "rust-mech-control-streaming-apple-m3",
+        "rust-mech-control-u32-casts-apple-m3",
+        "rust-mech-control-u8-ids-u32-apple-m3",
+        "rust-ordered-scan-only-apple-m3",
+        "rust-ordered-ordered-apple-m3",
+        "rust-ordered-mask-reuse-apple-m3",
+        "rust-ordered-ordered-mask-apple-m3",
+        "rust-ordered-ordered-mask-tables-apple-m3",
+        "rust-ordered-mask-tables256",
+        "rust-ordered-mask-tables256-apple-m3",
+        "rust-ordered-mask-tables256-fresh4",
+        "rust-ordered-mask-tables256-fresh4-apple-m3"
+      ]
+    },
+    "original_20_serial_Rust": {
+      "variant": "rust-ordered-mask-tables256",
+      "median_seconds": 0.0015119579999999999
+    },
+    "rows": [
+      {
+        "implementation": "mech-managed-host-v2-4",
+        "post_json_ms": 1.61325,
+        "times_current_fastest_Rust": 1.3273222276798826,
+        "times_original_20_serial_Rust": 1.066993924434409,
+        "whole_process_ms": 47.09525010548532,
+        "paired_median_percent_vs_IR331": 10.975841016091747,
+        "paired_95_interval_percent": [
+          10.653396797922987,
+          11.44932362122788
+        ]
+      },
+      {
+        "implementation": "mech-managed-short-overlap",
+        "post_json_ms": 1.485166,
+        "times_current_fastest_Rust": 1.2219394660433414,
+        "times_original_20_serial_Rust": 0.9822799310562861,
+        "whole_process_ms": 46.6604579705745,
+        "paired_median_percent_vs_IR331": 2.360337510027999,
+        "paired_95_interval_percent": [
+          1.3254810894020252,
+          2.9713325536988355
+        ]
+      },
+      {
+        "implementation": "mech-managed-retire-overlap",
+        "post_json_ms": 1.448542,
+        "times_current_fastest_Rust": 1.191806598064697,
+        "times_original_20_serial_Rust": 0.9580570359758671,
+        "whole_process_ms": 47.177332919090986,
+        "paired_median_percent_vs_IR331": 0.0,
+        "paired_95_interval_percent": [
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "implementation": "mech-managed-paid-cleanup",
+        "post_json_ms": 1.4607080000000001,
+        "times_current_fastest_Rust": 1.201816331349652,
+        "times_original_20_serial_Rust": 0.9661035557866027,
+        "whole_process_ms": 46.77883302792907,
+        "paired_median_percent_vs_IR331": 0.7768356793888431,
+        "paired_95_interval_percent": [
+          0.5478260869565377,
+          1.6384733890368652
+        ]
+      },
+      {
+        "implementation": "mech-managed-paid-alias-v2",
+        "post_json_ms": 1.450792,
+        "times_current_fastest_Rust": 1.193657814560764,
+        "times_original_20_serial_Rust": 0.9595451725510895,
+        "whole_process_ms": 47.39925009198487,
+        "paired_median_percent_vs_IR331": -0.19636951973915906,
+        "paired_95_interval_percent": [
+          -1.0800238115486027,
+          0.14748955571370903
+        ]
+      },
+      {
+        "implementation": "mech-ir320-compact-native-4",
+        "post_json_ms": 1.320625,
+        "times_current_fastest_Rust": 1.0865612378303082,
+        "times_original_20_serial_Rust": 0.8734534954013273,
+        "whole_process_ms": 27.820250019431114,
+        "paired_median_percent_vs_IR331": -9.2479661408298,
+        "paired_95_interval_percent": [
+          -9.564968247427252,
+          -7.776469471216984
+        ]
+      }
+    ],
+    "paired_protocol": "first-paid-workers/paired-bootstrap-protocol.json"
+  },
+  "resources": {
+    "record": "new-managed-resources/resources-paid-first/report.json",
+    "plan": "new-managed-resources/resources-paid-first/plan.json",
+    "script": "new-managed-resources/run.py",
+    "rounds": 7,
+    "implementations": 29,
+    "exact_outputs": 203,
+    "seed": 202611115400,
+    "references": {
+      "current_fastest_Rust": "rust-ordered-mask-tables256-fresh4-apple-m3-instrumented",
+      "original_20_serial_fastest_Rust": "rust-ordered-mask-tables256-instrumented"
+    },
+    "scope": {
+      "primary_resources": "All-thread process counters and allocator requests inside complete post-JSON measurement windows",
+      "managed": "measurement field includes input admission/setup, native execution, worker create/run/join, internal cleanup and result materialization",
+      "Rust": "PROCESS_METRICS.processing; post-JSON eligible only when declared complete boundary includes all preparation and worker lifecycle",
+      "preinitialized_Rust": "PROCESS_METRICS.processing retained as excluded_processing; no comparison to managed complete post-JSON counters",
+      "whole_process": "Separate /usr/bin/time -lp counters from launch through exit, including restore, JSON IO, postJSON and final destruction",
+      "RSS": "Endpoint resident/footprint counters in each window; peak resident/footprint from whole process separately; allocator peak is not RSS",
+      "allocation": "Original allocator all-thread requested allocations/reallocations; freed bytes can include allocations predating the window; excludes allocator internals, OS stacks and mmap",
+      "free_call_count": null,
+      "free_call_count_reason": "Current measurement helper records freed bytes, not number of free calls",
+      "restore": "Managed restore_measurement kept separate; precompiled artifact restoration/validation, outside postJSON",
+      "JSON": "Managed json_measurement and Rust reported preparation window retained separately; never added to postJSON",
+      "latency": "Instrumented timings are diagnostic only; no speed/reference selection or goal completion is inferred here",
+      "sizes": "Ordinary and instrumented executable file/section sizes separate; native code/stack from checked compiler metadata where available"
+    },
+    "rows": [
+      {
+        "implementation": "rust-ordered-mask-tables256-instrumented",
+        "post_json": {
+          "allocation_requests": 58,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 5675086,
+          "hardware": {
+            "cycles": 5883969,
+            "instructions_per_cycle": 3.001625773351287,
+            "instructions_retired": 17659336,
+            "lifetime_peak_physical_footprint_bytes_after": 5538128,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 5538128,
+            "physical_footprint_bytes_before": 2916640,
+            "resident_bytes_after": 6078464,
+            "resident_bytes_before": 3489792,
+            "system_cpu_seconds": 9.9375e-05,
+            "user_cpu_seconds": 0.0014599583333333335
+          },
+          "live_requested_heap_bytes_after": 3205712,
+          "live_requested_heap_bytes_before": 2055085,
+          "peak_additional_live_requested_heap_bytes": 5648124,
+          "peak_live_requested_heap_bytes": 7703209,
+          "requested_allocation_bytes": 6825713
+        },
+        "separate_windows": {
+          "reported_preparation": {
+            "allocation_requests": 7551,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 620960,
+            "hardware": {
+              "cycles": 4706171,
+              "instructions_per_cycle": 4.611288455094385,
+              "instructions_retired": 21726619,
+              "lifetime_peak_physical_footprint_bytes_after": 2916640,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 2916640,
+              "physical_footprint_bytes_before": 917792,
+              "resident_bytes_after": 3489792,
+              "resident_bytes_before": 1359872,
+              "system_cpu_seconds": 0.00019979166666666667,
+              "user_cpu_seconds": 0.0010485416666666668
+            },
+            "live_requested_heap_bytes_after": 2055085,
+            "live_requested_heap_bytes_before": 612,
+            "peak_additional_live_requested_heap_bytes": 2054473,
+            "peak_live_requested_heap_bytes": 2055085,
+            "requested_allocation_bytes": 2675433
+          }
+        },
+        "whole_process": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 38576247,
+          "instructions_retired": 138750180,
+          "involuntary_context_switches": 6,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 521,
+          "peak_physical_footprint_bytes": 5538128,
+          "peak_resident_bytes": 6111232,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.0,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.02
+        },
+        "executable_bytes": 468304,
+        "ordinary_executable_bytes": 435056,
+        "native_sizes": {
+          "metadata_root_stack_bytes": null,
+          "reason": "No matching Rust native stack metadata retained; executable sections are available separately"
+        }
+      },
+      {
+        "implementation": "rust-ordered-mask-tables256-fresh4-apple-m3-instrumented",
+        "post_json": {
+          "allocation_requests": 78,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 5876329,
+          "hardware": {
+            "cycles": 6707553,
+            "instructions_per_cycle": 2.7125018617072425,
+            "instructions_retired": 18184270,
+            "lifetime_peak_physical_footprint_bytes_after": 5636432,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 5636432,
+            "physical_footprint_bytes_before": 2933024,
+            "resident_bytes_after": 6176768,
+            "resident_bytes_before": 3457024,
+            "system_cpu_seconds": 0.00021045833333333336,
+            "user_cpu_seconds": 0.0015982083333333334
+          },
+          "live_requested_heap_bytes_after": 3205731,
+          "live_requested_heap_bytes_before": 2055085,
+          "peak_additional_live_requested_heap_bytes": 5721694,
+          "peak_live_requested_heap_bytes": 7776779,
+          "requested_allocation_bytes": 7026975
+        },
+        "separate_windows": {
+          "reported_preparation": {
+            "allocation_requests": 7551,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 620960,
+            "hardware": {
+              "cycles": 4731542,
+              "instructions_per_cycle": 4.574815144830163,
+              "instructions_retired": 21641536,
+              "lifetime_peak_physical_footprint_bytes_after": 2933024,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 2933024,
+              "physical_footprint_bytes_before": 934176,
+              "resident_bytes_after": 3457024,
+              "resident_bytes_before": 1392640,
+              "system_cpu_seconds": 0.00019220833333333335,
+              "user_cpu_seconds": 0.0010527083333333334
+            },
+            "live_requested_heap_bytes_after": 2055085,
+            "live_requested_heap_bytes_before": 612,
+            "peak_additional_live_requested_heap_bytes": 2054473,
+            "peak_live_requested_heap_bytes": 2055085,
+            "requested_allocation_bytes": 2675433
+          }
+        },
+        "whole_process": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 39713910,
+          "instructions_retired": 139557131,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 535,
+          "peak_physical_footprint_bytes": 5636432,
+          "peak_resident_bytes": 6209536,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.0,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.02
+        },
+        "executable_bytes": 468784,
+        "ordinary_executable_bytes": 452080,
+        "native_sizes": {
+          "metadata_root_stack_bytes": null,
+          "reason": "No matching Rust native stack metadata retained; executable sections are available separately"
+        }
+      },
+      {
+        "implementation": "mech-managed-host-v2-4-instrumented",
+        "post_json": {
+          "allocation_requests": 735,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6315001,
+          "hardware": {
+            "cycles": 10129123,
+            "instructions_per_cycle": 3.104543601652384,
+            "instructions_retired": 31512136,
+            "lifetime_peak_physical_footprint_bytes_after": 16286080,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 16187776,
+            "physical_footprint_bytes_before": 13517160,
+            "resident_bytes_after": 26951680,
+            "resident_bytes_before": 22888448,
+            "system_cpu_seconds": 0.000326,
+            "user_cpu_seconds": 0.002333375
+          },
+          "live_requested_heap_bytes_after": 8918858,
+          "live_requested_heap_bytes_before": 8196874,
+          "peak_additional_live_requested_heap_bytes": 4871859,
+          "peak_live_requested_heap_bytes": 13068733,
+          "requested_allocation_bytes": 7036985
+        },
+        "separate_windows": {
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6421268,
+              "instructions_per_cycle": 4.8219764382984796,
+              "instructions_retired": 30950601,
+              "lifetime_peak_physical_footprint_bytes_after": 13517160,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 13517160,
+              "physical_footprint_bytes_before": 12239208,
+              "resident_bytes_after": 22888448,
+              "resident_bytes_before": 21561344,
+              "system_cpu_seconds": 0.0001756666666666667,
+              "user_cpu_seconds": 0.0014212083333333334
+            },
+            "live_requested_heap_bytes_after": 8196874,
+            "live_requested_heap_bytes_before": 6771939,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 9310163,
+            "requested_allocation_bytes": 3290192
+          },
+          "restore": {
+            "allocation_requests": 162845,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 183071892,
+            "hardware": {
+              "cycles": 81039830,
+              "instructions_per_cycle": 4.122004179919923,
+              "instructions_retired": 334108035,
+              "lifetime_peak_physical_footprint_bytes_after": 12239208,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 12239208,
+              "physical_footprint_bytes_before": 1196368,
+              "resident_bytes_after": 21561344,
+              "resident_bytes_before": 2080768,
+              "system_cpu_seconds": 0.0009070833333333334,
+              "user_cpu_seconds": 0.019538333333333335
+            },
+            "live_requested_heap_bytes_after": 6771939,
+            "live_requested_heap_bytes_before": 6386,
+            "peak_additional_live_requested_heap_bytes": 9004686,
+            "peak_live_requested_heap_bytes": 9011072,
+            "requested_allocation_bytes": 189837445
+          }
+        },
+        "whole_process": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 124531166,
+          "instructions_retired": 496735613,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1817,
+          "peak_physical_footprint_bytes": 16286080,
+          "peak_resident_bytes": 27066368,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.02,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.04
+        },
+        "executable_bytes": 17178000,
+        "ordinary_executable_bytes": 17065168,
+        "native_sizes": {
+          "object_bytes": 5670640,
+          "metadata_code_bytes": 1021596,
+          "metadata_root_stack_bytes": 1568,
+          "native_metadata_bytes": 4640678,
+          "regions": [
+            {
+              "metadata_path": "<root>",
+              "code_bytes": 1021596,
+              "stack_bytes": 1568
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[0]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_106",
+              "header": 106,
+              "code_bytes": 6632,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[1]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_145",
+              "header": 145,
+              "code_bytes": 1004,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[2]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_267",
+              "header": 267,
+              "code_bytes": 72912,
+              "stack_bytes": 480
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[3]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_542",
+              "header": 542,
+              "code_bytes": 9352,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[4]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_561",
+              "header": 561,
+              "code_bytes": 7144,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[5]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_581",
+              "header": 581,
+              "code_bytes": 4700,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[6]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_710",
+              "header": 710,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[7]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_774",
+              "header": 774,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[8]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_798",
+              "header": 798,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[9]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_868",
+              "header": 868,
+              "code_bytes": 4512,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[10]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_890",
+              "header": 890,
+              "code_bytes": 1412,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[11]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1007",
+              "header": 1007,
+              "code_bytes": 67584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[12]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1197",
+              "header": 1197,
+              "code_bytes": 16380,
+              "stack_bytes": 352
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[13]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1216",
+              "header": 1216,
+              "code_bytes": 13296,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[14]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1236",
+              "header": 1236,
+              "code_bytes": 10380,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[15]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1257",
+              "header": 1257,
+              "code_bytes": 6976,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[16]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1413",
+              "header": 1413,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[17]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1477",
+              "header": 1477,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[18]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1501",
+              "header": 1501,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[19]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1587",
+              "header": 1587,
+              "code_bytes": 31584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[20]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1619",
+              "header": 1619,
+              "code_bytes": 8720,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[21]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1647",
+              "header": 1647,
+              "code_bytes": 2356,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[22]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1826",
+              "header": 1826,
+              "code_bytes": 6444,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[23]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1855",
+              "header": 1855,
+              "code_bytes": 1584,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[24]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2089",
+              "header": 2089,
+              "code_bytes": 20880,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[25]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2114",
+              "header": 2114,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[26]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2140",
+              "header": 2140,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[27]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2228",
+              "header": 2228,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[28]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2426",
+              "header": 2426,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[29]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2472",
+              "header": 2472,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[30]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2526",
+              "header": 2526,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[31]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2553",
+              "header": 2553,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[32]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2647",
+              "header": 2647,
+              "code_bytes": 75332,
+              "stack_bytes": 928
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[33]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2677",
+              "header": 2677,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[34]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2703",
+              "header": 2703,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[35]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2791",
+              "header": 2791,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[36]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2944",
+              "header": 2944,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[37]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2969",
+              "header": 2969,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[38]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3035",
+              "header": 3035,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[39]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3092",
+              "header": 3092,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[40]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3391",
+              "header": 3391,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[41]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3437",
+              "header": 3437,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[42]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3491",
+              "header": 3491,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[43]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3518",
+              "header": 3518,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[44]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3602",
+              "header": 3602,
+              "code_bytes": 40292,
+              "stack_bytes": 784
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[45]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3628",
+              "header": 3628,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[46]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3653",
+              "header": 3653,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[47]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3719",
+              "header": 3719,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[48]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3776",
+              "header": 3776,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1248,
+              "stack_bytes": 96
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram.classified",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1248,
+              "stack_bytes": 96
+            }
+          ],
+          "scope": "Native compiler metadata, not total executable size; region entries may share code and must not be summed"
+        }
+      },
+      {
+        "implementation": "mech-managed-retire-overlap-instrumented",
+        "post_json": {
+          "allocation_requests": 725,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 5654209,
+          "hardware": {
+            "cycles": 9226162,
+            "instructions_per_cycle": 3.2495355056631348,
+            "instructions_retired": 29974067,
+            "lifetime_peak_physical_footprint_bytes_after": 15434088,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15319400,
+            "physical_footprint_bytes_before": 13336936,
+            "resident_bytes_after": 26099712,
+            "resident_bytes_before": 22740992,
+            "system_cpu_seconds": 0.00027591666666666666,
+            "user_cpu_seconds": 0.002175666666666667
+          },
+          "live_requested_heap_bytes_after": 8918876,
+          "live_requested_heap_bytes_before": 8196892,
+          "peak_additional_live_requested_heap_bytes": 4211067,
+          "peak_live_requested_heap_bytes": 12407959,
+          "requested_allocation_bytes": 6376193
+        },
+        "separate_windows": {
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6358559,
+              "instructions_per_cycle": 4.849717315560537,
+              "instructions_retired": 30836706,
+              "lifetime_peak_physical_footprint_bytes_after": 13336936,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 13336936,
+              "physical_footprint_bytes_before": 12108136,
+              "resident_bytes_after": 22740992,
+              "resident_bytes_before": 21463040,
+              "system_cpu_seconds": 0.00016225000000000001,
+              "user_cpu_seconds": 0.0014138333333333333
+            },
+            "live_requested_heap_bytes_after": 8196892,
+            "live_requested_heap_bytes_before": 6771957,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 9310181,
+            "requested_allocation_bytes": 3290192
+          },
+          "restore": {
+            "allocation_requests": 165253,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 183322428,
+            "hardware": {
+              "cycles": 81918703,
+              "instructions_per_cycle": 4.108389329079055,
+              "instructions_retired": 336573157,
+              "lifetime_peak_physical_footprint_bytes_after": 12108136,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 12108136,
+              "physical_footprint_bytes_before": 1196344,
+              "resident_bytes_after": 21463040,
+              "resident_bytes_before": 2064384,
+              "system_cpu_seconds": 0.0008855416666666667,
+              "user_cpu_seconds": 0.019838083333333336
+            },
+            "live_requested_heap_bytes_after": 6771957,
+            "live_requested_heap_bytes_before": 6396,
+            "peak_additional_live_requested_heap_bytes": 9004686,
+            "peak_live_requested_heap_bytes": 9011082,
+            "requested_allocation_bytes": 190087989
+          }
+        },
+        "whole_process": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 126576441,
+          "instructions_retired": 497793392,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1768,
+          "peak_physical_footprint_bytes": 15434088,
+          "peak_resident_bytes": 26230784,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.02,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.04
+        },
+        "executable_bytes": 17221296,
+        "ordinary_executable_bytes": 17108464,
+        "native_sizes": {
+          "object_bytes": 5670768,
+          "metadata_code_bytes": 1021740,
+          "metadata_root_stack_bytes": 1568,
+          "native_metadata_bytes": 4640678,
+          "regions": [
+            {
+              "metadata_path": "<root>",
+              "code_bytes": 1021740,
+              "stack_bytes": 1568
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[0]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_106",
+              "header": 106,
+              "code_bytes": 6632,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[1]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_145",
+              "header": 145,
+              "code_bytes": 1004,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[2]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_267",
+              "header": 267,
+              "code_bytes": 72912,
+              "stack_bytes": 480
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[3]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_542",
+              "header": 542,
+              "code_bytes": 9352,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[4]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_561",
+              "header": 561,
+              "code_bytes": 7144,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[5]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_581",
+              "header": 581,
+              "code_bytes": 4700,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[6]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_710",
+              "header": 710,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[7]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_774",
+              "header": 774,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[8]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_798",
+              "header": 798,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[9]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_868",
+              "header": 868,
+              "code_bytes": 4512,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[10]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_890",
+              "header": 890,
+              "code_bytes": 1412,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[11]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1007",
+              "header": 1007,
+              "code_bytes": 67584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[12]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1197",
+              "header": 1197,
+              "code_bytes": 16380,
+              "stack_bytes": 352
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[13]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1216",
+              "header": 1216,
+              "code_bytes": 13296,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[14]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1236",
+              "header": 1236,
+              "code_bytes": 10380,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[15]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1257",
+              "header": 1257,
+              "code_bytes": 6976,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[16]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1413",
+              "header": 1413,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[17]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1477",
+              "header": 1477,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[18]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1501",
+              "header": 1501,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[19]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1587",
+              "header": 1587,
+              "code_bytes": 31584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[20]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1619",
+              "header": 1619,
+              "code_bytes": 8720,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[21]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1647",
+              "header": 1647,
+              "code_bytes": 2356,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[22]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1826",
+              "header": 1826,
+              "code_bytes": 6444,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[23]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1855",
+              "header": 1855,
+              "code_bytes": 1584,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[24]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2089",
+              "header": 2089,
+              "code_bytes": 20880,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[25]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2114",
+              "header": 2114,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[26]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2140",
+              "header": 2140,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[27]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2228",
+              "header": 2228,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[28]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2426",
+              "header": 2426,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[29]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2472",
+              "header": 2472,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[30]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2526",
+              "header": 2526,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[31]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2553",
+              "header": 2553,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[32]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2647",
+              "header": 2647,
+              "code_bytes": 75332,
+              "stack_bytes": 928
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[33]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2677",
+              "header": 2677,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[34]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2703",
+              "header": 2703,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[35]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2791",
+              "header": 2791,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[36]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2944",
+              "header": 2944,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[37]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2969",
+              "header": 2969,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[38]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3035",
+              "header": 3035,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[39]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3092",
+              "header": 3092,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[40]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3391",
+              "header": 3391,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[41]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3437",
+              "header": 3437,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[42]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3491",
+              "header": 3491,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[43]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3518",
+              "header": 3518,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[44]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3602",
+              "header": 3602,
+              "code_bytes": 40292,
+              "stack_bytes": 784
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[45]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3628",
+              "header": 3628,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[46]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3653",
+              "header": 3653,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[47]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3719",
+              "header": 3719,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[48]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3776",
+              "header": 3776,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1392,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram.classified",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1392,
+              "stack_bytes": 80
+            }
+          ],
+          "scope": "Native compiler metadata, not total executable size; region entries may share code and must not be summed"
+        }
+      },
+      {
+        "implementation": "mech-managed-paid-cleanup-instrumented",
+        "post_json": {
+          "allocation_requests": 725,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 5654209,
+          "hardware": {
+            "cycles": 9046855,
+            "instructions_per_cycle": 3.2883913802089233,
+            "instructions_retired": 29749600,
+            "lifetime_peak_physical_footprint_bytes_after": 15450472,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15352144,
+            "physical_footprint_bytes_before": 13369680,
+            "resident_bytes_after": 26116096,
+            "resident_bytes_before": 22790144,
+            "system_cpu_seconds": 0.0002785416666666667,
+            "user_cpu_seconds": 0.002144125
+          },
+          "live_requested_heap_bytes_after": 8918872,
+          "live_requested_heap_bytes_before": 8196888,
+          "peak_additional_live_requested_heap_bytes": 4211067,
+          "peak_live_requested_heap_bytes": 12407955,
+          "requested_allocation_bytes": 6376193
+        },
+        "separate_windows": {
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6339065,
+              "instructions_per_cycle": 4.838764223231673,
+              "instructions_retired": 30753787,
+              "lifetime_peak_physical_footprint_bytes_after": 13369680,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 13369680,
+              "physical_footprint_bytes_before": 12091752,
+              "resident_bytes_after": 22790144,
+              "resident_bytes_before": 21463040,
+              "system_cpu_seconds": 0.0001795,
+              "user_cpu_seconds": 0.0014097916666666668
+            },
+            "live_requested_heap_bytes_after": 8196888,
+            "live_requested_heap_bytes_before": 6771953,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 9310177,
+            "requested_allocation_bytes": 3290192
+          },
+          "restore": {
+            "allocation_requests": 165253,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 183322428,
+            "hardware": {
+              "cycles": 81667334,
+              "instructions_per_cycle": 4.121240629699018,
+              "instructions_retired": 336572004,
+              "lifetime_peak_physical_footprint_bytes_after": 12091752,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 12091752,
+              "physical_footprint_bytes_before": 1196368,
+              "resident_bytes_after": 21463040,
+              "resident_bytes_before": 2048000,
+              "system_cpu_seconds": 0.0009102916666666667,
+              "user_cpu_seconds": 0.019609958333333333
+            },
+            "live_requested_heap_bytes_after": 6771953,
+            "live_requested_heap_bytes_before": 6392,
+            "peak_additional_live_requested_heap_bytes": 9004686,
+            "peak_live_requested_heap_bytes": 9011078,
+            "requested_allocation_bytes": 190087989
+          }
+        },
+        "whole_process": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 123140465,
+          "instructions_retired": 497374089,
+          "involuntary_context_switches": 15,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1768,
+          "peak_physical_footprint_bytes": 15450472,
+          "peak_resident_bytes": 26214400,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.02,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.04
+        },
+        "executable_bytes": 17221616,
+        "ordinary_executable_bytes": 17108768,
+        "native_sizes": {
+          "object_bytes": 5670768,
+          "metadata_code_bytes": 1021740,
+          "metadata_root_stack_bytes": 1568,
+          "native_metadata_bytes": 4640678,
+          "regions": [
+            {
+              "metadata_path": "<root>",
+              "code_bytes": 1021740,
+              "stack_bytes": 1568
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[0]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_106",
+              "header": 106,
+              "code_bytes": 6632,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[1]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_145",
+              "header": 145,
+              "code_bytes": 1004,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[2]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_267",
+              "header": 267,
+              "code_bytes": 72912,
+              "stack_bytes": 480
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[3]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_542",
+              "header": 542,
+              "code_bytes": 9352,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[4]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_561",
+              "header": 561,
+              "code_bytes": 7144,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[5]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_581",
+              "header": 581,
+              "code_bytes": 4700,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[6]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_710",
+              "header": 710,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[7]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_774",
+              "header": 774,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[8]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_798",
+              "header": 798,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[9]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_868",
+              "header": 868,
+              "code_bytes": 4512,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[10]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_890",
+              "header": 890,
+              "code_bytes": 1412,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[11]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1007",
+              "header": 1007,
+              "code_bytes": 67584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[12]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1197",
+              "header": 1197,
+              "code_bytes": 16380,
+              "stack_bytes": 352
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[13]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1216",
+              "header": 1216,
+              "code_bytes": 13296,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[14]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1236",
+              "header": 1236,
+              "code_bytes": 10380,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[15]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1257",
+              "header": 1257,
+              "code_bytes": 6976,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[16]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1413",
+              "header": 1413,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[17]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1477",
+              "header": 1477,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[18]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1501",
+              "header": 1501,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[19]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1587",
+              "header": 1587,
+              "code_bytes": 31584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[20]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1619",
+              "header": 1619,
+              "code_bytes": 8720,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[21]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1647",
+              "header": 1647,
+              "code_bytes": 2356,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[22]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1826",
+              "header": 1826,
+              "code_bytes": 6444,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[23]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1855",
+              "header": 1855,
+              "code_bytes": 1584,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[24]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2089",
+              "header": 2089,
+              "code_bytes": 20880,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[25]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2114",
+              "header": 2114,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[26]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2140",
+              "header": 2140,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[27]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2228",
+              "header": 2228,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[28]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2426",
+              "header": 2426,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[29]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2472",
+              "header": 2472,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[30]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2526",
+              "header": 2526,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[31]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2553",
+              "header": 2553,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[32]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2647",
+              "header": 2647,
+              "code_bytes": 75332,
+              "stack_bytes": 928
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[33]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2677",
+              "header": 2677,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[34]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2703",
+              "header": 2703,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[35]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2791",
+              "header": 2791,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[36]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2944",
+              "header": 2944,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[37]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2969",
+              "header": 2969,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[38]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3035",
+              "header": 3035,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[39]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3092",
+              "header": 3092,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[40]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3391",
+              "header": 3391,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[41]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3437",
+              "header": 3437,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[42]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3491",
+              "header": 3491,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[43]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3518",
+              "header": 3518,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[44]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3602",
+              "header": 3602,
+              "code_bytes": 40292,
+              "stack_bytes": 784
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[45]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3628",
+              "header": 3628,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[46]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3653",
+              "header": 3653,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[47]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3719",
+              "header": 3719,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[48]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3776",
+              "header": 3776,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1392,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram.classified",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1392,
+              "stack_bytes": 80
+            }
+          ],
+          "scope": "Native compiler metadata, not total executable size; region entries may share code and must not be summed"
+        }
+      },
+      {
+        "implementation": "mech-managed-paid-alias-v2-instrumented",
+        "post_json": {
+          "allocation_requests": 725,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 5654209,
+          "hardware": {
+            "cycles": 9048071,
+            "instructions_per_cycle": 3.2814888388917374,
+            "instructions_retired": 29691144,
+            "lifetime_peak_physical_footprint_bytes_after": 15729024,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 15630720,
+            "physical_footprint_bytes_before": 13615464,
+            "resident_bytes_after": 26394624,
+            "resident_bytes_before": 22953984,
+            "system_cpu_seconds": 0.0002712916666666667,
+            "user_cpu_seconds": 0.002149166666666667
+          },
+          "live_requested_heap_bytes_after": 8918874,
+          "live_requested_heap_bytes_before": 8196890,
+          "peak_additional_live_requested_heap_bytes": 4211067,
+          "peak_live_requested_heap_bytes": 12407957,
+          "requested_allocation_bytes": 6376193
+        },
+        "separate_windows": {
+          "json": {
+            "allocation_requests": 40089,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 1865257,
+            "hardware": {
+              "cycles": 6403161,
+              "instructions_per_cycle": 4.837130910811082,
+              "instructions_retired": 30944753,
+              "lifetime_peak_physical_footprint_bytes_after": 13615464,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 13615464,
+              "physical_footprint_bytes_before": 12353896,
+              "resident_bytes_after": 22953984,
+              "resident_bytes_before": 21659648,
+              "system_cpu_seconds": 0.00017087500000000002,
+              "user_cpu_seconds": 0.0014246250000000001
+            },
+            "live_requested_heap_bytes_after": 8196890,
+            "live_requested_heap_bytes_before": 6771955,
+            "peak_additional_live_requested_heap_bytes": 2538224,
+            "peak_live_requested_heap_bytes": 9310179,
+            "requested_allocation_bytes": 3290192
+          },
+          "restore": {
+            "allocation_requests": 165253,
+            "allocator_accounting_underflows": 0,
+            "allocator_lifetime_accounting_underflows": 0,
+            "freed_allocation_bytes": 183322428,
+            "hardware": {
+              "cycles": 82118742,
+              "instructions_per_cycle": 4.102110599794624,
+              "instructions_retired": 336860162,
+              "lifetime_peak_physical_footprint_bytes_after": 12353896,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 12353896,
+              "physical_footprint_bytes_before": 1196368,
+              "resident_bytes_after": 21659648,
+              "resident_bytes_before": 2048000,
+              "system_cpu_seconds": 0.000896375,
+              "user_cpu_seconds": 0.019867875
+            },
+            "live_requested_heap_bytes_after": 6771955,
+            "live_requested_heap_bytes_before": 6394,
+            "peak_additional_live_requested_heap_bytes": 9004686,
+            "peak_live_requested_heap_bytes": 9011080,
+            "requested_allocation_bytes": 190087989
+          }
+        },
+        "whole_process": {
+          "average_shared_memory_size": 0,
+          "average_unshared_data_size": 0,
+          "average_unshared_stack_size": 0,
+          "block_input_operations": 0,
+          "block_output_operations": 0,
+          "cycles": 125337163,
+          "instructions_retired": 497618601,
+          "involuntary_context_switches": 14,
+          "messages_received": 0,
+          "messages_sent": 0,
+          "page_faults": 0,
+          "page_reclaims": 1782,
+          "peak_physical_footprint_bytes": 15729024,
+          "peak_resident_bytes": 26492928,
+          "signals_received": 0,
+          "swaps": 0,
+          "system_cpu_seconds": 0.0,
+          "user_cpu_seconds": 0.02,
+          "voluntary_context_switches": 0,
+          "wall_seconds": 0.04
+        },
+        "executable_bytes": 17219936,
+        "ordinary_executable_bytes": 17107104,
+        "native_sizes": {
+          "object_bytes": 5670768,
+          "metadata_code_bytes": 1021740,
+          "metadata_root_stack_bytes": 1568,
+          "native_metadata_bytes": 4640678,
+          "regions": [
+            {
+              "metadata_path": "<root>",
+              "code_bytes": 1021740,
+              "stack_bytes": 1568
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[0]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_106",
+              "header": 106,
+              "code_bytes": 6632,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[1]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_145",
+              "header": 145,
+              "code_bytes": 1004,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[2]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_267",
+              "header": 267,
+              "code_bytes": 72912,
+              "stack_bytes": 480
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[3]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_542",
+              "header": 542,
+              "code_bytes": 9352,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[4]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_561",
+              "header": 561,
+              "code_bytes": 7144,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[5]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_581",
+              "header": 581,
+              "code_bytes": 4700,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[6]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_710",
+              "header": 710,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[7]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_774",
+              "header": 774,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[8]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_798",
+              "header": 798,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[9]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_868",
+              "header": 868,
+              "code_bytes": 4512,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[10]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_890",
+              "header": 890,
+              "code_bytes": 1412,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[11]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1007",
+              "header": 1007,
+              "code_bytes": 67584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[12]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1197",
+              "header": 1197,
+              "code_bytes": 16380,
+              "stack_bytes": 352
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[13]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1216",
+              "header": 1216,
+              "code_bytes": 13296,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[14]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1236",
+              "header": 1236,
+              "code_bytes": 10380,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[15]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1257",
+              "header": 1257,
+              "code_bytes": 6976,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[16]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1413",
+              "header": 1413,
+              "code_bytes": 1188,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[17]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1477",
+              "header": 1477,
+              "code_bytes": 6152,
+              "stack_bytes": 240
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[18]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1501",
+              "header": 1501,
+              "code_bytes": 2320,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[19]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1587",
+              "header": 1587,
+              "code_bytes": 31584,
+              "stack_bytes": 576
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[20]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1619",
+              "header": 1619,
+              "code_bytes": 8720,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[21]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1647",
+              "header": 1647,
+              "code_bytes": 2356,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[22]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1826",
+              "header": 1826,
+              "code_bytes": 6444,
+              "stack_bytes": 272
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[23]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_1855",
+              "header": 1855,
+              "code_bytes": 1584,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[24]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2089",
+              "header": 2089,
+              "code_bytes": 20880,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[25]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2114",
+              "header": 2114,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[26]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2140",
+              "header": 2140,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[27]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2228",
+              "header": 2228,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[28]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2426",
+              "header": 2426,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[29]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2472",
+              "header": 2472,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[30]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2526",
+              "header": 2526,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[31]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2553",
+              "header": 2553,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[32]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2647",
+              "header": 2647,
+              "code_bytes": 75332,
+              "stack_bytes": 928
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[33]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2677",
+              "header": 2677,
+              "code_bytes": 7020,
+              "stack_bytes": 224
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[34]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2703",
+              "header": 2703,
+              "code_bytes": 2380,
+              "stack_bytes": 160
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[35]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2791",
+              "header": 2791,
+              "code_bytes": 2220,
+              "stack_bytes": 208
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[36]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2944",
+              "header": 2944,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[37]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_2969",
+              "header": 2969,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[38]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3035",
+              "header": 3035,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[39]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3092",
+              "header": 3092,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[40]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3391",
+              "header": 3391,
+              "code_bytes": 1408,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[41]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3437",
+              "header": 3437,
+              "code_bytes": 1160,
+              "stack_bytes": 112
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[42]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3491",
+              "header": 3491,
+              "code_bytes": 6992,
+              "stack_bytes": 256
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[43]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3518",
+              "header": 3518,
+              "code_bytes": 2436,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[44]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3602",
+              "header": 3602,
+              "code_bytes": 40292,
+              "stack_bytes": 784
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[45]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3628",
+              "header": 3628,
+              "code_bytes": 5968,
+              "stack_bytes": 192
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[46]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3653",
+              "header": 3653,
+              "code_bytes": 2012,
+              "stack_bytes": 128
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[47]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3719",
+              "header": 3719,
+              "code_bytes": 8528,
+              "stack_bytes": 464
+            },
+            {
+              "metadata_path": "compiled_numeric_functions[48]",
+              "symbol": "mech_canonical_program_entry_v1_numeric_3776",
+              "header": 3776,
+              "code_bytes": 3132,
+              "stack_bytes": 304
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1392,
+              "stack_bytes": 80
+            },
+            {
+              "metadata_path": "compiled_utf8_histogram.classified",
+              "symbol": "mech_canonical_program_entry_v1_utf8_histogram",
+              "code_bytes": 1392,
+              "stack_bytes": 80
+            }
+          ],
+          "scope": "Native compiler metadata, not total executable size; region entries may share code and must not be summed"
+        }
+      }
+    ]
+  },
+  "timed_exact_outputs": 1133,
+  "independent_confirmation": false,
+  "adverse_result_rerun": false,
+  "established_new_latency_gain": false,
+  "allocations_unchanged": true,
+  "logical_work_and_checks_enabled": true,
+  "qualification": {
+    "R333_broad": "paid-alias-compiler-v2/broad-native-contracts.json",
+    "passed": 1059,
+    "inherited_failures": 16,
+    "ignored": 11,
+    "new_positive_fixture_skipped_in_broad": true,
+    "attribution": "paid-alias-compiler-v2/broad-failure-attribution.json",
+    "corrected_test_only_override": "paid-alias-fixture-tests-v3/override.json",
+    "corrected_positive_fixture": "paid-alias-fixture-tests-v3/positive-fixture.json",
+    "full_broad_green": false,
+    "full5000_and31edges": [
+      "paid-cleanup",
+      "paid-alias-v2"
+    ]
+  },
+  "worker_scope_audit": {
+    "record": "cold-alias-prefix-candidate/real-worker-scope-audit.json",
+    "kind": "read-only static source eligibility",
+    "estimated_shared_locks_saved": 180,
+    "dynamic_success_count_measured": false,
+    "lock_savings_measured": false
+  },
+  "limitations": [
+    "Single Apple M3 machine, exploratory same-machine paired cohort; no global-fastest implementation claim.",
+    "IR332 is slower in paired primary result; IR333 paired interval crosses zero. Neither is selected and no independent confirmation or adverse-result rerun was launched.",
+    "Instruction reductions are measured complete post-JSON all-thread totals, not proof of latency improvement; cycles vary with scheduling and instrumentation.",
+    "Allocator bytes/requests/peak remain unchanged across IR331/332/333; free-call count unavailable. RSS is whole-process peak, separate from requested heap and endpoint residency.",
+    "Broad1059/16/11 is the v2 test closure with the broken new positive fixture explicitly skipped. v3 corrects only its test source and passes that one test; no full broad v3 green claim.",
+    "There is one observed200-byte cleanup test-owner failure. The equivalent alias helper pattern was corrected statically before its first test run; no second owner-leak failed run exists. A later new positive cold-alias fixture failed, then its test-only v3 correction passed. These are test corrections, not production ownership fixes.",
+    "The 180 shared-lock estimate is static for one successful cold-alias suffix across four workers. Dynamic batching counts and actual lock savings are not measured.",
+    "No live IR334 source, engine candidate, metadata or timing is an input to this historical packet."
+  ],
+  "source_audit": "negative-worker-payments-source-audit.json"
+}

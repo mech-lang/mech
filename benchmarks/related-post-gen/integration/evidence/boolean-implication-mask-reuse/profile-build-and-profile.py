@@ -1,0 +1,30 @@
+from pathlib import Path
+import bisect,collections,hashlib,importlib.util,json,os,shutil,struct,subprocess,time
+P=Path(__file__).parent;U=Path('/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4');R=Path('/Users/cim310/mech-lang/mech/benchmarks/related-post-gen');old=Path('/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-pc-profile-20261105-v2');sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+def run(c,p,timeout=None,env=None):
+ c=list(map(str,c));t=time.monotonic();r=subprocess.run(c,capture_output=True,text=True,timeout=timeout,env={**os.environ,**(env or {})});d=dict(command=c,exit=r.returncode,seconds=time.monotonic()-t,stdout=r.stdout,stderr=r.stderr,profiled_timings_excluded=True);p.write_text(json.dumps(d,indent=2)+'\n');assert r.returncode==0,r.stdout+r.stderr;return d
+run(['cc','-O3','-c',P/'sampler.c','-o',P/'sampler.o'],P/'sampler-build.json')
+spec=importlib.util.spec_from_file_location('audit',R/'audit-native-link.py');audit=importlib.util.module_from_spec(spec);spec.loader.exec_module(audit);summary={}
+for label,bundle in [('before',Path('/private/tmp/mech-related-ordered-subsets-reused-masks-source-20261106-v1')),('after',U/'reuse-4')]:
+ p=P/label;p.mkdir(exist_ok=True);(p/'build').symlink_to(bundle/'build',target_is_directory=True)
+ source=(old/'runner.rs').read_text();reference=(bundle/'runner.rs').read_text();assert source[:source.index('fn run()')]==reference[:reference.index('fn run()')],label;source=source.replace('        let memory = mode.memory_budget();', '        assert_eq!(unsafe { mpc_phase(1) }, sample as u64 * 2 + 1);\n        let memory = mode.memory_budget();')
+ source=source.replace('        if let Some(expected) = &expected { assert_eq!(values, expected.as_slice()); }\n        else { expected = Some(values.to_vec()); }\n','')
+ source=source.replace('        std::hint::black_box(&related);','        std::hint::black_box(&related);\n        assert_eq!(unsafe { mpc_phase(0) }, sample as u64 * 2 + 2);\n        if let Some(expected) = &expected { assert_eq!(values, expected.as_slice()); }\n        else { expected = Some(values.to_vec()); }')
+ source=source.replace(' fn mpc_enable(active: i32);',' fn mpc_enable(active: i32);\n fn mpc_phase(active: i32) -> u64;')
+ (p/'runner.rs').write_text(source)
+ receipt=json.loads((bundle/'runner-aot.build.json').read_text());cmd=receipt['command'][:];cmd=[str(p/'runner.rs')if x==str(bundle/'runner.rs')else str(p/'runner-pc')if x==str(bundle/'runner-aot')else x for x in cmd];assert str(p/'runner.rs')in cmd and str(p/'runner-pc')in cmd;cmd[1:1]=['-C','link-arg='+str(P/'sampler.o')];run(cmd,p/'build.json',env={'RUSTC_BOOTSTRAP':'1'})
+ run(['python3',R/'audit-native-link.py','--object',p/'build/object.o','--executable',p/'runner-pc','--output',p/'native-link-audit.json'],p/'audit-run.json');assert json.loads((p/'native-link-audit.json').read_text())['normalized_text_sha256']==json.loads((bundle/'native-link-audit.json').read_text())['normalized_text_sha256']
+ record=run([p/'runner-pc',p/'build/source.mec','/private/tmp/mech-related-post-rust-local-20261102/posts.json',p/'output.json','1000'],p/'run.json',timeout=90);row=json.loads(record['stdout'].strip());assert row['completed_iterations']==1000 and row['all_iterations_indices_exact'];assert json.loads((p/'output.json').read_text())==json.loads(Path('/private/tmp/mech-related-frozen-native-composition-latency-20261105-v1/related_posts_rust.json').read_text());stats=json.loads((p/'output.json.pc.json').read_text());assert stats['suspended']==stats['resumed']+stats['resume_terminated']and stats['full']==0 and stats['records']>1000 and stats['record_bytes']==56 and stats['last_phase_epoch']==2000 and stats['post_json_only']
+ _,sections,symbols=audit.macho(p/'runner-pc');section=next(s for s in sections if s['name']=='__text');symbols=sorted([s for s in symbols if s['section']and sections[s['section']-1]['name']=='__text'],key=lambda s:s['value']);starts=[s['value']for s in symbols];counts=collections.Counter();pcs=collections.defaultdict(collections.Counter);base=stats['image_base']
+ observed_phases=set()
+ for ns,thread,pc,lr,sp,fp,phase in struct.iter_unpack('<7Q',(p/'output.json.pc.bin').read_bytes()):
+  assert phase & 1 and 1 <= phase <= 1999
+  observed_phases.add(phase)
+  address=pc-base+0x100000000
+  if section['address']<=address<section['address']+section['size']:
+   i=bisect.bisect_right(starts,address)-1
+   if i>=0:
+    symbol=symbols[i];counts[symbol['name']]+=1
+    if symbol['name'].startswith('_mech_canonical_program_entry_v1'):pcs[symbol['name']][address-symbol['value']]+=1
+ result=dict(compiler=('c4649860a5e445c1ce1bdec8503870e8a455da17' if label=='before' else 'cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b'),source=str(bundle/'build/source.mec'),source_sha256=sha(bundle/'build/source.mec'),profiled_timings_excluded=True,all1000_index_arrays_and_final_rust_output_exact=True,sampler=stats,post_json_phase_gate=dict(all_records_within_one_odd_epoch=True,observed_epochs=len(observed_phases),total_epochs=1000),top_symbol_observations=counts.most_common(60),native_function_observations={k:sum(v.values())for k,v in pcs.items()},native_pc_offsets={k:dict(v)for k,v in pcs.items()},limitations=['Register observations are statistical samples, not executed instruction counts or CPU-time shares.','Restored program and original JSON text are reused. Every epoch begins after JSON decoding and ends after RelatedPosts materialization, matching the continuous post-JSON boundary. Verification and teardown occur with the gate closed.','Every timed value from this profiler is excluded from comparative latency.']);(p/'summary.json').write_text(json.dumps(result,indent=2)+'\n');summary[label]=result;print(label,'1000 exact invocations',stats['records'],'records',flush=True)
+(P/'summary.json').write_text(json.dumps(dict(schema='mech.related-post-gen.boolean-implication-mask-reuse-post-json-native-pc-profile.v1',rows=summary),indent=2)+'\n')

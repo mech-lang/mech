@@ -1,0 +1,195 @@
+;; `select`/`bitselect`-related rewrites
+
+;; remove select when both choices are the same
+(rule (simplify (select    ty _ x x)) (subsume x))
+(rule (simplify (bitselect ty _ x x)) (subsume x))
+
+;; Push zeroes to the right -- this makes the select `truthy`, as used elsewhere
+;; if icmp { 0 } else { nonzero } => if !icmp { nonzero } else { 0 }
+(rule (simplify (select sty (icmp cty cc x y)
+                        zero @ (iconst_u _ 0)
+                        nonzero @ (iconst_u _ (u64_when_non_zero))))
+    (select sty (icmp cty (intcc_complement cc) x y) nonzero zero))
+
+;; if icmp(x, y) { 1 } else { 0 } => uextend(icmp(x, y))
+(rule (simplify (select ty cmp @ (icmp _ cc x y)
+                        (iconst_u _ 1)
+                        (iconst_u _ 0)))
+    (uextend_maybe ty cmp))
+;; if icmp(x, y) { -1 } else { 0 } => uextend(icmp(x, y))
+(rule (simplify (select ty cmp@(icmp _ cc x y)
+                        (iconst_s _ -1)
+                        (iconst_s _ 0)))
+    (bmask ty cmp))
+
+;; Transform select-of-icmp into {u,s}{min,max} instructions where possible.
+(rule (simplify (select ty (sgt _ x y) x y)) (smax ty x y))
+(rule (simplify (select ty (sge _ x y) x y)) (smax ty x y))
+(rule (simplify (select ty (ugt _ x y) x y)) (umax ty x y))
+(rule (simplify (select ty (uge _ x y) x y)) (umax ty x y))
+(rule (simplify (select ty (slt _ x y) x y)) (smin ty x y))
+(rule (simplify (select ty (sle _ x y) x y)) (smin ty x y))
+(rule (simplify (select ty (ult _ x y) x y)) (umin ty x y))
+(rule (simplify (select ty (ule _ x y) x y)) (umin ty x y))
+
+;; These are the same rules as above, but when the operands for select are swapped
+(rule (simplify (select ty (slt _ x y) y x)) (smax ty x y))
+(rule (simplify (select ty (sle _ x y) y x)) (smax ty x y))
+(rule (simplify (select ty (ult _ x y) y x)) (umax ty x y))
+(rule (simplify (select ty (ule _ x y) y x)) (umax ty x y))
+(rule (simplify (select ty (sgt _ x y) y x)) (smin ty x y))
+(rule (simplify (select ty (sge _ x y) y x)) (smin ty x y))
+(rule (simplify (select ty (ugt _ x y) y x)) (umin ty x y))
+(rule (simplify (select ty (uge _ x y) y x)) (umin ty x y))
+
+;; Transform bitselect-of-icmp into {u,s}{min,max} instructions where possible.
+(rule (simplify (bitselect ty @ (multi_lane _ _) (sgt _ x y) x y)) (smax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (sge _ x y) x y)) (smax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (ugt _ x y) x y)) (umax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (uge _ x y) x y)) (umax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (slt _ x y) x y)) (smin ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (sle _ x y) x y)) (smin ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (ult _ x y) x y)) (umin ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (ule _ x y) x y)) (umin ty x y))
+
+;; These are the same rules as above, but when the operands for select are swapped
+(rule (simplify (bitselect ty @ (multi_lane _ _) (slt _ x y) y x)) (smax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (sle _ x y) y x)) (smax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (ult _ x y) y x)) (umax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (ule _ x y) y x)) (umax ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (sgt _ x y) y x)) (smin ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (sge _ x y) y x)) (smin ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (ugt _ x y) y x)) (umin ty x y))
+(rule (simplify (bitselect ty @ (multi_lane _ _) (uge _ x y) y x)) (umin ty x y))
+
+;; (c & x) | (~c & y) -> (bitselect c x y)
+;; These are all the same rule, just with different permutations of the operands
+;;
+;; We currently only match vectors since scalar floats and i128's are not supported
+;; in some backends.
+(rule (simplify (bor (ty_vec128 ty) (band ty c x) (band ty (bnot ty c) y))) (bitselect ty c x y))
+(rule (simplify (bor (ty_vec128 ty) (band ty c x) (band ty y (bnot ty c) ))) (bitselect ty c x y))
+(rule (simplify (bor (ty_vec128 ty) (band ty x c) (band ty (bnot ty c) y))) (bitselect ty c x y))
+(rule (simplify (bor (ty_vec128 ty) (band ty x c) (band ty y (bnot ty c) ))) (bitselect ty c x y))
+(rule (simplify (bor (ty_vec128 ty) (band ty (bnot ty c) y) (band ty c x))) (bitselect ty c x y))
+(rule (simplify (bor (ty_vec128 ty) (band ty (bnot ty c) y) (band ty x c))) (bitselect ty c x y))
+(rule (simplify (bor (ty_vec128 ty) (band ty y (bnot ty c)) (band ty c x))) (bitselect ty c x y))
+(rule (simplify (bor (ty_vec128 ty) (band ty y (bnot ty c)) (band ty x c))) (bitselect ty c x y))
+
+;; Lift an extend operation outside of a `select` if the extend is happening
+;; on both the consequent and the alternative.
+(rule (simplify (select ty cond
+                           (uextend ty a @ (value_type small))
+                           (uextend ty b @ (value_type small))))
+      (uextend ty (select small cond a b)))
+(rule (simplify (select ty cond
+                           (sextend ty a @ (value_type small))
+                           (sextend ty b @ (value_type small))))
+      (sextend ty (select small cond a b)))
+
+(rule (simplify (select ty (sgt _ x (iconst_u ty 0)) x (ineg ty x))) (subsume (iabs ty x)))
+(rule (simplify (select ty (sge _ x (iconst_u ty 0)) x (ineg ty x))) (subsume (iabs ty x)))
+(rule (simplify (select ty (sle _ x (iconst_u ty 0)) (ineg ty x) x)) (subsume (iabs ty x)))
+(rule (simplify (select ty (slt _ x (iconst_u ty 0)) (ineg ty x) x)) (subsume (iabs ty x)))
+
+;; fold add-select to select-add
+(rule (simplify
+        (iadd ty (select ty c (iconst_u ty x) (iconst_u ty y)) (iconst_u ty z)))
+        (select ty c
+            (iconst ty (imm64_masked ty (u64_wrapping_add x z)))
+            (iconst ty (imm64_masked ty (u64_wrapping_add y z)))))
+
+(rule (simplify (select ty d a (select ty d _ y))) (select ty d a y))
+(rule (simplify (select ty d (select ty d x _) a)) (select ty d x a))
+
+;; min x y < x => false and its commutative versions
+(rule (simplify (sgt (fits_in_64 ty) (smin _ x y) x)) (iconst_u ty 0))
+(rule (simplify (sgt (fits_in_64 ty) (smin _ x y) y)) (iconst_u ty 0))
+(rule (simplify (slt (fits_in_64 ty) x (smin _ x z))) (iconst_u ty 0))
+(rule (simplify (slt (fits_in_64 ty) x (smin _ y x))) (iconst_u ty 0))
+(rule (simplify (ugt (fits_in_64 ty) (umin _ x y) x)) (iconst_u ty 0))
+(rule (simplify (ugt (fits_in_64 ty) (umin _ x y) y)) (iconst_u ty 0))
+(rule (simplify (ult (fits_in_64 ty) x (umin _ x z))) (iconst_u ty 0))
+(rule (simplify (ult (fits_in_64 ty) x (umin _ y x))) (iconst_u ty 0))
+
+;; (x == y) ? x : y => y
+;; select(eq/ne) patterns that always collapse to y.
+(rule (simplify (select ty (eq cty x y) x y)) (subsume y))
+(rule (simplify (select ty (ne cty x y) y x)) (subsume y))
+(rule (simplify (select ty (eq cty y x) x y)) (subsume y))
+(rule (simplify (select ty (ne cty y x) y x)) (subsume y))
+
+;; (x | (y != z)) ? y : z  ==> y
+(rule (simplify (select ty (bor cty x (ne cty y z)) y z)) (subsume y))
+(rule (simplify (select ty (bor cty (ne cty y z) x) y z)) (subsume y))
+(rule (simplify (select ty (bor cty x (ne cty z y)) y z)) (subsume y))
+(rule (simplify (select ty (bor cty (ne cty z y) x) y z)) (subsume y))
+
+;; (x == y) ? x : (x | y)  ==> (x | y)
+;; and equivalent operand-order variants.
+(rule (simplify (select ty (eq cty x y) x (bor ty x y))) (bor ty x y))
+(rule (simplify (select ty (ne cty x y) (bor ty x y) x)) (bor ty x y))
+(rule (simplify (select ty (eq cty x y) x (bor ty y x))) (bor ty x y))
+(rule (simplify (select ty (ne cty x y) (bor ty y x) x)) (bor ty x y))
+(rule (simplify (select ty (eq cty y x) x (bor ty x y))) (bor ty x y))
+(rule (simplify (select ty (ne cty y x) (bor ty x y) x)) (bor ty x y))
+(rule (simplify (select ty (eq cty y x) x (bor ty y x))) (bor ty x y))
+(rule (simplify (select ty (ne cty y x) (bor ty y x) x)) (bor ty x y))
+
+;; (x != y) ? (x & y) : y  ==> (x & y)
+;; and equivalent operand-order variants.
+(rule (simplify (select ty (ne cty x y) (band ty x y) y)) (band ty x y))
+(rule (simplify (select ty (eq cty x y) y (band ty x y))) (band ty x y))
+(rule (simplify (select ty (ne cty x y) (band ty y x) y)) (band ty x y))
+(rule (simplify (select ty (eq cty x y) y (band ty y x))) (band ty x y))
+(rule (simplify (select ty (ne cty y x) (band ty x y) y)) (band ty x y))
+(rule (simplify (select ty (eq cty y x) y (band ty x y))) (band ty x y))
+(rule (simplify (select ty (ne cty y x) (band ty y x) y)) (band ty x y))
+(rule (simplify (select ty (eq cty y x) y (band ty y x))) (band ty x y))
+
+;; (x <_u y) ? 1 : (x == y)  ==> (x <=_u y)
+;; and equivalent operand-order variants.
+(rule (simplify (select ty (ult cty x y) (iconst_u ty 1) (eq ty x y))) (ule ty x y))
+(rule (simplify (select ty (uge cty x y) (eq ty x y) (iconst_u ty 1))) (ule ty x y))
+(rule (simplify (select ty (ugt cty y x) (iconst_u ty 1) (eq ty x y))) (ule ty x y))
+(rule (simplify (select ty (ule cty y x) (eq ty x y) (iconst_u ty 1))) (ule ty x y))
+(rule (simplify (select ty (ult cty x y) (iconst_u ty 1) (eq ty y x))) (ule ty x y))
+(rule (simplify (select ty (uge cty x y) (eq ty y x) (iconst_u ty 1))) (ule ty x y))
+(rule (simplify (select ty (ugt cty y x) (iconst_u ty 1) (eq ty y x))) (ule ty x y))
+(rule (simplify (select ty (ule cty y x) (eq ty y x) (iconst_u ty 1))) (ule ty x y))
+
+;; (x < y) ? 1 : (x > y)  ==> (x != y)
+;; and equivalent operand-order variants.
+(rule (simplify (select ty (slt cty x y) (iconst_u ty 1) (sgt ty x y))) (ne ty x y))
+(rule (simplify (select ty (sge cty x y) (sgt ty x y) (iconst_u ty 1))) (ne ty x y))
+(rule (simplify (select ty (sgt cty y x) (iconst_u ty 1) (sgt ty x y))) (ne ty x y))
+(rule (simplify (select ty (sle cty y x) (sgt ty x y) (iconst_u ty 1))) (ne ty x y))
+(rule (simplify (select ty (slt cty x y) (iconst_u ty 1) (slt ty y x))) (ne ty x y))
+(rule (simplify (select ty (sge cty x y) (slt ty y x) (iconst_u ty 1))) (ne ty x y))
+(rule (simplify (select ty (sgt cty y x) (iconst_u ty 1) (slt ty y x))) (ne ty x y))
+(rule (simplify (select ty (sle cty y x) (slt ty y x) (iconst_u ty 1))) (ne ty x y))
+(rule (simplify (select ty (ult cty x y) (iconst_u ty 1) (ugt ty x y))) (ne ty x y))
+(rule (simplify (select ty (uge cty x y) (ugt ty x y) (iconst_u ty 1))) (ne ty x y))
+(rule (simplify (select ty (ugt cty y x) (iconst_u ty 1) (ugt ty x y))) (ne ty x y))
+(rule (simplify (select ty (ule cty y x) (ugt ty x y) (iconst_u ty 1))) (ne ty x y))
+(rule (simplify (select ty (ult cty x y) (iconst_u ty 1) (ult ty y x))) (ne ty x y))
+(rule (simplify (select ty (uge cty x y) (ult ty y x) (iconst_u ty 1))) (ne ty x y))
+(rule (simplify (select ty (ugt cty y x) (iconst_u ty 1) (ult ty y x))) (ne ty x y))
+(rule (simplify (select ty (ule cty y x) (ult ty y x) (iconst_u ty 1))) (ne ty x y))
+
+;; (x ? 1 : (x | y))  ==>  (x ? 1 : y)
+(rule (simplify (select ty x (iconst_u ty 1) (bor ty x y))) (select ty x (iconst_u ty 1) y))
+(rule (simplify (select ty x (iconst_u ty 1) (bor ty y x))) (select ty x (iconst_u ty 1) y))
+
+;; if x == n then (y - n) else (y - x)  ==>  (y - x)
+;; and equivalent predicate/operand-order variants.
+(rule (simplify (select ty (eq cty x (iconst_u ty n)) (isub ty y (iconst_u ty n)) (isub ty y x))) (isub ty y x))
+(rule (simplify (select ty (ne cty x (iconst_u ty n)) (isub ty y x) (isub ty y (iconst_u ty n)))) (isub ty y x))
+(rule (simplify (select ty (eq cty (iconst_u ty n) x) (isub ty y (iconst_u ty n)) (isub ty y x))) (isub ty y x))
+(rule (simplify (select ty (ne cty (iconst_u ty n) x) (isub ty y x) (isub ty y (iconst_u ty n)))) (isub ty y x))
+
+;; select(cond, eq(z, y), eq(p, y))  ==>  eq(y, select(cond, z, p))
+(rule (simplify (select ty x (eq ty z y) (eq ty (iconst_u cty p) y))) (eq ty y (select cty x z (iconst_u cty p))))
+(rule (simplify (select ty x (eq ty z y) (eq ty y (iconst_u cty p)))) (eq ty y (select cty x z (iconst_u cty p))))
+(rule (simplify (select ty x (eq ty y z) (eq ty (iconst_u cty p) y))) (eq ty y (select cty x z (iconst_u cty p))))
+(rule (simplify (select ty x (eq ty y z) (eq ty y (iconst_u cty p)))) (eq ty y (select cty x z (iconst_u cty p))))

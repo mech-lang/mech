@@ -7,6 +7,8 @@ use super::combinator::Attempt;
 use crate::document::{RuleId, SyntaxKind, TextSize};
 use alloc::{boxed::Box, vec::Vec};
 
+pub(super) const COMMENT_SIGIL_LITERALS: [&str; 2] = ["--", "//"];
+
 pub(crate) fn supports(rule: RuleId) -> bool {
     matches!(rule, rules::COMMENT | rules::COMMENT_SIGIL)
 }
@@ -101,7 +103,7 @@ impl Continuation {
                         self.push(Frame::Leading(parser.start()));
                     } else {
                         self.push(Frame::SigilProbe(false));
-                        self.probe(parser, "--", final_input);
+                        self.probe(parser, COMMENT_SIGIL_LITERALS[0], final_input);
                     }
                 }
                 Frame::Exit(checkpoint, promote_halt) => {
@@ -193,7 +195,7 @@ impl Continuation {
                         self.base(rule);
                     } else if !slash {
                         self.push(Frame::SigilProbe(true));
-                        self.probe(parser, "//", final_input);
+                        self.probe(parser, COMMENT_SIGIL_LITERALS[1], final_input);
                     } else {
                         self.result = Attempt::NoMatch;
                     }
@@ -278,12 +280,13 @@ impl Continuation {
                 }
                 Frame::Probe(mut scan) => {
                     let before = *allowance;
-                    let progress = scan.advance(
-                        parser.source(),
+                    let progress = scan.advance_cached(
+                        parser.source,
                         parser.cursor().end(),
                         parser.cursor().context_end(),
                         final_input,
                         allowance,
+                        &mut parser.state.literal_cache,
                     );
                     self.work += before - *allowance;
                     match progress {

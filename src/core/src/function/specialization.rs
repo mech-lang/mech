@@ -4,10 +4,11 @@ use alloc::{
     format,
     rc::Rc,
     string::{String, ToString},
+    sync::Arc,
     vec::Vec,
 };
 #[cfg(not(feature = "no_std"))]
-use std::{boxed::Box, rc::Rc, string::String, vec::Vec};
+use std::{boxed::Box, rc::Rc, string::String, sync::Arc, vec::Vec};
 
 use crate::{
     CallMemoryPlan, CallMemoryPlanningRequest, ConversionPlan, CurrentMemoryFootprint,
@@ -349,6 +350,7 @@ fn output_cell_physical_storage_descriptor(
     if matches!(
         implementation_memory,
         ImplementationMemoryClass::CanonicalFinalize
+            | ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize
             | ImplementationMemoryClass::CanonicalSortUnique
             | ImplementationMemoryClass::CanonicalCloneInput { .. }
     ) && cell.has_managed_canonical_storage()?
@@ -532,19 +534,7 @@ impl ResolvedOperationDescriptor {
         contract: OperationContractDeclaration,
     ) -> MResult<Self> {
         let canonical_name = canonical_name.into();
-        if canonical_name.is_empty() || OperationId::from_name(&canonical_name) != id {
-            return Err(MechError::new(
-                RuntimeOperationBindingMismatch {
-                    operation: Some(id),
-                    reason: format!(
-                        "canonical operation name {canonical_name:?} does not match operation ID 0x{:016x}",
-                        id.raw(),
-                    ),
-                },
-                None,
-            )
-            .with_compiler_loc());
-        }
+        Self::validate_identity(id, &canonical_name)?;
         Ok(Self {
             id,
             canonical_name,
@@ -599,8 +589,27 @@ impl ResolvedOperationDescriptor {
         Self::from_name(canonical_name, declaration)
     }
 
+    // Validation checks identity only. Borrowing the same canonical name avoids
+    // allocating a complete temporary contract at every memory-plan visit.
+    fn validate_identity(id: OperationId, canonical_name: &str) -> MResult<()> {
+        if canonical_name.is_empty() || OperationId::from_name(canonical_name) != id {
+            return Err(MechError::new(
+                RuntimeOperationBindingMismatch {
+                    operation: Some(id),
+                    reason: format!(
+                        "canonical operation name {canonical_name:?} does not match operation ID 0x{:016x}",
+                        id.raw(),
+                    ),
+                },
+                None,
+            )
+            .with_compiler_loc());
+        }
+        Ok(())
+    }
+
     pub fn validate(&self) -> MResult<()> {
-        Self::new(self.id, self.canonical_name.clone(), self.contract.clone()).map(|_| ())
+        Self::validate_identity(self.id, &self.canonical_name)
     }
 }
 
@@ -665,17 +674,60 @@ pub enum BoundImplementationId {
 
 /// Immutable certificate joining semantic resolution to one physical runtime
 /// implementation. It contains no allocation or lifetime policy.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct BoundCall {
+    certificate: Arc<BoundCallCertificate>,
+    ports: Arc<BoundCallPorts>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct BoundCallCertificate {
     operation: ResolvedOperationDescriptor,
     origin: BoundCallOrigin,
-    inputs: Box<[ResolvedValueDescriptor]>,
-    outputs: Box<[ResolvedValueDescriptor]>,
     implementation: BoundImplementationId,
     target: ExecutionTarget,
 }
 
+#[derive(Debug, Eq, PartialEq)]
+struct BoundCallPorts {
+    inputs: Box<[ResolvedValueDescriptor]>,
+    outputs: Box<[ResolvedValueDescriptor]>,
+}
+
+// Preserve the existing value-based diagnostics, independent of sharing.
+impl core::fmt::Debug for BoundCall {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("BoundCall")
+            .field("operation", &self.certificate.operation)
+            .field("origin", &self.certificate.origin)
+            .field("inputs", &self.ports.inputs)
+            .field("outputs", &self.ports.outputs)
+            .field("implementation", &self.certificate.implementation)
+            .field("target", &self.certificate.target)
+            .finish()
+    }
+}
+
 impl BoundCall {
+    fn from_parts(
+        operation: ResolvedOperationDescriptor,
+        origin: BoundCallOrigin,
+        inputs: Box<[ResolvedValueDescriptor]>,
+        outputs: Box<[ResolvedValueDescriptor]>,
+        implementation: BoundImplementationId,
+        target: ExecutionTarget,
+    ) -> Self {
+        Self {
+            certificate: Arc::new(BoundCallCertificate {
+                operation,
+                origin,
+                implementation,
+                target,
+            }),
+            ports: Arc::new(BoundCallPorts { inputs, outputs }),
+        }
+    }
+
     /// Refreshes only live extent witnesses. The selected operation,
     /// implementation, schemas, and program-lifetime dimensions remain
     /// immutable semantic authority.
@@ -684,7 +736,10 @@ impl BoundCall {
         inputs: Box<[ResolvedValueDescriptor]>,
         outputs: Box<[ResolvedValueDescriptor]>,
     ) -> MResult<Self> {
-        for (expected, actual) in [(&self.inputs, &inputs), (&self.outputs, &outputs)] {
+        for (expected, actual) in [
+            (&self.ports.inputs, &inputs),
+            (&self.ports.outputs, &outputs),
+        ] {
             if expected.len() != actual.len()
                 || expected
                     .iter()
@@ -698,9 +753,8 @@ impl BoundCall {
             }
         }
         Ok(Self {
-            inputs,
-            outputs,
-            ..self.clone()
+            certificate: Arc::clone(&self.certificate),
+            ports: Arc::new(BoundCallPorts { inputs, outputs }),
         })
     }
 
@@ -714,14 +768,14 @@ impl BoundCall {
         call.validate()?;
         validate_bound_descriptors(&call.converted_inputs, &inputs, "input")?;
         validate_bound_descriptors(&call.outputs, &outputs, "output")?;
-        Ok(Self {
-            operation: call.operation.clone(),
-            origin: BoundCallOrigin::ResolvedOverload(call.overload_id),
+        Ok(Self::from_parts(
+            call.operation.clone(),
+            BoundCallOrigin::ResolvedOverload(call.overload_id),
             inputs,
             outputs,
-            implementation: BoundImplementationId::Runtime(runtime_function),
+            BoundImplementationId::Runtime(runtime_function),
             target,
-        })
+        ))
     }
 
     pub fn syntax_directed(
@@ -731,14 +785,14 @@ impl BoundCall {
         runtime_function: RuntimeFunctionId,
         target: ExecutionTarget,
     ) -> MResult<Self> {
-        Ok(Self {
+        Ok(Self::from_parts(
             operation,
-            origin: BoundCallOrigin::SyntaxDirected,
+            BoundCallOrigin::SyntaxDirected,
             inputs,
             outputs,
-            implementation: BoundImplementationId::Runtime(runtime_function),
+            BoundImplementationId::Runtime(runtime_function),
             target,
-        })
+        ))
     }
 
     pub fn artifact_operation(
@@ -792,64 +846,65 @@ impl BoundCall {
             )
             .with_compiler_loc());
         }
-        Ok(Self {
+        Ok(Self::from_parts(
             operation,
-            origin: BoundCallOrigin::ArtifactOperation,
+            BoundCallOrigin::ArtifactOperation,
             inputs,
             outputs,
-            implementation: BoundImplementationId::Resident(resident_operation),
+            BoundImplementationId::Resident(resident_operation),
             target,
-        })
+        ))
     }
 
-    pub const fn operation(&self) -> OperationId {
-        self.operation.id
+    pub fn operation(&self) -> OperationId {
+        self.certificate.operation.id
     }
 
-    pub const fn operation_descriptor(&self) -> &ResolvedOperationDescriptor {
-        &self.operation
+    pub fn operation_descriptor(&self) -> &ResolvedOperationDescriptor {
+        &self.certificate.operation
     }
 
     pub fn resolve_operation_contract(
         &mut self,
         contract: &OperationContractDeclaration,
     ) -> MResult<()> {
-        self.operation.contract = contract.clone();
-        self.operation.validate()
+        let certificate = Arc::make_mut(&mut self.certificate);
+        certificate.operation.contract = contract.clone();
+        certificate.operation.validate()
     }
 
-    pub const fn origin(&self) -> &BoundCallOrigin {
-        &self.origin
+    pub fn origin(&self) -> &BoundCallOrigin {
+        &self.certificate.origin
     }
 
     pub fn inputs(&self) -> &[ResolvedValueDescriptor] {
-        &self.inputs
+        &self.ports.inputs
     }
 
     pub fn outputs(&self) -> &[ResolvedValueDescriptor] {
-        &self.outputs
+        &self.ports.outputs
     }
 
-    pub const fn implementation(&self) -> &BoundImplementationId {
-        &self.implementation
+    pub fn implementation(&self) -> &BoundImplementationId {
+        &self.certificate.implementation
     }
 
-    pub const fn runtime_function(&self) -> Option<RuntimeFunctionId> {
-        match &self.implementation {
+    pub fn runtime_function(&self) -> Option<RuntimeFunctionId> {
+        match &self.certificate.implementation {
             BoundImplementationId::Runtime(function) => Some(*function),
             BoundImplementationId::Resident(_) => None,
         }
     }
 
-    pub const fn resident_operation(&self) -> Option<&crate::ResidentOperationKey> {
-        match &self.implementation {
+    pub fn resident_operation(&self) -> Option<&crate::ResidentOperationKey> {
+        match &self.certificate.implementation {
             BoundImplementationId::Runtime(_) => None,
             BoundImplementationId::Resident(operation) => Some(operation),
         }
     }
 
-    pub const fn target(&self) -> ExecutionTarget {
-        self.target
+    pub fn target(&self) -> ExecutionTarget {
+        self.certificate.target
     }
 }
 

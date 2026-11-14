@@ -1,0 +1,2042 @@
+# Current compression scoreboard
+
+The compiler now emits one allocation and one sequence of writes when the
+current borrowed output has room for a complete terminal byte append. Two
+matched matrices take **0.974266×** and **0.976169×** paired control. Both
+timing gates pass on every case. Each matrix validates 245,664 complete
+compression calls. [Terminal append proof and timing](native-terminal-byte-appends.md).
+
+| Peer result | Mech wins, full | Full repeat | Paired control, full / repeat |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **76/81 (93.8%)** | **74/81 (91.4%)** | 73 / 73 |
+| Faster than libdeflate | **36/81 (44.4%)** | **35/81 (43.2%)** | 34 / 35 |
+| Faster than both | **31/81 (38.3%)** | **28/81 (34.6%)** | 26 / 27 |
+| Faster than at least one | **81/81 (100%)** | **81/81 (100%)** | 81 / 81 |
+
+Empty, one stored byte, and seven stored bytes with a prefix take
+0.552×, 0.519× and 0.508× paired control on repeat. All three beat both
+peers twice. The largest remaining Roc gap is the 65,537-byte held-out
+slide case at 1.016263× and 1.015827×. Natural 1 MiB takes 1.002909× and
+1.006801×. Natural 32 KiB straddles parity at 0.998049× and 1.000093×.
+
+## Previous compiler baseline
+
+Moving the current match-record completion test to the loop's incoming edges
+speeds up the normally emitted compact executable. Two complete matrices
+take **0.993688×** and **0.996321×** paired control. Both timing gates pass
+on every case. [Review and matched compression timing](native-reduction-rotation.md).
+
+| Peer result | Mech wins, full | Full repeat | Paired control, full / repeat |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **72/81 (88.9%)** | **73/81 (90.1%)** | 64 / 64 |
+| Faster than libdeflate | **35/81 (43.2%)** | **34/81 (42.0%)** | 34 / 34 |
+| Faster than both | **26/81 (32.1%)** | **27/81 (33.3%)** | 17 / 17 |
+| Faster than at least one | **81/81 (100%)** | **80/81 (98.8%)** | 81 / 81 |
+
+Natural 1 MiB reaches 1.007860× and 1.006525× Roc. The held-out slide
+case reaches 1.014728× and 1.017101×. Random 1 MiB crosses above 1× in
+the second run and returns to 0.988357× in the adverse confirmation.
+The three stored routes remain the largest misses against Roc.
+
+## Compression runtime experiments
+
+### Match-record continuation and selected matcher reuse
+
+The combined ARM64 experiment beats Roc on **81/81 (100%)** in all three full
+comparisons. It beats libdeflate on **33/81 (40.7%)** in each. The combined
+worker falls through from a completed match record to the next record's
+checked read. It also reuses the selected masked distance and already-read
+bytes in the matcher. The pinned program and complete compression boundary
+are identical across the measurements. Each full matrix validates 245,664
+timed calls with exact compressed bytes, independent inflate, matching
+capacities, live aliases and cleanup.
+
+| Input | Mech / paired control, repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Eight literals | 1.0104× | 0.1669× / 0.1674× | 2.1399× |
+| Natural 128 KiB | 0.9571× | 0.9788× / 0.9789× | 0.8039× |
+| Natural 1 MiB | 0.9590× | 0.9904× / 0.9891× | 0.7989× |
+| Held-out slides | 0.9608× | 0.9962× / 0.9950× | 0.8696× |
+| Repeated 32 KiB | 1.0086× | 0.5264× / 0.4832× | 0.9500× |
+
+Against the paired compiler, the first two geometric means are **0.96964×**
+and **0.96935×**. Repeated 32 KiB misses both 1.05 gates in the first
+run at 1.0820× its paired control. Both gates pass all 81 on repeat.
+Periodic 32,767 bytes has an adverse repeat geometric block ratio of
+1.1178× paired control while passing the existing two median gates. Two
+libdeflate wins are lost against each same-run control in the first two runs.
+The third run takes 0.96938× with both gates passing on all 81 and a worst
+paired block ratio of 1.02072×. It also passes both gates on all 11 inputs
+in the adverse confirmation. [Independent confirmation and compiler layout trial](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-compiler-layout-314d9e8342bb.tar.gz).
+
+With the parser layout alone, the two full runs beat Roc on **79/81** and
+**81/81**, passing both gates on every case. That worker also passed
+68,096 direct parser positions and 288 rejection/retry checks. The
+combined worker passes 162 additional linked streams. Both results
+use fixed ARM64 instruction layouts in the compact experiment. The
+compiler-produced loop rotation above integrates the continuation change.
+The matcher and direct-write experiments still use linked edits. The first
+archive verifies 756 file hashes and 11 matched cohorts. SHA-256
+`db71df8e5022fb2b821ee4d9ea65ce11f5c9b05b0125fad0d7dad91b814ef012`.
+[Exact measurement and qualification receipts](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-record-layout-db71df8e5022.tar.gz).
+
+### Direct-write ARM64 worker
+
+The direct-write ARM64 worker beats Roc on **79/81 (97.5%)** in both full
+comparisons, up from **64/81 (79.0%)** for the paired compiler control. It
+beats libdeflate on **33/81 (40.7%)** and both peers on **31/81 (38.3%)** in
+each run. The geometric means are **0.97077×** and **0.97006×** paired
+control. Both timing gates pass on all 81 cases in each run. Each matrix
+validates 245,664 calls with exact stream bytes, independent inflate,
+matching capacities, live aliases and cleanup.
+
+| Input | Mech / paired control, repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Empty | 0.5136× | 0.8610× / 0.8648× | 0.0068× |
+| Seven stored bytes with prefix | 0.4479× | 0.8432× / 0.8502× | 0.0071× |
+| Eight literals | 0.9984× | 0.1612× / 0.1623× | 2.0504× |
+| Reymont 32,769 bytes | 0.9756× | 0.9922× / 0.9918× | 0.9021× |
+| Natural 128 KiB | 0.9734× | 0.9936× / 0.9948× | 0.8191× |
+| Natural 256 KiB | 0.9777× | 0.9967× / 0.9994× | 0.8083× |
+| Natural 1 MiB | 0.9752× | 1.0092× / 1.0091× | 0.8141× |
+| Held-out slides | 0.9778× | 1.0116× / 1.0148× | 0.8870× |
+
+Periodic 1 MiB slows by 2.7% and 2.6% against its paired control. Two
+periodic sizes lose libdeflate wins on the first run and retain them on
+repeat. All three stored cases win against Roc twice. The exact worker
+passes 162 additional linked stream checks and 288 rejection/retry pairs.
+The experimental matcher, optimal parser and short write still require
+normal compiler emission. The archive includes the two profiles and the
+disposition of each trial, with 806 file hashes and 11 matched cohorts.
+SHA-256 `88b2a5a7a056ce7684bee4148adf0721942bf8c28022eeb9bec876de648b7b8c`.
+[Timing, correctness, exact worker receipts and profiles](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-packet-loads-88b2a5a7a056.tar.gz).
+
+### Previous combined ARM64 worker
+
+The previous combined ARM64 experiment shortens matcher decisions
+and the recurring parser record lookup. It takes **0.97445×** and **0.97390×**
+the published compiler's time across the two full matrices. It beats Roc on
+**75/81 (92.6%)** and **76/81 (93.8%)**, libdeflate on **34/81** in both, and
+both peers on **28/81** and **29/81**. All 81 cases pass both timing gates in
+both runs, with the same exact compressed bytes, capacities, aliases and
+independent decompression.
+
+| Input | Mech / paired control, repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.9970× | 0.1610× / 0.1616× | 2.0480× |
+| Reymont 32,769 bytes | 0.9791× | 0.9936× / 0.9925× | 0.9013× |
+| Natural 64 KiB | 0.9736× | 0.9878× / 0.9876× | 0.8298× |
+| Natural 128 KiB | 0.9751× | 1.0021× / 0.9998× | 0.8216× |
+| Natural 256 KiB | 0.9777× | 1.0005× / 1.0011× | 0.8108× |
+| Natural 1 MiB | 0.9796× | 1.0101× / 1.0107× | 0.8157× |
+| Held-out slides | 0.9786× | 1.0167× / 1.0123× | 0.8858× |
+| Seven stored bytes with prefix | 0.5489× | 1.0217× / 1.0330× | 0.0086× |
+| Empty | 0.6096× | 1.0476× / 1.0354× | 0.0082× |
+
+Periodic 8 KiB is the largest slowdown at 1.0188× control on repeat.
+Periodic 65,537 bytes loses a libdeflate win in the first run. The parser
+and matcher edits still need normal compiler emission. The published
+compiler baseline remains 64/81. The archive retains all 20 matched cohorts
+and 1,075 file hashes. SHA-256
+`9eb2ae52738b4bc9dac89e001a489e3ce48d274ab7a0985bdc819c6bcee53b62`.
+[Timing, exact worker receipts and correctness evidence](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-runtime-followup-9eb2ae52738b.tar.gz).
+
+### Earlier combined experiment
+
+The combined ARM64 trial keeps the reduction minimum live between match
+records and uses one backing acquisition for the admitted short write chain.
+It beats Roc on **69/81 (85.2%)** and **67/81 (82.7%)** in the two complete
+comparisons. It beats libdeflate on **35/81** in both, and both peers on
+**23/81** and **21/81**. Both timing gates pass on all 81 cases in both runs.
+
+| Input | Mech / paired control, first and repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Empty | 0.665× / 0.651× | 1.119× / 1.086× | 0.0086× |
+| One stored byte | 0.589× / 0.594× | 0.966× / 0.949× | 0.0086× |
+| Seven stored bytes with prefix | 0.583× / 0.615× | 1.063× / 1.145× | 0.0095× |
+| Eight literals | 1.007× / 0.991× | 0.167× / 0.164× | 2.087× |
+| Natural 64 KiB | 0.987× / 0.986× | 0.9977× / 0.9996× | 0.840× |
+| Natural 1 MiB | 0.989× / 0.988× | 1.021× / 1.021× | 0.823× |
+
+The normally emitted reduction trial had flat elapsed time and was declined.
+The published score above remains the compiler baseline. The measured code and
+timings use the existing compact benchmark entry. [Exact machine edits, two
+full comparison cohorts, adverse results and counter receipts](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-runtime-pilots-706a9fb3f8de.tar.gz).
+
+## Keep the first compact owner slot inline
+
+The compact runtime keeps the first output-owner slot inline. The two final
+81-case runs take 0.993514× and 0.993649× paired control, and both timing
+gates pass on all 81 cases. The three stored cases improve 14.0–17.1% and
+remain the largest misses. [Runtime qualification, paired observations and parser pilot](native-inline-owner-slot.md).
+
+| Peer result | Mech wins, full | Full repeat | Previous published |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **64/81 (79.0%)** | **64/81 (79.0%)** | 64 |
+| Faster than libdeflate | **32/81 (39.5%)** | **34/81 (42.0%)** | 35 |
+| Faster than both | **15/81 (18.5%)** | **17/81 (21.0%)** | 18 |
+| Faster than at least one | **81/81 (100%)** | **81/81 (100%)** | 81 |
+
+Periodic 65,536 bytes crosses from 0.998430× to 1.000881× libdeflate in
+the full run. The repeat gains periodic 65,535 bytes at 0.996621×. The
+predecessor's 35/81 result is a separate full comparison.
+
+## Normalize the checked read setup
+
+The compact compiler reuses the current header ordinal and narrows the guarded previous-node read. **All 81 level-12 cases beat at least one peer in three full comparisons.** The final compiler build takes **0.990152×** paired control across the suite. Both timing gates pass on all 81 cases in the final and repeat runs. The first run's empty-input pooled gate miss is preserved in the qualification.
+
+| Peer result | Mech wins, final | Previous published | Full repeat |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **64/81 (79.0%)** | 62 | 64 |
+| Faster than libdeflate | **35/81 (43.2%)** | 33 | 32 |
+| Faster than both | **18/81 (22.2%)** | 16 | 15 |
+| Faster than at least one | **81/81 (100%)** | 79 | 81 |
+
+| Input | Final control → Mech / Roc | Mech / libdeflate |
+| --- | ---: | ---: |
+| Eight literals | 0.161196× → 0.161213× | 2.051159× |
+| Natural 16 KiB | 1.034124× → **0.997890×** | 1.007176× |
+| Reymont 16 KiB | 1.029963× → **0.992628×** | 1.006790× |
+| Reymont 32,769 bytes | 1.060096× → 1.035645× | 0.945749× |
+| Natural 256 KiB | 1.080465× → 1.055083× | 0.855102× |
+| Natural 1 MiB | 1.092606× → 1.058501× | 0.854026× |
+| Random 1 MiB | 0.985462× → 0.990721× | 1.399015× |
+
+Natural and Reymont 16 KiB use identical input bytes and beat Roc in all three full runs. The earlier focused natural 16 KiB confirmation measures 1.001617× Roc. [Exact artifact qualification, three full matrices, and independent hardware profiles](native-defaulted-read-setup-qualification.md).
+
+## Pair two empty append visits
+
+The compiler pairs two proved empty append visits in the sparse parser. The first and repeat full matrices take **0.979019×** and **0.980157×** paired control. Both 1.05 gates pass on all 81 cases in both runs.
+
+| Peer result | Mech wins, first full | Full repeat | Previous published |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **62/81 (76.5%)** | 62 | 59 |
+| Faster than libdeflate | **33/81 (40.7%)** | 32 | 29 |
+| Faster than both | **16/81 (19.8%)** | 16 | 12 |
+| Faster than at least one | **79/81 (97.5%)** | 78 | 76 |
+
+| Input | First full / Roc | Full repeat / Roc | First / libdeflate | Full repeat / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| Eight literals | 0.159891× | 0.161206× | 2.045681× | 2.060078× |
+| Random 128 KiB | 0.966177× | 0.965980× | 1.501933× | 1.502023× |
+| Random 256 KiB | 0.984984× | 0.989045× | 1.469998× | 1.469216× |
+| Random 1 MiB | 0.988962× | 0.987815× | 1.397278× | 1.397416× |
+| Natural 16 KiB | 1.033878× | 1.035183× | 1.042094× | 1.042788× |
+| Reymont 16 KiB | 1.038522× | 1.029408× | 1.045745× | 1.039911× |
+| Reymont 32,769 bytes | 1.065094× | 1.095294× | 0.968197× | 1.063610× |
+
+The two 16 KiB cases use identical input bytes and remain above both peers. Reymont 32,769 bytes returns to 0.971485× libdeflate in the focused repeat. [Machine code, both full matrices, adverse repeat and qualification](native-sparse-append-pairs-qualification.md).
+
+## Reuse the checked input extent
+
+The matcher reuses the checked input extent to remove one packed-read comparison. Its first and repeat 81-case matrices take **0.998878×** and **0.998260×** paired control. Both 1.05 gates pass throughout. The repeat has 76 cases faster than at least one peer.
+
+| Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
+| --- | ---: | ---: | ---: | ---: |
+| Faster than Roc | **59/81 (72.8%)** | 59 | 58 | 59 |
+| Faster than libdeflate | **29/81 (35.8%)** | 28 | 27 | 28 |
+| Faster than both | **12/81 (14.8%)** | 12 | 10 | 11 |
+| Faster than at least one | **76/81 (93.8%)** | 75 | 75 | 76 |
+
+| Input | First full / Roc | Confirmation / Roc | Repeat / Roc | Repeat / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| Eight literals | 0.161068× | 0.160473× | 0.161389× | 2.049723× |
+| Random 128 KiB | **1.005455×** | **1.005001×** | 1.034138× | 1.588859× |
+| Random 256 KiB | 1.029658× | 1.029785× | 1.052528× | 1.555393× |
+| Random 1 MiB | 1.029766× | 1.033187× | 1.032715× | 1.461085× |
+| Natural 16 KiB | 1.042593× | 1.036071× | 1.040481× | 1.048482× |
+| Reymont 16 KiB | 1.034597× | 1.035262× | 1.073839× | 1.085303× |
+
+Random 128 KiB improves 0.51%, 0.60%, and 1.23% against its paired control in those runs. Its repeat control also rises to 1.046984× Roc. Natural 16 KiB is effectively flat in both full matrices. [Machine evidence, both full matrices, and adverse observations](native-packed-base-span-qualification.md).
+
+## Prefetch a second private write range
+
+The AArch64 matcher prefetches the next entries in two disjoint ranges of the same admitted private vector. The compiler-generated worker takes **0.996545×** and **0.995305×** paired control in two full 81-case runs. Both 1.05 gates pass throughout, and the same 76 cases beat at least one peer in each run.
+
+| Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
+| --- | ---: | ---: | ---: | ---: |
+| Faster than Roc | **59/81 (72.8%)** | 59 | 59 | 59 |
+| Faster than libdeflate | **28/81 (34.6%)** | 29 | 28 | 27 |
+| Faster than both | **11/81 (13.6%)** | 12 | 11 | 10 |
+| Faster than at least one | **76/81 (93.8%)** | 76 | 76 | 76 |
+
+| Input | Control / Roc | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: | ---: |
+| Eight literals | 0.162489× | 0.162425× | 2.054379× | 0.999604× |
+| Distribution change, 16 KiB | 0.985732× | 0.979901× | 1.690786× | 0.994085× |
+| Natural 16 KiB | 1.038524× | 1.032789× | 1.045128× | 0.994478× |
+| Reymont 16 KiB | 1.039083× | 1.035769× | 1.043142× | 0.996811× |
+| Random 128 KiB | 1.033289× | **1.014270×** | 1.576134× | 0.981594× |
+| Random 256 KiB | 1.050704× | 1.033266× | 1.536958× | 0.983404× |
+| Random 1 MiB | 1.057268× | 1.040641× | 1.473601× | 0.984274× |
+
+The random cases improve by 1.6–1.8% in the repeat. The same-layout NOP control confirms the benefit of the hint itself. The largest adverse comparison in the repeat is periodic 4 KiB at 1.021623× control and 0.360677× Roc. [Qualification, both full matrices and machine evidence](native-second-private-write-qualification.md).
+
+## Borrow short checked reads
+
+The compiler borrows short checked-read copies from an already held array. It changes one generated body, reduces the root by 126,096 code bytes, and takes **0.985225×** and **0.985569×** paired control in the two 81-case comparisons. Both comparisons reach 76 wins against at least one peer.
+
+| Peer result | Mech wins, full repeat | First full run | Paired repeat control | Previous published |
+| --- | ---: | ---: | ---: | ---: |
+| Faster than Roc | **59/81 (72.8%)** | 59 | 58 | 58 |
+| Faster than libdeflate | **27/81 (33.3%)** | 29 | 27 | 28 |
+| Faster than both | **10/81 (12.3%)** | 12 | 10 | 11 |
+| Faster than at least one | **76/81 (93.8%)** | 76 | 75 | 75 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.160836× | 2.045308× | 0.939151× |
+| Distribution change, 16 KiB | 0.989398× | 1.702020× | 0.971009× |
+| Natural 16 KiB | 1.047735× | 1.054706× | 0.998035× |
+| Reymont 16 KiB | 1.041353× | 1.047238× | 0.995754× |
+| Random 128 KiB | 1.028799× | 1.597988× | 0.994897× |
+| Random 256 KiB | 1.049924× | 1.561856× | 0.996645× |
+| Random 1 MiB | 1.074620× | 1.502176× | 0.976880× |
+
+Distribution change improves to 0.984453× and 0.989398× Roc in the two full runs. Both 1.05 gates pass 81/81 in the first run. The repeat misses both gates on repeated 16 KiB during a period when all four workers slow markedly. The focused repeat passes both gates and measures 0.979838× control on that case. All observations remain in the evidence. [Compiler qualification, exact binary profiles and both timing matrices](native-checked-read-borrowing.md).
+
+## Schedule independent reads from fixed private views
+
+The compiler schedules two proved independent reads from a fixed private view together. The normally linked worker reproduces the timed Object and executable byte for byte. The first complete matrix takes **0.997551×** paired control and the full repeat takes **0.998381×**. Both 1.05 gates pass throughout.
+
+| Peer result | Mech wins, full repeat | Paired control wins | Previous published |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **58/81 (71.6%)** | 58 | 58 |
+| Faster than libdeflate | **28/81 (34.6%)** | 28 | 27 |
+| Faster than both | **11/81 (13.6%)** | 11 | 10 |
+| Faster than at least one | **75/81 (92.6%)** | 75 | 75 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.171119×** | 2.196541× | 1.006523× |
+| Distribution change, 16 KiB | 1.019519× | 1.748760× | 0.999096× |
+| Natural 16 KiB | 1.043937× | 1.050029× | 0.996404× |
+| Reymont 16 KiB | 1.048250× | 1.049870× | 0.997746× |
+| Random 128 KiB | 1.033987× | 1.609464× | 0.990257× |
+| Random 256 KiB | 1.052619× | 1.565655× | 0.987213× |
+| Random 1 MiB | 1.059833× | 1.497692× | 0.971743× |
+
+The first full comparison scored 74 wins against at least one peer. It includes an elevated random 65,535-byte reading in both Mech arms, with the candidate still faster than its paired control. That input beats Roc in the full repeat and the targeted repeat. Both arms share the same 75 winning inputs in the full repeat. The separate adverse cohort takes 1.001877× paired control. [Compiler qualification](native-independent-private-read-qualification.md) · [Both complete matrices and the profiles](native-independent-private-read-trial.md).
+
+## Prefetch bounded private writes
+
+The compiler prefetches a proved next private table write. The normally linked executable reproduces the measured worker byte for byte and takes **0.992619×** the paired control across all 81 cases. Both 1.05 gates pass throughout.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **58/81 (71.6%)** | 55 |
+| Faster than libdeflate | **27/81 (33.3%)** | 28 |
+| Faster than both | **10/81 (12.3%)** | 11 |
+| Faster than at least one | **75/81 (92.6%)** | 72 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.172535×** | 2.192125× | 0.992786× |
+| Random 65,535 bytes | **0.991931×** | 1.688452× | 0.977117× |
+| Random 65,536 bytes | **0.988731×** | 1.677902× | 0.973130× |
+| Random 65,537 bytes | **0.989788×** | 1.674206× | 0.980264× |
+| Distribution change, 16 KiB | 1.015022× | 1.761947× | 0.983398× |
+| Reymont 16 KiB | 1.045821× | 1.050675× | 0.988761× |
+| Natural 16 KiB | 1.047558× | 1.053377× | 0.992488× |
+| Random 128 KiB | 1.048261× | 1.629751× | 0.972953× |
+| Random 256 KiB | 1.068322× | 1.586215× | 0.970810× |
+| Random 1 MiB | 1.074295× | 1.518749× | 0.970199× |
+| Repeated 32,769 bytes | **0.516725×** | 1.005793× | 1.008418× |
+
+The three random crossings recur in both confirmation cohorts. Repeated 32,769 bytes returns to 0.993915× libdeflate in confirmation. [Compiler qualification](native-private-write-prefetch-qualification.md) · [Full measurements and profiles](native-returning-cache-hint-trial.md).
+
+## Forward exhausted reduction entries
+
+The compiler sends a proved zero-trip reduction directly to its existing typed completion. The normally linked executable takes **0.997296×** the paired control across all 81 cases. Both 1.05 gates pass throughout. Held-out mixed crosses below Roc in the full run and confirmation.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **55/81 (67.9%)** | 54 |
+| Faster than libdeflate | **28/81 (34.6%)** | 28 |
+| Faster than both | **11/81 (13.6%)** | 11 |
+| Faster than at least one | **72/81 (88.9%)** | 71 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.171315×** | 2.186214× | 0.998988× |
+| Natural 8 KiB | **0.978042×** | 1.219986× | 0.998133× |
+| Natural 32,769 bytes | 1.079402× | **0.982355×** | 0.986069× |
+| Natural 33,027 bytes | 1.078709× | **0.984800×** | 0.987036× |
+| Held-out random, 65,537 bytes | **0.985829×** | 1.665710× | 1.000622× |
+| Held-out mixed, 131,073 bytes | **0.993448×** | 1.149819× | 0.992255× |
+| Random 65,535 bytes | 1.012148× | 1.713476× | 0.999006× |
+| Random 65,536 bytes | 1.011291× | 1.715241× | 0.997359× |
+| Random 65,537 bytes | 1.010457× | 1.714213× | 1.002627× |
+| Random 1 MiB | 1.105207× | 1.568549× | 0.998169× |
+| Periodic 256 KiB | **0.556275×** | **0.981794×** | 0.998882× |
+
+Held-out mixed repeats at 0.990378× Roc, held-out random at 0.987074× Roc and natural 33,027 bytes at 0.984302× libdeflate. The adverse cohort takes 1.001775× control and passes both gates on all ten cases. [Benchmark and compiler qualification](native-zero-trip-parser-qualification.md).
+
+## Short-circuit comparisons
+
+The compiler short-circuits a branch-only chain of integer comparisons after its shared stop decision. The normally linked executable takes **0.997813×** the paired control across all 81 cases. Both 1.05 gates pass throughout. The original and decoded compiler paths reproduce the exact timed Object and executable.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **54/81 (66.7%)** | 53 |
+| Faster than libdeflate | **28/81 (34.6%)** | 28 |
+| Faster than both | **11/81 (13.6%)** | 11 |
+| Faster than at least one | **71/81 (87.7%)** | 70 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | **0.171109×** | 2.178995× | 0.999990× |
+| Natural 8 KiB | **0.988609×** | 1.226353× | 1.003307× |
+| Natural 32,769 bytes | 1.099334× | **0.998754×** | 1.001062× |
+| Natural 33,027 bytes | 1.102226× | **0.997193×** | 1.000067× |
+| Held-out window, 32,767 bytes | 1.092552× | **0.996566×** | 0.998231× |
+| Held-out random, 65,537 bytes | **0.992046×** | 1.678024× | 0.980329× |
+| Held-out mixed, 131,073 bytes | 1.003434× | 1.163015× | 0.991590× |
+| Random 65,535 bytes | 1.011493× | 1.715026× | 0.974803× |
+| Random 65,536 bytes | 1.014891× | 1.721789× | 0.977485× |
+| Random 65,537 bytes | 1.012785× | 1.718556× | 0.979249× |
+| Random 1 MiB | 1.106722× | 1.564527× | 0.969906× |
+| Periodic 256 KiB | **0.553947×** | **0.978766×** | 0.998744× |
+
+Held-out random repeats at 0.989139× Roc. Natural 33,027 bytes repeats at 0.999341× libdeflate. Held-out mixed is 1.000604× Roc in confirmation. The fresh paired comparison adds one case against Roc and against either peer. The preceding published count of cases faster than both was 12/81. The fresh control and candidate each have 11/81. [Benchmark and compiler qualification](native-comparison-branch-qualification.md).
+
+## Shared clamp decisions and buffer views
+
+The compiler reuses the fixed view length admitted by the caller, combines adjacent private halfword reads, and shares the decision for two successive clamps. The normally linked executable takes **0.992946×** the paired control across all 81 cases. Both 1.05 gates pass throughout. Source and decoded bytecode reproduce the timed Object and worker.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **53/81 (65.4%)** | 53 |
+| Faster than libdeflate | **27/81 (33.3%)** | 22 |
+| Faster than both | **12/81 (14.8%)** | 9 |
+| Faster than at least one | **68/81 (84.0%)** | 66 |
+
+| Input | Mech / Roc | Mech / libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.169477× | 2.182011× | 0.999386× |
+| Natural 8 KiB | **0.989113×** | 1.235215× | 1.000729× |
+| Natural 32,767 bytes | 1.102468× | **0.999730×** | 0.997098× |
+| Natural 32,769 bytes | 1.099165× | 1.000773× | 0.999725× |
+| Natural 33,027 bytes | 1.098150× | 1.001481× | 0.998961× |
+| Held-out window, 32 KiB | 1.095286× | **0.992312×** | 0.992040× |
+| Held-out random, 65,537 bytes | 1.010857× | 1.708618× | 0.992497× |
+| Held-out mixed, 131,073 bytes | 1.011405× | 1.172901× | 0.998259× |
+| Periodic 256 KiB | **0.556697×** | **0.981786×** | 0.981534× |
+| Random 1 MiB | 1.136827× | 1.602088× | 0.984201× |
+
+Natural 33,027 bytes is 0.999536× libdeflate in confirmation and 0.997248× in the stored-case repeat. The full cohort remains above parity. The full paired estimate for seven stored bytes is +7.07%, with both 1.05 gates passing and a −0.64% paired repeat. Periodic 8 KiB is +1.22% full and −0.64% adverse. The separate fixed-address candidate scored 70/81. [Normally linked measurements and qualification](native-shared-clamp-qualification.md).
+
+## Shared branch flags
+
+Normalizing the branch-only loop decision takes **0.997359×** the paired continuation-forwarding control over all 81 cases. Both 1.05 gates pass throughout. Source and decoded bytecode reproduce the timed Object and executable. The five new libdeflate wins all recur in confirmation.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **53/81 (65.4%)** | 53 |
+| Faster than libdeflate | **24/81 (29.6%)** | 19 |
+| Faster than both | 9/81 | 9 |
+| Faster than either | **68/81 (84.0%)** | 63 |
+
+| Input | Mech/Roc | Mech/libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.172431× | 2.172041× | 1.002311× |
+| Natural 8 KiB | **0.989697×** | 1.229915× | 0.996410× |
+| Natural 32,767 bytes | 1.096678× | **0.999698×** | 0.996595× |
+| Natural 32 KiB | 1.096860× | **0.999072×** | 0.995592× |
+| Natural 32,769 bytes | 1.097267× | **0.998910×** | 0.996184× |
+| Held-out window, 32 KiB | 1.096814× | **0.996401×** | 0.996396× |
+| Reymont prefix, 32,769 bytes | 1.096453× | **0.997077×** | 0.993289× |
+| Held-out slides, 65,537 bytes | 1.122327× | 0.981078× | 0.994555× |
+| Held-out mixed, 131,073 bytes | **1.010960×** | 1.171059× | 0.994772× |
+| Held-out random, 65,537 bytes | **1.019332×** | 1.716335× | 0.993150× |
+
+Natural 8 KiB also beats Roc in the paired control. Periodic 8 KiB is +1.89% in the full run and +0.64% in the adverse check. The 32-byte stored outlier changes from +6.45% on the paired estimator to −0.60% on retest. Periodic 256 KiB remains at the boundary, 1.000423× libdeflate in the full run and 0.999814× in confirmation. [All matched observations, counters, executable profiles and compiler qualification](native-shared-state-branch-flags.md).
+
+## Selected loop continuations
+
+Forwarding selected loop continuations takes **0.996746×** the paired packed-read control across 81 cases. Both 1.05 timing gates pass throughout. The ordinary compiler reproduces the exact timed Object and executable from source and decoded bytecode.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **52/81 (64.2%)** | 52 |
+| Faster than libdeflate | **20/81 (24.7%)** | 20 |
+| Faster than both | 10/81 | 10 |
+| Faster than either | 62/81 (76.5%) | 62 |
+
+| Input | Mech/Roc | Mech/libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.172433× | 2.200984× | 0.994541× |
+| Natural 8 KiB | **1.000490×** | 1.240994× | 0.998791× |
+| Natural 32 KiB | 1.103885× | **1.004790×** | 0.988645× |
+| Held-out slides, 65,537 bytes | 1.129954× | **0.988504×** | 0.988651× |
+| Held-out mixed, 131,073 bytes | 1.015927× | 1.176235× | 0.991495× |
+| Natural 256 KiB | 1.116967× | 0.906274× | 0.982609× |
+| Natural 1 MiB | 1.129484× | 0.910495× | 0.986223× |
+
+Natural 8 KiB reaches 0.997146× Roc in confirmation and 1.000275× in the adverse check. Slides remains below libdeflate in all four cohorts. The largest full-matrix slowdown is periodic 8 KiB at +1.29%, rising to +1.83% in the adverse check. [Complete matched observations, counters, executable profiles and compiler qualification](native-selected-loop-continuations.md). The two preceding [prefix minimum diagnostics](native-matcher-prefix-minimum-pilots.md) did not change the compiler.
+
+## First packed reverse read
+
+The preceding opt-in first packed reverse read takes **1.000810×** the paired branch-fed selection time across all 81 cases. The 20-case screen, eight-case confirmation and ten-case adverse check take 0.998183×, 0.995486× and 0.997340×. Both 1.05 gates pass throughout. Source and decoded bytecode produce the exact timed Object and executable.
+
+| Peer result | Mech wins | Paired control wins |
+| --- | ---: | ---: |
+| Faster than Roc | **52/81 (64.2%)** | 52 |
+| Faster than libdeflate | **20/81 (24.7%)** | 18 |
+| Faster than both | 10/81 | 9 |
+| Faster than either | 62/81 (76.5%) | 61 |
+
+| Input | Mech/Roc | Mech/libdeflate | Mech / paired control |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.172446× | 2.184845× | 1.008677× |
+| Natural 8 KiB | **1.009695×** | 1.257854× | 1.004197× |
+| Natural 32 KiB | 1.116304× | 1.015999× | 0.992172× |
+| Held-out slides, 65,537 bytes | 1.142990× | **0.999027×** | 0.989249× |
+| Held-out mixed, 131,073 bytes | 1.022496× | 1.184215× | 0.992072× |
+| Natural 256 KiB | 1.133146× | 0.918982× | 0.988291× |
+| Natural 1 MiB | 1.145485× | 0.922673× | 0.992217× |
+| Periodic 256 KiB | 0.567149× | **0.999458×** | 0.997661× |
+
+Held-out slides is consistently 0.78–1.08% faster than the paired Mech control, but ranges from 0.998062× to 1.003214× libdeflate. Periodic 256 KiB returns to 1.003013× libdeflate in the adverse check. Natural 8 KiB reaches 1.000663× Roc in that check and 1.002529× in confirmation. The largest full-matrix slowdown was periodic 8 KiB at +2.97%; it was +0.73% when retested. [All measurements, qualification and exact executable profiles](native-first-packed-reverse-qualification.md).
+
+The preceding [branch-fed selection](native-branch-fed-selection-pilot.md) takes 0.995253× its paired composed-countdown control and records 52 Roc wins, 19 libdeflate wins, ten both and 61 either. Its historical peer measurements are a separate cohort.
+
+The preceding [composed ordered reduction](native-composed-countdown-qualification.md) takes 0.993395× its paired grouped-histogram control. That cohort records 52 Roc wins and 16 libdeflate wins. Repeated 32 KiB crosses below libdeflate and natural 8 KiB reaches 1.001108× Roc in that separate measurement.
+
+Folding two identical routes in each composed parser reduced natural-text instructions by 0.88–1.04%. The 81-case trial took 0.998186× control time, with natural 8 KiB slower by 0.67% and the same peer win sets. The folding rule was not retained. [Trial timings, counters and linked code](native-composed-route-folding.md).
+
+Reusing the remaining span after the first short visit improved natural 256 KiB by 0.46–0.73% across three cohorts. Natural 8 KiB reached 0.998938× Roc in the screen, 1.008855× in the full matrix and 1.004024× in confirmation. The all-case win sets were unchanged. [Short-entry timing and linked code](native-short-reduction-entry-pilot.md).
+
+Selecting two ARM64 horizontal minima removed five instructions from vector completion. The full matrix took 1.000126× control time and kept 52 Roc wins. Repeated 65,535 bytes lost its libdeflate win in the screen and full run. [Horizontal minimum timing and linked code](native-horizontal-minimum-pilot.md).
+
+Entering the scalar countdown directly shrank each composed parser by 64 bytes and retired 0.21–0.25% fewer instructions on natural text. Natural 256 KiB and 1 MiB slowed with or without the original function placement. The full trial added no Roc wins and lost one libdeflate win. [Direct countdown timings and placement control](native-direct-short-countdown-pilot.md).
+
+ARM64 conditional comparisons followed by a selection cut repeated-input instructions by about 1.9%. The full trial took 0.995219× control, kept 52 Roc wins and raised libdeflate wins from 16 to 18. The two repeated-input crossings held at fixed function addresses. Natural 8 KiB slowed there by 1.35%, crossing from 0.997531× to 1.011014× Roc. The broader rule is not active. [Conditional selection timings and isolated vector matcher](native-conditional-select-pilot.md).
+
+Sharing adjacent extending-load addresses cut random 1 MiB instructions by 1.55% in a separate fixed-address trial. Held-out random 65,537 bytes went from 1.033159× to 1.025149× Roc, while natural 8 KiB and larger natural cases slowed. The 16-case screen took 0.999682× control; the rule is not active. [Address sharing measurements and profiles](native-adjacent-extended-loads-pilot.md).
+
+A separate masked equality rule shortened two matcher branches at fixed addresses. Its 16-case screen took 1.001666× control with no new peer wins, and natural 8 KiB slowed from 1.002010× to 1.004792× Roc. [Masked comparison trial and profile](native-masked-equality-pilot.md).
+
+Sharing the first ordered-reduction ordinal changed its address calculation but saved no machine instructions. The 20-case screen took 1.000384× control with no new peer wins. Natural 8 KiB went from 1.005867× to 1.008611× Roc. [Short-reduction address trial and profiles](native-first-biased-index-pilot.md).
+
+
+## Grouped histogram comparison
+
+The grouped histogram runs in the compact native phase. Its complete 81-case comparison uses a shared startup descriptor and takes **0.959313×** the paired control time. Both timing gates pass on all 81 cases.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **52/81 (64.2%)** |
+| Faster than libdeflate | 16/81 (19.8%) |
+| Faster than both | 7/81 |
+| Faster than either | 61/81 (75.3%) |
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Eight literals | 0.175010× | 2.174522× |
+| Natural 8 KiB | 1.028615× | 1.278145× |
+| Held-out random 65,537 bytes | 1.029302× | 1.741928× |
+| Natural 256 KiB | 1.170262× | 0.949264× |
+| Random 1 MiB | 1.165518× | 1.650990× |
+| Repeated 65,537 bytes | 0.567892× | 1.002452× |
+| Periodic 1 MiB | 0.579914× | 0.984346× |
+
+The matched control won 47 Roc cases and 17 libdeflate cases. The grouped tally gains five random Roc cases and loses the narrow repeated 65,537-byte libdeflate comparison. [Grouped histogram proof, qualification and complete matched results](native-grouped-histogram-qualification.md).
+
+The subsequent countdown and register-allocation trial takes 0.994941× control across all 81 cases and reaches 1.008016× Roc on natural 8 KiB. It keeps 52 Roc wins and loses one libdeflate win in the matched run. That trial led to the composed-only selection above. [Countdown machine code, compilation stages, and matched results](native-reduction-loop-registers-pilot.md).
+
+## Equal join argument comparison
+
+The branch cleanup after equal join arguments was qualified on top of the reverse cursor. The complete 81-case comparison takes **0.994529×** the paired control time.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **47/81 (58.0%)** |
+| Faster than libdeflate | 17/81 (21.0%) |
+| Faster than both | 8/81 |
+| Faster than either | 56/81 (69.1%) |
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Natural 8 KiB | 1.030752× | 1.278943× |
+| Repeated 65,537 bytes | 0.568488× | 1.004584× |
+| Periodic 1 MiB | 0.586191× | 0.992506× |
+| Repeated 64 KiB | 0.563809× | 0.998941× |
+| Repeated 1 MiB | 0.597743× | 0.939300× |
+
+[Branch proof, combined qualification, and full matched results](native-equal-join-branch-qualification.md).
+
+## Reverse cursor comparison
+
+The reverse cursor comparison ran all 81 level-12 cases against its direct selected-read control. Both 1.05 timing gates passed. Paired elapsed was **0.996594× control** across the suite.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **47/81 (58.0%)** |
+| Faster than libdeflate | 12/81 (14.8%) |
+| Faster than both | 3/81 |
+| Faster than either | 56/81 (69.1%) |
+
+Repeated 128 KiB joins repeated 256 KiB and repeated 1 MiB below both peers. Natural 8 KiB is the closest Roc miss. Its nine-case pilot measured 1.005110× Roc, and the full matched comparison measured 1.034741×.
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Natural 8 KiB | 1.034741× | 1.289660× |
+| Repeated 32,767 bytes | 0.512233× | 1.000730× |
+| Periodic 1 MiB | 0.590594× | 1.001405× |
+| Repeated 128 KiB | 0.588129× | 0.999342× |
+| Repeated 256 KiB | 0.607588× | 0.989399× |
+| Repeated 1 MiB | 0.603854× | 0.951439× |
+
+[Reverse cursor proof, qualification, timing, and profiles](native-ordered-reduction-cursor-restoration.md).
+
+The separate selected byte-pair pilot took 1.017441× its paired control and lost the repeated 256 KiB win over libdeflate. The trial is recorded as evidence. [Seven-case pilot and machine audit](native-selected-byte-pair-pilot.md).
+
+The first equal join argument pilot measured 1.000934× control with identical win sets. The linked matcher still tests a constant false value on the skip route. [Separate seven-case pilot and branch audit](native-equal-join-pilot.md).
+
+The short reduction pair pilot measured 1.009291× control. All four natural sizes regressed. [Nine-case pilot and linked parser audit](native-short-reduction-pair-pilot.md).
+
+## Selected-read bounds comparison
+
+The selected-read bounds comparison uses the same 81 level-12 cases and pairs each candidate run with its control.
+
+| Peer result | Mech wins |
+| --- | ---: |
+| Faster than Roc | **47/81 (58.0%)** |
+| Faster than libdeflate | 11/81 (13.6%) |
+| Faster than both | 2/81 |
+| Faster than either | 56/81 (69.1%) |
+
+The same 47 cases beat Roc in the control and candidate. Repeated 256 KiB joins repeated 1 MiB below both peers. The paired geometric mean is 0.994925× control.
+
+| Input | Mech/Roc | Mech/libdeflate |
+| --- | ---: | ---: |
+| Natural 8 KiB | 1.043123× | 1.301655× |
+| Periodic 1 MiB | 0.590477× | 1.002281× |
+| Repeated 256 KiB | 0.608077× | 0.990174× |
+| Repeated 1 MiB | 0.604758× | 0.947619× |
+
+[Selected-read proof, qualification, timing, and profiles](native-selected-read-bounds.md).
+
+The later countdown predicate trial measured 1.007504× its paired control across seven cases and lost the repeated 256 KiB win over libdeflate. The compiler change was rejected. [Trial timing and profiles](native-countdown-predicate-pilot.md).
+
+## Historical R355 baseline
+
+R355 remains the retained performance baseline.
+
+**47/81 cases faster than Roc (58.02%)** in the primary cohort. Goal 100%.
+
+The matched R355 campaign counts 47/81 faster than Roc (58.02%), 8/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
+
+Natural 256 KiB and 1 MiB measure 0.971824× and 0.977661× libdeflate in this cohort. The nearest remaining libdeflate case is prefix-natural-65536 at 1.002675× libdeflate and 1.191474× Roc. The nearest remaining case where Roc is faster is heldout-window-32767 at 1.186594× Roc and 1.082331× libdeflate.
+
+| Input | R350 / Roc | Retained image / Roc | R350 / libdeflate | Retained image / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.183427× | 0.181837× | 2.333083× | 2.312853× |
+| prefix-natural-262144 | 1.218120× | 1.197968× | 0.988171× | 0.971824× |
+| prefix-natural-1048576 | 1.233933× | 1.211662× | 0.995631× | 0.977661× |
+| prefix-natural-8192 | 1.067948× | 1.057526× | 1.332191× | 1.319191× |
+| prefix-natural-65536 | 1.209767× | 1.191474× | 1.018069× | 1.002675× |
+| prefix-repeated-1048576 | 0.692360× | 0.647542× | 1.090039× | 1.019478× |
+| prefix-repeated-262144 | 0.695735× | 0.650503× | 1.131380× | 1.057826× |
+| heldout-window-32767 | 1.208369× | 1.186594× | 1.102194× | 1.082331× |
+
+[R355 qualification, profiling and paired measurement evidence](native-natural-loop-register-allocation.md).
+
+## Failed merge performance comparison
+
+The merged candidate beat Roc on **22/81 (27.16%)** in the fresh comparison. It failed compression performance qualification.
+
+The paired run retimed R355 and the merged candidate together. R355 won 47/81 against Roc and 7/81 against libdeflate. The merged candidate won 3/81 against libdeflate and ran at 1.427894× R355 elapsed across all 81 cases.
+
+| Input | R355 / Roc | Merged / Roc | R355 / libdeflate | Merged / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.190937× | 0.185935× | 2.326859× | 2.265909× |
+| prefix-natural-4096 | 0.895152× | 0.933876× | 1.505256× | 1.570372× |
+| prefix-natural-8192 | 1.057780× | 1.106123× | 1.306889× | 1.366617× |
+| prefix-random-16384 | 0.998373× | 1.153022× | 2.646997× | 3.057019× |
+| reymont-prefix-32769 | 1.187474× | 1.248135× | 1.080860× | 1.136075× |
+| prefix-natural-131072 | 1.205143× | 1.301038× | 0.960539× | 1.036971× |
+| prefix-natural-262144 | 1.214042× | 1.277660× | 0.986414× | 1.038104× |
+| prefix-natural-1048576 | 1.210550× | 1.282665× | 0.974787× | 1.032857× |
+| prefix-repeated-1048576 | 0.649217× | 1.608525× | 1.021393× | 2.530643× |
+
+[Merged compiler qualification, comparison and profiles](native-compression-integration-baseline.md).
+
+## Historical R350 measured comparison
+
+**46/81 cases faster than Roc (56.79%)** in the primary cohort. Goal 100%.
+
+The matched R350 campaign counts 46/81 faster than Roc (56.79%), 5/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
+
+Natural 256 KiB and 1 MiB measure 0.988997× and 0.994907× libdeflate in this cohort. The nearest remaining libdeflate case is prefix-natural-131072 at 1.005364× libdeflate and 1.221807× Roc. The nearest remaining case where Roc is faster is reymont-prefix-32769 at 1.202774× Roc and 1.100402× libdeflate.
+
+| Input | R349 / Roc | Retained image / Roc | R349 / libdeflate | Retained image / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.183507× | 0.183772× | 2.320180× | 2.323534× |
+| prefix-natural-262144 | 1.233715× | 1.220096× | 1.000036× | 0.988997× |
+| prefix-natural-1048576 | 1.247569× | 1.234952× | 1.005072× | 0.994907× |
+| prefix-random-16384 | 1.015657× | 1.015327× | 2.776338× | 2.775436× |
+| prefix-natural-131072 | 1.230305× | 1.221807× | 1.012356× | 1.005364× |
+| prefix-natural-65537 | 1.219281× | 1.209794× | 1.025773× | 1.017791× |
+| prefix-natural-65535 | 1.226353× | 1.215890× | 1.031519× | 1.022718× |
+| reymont-prefix-32769 | 1.214641× | 1.202774× | 1.111259× | 1.100402× |
+
+[R350 qualification, profiling and paired measurement evidence](native-ordered-result-extension.md).
+
+## Historical R349 measured comparison
+
+**46/81 cases faster than Roc (56.79%)** in the primary cohort. Goal 100%.
+
+The matched R349 campaign counts 46/81 faster than Roc (56.79%), 4/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
+
+Natural 256 KiB measures 0.997587× libdeflate in this cohort. The nearest remaining libdeflate case is prefix-natural-1048576 at 1.005035× libdeflate and 1.247016× Roc. The nearest remaining case where Roc is faster is reymont-prefix-32769 at 1.218744× Roc and 1.107388× libdeflate.
+
+| Input | R343 / Roc | Retained image / Roc | R343 / libdeflate | Retained image / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.185115× | 0.184827× | 2.327744× | 2.324117× |
+| prefix-natural-262144 | 1.234200× | 1.233386× | 0.998245× | 0.997587× |
+| prefix-random-16384 | 1.060554× | 1.016502× | 2.866315× | 2.747258× |
+| prefix-natural-1048576 | 1.250452× | 1.247016× | 1.007804× | 1.005035× |
+| prefix-natural-131072 | 1.234496× | 1.226914× | 1.016277× | 1.010035× |
+| prefix-natural-65537 | 1.226916× | 1.222624× | 1.029471× | 1.025870× |
+| reymont-prefix-32769 | 1.223099× | 1.218744× | 1.111344× | 1.107388× |
+
+[R349 qualification, profiling and paired measurement evidence](native-current-array-length-floors.md).
+
+## Historical R344 measured comparison
+
+**46/81 cases faster than Roc (56.79%)** in the primary cohort. Goal 100%.
+
+The matched R344 campaign counts 46/81 faster than Roc (56.79%), 3/81 faster than libdeflate and 0/81 faster than both. Roc is faster than libdeflate in 17/81.
+
+The nearest remaining libdeflate case is prefix-natural-262144 at 1.006703× libdeflate and 1.241978× Roc. The nearest remaining case where Roc is faster is reymont-prefix-32769 at 1.221637× Roc and 1.118748× libdeflate.
+
+| Input | R333 / Roc | Retained image / Roc | R333 / libdeflate | Retained image / libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| eight-literals | 0.182455× | 0.182337× | 2.329816× | 2.328317× |
+| prefix-random-16384 | 1.066922× | 1.060161× | 2.895325× | 2.876978× |
+| prefix-natural-262144 | 1.274495× | 1.241978× | 1.033060× | 1.006703× |
+| prefix-natural-1048576 | 1.283349× | 1.252283× | 1.035016× | 1.009961× |
+| prefix-natural-131072 | 1.274992× | 1.233081× | 1.047524× | 1.013090× |
+| reymont-prefix-32769 | 1.255082× | 1.221637× | 1.149376× | 1.118748× |
+
+[R344 qualification, profiling and paired measurement evidence](native-shared-benchmark-metadata.md).
+
+## Historical R333 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R333 composes the two read-only cost lookups. Paired elapsed changes -0.551% across all 81. The pooled and block timing gates pass 81/81 and 81/81. The matched libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.063631× Roc. The closest above libdeflate parity is prefix-natural-1048576 at 1.035586×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The closest outstanding case in that group is prefix-natural-131072 at 1.243290× Roc and 1.046309× libdeflate.
+
+| Input | R327 / Roc | R333 / Roc | R327 / libdeflate | R333 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.184753× | 0.185797× | 2.352217× | 2.365505× |
+| prefix-natural-4096 | 0.989985× | 0.974822× | 1.656656× | 1.631282× |
+| prefix-random-16384 | 1.065231× | 1.061372× | 2.872542× | 2.862136× |
+| prefix-natural-131072 | 1.272104× | 1.243290× | 1.070558× | 1.046309× |
+| prefix-natural-32769 | 1.284679× | 1.257145× | 1.170855× | 1.145761× |
+| heldout-window-32768 | 1.288238× | 1.259260× | 1.173586× | 1.147187× |
+| reymont-prefix-32769 | 1.283504× | 1.259470× | 1.170657× | 1.148736× |
+| prefix-natural-65537 | 1.288771× | 1.261873× | 1.087115× | 1.064426× |
+| prefix-natural-262144 | 1.319093× | 1.302291× | 1.069925× | 1.056297× |
+| prefix-natural-1048576 | 1.308070× | 1.280082× | 1.058228× | 1.035586× |
+| prefix-random-1048576 | 1.588463× | 1.597372× | 2.239233× | 2.251792× |
+| prefix-periodic-1048576 | 0.710743× | 0.715957× | 1.199195× | 1.207993× |
+| prefix-repeated-1048576 | 0.717065× | 0.714685× | 1.133171× | 1.129410× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R333 timing, proof and replay evidence](native-composed-readonly-lookups.md).
+
+## Historical R327 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R327 reuses selected readable bounds. Paired elapsed changes -0.634% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.072563× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.060805×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is prefix-natural-32769 at 1.286170× Roc and 1.168310× libdeflate, requiring a 22.25% elapsed reduction to match Roc.
+
+| Input | R325 / Roc | R327 / Roc | R325 / libdeflate | R327 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.181435× | 0.182187× | 2.301381× | 2.310929× |
+| prefix-random-8192 | 0.777797× | 0.768392× | 2.792720× | 2.758951× |
+| prefix-random-16384 | 1.079242× | 1.060532× | 2.914248× | 2.863726× |
+| prefix-periodic-131072 | 0.696969× | 0.695903× | 1.264983× | 1.263047× |
+| prefix-periodic-1048576 | 0.707604× | 0.706768× | 1.197878× | 1.196463× |
+| prefix-repeated-131072 | 0.702932× | 0.703128× | 1.177426× | 1.177754× |
+| prefix-repeated-1048576 | 0.709147× | 0.711352× | 1.113753× | 1.117216× |
+| prefix-natural-4096 | 0.967744× | 0.958459× | 1.628820× | 1.613191× |
+| prefix-natural-32767 | 1.303936× | 1.302555× | 1.182600× | 1.181348× |
+| reymont-prefix-32769 | 1.299074× | 1.287031× | 1.184752× | 1.173769× |
+| heldout-window-32768 | 1.296866× | 1.287287× | 1.178483× | 1.169778× |
+| prefix-natural-65537 | 1.306188× | 1.290472× | 1.097961× | 1.084751× |
+| prefix-natural-262144 | 1.322366× | 1.308667× | 1.071909× | 1.060805× |
+| prefix-natural-1048576 | 1.328210× | 1.314428× | 1.072080× | 1.060956× |
+| prefix-random-1048576 | 1.615398× | 1.596531× | 2.268571× | 2.242075× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R327 timing, proof and replay evidence](native-selected-readable-bounds.md).
+
+## Historical R325 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R325 carries the reverse reduction cursor. Paired elapsed changes -0.499% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.094231× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.071535×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is reymont-prefix-32769 at 1.300001× Roc and 1.186219× libdeflate, requiring a 23.08% elapsed reduction to match Roc.
+
+| Input | R320 / Roc | R325 / Roc | R320 / libdeflate | R325 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.182140× | 0.181623× | 2.322590× | 2.315992× |
+| prefix-random-8192 | 0.792260× | 0.789417× | 2.831918× | 2.821758× |
+| prefix-random-16384 | 1.084564× | 1.080017× | 2.920775× | 2.908531× |
+| prefix-periodic-131072 | 0.702952× | 0.696108× | 1.273056× | 1.260660× |
+| prefix-periodic-1048576 | 0.709009× | 0.706669× | 1.201583× | 1.197617× |
+| prefix-repeated-131072 | 0.705422× | 0.702686× | 1.180861× | 1.176282× |
+| prefix-repeated-1048576 | 0.711252× | 0.709879× | 1.115845× | 1.113691× |
+| prefix-natural-4096 | 0.972967× | 0.962622× | 1.662757× | 1.645078× |
+| prefix-natural-32767 | 1.323575× | 1.309101× | 1.205449× | 1.192266× |
+| reymont-prefix-32769 | 1.312570× | 1.300001× | 1.197689× | 1.186219× |
+| heldout-window-32768 | 1.320556× | 1.304625× | 1.198138× | 1.183684× |
+| prefix-natural-65537 | 1.321319× | 1.307254× | 1.109463× | 1.097654× |
+| prefix-natural-262144 | 1.331517× | 1.321870× | 1.079355× | 1.071535× |
+| prefix-natural-1048576 | 1.337900× | 1.328470× | 1.079916× | 1.072305× |
+| prefix-random-1048576 | 1.610436× | 1.612026× | 2.280150× | 2.282401× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R325 timing, proof and replay evidence](native-reverse-load-writeback.md).
+
+## Historical R320 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R320 reuses the initial byte pair on selected paths. Paired elapsed changes -0.823% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.072412× Roc. The closest above libdeflate parity is prefix-natural-1048576 at 1.078552×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is reymont-prefix-32769 at 1.310586× Roc and 1.195810× libdeflate, requiring a 23.70% elapsed reduction to match Roc.
+
+| Input | R317 / Roc | R320 / Roc | R317 / libdeflate | R320 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.183858× | 0.183280× | 2.311610× | 2.304338× |
+| prefix-random-8192 | 0.780607× | 0.778753× | 2.812467× | 2.805786× |
+| prefix-random-16384 | 1.081908× | 1.073569× | 2.919012× | 2.896514× |
+| prefix-periodic-131072 | 0.708172× | 0.697189× | 1.280902× | 1.261036× |
+| prefix-periodic-1048576 | 0.719039× | 0.708879× | 1.219598× | 1.202365× |
+| prefix-repeated-131072 | 0.713933× | 0.708360× | 1.194845× | 1.185518× |
+| prefix-repeated-1048576 | 0.719976× | 0.710964× | 1.131335× | 1.117174× |
+| prefix-natural-4096 | 0.976297× | 0.972918× | 1.662997× | 1.657240× |
+| prefix-natural-32767 | 1.320685× | 1.313833× | 1.202193× | 1.195955× |
+| reymont-prefix-32769 | 1.315659× | 1.310586× | 1.200439× | 1.195810× |
+| heldout-window-32768 | 1.317757× | 1.312644× | 1.198497× | 1.193847× |
+| prefix-natural-65537 | 1.325106× | 1.319838× | 1.113718× | 1.109290× |
+| prefix-natural-262144 | 1.342164× | 1.333217× | 1.087771× | 1.080520× |
+| prefix-natural-1048576 | 1.346879× | 1.336065× | 1.087282× | 1.078552× |
+| prefix-random-1048576 | 1.634713× | 1.613741× | 2.313052× | 2.283377× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R320 timing, proof and replay evidence](native-selected-byte-pair.md).
+
+## Historical R317 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R317 allocates the saved link register in framed leaf functions. Paired elapsed changes +0.010% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.074052× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.086069×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is heldout-window-32768 at 1.314469× Roc and 1.201616× libdeflate, requiring a 23.92% elapsed reduction to match Roc.
+
+| Input | R315 / Roc | R317 / Roc | R315 / libdeflate | R317 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.183182× | 0.183064× | 2.317330× | 2.315841× |
+| prefix-random-8192 | 0.783637× | 0.788541× | 2.805431× | 2.822985× |
+| prefix-random-16384 | 1.095690× | 1.095046× | 2.935115× | 2.933389× |
+| prefix-periodic-131072 | 0.701255× | 0.708141× | 1.273304× | 1.285808× |
+| prefix-periodic-1048576 | 0.709254× | 0.719817× | 1.200946× | 1.218832× |
+| prefix-repeated-131072 | 0.703062× | 0.712938× | 1.178383× | 1.194936× |
+| prefix-repeated-1048576 | 0.711228× | 0.721120× | 1.116707× | 1.132238× |
+| prefix-natural-4096 | 0.980266× | 0.974934× | 1.681774× | 1.672626× |
+| prefix-natural-32767 | 1.339033× | 1.319552× | 1.217873× | 1.200154× |
+| reymont-prefix-32769 | 1.329434× | 1.315550× | 1.216897× | 1.204189× |
+| heldout-window-32768 | 1.327940× | 1.314469× | 1.213931× | 1.201616× |
+| prefix-natural-65537 | 1.344949× | 1.327774× | 1.128332× | 1.113923× |
+| prefix-natural-262144 | 1.361582× | 1.340684× | 1.102998× | 1.086069× |
+| prefix-natural-1048576 | 1.367430× | 1.347037× | 1.105167× | 1.088685× |
+| prefix-random-1048576 | 1.626115× | 1.631475× | 2.301789× | 2.309375× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R317 timing, proof and replay evidence](native-framed-leaf-register.md).
+
+## Historical R315 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R315 forwards a selected mismatch through the already resolved decisions. Paired elapsed changes -0.568% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-natural-4096 at 1.010958× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.099598×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is heldout-window-32767 at 1.333156× Roc and 1.212450× libdeflate, requiring a 24.99% elapsed reduction to match Roc.
+
+| Input | R314 / Roc | R315 / Roc | R314 / libdeflate | R315 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.181540× | 0.180131× | 2.323341× | 2.305305× |
+| prefix-random-8192 | 0.788547× | 0.784198× | 2.811498× | 2.795991× |
+| prefix-random-16384 | 1.094439× | 1.074619× | 2.969679× | 2.915899× |
+| prefix-periodic-131072 | 0.697352× | 0.696483× | 1.261895× | 1.260322× |
+| prefix-periodic-1048576 | 0.708865× | 0.708797× | 1.202042× | 1.201926× |
+| prefix-repeated-131072 | 0.704966× | 0.704816× | 1.179950× | 1.179700× |
+| prefix-repeated-1048576 | 0.710593× | 0.711106× | 1.117946× | 1.118753× |
+| prefix-natural-4096 | 0.981286× | 0.974793× | 1.678325× | 1.667220× |
+| prefix-natural-32767 | 1.351572× | 1.334376× | 1.228525× | 1.212894× |
+| reymont-prefix-32769 | 1.349985× | 1.334761× | 1.228686× | 1.214831× |
+| heldout-window-32768 | 1.350825× | 1.334876× | 1.229280× | 1.214766× |
+| prefix-natural-65537 | 1.353221× | 1.342407× | 1.139669× | 1.130562× |
+| prefix-natural-262144 | 1.372258× | 1.354530× | 1.113989× | 1.099598× |
+| prefix-natural-1048576 | 1.386745× | 1.368633× | 1.120419× | 1.105786× |
+| prefix-random-1048576 | 1.650705× | 1.628540× | 2.335408× | 2.304050× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R315 timing, proof and replay evidence](native-selected-mismatch.md).
+
+R316 measures carried child addresses. The 81-case paired elapsed changes +0.482%. [R316 timing, proof and replay evidence](native-carried-child-addresses.md).
+
+## Historical R314 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R314 proves the two initial scalar reads inside a checked input window. Paired elapsed changes -0.880% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.083255× Roc. The closest above libdeflate parity is prefix-natural-262144 at 1.115964×.
+
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 and 64 KiB. The closest case is prefix-natural-65537 at 1.346338× Roc and 1.129457× libdeflate, requiring a 25.72% elapsed reduction to match Roc.
+
+| Input | R313 / Roc | R314 / Roc | R313 / libdeflate | R314 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.194407× | 0.189065× | 2.698778× | 2.624625× |
+| prefix-random-8192 | 0.785041× | 0.788900× | 2.821849× | 2.835719× |
+| prefix-random-16384 | 1.095081× | 1.088869× | 2.943468× | 2.926768× |
+| prefix-periodic-131072 | 0.713323× | 0.692944× | 1.298257× | 1.261167× |
+| prefix-periodic-1048576 | 0.729676× | 0.708285× | 1.235195× | 1.198983× |
+| prefix-repeated-131072 | 0.717511× | 0.702009× | 1.202968× | 1.176978× |
+| prefix-repeated-1048576 | 0.729166× | 0.710335× | 1.151823× | 1.122077× |
+| prefix-natural-4096 | 0.997631× | 0.996125× | 1.702697× | 1.700125× |
+| prefix-natural-32767 | 1.350179× | 1.350500× | 1.227247× | 1.227539× |
+| reymont-prefix-32769 | 1.346953× | 1.346506× | 1.228727× | 1.228318× |
+| heldout-window-32768 | 1.350705× | 1.353873× | 1.227745× | 1.230625× |
+| prefix-natural-262144 | 1.380414× | 1.374114× | 1.121081× | 1.115964× |
+| prefix-natural-1048576 | 1.385693× | 1.389411× | 1.118462× | 1.121463× |
+| prefix-random-1048576 | 1.647170× | 1.648358× | 2.332213× | 2.333895× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R314 timing, proof and replay evidence](native-scalar-byte-spans.md).
+
+## Historical R313 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R313 reuses the selected input-window comparisons through the matcher. Paired elapsed changes -0.780% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-natural-4096 at 1.000762× Roc. The closest above libdeflate parity is 256 KiB natural at 1.116256×.
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 KiB. The closest case is heldout-window-32768 at 1.347196× Roc and 1.228103× libdeflate, requiring a 25.77% elapsed reduction to match Roc.
+
+
+| Input | R312 / Roc | R313 / Roc | R312 / libdeflate | R313 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.181078× | 0.183156× | 2.306530× | 2.332990× |
+| prefix-random-8192 | 0.787610× | 0.790435× | 2.805482× | 2.815544× |
+| prefix-random-16384 | 1.103377× | 1.093201× | 2.976185× | 2.948736× |
+| prefix-periodic-131072 | 0.728841× | 0.715789× | 1.322400× | 1.298720× |
+| prefix-periodic-1048576 | 0.740598× | 0.729926× | 1.252752× | 1.234700× |
+| prefix-repeated-131072 | 0.732165× | 0.723716× | 1.224013× | 1.209889× |
+| prefix-repeated-1048576 | 0.740535× | 0.729368× | 1.163245× | 1.145704× |
+| prefix-natural-4096 | 0.989913× | 0.985195× | 1.693191× | 1.685120× |
+| prefix-natural-32767 | 1.354085× | 1.348764× | 1.234217× | 1.229367× |
+| reymont-prefix-32769 | 1.354036× | 1.348475× | 1.232615× | 1.227553× |
+| heldout-window-32768 | 1.354765× | 1.347196× | 1.235003× | 1.228103× |
+| prefix-natural-262144 | 1.385548× | 1.377538× | 1.122747× | 1.116256× |
+| prefix-natural-1048576 | 1.401785× | 1.392938× | 1.130270× | 1.123136× |
+| prefix-random-1048576 | 1.659751× | 1.647827× | 2.349192× | 2.332316× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R313 timing, proof and replay evidence](native-dominating-window-facts.md).
+
+## Historical R312 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R312 defers phase packet loads with a single use on an exit. Paired elapsed changes -0.330% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.088388× Roc. The closest above libdeflate parity is 256 KiB natural at 1.121742×.
+Roc is faster than libdeflate in 17/81 matched cases. Mech is faster than both in 0/81. The first priority is natural text around 32 KiB. The closest case is prefix-natural-32767 at 1.351416× Roc and 1.232441× libdeflate, requiring a 26.00% elapsed reduction to match Roc.
+
+
+| Input | R309 / Roc | R312 / Roc | R309 / libdeflate | R312 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.182481× | 0.181236× | 2.321540× | 2.305701× |
+| prefix-random-8192 | 0.782918× | 0.784815× | 2.797741× | 2.804520× |
+| prefix-random-16384 | 1.090115× | 1.081763× | 2.965464× | 2.942743× |
+| prefix-periodic-131072 | 0.728591× | 0.727434× | 1.323311× | 1.321210× |
+| prefix-periodic-1048576 | 0.739356× | 0.738884× | 1.254795× | 1.253994× |
+| prefix-repeated-131072 | 0.731382× | 0.734421× | 1.222635× | 1.227714× |
+| prefix-repeated-1048576 | 0.739931× | 0.739725× | 1.163443× | 1.163118× |
+| prefix-natural-4096 | 0.985796× | 0.983635× | 1.683414× | 1.679723× |
+| prefix-natural-32767 | 1.358774× | 1.351416× | 1.239151× | 1.232441× |
+| reymont-prefix-32769 | 1.359593× | 1.351458× | 1.243343× | 1.235904× |
+| heldout-window-32768 | 1.363360× | 1.355723× | 1.242120× | 1.235162× |
+| prefix-natural-262144 | 1.390089× | 1.385044× | 1.125828× | 1.121742× |
+| prefix-natural-1048576 | 1.403100× | 1.400530× | 1.131102× | 1.129031× |
+| prefix-random-1048576 | 1.681196× | 1.661670× | 2.377852× | 2.350235× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R312 timing, proof and replay evidence](native-exit-packet-loads.md).
+
+## Historical R309 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R309 reuses a dominating unsigned bounds comparison. Paired elapsed changes -0.525% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.112643× Roc. The closest above libdeflate parity is 256 KiB natural at 1.124730×.
+
+| Input | R308 / Roc | R309 / Roc | R308 / libdeflate | R309 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.182902× | 0.182504× | 2.336349× | 2.331272× |
+| prefix-random-8192 | 0.817676× | 0.812088× | 2.929162× | 2.909144× |
+| prefix-random-16384 | 1.114838× | 1.100570× | 3.033896× | 2.995069× |
+| prefix-periodic-131072 | 0.730498× | 0.730658× | 1.321621× | 1.321910× |
+| prefix-periodic-1048576 | 0.740463× | 0.740256× | 1.253161× | 1.252810× |
+| prefix-repeated-131072 | 0.729754× | 0.721587× | 1.251530× | 1.237524× |
+| prefix-repeated-1048576 | 0.739780× | 0.739540× | 1.162214× | 1.161836× |
+| prefix-natural-4096 | 1.000205× | 0.996521× | 1.709546× | 1.703248× |
+| prefix-natural-262144 | 1.389048× | 1.387369× | 1.126092× | 1.124730× |
+| prefix-natural-1048576 | 1.403890× | 1.402181× | 1.131306× | 1.129929× |
+| prefix-random-1048576 | 1.694342× | 1.674439× | 2.397382× | 2.369221× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R309 timing, proof and replay evidence](native-repeated-bounds-checks.md).
+
+## Historical R308 measured comparison
+
+**46/81 cases faster than Roc (56.79%).** Goal 100%.
+R308 widens unsigned dot products in two Huffman cost loops. Paired elapsed changes -1.170% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+The closest primary case above parity is prefix-random-16384 at 1.108522× Roc.
+
+| Input | R304 / Roc | R308 / Roc | R304 / libdeflate | R308 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.195052× | 0.183332× | 2.496556× | 2.346542× |
+| prefix-random-8192 | 0.813810× | 0.801660× | 2.915373× | 2.871845× |
+| prefix-random-16384 | 1.123333× | 1.113617× | 3.060576× | 3.034103× |
+| prefix-periodic-131072 | 0.729314× | 0.718622× | 1.329129× | 1.309643× |
+| prefix-periodic-1048576 | 0.741126× | 0.740038× | 1.255028× | 1.253186× |
+| prefix-repeated-131072 | 0.735122× | 0.735163× | 1.231185× | 1.231254× |
+| prefix-repeated-1048576 | 0.743341× | 0.738997× | 1.169736× | 1.162900× |
+| prefix-natural-4096 | 1.003873× | 0.991145× | 1.697860× | 1.676334× |
+| prefix-natural-1048576 | 1.405550× | 1.406094× | 1.134229× | 1.134668× |
+| prefix-random-1048576 | 1.696041× | 1.694171× | 2.401077× | 2.398430× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R308 timing, proof and replay evidence](native-widening-reductions.md).
+
+## Historical R304 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R304 shares adjacent typed addresses. Paired elapsed changes -0.810% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R303 / Roc | R304 / Roc | R303 / libdeflate | R304 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.194810× | 0.193882× | 2.499098× | 2.487201× |
+| prefix-random-8192 | 0.820479× | 0.812653× | 2.918651× | 2.890812× |
+| prefix-periodic-131072 | 0.740361× | 0.728603× | 1.341911× | 1.320600× |
+| prefix-periodic-1048576 | 0.751401× | 0.740975× | 1.274684× | 1.256997× |
+| prefix-repeated-131072 | 0.743454× | 0.738084× | 1.241343× | 1.232377× |
+| prefix-repeated-1048576 | 0.752914× | 0.742142× | 1.184204× | 1.167260× |
+| prefix-natural-4096 | 1.001705× | 0.996317× | 1.719334× | 1.710086× |
+| prefix-natural-1048576 | 1.403966× | 1.404636× | 1.132615× | 1.133156× |
+| prefix-random-1048576 | 1.713010× | 1.700575× | 2.422950× | 2.405362× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R304 timing, proof and replay evidence](native-adjacent-typed-addresses.md).
+
+R305 screens bounded indexed updates at the phase entry. Paired elapsed changes -0.498% across 27 cases. Three short-input block gates miss. R304 is the retained baseline. [R305 timing, code and replay](native-bounded-indexed-updates.md).
+
+R306 measures a callee-local indexed update. The 81-case paired elapsed changes -0.675%. [R306 timing, proof and replay evidence](native-local-bounded-indexed-updates.md).
+
+## Historical R303 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R303 forwards a proved equality endpoint. Paired elapsed changes -1.436% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R301 / Roc | R303 / Roc | R301 / libdeflate | R303 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.195000× | 0.195287× | 2.487166× | 2.490820× |
+| prefix-random-8192 | 0.810979× | 0.813350× | 2.946582× | 2.955200× |
+| prefix-periodic-131072 | 0.766247× | 0.738613× | 1.394381× | 1.344093× |
+| prefix-periodic-1048576 | 0.779972× | 0.751472× | 1.321756× | 1.273459× |
+| prefix-repeated-131072 | 0.766513× | 0.741732× | 1.286632× | 1.245037× |
+| prefix-repeated-1048576 | 0.777212× | 0.751014× | 1.221658× | 1.180478× |
+| prefix-natural-4096 | 1.002560× | 0.997365× | 1.722593× | 1.713668× |
+| prefix-natural-1048576 | 1.408331× | 1.405020× | 1.136660× | 1.133988× |
+| prefix-random-1048576 | 1.719274× | 1.711657× | 2.428797× | 2.418036× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R303 timing, proof and replay evidence](native-forwarded-equality-end.md).
+
+## Historical R301 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R301 reuses checked spans for ordered captures. Paired elapsed changes -0.475% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R297 / Roc | R301 / Roc | R297 / libdeflate | R301 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.195561× | 0.196638× | 2.469847× | 2.483453× |
+| prefix-random-8192 | 0.810624× | 0.820570× | 2.892809× | 2.928306× |
+| prefix-periodic-131072 | 0.774351× | 0.763179× | 1.396637× | 1.376487× |
+| prefix-periodic-1048576 | 0.790321× | 0.779962× | 1.339501× | 1.321945× |
+| prefix-repeated-131072 | 0.779710× | 0.772003× | 1.305959× | 1.293050× |
+| prefix-repeated-1048576 | 0.786521× | 0.777683× | 1.235952× | 1.222064× |
+| prefix-natural-4096 | 0.996537× | 1.001627× | 1.704040× | 1.712745× |
+| prefix-natural-1048576 | 1.405964× | 1.403915× | 1.134504× | 1.132851× |
+| prefix-random-1048576 | 1.713533× | 1.713116× | 2.426087× | 2.425496× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R301 timing, proof and replay evidence](native-ordered-capture-spans.md).
+
+R302 screens shared equality across a fixed prefix and its continuation. Paired elapsed changes -0.098% across 27 cases. The current baseline remains R301. [R302 timing, code and replay](native-shifted-equality-prefix.md).
+
+## Historical R297 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R297 folds exact flags in selected reductions. Paired elapsed changes -0.635% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R296 / Roc | R297 / Roc | R296 / libdeflate | R297 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.193690× | 0.194091× | 2.477664× | 2.482799× |
+| prefix-random-8192 | 0.817598× | 0.821070× | 2.941261× | 2.953750× |
+| prefix-periodic-131072 | 0.773035× | 0.775008× | 1.402558× | 1.406138× |
+| prefix-periodic-1048576 | 0.790692× | 0.790694× | 1.339846× | 1.339850× |
+| prefix-repeated-131072 | 0.775135× | 0.774328× | 1.296669× | 1.295319× |
+| prefix-repeated-1048576 | 0.786961× | 0.786132× | 1.235358× | 1.234056× |
+| prefix-natural-4096 | 1.013778× | 1.004644× | 1.727450× | 1.711885× |
+| prefix-natural-1048576 | 1.421741× | 1.406241× | 1.146626× | 1.134125× |
+| prefix-random-1048576 | 1.707312× | 1.710297× | 2.418515× | 2.422743× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R297 timing, proof and replay evidence](native-scoped-bitwise-guards.md).
+
+R298 screens shared immutable comparison window bounds. Paired elapsed changes -0.223% across 27 cases. The current baseline remains R297. [R298 timing, code and replay](native-paired-capture-bounds.md).
+
+R299 screens the checked end for paired immutable windows. Paired elapsed changes -0.147% across 27 cases. The current baseline remains R297. [R299 timing, code and replay](native-checked-capture-ends.md).
+
+R300 screens reuse of a checked span for fixed-width reads. Paired elapsed changes +1.153% across 27 cases. The current baseline remains R297. [R300 timing, code and replay](native-checked-span-guards.md).
+
+## Historical R296 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R296 shares fixed-width readable window bounds. Paired elapsed changes -1.015% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R295 / Roc | R296 / Roc | R295 / libdeflate | R296 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197683× | 0.198009× | 2.473054× | 2.477136× |
+| prefix-random-8192 | 0.822424× | 0.824442× | 2.954963× | 2.962213× |
+| prefix-periodic-131072 | 0.790865× | 0.771082× | 1.439575× | 1.403566× |
+| prefix-periodic-1048576 | 0.810910× | 0.790040× | 1.375087× | 1.339696× |
+| prefix-repeated-131072 | 0.794293× | 0.777072× | 1.322201× | 1.293535× |
+| prefix-repeated-1048576 | 0.804576× | 0.786582× | 1.265708× | 1.237401× |
+| prefix-natural-4096 | 1.006309× | 1.003424× | 1.746063× | 1.741056× |
+| prefix-natural-1048576 | 1.425235× | 1.424104× | 1.149017× | 1.148105× |
+| prefix-random-1048576 | 1.709757× | 1.712933× | 2.420899× | 2.425396× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R296 timing, proof and replay evidence](native-shared-window-limits.md).
+
+## Historical R295 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R295 preserves agreeing Boolean literals at joins. Paired elapsed changes -0.525% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R294 / Roc | R295 / Roc | R294 / libdeflate | R295 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.194175× | 0.193589× | 2.480856× | 2.473371× |
+| prefix-random-8192 | 0.828606× | 0.836781× | 2.966367× | 2.995631× |
+| prefix-periodic-131072 | 0.794833× | 0.794195× | 1.443559× | 1.442401× |
+| prefix-periodic-1048576 | 0.811171× | 0.810991× | 1.373230× | 1.372925× |
+| prefix-repeated-131072 | 0.793214× | 0.799196× | 1.326188× | 1.336189× |
+| prefix-repeated-1048576 | 0.804349× | 0.805647× | 1.263745× | 1.265784× |
+| prefix-natural-4096 | 1.037621× | 1.019462× | 1.754280× | 1.723580× |
+| prefix-natural-1048576 | 1.450186× | 1.424209× | 1.168464× | 1.147533× |
+| prefix-random-1048576 | 1.711824× | 1.713373× | 2.418634× | 2.420824× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R295 timing, proof and replay evidence](native-agreeing-boolean-literals.md).
+
+## Historical R294 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R294 reuses geometry facts for immutable captures. Paired elapsed changes -0.729% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R293 / Roc | R294 / Roc | R293 / libdeflate | R294 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.199245× | 0.197678× | 2.509578× | 2.489839× |
+| prefix-random-8192 | 0.827767× | 0.834092× | 2.911053× | 2.933296× |
+| prefix-periodic-131072 | 0.802801× | 0.791278× | 1.460179× | 1.439221× |
+| prefix-periodic-1048576 | 0.822271× | 0.811852× | 1.389592× | 1.371985× |
+| prefix-repeated-131072 | 0.801409× | 0.795662× | 1.342055× | 1.332432× |
+| prefix-repeated-1048576 | 0.813534× | 0.804603× | 1.278850× | 1.264811× |
+| prefix-natural-4096 | 1.044694× | 1.037683× | 1.794161× | 1.782121× |
+| prefix-natural-1048576 | 1.453693× | 1.446452× | 1.172063× | 1.166225× |
+| prefix-random-1048576 | 1.707284× | 1.711133× | 2.410358× | 2.415792× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R294 timing, proof and replay evidence](native-captured-view-geometry.md).
+
+## Historical R293 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R293 reuses the flat-view proof in packed reads. Paired elapsed changes -0.923% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R292 / Roc | R293 / Roc | R292 / libdeflate | R293 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.196668× | 0.196441× | 2.516293× | 2.513395× |
+| prefix-random-8192 | 0.840841× | 0.809658× | 3.051630× | 2.938457× |
+| prefix-periodic-131072 | 0.794514× | 0.805471× | 1.443464× | 1.463370× |
+| prefix-periodic-1048576 | 0.811491× | 0.823094× | 1.373233× | 1.392868× |
+| prefix-repeated-131072 | 0.793000× | 0.804301× | 1.323310× | 1.342169× |
+| prefix-repeated-1048576 | 0.804555× | 0.814135× | 1.264046× | 1.279097× |
+| prefix-natural-4096 | 1.059592× | 1.040108× | 1.820329× | 1.786857× |
+| prefix-natural-1048576 | 1.469640× | 1.452843× | 1.186922× | 1.173356× |
+| prefix-random-1048576 | 1.768916× | 1.707633× | 2.504031× | 2.417281× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R293 timing, proof and replay evidence](native-admitted-packed-reads.md).
+
+## Historical R292 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R292 retains spill copy facts across taken branches. Paired elapsed changes -0.765% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R291 / Roc | R292 / Roc | R291 / libdeflate | R292 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197142× | 0.194734× | 2.528726× | 2.497838× |
+| prefix-random-8192 | 0.861287× | 0.847291× | 3.109778× | 3.059246× |
+| prefix-periodic-131072 | 0.805428× | 0.792766× | 1.463627× | 1.440618× |
+| prefix-periodic-1048576 | 0.824648× | 0.812344× | 1.396811× | 1.375970× |
+| prefix-repeated-131072 | 0.803174× | 0.793762× | 1.344800× | 1.329040× |
+| prefix-repeated-1048576 | 0.815422× | 0.804040× | 1.281453× | 1.263566× |
+| prefix-natural-4096 | 1.063860× | 1.055261× | 1.817828× | 1.803135× |
+| prefix-natural-1048576 | 1.473780× | 1.479314× | 1.188070× | 1.192531× |
+| prefix-random-1048576 | 1.775667× | 1.765666× | 2.510527× | 2.496386× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R292 timing, proof and replay evidence](native-forward-spill-copies.md).
+
+## Historical R291 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R291 combines checked empty runs and reduction handoffs. Paired elapsed changes -0.262% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R290 / Roc | R291 / Roc | R290 / libdeflate | R291 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198204× | 0.198646× | 2.523229× | 2.528860× |
+| prefix-random-8192 | 0.879097× | 0.864606× | 3.161676× | 3.109561× |
+| prefix-periodic-131072 | 0.804064× | 0.805725× | 1.458095× | 1.461107× |
+| prefix-periodic-1048576 | 0.820582× | 0.822567× | 1.390151× | 1.393515× |
+| prefix-repeated-131072 | 0.804381× | 0.803953× | 1.348448× | 1.347731× |
+| prefix-repeated-1048576 | 0.814741× | 0.817178× | 1.279751× | 1.283579× |
+| prefix-natural-4096 | 1.070267× | 1.055364× | 1.822284× | 1.796910× |
+| prefix-natural-1048576 | 1.473845× | 1.472239× | 1.190040× | 1.188742× |
+| prefix-random-1048576 | 1.774716× | 1.779286× | 2.505780× | 2.512232× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R291 timing, proof and replay evidence](native-empty-and-handoff.md).
+
+## Historical R290 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R290 proves readable bounds at empty-run entry. Paired elapsed changes -0.308% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R288 / Roc | R290 / Roc | R288 / libdeflate | R290 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198503× | 0.198765× | 2.514570× | 2.517892× |
+| prefix-random-8192 | 0.862860× | 0.863339× | 3.104736× | 3.106458× |
+| prefix-periodic-131072 | 0.811379× | 0.807536× | 1.469276× | 1.462316× |
+| prefix-periodic-1048576 | 0.826206× | 0.820947× | 1.396533× | 1.387645× |
+| prefix-repeated-131072 | 0.807803× | 0.805485× | 1.353858× | 1.349972× |
+| prefix-repeated-1048576 | 0.817260× | 0.813896× | 1.286007× | 1.280713× |
+| prefix-natural-4096 | 1.063857× | 1.058589× | 1.821370× | 1.812350× |
+| prefix-natural-1048576 | 1.467280× | 1.472776× | 1.183473× | 1.187906× |
+| prefix-random-1048576 | 1.782865× | 1.771598× | 2.520355× | 2.504427× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R290 timing, proof and replay evidence](native-empty-window.md).
+
+## Historical R288 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R288 emits each current window check once. Paired elapsed changes -0.799% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R287 / Roc | R288 / Roc | R287 / libdeflate | R288 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.201114× | 0.200733× | 2.515561× | 2.510802× |
+| prefix-random-8192 | 0.853602× | 0.856097× | 3.098573× | 3.107633× |
+| prefix-periodic-131072 | 0.827335× | 0.806444× | 1.499596× | 1.461730× |
+| prefix-periodic-1048576 | 0.846275× | 0.825687× | 1.432777× | 1.397920× |
+| prefix-repeated-131072 | 0.824803× | 0.808417× | 1.379811× | 1.352399× |
+| prefix-repeated-1048576 | 0.837032× | 0.818237× | 1.315791× | 1.286245× |
+| prefix-natural-4096 | 1.077144× | 1.069963× | 1.834289× | 1.822061× |
+| prefix-natural-1048576 | 1.470482× | 1.465712× | 1.186713× | 1.182864× |
+| prefix-random-1048576 | 1.764005× | 1.781920× | 2.496865× | 2.522222× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R288 timing, proof and replay evidence](native-shared-window-checks.md).
+
+R289 measures selected completion forwarding in ordered reductions. The 81-case paired elapsed changes +0.149%. [R289 timing, proof and replay evidence](native-reduction-handoff.md).
+
+## Historical R287 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R287 carries checked view lengths through loop indices. Paired elapsed changes -0.463% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R286 / Roc | R287 / Roc | R286 / libdeflate | R287 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198129× | 0.198445× | 2.519734× | 2.523749× |
+| prefix-random-8192 | 0.859466× | 0.857887× | 3.082899× | 3.077236× |
+| prefix-periodic-131072 | 0.830982× | 0.827618× | 1.507813× | 1.501709× |
+| prefix-periodic-1048576 | 0.846272× | 0.868962× | 1.410258× | 1.448070× |
+| prefix-repeated-131072 | 0.824455× | 0.823755× | 1.382717× | 1.381542× |
+| prefix-repeated-1048576 | 0.836137× | 0.836853× | 1.314402× | 1.315527× |
+| prefix-natural-4096 | 1.075146× | 1.067306× | 1.832369× | 1.819007× |
+| prefix-natural-1048576 | 1.479486× | 1.466281× | 1.195625× | 1.184954× |
+| prefix-random-1048576 | 1.780821× | 1.764568× | 2.518956× | 2.495966× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R287 timing, proof and replay evidence](native-current-matcher-lengths.md).
+
+## Historical R286 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R286 retains copy facts over single-predecessor block chains. Paired elapsed changes -3.002% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R285 / Roc | R286 / Roc | R285 / libdeflate | R286 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.196468× | 0.195031× | 2.528546× | 2.510044× |
+| prefix-random-8192 | 0.969709× | 0.907995× | 3.321527× | 3.110141× |
+| prefix-periodic-131072 | 0.878516× | 0.826291× | 1.590635× | 1.496078× |
+| prefix-periodic-1048576 | 0.901823× | 0.849858× | 1.524770× | 1.436910× |
+| prefix-repeated-131072 | 0.870399× | 0.824522× | 1.458234× | 1.381375× |
+| prefix-repeated-1048576 | 0.884717× | 0.836596× | 1.391071× | 1.315408× |
+| prefix-natural-4096 | 1.080632× | 1.062951× | 1.859157× | 1.828738× |
+| prefix-natural-1048576 | 1.485025× | 1.475257× | 1.197336× | 1.189461× |
+| prefix-random-1048576 | 1.816262× | 1.773796× | 2.569302× | 2.509229× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R286 timing, proof and replay evidence](native-adjacent-spill-reloads.md).
+
+## Historical R285 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R285 shares the comparison for cost and item selection. Paired elapsed changes -0.328% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R284 / Roc | R285 / Roc | R284 / libdeflate | R285 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.206688× | 0.205531× | 2.655055× | 2.640191× |
+| prefix-random-8192 | 0.895898× | 0.897192× | 3.244231× | 3.248917× |
+| prefix-periodic-131072 | 0.877310× | 0.874936× | 1.593823× | 1.589509× |
+| prefix-periodic-1048576 | 0.898477× | 0.898940× | 1.519825× | 1.520608× |
+| prefix-repeated-131072 | 0.870946× | 0.868062× | 1.457709× | 1.452882× |
+| prefix-repeated-1048576 | 0.885730× | 0.887026× | 1.391239× | 1.393273× |
+| prefix-natural-4096 | 1.085670× | 1.082966× | 1.857962× | 1.853335× |
+| prefix-natural-1048576 | 1.493619× | 1.486272× | 1.203342× | 1.197423× |
+| prefix-random-1048576 | 1.816989× | 1.818336× | 2.567494× | 2.569397× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R285 timing, proof and replay evidence](native-item-selection-flags.md).
+
+## Historical R284 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R284 carries integer widths through packed-load joins. Paired elapsed changes -1.132% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R283 / Roc | R284 / Roc | R283 / libdeflate | R284 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198133× | 0.196635× | 2.532331× | 2.513178× |
+| prefix-random-8192 | 0.904537× | 0.896195× | 3.235427× | 3.205589× |
+| prefix-periodic-131072 | 0.882284× | 0.878215× | 1.601798× | 1.594411× |
+| prefix-periodic-1048576 | 0.905098× | 0.899808× | 1.533406× | 1.524444× |
+| prefix-repeated-131072 | 0.874929× | 0.869836× | 1.461863× | 1.453353× |
+| prefix-repeated-1048576 | 0.888924× | 0.884224× | 1.398782× | 1.391387× |
+| prefix-natural-4096 | 1.082819× | 1.072412× | 1.863732× | 1.845820× |
+| prefix-natural-1048576 | 1.510127× | 1.494275× | 1.217776× | 1.204992× |
+| prefix-random-1048576 | 1.866443× | 1.814843× | 2.635160× | 2.562309× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R284 timing, proof and replay evidence](native-packed-join-widths.md).
+
+## Historical R283 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R283 reuses selected-edge facts in private vector bodies. Paired elapsed changes -1.947% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R280 / Roc | R283 / Roc | R280 / libdeflate | R283 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197765× | 0.199712× | 2.546495× | 2.571557× |
+| prefix-random-8192 | 0.934169× | 0.902508× | 3.336731× | 3.223645× |
+| prefix-periodic-131072 | 0.912240× | 0.883808× | 1.653662× | 1.602122× |
+| prefix-periodic-1048576 | 0.933312× | 0.903041× | 1.580701× | 1.529433× |
+| prefix-repeated-131072 | 0.895066× | 0.870938× | 1.503917× | 1.463377× |
+| prefix-repeated-1048576 | 0.916928× | 0.889635× | 1.442804× | 1.399858× |
+| prefix-natural-4096 | 1.110450× | 1.088399× | 1.904977× | 1.867148× |
+| prefix-natural-1048576 | 1.526360× | 1.509112× | 1.231512× | 1.217595× |
+| prefix-random-1048576 | 1.919229× | 1.866758× | 2.715268× | 2.641033× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R283 timing, proof and replay evidence](native-vector-predicate-reuse.md).
+
+## Historical R280 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R280 narrows wrapping operations whose users keep only the low 32 bits. Paired elapsed changes -1.900% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R279 / Roc | R280 / Roc | R279 / libdeflate | R280 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.196939× | 0.197073× | 2.512061× | 2.513758× |
+| prefix-random-8192 | 0.961595× | 0.935451× | 3.463437× | 3.369271× |
+| prefix-periodic-131072 | 0.946320× | 0.910440× | 1.718917× | 1.653743× |
+| prefix-periodic-1048576 | 0.968052× | 0.933103× | 1.640215× | 1.581000× |
+| prefix-repeated-131072 | 0.932557× | 0.902623× | 1.561801× | 1.511669× |
+| prefix-repeated-1048576 | 0.949175× | 0.917297× | 1.490858× | 1.440788× |
+| prefix-natural-4096 | 1.098251× | 1.109993× | 1.864200× | 1.884130× |
+| prefix-natural-1048576 | 1.520798× | 1.527103× | 1.226933× | 1.232019× |
+| prefix-random-1048576 | 1.975834× | 1.916228× | 2.790917× | 2.706722× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R280 timing, proof and replay evidence](native-masked-wrapping-arithmetic.md).
+
+R281 isolates the pinned C matcher’s four prefetch hints. Removing them increases 1 MiB random elapsed by 5.42% and changes 4 KiB natural elapsed by −0.06% in the paired screen. The Mech baseline remains R280. [Control and all 11 measurements](native-matcher-prefetch-control.md).
+
+R282 emits five proved future-write hints in the vector matcher. The 27-case paired screen improves 1 MiB random by 3.47%, regresses several repetitive cases about 1%, and misses one block gate. R280 stays retained. [Code, fixed-layout control and timings](native-private-write-prefetch.md).
+
+## Historical R279 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R279 separates packet descriptor lifetimes across the checked append run. Paired elapsed changes -0.509% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R278 / Roc | R279 / Roc | R278 / libdeflate | R279 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.201945× | 0.201739× | 2.532281× | 2.529701× |
+| prefix-random-8192 | 0.968319× | 0.973673× | 3.468744× | 3.487925× |
+| prefix-periodic-131072 | 0.953066× | 0.946454× | 1.720157× | 1.708223× |
+| prefix-periodic-1048576 | 0.975436× | 0.969030× | 1.649626× | 1.638792× |
+| prefix-repeated-131072 | 0.933553× | 0.929834× | 1.566924× | 1.560683× |
+| prefix-repeated-1048576 | 0.954446× | 0.948688× | 1.501559× | 1.492502× |
+| prefix-natural-4096 | 1.103297× | 1.093769× | 1.886769× | 1.870476× |
+| prefix-natural-1048576 | 1.527874× | 1.522098× | 1.232274× | 1.227616× |
+| prefix-random-1048576 | 1.976420× | 1.975365× | 2.793264× | 2.791773× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R279 timing, proof and replay evidence](native-append-descriptor-lifetimes.md).
+
+## Historical R278 measured comparison
+
+**45/81 cases faster than Roc (55.56%).** Goal 100%.
+R278 specializes the checked empty append run. Paired elapsed changes -4.382% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R276 / Roc | R278 / Roc | R276 / libdeflate | R278 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.198646× | 0.198668× | 2.523829× | 2.524102× |
+| prefix-random-8192 | 1.040506× | 0.971396× | 3.726015× | 3.478534× |
+| prefix-periodic-131072 | 1.032247× | 0.947082× | 1.878022× | 1.723077× |
+| prefix-periodic-1048576 | 1.062911× | 0.976064× | 1.798539× | 1.651587× |
+| prefix-repeated-131072 | 1.012677× | 0.938080× | 1.700352× | 1.575098× |
+| prefix-repeated-1048576 | 1.034364× | 0.954039× | 1.625450× | 1.499224× |
+| prefix-natural-4096 | 1.083503× | 1.099890× | 1.865332× | 1.893543× |
+| prefix-natural-1048576 | 1.501933× | 1.527530× | 1.210507× | 1.231137× |
+| prefix-random-1048576 | 2.124785× | 1.983389× | 3.000450× | 2.800781× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R278 timing, proof and replay evidence](native-checked-append-run.md).
+
+## Historical R276 measured comparison
+
+**38/81 cases faster than Roc (46.91%).** Goal 100%.
+R276 evaluates the first short ordered-reduction visit directly. Paired elapsed changes -0.289% across all 81. Both timing gates pass 81/81. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R275 / Roc | R276 / Roc | R275 / libdeflate | R276 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.197751× | 0.198232× | 2.520126× | 2.526258× |
+| prefix-repeated-131072 | 1.012775× | 1.012343× | 1.699752× | 1.699029× |
+| prefix-repeated-1048576 | 1.034131× | 1.035177× | 1.626138× | 1.627783× |
+| prefix-periodic-1048576 | 1.062649× | 1.066074× | 1.801070× | 1.806875× |
+| prefix-natural-32768 | 1.478091× | 1.471887× | 1.341623× | 1.335991× |
+| prefix-natural-1048576 | 1.508769× | 1.499167× | 1.219665× | 1.211903× |
+| prefix-random-1048576 | 2.117142× | 2.124698× | 2.999997× | 3.010703× |
+
+Ratios use the same fresh four-actor comparison. The parity score and gates use the two primary cohorts.
+
+[R276 timing, proof and replay evidence](native-short-reduction-first-visit.md).
+
+R277 measures the dense offset map as a source experiment. Paired elapsed changes -0.320% across 81 cases. Both timing gates pass 81/81. The compiler and source baseline stays at R276. [R277 results and replay](native-dense-offset-slot-experiment.md).
+
+## Historical R275 measured comparison
+
+**38/81 cases faster than Roc (46.91%).** Goal 100%.
+R275 reuses proved byte equality across shifted immutable input windows and keeps the R272 runtime. Paired elapsed falls 2.55% across all 81. Both timing gates pass 81/81. 6 cases move below Roc parity. The separate libdeflate cohort has 3 faster cases.
+
+| Input | R274 / Roc | R275 / Roc | R274 / libdeflate | R275 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.199350× | 0.200462× | 2.536363× | 2.550512× |
+| prefix-periodic-32768 | 0.985956× | 0.908698× | 2.109599× | 1.944295× |
+| prefix-periodic-65536 | 1.076877× | 0.991375× | 2.070482× | 1.906090× |
+| prefix-repeated-65536 | 1.044666× | 0.972245× | 1.843924× | 1.716094× |
+| prefix-repeated-131072 | 1.095238× | 1.015547× | 1.831637× | 1.698365× |
+| prefix-repeated-262144 | 1.115580× | 1.032471× | 1.809245× | 1.674460× |
+| prefix-periodic-1048576 | 1.159278× | 1.063635× | 1.963402× | 1.801417× |
+| prefix-repeated-1048576 | 1.121432× | 1.035256× | 1.761369× | 1.626018× |
+| prefix-natural-1048576 | 1.508668× | 1.512215× | 1.215593× | 1.218451× |
+| prefix-random-1048576 | 2.111450× | 2.121498× | 2.982260× | 2.996453× |
+
+The table uses a fresh four-actor cohort. The parity score and timing gates use the two primary cohorts.
+
+[R275 compiler patch, all 81 timings, compiled controls and profiles](native-shifted-immutable-equality.md).
+
+## Historical R274 measured comparison
+
+**32/81 cases faster than Roc (39.51%).** Goal 100%.
+R274 carries the selected item in capacity-proved native reductions and keeps the R272 runtime. Paired elapsed falls 3.09% across all 81. Both timing gates pass 81/81. The matched control and candidate each beat Roc in 32 cases. The separate libdeflate cohort has three faster cases for each.
+
+| Input | R272 / Roc | R274 / Roc | R272 / libdeflate | R274 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.201229× | 0.199891× | 2.554727× | 2.537733× |
+| prefix-repeated-33027 | 0.981701× | 0.971683× | 1.904939× | 1.885501× |
+| prefix-periodic-32768 | 0.982359× | 0.980489× | 2.096360× | 2.092368× |
+| prefix-repeated-65536 | 1.050521× | 1.041300× | 1.858888× | 1.842571× |
+| prefix-natural-32768 | 1.685446× | 1.475704× | 1.535526× | 1.344440× |
+| prefix-natural-1048576 | 1.760098× | 1.506684× | 1.419691× | 1.215288× |
+| prefix-random-1048576 | 2.108295× | 2.107406× | 2.974567× | 2.973314× |
+| prefix-periodic-1048576 | 1.157258× | 1.150178× | 1.971536× | 1.959475× |
+| prefix-repeated-1048576 | 1.120134× | 1.120273× | 1.762614× | 1.762834× |
+
+The table uses a fresh four-actor cohort. The parity score and timing gates use the two primary cohorts.
+
+[R274 compiler patch, all 81 timings, linked controls and profiles](native-capacity-phase-selected-item.md).
+
+## Historical R272 measured comparison
+
+**31/81 cases faster than Roc (38.27%).** Goal 100%.
+R272 supplies large zero-filled buffers through private pages. The compressor Object and program stay at R270. Paired elapsed falls 10.25% across all 81. Both timing gates pass 81/81. Four periodic inputs cross below Roc parity. The separate libdeflate cohort has 3/81 faster cases.
+
+| Input | R270 / Roc | R272 / Roc | R270 / libdeflate | R272 / libdeflate |
+|---|---:|---:|---:|---:|
+| eight-literals | 0.416211× | 0.197800× | 5.324992× | 2.530654× |
+| prefix-repeated-4096 | 0.673301× | 0.528675× | 2.543811× | 1.997397× |
+| prefix-repeated-33027 | 1.001379× | 0.982016× | 1.946909× | 1.909263× |
+| prefix-periodic-32768 | 1.012630× | 0.988405× | 2.170907× | 2.118972× |
+| prefix-natural-1048576 | 1.765329× | 1.756943× | 1.425009× | 1.418240× |
+| prefix-random-1048576 | 2.117091× | 2.106640× | 2.992581× | 2.977810× |
+
+Ratios in this table use the same fresh four-actor cohort. The 31-case score comes from the two primary cohorts.
+
+[R272 full timings, memory policy, qualification and profiles](native-zero-page-scratch.md).
+
+R273 reduces work in read-only scalar loops. Empty and one-byte inputs miss the block timing gate, so R272 remains active. [R273 measurements and exact-image evidence](native-readonly-scalar-reductions.md).
+
+## Historical R270 measured comparison
+
+**27/81 cases faster than Roc (33.3%).** Goal 100%.
+R270 is retained. Paired elapsed improves 0.737% over R268, with 81/81 passes on both gates. Repeated 33,027 bytes crosses parity. All previously faster cases stay below 1× in the paired comparison.
+
+| Frontier | R268 / Roc | R270 / Roc |
+|---|---:|---:|
+| prefix-repeated-32768 | 0.995036× | 0.973240× |
+| prefix-repeated-33027 | 1.015880× | 0.992047× |
+| prefix-periodic-32768 | 1.033342× | 1.002207× |
+| prefix-periodic-32767 | 1.030812× | 1.008713× |
+| eight-literals | 0.426039× | 0.426594× |
+| prefix-natural-1048576 | 1.750283× | 1.764205× |
+
+[R270 timings, qualification and compiler patch](native-equality-loop-tiers.md). [Mech against libdeflate and Roc](native-libdeflate-comparison.md).
+
+R271 removes the recurring previous-node load and changes paired elapsed by -0.149%. The timing gates miss seven-stored-prefix. R270 remains retained. [R271 measurements and proof](native-append-tail-forwarding.md).
+
+## Historical R268 measured comparison
+
+**Cases faster than Roc: 26/81 = 32.1%. Goal 100%.**
+R268 is the retained compact compiler. The growth-isolated threaded candidate changes paired elapsed -3.590% across all 81. It passes 81/81 pooled and 81/81 block gates.
+
+| Frontier | R264 / Roc | R268 candidate / Roc |
+|---|---:|---:|
+| prefix-repeated-32767 | 1.01982× | 0.99346× |
+| prefix-repeated-32768 | 1.02010× | 0.98651× |
+| prefix-repeated-32769 | 1.02155× | 0.99224× |
+| prefix-repeated-33027 | 1.03488× | 1.01076× |
+| prefix-periodic-32768 | 1.04986× | 1.02095× |
+| eight-literals | 0.42972× | 0.42657× |
+| prefix-natural-1048576 | 1.88820× | 1.75372× |
+
+Cases moving below 1× in the fresh comparison repeated-32769, prefix-repeated-32767, prefix-repeated-32768, prefix-repeated-32769.
+
+[All 81 results, proof, counters, safety gates and profiles](native-thread-after-growth-isolation.md).
+
+The R269 vector address pilot missed both eight-literal timing gates and moved three cases above parity in its screen. R268 remains the measured baseline. [R269 screen and executable evidence](native-shared-vector-addresses.md).
+
+## Historical R267 measured comparison
+
+**Cases faster than Roc: 22/81 = 27.2%. Goal 100%.**
+R264 remains the retained experimental compiler. The separate no-growth body improved paired elapsed 2.1243% across the matrix. Empty and one-byte inputs missed the block timing gate. Both counter cohorts and all adverse observations are preserved.
+
+| Frontier | R264 / Roc | No-growth candidate / Roc |
+|---|---:|---:|
+| prefix-repeated-32767 | 1.02345× | 1.00157× |
+| prefix-repeated-32768 | 1.02433× | 1.00468× |
+| prefix-repeated-32769 | 1.03258× | 1.00284× |
+| prefix-periodic-32768 | 1.05766× | 1.03260× |
+| eight-literals | 0.41593× | 0.41354× |
+| prefix-natural-1048576 | 1.89164× | 1.81871× |
+
+In the separate 13-case screen, applying R260 after growth-state isolation moves repeated 32,768 bytes from 1.0055× to 0.9945× Roc. Repeated 32,767 bytes reaches 0.9951×. Both gates pass for all 13 cases. The full 81-case acceptance follows separately.
+
+[Full R267 matrix, allocator trace, capacity proof and pilots](native-loop-state.md).
+
+## Historical R266 measured rejection
+
+**Cases faster than Roc: 22/81 = 27.2%; goal 100%.**
+Retained experimental compiler: **R264**. R266 is rejected globally: direct
+extending loads reduce instructions but slow the near-parity frontier. Its
+qualified instruction savings and eight-byte improvement remain available for
+later isolated or combined measurements.
+
+| Headline | Retained R264 | Evaluated R266 | Movement |
+|---|---:|---:|---:|
+| Faster-than-reference configurations | 22/81 (27.1605%) | 22/81 (27.1605%) | 0.0000 percentage points |
+| Target | 100% | 100% | Open |
+| All 81 paired geometric elapsed | Baseline | +1.747846% | Candidate rejected |
+| Primary cohorts | Baseline | +1.702110%, +1.793602% | Both adverse |
+| Existing pooled/block 1.05 gates | — | 81/81 each | Unchanged ceilings |
+| Heap/copy/zero/private peaks | Baseline | Equal on all 81 | No saving |
+
+A case counts only when its paired geometric elapsed ratio is strictly below 1.0
+in the same fresh balanced blocks; ties do not count. The fixed 81-case inventory
+is unchanged. This is a configuration share, not byte-weighted throughput or a
+confidence threshold. Chat updates should show this metric and compact frontier;
+all 81 cases continue to be measured and saved in the round report.
+
+| Frontier / control | Bytes | Retained R264 / Roc | Rejected R266 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| prefix-repeated-32767 | 32767 | 1.018886x | 1.044322x | +2.4965% |
+| prefix-repeated-32768 | 32768 | 1.023706x | 1.049353x | +2.5053% |
+| prefix-repeated-32769 | 32769 | 1.028317x | 1.058131x | +2.8993% |
+| prefix-repeated-33027 | 33027 | 1.041527x | 1.067907x | +2.5329% |
+| prefix-periodic-32768 | 32768 | 1.057612x | 1.086396x | +2.7215% |
+| prefix-periodic-32769 | 32769 | 1.066628x | 1.094666x | +2.6287% |
+| eight-literals | 8 | 0.431513x | 0.422142x | -2.1717% |
+
+The candidate cuts repeated/periodic 32 KiB retired instructions about 1.88% but
+slows their primary elapsed about 2.5–2.7%. Eight literals improves 2.17% elapsed
+and 1.79% instructions. Natural 1 MiB instructions decline 3.00% while primary elapsed
+worsens 0.84%. These separate cohorts and positive/negative observations remain.
+Both columns use the same fresh reference measurements; the retained compiler
+is unchanged and historical denominators are preserved. No new case crosses 1x.
+
+[All 81 rows, shared-load design, counters, C/Rust/reference assembly, source controls and review contract](native-extending-scalar-loads.md).
+The path has six adjacent narrow-load/extension-or-copy pairs before and zero
+after, but that is a static count. The selected matching frame shrinks 960→944B;
+normal matching code grows 796B. The root frame shrinks 64B. The 2,084,296-byte
+worker file size remains unchanged, and no heap/RSS saving is claimed.
+
+725 native tests pass with seven inherited exclusions, plus five focused tests;
+7384 native source controls, 759 fresh resident calls and 324 original/decoded full
+smokes pass. All 17 image pairs agree. Eight new candidate profiles follow all
+four measurement cohorts. R264 baseline/reference profiles and R230 matching
+resident rows remain inherited. Full hosted CI, a fresh full linked/AOT suite,
+full 6.6 MB input and the additional ordinary managed-contract integration remain
+outside the current claims. The maintained 680-test result is inherited.
+
+Next simplify the generic unit-append spare-capacity check: for maximum 1,
+`length <= capacity && capacity-length >= 1` is exactly unsigned `length < capacity`.
+The actual retained path currently builds that test with eight instructions.
+Keep other maxima and the same cold growth/rejection path; qualify the unsigned
+extremes, source errors/aliases/recovery and all 81 performance before adoption.
+This proposal is not yet implemented. The target remains 100% faster cases.
+
+Review requests must name exact base/head, linked source/evidence, metric
+expectations, safety invariants and coverage limits.
+
+## Historical R265 measured rejection
+
+**Cases faster than Roc: 22/81 = 27.2%; goal 100%.**
+Retained experimental compiler: **R264**. R265's checked internal argument-read
+alternative is rejected: paired geometric elapsed **+1.812837%**, with both
+primary cohorts adverse (+2.055305% and +1.570945%). Its isolated natural-text
+gain is preserved in the report. No slower candidate is adopted.
+
+| Headline metric | Retained R264 | Rejected R265 | Movement |
+|---|---:|---:|---:|
+| Cases faster than reference | 22/81 (27.1605%) | 22/81 (27.1605%) | 0.0000 percentage points |
+| Target | 100% | 100% | Open |
+| Existing pooled/block 1.05 gates | — | 81/81 each | Unchanged ceilings |
+| Heap/copy/zero/private peaks | Baseline | Equal on all 81 | No saving |
+
+Count a case only when its paired geometric elapsed ratio is strictly below 1.0
+in the same fresh balanced blocks. Ties do not count. The denominator remains
+the fixed 81 complete compression inputs/configurations; this is a case share,
+not byte-weighted throughput or a significance threshold. Future chat updates
+should show this percentage/count, percentage-point movement, and a compact
+frontier. The complete matrix is still measured and saved in the round report.
+
+| Frontier / control | Bytes | Retained R264 / Roc | Rejected R265 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| prefix-repeated-32767 | 32767 | 1.026606x | 1.060901x | +3.3406% |
+| prefix-repeated-32768 | 32768 | 1.031579x | 1.066543x | +3.3893% |
+| prefix-repeated-32769 | 32769 | 1.030045x | 1.059532x | +2.8627% |
+| prefix-repeated-33027 | 33027 | 1.044947x | 1.072964x | +2.6812% |
+| prefix-periodic-32768 | 32768 | 1.059505x | 1.098785x | +3.7074% |
+| prefix-periodic-32769 | 32769 | 1.071074x | 1.102238x | +2.9097% |
+| eight-literals | 8 | 0.422626x | 0.421959x | -0.1578% |
+
+Both columns use the same new reference measurements. R264's source is unchanged;
+its historical ratios below keep their original denominators. There is no new
+parity crossing. The candidate removes static reads but adds about 0.23% retired
+instructions on repeated/periodic 32 KiB. This negative result is preserved.
+
+[All 81 rows, percentage metric, counters, source proof, safety controls and review contract](native-current-packet-reads.md).
+724 candidate native tests pass (seven inherited exclusions), 7384 fresh native
+source calls, 759 fresh resident calls and 324 complete original/decoded smokes
+pass. Eight new candidate profiles follow completion of all four cohorts. R264
+baseline/reference profiles and R230 matching-resident rows are explicitly reused.
+The unchanged maintained 680-test result is inherited; full hosted CI, a fresh full
+linked/AOT suite and full 6.6 MB input are not claimed. The compact entry's ordinary
+managed-contract omissions remain explicit. No source algorithm, buffer, table,
+allocation site or timing boundary changes.
+
+Next map the changed path-loop live ranges/spill sequence and dynamic visits
+before another argument-read experiment; preserve live-value allocation and
+judge the frontier and all 81 elapsed/instruction results. Review requests must
+name exact base/head, linked patch/evidence, metric expectations, safety invariants
+and coverage limits. Goal: 100% of cases faster than the reference.
+
+## Historical R264 matched cohort
+
+**Retained experimental computational baseline: R264 on R263.**
+The compiler branches directly on vector truth while retaining normalized Boolean
+values for observers. The source algorithm and timing boundary stay unchanged.
+
+| Paired result, all 81 | R263 to R264 |
+|---|---:|
+| Geometric elapsed | **−0.336093%** |
+| Cohort A | +0.094530% |
+| Cohort B | −0.764863% |
+| Existing pooled/block gates | 81/81 each |
+| Below-reference configurations | 22 to 22 |
+| Heap/copy/zero/private-peak families | Equal on all 81 |
+
+This is a small, noisy gain with explicit tradeoffs. The next priority remains
+the repeated/periodic cases nearest 1x around 32 KiB. No case newly crosses 1x.
+Both columns below use the same fresh reference runs; historical tables retain
+their original denominators. Negative changes mean faster.
+
+| Case | Bytes | R263 / Roc | R264 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| prefix-repeated-32767 | 32767 | 1.021118x | 1.022805x | +0.1652% |
+| prefix-repeated-32768 | 32768 | 1.041336x | 1.034897x | -0.6183% |
+| prefix-repeated-32769 | 32769 | 1.026890x | 1.026793x | -0.0094% |
+| prefix-repeated-33027 | 33027 | 1.038928x | 1.040467x | +0.1481% |
+| prefix-periodic-32767 | 32767 | 1.061943x | 1.066311x | +0.4113% |
+| prefix-periodic-32768 | 32768 | 1.061908x | 1.057479x | -0.4170% |
+| prefix-periodic-32769 | 32769 | 1.063255x | 1.061318x | -0.1822% |
+| prefix-periodic-33027 | 33027 | 1.071861x | 1.068822x | -0.2835% |
+| eight-literals | 8 | 0.428201x | 0.424475x | -0.8701% |
+| prefix-natural-1048576 | 1048576 | 1.889632x | 1.890300x | +0.0353% |
+| prefix-random-1048576 | 1048576 | 2.145590x | 2.149057x | +0.1616% |
+| prefix-periodic-1048576 | 1048576 | 1.220897x | 1.222641x | +0.1428% |
+| prefix-repeated-1048576 | 1048576 | 1.180242x | 1.180345x | +0.0087% |
+
+[All81 comparisons, compiler/backend design, counters, profiles and evidence](native-vector-truth-lowering.md).
+The actual private difference test shrinks 4→3 instructions and needs one scalar
+lane transfer instead of two. Both matching frames grow 16 bytes; their normal
+body shrinks 1,632 bytes and vector body grows 120 bytes. Root Object bytes, 339 of 341
+root/numeric definitions and the 2,084,296-byte worker file size remain exact.
+Natural/random 1 MiB instructions increase 0.27%/0.75%, while repeated/periodic 32 KiB
+instructions fall about 0.35%. These costs remain beside the elapsed results.
+
+720 native tests, 5788 fresh native source controls and 324 final complete
+original/decoded smokes pass. Frozen source-resident observations are reused;
+zero new source-resident calls are claimed. Seven native exclusions and the
+unchanged maintained 680-test result remain inherited. Full hosted CI, a fresh full
+linked/AOT suite, full 6.6 MB input and a fresh full disabled-pipeline emit are not
+claimed. The established compact-entry ordinary managed-contract omissions stay
+explicit. All primary/counter collection finishes before post-change profiling.
+Twelve fresh exact-image captures include both 32 KiB border inputs.
+
+Next retest the archived R235 checked argument-packet read alternative on the
+current outlined architecture. Its old repetitive regression remains evidence;
+no new win is assumed. Prove the current private packet span, retain source-array
+traps/current arguments/aliases/error/retry behavior, and time all 81 again.
+
+## Historical R263 matched cohort
+
+**Historical R263 checkpoint, on R261's correctness repairs.**
+This generic compiler change reuses guarded current-length bounds for masked
+one-based indices. It removes 20 read checks and 15 write checks in each matching
+body. The complete source algorithm, allocation behavior and ordinary contract
+boundary remain unchanged. All 81 complete compression cases are timed and checked.
+
+| Round comparison | Paired geometric elapsed | Existing pooled gates | Existing block gates | Below-reference cases |
+|---|---:|---:|---:|---:|
+| Repaired R261 to R263 | **−1.188790%** | 81/81 | 81/81 | 22 to 22 |
+
+The next priority is the controlled cases nearest 1x, especially repeated and
+periodic inputs near 32 KiB. This round creates no new parity crossing. Negative
+time changes below mean faster; ratios below 1x mean faster than the reference.
+
+| Input | Bytes | R261 / Roc | R263 / Roc | Time change | Additional cut to 1x |
+|---|---:|---:|---:|---:|---:|
+| repeated | 32767 | 1.051163x | 1.020506x | -2.9165% | 2.009% |
+| repeated | 32769 | 1.052589x | 1.025549x | -2.5688% | 2.491% |
+| repeated | 32768 | 1.055728x | 1.027648x | -2.6598% | 2.690% |
+| repeated | 33027 | 1.073708x | 1.041968x | -2.9561% | 4.028% |
+| periodic | 32768 | 1.089061x | 1.050873x | -3.5065% | 4.841% |
+| periodic | 32767 | 1.092386x | 1.055233x | -3.4011% | 5.234% |
+| periodic | 33027 | 1.096717x | 1.061571x | -3.2046% | 5.800% |
+| periodic | 32769 | 1.094361x | 1.062217x | -2.9372% | 5.857% |
+
+| Input | Bytes | R261 / Roc | R263 / Roc | Time change |
+|---|---:|---:|---:|---:|
+| eight-literals | 8 | 0.414859x | 0.420113x | +1.2663% |
+| prefix-natural-32768 | 32768 | 1.836182x | 1.832518x | -0.1995% |
+| prefix-random-32768 | 32768 | 1.824029x | 1.786578x | -2.0532% |
+| prefix-natural-1048576 | 1048576 | 1.902061x | 1.896635x | -0.2852% |
+| prefix-random-1048576 | 1048576 | 2.167748x | 2.158164x | -0.4421% |
+| prefix-periodic-1048576 | 1048576 | 1.267936x | 1.221557x | -3.6578% |
+| prefix-repeated-1048576 | 1048576 | 1.222298x | 1.180133x | -3.4497% |
+
+[All 81 before/after rows, compiler design, exact pins, qualification and evidence](native-guarded-index-bounds.md).
+Every historical round below keeps its original denominator. The current comparison
+uses two fresh balanced cohorts and ratios formed inside 48 blocks per case.
+No valid observation is discarded or rerun and no gate is relaxed. Small adverse
+results remain: eight +1.2663%, random 64 +3.9597%, eight-prefix +3.5080%.
+
+All 81 payload allocation/requested-byte/copy/zero/private-peak fields remain
+unchanged. Fresh independent instructions decline on natural/random/periodic/
+repeated 1 MiB by 1.64%/3.62%/3.35%/3.32%. The worker shrinks 2,100,808→2,084,296 bytes;
+matching frames grow 16 bytes and the root frame shrinks 32 bytes. Fresh profiles
+retain the path phase as the main natural-text bottleneck.
+
+719 native tests, 3936 linked/resident comparisons and 324 complete original/decoded
+smokes pass; seven inherited native exclusions remain. The unchanged maintained
+680-test result is inherited. Full CI, the full linked/AOT integration suite and
+full 6.6 MB input are not freshly run. The memory-only cohort tail overlaps the
+first profile; no isolated RSS improvement is claimed. Primary elapsed and CPU
+instruction/cycle measurements finish before profiling. Ordinary managed
+admission/accounting/publication/recovery costs remain outside the compact timing
+entry, and their integration remains open. IR/work/ABI/bytecode stay 215/107/39/14.
+
+## Historical measurements
+
+R256 composed fixed-buffer nested computations into one guarded native phase.
+Its historical all-81 improvement is 18.2622%; R261 repairs preserve that Object.
+The tables below remain historical rather than current R263 results.
+
+## R262 packed-state retest
+
+R261 remains retained. The old packed scalar-choice idea is retested after
+native outlining: its continuing loop shrinks14→12 instructions with no frame
+growth, but the empty outer route grows39→44 through extra stack traffic.
+All81 paired elapsed worsens2.8700%; random1MiB changes2.168785x→2.254190x
+reference and periodic1MiB1.268420x→1.332019x. The unchanged gates pass76/81
+point and77/81 block cases. All81 heap/copy/private-peak fields stay equal.
+The candidate is archived; no slower executable replaces the baseline.
+[Complete retest, native witnesses, profiles and all81 evidence](native-scalar-choice-retest.md).
+
+## R261 interaction repairs
+
+The four review findings are repaired and qualified. The complete compressor
+Object and linked worker remain byte-identical to R256; no new optimization is
+enabled. Fresh all81 paired measurements pass every existing point/block 1.05
+gate, with identical heap/copy/zero/private-peak fields. The geometric change is
+−0.5828%, with the largest slower row +1.1520%; these are measurements of identical
+code, not attributable performance effects. Fresh reference multiples are eight
+0.417756x; at32KiB text/random/periodic/repeated
+1.837612x/1.816686x/1.081951x/1.051936x; at1MiB
+1.901775x/2.169105x/1.265729x/1.221235x. The historical R256 table below remains
+unchanged. Maintained projection correctness is tested separately; its added
+admission cost is not established by compact-entry timings.
+[Repairs, native regressions, coverage limits and verified packet](native-review-interactions.md).
+
+## R260 empty-path and fixed-placement control
+
+R256 remains the measurement control. The current empty route shrinks39→21 instructions, and all178 retained function entries stay at the same linked addresses. Text1MiB improves4.11% to1.821964x reference, but random/periodic/repeated regress3.61%/3.68%/4.11% despite fewer instructions. Both controls are archived; the retained table below is unchanged. All81 heap/copy/zero/private-peak fields match. The new review of inherited compiler/runtime/tooling defects takes priority over another optimization. [Full paired all81 results, native census and qualification](native-empty-path-placement-control.md).
+
+## R259 matched proof-use control
+
+R256 remains retained. A fresh four-actor comparison measures R256, explicit
+adapter-window gating, fullR257 and the reference together on all81 cases.
+The explicit-window control is2.8501% slower by paired geometric elapsed and
+fails two combined gates. FullR257 is1.0201% faster in the same cohort, while its
+repetitive penalty and historical misses remain. The control adds a redundant
+adapter check at source-window-proved sites, so it is not pure geometry-only
+attribution. All81 three-way heap/copy fields match. None of these observations
+replace the retained table. [All81 paired results and disposition](native-explicit-window-control.md).
+
+## R258 SSA-isolation component
+
+R256 remains the retained compiler. R258 records a1.2245% all81 within-block
+geometric elapsed improvement, with text/random gains and periodic/repeated
+instruction increases. At1MiB the paired candidate/reference ratios are
+1.880496x/2.102709x/1.294166x/1.234041x for text/random/periodic/repeated;
+paired changes versus its fresh R256 control are−1.5147%/−2.9981%/+2.1049%/+0.7183%.
+Eight is0.424178x in that paired cohort. These are experimental observations,
+not replacement retained timings. All combined gates pass; the second-cohort
+empty miss remains. New effect tables calculate ratios inside each balanced
+block first, with the existing pooled gates preserved.
+[Complete component and next exact geometry control](native-packed-read-ssa.md).
+
+## R257 component and timing audit
+
+**R256 remains retained.** The next packed-read geometry experiment is archived with all81 results, including text/random gains, repetitive-input instruction increases and the failed pooled empty timing gate. Code shrinks, but executed work does not improve uniformly. [Complete R257 component, qualification, profiles and all81 observations](native-entry-packed-geometry.md).
+
+The supplemental paired audit finds two R257 sign reversals from pooling actor medians across heterogeneous cohorts. Repeated32KiB's pooled−2.1642% masks individual+0.5778%/+0.3198% slowdowns; comparing within the48 balanced blocks gives+0.3240%. The same audit confirms R256's18.2763% matrix improvement and finds no R256 reversals. Existing observations, pooled ratios and1.05 gates are preserved. The historical R256 table below remains unchanged; pooled medians are descriptive, not paired causal estimates.
+
+## Historical R256 below-reference configurations
+
+| Group | Case | Bytes | R256 / Roc |
+|---|---|---:|---:|
+| original25 | eight-literals | 8 | **0.414364x** |
+| original25 | eight-overlap | 8 | **0.411438x** |
+| original25 | 320-overlap | 320 | **0.447221x** |
+| original25 | eight-literals-prefix | 8 | **0.411343x** |
+| original25 | 128-biased-dynamic | 128 | **0.409098x** |
+| original25 | 32-high-entropy-stored | 32 | **0.422530x** |
+| original25 | random-64 | 64 | **0.437030x** |
+| original25 | random-256 | 256 | **0.475533x** |
+| original25 | random-1024 | 1024 | **0.538481x** |
+| original25 | repeated-1024 | 1024 | **0.518242x** |
+| original25 | reymont-prefix-1024 | 1024 | **0.669349x** |
+| prefix56 | prefix-natural-1024 | 1024 | **0.675251x** |
+| prefix56 | prefix-random-1024 | 1024 | **0.537245x** |
+| prefix56 | prefix-random-4096 | 4096 | **0.947134x** |
+| prefix56 | prefix-periodic-1024 | 1024 | **0.522303x** |
+| prefix56 | prefix-periodic-4096 | 4096 | **0.765540x** |
+| prefix56 | prefix-periodic-8192 | 8192 | **0.875809x** |
+| prefix56 | prefix-periodic-16384 | 16384 | **0.980901x** |
+| prefix56 | prefix-repeated-1024 | 1024 | **0.521466x** |
+| prefix56 | prefix-repeated-4096 | 4096 | **0.741312x** |
+| prefix56 | prefix-repeated-8192 | 8192 | **0.851834x** |
+| prefix56 | prefix-repeated-16384 | 16384 | **0.949197x** |
+
+## Historical R255 versus R256 matched measurements
+
+Ratios use pooled observation medians. Changes use balanced block means against matched R255. Positive changes are regressions. Instructions/cycles are from a separate cohort. All observations and the three individual Primary B gate misses remain recorded.
+
+| Case | Bytes | R255 / Roc | Retained R256 / Roc | Elapsed change | Instructions change |
+|---|---:|---:|---:|---:|---:|
+| empty | 0 | 1.976190x | 1.976190x | +4.1367% | +0.3199% |
+| one-stored | 1 | 1.976190x | 1.976190x | +3.4691% | +0.3297% |
+| seven-stored-prefix | 7 | 1.976190x | 1.976190x | +1.5995% | +0.3271% |
+| eight-literals | 8 | 0.427100x | 0.414364x | -3.4678% | -2.9654% |
+| eight-overlap | 8 | 0.415224x | 0.411438x | -0.4414% | -2.7329% |
+| 320-overlap | 320 | 0.471106x | 0.447221x | -3.7754% | -6.9207% |
+| eight-literals-prefix | 8 | 0.419347x | 0.411343x | -1.0045% | -2.9685% |
+| 128-biased-dynamic | 128 | 0.430983x | 0.409098x | -4.2641% | -5.8909% |
+| 32-high-entropy-stored | 32 | 0.449914x | 0.422530x | -6.6809% | -10.2314% |
+| 16384-distribution-change | 16384 | 2.324858x | 1.865948x | -19.7393% | -19.4188% |
+| 33027-periodic-window | 33027 | 1.444307x | 1.101319x | -23.7476% | -20.9825% |
+| random-64 | 64 | 0.466704x | 0.437030x | -6.7839% | -12.1854% |
+| random-256 | 256 | 0.545797x | 0.475533x | -12.2065% | -18.3207% |
+| random-1024 | 1024 | 0.647682x | 0.538481x | -15.6985% | -20.9159% |
+| repeated-1024 | 1024 | 0.563010x | 0.518242x | -8.0336% | -10.9642% |
+| random-32769 | 32769 | 2.523387x | 1.809078x | -28.3075% | -28.0738% |
+| repeated-32769 | 32769 | 1.374344x | 1.054159x | -23.2973% | -21.0944% |
+| reymont-prefix-1024 | 1024 | 0.802377x | 0.669349x | -16.4497% | -16.6329% |
+| reymont-prefix-16384 | 16384 | 2.051386x | 1.757274x | -14.3372% | -15.3122% |
+| reymont-prefix-32769 | 32769 | 2.128826x | 1.838233x | -13.6504% | -15.7320% |
+| heldout-window-32767 | 32767 | 2.126821x | 1.833910x | -13.7722% | -15.7700% |
+| heldout-window-32768 | 32768 | 2.128863x | 1.839295x | -13.6020% | -15.7709% |
+| heldout-slides-65537 | 65537 | 2.213204x | 1.902064x | -14.0583% | -15.8723% |
+| heldout-random-65537 | 65537 | 2.789476x | 1.975392x | -29.1841% | -30.0327% |
+| heldout-mixed-131073 | 131073 | 2.274267x | 1.920398x | -15.5597% | -17.6464% |
+| prefix-natural-1024 | 1024 | 0.805746x | 0.675251x | -16.3223% | -16.6298% |
+| prefix-natural-4096 | 4096 | 1.558745x | 1.318161x | -15.4344% | -15.8698% |
+| prefix-natural-8192 | 8192 | 1.856918x | 1.589342x | -14.4096% | -15.1039% |
+| prefix-natural-16384 | 16384 | 2.050931x | 1.762051x | -14.0853% | -15.3119% |
+| prefix-natural-32767 | 32767 | 2.131404x | 1.837118x | -13.8071% | -15.7724% |
+| prefix-natural-32768 | 32768 | 2.135596x | 1.837344x | -13.9658% | -15.7661% |
+| prefix-natural-32769 | 32769 | 2.130578x | 1.835871x | -13.8322% | -15.7383% |
+| prefix-natural-33027 | 33027 | 2.132550x | 1.839407x | -13.7461% | -15.7381% |
+| prefix-natural-65535 | 65535 | 2.127331x | 1.900385x | -10.6681% | -13.6003% |
+| prefix-natural-65536 | 65536 | 2.133617x | 1.908106x | -10.5694% | -13.6004% |
+| prefix-natural-65537 | 65537 | 2.125089x | 1.903007x | -10.4505% | -13.5776% |
+| prefix-natural-131072 | 131072 | 2.137816x | 1.903422x | -10.9642% | -13.5444% |
+| prefix-natural-262144 | 262144 | 2.143698x | 1.908282x | -10.9817% | -13.5030% |
+| prefix-natural-1048576 | 1048576 | 2.182609x | 1.908252x | -12.5701% | -14.9740% |
+| prefix-random-1024 | 1024 | 0.653959x | 0.537245x | -18.1326% | -21.0675% |
+| prefix-random-4096 | 4096 | 1.211736x | 0.947134x | -21.8366% | -23.2881% |
+| prefix-random-8192 | 8192 | 1.579874x | 1.166803x | -26.1458% | -25.3070% |
+| prefix-random-16384 | 16384 | 2.119998x | 1.541744x | -27.2762% | -26.4495% |
+| prefix-random-32767 | 32767 | 2.541201x | 1.826622x | -28.1197% | -28.2248% |
+| prefix-random-32768 | 32768 | 2.541539x | 1.828522x | -28.0545% | -28.2249% |
+| prefix-random-32769 | 32769 | 2.517614x | 1.813471x | -27.9686% | -28.0679% |
+| prefix-random-33027 | 33027 | 2.530290x | 1.811509x | -28.4071% | -28.0961% |
+| prefix-random-65535 | 65535 | 2.800912x | 2.000222x | -28.5868% | -29.3728% |
+| prefix-random-65536 | 65536 | 2.799132x | 1.993951x | -28.7654% | -29.3728% |
+| prefix-random-65537 | 65537 | 2.785346x | 1.994217x | -28.4033% | -29.2923% |
+| prefix-random-131072 | 131072 | 2.929944x | 2.081702x | -28.9508% | -30.1548% |
+| prefix-random-262144 | 262144 | 2.999684x | 2.188740x | -27.0343% | -29.9102% |
+| prefix-random-1048576 | 1048576 | 3.069914x | 2.170161x | -29.3087% | -31.2393% |
+| prefix-periodic-1024 | 1024 | 0.577033x | 0.522303x | -9.9486% | -12.0610% |
+| prefix-periodic-4096 | 4096 | 0.899704x | 0.765540x | -14.9121% | -17.0162% |
+| prefix-periodic-8192 | 8192 | 1.076883x | 0.875809x | -18.6718% | -18.3903% |
+| prefix-periodic-16384 | 16384 | 1.267506x | 0.980901x | -22.6117% | -20.7949% |
+| prefix-periodic-32767 | 32767 | 1.440622x | 1.092726x | -24.1491% | -21.3065% |
+| prefix-periodic-32768 | 32768 | 1.439207x | 1.090658x | -24.2181% | -21.3068% |
+| prefix-periodic-32769 | 32769 | 1.435808x | 1.088024x | -24.2222% | -21.1598% |
+| prefix-periodic-33027 | 33027 | 1.439778x | 1.098919x | -23.6744% | -20.9820% |
+| prefix-periodic-65535 | 65535 | 1.553309x | 1.168122x | -24.7978% | -21.4074% |
+| prefix-periodic-65536 | 65536 | 1.554477x | 1.166292x | -24.9721% | -21.4072% |
+| prefix-periodic-65537 | 65537 | 1.552722x | 1.166647x | -24.8645% | -21.3321% |
+| prefix-periodic-131072 | 131072 | 1.622989x | 1.212178x | -25.3120% | -21.4600% |
+| prefix-periodic-262144 | 262144 | 1.663151x | 1.240945x | -25.3859% | -21.5047% |
+| prefix-periodic-1048576 | 1048576 | 1.691711x | 1.267271x | -25.0894% | -21.0589% |
+| prefix-repeated-1024 | 1024 | 0.562111x | 0.521466x | -6.9248% | -10.9512% |
+| prefix-repeated-4096 | 4096 | 0.875654x | 0.741312x | -15.3419% | -16.6166% |
+| prefix-repeated-8192 | 8192 | 1.046276x | 0.851834x | -18.5842% | -18.1769% |
+| prefix-repeated-16384 | 16384 | 1.214046x | 0.949197x | -21.8154% | -20.6697% |
+| prefix-repeated-32767 | 32767 | 1.374672x | 1.053905x | -23.3340% | -21.2420% |
+| prefix-repeated-32768 | 32768 | 1.372313x | 1.048871x | -23.5691% | -21.2408% |
+| prefix-repeated-32769 | 32769 | 1.370309x | 1.047298x | -23.5721% | -21.0948% |
+| prefix-repeated-33027 | 33027 | 1.384601x | 1.075042x | -22.3573% | -20.3153% |
+| prefix-repeated-65535 | 65535 | 1.480816x | 1.136948x | -23.2215% | -20.8088% |
+| prefix-repeated-65536 | 65536 | 1.479569x | 1.132539x | -23.4548% | -20.8089% |
+| prefix-repeated-65537 | 65537 | 1.477570x | 1.130412x | -23.4952% | -20.7362% |
+| prefix-repeated-131072 | 131072 | 1.544460x | 1.178993x | -23.6631% | -20.5967% |
+| prefix-repeated-262144 | 262144 | 1.569101x | 1.225382x | -21.9055% | -20.2888% |
+| prefix-repeated-1048576 | 1048576 | 1.583851x | 1.222946x | -22.7866% | -20.1630% |

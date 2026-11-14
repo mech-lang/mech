@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-metrics.py",
+    "--config",
+    "/private/tmp/mech-related-branch-insertion-boolean-combination-runners-20261107-v1/comparison-config.json",
+    "--out",
+    "/private/tmp/mech-related-branch-insertion-boolean-combination-runners-20261107-v1/metrics",
+    "--variant",
+    "mech-ir239-original-4",
+    "--variant",
+    "mech-ir239-reuse-4",
+    "--variant",
+    "mech-ir239-reuse-rust-insert-4"
+  ],
+  "exit": 0,
+  "seconds": 6.341370000038296,
+  "stdout": "{\"variant\": \"mech-ir239-original-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir239-reuse-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n{\"variant\": \"mech-ir239-reuse-rust-insert-4\", \"status\": \"built\", \"reverse_patch_exact\": true}\n",
+  "stderr": ""
+}

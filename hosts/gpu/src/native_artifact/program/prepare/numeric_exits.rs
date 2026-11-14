@@ -1,0 +1,479 @@
+//! Exact current-traversal values needed by an ordinary cold continuation.
+//! A repeated immutable predicate keeps its established truth until the root
+//! latch. This prunes only impossible liveness edges, never generated branches.
+use super::*;
+use crate::native_artifact::program::prepare::numeric_plan::{Exit, ExitKind};
+
+#[path = "numeric_reachability.rs"]
+mod reachability;
+
+fn identity(
+    facts: &NativeProgramFacts<'_>,
+    mut value: mech_engine::native_artifact::NativeMatchValue,
+) -> u32 {
+    while let Some(source) = facts.unique_identity_copy(value) {
+        value = source;
+    }
+    value.get()
+}
+
+fn forest_reachability(
+    plan: &Plan,
+    forest: &super::super::numeric_phase::Forest,
+) -> reachability::Reachability {
+    let mut successors = vec![Vec::new(); plan.blocks().len()];
+    let root = &forest.loops[0];
+    for site in forest
+        .sites
+        .iter()
+        .copied()
+        .chain((!forest.sites.contains(&root.header)).then_some(root.header))
+    {
+        if site == root.latch {
+            continue;
+        }
+        successors[site] = forest
+            .successors(plan, site)
+            .into_iter()
+            .filter(|next| forest.sites.contains(next))
+            .collect();
+    }
+    reachability::Reachability::new(successors, root.header, root.latch)
+}
+
+fn known_predicates(
+    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
+    forest: &super::super::numeric_phase::Forest,
+    from: usize,
+    reachability: &mut reachability::Reachability,
+) -> BTreeMap<u32, bool> {
+    required_predicates(plan, facts, forest, from, reachability).0
+}
+
+fn required_predicates(
+    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
+    forest: &super::super::numeric_phase::Forest,
+    from: usize,
+    reachability: &mut reachability::Reachability,
+) -> (BTreeMap<u32, bool>, bool) {
+    let mut known = BTreeMap::new();
+    let mut consistent = true;
+    for &site in &forest.sites {
+        let operands = match plan.blocks()[site].terminator() {
+            Term::Scalar(Branch::Branch { condition, .. }) => vec![condition],
+            Term::Scalar(Branch::LiteralBranch { left, right, .. }) => vec![left, right],
+            _ => continue,
+        };
+        for value in operands {
+            let root = identity(facts, value);
+            let Ok([definition]) = facts.definition_sites(root) else {
+                continue;
+            };
+            if !definition
+                .site()
+                .is_some_and(|site| forest.sites.contains(&(site as usize)))
+                || plan.value_scopes()[root as usize]
+                    != (mech_engine::native_artifact::NativeIterationValueScope::Immutable {
+                        iteration: Some(forest.loops[0].iteration),
+                    })
+            {
+                continue;
+            }
+            let Some((no, yes)) = facts.boolean_branch_edges(site as u32, value) else {
+                continue;
+            };
+            for (edge, truth) in [(no, false), (yes, true)] {
+                if !reachability.reaches(from, Some((site, edge as usize))) {
+                    if known
+                        .insert(root, truth)
+                        .is_some_and(|previous| previous != truth)
+                    {
+                        consistent = false;
+                    }
+                }
+            }
+        }
+    }
+    (known, consistent)
+}
+
+/// Profitability only: repeated immutable guards can make a CFG backedge
+/// contradictory even though the graph has a syntactic path to it. Such a
+/// prefix retains the existing parent pieces instead of adding a Tail phase.
+pub(super) fn retains_native_backedge(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    facts: &NativeProgramFacts<'_>,
+    forest: &super::super::numeric_phase::Forest,
+) -> bool {
+    let latch = tail.latch() as usize;
+    if !forest.sites.contains(&latch) {
+        return false;
+    }
+    let mut reachability = forest_reachability(plan, forest);
+    reachability.reaches(latch, None)
+        && required_predicates(plan, facts, forest, latch, &mut reachability).1
+}
+
+fn live_before(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    facts: &NativeProgramFacts<'_>,
+    start: usize,
+    known: &BTreeMap<u32, bool>,
+) -> Result<BTreeSet<u32>, &'static str> {
+    live_query(plan, tail, facts, start, known, None)
+}
+
+fn live_query(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    facts: &NativeProgramFacts<'_>,
+    start: usize,
+    known: &BTreeMap<u32, bool>,
+    wanted: Option<&BTreeSet<u32>>,
+) -> Result<BTreeSet<u32>, &'static str> {
+    // Query-local ordinals replace per-node source-ID tree allocations. Each
+    // query still visits and validates its exact graph in the original order.
+    let mut ordinals = vec![usize::MAX; plan.blocks().len()];
+    let mut next = Vec::new();
+    let mut reads = Vec::<BTreeSet<u32>>::new();
+    let mut pending = vec![start];
+    while let Some(site) = pending.pop() {
+        if ordinals[site] != usize::MAX {
+            continue;
+        }
+        let mut used = BTreeSet::new();
+        match plan.blocks()[site].action() {
+            Action::Initialize { iteration } | Action::Latch { iteration } => {
+                if let NativeControlLoop::Tail(child) = &plan.iterations()[*iteration as usize] {
+                    used.insert(
+                        if matches!(plan.blocks()[site].action(), Action::Initialize { .. }) {
+                            child.seed().get()
+                        } else {
+                            child.next().get()
+                        },
+                    );
+                } else {
+                    facts.parallel_action_reads(site as u32, &mut |value| {
+                        used.insert(value.get());
+                        Ok(())
+                    })?;
+                }
+            }
+            _ => facts.parallel_action_reads(site as u32, &mut |value| {
+                used.insert(value.get());
+                Ok(())
+            })?,
+        }
+        if site == tail.finish() as usize {
+            used.insert(tail.returned().get());
+        }
+        let mut successors = if site == tail.latch() as usize || site == tail.finish() as usize {
+            Vec::new()
+        } else {
+            NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
+                .into_iter()
+                .flatten()
+                .map(|s| s as usize)
+                .collect::<Vec<_>>()
+        };
+        let conditions = match plan.blocks()[site].terminator() {
+            Term::Scalar(Branch::Branch { condition, .. }) => vec![condition],
+            Term::Scalar(Branch::LiteralBranch { left, right, .. }) => vec![left, right],
+            _ => Vec::new(),
+        };
+        for value in conditions {
+            used.insert(value.get());
+            if let Some(&truth) = known.get(&identity(facts, value))
+                && let Some((no, yes)) = facts.boolean_branch_edges(site as u32, value)
+            {
+                successors.retain(|&s| s == (if truth { yes } else { no }) as usize);
+            }
+        }
+        pending.extend(&successors);
+        ordinals[site] = next.len();
+        next.push(successors);
+        if let Some(wanted) = wanted {
+            used.retain(|value| wanted.contains(value));
+        }
+        reads.push(used);
+    }
+    // Only a value read in this selected graph can seed a liveness fact, and
+    // only sites in this graph can kill one. Avoid materializing the entire
+    // program's definitions for each cold continuation.
+    let mut read_values = vec![false; plan.values().len()];
+    for &value in reads.iter().flatten() {
+        if let Some(read) = read_values.get_mut(value as usize) {
+            *read = true;
+        }
+    }
+    let mut definitions = vec![Vec::<u32>::new(); next.len()];
+    for value in 0..plan.values().len() {
+        if wanted.is_some_and(|wanted| !wanted.contains(&(value as u32))) {
+            continue;
+        }
+        // Preserve the original lookup/validation order even for values that
+        // cannot be live. An empty read set must not suppress an old error.
+        let sites = facts.definition_sites(value as u32)?;
+        if !read_values[value] {
+            continue;
+        }
+        for definition in sites {
+            if let Some(site) = definition.site()
+                && let Some(&index) = ordinals.get(site as usize)
+                && index != usize::MAX
+            {
+                let killed = &mut definitions[index];
+                // The outer value loop is ordered. Repeated definition records
+                // keep the original set semantics without allocating a tree.
+                if killed.last() != Some(&(value as u32)) {
+                    killed.push(value as u32);
+                }
+            }
+        }
+    }
+    for successors in &mut next {
+        for successor in successors {
+            *successor = ordinals[*successor];
+        }
+    }
+    Ok(liveness::live_before_indexed(&next, &reads, &definitions, ordinals[start]))
+}
+
+#[path = "numeric_liveness.rs"]
+mod liveness;
+
+pub(super) fn derive(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    forest: &super::super::numeric_phase::Forest,
+    provenance: &mut Provenance<'_, '_>,
+    arrays: &[Array],
+) -> Result<Vec<Exit>, &'static str> {
+    let mut exits = Vec::new();
+    let mut boundaries = forest
+        .cold
+        .iter()
+        .map(|child| child.initialize)
+        .chain(forest.stops.iter().copied())
+        .map(|to| (to, None, ExitKind::Unsupported))
+        .collect::<Vec<_>>();
+    if forest.checked_children {
+        for child in forest.loops.iter().skip(1) {
+            boundaries.push((
+                child.initialize,
+                None,
+                ExitKind::ChildInitialize {
+                    iteration: child.iteration,
+                },
+            ));
+            boundaries.push((
+                child.header,
+                Some(child.latch),
+                ExitKind::ChildHeader {
+                    iteration: child.iteration,
+                },
+            ));
+        }
+    }
+    let mut reachability = None;
+    for (to, from, kind) in boundaries {
+        let from = if let Some(from) = from {
+            from
+        } else {
+            let [from] = provenance.facts.predecessors(to as u32)? else {
+                return Err("cold initializer lacks a unique exact predecessor");
+            };
+            *from as usize
+        };
+        if !forest.sites.contains(&from) {
+            return Err("cold predecessor is outside the native traversal");
+        }
+        let reachability = reachability.get_or_insert_with(|| forest_reachability(plan, forest));
+        if !reachability.reaches(from, None) {
+            return Err("cold predecessor is outside the native traversal");
+        }
+        let known = known_predicates(plan, provenance.facts, forest, from, reachability);
+        let live = live_before(plan, tail, provenance.facts, to, &known)?;
+        let mut export = Exit {
+            from,
+            to,
+            frames: Vec::new(),
+            aliases: Vec::new(),
+            values: live.iter().copied().collect(),
+            retire_carrier: (!forest.prepaid_sites.is_empty() || forest.checked_children)
+                && !live.contains(&tail.carrier().get()),
+            kind,
+        };
+        for value in live {
+            if plan.values()[value as usize].scalar_kind().is_some()
+                // A private enum state is entirely represented by its checked
+                // tag/payload snapshot lanes, with no managed buffer binding.
+                || (aggregates.slot_at(value as usize).is_some()
+                    && matches!(plan.values()[value as usize].definition().body(), SchemaBody::Enum { .. }))
+                || !provenance.facts.definition_sites(value)?.iter().any(|d| {
+                    d.site()
+                        .is_some_and(|s| forest.sites.contains(&(s as usize)))
+                })
+            {
+                continue;
+            }
+            if frames.fields_at(value as usize).is_some() {
+                export.frames.push(value);
+            } else {
+                let field = provenance
+                    .array(value, None)
+                    .ok_or("cold live value has no exact buffer binding")?;
+                let array = arrays
+                    .iter()
+                    .position(|a| a.field == field)
+                    .ok_or("cold live buffer is outside the phase")?;
+                export.aliases.push((value, array));
+            }
+        }
+        exits.push(export);
+    }
+    Ok(exits)
+}
+
+pub(super) fn boundary_values(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    facts: &NativeProgramFacts<'_>,
+    forest: &super::super::numeric_phase::Forest,
+    frames: &[FrameWords],
+    header: BTreeSet<u32>,
+) -> Result<super::super::numeric_plan::BoundaryValues, &'static str> {
+    let mut candidates = frames
+        .iter()
+        .map(|frame| frame.value)
+        .collect::<BTreeSet<_>>();
+    candidates.extend([tail.carrier().get(), tail.returned().get()]);
+    for &site in &forest.sites {
+        match plan.blocks()[site].action() {
+            Action::Initialize { iteration } | Action::Latch { iteration }
+                if matches!(
+                    plan.iterations()[*iteration as usize],
+                    NativeControlLoop::Tail(_)
+                ) =>
+            {
+                let NativeControlLoop::Tail(child) = &plan.iterations()[*iteration as usize] else {
+                    unreachable!()
+                };
+                candidates.insert(
+                    if matches!(plan.blocks()[site].action(), Action::Initialize { .. }) {
+                        child.seed().get()
+                    } else {
+                        child.next().get()
+                    },
+                );
+            }
+            _ => facts.parallel_action_reads(site as u32, &mut |value| {
+                candidates.insert(value.get());
+                Ok(())
+            })?,
+        }
+        match plan.blocks()[site].terminator() {
+            Term::Scalar(Branch::Branch { condition, .. }) => {
+                candidates.insert(condition.get());
+            }
+            Term::Scalar(Branch::LiteralBranch { left, right, .. }) => {
+                candidates.extend([left.get(), right.get()]);
+            }
+            _ => {}
+        }
+    }
+    for value in 0..plan.values().len() {
+        if facts
+            .definition_sites(value as u32)?
+            .iter()
+            .any(|definition| {
+                definition
+                    .site()
+                    .is_some_and(|site| forest.sites.contains(&(site as usize)))
+            })
+        {
+            candidates.insert(value as u32);
+        }
+    }
+    let known = BTreeMap::new();
+    Ok(super::super::numeric_plan::BoundaryValues {
+        candidates: candidates.iter().copied().collect(),
+        header: header.into_iter().collect(),
+        exit: live_query(
+            plan,
+            tail,
+            facts,
+            tail.exit() as usize,
+            &known,
+            Some(&candidates),
+        )?
+        .into_iter()
+        .collect(),
+    })
+}
+
+/// Only lexical local values dead at entry and wholly defined/read in this
+/// selected traversal can lose their historical private SSA contents. This
+/// changes neither canonical values nor source definitions. A live capture,
+/// carrier, escaped output or partially selected definition is never freshened.
+/// Return the same header query for boundary construction in this derivation;
+/// its plan, root and empty predicate context have not changed between uses.
+pub(super) fn fresh_values(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    forest: &super::super::numeric_phase::Forest,
+    facts: &NativeProgramFacts<'_>,
+) -> Result<(Vec<u32>, BTreeSet<u32>), &'static str> {
+    use mech_engine::native_artifact::{
+        NativeIterationValueScope as Scope, NativeProgramReadRole as Read,
+    };
+    let live = live_before(plan, tail, facts, tail.header() as usize, &BTreeMap::new())?;
+    let scopes = forest
+        .loops
+        .iter()
+        .map(|loop_| loop_.iteration)
+        .collect::<BTreeSet<_>>();
+    let mut outputs = BTreeMap::new();
+    for block in plan.blocks() {
+        let output = match block.action() {
+            Action::Scalar(Scalar::Copy { output, .. } | Scalar::Primitive { output, .. })
+            | Action::Structural { output, .. }
+            | Action::LibraryCall { output, .. } => *output,
+            _ => continue,
+        };
+        outputs.insert(output.get(), output);
+    }
+    let mut fresh = Vec::new();
+    for (value, sealed) in outputs {
+        if live.contains(&value)
+            || !matches!(plan.value_scopes()[value as usize], Scope::Immutable { iteration: Some(owner) } if scopes.contains(&owner))
+            || !(plan.values()[value as usize].scalar_kind().is_some()
+                || frames.fields_at(value as usize).is_some()
+                || aggregates.slot_at(value as usize).is_some())
+        {
+            continue;
+        }
+        let definitions = facts.definition_sites(value)?;
+        if definitions.is_empty()
+            || definitions.iter().any(|d| {
+                !d.site()
+                    .is_some_and(|site| forest.sites.contains(&(site as usize)))
+            })
+        {
+            continue;
+        }
+        if facts.read_roles(sealed)?.iter().any(|role| !matches!(role, Read::Action(site) | Read::Terminator(site) if forest.sites.contains(&(*site as usize)))) {
+            continue;
+        }
+        fresh.push(value);
+    }
+    Ok((fresh, live))
+}

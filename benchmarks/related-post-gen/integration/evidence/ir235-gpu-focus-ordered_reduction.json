@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-boolean-implication-freshness-tests-20261106-v4/mech_gpu-tests",
+    "ordered_reduction",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 18.643213958945125
+}

@@ -25,15 +25,27 @@ thread_local! {
     test,
     feature = "native-artifact",
     any(feature = "full_source", feature = "full_compiler"),
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 #[path = "set_conversion_output_tests.rs"]
 mod output_tests;
 
 pub(super) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     return super::native_collection_semantics::register_set_conversion(builder);
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     builder.insert_resident_factory(
         ["convert"],
         "set",

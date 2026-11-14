@@ -22,6 +22,7 @@ pub(in crate::native_artifact) enum OwnerOperation {
     WriteCallDenied,
     EnterPackedSsa,
     EnterGuardedLoop,
+    FixedKeyFailure,
     Unknown(u64),
 }
 impl OwnerOperation {
@@ -43,6 +44,7 @@ impl OwnerOperation {
             12 => Self::WriteCallDenied,
             13 => Self::EnterPackedSsa,
             14 => Self::EnterGuardedLoop,
+            15 => Self::FixedKeyFailure,
             value => Self::Unknown(value),
         }
     }
@@ -63,6 +65,7 @@ impl OwnerOperation {
             Self::WriteCallDenied => 12,
             Self::EnterPackedSsa => 13,
             Self::EnterGuardedLoop => 14,
+            Self::FixedKeyFailure => 15,
             Self::Unknown(value) => value,
         }
     }

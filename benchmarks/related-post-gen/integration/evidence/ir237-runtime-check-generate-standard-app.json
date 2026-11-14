@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/generate-standard-app",
+    "/private/tmp/mech-related-owned-shape-metadata-compiler-20261107",
+    "/private/tmp/mech-related-owned-shape-metadata-runtime-check-20261107-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.0180091671645641,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "cd5f1b6b260c87297d38baa3e571d9fc86b904ac1aeb3eee02b1d8f2483053d1"
+}

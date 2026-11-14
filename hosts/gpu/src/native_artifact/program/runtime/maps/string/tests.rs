@@ -5,6 +5,35 @@ use std::collections::BTreeMap;
 use std::hash::{BuildHasher, Hasher};
 use std::rc::Rc;
 
+thread_local! {
+    static PUBLICATION_HASHER: std::cell::RefCell<Option<DefaultHashBuilder>> = const {
+        std::cell::RefCell::new(None)
+    };
+}
+
+pub(super) fn publication_hasher() -> DefaultHashBuilder {
+    PUBLICATION_HASHER.with(|hasher| hasher.borrow().clone().unwrap_or_default())
+}
+
+/// Exact finite-boundary trials must repeat the same hash-table iteration
+/// order. Production and ordinary tests keep independently randomized tables.
+pub(in crate::native_artifact) fn with_fixed_publication_hash_seed<R>(
+    run: impl FnOnce() -> R,
+) -> R {
+    struct Restore(Option<DefaultHashBuilder>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            PUBLICATION_HASHER.with(|hasher| {
+                hasher.replace(self.0.take());
+            });
+        }
+    }
+    let _restore = Restore(
+        PUBLICATION_HASHER.with(|hasher| hasher.replace(Some(DefaultHashBuilder::default()))),
+    );
+    run()
+}
+
 fn limits() -> Limits {
     Limits {
         entries: 4096,

@@ -1,0 +1,16 @@
+{
+  "hosts/gpu/src/native_artifact/codegen/options.rs": "IR246-source-hosts__gpu__src__native_artifact__codegen__options.rs.txt",
+  "hosts/gpu/src/native_artifact/codegen/control/report/mod.rs": "IR246-source-hosts__gpu__src__native_artifact__codegen__control__report__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_address_tests.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__numeric_address_tests.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_read_packs.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__numeric_read_packs.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_segments.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__numeric_segments.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__numeric_words.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__readonly_numeric.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/dead_values/mod.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__dead_values__mod.rs.txt",
+  "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/dead_values/tests.rs": "IR246-source-hosts__gpu__src__native_artifact__program__codegen__cfg_cleanup__dead_values__tests.rs.txt",
+  "hosts/gpu/src/native_artifact/program/image/identity.rs": "IR246-source-hosts__gpu__src__native_artifact__program__image__identity.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/fresh_traversals.rs": "IR246-source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__fresh_traversals.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/invariant_numeric.rs": "IR246-source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__invariant_numeric.rs.txt",
+  "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree.rs": "IR246-source-hosts__gpu__src__native_artifact__program__runtime__composition_tests__numeric_tree.rs.txt"
+}

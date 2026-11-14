@@ -313,6 +313,19 @@ impl MatrixValue {
         }
     }
 
+    /// Physical element capacity of a packed unsigned buffer, including
+    /// uninitialized spare slots. This is descriptive storage metadata only;
+    /// logical shape and encoded values continue to use `elements().len()`.
+    pub fn unsigned_buffer_capacity(&self) -> Option<usize> {
+        match &self.elements {
+            SequenceStorage::U8(words) => Some(words.capacity()),
+            SequenceStorage::U16(words) => Some(words.capacity()),
+            SequenceStorage::U32(words) => Some(words.capacity()),
+            SequenceStorage::U64(words) => Some(words.capacity()),
+            _ => None,
+        }
+    }
+
     /// Returns canonical row-major snapshot elements.
     pub fn elements(&self) -> SequenceView<'_> {
         self.elements.view()

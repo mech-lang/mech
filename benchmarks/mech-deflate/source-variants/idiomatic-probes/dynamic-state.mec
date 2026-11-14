@@ -1,0 +1,12 @@
+#Update(initial<[u32]>, stop<u64>, delta<u32>) => <[u32]>
+  | :Walk(values<[u32]>, i<u64>)
+  | :Done(values<[u32]>).
+#Update(initial, stop, delta) -> :Walk(initial, 0u64)
+  :Walk(values, i)
+    | i < stop -> {
+        ~next := values
+        next[i + 1u64] = next[i + 1u64] + delta
+      } -> :Walk(next, i + 1u64)
+    | * -> :Done(values)
+  :Done(values) => values.
+#Update(data<[u32]>, count<u64>, increment<u32>)

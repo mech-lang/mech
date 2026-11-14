@@ -1132,6 +1132,81 @@ fn sequence_length() -> Result<Vec<KindScheme>, SemanticModelError> {
     ])
 }
 
+fn sequence_buffer(name: &str) -> Result<Vec<KindScheme>, SemanticModelError> {
+    if name == "sequence/append-le-bytes" {
+        // Retain the input row axis: a zero-count append can then preserve
+        // the exact frozen value. Runtime geometry still requires one row.
+        let byte = BuiltinScalarKind::U8.kind_expr();
+        return Ok(vec![make(
+            0,
+            3,
+            vec![
+                matrix(byte.clone(), dim(0), dim(1)),
+                BuiltinScalarKind::U64.kind_expr(),
+                byte.clone(),
+            ],
+            vec![matrix(byte, dim(0), dim(2))],
+            Vec::new(),
+        )?]);
+    }
+    [
+        BuiltinScalarKind::U8,
+        BuiltinScalarKind::U16,
+        BuiltinScalarKind::U32,
+        BuiltinScalarKind::U64,
+    ]
+    .into_iter()
+    .map(|scalar| {
+        let element = scalar.kind_expr();
+        let row = |count| matrix(element.clone(), DimensionExpr::Constant(1), count);
+        let (inputs, count, dims) = match name {
+            "sequence/with-capacity" => (
+                vec![element.clone(), BuiltinScalarKind::U64.kind_expr()],
+                dim(0),
+                1,
+            ),
+            "sequence/reserve" => (
+                vec![
+                    matrix(element.clone(), dim(0), dim(1)),
+                    BuiltinScalarKind::U64.kind_expr(),
+                ],
+                dim(2),
+                3,
+            ),
+            "sequence/append" => (
+                vec![matrix(element.clone(), dim(0), dim(1)), element.clone()],
+                dim(2),
+                3,
+            ),
+            "sequence/append-sublist" => (
+                vec![
+                    matrix(element.clone(), dim(0), dim(1)),
+                    matrix(element.clone(), dim(2), dim(3)),
+                    BuiltinScalarKind::U64.kind_expr(),
+                    BuiltinScalarKind::U64.kind_expr(),
+                ],
+                dim(4),
+                5,
+            ),
+            "sequence/clear" => (vec![matrix(element.clone(), dim(0), dim(1))], dim(2), 3),
+            _ => unreachable!("maintained buffer scheme selection"),
+        };
+        // These are turn-shaped sequences. Their producer resolves the current
+        // initialized length; a first empty visit must not freeze a recursive
+        // frame's schema to zero (or an ever-growing affine expression).
+        // A generic matrix parameter need not prove its row extent statically;
+        // the operation checks the current row and refines the successful result.
+        let output = if name == "sequence/append-sublist" {
+            // Keep the destination row axis so an empty append can retain its owner.
+            matrix(element.clone(), dim(0), count)
+        } else {
+            row(count)
+        };
+        make(0, dims, inputs, vec![output], Vec::new())
+    })
+    .collect()
+}
+
 fn sequence_sort_indices() -> Result<KindScheme, SemanticModelError> {
     let primary_length = DimensionExpr::Multiply(vec![dim(0), dim(1)].into_boxed_slice());
     let secondary_length = DimensionExpr::Multiply(vec![dim(2), dim(3)].into_boxed_slice());
@@ -1721,6 +1796,22 @@ pub fn maintained_source_schemes(
             numeric_binary_for_predicate(BuiltinKindPredicate::Ordered)?
         }
         "logic/not" => bool_unary()?,
+        "bits/not" | "bits/leading-zeros" | "bits/trailing-zeros" => vec![exact_unary(
+            BuiltinScalarKind::U64.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+        )?],
+        "bits/and"
+        | "bits/or"
+        | "bits/xor"
+        | "bits/shift-left-wrap"
+        | "bits/shift-right-wrap"
+        | "bits/wrapping-add"
+        | "bits/wrapping-sub"
+        | "bits/wrapping-mul" => vec![exact_binary(
+            BuiltinScalarKind::U64.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+            BuiltinScalarKind::U64.kind_expr(),
+        )?],
         "logic/and" | "logic/or" | "logic/xor" => bool_binary()?,
         "range/exclusive" | "range/inclusive" => vec![range_binary()?],
         "range/exclusive-increment" | "range/inclusive-increment" => vec![range_ternary()?],
@@ -1767,6 +1858,12 @@ pub fn maintained_source_schemes(
         )?],
         "number/format" => number_format()?,
         "sequence/length" => sequence_length()?,
+        name @ ("sequence/with-capacity"
+        | "sequence/reserve"
+        | "sequence/append"
+        | "sequence/append-le-bytes"
+        | "sequence/append-sublist"
+        | "sequence/clear") => sequence_buffer(name)?,
         "sequence/sort-indices" => vec![sequence_sort_indices()?],
         "text/lines" => vec![text_lines()?],
         "text/join" => vec![text_join()?],

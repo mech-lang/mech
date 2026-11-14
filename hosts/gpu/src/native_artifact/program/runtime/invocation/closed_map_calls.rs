@@ -33,9 +33,16 @@ impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
         let owner = state.slots[index]
             .take_closed()
             .ok_or_else(|| invalid("closed map owner lost"))?;
+        let is_fixed = owner.fixed.is_some();
+        let fixed_validation = if owner.fixed.is_some() {
+            owner.validate_fixed()
+        } else {
+            Ok(())
+        };
         let Owner {
             mut binding,
             packed,
+            fixed,
             packed_ssa_entered,
             guarded_loop_entered,
             guarded_calls_entered,
@@ -44,6 +51,30 @@ impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
             error,
             ..
         } = *owner;
+        if let Some(lane) = fixed {
+            let crate::native_artifact::program::runtime::maps::fixed_keys::Lane {
+                frame,
+                view,
+                lane,
+                ..
+            } = *lane;
+            let destination = state
+                .matrix_keys
+                .get_mut(lane)
+                .ok_or_else(|| invalid("fixed-key return lane missing"))?;
+            if destination.view.is_some() || destination.pending.is_some() {
+                state.slots[index].retain(binding);
+                return Err(invalid("fixed-key loan returned to an occupied lane"));
+            }
+            destination.view = Some(view);
+            updates = frame.updates;
+            #[cfg(test)]
+            crate::native_artifact::program::runtime::maps::fixed_keys::record(1, updates);
+        }
+        if let Err(error) = fixed_validation {
+            state.slots[index].retain(binding);
+            return Err(error);
+        }
         if let Some(error) = error {
             state.slots[index].retain(binding);
             return Err(error);
@@ -51,6 +82,10 @@ impl<'state, 'plan, 'a> Invocation<'state, 'a, 'plan> {
         let traversals = funded
             .checked_sub(remaining)
             .ok_or_else(|| invalid("closed map body fuel was renewed"))?;
+        if is_fixed && updates > traversals {
+            state.slots[index].retain(binding);
+            return Err(invalid("fixed-key writes exceed paid source traversals"));
+        }
         let is_packed = packed.is_some();
         if let Some(packed) = packed {
             if packed.remaining() != remaining || packed.funded() != funded {

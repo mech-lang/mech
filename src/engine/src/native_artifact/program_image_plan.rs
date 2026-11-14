@@ -1,42 +1,48 @@
 //! Reassemble the same compiler-produced plan, never an alternative lowering.
-use super::{collections, iteration, loops, nodes};
-use crate::native_artifact::NativeProgramArtifactPlan;
+use super::{collections, iteration, library, loops, nodes};
+use crate::native_artifact::{
+    BuildOwnedImageReader, BuildOwnedImageRecord, NativeProgramArtifactPlan,
+};
 use mech_core::{FunctionCatalog, NodeId, ProgramRevision, SchemaTable};
 use serde::Deserialize;
-use serde_json::{Value as Json, value::RawValue};
+use serde_json::Value as Json;
+#[cfg(test)]
+use serde_json::value::RawValue;
 
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Plan")]
 struct Plan<'a> {
     revision: ProgramRevision,
     #[serde(borrow)]
-    resource_requirements: Vec<&'a RawValue>,
+    resource_requirements: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    observations: Vec<&'a RawValue>,
+    observations: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    effects: Vec<&'a RawValue>,
+    effects: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    inputs: Vec<&'a RawValue>,
+    inputs: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    constants: Vec<&'a RawValue>,
+    constants: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    values: Vec<&'a RawValue>,
+    values: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    value_scopes: Vec<&'a RawValue>,
+    value_scopes: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    blocks: Vec<&'a RawValue>,
+    blocks: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    iterations: Vec<&'a RawValue>,
+    iterations: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    collections: Vec<&'a RawValue>,
+    collections: Vec<BuildOwnedImageRecord<'a>>,
     #[serde(borrow)]
-    outputs: Vec<&'a RawValue>,
+    outputs: Vec<BuildOwnedImageRecord<'a>>,
     entry: u32,
     activation_nodes: Box<[NodeId]>,
     activation_boundary: Option<u32>,
+    #[serde(borrow, default)]
+    template_definitions: Option<BuildOwnedImageRecord<'a>>,
 }
 #[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Image")]
 struct Image<'a> {
     format: String,
     version: u32,
@@ -61,7 +67,9 @@ pub unsafe fn decode_build_owned_native_plan_image(
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
-    let image: Image<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    let mut reader = BuildOwnedImageReader::from_image(bytes).map_err(|e| e.to_string())?;
+    let image: Image<'_> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
+    reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-plan" || image.version != 1 {
         return Err("unsupported native plan image format".into());
     }
@@ -89,8 +97,9 @@ pub unsafe fn decode_build_owned_native_plan_value(
 }
 
 /// Restore the plan body borrowed directly from an enclosing checked image.
-/// Only one record's temporary JSON tree is materialized at a time; neither
-/// the plan nor the completed descriptor borrows the image buffer.
+/// Records stream directly into private typed wire readers. Only nested fields
+/// which still require a value-based validator materialize temporary JSON;
+/// neither the plan nor the completed descriptor borrows the image buffer.
 ///
 /// # Safety
 /// The enclosing descriptor must validate its format and version and preserve
@@ -101,19 +110,68 @@ pub unsafe fn decode_build_owned_native_plan_body(
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
-    let plan: Plan<'_> = serde_json::from_slice(bytes).map_err(|e| e.to_string())?;
+    let mut reader = BuildOwnedImageReader::from_image(bytes).map_err(|e| e.to_string())?;
+    let plan: Plan<'_> = Plan::deserialize(&mut reader).map_err(|e| e.to_string())?;
+    reader.end().map_err(|e| e.to_string())?;
     restore(plan, schemas, catalog)
 }
 
+/// Restore a record borrowed from typed Object metadata or its inspectable JSON.
+///
+/// # Safety
+/// The exact checked-build provenance, confinement and runtime-admission
+/// obligations of `decode_build_owned_native_plan_body` all apply.
+pub unsafe fn decode_build_owned_native_plan_record(
+    image: BuildOwnedImageRecord<'_>,
+    schemas: &SchemaTable,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, String> {
+    let plan = image.decode().map_err(|error| error.to_string())?;
+    restore(plan, schemas, catalog)
+}
+
+/// Restore compiler-emitted type-reference rows against this image's actual
+/// canonical schema table. This representation grants no proof authority.
+///
+/// # Safety
+/// All checked-build provenance, confinement and runtime-admission obligations
+/// of `decode_build_owned_native_plan_record` apply. The enclosing image must
+/// establish the table-format version before selecting this representation.
+pub unsafe fn decode_build_owned_native_table_plan_record(
+    image: BuildOwnedImageRecord<'_>,
+    schemas: &SchemaTable,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, String> {
+    let plan = image.decode().map_err(|error| error.to_string())?;
+    restore_inner::<true, false>(plan, schemas, catalog)
+}
+
+/// Restore shared immutable library definitions and exact per-site headers.
+///
+/// # Safety
+/// All unchanged checked Object/image provenance, confinement and runtime
+/// admission duties of `decode_build_owned_native_table_plan_record` apply.
+/// Only the enclosing descriptor's explicit shared-table version selects this.
+pub unsafe fn decode_build_owned_native_shared_table_plan_record(
+    image: BuildOwnedImageRecord<'_>,
+    schemas: &SchemaTable,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, String> {
+    let plan = image.decode().map_err(|error| error.to_string())?;
+    restore_inner::<true, true>(plan, schemas, catalog)
+}
+
 fn records<T>(
-    images: Vec<&RawValue>,
-    mut restore: impl FnMut(&Json) -> Result<T, String>,
+    images: Vec<BuildOwnedImageRecord<'_>>,
+    mut restore: impl for<'image> FnMut(&mut BuildOwnedImageReader<'image>) -> Result<T, String>,
 ) -> Result<Box<[T]>, String> {
     images
         .into_iter()
         .map(|image| {
-            let value = serde_json::from_str(image.get()).map_err(|e| e.to_string())?;
-            restore(&value)
+            let mut reader = image.reader();
+            let value = restore(&mut reader)?;
+            reader.end().map_err(|error| error.to_string())?;
+            Ok(value)
         })
         .collect()
 }
@@ -123,7 +181,22 @@ fn restore(
     schemas: &SchemaTable,
     catalog: &FunctionCatalog,
 ) -> Result<NativeProgramArtifactPlan, String> {
-    let resource_requirements = records(w.resource_requirements, nodes::request)?;
+    restore_inner::<false, false>(w, schemas, catalog)
+}
+
+fn restore_inner<const TABLES: bool, const SHARED_TEMPLATES: bool>(
+    w: Plan<'_>,
+    schemas: &SchemaTable,
+    catalog: &FunctionCatalog,
+) -> Result<NativeProgramArtifactPlan, String> {
+    if w.template_definitions.is_some() != SHARED_TEMPLATES {
+        return Err("plan image version differs from its template definitions".into());
+    }
+    // SAFETY: this constructor remains inside the unchanged checked-build
+    // loader. The table validates the actual linked factory and canonical
+    // schemas for every definition; each source header remains independent.
+    let templates = unsafe { library::Templates::new(w.template_definitions, catalog, schemas)? };
+    let resource_requirements = records(w.resource_requirements, |reader| nodes::request(reader))?;
     let inputs = records(w.inputs, |v| nodes::input(v, schemas))?;
     let observations = records(w.observations, |v| nodes::observation(v, schemas))?;
     let effects = records(w.effects, |v| nodes::effect(v, schemas))?;
@@ -134,22 +207,30 @@ fn restore(
         .into_iter()
         .map(|v| nodes::constant(v, schemas))
         .collect::<Result<_, _>>()?;
-    let values = records(w.values, |v| nodes::program_type(v, schemas))?;
-    let value_scopes = records(w.value_scopes, loops::scope)?;
+    let mut types = nodes::TypeTable::new(schemas);
+    let values = records(w.values, |v| {
+        if TABLES {
+            types.read(v)
+        } else {
+            nodes::program_type(v, schemas)
+        }
+    })?;
+    let value_scopes = records(w.value_scopes, |reader| loops::scope(reader))?;
     let outputs = records(w.outputs, |v| nodes::output(v, schemas))?;
     // SAFETY: each private reader inherits the enclosing build-owned contract.
-    let blocks = records(w.blocks, |v| unsafe {
-        iteration::block(v, catalog, schemas)
-    })?;
+    let blocks = records(w.blocks, |v| unsafe { iteration::block(v, &templates) })?;
     // SAFETY: same confined image, schemas and selected registry.
     let iterations = records(w.iterations, |v| unsafe {
-        loops::control_loop(v, catalog, schemas)
+        loops::control_loop(v, &templates)
     })?;
     // SAFETY: same confined image, schemas and selected registry.
     let collections = records(w.collections, |v| unsafe {
-        collections::collection(v, catalog, schemas)
+        collections::collection(v, &templates)
     })?;
     let plan = NativeProgramArtifactPlan {
+        // An image contains semantic selection, not its producer's budget.
+        // Shape/ownership proofs and same-Object binding still run on load.
+        definition_table_byte_limit: u64::MAX,
         revision: w.revision,
         resource_requirements,
         observations,
@@ -191,16 +272,57 @@ mod tests {
         let start = bytes.as_ptr() as usize;
         let end = start + bytes.len();
         for block in &plan.blocks {
-            let address = block.get().as_ptr() as usize;
-            assert!(address >= start && address + block.get().len() <= end);
+            let BuildOwnedImageRecord::Json(text) = block else {
+                panic!("JSON record expected")
+            };
+            let address = text.as_ptr() as usize;
+            assert!(address >= start && address + text.len() <= end);
         }
-        let records = records(plan.blocks, |value| Ok(value.clone())).unwrap();
+        let records = records(plan.blocks, |reader| {
+            Json::deserialize(reader).map_err(|error| error.to_string())
+        })
+        .unwrap();
         assert_eq!(records.as_ref(), image["blocks"].as_array().unwrap());
 
         let mut changed = image;
         changed["unexpected"] = true.into();
         let bytes = serde_json::to_vec(&changed).unwrap();
         assert!(serde_json::from_slice::<Plan<'_>>(&bytes).is_err());
+    }
+
+    #[test]
+    fn streamed_records_reject_duplicate_fields_and_invalid_typed_payloads() {
+        // These are wire-only scopes, never executable loop proofs. In
+        // particular duplicate fields must not be lost in an intermediate map.
+        for text in [
+            r#"{"Immutable":{"iteration":null}}"#,
+            r#"{"Carrier":{"iteration":4294967295}}"#,
+        ] {
+            let image: Box<RawValue> = serde_json::from_str(text).unwrap();
+            let loaded = records(vec![BuildOwnedImageRecord::Json(image.get())], |reader| {
+                loops::scope(reader)
+            })
+            .unwrap();
+            assert_eq!(serde_json::to_string(&loaded[0]).unwrap(), text);
+        }
+        for text in [
+            r#"{"Immutable":{"iteration":0,"iteration":1}}"#,
+            r#"{"Carrier":{"iteration":4294967296}}"#,
+            r#"{"Carrier":{"iteration":-1}}"#,
+            r#"{"Carrier":{"iteration":0,"unknown":true}}"#,
+            r#"{"Immutable":{"iteration":null},"Carrier":{"iteration":0}}"#,
+            "null",
+            "[]",
+        ] {
+            let image: Box<RawValue> = serde_json::from_str(text).unwrap();
+            assert!(
+                records(vec![BuildOwnedImageRecord::Json(image.get())], |reader| {
+                    loops::scope(reader)
+                })
+                .is_err(),
+                "{text}"
+            );
+        }
     }
 
     #[test]
@@ -257,22 +379,28 @@ mod tests {
                 serde_json::to_string(&[0u8; 32]).unwrap(),
                 std::str::from_utf8(&bytes).unwrap()
             );
-            let wire: Plan<'_> = serde_json::from_str(&envelope).unwrap();
-            let restored = restore(
-                wire,
-                &schemas,
-                &mech_core::FunctionCatalogBuilder::new().build().unwrap(),
-            )
-            .unwrap();
-            assert_eq!(
-                restored.constants()[0]
-                    .constant()
-                    .canonical_data_draft()
-                    .unwrap(),
-                payload
-            );
-            let raw = serde_json::to_string(&restored.constants()[0]).unwrap();
-            assert_eq!(raw, std::str::from_utf8(&bytes).unwrap());
+            let native =
+                crate::native_artifact::encode_native_metadata_image(envelope.as_bytes()).unwrap();
+            for image in [envelope.as_bytes(), native.as_slice()] {
+                let mut reader = BuildOwnedImageReader::from_image(image).unwrap();
+                let wire: Plan<'_> = Plan::deserialize(&mut reader).unwrap();
+                reader.end().unwrap();
+                let restored = restore(
+                    wire,
+                    &schemas,
+                    &mech_core::FunctionCatalogBuilder::new().build().unwrap(),
+                )
+                .unwrap();
+                assert_eq!(
+                    restored.constants()[0]
+                        .constant()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    payload
+                );
+                let raw = serde_json::to_string(&restored.constants()[0]).unwrap();
+                assert_eq!(raw, std::str::from_utf8(&bytes).unwrap());
+            }
         }
     }
 }

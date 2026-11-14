@@ -1,0 +1,1416 @@
+//! Explicit program IR/ABI identity. No Debug or pointer serialization.
+use crate::native_artifact::identity::transcript::{
+    self, optional_index, origin, scalar_action, scalar_kind, scalar_terminator,
+};
+use mech_engine::native_artifact::{
+    NativeIterationAction, NativeIterationTerminator, NativeIterationValueScope,
+    NativeProgramArtifactPlan, NativeSelectedTextJoin, NativeTextLineMatrixRegion,
+    NativeTextLineRetentionFrontier,
+};
+use sha2::{Digest, Sha256};
+// Identity construction runs once per descriptor, outside generated execution.
+// Keep the streaming hash update out of its hundreds of serialization sites;
+// this shares code without changing a single byte of the identity transcript.
+#[inline(never)]
+fn word(hash: &mut Sha256, value: u64) {
+    transcript::word(hash, value);
+}
+#[inline(never)]
+fn bytes(hash: &mut Sha256, value: &[u8]) {
+    transcript::bytes(hash, value);
+}
+
+fn selected_template(
+    hash: &mut Sha256,
+    template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
+) {
+    word(hash, template.origin().node().get() as u64);
+    word(hash, template.origin().block().map_or(u64::MAX, u64::from));
+    word(hash, template.origin().local().map_or(u64::MAX, u64::from));
+    hash.update(template.program_revision().as_bytes());
+    bytes(hash, template.primitive().name().as_bytes());
+    let key = template.selected_key();
+    word(hash, key.module_path.len() as u64);
+    for part in &key.module_path {
+        bytes(hash, part.as_bytes());
+    }
+    bytes(hash, key.operation_name.as_bytes());
+    word(hash, template.inputs().len() as u64);
+    for input in template.inputs() {
+        bytes(hash, &input.canonical_bytes());
+    }
+    bytes(hash, &template.output().canonical_bytes());
+    match template.contract().canonical_bytes() {
+        Ok(encoded) => {
+            hash.update([1]);
+            bytes(hash, &encoded);
+        }
+        Err(_) => hash.update([0]), // opaque invalid plans never reach execution
+    }
+    use mech_core::ImplementationMemoryClass as M;
+    let (tag, a, b) = match template.implementation_memory() {
+        M::NoAdditionalScratch => (0, 0, 0),
+        M::CloneInput { input } => (1, input, 0),
+        M::CanonicalCloneInput { input } => (2, input, 0),
+        M::AbiContiguousBridge { input, output } => (3, input, output),
+        M::ExternalMarshalling => (4, 0, 0),
+        M::MatrixSolve => (5, 0, 0),
+        M::CanonicalFinalize => (6, 0, 0),
+        M::CanonicalSortUnique => (7, 0, 0),
+        M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+        M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
+    };
+    for number in [tag as u64, a as u64, b as u64] {
+        word(hash, number);
+    }
+}
+// IR25 pins deferred final counts, bounded scan progress and the unvisited
+// EOF exit boundary before captured-source consumers acquire ownership.
+// IR26 keeps a returned range open until its requested endpoint is physically
+// available. The frontier itself is unchanged, so its old hash cannot safely
+// authenticate Objects emitted before the corrected retention instructions.
+// IR27 pins the optional sole-use Range producer/endpoints/inclusivity in the
+// selected matrix-join proof. The three original LibraryCall visits remain.
+// IR28 pins funded canonical child bindings in structural patterns.
+// IR29 pins the complete same-plan retained-map candidate and word inventory
+// carried by build-owned descriptors. It does not activate owner execution.
+// IR30 pins the explicit owner boundary after borrowed/closed-loop storage;
+// candidate words may not overlap those separately retained metadata lanes.
+// IR31 selects conditional owner words and per-region live flags.
+// IR32 pins non-escaping range/String projections used by retained map keys.
+// IR33 pins single-entry native owner groups and precise interior error origins.
+// IR34 pins acyclic native path frontiers and fused map-helper admission.
+// IR35 binds a private storage pair and pinned String to closed map Tail bodies.
+// IR36 admits a closed map Tail within an ordinary suspended parent loop.
+// IR37 carries an invariant-width proof for generated private map storage.
+// IR38 versions closed packed bodies into native SSA while preserving the
+// original source CFG. Private op13 attests actual first-header selection.
+// IR40 binds constructor-private parallel entries to immutable root captures
+// and original collection result frontiers; linked children share ABI21.
+// IR41 adds source-derived finite character domains to those same generated
+// SSA bodies, retaining every canonical String map key and worker boundary.
+// IR42 probes eight admitted control bytes with SIMD equality, retaining full
+// packed-key verification, bounded wraparound and original source updates.
+// IR43 substitutes only scalar guards/arithmetic proved by bounded exact
+// current-traversal edge facts; source CFG, work charges and ABI are unchanged.
+// IR44 selects a one-word key only when every admitted width fits the proved
+// source domain; both representations retain the complete U64 source count.
+// IR45 threads exact enum tags through a bounded product CFG. Initial/unknown
+// tags still dispatch, and all original header debits and terminal visits run.
+// IR46 emits the ABI24 folded-product hash in generated packed probes.
+// IR47 synchronizes proved private helper read/write sets in packed SSA;
+// the ABI, source work, finite charges and full exit/error spills are unchanged.
+// IR48 adds a source-proved unsigned stop/range version, selected only when
+// invariant widths/limits fit the actual pinned source. Original work remains.
+// ABI25 binds private op14's validated, once-per-invocation selection receipt.
+// IR49 binds complete-use frozen owners and private same-scope read helpers.
+// IR50 carries source-proved current-key cache/presence facts within one
+// closed traversal. New selections, headers and mutations invalidate aliases.
+// IR51 removes only literal constant branches and unreachable continuations
+// after native data optimization, before register allocation. Work is unchanged.
+// IR52 isolates proved closed packed loops into local native functions; the
+// identical inline body remains the fallback and finite work is unchanged.
+// IR53 versions guarded calls and peels rolling-key adjacency into a
+// source-proved steady loop. ABI27 binds the actual call-guard selection.
+// IR54 cleans literal control flow before the single ordinary backend data
+// optimization pass, avoiding repeated expression placement/rematerialization.
+// IR55 moves native helper register preservation into an owned PreserveAll
+// bridge. The original C ABI, source work envelope and finite limits remain.
+// IR56 gives that bridge one caller-owned scratch-pointer argument instead of
+// nine register/stack arguments. Original helper arguments and status remain.
+// IR57 stores exact invocation-constant helper bindings once, outside the
+// loop. Distinct function/context operands retain the ordinary native call.
+// IR58 proves a single insertion per index+1 recurrence, checks the active
+// entry's tally/index equality, and reuses that exact source progress. Only
+// certified completed recurrence nodes establish steady nonempty storage.
+// IR59 proves the stored-value bound of an empty, single-insertion source
+// recurrence before omitting its exact read+1 source overflow checks.
+// IR60 loads admitted AArch64 control groups directly into a 64-bit vector;
+// integer fingerprints/empty masks and the eight-byte read extent remain.
+// IR61 was an unpromoted cache-header experiment. IR62 binds immutable hash
+// constants and a source-certified endpoint in owned caller stack storage.
+// Rust helper ABI, packed frame layout and original work prices remain.
+// IR63 was an unpromoted lookup-state experiment. IR64 separates a proved
+// funded, present-entry source trace from its precise cold continuations.
+// The original helper ABI, source operations and finite work prices remain.
+// IR65 folds scalar expressions before constant control-edge cleanup inside
+// helper-free funded functions; ordinary/checked functions keep IR64's policy.
+// IR66 was an unpromoted immutable-snapshot experiment. IR67 versions the
+// helper-free source graph by the actual private width, with bounded complete
+// constant-width arms and the original generic fallback.
+// IR68 moves the identical fuel test to each incoming header edge, keeping
+// exact header continuations while retiring prior-iteration snapshot liveness.
+// IR69 also admits productive traversal at those incoming edges. Terminal
+// traversal returns before its original header/debit for exact outer replay.
+// IR70 gives each incoming header edge its own precise cold snapshot, avoiding
+// initial/completed-state joins while retaining the same source continuation.
+// IR71 admits a direct present-entry continuation, a peeled first control
+// group and raw first-match SIMD bits. Precise missing/error continuations,
+// bounded later probing and original work prices remain.
+// IR72 strip-mines the proved +1 source recurrence by its existing prepaid
+// fuel and endpoint. A cold stack word reconstructs exact fuel on every exit;
+// the hot source loop needs one stopping bound and no fuel counter mutation.
+// IR73 binds that prepaid extent and cold fuel base as private call arguments,
+// preventing loop rematerialization of their scalar preparation. Original
+// source continuations, finite credit and external helper ABI remain unchanged.
+// IR74 represents the proved adjacent read by a source-derived byte cursor.
+// Opaque caller stop/credit pointers preserve the exact prepaid extent; cold
+// continuations recover the original scalar counter and previous selection.
+// IR75 reconstructs only source-proved affine scalar/frame values inside
+// their precise cold continuations. Initial and completed cursor coordinates
+// remain distinct; unknown values retain their original SSA storage.
+// IR76 obtains the cold index bias from the owned frame at the snapshot,
+// rather than sharing the hot source SSA expression and its live registers.
+// Frame immutability, source recipes and original finite prices are unchanged.
+// IR77 / ABI28 add an optional bounded complete-key lookup cache over the
+// original hash table. Every key and source update remains; allocation, cache
+// maintenance and growth refreshes are admitted under work policy66.
+// IR78 separates admitted cached and ordinary hash funded functions. Both
+// emit the original source graph; the caller binds actual cache/width guards,
+// and code/stack admission includes both versions under unchanged prices.
+// IR79 declares disjoint origin, borrowed-view and scalar-Tail metadata
+// storage to native alias analysis. Calls retain full memory effects, and
+// source checks, prices and continuation clearance remain unchanged.
+// IR80 binds aligned private control-group placement to generated probes.
+// Candidate payload addresses use control-bit byte offsets and an early group
+// base. Frame layout, finite body prices and per-group charges are unchanged.
+// IR81 / ABI29 read selected rows directly from existing LF offsets in a
+// pinned one/two-chunk ASCII window. Other representations keep checked cells.
+// IR82 composes a sole-use selected join with its source-derived byte map in
+// initialized physical chunks. Original error/admission boundaries remain.
+// IR86 carries a private same-account initialized String buffer across a
+// complete-use-proved join/map chain, without a frozen intermediate or a
+// second UTF-8 scan. Original admissions, finite prices and ABI30 remain.
+// IR87 / ABI31 loads immutable selected-source spans and maps directly into
+// checked output spare capacity. The original finite join/map prices remain;
+// only a complete initialized-extent receipt permits publishing its length.
+// IR88 / ABI32 prepare joined-map byte tables once at the owning host
+// boundary, avoiding per-row u16-to-byte conversion. Original source proofs,
+// geometry/extent receipts, work policy69 and finite prices are unchanged.
+// IR89 reads only the length home for a borrowed Length action. The unused
+// pointer load is absent; source checks, finite prices, ABI32 and policy69
+// remain. No new memory-access promise is made.
+// IR90 marks only owner-proved private origin/view/scalar-loan homes nontrapping.
+// Mutable values, callback barriers, source bounds, ABI32 and policy69 remain;
+// no readonly, alignment or arbitrary code-motion permission is introduced.
+// IR91 / ABI33 share a prepared byte-table format between ordinary and joined
+// mapping. A verified low-five-bit projection selects a two-vector leaf;
+// incompatible maps retain all 128 cells. All source prices and owners remain.
+// IR92 runs admitted callback-free scalar Tails with the maintained bounded
+// tag graph and SSA aggregate/view homes. Original checkpoint, error, work
+// prices, fallback and owner-retirement boundaries remain; ABI33 is unchanged.
+// IR93 loads initialized candidate payloads beside hash keys in helper-free
+// source loops. A callee-local valid bit preserves ordinary reload fallback;
+// no runtime frame, resource price or library/storage ABI changes.
+// IR94 reads the two initialized narrow-slot words together; wide slots retain
+// separate full-width accesses. Runtime storage and original prices are unchanged.
+// IR95 adds the maintained U64 word primitives. IR96 additionally selects
+// checked unsigned scalar conversions through the original conversion leaf.
+// IR97 includes pure indexed matrix replacements in local transition code.
+// IR98 selects witnessed constant tuple reads as checked structural projections.
+// IR99 represents U8/U16/U32 scalars and exact checked unsigned casts.
+// IR100 admits witnessed tuple/record construction with runtime-shaped unsigned
+// buffers. Component parameters are resolved in their own schema arenas.
+// IR101 carries live unsigned buffer dimensions through structural projections
+// and lowers structurally total ordinary tail recursion on real argument values.
+// IR102 routes selected nested tail calls to the exact lexical target and does
+// not manufacture result copies for branches that only recur.
+// IR103 admits ordinary recursive statement frames and up to 32 lexical control
+// levels, with canonical identity conformance for compound function outputs.
+// IR104 preserves lexical Assert operations as checked branches with distinct
+// integrity-failure terminals; no document constraint is hoisted out of a visit.
+// Exact-width unsigned comparison primitives retain their semantic kinds.
+// IR106 admits record-field access through the maintained snapshot selector.
+// IR107 binds pure uniform unsigned construction to its same-plan header.
+// IR108 selects checked U32 counter addition through the maintained scalar leaf.
+// IR109 derives original-site last-use candidates for packed buffer calls.
+// The cache is rebuilt from the validated plan, not accepted as image authority.
+// IR110 adds checked U8 addition and U32 subtraction.
+// IR111 adds bulk little-endian byte append with an explicit count operand.
+// IR112 admits scalar selection of fixed-schema record/tuple matrix elements.
+// IR113 admits fixed record/tuple matrix arguments across control frames.
+// IR114 retains immutable aggregate-matrix leaves in private buffer frames.
+// IR115 adds a borrowed packed source range to selected unsigned-buffer calls.
+// IR116 adds independently rederived read-only numeric leaf/view/carrier proofs.
+// IR117 adds current-version proofs, fixed private unsigned writes and prepaid publication.
+// IR118 derives private flat one-array/scalar terminal result recipes.
+// IR119 admits repeated current-Bool correlation in the existing numeric
+// version proof. Images rederive the eligibility from the restored plan.
+// IR120 admits opaque canonical tuple/record siblings in the existing private
+// managed-owner frame. The unchanged component use checks remain authoritative.
+// IR121 derives private flat scalar records and constant named observations
+// through the existing scalar aggregate storage, escape proof and emitter.
+// IR122 composes private structural spans in the existing scalar/owner lanes;
+// current leaf shape/admission recipes are rederived on image loading.
+// IR123 retains the constructor for dynamic opaque siblings or incompatible
+// structural bindings that the private leaf-shape recipe cannot represent.
+// IR127 adds proved reserved-capacity appends, current length/capacity lanes,
+// header capacity fallback and final initialized-prefix reconciliation.
+// IR128 derives dead canonical alias candidates through structural transport;
+// original last-use barriers, runtime identity and Core exclusivity remain.
+// IR129 composes exact private flat scalar aggregate results and their shared
+// word-bank actions with numeric leaves. The restored plan rederives selection.
+// IR131 checks a single-use child continuation; IR130 composes current parent frame sources around already-qualified children.
+// IR132 assigns one numeric scratch bank while keeping independent region
+// readiness/fuel and original logical setup prices. Images rederive both homes.
+// IR133 derives acyclic parent pieces around multiple ordinary child boundaries.
+// Exact nested child edges reuse validated ancestry and one invocation marker;
+// every piece reacquires owners/views and images reconstruct the same inventory.
+// IR134 retains structural unsigned-array projections as proved aliases inside
+// parent pieces. Images reconstruct current-source and exact exit-use proofs.
+// IR135 separates immutable managed owner transport from typed numeric views.
+// Matrix-of-records/String carriers keep exact source/exit proofs and ordinary
+// child boundaries. Numeric factories still admit each actual unsigned view.
+// IR136 retains constant, unambiguous named managed projections in parent
+// pieces. Images rederive the selector, owner and declared-output proofs.
+// IR137 composes a larger parent piece with its complete ordinary scalar
+// prefix. A declined entry restores the existing scalar readiness word;
+// independently restored images rederive the containment and selection proof.
+// IR138 retains immutable constants but omits invocation owners with no all-path
+// semantic consumer. Images rederive the exact constant ownership bounds.
+// IR140 exports only independently derived exit-consumed parent argument words.
+// Slot ordinals, full capacity checks, local spills and conservative prices stay.
+// IR141 initializes private parent scratch directly from checked arguments and
+// spills only source homes. Exit exports, capacity guards and prices stay.
+// IR143 reconstructs finite ordinary collection-source reads through finalization.
+// IR142 belongs to the rejected adjacent-seed experiment and is not reused.
+// IR144 belongs to the held aggregate-in-numeric-pieces experiment.
+// IR145 funds the existing private scalar aggregate word actions through the
+// ordinary scalar path. Images rederive those same current source frontiers.
+// IR146 carries exact recursive scalar paths in numeric frame recipes. Only
+// scalar-only composite spans may enter the existing native word bank; array
+// identity/version proofs and checked runtime boundaries remain unchanged.
+// IR147 pins immutable ancestor/root numeric captures of scalar-state Tails,
+// including their exact selected factories, current-view and cold error route.
+// IR149 makes private-frame/retained-map single-owner selection part of the
+// executable contract. Images emitted before that arbitration are rejected.
+// IR150 binds generated physical scalar-frame transport and fused numeric
+// entry admission, plus complete retained-Map Tuple/Record result words.
+// IR151 also binds direct child numeric carrier transport and narrowed private
+// boundary spills; prototype IR150 child argument words cannot be reused.
+// IR152 pins current-generation opaque Record-to-Map views and their exact
+// selected read-only consumer, including the canonical publication boundary.
+// IR153 pins closed numeric loop trees: one owner/view bank, internal child
+// edges, per-node traversal settlement and exact cold source reconstruction.
+// IR154 pins bottom-up current-array child contracts and their composed cold
+// aliases. Every child call invalidates old versions before exposing only its
+// proved current return; images rederive the complete same-plan tree proof.
+// IR155 pins closed String-matrix/immutable-Map lookup collections, explicit
+// pinned byte-table geometry and atomic private-output preflight/commit.
+// IR156 emits complete uniform unsigned range collections with checked private banks.
+// IR157 retains only live ordinary source homes at numeric cold boundaries.
+// IR158 proves immutable conditional joins available before uniform construction.
+// IR159 folds repeated tests of native-produced Booleans on unchanged CFG edges.
+// IR160 lowers exact unsigned SWAR population-count idioms to native popcount.
+// IR161 lowers pure scalar choices across empty source-edge chains to selects.
+// IR162 supports exact nested managed leaves in private numeric frames.
+// IR163 retains only exact private consumers at numeric cold boundaries.
+// IR169 retains radix frame admission while eliding single-bucket index moves.
+// IR173 admits recursive numeric workers and their private field transport.
+// IR174 admits String-matrix carriers with independent closed canonical fields.
+// IR175 retains immutable String-matrix leaves in private recursive frame lanes.
+// IR176 proves invariant recursive inputs outside changing native Map state.
+// IR177 also lifts immutable numeric matrices with independent changing axes.
+// IR178 derives a selected String-matrix scalar projection route on restore.
+// IR179 binds complete descriptor bytes to an additional read-only Object symbol.
+// IR203 emits a checked bulk UTF8 histogram at its original library visit.
+// IR204 emits word hashing and prepaid adaptive native histogram passes.
+// IR222 restores compiler-resolved immutable type templates only under genuine
+// compiled-module provenance; independent images rederive complete evidence.
+// IR223 lowers closed native transport allocation plans directly to typed
+// fixed arenas, retaining complete shared admission and fresh opaque identities.
+// IR224 proves zero/one native SSA values across every incoming loop edge
+// before replacing equality-to-Boolean branches with direct native tests.
+// IR225 derives projected child debit totals from the same checked remaining
+// fuel and root traversal count, publishing exact totals at cold boundaries.
+// Additional #973 IR history (its independent version sequence):
+// IR146 composes synchronous numeric children into one phase with current buffer
+// versions, distinct live scalar homes, and independently reconstructed exits.
+// IR147 is reserved for the held strided-phase eligibility experiment.
+// IR148 binds numeric first-change handoff to the independently reconstructed
+// ordinary source-site canonical alias-retirement proof.
+// IR149 independently derives the canonical argument prefix separately from
+// numeric reconciliation words. Physical backing and original prices remain.
+// IR150 rederives checked-offset positive-stride phase bounds on the retained
+// canonical first-change handoff and independently bounded argument owners.
+// IR151 reconstructs exact current-state cold child exits for numeric loops.
+// IR152 adds actual cold source cuts and independently proved prepaid membership.
+// IR153 keeps SSA and boundary accesses in each private home's same alias region.
+// IR154 independently reconstructs dead root carrier retirement after all live
+// values have been exported at an actual native interval boundary.
+// IR155 reconstructs ordinary parent pieces on a native interval's cold route.
+// Source-price coverage belongs to the exact current root continuation only.
+// Acyclic prefixes retain their existing parent pieces.
+// IR156 reconstructs fixed-size mutable child effects, current owner returns
+// and conservative first-change funding on the same invocation account.
+// IR157 reconstructs checked child-visit funding, exact nested continuations
+// and already-paid ancestor traversal membership. Static paths retain prices.
+// IR158 reconstructs physical cleanup from native segment representations;
+// unmaterialized frames/aliases retain ordered original charges, not drops.
+// IR159 keeps unchanged cleanup groups on their original route and checks
+// canonical emptiness only for the frame retirements actually omitted.
+// IR160 composes current-funded Tail children with exact cold Collection exits,
+// restoring the reached active Tail and only its paid ancestor traversal credit.
+// IR161 was a rejected terminal-error transport experiment. IR162 narrows only
+// bounds-error snapshots to exact settlement inputs and current call operands.
+// IR163 binds total unsigned pointwise CFGs to admitted collection views.
+// IR164 reconstructs fresh private SSA values at each lexical root traversal.
+// IR165 reconstructs exact current consumer values for every numeric exit family.
+// IR166 shares the checked view's matrix-address quotient and remainder.
+// IR167 emits checked unsigned add/sub directly as exact word comparisons.
+// IR168 lowers checked bulk little-endian byte appends in private numeric loops.
+// IR169/170 were rejected refusal/private-store experiments. IR171 checks
+// current unit-dimension geometry in the shared numeric address emitter.
+// IR172 emits guarded whole-word loads for confined source byte packs.
+// IR173 restores exact cold child markers and selects fully charged ordinary
+// descendant parent pieces; current paid overlaps retain ordinary execution.
+// IR174's pure geometry-placement experiment was rejected. IR175 reconstructs
+// current comparison-produced complementary case edges within numeric entries.
+// IR176's guarded-subtraction emission experiment was rejected.
+// IR177 reconstructs complete child re-entry after a partial parent's cold
+// handoff, retaining primary source ownership and one invocation-current loan.
+// IR178 reuses a freshly executed source window check for confined packed
+// reads. Current geometry and the original lexical checks remain required.
+// IR179 rederives current-traversal aggregate guard facts for numeric regions
+// with the same fact engine as packed maps. No fact crosses a source latch.
+// IR180 binds the shared traversal transfer to the original ordered Pack/
+// Project and parallel Copy recipe, including overlapping private word homes.
+// IR181 recognizes fresh normalized U32 comparisons at the same confined
+// numeric complementary cases; arbitrary raw Bool homes retain their defaults.
+// IR182 rederives current immutable-view lengths and selected normalized Bool
+// relations before omitting an exact one-based scalar-read bounds guard.
+// IR183 rederives activation-current complete child read windows and paired
+// checked/native bodies. No persisted guard grants execution authority.
+// IR184 also reconstructs bounded unsigned SSA word facts for early CFG cleanup.
+// IR185/186 were rejected experiments. IR187 reconstructs dominance-scoped
+// invariant phi chains without changing source operations or their prices.
+// IR188 rederives activation-current affine read windows after local-phi cleanup.
+// IR189 also merges activation entries before invariant local-phi analysis.
+// IR226 combines both compiler histories and their independently checked metadata.
+// IR227 also integrates current child-funding gates from PR973/IR194.
+// IR228 consumes selected nonempty-entry facts in the compact scalar reduction
+// backedge from PR973/IR196. The earlier reverse-input experiment was rejected.
+// IR229's query fresh-traversal probe emitted unchanged native text.
+// IR230 also integrates activation-current affine read-address bases from
+// PR973/IR197 without changing source operations, admission or visit prices.
+// IR231 preserves the exhausted source transition after an ordered reduction.
+// IR232/233's direct Boolean experiments remain unselected source patches.
+// IR235 adds producer-canonical, current-visit Boolean implications to numeric
+// tree freshness. Unknown representations and lost availability still decline.
+// Only proved identity edges are bypassed; other payloads keep native source
+// traversal and the independently proved complete-child funding path.
+// IR236 integrates PR973/IR199's facts through checked shape-preserving writes
+// and closed supported prefixes. Opaque continuations retain their guards.
+// IR237's descriptor-copy experiment remains unselected. IR238 encodes nested
+// canonical schema nodes into one buffer and reuses their bytes for table keys.
+// IR239 retries producer-proven direct Boolean branches together with the
+// branch-style source insertion. It remains a separately measured experiment.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 239;
+// Shared immutable schema arenas and the admitted two-phase entry protocol
+// change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
+// neither phase may renew the invocation's cumulative ledger. Policy11 reuses
+// exact live-geometry bindings within one invocation, retiring an old binding
+// before a shape miss rebuilds it. Every visit measures and executes fresh Values.
+// Policy12 replaces repeated managed lexical-scope discovery with exact
+// descriptor-derived retirement tables, admitted once on the same session.
+// Exact current facts may reuse admitted planning metadata (never values or
+// permits). Scalar String capture uses canonical shared-data ownership bounds.
+// Immutable String indices are weak-owner-bound, admitted independently, and
+// counted in every fresh call/permit; compact boundaries require segmentation.
+// Policy13/IR6 add an explicit selected U64 range source strategy. It preserves
+// every candidate/error boundary and admits fixed source state instead of a
+// nonexistent Matrix. ABI8's existing two-word collection helper wire is unchanged.
+// Policy14/IR7 admit selected TextJoin append sinks. The elided Matrix is
+// never initialized; its selected consumer alone publishes a canonical String.
+// Policy15/IR8 add selected String histogram sinks and guarded query demands.
+// No elided Matrix/Map/Set has a Value handle; scalar demand outputs retain
+// canonical ownership and every generated producer visit remains unchanged.
+// Policy16/IR9 add one private current-candidate unit-U64 String span. Both
+// original selected visits remain; the actual source owner and index stay
+// fully admitted until the existing sink consumes the checked byte range.
+// Policy17 proves immutable selected query-stage associations once in the
+// descriptor constructor, eliminating repeated deep equality and unused full
+// binder reservations. Every original stage keeps fixed header work, dynamic
+// generation/phase checks, comparisons and canonical scalar owner admission.
+// ABI8's two-word helper transport and IR9's selected control proof are unchanged.
+// Policy18/IR10 add a strict sole-use String element -> selected String map
+// entry -> TextJoin strategy. Both original visits and complete owner pins
+// remain; only nonexistent key/result allocations and their copies disappear.
+// Canonical key planning/search and final append share maintained mechanics.
+// Policy20 reuses paid immutable DATA footprints within the same invocation;
+// every turn still validates its current finite limits and admission ledger.
+// Policy21 composes recursive declared-schema conversion binding and staging
+// with the collection strategies above. Present Matrix axes remain witnessed;
+// every invocation keeps fresh admission and atomic publication obligations.
+// Policy22/IR11 emit closed canonical window-query loops as native regions.
+// Their finite byte/compare/instruction bound is charged before entry, not
+// by visiting each operation. Existing activation, capture and atomic commit
+// remain ONE round. Genuine String owners are loaned only across that body.
+// Policy23 prepays a complete native histogram region and finite dense scratch.
+// Policy24 prepays byte-map table/output and one complete String map loop.
+// Policy25 admits private aggregate words once in the session's transport;
+// no repeated canonical heap ownership is created for those unobservable values.
+// Policy26 admits String owner tables once; bounded native equality charges
+// the same cumulative comparison ledger and each generated visit covers its code.
+// Policy27 funds the conditional selector elision; ordinary fallback and
+// failure-only reconstruction retain the original selected maintained leaves.
+// Policy28 funds one acyclic Tail traversal before native execution and
+// reconciles its finite cumulative fuel before every callback/region exit.
+// Policy29 preserves both original selection/join visits while charging their
+// private metadata and complete canonical String construction on the same ledger.
+// Policy30 admits private line geometry and its immutable String owner instead
+// of copied line payloads. Original producer/length/selection visits remain;
+// Unicode fallback inherits the same original call's already-spent allowance.
+// Policy31 funds exact current-alias retirement and ownership handoff before
+// a closed String map loop; copied/shared fallback stays on the same ledger.
+// Policy32 funds header pauses/re-entry on the SAME cumulative account.
+// Policy33 funds emitted retention min/range rules on that same account.
+// Policy34 binds line-store/window debits to the existing shared program ledger.
+// Policy35 funds EOF source admission, symbolic-count branches, scoped Unicode
+// cell construction and scan-exit loan retirement on that same finite account.
+// Policy36 admits actual fixed range geometry instead of allocating a dead
+// numeric selector. Original-site shape/index errors and one ledger remain;
+// less actual work/storage may let formerly budget-denied programs succeed.
+// Policy37 admits one same-entry immutable representation-fact slot and its
+// complete weak identity shell before use. It never retains source payloads
+// or permissions; every call still pays the original full scan bound and
+// validates its fresh owners, shapes and finite limits on the same ledger.
+// Policy38 retains actual library hash-table updates for compiled ASCII
+// windows instead of dense or query-only counters. Growth, collisions and
+// ownership remain finite on the original invocation account. ABI13 binds the
+// new private accumulator/callback loans and rejects preceding Object images.
+// Policy39 produces rolling ASCII keys in the emitted loop and amortizes
+// finite work on the same account. Capacity changes prepay remaining deltas;
+// every window still updates the library table. ABI14 binds packed-key loans.
+// Policy40 batches at most 128 initialized rolling keys in descriptor-admitted
+// stack storage. ABI15 binds the private batch callback contract; every key
+// retains its original table update and finite accounting.
+// Policy41 admits canonical structural child measurement, copying and finalization
+// on the same invocation ledger before publishing the bound value.
+// Policy42 retains admitted node witnesses and funds per-slot node metadata;
+// old Objects must not reuse the earlier snapshot/transport allocation prices.
+// Policy43 funds each snapshot owner's account-wide node witness claim. The
+// complete owner size, including that claim, remains part of byte admission.
+// Policy44 removes the superseded per-slot node census. The account-wide
+// snapshot claim still covers admitted owners, including caller-held roots.
+// Policy45 retains the recursive binding node witness independently of byte
+// reservations. Older Objects must not reuse the preceding binding layout price.
+// Policy46 retains lazy map-owner session metadata through entry boundaries.
+// Fixed caller geometry includes that state; table allocations remain lazy.
+// Policy47 funds owner transport and retained session entry/call/exit operations.
+// Policy48 maintains call-cache metadata totals at mutation boundaries rather
+// than scanning every unrelated cache during each retained-map operation.
+// Policy49 funds selected map-key metadata and genuine-owner projection lanes.
+// Policy50 prepays straight-line native groups, retaining per-block canonical
+// fallback prices and all library/ownership/loop admission boundaries.
+// Policy51 admits an immutable outer caller census for closed map loops.
+// Snapshot and cache holdings stay dynamic; each loop invocation owns its census.
+// Policy52 prepays every native branch in an acyclic path and validates the
+// next observable frontier. Map helpers admit themselves on the same ledger.
+// Policy53 prepays bounded source-body batches on the same account used by
+// private map storage. Checked growth and canonical publication remain funded.
+// Policy54 retains one successful range shape in the invocation-owned map
+// lane. Fresh endpoints and changed shapes are checked; full selector work
+// and scratch remain prepaid, and private owner metadata remains accounted.
+// Policy55 shares one setup/teardown of the native call's thread-local
+// account, observer and cap addresses, preserving all debits and restoration.
+// Policy56 retains a same-version lookup for one pinned immutable key in a
+// closed loop. Full lookup debits remain; every write invalidates the proof.
+// Policy57 fuses a selected adjacent range/String projection in a closed map
+// body. Both original visits, range charges and diagnostic origins remain.
+// Policy58 prepays bounded packed-map bodies and growth deltas on the same
+// finite account. Generated probes/stores retain every source operation.
+// Policy59 fences the SSA emission/protocol; existing finite body prices and
+// source-operation caps remain in force, including slow-path synchronization.
+// Policy61 lends finite parent work to isolated native children, accounts their
+// shared memory concurrently, and reconciles all spending before publication.
+// Policy62 includes compact-key validation and decoding inside the existing
+// finite loop, growth and publication bounds, with shared worker claims intact.
+// Policy63 admits both control/slot containers and their simultaneous growth;
+// ABI22 pins the new control pointer and three-word payload slot layout.
+// Policy64 prices the actual domain-selected slot backing and its concurrent
+// growth. Full-chain body prices, source-call caps and shared claims remain.
+// ABI23 binds both payload layouts; the packed Frame remains nineteen words.
+// Policy65 prices complete frozen-map validation and private read probes;
+// physical canonical-map import, sorting and allocation are genuinely absent.
+// Policy67 admits the actual immutable-owner layout containing its inline
+// shared String representation fact. Original scan charges remain in force.
+// Policy68 includes the inline borrowed-offset descriptors in the actual loan
+// layout. Original row/payload work and row-capacity claims stay in force.
+// Policy69 admits the actual composition-state layout and requires a bounded
+// chunk/table computation to fit the original prepaid join envelope. Source
+// operation prices, finite allowances and later map charges are unchanged.
+// Policy70 returns selected linear U64 matrix reads into the already admitted
+// scalar frame, with current source/active-call admission and no temporary Values.
+// Policy71 also returns selected U8/U16/U32 reads into native scalar words.
+// Policy72 resolves eligible aggregate output shapes from current children
+// inside the existing prepaid binding envelope, including cache rebindings.
+// Policy73 prepays schema closure and dimension witnesses before projecting a
+// runtime-shaped child, alongside its packed-to-draft expansion and publication.
+// Policy74 transports scalar Tail carriers in native words and retires their
+// other managed locals after the generated latch, as for native aggregates.
+// Policy75 charges each assertion's actual generated branch/copy/failure visit
+// and seals integrity status to the precise admitted failure terminal.
+// Policy76 stores collected unsigned words at their exact widths and admits
+// their packed publication and relocating growth without scalar draft arrays.
+// Computed cursor words and transferred packed output have no payload clone;
+// their source checks and arithmetic/construction work remain charged.
+// Policy77 projects unsigned matrix arguments with one admitted packed copy
+// through the existing typed constructor, without scalar draft expansion.
+// Policy78 keeps selected unsigned aggregate fields packed in the maintained
+// access leaf, with unchanged selector/shape checks and copy admission.
+// Policy79 constructs plain unsigned indexed updates in packed storage after
+// the existing routing, bounds, finalization and publication admission.
+// Policy80 admits optional binding caches only when the unchanged finite call
+// scope can coexist, otherwise invoking the same maintained leaf uncached.
+// Policy81 shares already-prepaid immutable arena owners for generated copies,
+// charging fixed alias work without repaying the one payload destruction.
+// Policy82 charges one admitted typed fill rather than unexecuted per-word
+// control/helper visits. Byte work, clone limits and publication stay funded.
+// Policy83 reads selected unsigned-matrix length into its admitted native word
+// without constructing an unused general binding or canonical scalar owner.
+// Policy84 returns selected scalar record fields into their native lane without
+// general call binding, dimension closure or a canonical scalar result owner.
+// Policy85 funds selected packed-buffer operations, actual capacity/copy
+// coexistence, consuming ownership transfer and checked fresh publication.
+// Policy86 admits the complete old backing when consuming growth reallocates,
+// and enforces the copy-byte quota through ResourceDemand's correct field.
+// Policy87 retains nonescaping buffer argument frames in planned handle lanes.
+// Policy88 uses the core composite binding witness for frame metadata admission.
+// Policy89 retains private record fields through validated reference transport.
+// Policy90 packs current-visit proof rows within the existing finite byte bound.
+// Policy91 admits numeric views once per invocation and prices native leaf bodies
+// with the existing finite conservative closed-tail envelopes. Elided frame and
+// library transactions no longer debit their physical canonical construction.
+// Policy92 funds fixed-shape publication before entry, charges store comparisons,
+// and settles/reopens the same account only at a first changed write.
+// Policy93 also funds synchronization of the actual private terminal frame.
+// Policy95 includes checked child-edge transitions within source admission.
+// Policy94 settles acyclic parent envelopes and reached lexical retirements
+// before ordinary child entry; it does not renew a child or parent allowance.
+// Policy96 prices current alias previews and funds ordinary canonical escape
+// installation before a parent piece, without materializing its private aliases.
+// Policy97 prices named managed projections as native owner aliases. The
+// compile-time selector proof removes physical lookup/comparison work; current
+// source admission, declared result limits and reached retirement stay checked.
+// Policy98 retains the paid scalar-prefix debit, then funds the existing parent
+// envelope from the same current account. No debit is refunded or permission
+// carried across a child; a refusal retains the original scalar continuation.
+// Policy99 prices only reached setup construction for constants with a runtime
+// consumer. Unread constants retain their immutable plan/type/local metadata,
+// but no independent admission, arena installation or owner cleanup is needed.
+// Policy100 funds word-scaled entry/exit templates of recursive scalar frames.
+// Existing flat-frame envelopes and prices remain unchanged.
+// Policy101 pays current-demand inspection before optional shallow String
+// matrix call-cache admission/eviction. Other operation-family prices stay.
+// Policy102 funds disjoint private tagged variant banks, checked current-tag
+// observations and inactive-bank clearing. Existing untagged prices remain.
+// Policy103 funds the complete canonical structured retained-Map publication;
+// scalar-frame transport keeps the existing logical and finite work charges.
+// Policy104 pays current canonical-root and selected borrowed-Map inspection.
+// Views retain no payload and cannot renew the invocation's finite allowance.
+// Policy105 funds composed numeric-tree traversal inventories and boundaries.
+// Every node keeps its own finite debit; existing leaf prices stay unchanged.
+// Policy106 funds native UTF8 table setup and whole-loop physical preflight.
+// Logical source/builder floors and declared finite caps stay explicit; the
+// native lookup price replaces canonical per-key planning/materialization.
+// Policy107 funds the explicit native fill bank and prepaid SIMD/scalar stores.
+// Policy108 funds nested managed-leaf synchronization and cold private-frame
+// reconciliation. Existing flat-frame prices retain their original formula.
+// Policy110 includes numeric worker receipts and shared native-fuel metadata.
+// Policy111 funds selected String projection/copy without generic call planning.
+// Policy113 accounts the complete physical batch and canonical publication.
+// Policy114 prepays each bounded pass and coexisting old/new growth banks.
+// Independent #973 pricing history, prior to the combined policy below:
+// Policy100 retains existing leaf and parent prices. Nested phases separately
+// prove an outer admission envelope and settle actual per-loop traversal debits;
+// their finite boundary allowance follows the phase's source word inventory.
+// Policy101 is reserved for the held strided-phase eligibility experiment.
+// Policy102 funds the existing same-plan canonical alias checks and ordered
+// matching retirements before a nested phase first-change consuming handoff.
+// Existing child-free leaf handoffs and their prices remain unchanged.
+// Policy103 composes reached traversal prices in positive-stride phases.
+// Admission envelopes remain conservative bounds, never prepaid debits.
+// Existing leaf/parent prices and original per-site failure order remain.
+// Policy104 retains the paid root traversal across an ordinary child and suffix.
+// Only those proved source visits are prepaid; child/factory work stays dynamic.
+// Policy105 extends that membership to exact interval cuts and retains each
+// private fuel home's boundary alias region.
+// Policy106 charges the existing frame retirement recipe when a dead interval
+// carrier releases its pins after exporting the ordinary continuation.
+// Policy107 retains the paid root source visits across an ordinary parent
+// piece. Its own entry, per-site overhead, synchronization and cleanup are
+// still charged; neither a source debit nor an account is renewed or refunded.
+// Policy115 combines phase/continuation pricing with the complete numeric-tree
+// and typed collection envelopes; neither branch can authenticate old Objects.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 115;
+pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
+const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
+#[derive(Clone, Debug)]
+pub struct NativeProgramObjectIdentity {
+    bytes: [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+    symbol: String,
+}
+impl NativeProgramObjectIdentity {
+    pub(in crate::native_artifact) fn from_descriptor(
+        d: &crate::native_artifact::program::image::NativeProgramDescriptor,
+    ) -> Result<Self, &'static str> {
+        let mut bytes = [0; NATIVE_PROGRAM_LINK_IDENTITY_BYTES];
+        bytes[..16].copy_from_slice(MAGIC);
+        let p = d.plan();
+        for (at, value) in [
+            (16, NATIVE_PROGRAM_TYPED_IR_VERSION),
+            (24, crate::native_artifact::program::protocol::abi::VERSION),
+            (32, NATIVE_PROGRAM_WORK_POLICY_VERSION),
+            (112, d.stack_bytes()),
+            (120, d.code_bytes()),
+            (128, p.transport_input_count() as u64),
+            (136, p.values().len() as u64),
+            (144, p.blocks().len() as u64),
+            (152, p.transport_output_count() as u64),
+            (160, p.entry() as u64),
+            (168, p.iterations().len() as u64),
+            (176, p.constants().len() as u64),
+            (
+                184,
+                core::mem::size_of::<crate::native_artifact::program::protocol::abi::Frame>()
+                    as u64,
+            ),
+        ] {
+            bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
+        }
+        bytes[40..72].copy_from_slice(p.program_revision().as_bytes());
+        bytes[72..104].copy_from_slice(d.typed_ir_sha256());
+        bytes[104..112].copy_from_slice(
+            &crate::native_artifact::identity::host_target_tag()
+                .ok_or("unsupported program target")?,
+        );
+        Ok(Self {
+            bytes,
+            symbol: format!(
+                "mech_canonical_program_identity_v1_{}",
+                crate::native_artifact::identity::hex(d.typed_ir_sha256())
+            ),
+        })
+    }
+    pub fn bytes(&self) -> &[u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES] {
+        &self.bytes
+    }
+    pub fn symbol(&self) -> &str {
+        &self.symbol
+    }
+}
+pub(in crate::native_artifact) fn typed_ir_sha256(
+    plan: &NativeProgramArtifactPlan,
+    frontiers: &[NativeTextLineRetentionFrontier],
+    joins: &[NativeSelectedTextJoin],
+    lines: &[NativeTextLineMatrixRegion],
+    map_owners: Option<&mech_engine::native_artifact::NativeMapOwnerWords>,
+    frozen_maps: &crate::native_artifact::program::prepare::frozen_map::Layout,
+    borrowed_record_maps: &crate::native_artifact::program::prepare::borrowed_record_map::Layout,
+    utf8_reads: &crate::native_artifact::program::prepare::utf8_reads::Layout,
+    numeric_maps: &crate::native_artifact::program::prepare::numeric_maps::Layout,
+    string_maps: &[mech_engine::native_artifact::NativeStringMapRegion],
+) -> [u8; 32] {
+    let mut hash = Sha256::new();
+    hash.update(b"mech.canonical-managed-program-cfg\0");
+    word(&mut hash, NATIVE_PROGRAM_TYPED_IR_VERSION); // Separate control IR version.
+    word(
+        &mut hash,
+        crate::native_artifact::program::protocol::abi::VERSION,
+    );
+    word(&mut hash, NATIVE_PROGRAM_WORK_POLICY_VERSION);
+    hash.update(plan.program_revision().as_bytes());
+    bytes(&mut hash, b"mech.complete-frozen-map-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), frozen_maps)
+        .expect("frozen map proof contains only finite ordered integer fields");
+    // These proof records contain only ordered struct/enum fields, arrays and
+    // integer words (no maps, floats, pointers or Debug output). Stream their
+    // complete encoding, including lengths and otherwise unused candidates,
+    // rather than reconstructing selection or allocating a second image.
+    bytes(&mut hash, b"mech.retained-map-candidate-layout.v1");
+    struct ProofDigest<'a>(&'a mut Sha256);
+    impl std::io::Write for ProofDigest<'_> {
+        fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+            self.0.update(bytes);
+            Ok(bytes.len())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Ok(())
+        }
+    }
+    // The fixed proof grammar above has no fallible JSON values; the digest
+    // sink is infallible. A failure still receives a distinct invalid marker.
+    let encoded = serde_json::to_writer(ProofDigest(&mut hash), &map_owners);
+    word(&mut hash, u64::from(encoded.is_ok()));
+    bytes(&mut hash, b"mech.borrowed-record-map-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), borrowed_record_maps)
+        .expect("borrowed record-map proof contains only finite ordered integer fields");
+    bytes(&mut hash, b"mech.native-utf8-map-read-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), utf8_reads)
+        .expect("native UTF8 lookup proof contains only finite ordered integer fields");
+    bytes(&mut hash, b"mech.native-numeric-map-layout.v1");
+    serde_json::to_writer(ProofDigest(&mut hash), numeric_maps)
+        .expect("numeric map proof contains only finite ordered integer fields");
+    word(&mut hash, frontiers.len() as u64);
+    for frontier in frontiers {
+        word(&mut hash, u64::from(frontier.iteration()));
+        match frontier.scans_per_ordinal() {
+            Some(bound) => {
+                hash.update([1]);
+                word(&mut hash, bound);
+            }
+            None => hash.update([0]),
+        }
+        word(
+            &mut hash,
+            u64::from(frontier.read().count().lines().matrix().get()),
+        );
+        word(&mut hash, frontier.states().len() as u64);
+        for state in frontier.states() {
+            word(&mut hash, u64::from(state.ordinal()));
+            word(
+                &mut hash,
+                state.index_field().map_or(u64::MAX, |field| field as u64),
+            );
+            word(&mut hash, state.keep_fields().len() as u64);
+            for field in state.keep_fields() {
+                word(&mut hash, *field as u64);
+            }
+            let (first, end) = state
+                .returned_range()
+                .map_or((u64::MAX, u64::MAX), |(first, end)| {
+                    (first as u64, end as u64)
+                });
+            word(&mut hash, first);
+            word(&mut hash, end);
+        }
+    }
+    word(&mut hash, plan.entry() as u64);
+    word(&mut hash, plan.values().len() as u64);
+    for ty in plan.values() {
+        hash.update([ty.scalar_kind().map_or(0, scalar_kind)]);
+        word(&mut hash, ty.schema().get() as u64);
+        hash.update(ty.schema_key().as_bytes());
+    }
+    word(
+        &mut hash,
+        plan.activation_boundary().map_or(u64::MAX, u64::from),
+    );
+    word(&mut hash, plan.activation_nodes().len() as u64);
+    for node in plan.activation_nodes() {
+        word(&mut hash, u64::from(node.get()));
+    }
+    word(&mut hash, string_maps.len() as u64);
+    for region in string_maps {
+        for field in [
+            region.collection(),
+            region.iteration(),
+            region.source().get(),
+            region.map().get(),
+            region.selection_site(),
+        ] {
+            word(&mut hash, u64::from(field));
+        }
+        word(&mut hash, region.owned_source_slots().len() as u64);
+        for value in region.owned_source_slots() {
+            word(&mut hash, u64::from(value.get()));
+        }
+    }
+    word(&mut hash, plan.inputs().len() as u64);
+    for input in plan.inputs() {
+        word(&mut hash, input.input().get() as u64);
+        word(&mut hash, input.slot().get() as u64);
+        bytes(&mut hash, input.name().as_bytes());
+        word(&mut hash, input.value().get() as u64);
+    }
+    // Retain complete original resource authority obligations, including unused
+    // declarations. Observation/effect SSA transport is explicit compiler
+    // metadata, not a synthetic application input/output or a resource opcode.
+    word(&mut hash, plan.resource_requirements().len() as u64);
+    for request in plan.resource_requirements() {
+        for field in [
+            &request.base_uri,
+            &request.path,
+            &request.context_name,
+            &request.operation,
+        ] {
+            bytes(&mut hash, field.as_bytes());
+        }
+        hash.update([match request.intent {
+            mech_core::ResourceIntent::Read => 0,
+            mech_core::ResourceIntent::Send => 1,
+            mech_core::ResourceIntent::Assign => 2,
+        }]);
+        hash.update([match request.delivery {
+            mech_core::ResourceDelivery::Snapshot => 0,
+            mech_core::ResourceDelivery::Live => 1,
+        }]);
+    }
+    word(&mut hash, plan.observations().len() as u64);
+    for observation in plan.observations() {
+        for field in [
+            observation.node().get(),
+            observation.requirement().get(),
+            observation.slot().get(),
+            observation.ordinal(),
+            observation.value().get(),
+            observation.ty().schema().get(),
+        ] {
+            word(&mut hash, u64::from(field));
+        }
+        hash.update(observation.ty().schema_key().as_bytes());
+    }
+    word(&mut hash, plan.effects().len() as u64);
+    for effect in plan.effects() {
+        for field in [
+            effect.node().get(),
+            effect.requirement().get(),
+            effect.ordinal(),
+            effect.value().get(),
+            effect.ty().schema().get(),
+        ] {
+            word(&mut hash, u64::from(field));
+        }
+        hash.update(effect.ty().schema_key().as_bytes());
+        match effect.payload() {
+            mech_engine::ArtifactSource::Slot(slot) => {
+                hash.update([0]);
+                word(&mut hash, u64::from(slot.get()));
+            }
+            mech_engine::ArtifactSource::Constant(constant) => {
+                hash.update([1]);
+                word(&mut hash, u64::from(constant.get()));
+            }
+        }
+    }
+    word(&mut hash, plan.transport_input_count() as u64);
+    word(&mut hash, plan.transport_output_count() as u64);
+    word(&mut hash, plan.constants().len() as u64);
+    for constant in plan.constants() {
+        word(&mut hash, constant.value().get() as u64);
+        // The canonical revision commits to complete immutable constant data.
+        word(&mut hash, constant.constant().schema().get() as u64);
+        hash.update(constant.constant().schema_key().as_bytes());
+    }
+
+    word(&mut hash, plan.blocks().len() as u64);
+    for block in plan.blocks() {
+        origin(&mut hash, block.origin());
+        optional_index(&mut hash, block.iteration());
+        match block.action() {
+            NativeIterationAction::PrepareStringSpanSelector { collection } => {
+                hash.update([14]);
+                word(&mut hash, u64::from(*collection));
+            }
+            NativeIterationAction::ProjectStringSpan { collection } => {
+                hash.update([15]);
+                word(&mut hash, u64::from(*collection));
+            }
+            NativeIterationAction::ProjectStringMapEntry { collection } => {
+                hash.update([16]);
+                word(&mut hash, u64::from(*collection));
+            }
+            NativeIterationAction::HistogramQueryStep { collection, step } => {
+                hash.update([12]);
+                word(&mut hash, *collection as u64);
+                word(&mut hash, *step as u64);
+            }
+            NativeIterationAction::HistogramFinish { collection } => {
+                hash.update([13]);
+                word(&mut hash, *collection as u64);
+            }
+            NativeIterationAction::TextJoinFinish { collection } => {
+                hash.update([11]);
+                word(&mut hash, *collection as u64);
+            }
+            NativeIterationAction::PrepareU64Range { iteration } => {
+                hash.update([9]);
+                word(&mut hash, u64::from(*iteration));
+            }
+            NativeIterationAction::Structural {
+                source,
+                path,
+                observation,
+                output,
+            } => {
+                hash.update([8]);
+                word(&mut hash, source.get() as u64);
+                word(&mut hash, output.get() as u64);
+                word(&mut hash, path.len() as u64);
+                for step in path {
+                    match step {
+                        mech_engine::native_artifact::NativeStructuralStep::EnumPayload {
+                            ordinal,
+                        } => {
+                            hash.update([0]);
+                            word(&mut hash, *ordinal as u64);
+                        }
+                        mech_engine::native_artifact::NativeStructuralStep::TupleItem {
+                            ordinal,
+                        } => {
+                            hash.update([1]);
+                            word(&mut hash, *ordinal as u64);
+                        }
+                    }
+                }
+                match observation {
+                    mech_engine::native_artifact::NativeStructuralObservation::CanonicalValue => {
+                        hash.update([3]);
+                    }
+                    mech_engine::native_artifact::NativeStructuralObservation::U64 => {
+                        hash.update([0])
+                    }
+                    mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal {
+                        ordinal,
+                    } => {
+                        hash.update([1]);
+                        word(&mut hash, *ordinal as u64);
+                    }
+                    mech_engine::native_artifact::NativeStructuralObservation::StringEqual {
+                        peer,
+                    } => {
+                        hash.update([2]);
+                        word(&mut hash, peer.get() as u64);
+                    }
+                }
+            }
+            // Commit the maintained selection as well as operand slots.
+            NativeIterationAction::LibraryCall {
+                template,
+                operands,
+                output,
+            } => {
+                hash.update([3]);
+                bytes(&mut hash, template.primitive().name().as_bytes());
+                word(&mut hash, output.get() as u64);
+                word(&mut hash, operands.len() as u64);
+                for v in operands {
+                    word(&mut hash, v.get() as u64);
+                }
+                let key = template.selected_key();
+                word(&mut hash, key.module_path.len() as u64);
+                for part in &key.module_path {
+                    bytes(&mut hash, part.as_bytes());
+                }
+                bytes(&mut hash, key.operation_name.as_bytes());
+                use mech_core::ImplementationMemoryClass as M;
+                let (tag, a, b) = match template.implementation_memory() {
+                    M::NoAdditionalScratch => (0u64, 0, 0),
+                    M::CloneInput { input } => (1, input, 0),
+                    M::CanonicalCloneInput { input } => (2, input, 0),
+                    M::AbiContiguousBridge { input, output } => (3, input, output),
+                    M::ExternalMarshalling => (4, 0, 0),
+                    M::MatrixSolve => (5, 0, 0),
+                    M::CanonicalFinalize => (6, 0, 0),
+                    M::CanonicalSortUnique => (7, 0, 0),
+                    M::PackedStringMatrixOrCanonicalFinalize => (8, 0, 0),
+                    M::PackedUnsignedMatrixUpdateOrCanonicalFinalize => (9, 0, 0),
+                };
+                for n in [tag, a as u64, b as u64] {
+                    word(&mut hash, n);
+                }
+            }
+            NativeIterationAction::Scalar(action) => {
+                hash.update([0]);
+                scalar_action(&mut hash, action);
+            }
+            NativeIterationAction::Initialize { iteration } => {
+                hash.update([1]);
+                word(&mut hash, *iteration as u64);
+            }
+            NativeIterationAction::Latch { iteration } => {
+                hash.update([2]);
+                word(&mut hash, *iteration as u64);
+            }
+            NativeIterationAction::CollectionBegin { collection } => {
+                hash.update([4]);
+                word(&mut hash, *collection as u64);
+            }
+            NativeIterationAction::CollectionElement { iteration } => {
+                hash.update([5]);
+                word(&mut hash, *iteration as u64);
+            }
+            NativeIterationAction::CollectionPush { collection, value } => {
+                hash.update([6]);
+                word(&mut hash, *collection as u64);
+                word(&mut hash, value.get() as u64);
+            }
+            NativeIterationAction::CollectionFinish { collection } => {
+                hash.update([7]);
+                word(&mut hash, *collection as u64);
+            }
+        }
+        match block.terminator() {
+            NativeIterationTerminator::TailHeader { iteration, body } => {
+                hash.update([2]);
+                word(&mut hash, iteration as u64);
+                word(&mut hash, body as u64);
+            }
+            NativeIterationTerminator::Scalar(terminator) => {
+                hash.update([0]);
+                scalar_terminator(&mut hash, terminator);
+            }
+            NativeIterationTerminator::Header {
+                iteration,
+                body,
+                exit,
+            } => {
+                hash.update([1]);
+                for id in [iteration, body, exit] {
+                    word(&mut hash, id as u64);
+                }
+            }
+        }
+    }
+    word(&mut hash, plan.value_scopes().len() as u64);
+    for scope in plan.value_scopes() {
+        match scope {
+            NativeIterationValueScope::Immutable { iteration } => {
+                hash.update([0]);
+                optional_index(&mut hash, *iteration);
+            }
+            NativeIterationValueScope::Carrier { iteration } => {
+                hash.update([1]);
+                word(&mut hash, *iteration as u64);
+            }
+        }
+    }
+    word(&mut hash, plan.iterations().len() as u64);
+    for iteration in plan.iterations() {
+        let iteration = iteration.as_ref();
+        word(&mut hash, iteration.origin().node().get() as u64);
+        for id in [
+            iteration.origin().block(),
+            iteration.origin().local(),
+            iteration.parent(),
+        ] {
+            optional_index(&mut hash, id);
+        }
+        match iteration {
+            mech_engine::native_artifact::NativeControlLoopRef::Iteration(fold) => {
+                hash.update([0]);
+                word(&mut hash, fold.count());
+                for value in [fold.seed(), fold.carrier(), fold.next(), fold.result()] {
+                    word(&mut hash, value.get() as u64);
+                }
+            }
+            mech_engine::native_artifact::NativeControlLoopRef::Collection(collection) => {
+                hash.update([1]);
+                word(&mut hash, collection.collection() as u64);
+                match collection.source() {
+                    mech_engine::native_artifact::NativeCollectionSource::Value(value) => {
+                        hash.update([0]);
+                        word(&mut hash, u64::from(value.get()));
+                    }
+                    mech_engine::native_artifact::NativeCollectionSource::U64Range(cursor) => {
+                        hash.update([1]);
+                        word(&mut hash, u64::from(cursor.prepare()));
+                        word(&mut hash, u64::from(cursor.semantic_output().get()));
+                        word(&mut hash, u64::from(cursor.before_collection_begin()));
+                        for value in cursor.operands() {
+                            word(&mut hash, u64::from(value.get()));
+                        }
+                        let template = cursor.template();
+                        hash.update(template.program_revision().as_bytes());
+                        bytes(&mut hash, template.primitive().name().as_bytes());
+                        let at = template.origin();
+                        word(&mut hash, u64::from(at.node().get()));
+                        for part in [at.block(), at.local()] {
+                            word(&mut hash, part.map_or(u64::MAX, u64::from));
+                        }
+                        word(&mut hash, template.inputs().len() as u64);
+                        for schema in template.inputs() {
+                            hash.update(schema.key().as_bytes());
+                        }
+                        hash.update(template.output().key().as_bytes());
+                        let selected = template.selected_key();
+                        word(&mut hash, selected.module_path.len() as u64);
+                        for part in &selected.module_path {
+                            bytes(&mut hash, part.as_bytes());
+                        }
+                        bytes(&mut hash, selected.operation_name.as_bytes());
+                        // The only eligible maintained factories have this
+                        // exact class; the engine proof rejects all others.
+                        word(
+                            &mut hash,
+                            u64::from(
+                                template.implementation_memory()
+                                    == mech_core::ImplementationMemoryClass::NoAdditionalScratch,
+                            ),
+                        );
+                    }
+                }
+                match collection.element() {
+                    Some(value) => {
+                        hash.update([1]);
+                        word(&mut hash, value.get() as u64);
+                    }
+                    None => hash.update([0]),
+                }
+            }
+            mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) => {
+                hash.update([2]);
+                for value in [
+                    tail.seed(),
+                    tail.carrier(),
+                    tail.next(),
+                    tail.returned(),
+                    tail.result(),
+                ] {
+                    word(&mut hash, value.get() as u64);
+                }
+                word(&mut hash, tail.finish() as u64);
+            }
+        }
+        for id in [
+            iteration.initialize(),
+            iteration.header(),
+            iteration.body(),
+            iteration.latch(),
+            iteration.exit(),
+        ] {
+            word(&mut hash, id as u64);
+        }
+    }
+
+    word(&mut hash, plan.collections().len() as u64);
+    for collection in plan.collections() {
+        word(&mut hash, collection.origin().node().get() as u64);
+        for id in [
+            collection.origin().block(),
+            collection.origin().local(),
+            collection.parent(),
+            collection.parent_collection(),
+        ] {
+            optional_index(&mut hash, id);
+        }
+        match collection.kind() {
+            mech_engine::ComprehensionKind::Matrix => hash.update([0]),
+            mech_engine::ComprehensionKind::MatrixPreserveShape => hash.update([1]),
+            mech_engine::ComprehensionKind::Set => hash.update([2]),
+            mech_engine::ComprehensionKind::MatrixHorizontalBlocks { rows } => {
+                hash.update([3]);
+                match rows {
+                    mech_engine::MatrixBlockRows::InferOrZero => hash.update([0]),
+                    mech_engine::MatrixBlockRows::Fixed(n) => {
+                        hash.update([1]);
+                        word(&mut hash, n);
+                    }
+                    mech_engine::MatrixBlockRows::InputMatrixElements { input } => {
+                        hash.update([2]);
+                        word(&mut hash, input as u64);
+                    }
+                }
+            }
+        }
+        for value in [
+            collection.output().get(),
+            collection.begin(),
+            collection.push(),
+            collection.finish(),
+        ] {
+            word(&mut hash, value as u64);
+        }
+        match collection.result() {
+            mech_engine::native_artifact::NativeCollectionResult::Materialized => hash.update([0]),
+            mech_engine::native_artifact::NativeCollectionResult::GuardedHistogramQuery(sink) => {
+                use mech_engine::native_artifact::{
+                    NativeHistogramQueryPhase as P, NativeHistogramQuerySetShape as S,
+                    NativeHistogramQueryStepKind as K,
+                };
+                hash.update([2]);
+                for value in [sink.query(), sink.match_result(), sink.zero()] {
+                    word(&mut hash, value.get() as u64);
+                }
+                hash.update([match sink.set_shape() {
+                    S::Dynamic => 0,
+                    S::FreeExact => 1,
+                }]);
+                for site in [sink.true_copy(), sink.false_copy()] {
+                    word(&mut hash, site as u64);
+                }
+                word(&mut hash, sink.bool_tests().len() as u64);
+                for &site in sink.bool_tests() {
+                    word(&mut hash, site as u64);
+                }
+                word(&mut hash, sink.steps().len() as u64);
+                for step in sink.steps() {
+                    word(&mut hash, step.site() as u64);
+                    let (tag, phase) = match step.kind() {
+                        K::Histogram => (0, 0),
+                        K::Keys => (1, 0),
+                        K::Set => (2, 0),
+                        K::Membership => (3, 0),
+                        K::Lookup => (4, 0),
+                        K::Cleanup => (5, 0),
+                        K::Alias { phase } => (
+                            6,
+                            match phase {
+                                P::ProducerReady => 0,
+                                P::HistogramReady => 1,
+                                P::KeysReady => 2,
+                                P::SetReady => 3,
+                                P::Guarded => 4,
+                                P::LookupRead => 5,
+                            },
+                        ),
+                    };
+                    hash.update([tag, phase]);
+                    word(&mut hash, step.operands().len() as u64);
+                    for value in step.operands() {
+                        word(&mut hash, value.get() as u64);
+                    }
+                    match step.output() {
+                        Some(value) => {
+                            hash.update([1]);
+                            word(&mut hash, value.get() as u64);
+                        }
+                        None => hash.update([0]),
+                    }
+                    match step.template() {
+                        Some(template) => {
+                            hash.update([1]);
+                            selected_template(&mut hash, template);
+                        }
+                        None => hash.update([0]),
+                    }
+                }
+            }
+            mech_engine::native_artifact::NativeCollectionResult::Histogram(sink) => {
+                hash.update([3]);
+                word(&mut hash, sink.consumer() as u64);
+                word(&mut hash, sink.output().get() as u64);
+                selected_template(&mut hash, sink.template());
+            }
+            mech_engine::native_artifact::NativeCollectionResult::TextJoin(sink) => {
+                hash.update([1]);
+                word(&mut hash, sink.consumer() as u64);
+                word(&mut hash, sink.separator().get() as u64);
+                word(&mut hash, sink.output().get() as u64);
+                let template = sink.template();
+                word(&mut hash, template.origin().node().get() as u64);
+                word(
+                    &mut hash,
+                    template.origin().block().map_or(u64::MAX, u64::from),
+                );
+                word(
+                    &mut hash,
+                    template.origin().local().map_or(u64::MAX, u64::from),
+                );
+                hash.update(template.program_revision().as_bytes());
+                bytes(&mut hash, template.primitive().name().as_bytes());
+                let key = template.selected_key();
+                word(&mut hash, key.module_path.len() as u64);
+                for part in &key.module_path {
+                    bytes(&mut hash, part.as_bytes());
+                }
+                bytes(&mut hash, key.operation_name.as_bytes());
+                word(&mut hash, template.inputs().len() as u64);
+                for input in template.inputs() {
+                    bytes(&mut hash, &input.canonical_bytes());
+                }
+                bytes(&mut hash, &template.output().canonical_bytes());
+                match template.contract().canonical_bytes() {
+                    Ok(encoded) => {
+                        hash.update([1]);
+                        bytes(&mut hash, &encoded);
+                    }
+                    Err(_) => hash.update([0]), // invalid private plans are rejected before entry
+                }
+                hash.update([6]); // exact CanonicalFinalize witness, checked by proof
+            }
+        }
+        match collection.string_span_projection() {
+            Some(projection) => {
+                hash.update([1]);
+                for site in [projection.range_site(), projection.selection_site()] {
+                    word(&mut hash, u64::from(site));
+                }
+                for value in [
+                    projection.operands()[0],
+                    projection.operands()[1],
+                    projection.source(),
+                    projection.selector(),
+                    projection.output(),
+                ] {
+                    word(&mut hash, u64::from(value.get()));
+                }
+                selected_template(&mut hash, projection.range_template());
+                selected_template(&mut hash, projection.selection_template());
+            }
+            None => hash.update([0]),
+        }
+        match collection.string_element_map_projection() {
+            Some(projection) => {
+                hash.update([1]);
+                for site in [
+                    projection.iteration(),
+                    projection.element_site(),
+                    projection.selection_site(),
+                ] {
+                    word(&mut hash, u64::from(site));
+                }
+                for value in [
+                    projection.source(),
+                    projection.map(),
+                    projection.element(),
+                    projection.output(),
+                ] {
+                    word(&mut hash, u64::from(value.get()));
+                }
+                selected_template(&mut hash, projection.selection_template());
+            }
+            None => hash.update([0]),
+        }
+        word(&mut hash, collection.generators().len() as u64);
+        for &generator in collection.generators() {
+            word(&mut hash, generator as u64);
+        }
+    }
+
+    word(&mut hash, plan.outputs().len() as u64);
+    for output in plan.outputs() {
+        word(&mut hash, output.output().get() as u64);
+        word(&mut hash, output.slot().get() as u64);
+        bytes(&mut hash, output.name().as_bytes());
+        word(&mut hash, output.value().get() as u64);
+    }
+    word(&mut hash, joins.len() as u64);
+    for join in joins {
+        word(&mut hash, u64::from(join.selection()));
+        word(&mut hash, u64::from(join.consumer()));
+        for value in [
+            join.source(),
+            join.selector(),
+            join.selected(),
+            join.separator(),
+            join.output(),
+        ] {
+            word(&mut hash, u64::from(value.get()));
+        }
+        match join.range() {
+            Some(range) => {
+                hash.update([1]);
+                word(&mut hash, u64::from(range.producer()));
+                word(&mut hash, u64::from(range.start().get()));
+                word(&mut hash, u64::from(range.end().get()));
+                hash.update([u8::from(range.inclusive())]);
+            }
+            None => hash.update([0]),
+        }
+    }
+    word(&mut hash, lines.len() as u64);
+    for line in lines {
+        word(&mut hash, u64::from(line.producer()));
+        word(&mut hash, u64::from(line.source().get()));
+        word(&mut hash, u64::from(line.matrix().get()));
+        for sites in [line.lengths(), line.borrowed_regions(), line.selections()] {
+            word(&mut hash, sites.len() as u64);
+            for &site in sites {
+                word(&mut hash, u64::from(site));
+            }
+        }
+    }
+    hash.finalize().into()
+}

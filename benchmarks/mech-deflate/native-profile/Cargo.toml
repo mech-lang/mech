@@ -1,0 +1,97 @@
+[package]
+name = "mech-compression-native-profile"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# An ordinary consumer does not activate mech-gpu's full-catalog dev dependencies.
+[workspace]
+
+[features]
+# Recognized by the exact vendored SSA source in its focused test target.
+std = []
+linked-qualification = ["dep:mech-build"]
+unit-qualification = ["linked-qualification", "dep:mech-runtime"]
+
+[dependencies]
+mech-build = { path = "../../../src/build", default-features = false, features = ["process-supervision"], optional = true }
+mech-runtime = { path = "../../../src/runtime", default-features = false, features = ["compiler", "resident-routing-source"], optional = true }
+# Retain the established compiler/value configuration while selecting only the
+# machine operations needed by compression and the scalar regression controls.
+mech-core = { path = "../../../src/core", default-features = false, features = ["full", "math_pow"] }
+mech-engine = { path = "../../../src/engine", default-features = false, features = ["full_compiler", "async"] }
+mech-syntax = { path = "../../../src/syntax", default-features = false, features = ["full"] }
+mech-gpu = { path = "../../../hosts/gpu", default-features = false, features = ["canonical-native-program"] }
+mech-stdlib = { path = "../../../src/stdlib", default-features = false, features = [
+  "compiler", "native-plan", "full_values", "integer_bits",
+  "access", "assign", "convert", "variable_define", "invariant_define",
+  "variables", "matrix_comprehensions",
+  "math_add", "math_sub", "math_mul", "math_div", "math_mod",
+  "compare_eq", "compare_neq", "compare_lt", "compare_gt", "compare_lte", "compare_gte",
+  "logic_and", "logic_or", "range_inclusive",
+] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.149"
+miniz_oxide = "=0.8.9"
+sha2 = { version = "0.11.0", default-features = false }
+
+[[bin]]
+name = "native_frame_transport"
+path = "../../../hosts/gpu/examples/native_frame_transport.rs"
+
+[[bin]]
+name = "artifact_review"
+path = "artifact_review.rs"
+
+[profile.release]
+debug = false
+
+[patch.crates-io]
+cranelift-codegen = { path = "../../../vendor/cranelift-codegen" }
+cranelift-frontend = { path = "../../../vendor/cranelift-frontend" }
+regalloc2 = { path = "../../../vendor/regalloc2" }
+mech-math = { path = "../../../machines/math" }
+mech-compare = { path = "../../../machines/compare" }
+mech-logic = { path = "../../../machines/logic" }
+mech-range = { path = "../../../machines/range" }
+mech-matrix = { path = "../../../machines/matrix" }
+mech-set = { path = "../../../machines/set" }
+mech-string = { path = "../../../machines/string" }
+mech-stats = { path = "../../../machines/stats" }
+mech-combinatorics = { path = "../../../machines/combinatorics" }
+
+[[bin]]
+name = "compile_profile"
+path = "compile_profile.rs"
+
+[[test]]
+name = "guard_state"
+path = "guard_state_tests.rs"
+
+[[test]]
+name = "numeric_liveness"
+path = "numeric_liveness_tests.rs"
+
+[dev-dependencies]
+cranelift-codegen = { version = "0.131.3", default-features = false, features = ["std", "unwind"] }
+cranelift-frontend = { version = "0.131.3", default-features = false, features = ["std"] }
+
+[[test]]
+name = "ssa_builder"
+path = "ssa_builder_tests.rs"
+
+[[test]]
+name = "dimension_remap"
+path = "dimension_remap_tests.rs"
+
+[[test]]
+name = "old_value_reads"
+path = "old_value_reads_tests.rs"
+
+[[test]]
+name = "numeric_reachability"
+path = "numeric_reachability_tests.rs"
+
+[[test]]
+name = "loop_edge_visits"
+path = "loop_edge_visits_tests.rs"

@@ -1,0 +1,26 @@
+error[E0277]: the trait bound `std::sync::Arc<str>: From<&std::string::String>` is not satisfied
+   --> /private/tmp/mech-related-native-boolean-implication-freshness-compiler-20261106/hosts/gpu/src/native_artifact/program/prepare/numeric_boolean_relations.rs:379:72
+    |
+379 |                 TextSnapshot::new(DocumentId(0x424f4f4c), Revision(1), &text).unwrap(),
+    |                 -----------------                                      ^^^^^ the trait `From<&std::string::String>` is not implemented for `std::sync::Arc<str>`
+    |                 |
+    |                 required by a bound introduced by this call
+    |
+    = help: consider casting the `&std::string::String` value to `&str`
+    = note: required for `&std::string::String` to implement `Into<std::sync::Arc<str>>`
+note: required by a bound in `TextSnapshot::new`
+   --> /private/tmp/mech-related-native-fixed-frame-arenas-compiler-20261106/src/syntax/src/document/source.rs:67:22
+    |
+ 64 |     pub fn new(
+    |            --- required by a bound in this associated function
+...
+ 67 |         source: impl Into<Arc<str>>,
+    |                      ^^^^^^^^^^^^^^ required by this bound in `TextSnapshot::new`
+help: consider dereferencing here
+    |
+379 |                 TextSnapshot::new(DocumentId(0x424f4f4c), Revision(1), &*text).unwrap(),
+    |                                                                         +
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0277`.

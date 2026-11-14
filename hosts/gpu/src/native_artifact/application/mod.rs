@@ -1,4 +1,5 @@
 //! Build-owned canonical Object application generation, separate from resident apps.
+use crate::application_manifest::{WorkspaceResolutionError, workspace_resolution_patches};
 use crate::native_artifact::{NativeCompileError, emit_object};
 use mech_core::FunctionCatalog;
 use mech_engine::native_artifact::lower_pure_native_artifact;
@@ -30,6 +31,15 @@ impl From<std::io::Error> for NativeApplicationError {
         Self::Io(value)
     }
 }
+impl From<WorkspaceResolutionError> for NativeApplicationError {
+    fn from(error: WorkspaceResolutionError) -> Self {
+        match error {
+            WorkspaceResolutionError::Invalid(message) => Self::Invalid(message),
+            WorkspaceResolutionError::Io(error) => Self::Io(error),
+            WorkspaceResolutionError::Encoding(message) => Self::Encoding(message),
+        }
+    }
+}
 
 /// Generated inputs only; this value makes no claim of linking or execution.
 pub struct GeneratedLinkedApplication {
@@ -58,60 +68,6 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn json_string(value: &str) -> String {
     serde_json::to_string(value).expect("string serialization cannot fail")
-}
-
-/// Cargo ignores a dependency workspace's patch table. Retain the actual
-/// workspace's local resolution in the generated standalone workspace too.
-fn workspace_resolution_patches(workspace: &Path) -> Result<String, NativeApplicationError> {
-    use std::fmt::Write;
-    let source = fs::read_to_string(workspace.join("Cargo.toml"))?;
-    let manifest = source
-        .parse::<toml_edit::DocumentMut>()
-        .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?;
-    let Some(patches) = manifest
-        .get("patch")
-        .and_then(|patch| patch.get("crates-io"))
-    else {
-        return Ok(String::new());
-    };
-    let patches = patches
-        .as_table_like()
-        .ok_or(NativeApplicationError::Invalid(
-            "workspace registry overrides must be a table",
-        ))?;
-    let mut result = String::from("\n[patch.crates-io]\n");
-    for (package, specification) in patches.iter() {
-        let table = specification
-            .as_table_like()
-            .ok_or(NativeApplicationError::Invalid(
-                "workspace registry override must be a local path",
-            ))?;
-        if table.len() != 1 {
-            return Err(NativeApplicationError::Invalid(
-                "workspace registry override must contain only a local path",
-            ));
-        }
-        let relative = table.get("path").and_then(toml_edit::Item::as_str).ok_or(
-            NativeApplicationError::Invalid("workspace registry override has no local path"),
-        )?;
-        let path = workspace.join(relative).canonicalize()?;
-        if !path.starts_with(workspace) || !path.join("Cargo.toml").is_file() {
-            return Err(NativeApplicationError::Invalid(
-                "workspace registry override is outside the pinned workspace",
-            ));
-        }
-        let path = path.to_str().ok_or(NativeApplicationError::Invalid(
-            "workspace registry override path is not Unicode",
-        ))?;
-        writeln!(
-            &mut result,
-            "{} = {{ path = {} }}",
-            json_string(package),
-            json_string(path)
-        )
-        .expect("String formatting cannot fail");
-    }
-    Ok(result)
 }
 
 /// The exact shared name grammar for every generated linked application.
@@ -192,6 +148,10 @@ pub(in crate::native_artifact) fn render_main(
 ) -> String {
     template
         .replace("@IDENTITY_SYMBOL@", symbol)
+        .replace(
+            "@IMAGE_BINDING_SYMBOL@",
+            &format!("{symbol}_descriptor_binding_v1"),
+        )
         .replace("@BYTECODE_SHA256@", &digest(bytecode))
 }
 
@@ -295,6 +255,16 @@ pub(in crate::native_artifact) fn write_linked_application(
     let main = inputs
         .main
         .replace("@INSTALL_CANONICAL_FACTORIES@", &installation);
+    // A closed scalar Object can need no factories. Its empty catalog builder
+    // is consumed without mutation and must also compile with warnings denied.
+    let main = if installation.is_empty() {
+        main.replace(
+            "let mut builder = mech_core::FunctionCatalogBuilder::new();",
+            "let builder = mech_core::FunctionCatalogBuilder::new();",
+        )
+    } else {
+        main
+    };
     let factory_features = factory_feature_names
         .iter()
         .map(|feature| format!(", {}", json_string(feature)))
@@ -388,7 +358,7 @@ lto = "thin"
         engine = json_string(&format!("{workspace_text}/src/engine")),
         gpu = json_string(&format!("{workspace_text}/hosts/gpu")),
     );
-    cargo.push_str(&workspace_resolution_patches(workspace)?);
+    cargo.push_str(&workspace_resolution_patches(workspace, &[])?);
     let mut files = BTreeMap::<String, Vec<u8>>::from([
         ("application.mec".into(), inputs.source_provenance.to_vec()),
         ("program.mecb".into(), inputs.bytecode),
@@ -406,8 +376,9 @@ lto = "thin"
                 .map_err(|error| NativeApplicationError::Encoding(error.to_string()))?,
         ),
     ]);
-    // Bind both inspectable and embedded copies to the SAME checked Object,
-    // bytecode and source. The launcher loads only the smaller packed copy.
+    // Pin the inspectable and compatibility images to the SAME checked Object,
+    // bytecode and source. New program launchers reference the typed metadata
+    // export in program.o directly; the packed JSON remains a legacy image.
     if let Some(image) = inputs.descriptor_image {
         #[cfg(feature = "canonical-native-program")]
         files.insert(

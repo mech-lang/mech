@@ -1,0 +1,44 @@
++> sequence
+// Enum-state children mirror the path scanner's Matches and Lengths loops.
+phase-checked-word(values<[u32]>, at<u64>, allowed<bool>) => (out<u64>) :=
+  allowed! := allowed
+  out<u64> := values[at + 1u64].
+phase-checked-quotient(number<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  allowed! := allowed
+  out := number / divisor.
+
+#PhasePrefixes(values<[u32]>, end<u64>, allowed<bool>, divisor<u64>, at<u64>, number<u64>) => <u64>
+  | :Try(at<u64>, number<u64>)
+  | :Done(number<u64>).
+#PhasePrefixes(values, end, allowed, divisor, at, number) -> :Try(at, number)
+  :Try(at, number)
+    | at < end -> {
+        word := phase-checked-word(values, at, allowed)
+      } -> :Try(at + 1u64, number + word)
+    | * -> :Done(number)
+  :Done(number) => phase-checked-quotient(number, allowed, divisor).
+
+#PhaseCandidates(values<[u32]>, allowed<bool>, divisor<u64>, end<u64>, number<u64>) => <u64>
+  | :Try(end<u64>, number<u64>)
+  | :Done(number<u64>).
+#PhaseCandidates(values, allowed, divisor, end, number) -> :Try(end, number)
+  :Try(end, number)
+    | end <= sequence/length(values) -> {
+        prefix := #PhasePrefixes(values, end, allowed, divisor, 0u64, 0u64)
+      } -> :Try(end + 1u64, number + prefix)
+    | * -> :Done(number)
+  :Done(number) => number.
+
+fixed-store(nodes<[u64]>, at<u64>, number<u64>) => (out<[u64]>) :=
+  ~changed := nodes
+  changed[at + 1u64] = number
+  out := changed.
+parent(values<[u32]>, nodes<[u64]>, left<u64>, at<u64>, allowed<bool>, divisor<u64>, bias<u64>) => (out<[u64]>) :=
+  more := left != 0u64
+  readable := at < sequence/length(values)
+  primed := (more? | true => (readable? | true => fixed-store(nodes, at, bias) | false => nodes) | false => nodes)
+  word<u64> := (more? | true => (readable? | true => values[at + 1u64] | false => 0u32) | false => 0u32)
+  number := (more? | true => #PhaseCandidates(values, allowed, divisor, 1u64, 0u64) | false => 0u64)
+  next := (more? | true => fixed-store(primed, at, number + at + word + bias) | false => nodes)
+  out := (more? | true => parent(values, next, left - 1u64, at + 1u64, allowed, divisor, bias) | false => nodes).
+parent(values<[u32]>, nodes<[u64]>, steps<u64>, 0u64, allowed<bool>, divisor<u64>, bias<u64>)

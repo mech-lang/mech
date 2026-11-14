@@ -1,0 +1,1064 @@
+{
+  "independent_13_round": {
+    "mech_interval": "Continuous post-JSON admission/preparation/fresh workers/run/join/materialization/cleanup interval as recorded by each adapter.",
+    "ratio_definition": "Mech continuous post-JSON interval / unchanged repository rust_con original reported processing interval. Lower is faster; the denominator retains the original example\u2019s preinitialized-pool advantage. This does not promote it into a like-boundary fresh-worker cohort.",
+    "reference": "rust-preinitialized",
+    "reference_boundary": "Original rust_con processing interval. Global Rayon pool initialized before JSON and timer; scratch vectors, tag map and result materialization inside; pool teardown and output destruction outside.",
+    "reference_interval_field": "median_reported_excluded_processing_seconds",
+    "reference_milliseconds": 1.86625,
+    "reference_seconds": 0.00186625,
+    "rows": [
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 8.693958,
+        "name": "rust",
+        "over_fastest_verified_repository_rust_con": 4.658517347622237,
+        "samples": 13,
+        "seconds": 0.008693958,
+        "whole_process_seconds": 0.0238325
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_reported_excluded_processing_seconds",
+        "milliseconds": 1.86625,
+        "name": "rust-preinitialized",
+        "over_fastest_verified_repository_rust_con": 1.0,
+        "samples": 13,
+        "seconds": 0.00186625,
+        "whole_process_seconds": 0.017980292
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.572875,
+        "name": "rust-mech-control-streaming",
+        "over_fastest_verified_repository_rust_con": 0.8427997320830543,
+        "samples": 13,
+        "seconds": 0.001572875,
+        "whole_process_seconds": 0.017475541
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.567917,
+        "name": "rust-mech-control-u32-casts",
+        "over_fastest_verified_repository_rust_con": 0.8401430676490288,
+        "samples": 13,
+        "seconds": 0.001567917,
+        "whole_process_seconds": 0.017840083
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.563291,
+        "name": "rust-mech-control-u8-ids-u32",
+        "over_fastest_verified_repository_rust_con": 0.8376643000669792,
+        "samples": 13,
+        "seconds": 0.001563291,
+        "whole_process_seconds": 0.020168708
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.526875,
+        "name": "rust-ordered-scan-only",
+        "over_fastest_verified_repository_rust_con": 0.8181513730743469,
+        "samples": 13,
+        "seconds": 0.001526875,
+        "whole_process_seconds": 0.017860291
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.531375,
+        "name": "rust-ordered-ordered",
+        "over_fastest_verified_repository_rust_con": 0.8205626255860683,
+        "samples": 13,
+        "seconds": 0.001531375,
+        "whole_process_seconds": 0.017486791
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.5085000000000002,
+        "name": "rust-ordered-mask-reuse",
+        "over_fastest_verified_repository_rust_con": 0.8083054253181514,
+        "samples": 13,
+        "seconds": 0.0015085,
+        "whole_process_seconds": 0.018066833
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.488583,
+        "name": "rust-ordered-ordered-mask",
+        "over_fastest_verified_repository_rust_con": 0.7976332217012725,
+        "samples": 13,
+        "seconds": 0.001488583,
+        "whole_process_seconds": 0.017774625
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.49425,
+        "name": "rust-ordered-ordered-mask-tables",
+        "over_fastest_verified_repository_rust_con": 0.8006697923643671,
+        "samples": 13,
+        "seconds": 0.0014942500000000001,
+        "whole_process_seconds": 0.017334291
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 8.697916,
+        "name": "rust-apple-m3",
+        "over_fastest_verified_repository_rust_con": 4.660638178164769,
+        "samples": 13,
+        "seconds": 0.008697916,
+        "whole_process_seconds": 0.024584
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_reported_excluded_processing_seconds",
+        "milliseconds": 1.937375,
+        "name": "rust-preinitialized-apple-m3",
+        "over_fastest_verified_repository_rust_con": 1.038111185532485,
+        "samples": 13,
+        "seconds": 0.001937375,
+        "whole_process_seconds": 0.017936625
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.577958,
+        "name": "rust-mech-control-streaming-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8455233757535163,
+        "samples": 13,
+        "seconds": 0.001577958,
+        "whole_process_seconds": 0.017780334
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.59025,
+        "name": "rust-mech-control-u32-casts-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8521098459477561,
+        "samples": 13,
+        "seconds": 0.0015902499999999999,
+        "whole_process_seconds": 0.01979
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.587542,
+        "name": "rust-mech-control-u8-ids-u32-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8506588077695914,
+        "samples": 13,
+        "seconds": 0.001587542,
+        "whole_process_seconds": 0.017666958
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.574542,
+        "name": "rust-ordered-scan-only-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8436929671801742,
+        "samples": 13,
+        "seconds": 0.0015745420000000002,
+        "whole_process_seconds": 0.017754584
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.577583,
+        "name": "rust-ordered-ordered-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8453224380442063,
+        "samples": 13,
+        "seconds": 0.001577583,
+        "whole_process_seconds": 0.017481958
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.581208,
+        "name": "rust-ordered-mask-reuse-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8472648359008706,
+        "samples": 13,
+        "seconds": 0.001581208,
+        "whole_process_seconds": 0.017461417
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.574708,
+        "name": "rust-ordered-ordered-mask-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.843781915606162,
+        "samples": 13,
+        "seconds": 0.001574708,
+        "whole_process_seconds": 0.017689
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.5775420000000002,
+        "name": "rust-ordered-ordered-mask-tables-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8453004688546552,
+        "samples": 13,
+        "seconds": 0.0015775420000000001,
+        "whole_process_seconds": 0.017944834
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.478833,
+        "name": "rust-ordered-mask-tables256",
+        "over_fastest_verified_repository_rust_con": 0.7924088412592097,
+        "samples": 13,
+        "seconds": 0.0014788330000000001,
+        "whole_process_seconds": 0.017548167
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.486167,
+        "name": "rust-ordered-mask-tables256-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.7963386470194239,
+        "samples": 13,
+        "seconds": 0.001486167,
+        "whole_process_seconds": 0.018724125
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.202417,
+        "name": "rust-ordered-mask-tables256-fresh4",
+        "over_fastest_verified_repository_rust_con": 0.6442957803081045,
+        "samples": 13,
+        "seconds": 0.0012024170000000001,
+        "whole_process_seconds": 0.019130708
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.1994580000000001,
+        "name": "rust-ordered-mask-tables256-fresh4-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.6427102478231748,
+        "samples": 13,
+        "seconds": 0.001199458,
+        "whole_process_seconds": 0.017721167
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.4282080000000001,
+        "name": "mech-managed-scoped-frame",
+        "over_fastest_verified_repository_rust_con": 0.7652822505023442,
+        "samples": 13,
+        "seconds": 0.001428208,
+        "whole_process_seconds": 0.040379292
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.4215,
+        "name": "mech-managed-dense-worker-u32",
+        "over_fastest_verified_repository_rust_con": 0.7616878767582049,
+        "samples": 13,
+        "seconds": 0.0014215,
+        "whole_process_seconds": 0.048277167
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.422542,
+        "name": "mech-managed-dense-comparison-u32",
+        "over_fastest_verified_repository_rust_con": 0.7622462156731412,
+        "samples": 13,
+        "seconds": 0.001422542,
+        "whole_process_seconds": 0.048986667
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.190542,
+        "name": "mech-ir349-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6379327528466175,
+        "samples": 13,
+        "seconds": 0.001190542,
+        "whole_process_seconds": 0.019681334
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.441084,
+        "name": "mech-managed-selected-increment-lazy-map-wide",
+        "over_fastest_verified_repository_rust_con": 0.7721816476892164,
+        "samples": 13,
+        "seconds": 0.001441084,
+        "whole_process_seconds": 0.042925333
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.436791,
+        "name": "mech-managed-selected-increment-lazy-map-u32",
+        "over_fastest_verified_repository_rust_con": 0.7698813127930341,
+        "samples": 13,
+        "seconds": 0.001436791,
+        "whole_process_seconds": 0.047493125
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.1825830000000002,
+        "name": "mech-ir350-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6336680509042197,
+        "samples": 13,
+        "seconds": 0.001182583,
+        "whole_process_seconds": 0.019902625
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.1845,
+        "name": "mech-ir352-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.634695244474213,
+        "samples": 13,
+        "seconds": 0.0011845,
+        "whole_process_seconds": 0.019501583
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.4255419999999999,
+        "name": "mech-managed-exact-histogram-key-wide",
+        "over_fastest_verified_repository_rust_con": 0.7638537173476222,
+        "samples": 13,
+        "seconds": 0.001425542,
+        "whole_process_seconds": 0.041350916
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.4064159999999999,
+        "name": "mech-managed-exact-histogram-key-u32",
+        "over_fastest_verified_repository_rust_con": 0.7536053583389148,
+        "samples": 13,
+        "seconds": 0.001406416,
+        "whole_process_seconds": 0.048709833
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.1820000000000002,
+        "name": "mech-ir354-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6333556597454789,
+        "samples": 13,
+        "seconds": 0.001182,
+        "whole_process_seconds": 0.019902042
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.4410409999999998,
+        "name": "mech-managed-u16-exact-histogram-wide",
+        "over_fastest_verified_repository_rust_con": 0.772158606831882,
+        "samples": 13,
+        "seconds": 0.001441041,
+        "whole_process_seconds": 0.0413755
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.4115829999999998,
+        "name": "mech-managed-u16-exact-histogram-u32",
+        "over_fastest_verified_repository_rust_con": 0.7563740120562624,
+        "samples": 13,
+        "seconds": 0.001411583,
+        "whole_process_seconds": 0.04956875
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.400292,
+        "name": "mech-ir355-managed-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.7503239115874079,
+        "samples": 13,
+        "seconds": 0.001400292,
+        "whole_process_seconds": 0.04885125
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.172709,
+        "name": "mech-ir355-compact-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.6283772270596115,
+        "samples": 13,
+        "seconds": 0.001172709,
+        "whole_process_seconds": 0.020479916
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.188458,
+        "name": "mech-ir355-compact-key-u32-control-4",
+        "over_fastest_verified_repository_rust_con": 0.6368160750167449,
+        "samples": 13,
+        "seconds": 0.001188458,
+        "whole_process_seconds": 0.019877375
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.42625,
+        "name": "mech-ir353-managed-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.7642330877427997,
+        "samples": 13,
+        "seconds": 0.00142625,
+        "whole_process_seconds": 0.049075166
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.426625,
+        "name": "mech-ir353-managed-key-u32-control-4",
+        "over_fastest_verified_repository_rust_con": 0.7644340254521098,
+        "samples": 13,
+        "seconds": 0.001426625,
+        "whole_process_seconds": 0.047225708
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.1743750000000002,
+        "name": "mech-ir353-compact-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.62926992632284,
+        "samples": 13,
+        "seconds": 0.001174375,
+        "whole_process_seconds": 0.019878875
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.190375,
+        "name": "mech-ir353-compact-key-u32-control-4",
+        "over_fastest_verified_repository_rust_con": 0.6378432685867381,
+        "samples": 13,
+        "seconds": 0.001190375,
+        "whole_process_seconds": 0.020190542
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.500167,
+        "name": "mech-managed-mask-v1-ir352-u32",
+        "over_fastest_verified_repository_rust_con": 0.8038403215003348,
+        "samples": 13,
+        "seconds": 0.001500167,
+        "whole_process_seconds": 0.054392125
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.2037499999999999,
+        "name": "mech-ir352-compact-mask-v1-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6450100468854655,
+        "samples": 13,
+        "seconds": 0.00120375,
+        "whole_process_seconds": 0.019850666
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.473792,
+        "name": "mech-managed-mask-v2-ir352-u32",
+        "over_fastest_verified_repository_rust_con": 0.7897077026121903,
+        "samples": 13,
+        "seconds": 0.001473792,
+        "whole_process_seconds": 0.052808709
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.197833,
+        "name": "mech-ir352-compact-mask-v2-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6418395177494975,
+        "samples": 13,
+        "seconds": 0.001197833,
+        "whole_process_seconds": 0.019821584
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.482,
+        "name": "mech-managed-mask-v2-ir355-u32",
+        "over_fastest_verified_repository_rust_con": 0.7941058271935699,
+        "samples": 13,
+        "seconds": 0.001482,
+        "whole_process_seconds": 0.052109333
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.1986670000000001,
+        "name": "mech-ir355-compact-mask-v2-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6422864032150033,
+        "samples": 13,
+        "seconds": 0.001198667,
+        "whole_process_seconds": 0.020115917
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.425708,
+        "name": "mech-ir355-managed-guarded-u16-mask-v2-4",
+        "over_fastest_verified_repository_rust_con": 0.7639426657736101,
+        "samples": 13,
+        "seconds": 0.001425708,
+        "whole_process_seconds": 0.052112709
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.184583,
+        "name": "mech-ir355-compact-guarded-u16-mask-v2-4",
+        "over_fastest_verified_repository_rust_con": 0.6347397186872069,
+        "samples": 13,
+        "seconds": 0.001184583,
+        "whole_process_seconds": 0.020173208
+      }
+    ]
+  },
+  "primary_31_round": {
+    "mech_interval": "Continuous post-JSON admission/preparation/fresh workers/run/join/materialization/cleanup interval as recorded by each adapter.",
+    "ratio_definition": "Mech continuous post-JSON interval / unchanged repository rust_con original reported processing interval. Lower is faster; the denominator retains the original example\u2019s preinitialized-pool advantage. This does not promote it into a like-boundary fresh-worker cohort.",
+    "reference": "rust-preinitialized",
+    "reference_boundary": "Original rust_con processing interval. Global Rayon pool initialized before JSON and timer; scratch vectors, tag map and result materialization inside; pool teardown and output destruction outside.",
+    "reference_interval_field": "median_seconds",
+    "reference_milliseconds": 1.870584,
+    "reference_seconds": 0.001870584,
+    "rows": [
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 8.727583,
+        "name": "rust",
+        "over_fastest_verified_repository_rust_con": 4.665699589005358,
+        "samples": 31,
+        "seconds": 0.008727582999999999,
+        "whole_process_seconds": 0.0376765001565218
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.870584,
+        "name": "rust-preinitialized",
+        "over_fastest_verified_repository_rust_con": 1.0,
+        "samples": 31,
+        "seconds": 0.001870584,
+        "whole_process_seconds": 0.031489667017012835
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.644958,
+        "name": "rust-mech-control-streaming",
+        "over_fastest_verified_repository_rust_con": 0.8793820539467888,
+        "samples": 31,
+        "seconds": 0.001644958,
+        "whole_process_seconds": 0.030941917095333338
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.641375,
+        "name": "rust-mech-control-u32-casts",
+        "over_fastest_verified_repository_rust_con": 0.8774666093583608,
+        "samples": 31,
+        "seconds": 0.001641375,
+        "whole_process_seconds": 0.03157049999572337
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.652291,
+        "name": "rust-mech-control-u8-ids-u32",
+        "over_fastest_verified_repository_rust_con": 0.883302220055341,
+        "samples": 31,
+        "seconds": 0.001652291,
+        "whole_process_seconds": 0.03192079113796353
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.601792,
+        "name": "rust-ordered-scan-only",
+        "over_fastest_verified_repository_rust_con": 0.8563058381767406,
+        "samples": 31,
+        "seconds": 0.001601792,
+        "whole_process_seconds": 0.03197283297777176
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.5765420000000003,
+        "name": "rust-ordered-ordered",
+        "over_fastest_verified_repository_rust_con": 0.8428073799412377,
+        "samples": 31,
+        "seconds": 0.0015765420000000002,
+        "whole_process_seconds": 0.030413791071623564
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.580042,
+        "name": "rust-ordered-mask-reuse",
+        "over_fastest_verified_repository_rust_con": 0.8446784533600202,
+        "samples": 31,
+        "seconds": 0.001580042,
+        "whole_process_seconds": 0.030110458144918084
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.5787910000000003,
+        "name": "rust-ordered-ordered-mask",
+        "over_fastest_verified_repository_rust_con": 0.8440096782609069,
+        "samples": 31,
+        "seconds": 0.0015787910000000002,
+        "whole_process_seconds": 0.031016458058729768
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.573084,
+        "name": "rust-ordered-ordered-mask-tables",
+        "over_fastest_verified_repository_rust_con": 0.8409587594034804,
+        "samples": 31,
+        "seconds": 0.001573084,
+        "whole_process_seconds": 0.03136758413165808
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 8.721166,
+        "name": "rust-apple-m3",
+        "over_fastest_verified_repository_rust_con": 4.662269109540123,
+        "samples": 31,
+        "seconds": 0.008721166,
+        "whole_process_seconds": 0.0373796250205487
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.890708,
+        "name": "rust-preinitialized-apple-m3",
+        "over_fastest_verified_repository_rust_con": 1.0107581375655945,
+        "samples": 31,
+        "seconds": 0.001890708,
+        "whole_process_seconds": 0.03146420791745186
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.6605410000000003,
+        "name": "rust-mech-control-streaming-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8877126073996143,
+        "samples": 31,
+        "seconds": 0.0016605410000000002,
+        "whole_process_seconds": 0.031328999903053045
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.6616670000000002,
+        "name": "rust-mech-control-u32-casts-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.888314558448057,
+        "samples": 31,
+        "seconds": 0.0016616670000000001,
+        "whole_process_seconds": 0.030586790991947055
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.656542,
+        "name": "rust-mech-control-u8-ids-u32-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8855747723705538,
+        "samples": 31,
+        "seconds": 0.001656542,
+        "whole_process_seconds": 0.030913874972611666
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.649458,
+        "name": "rust-ordered-scan-only-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.881787719770938,
+        "samples": 31,
+        "seconds": 0.0016494580000000001,
+        "whole_process_seconds": 0.031029707984998822
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.6505,
+        "name": "rust-ordered-ordered-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8823447650573297,
+        "samples": 31,
+        "seconds": 0.0016505,
+        "whole_process_seconds": 0.030890375142917037
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.660667,
+        "name": "rust-ordered-mask-reuse-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8877799660426904,
+        "samples": 31,
+        "seconds": 0.001660667,
+        "whole_process_seconds": 0.030878999968990684
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.658709,
+        "name": "rust-ordered-ordered-mask-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8867332341129829,
+        "samples": 31,
+        "seconds": 0.001658709,
+        "whole_process_seconds": 0.030682000098749995
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.65925,
+        "name": "rust-ordered-ordered-mask-tables-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.8870224486042861,
+        "samples": 31,
+        "seconds": 0.00165925,
+        "whole_process_seconds": 0.03141708392649889
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.560208,
+        "name": "rust-ordered-mask-tables256",
+        "over_fastest_verified_repository_rust_con": 0.834075347591982,
+        "samples": 31,
+        "seconds": 0.001560208,
+        "whole_process_seconds": 0.0310615838970989
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.564959,
+        "name": "rust-ordered-mask-tables256-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.836615196109878,
+        "samples": 31,
+        "seconds": 0.001564959,
+        "whole_process_seconds": 0.03088183281943202
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.24575,
+        "name": "rust-ordered-mask-tables256-fresh4",
+        "over_fastest_verified_repository_rust_con": 0.6659684889852581,
+        "samples": 31,
+        "seconds": 0.00124575,
+        "whole_process_seconds": 0.031044708099216223
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_seconds",
+        "milliseconds": 1.252208,
+        "name": "rust-ordered-mask-tables256-fresh4-apple-m3",
+        "over_fastest_verified_repository_rust_con": 0.6694208867391147,
+        "samples": 31,
+        "seconds": 0.001252208,
+        "whole_process_seconds": 0.030964249977841973
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.44925,
+        "name": "mech-managed-scoped-frame",
+        "over_fastest_verified_repository_rust_con": 0.7747580434773311,
+        "samples": 31,
+        "seconds": 0.00144925,
+        "whole_process_seconds": 0.05508779198862612
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.438375,
+        "name": "mech-managed-dense-worker-u32",
+        "over_fastest_verified_repository_rust_con": 0.768944351068971,
+        "samples": 31,
+        "seconds": 0.001438375,
+        "whole_process_seconds": 0.0634961249306798
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.436291,
+        "name": "mech-managed-dense-comparison-u32",
+        "over_fastest_verified_repository_rust_con": 0.7678302604961872,
+        "samples": 31,
+        "seconds": 0.001436291,
+        "whole_process_seconds": 0.0641665409784764
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.2513750000000001,
+        "name": "mech-ir349-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6689755712654444,
+        "samples": 31,
+        "seconds": 0.001251375,
+        "whole_process_seconds": 0.03397066704928875
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.459292,
+        "name": "mech-managed-selected-increment-lazy-map-wide",
+        "over_fastest_verified_repository_rust_con": 0.7801264204120211,
+        "samples": 31,
+        "seconds": 0.001459292,
+        "whole_process_seconds": 0.05841483315452933
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.467625,
+        "name": "mech-managed-selected-increment-lazy-map-u32",
+        "over_fastest_verified_repository_rust_con": 0.7845811789259397,
+        "samples": 31,
+        "seconds": 0.001467625,
+        "whole_process_seconds": 0.06332504213787615
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.238958,
+        "name": "mech-ir350-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6623375373680092,
+        "samples": 31,
+        "seconds": 0.001238958,
+        "whole_process_seconds": 0.034745957935228944
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.2357500000000001,
+        "name": "mech-ir352-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6606225649315935,
+        "samples": 31,
+        "seconds": 0.00123575,
+        "whole_process_seconds": 0.034632167080417275
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.453,
+        "name": "mech-managed-exact-histogram-key-wide",
+        "over_fastest_verified_repository_rust_con": 0.7767627649974553,
+        "samples": 31,
+        "seconds": 0.001453,
+        "whole_process_seconds": 0.05739620793610811
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.44175,
+        "name": "mech-managed-exact-histogram-key-u32",
+        "over_fastest_verified_repository_rust_con": 0.7707486004370828,
+        "samples": 31,
+        "seconds": 0.00144175,
+        "whole_process_seconds": 0.06305674999020994
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.238542,
+        "name": "mech-ir354-compact-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6621151469273767,
+        "samples": 31,
+        "seconds": 0.001238542,
+        "whole_process_seconds": 0.03482316597364843
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.445834,
+        "name": "mech-managed-u16-exact-histogram-wide",
+        "over_fastest_verified_repository_rust_con": 0.7729318758205993,
+        "samples": 31,
+        "seconds": 0.001445834,
+        "whole_process_seconds": 0.05675562494434416
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.451083,
+        "name": "mech-managed-u16-exact-histogram-u32",
+        "over_fastest_verified_repository_rust_con": 0.7757379513563678,
+        "samples": 31,
+        "seconds": 0.001451083,
+        "whole_process_seconds": 0.0655323751270771
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.433,
+        "name": "mech-ir355-managed-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.7660709168901263,
+        "samples": 31,
+        "seconds": 0.001433,
+        "whole_process_seconds": 0.06342545803636312
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.233042,
+        "name": "mech-ir355-compact-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.6591748886978612,
+        "samples": 31,
+        "seconds": 0.001233042,
+        "whole_process_seconds": 0.03469137498177588
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.242459,
+        "name": "mech-ir355-compact-key-u32-control-4",
+        "over_fastest_verified_repository_rust_con": 0.6642091453791971,
+        "samples": 31,
+        "seconds": 0.001242459,
+        "whole_process_seconds": 0.03497012495063245
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.429375,
+        "name": "mech-ir353-managed-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.7641330194206729,
+        "samples": 31,
+        "seconds": 0.001429375,
+        "whole_process_seconds": 0.0645529159810394
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.459292,
+        "name": "mech-ir353-managed-key-u32-control-4",
+        "over_fastest_verified_repository_rust_con": 0.7801264204120211,
+        "samples": 31,
+        "seconds": 0.001459292,
+        "whole_process_seconds": 0.06281008291989565
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.224125,
+        "name": "mech-ir353-compact-guarded-u16-4",
+        "over_fastest_verified_repository_rust_con": 0.6544079282192086,
+        "samples": 31,
+        "seconds": 0.001224125,
+        "whole_process_seconds": 0.03489012480713427
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.250334,
+        "name": "mech-ir353-compact-key-u32-control-4",
+        "over_fastest_verified_repository_rust_con": 0.668419060571458,
+        "samples": 31,
+        "seconds": 0.001250334,
+        "whole_process_seconds": 0.03482491592876613
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.5150000000000001,
+        "name": "mech-managed-mask-v1-ir352-u32",
+        "over_fastest_verified_repository_rust_con": 0.8099074941301754,
+        "samples": 31,
+        "seconds": 0.001515,
+        "whole_process_seconds": 0.07000216701999307
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.260667,
+        "name": "mech-ir352-compact-mask-v1-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6739430038961095,
+        "samples": 31,
+        "seconds": 0.001260667,
+        "whole_process_seconds": 0.03461812483146787
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.502667,
+        "name": "mech-managed-mask-v2-ir352-u32",
+        "over_fastest_verified_repository_rust_con": 0.803314365994791,
+        "samples": 31,
+        "seconds": 0.001502667,
+        "whole_process_seconds": 0.06800058297812939
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.2566249999999999,
+        "name": "mech-ir352-compact-mask-v2-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.6717821813936182,
+        "samples": 31,
+        "seconds": 0.001256625,
+        "whole_process_seconds": 0.034814583137631416
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.5024579999999998,
+        "name": "mech-managed-mask-v2-ir355-u32",
+        "over_fastest_verified_repository_rust_con": 0.8032026361820693,
+        "samples": 31,
+        "seconds": 0.001502458,
+        "whole_process_seconds": 0.06711916695348918
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.256291,
+        "name": "mech-ir355-compact-mask-v2-key-u32-4",
+        "over_fastest_verified_repository_rust_con": 0.671603627530226,
+        "samples": 31,
+        "seconds": 0.001256291,
+        "whole_process_seconds": 0.03543466608971357
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.449875,
+        "name": "mech-ir355-managed-guarded-u16-mask-v2-4",
+        "over_fastest_verified_repository_rust_con": 0.7750921637306851,
+        "samples": 31,
+        "seconds": 0.001449875,
+        "whole_process_seconds": 0.06684012501500547
+      },
+      {
+        "all_outputs_exact": true,
+        "interval_field": "median_post_json_seconds",
+        "milliseconds": 1.244167,
+        "name": "mech-ir355-compact-guarded-u16-mask-v2-4",
+        "over_fastest_verified_repository_rust_con": 0.665122229207563,
+        "samples": 31,
+        "seconds": 0.001244167,
+        "whole_process_seconds": 0.03489708318375051
+      }
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "status": "corrected-offline-packaging-error-no-native-execution",
+  "initial_error": "KeyError: mech-managed-owned-capture-instrumented",
+  "cause": "Verifier wide-resource control-name reconstruction omitted the -wide suffix.",
+  "correction": "Use the exact wide and U32 control names present in the retained report.",
+  "benchmark_outputs_repeated": 0,
+  "native_executions": 0
+}

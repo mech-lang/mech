@@ -5,6 +5,9 @@ use super::{
     NativeControlLoopRef as Loop, NativeIterationAction as Action,
     NativeIterationValueScope as Scope,
 };
+use crate::resident::general::native_comprehension_lowering::{
+    collection_kind_supported, row_block_supported,
+};
 use mech_core::SchemaBody;
 
 const BAD: &str = "invalid native collection ownership or element types";
@@ -22,10 +25,7 @@ pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             || collection
                 .parent_collection()
                 .is_some_and(|parent| parent as usize >= id)
-            || !matches!(
-                collection.kind(),
-                crate::ComprehensionKind::Matrix | crate::ComprehensionKind::MatrixPreserveShape
-            )
+            || !collection_kind_supported(collection.kind())
         {
             return Err(BAD);
         }
@@ -64,8 +64,17 @@ pub(super) fn validate(plan: &impl ControlPlan) -> Result<(), &'static str> {
             return Err(BAD);
         };
         let yielded = definition(*value)?;
-        if !yielded.dimension_parameters().is_empty()
-            || element.as_ref() != yielded.body()
+        let same_element = if matches!(
+            collection.kind(),
+            crate::ComprehensionKind::MatrixHorizontalBlocks { .. }
+        ) {
+            row_block_supported(yielded)
+                && matches!(yielded.body(), SchemaBody::Matrix { element: child, .. } if child == element)
+                && row_block_supported(definition(collection.output())?)
+        } else {
+            yielded.dimension_parameters().is_empty() && element.as_ref() == yielded.body()
+        };
+        if !same_element
             || !crate::resident::general::native_comprehension_lowering::element_supported(element)
         {
             return Err(BAD);

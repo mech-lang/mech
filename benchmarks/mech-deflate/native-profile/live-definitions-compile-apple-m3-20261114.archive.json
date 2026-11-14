@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-live-definitions-20261114.tar.gz",
+  "bytes": 7253076,
+  "evidence_files": 364,
+  "files": 364,
+  "format": 1,
+  "manifest_sha256": "2263afdc0c3b3db207c0375bb1f6a519c1686e7bae1a15eaa00b6f629d9a15d1",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "9752f1295b32a5a9f02d00bb543f3329a4f70d269a442d7bfa3ec7091e77e00b",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-live-definitions-20261114.tar.gz",
+  "sha256": "3b9b7524189348828ab5a21e85fec192a0d48199cf85536eb5e844f79bcf44b6",
+  "source_revision": "1682e13446f223ed85e1832a14befdcec213cd6c",
+  "uncompressed_bytes": 50350317,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "3b9b7524189348828ab5a21e85fec192a0d48199cf85536eb5e844f79bcf44b6",
+    "source_revision": "1682e13446f223ed85e1832a14befdcec213cd6c",
+    "verified_bytes": 50350317,
+    "verified_files": 364
+  }
+}

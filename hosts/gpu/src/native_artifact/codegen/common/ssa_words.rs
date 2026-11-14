@@ -5,17 +5,90 @@ use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::offset;
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(in crate::native_artifact) struct Words {
-    variables: BTreeMap<usize, Variable>,
+    variables: BTreeMap<usize, (Variable, MemFlags)>,
+    native_extent_slots: BTreeMap<usize, u64>,
+    native_extent_values: RefCell<BTreeMap<Value, u64>>,
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "ssa_words_tests.rs"]
+mod tests;
 impl Words {
     pub(in crate::native_artifact) fn new(
         b: &mut FunctionBuilder<'_>,
         locals: Value,
         code: CodePlan<'_>,
         slots: BTreeSet<usize>,
+    ) -> Result<Self, NativeCompileError> {
+        Self::new_with_regions(b, locals, code, slots, |_| MemFlags::new())
+    }
+    /// Initialize private SSA inputs without first publishing them to source
+    /// homes. Ordinary source slots keep the same constant/local initialization.
+    pub(in crate::native_artifact) fn new_with(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        initial: impl FnMut(
+            &mut FunctionBuilder<'_>,
+            usize,
+        ) -> Result<Option<Value>, NativeCompileError>,
+    ) -> Result<Self, NativeCompileError> {
+        Self::build(b, locals, code, slots, initial, |_| MemFlags::new())
+    }
+    /// A physical home keeps one alias region across entry, spills, and reloads.
+    /// Tail/borrowed synchronization accesses these same private homes directly.
+    pub(in crate::native_artifact) fn new_with_regions(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        flags: impl FnMut(usize) -> MemFlags,
+    ) -> Result<Self, NativeCompileError> {
+        Self::build(b, locals, code, slots, |_, _| Ok(None), flags)
+    }
+    pub(in crate::native_artifact) fn new_with_initial_regions(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        initial: impl FnMut(
+            &mut FunctionBuilder<'_>,
+            usize,
+        ) -> Result<Option<Value>, NativeCompileError>,
+        flags: impl FnMut(usize) -> MemFlags,
+    ) -> Result<Self, NativeCompileError> {
+        Self::build(b, locals, code, slots, initial, flags)
+    }
+    /// Current DEFLATE entries and selected related entries share one builder.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn new_with_regions_and_initial(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        initial: impl FnMut(
+            &mut FunctionBuilder<'_>,
+            usize,
+        ) -> Result<Option<Value>, NativeCompileError>,
+        flags: impl FnMut(usize) -> MemFlags,
+    ) -> Result<Self, NativeCompileError> {
+        Self::build(b, locals, code, slots, initial, flags)
+    }
+    fn build(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        mut initial: impl FnMut(
+            &mut FunctionBuilder<'_>,
+            usize,
+        ) -> Result<Option<Value>, NativeCompileError>,
+        mut flags: impl FnMut(usize) -> MemFlags,
     ) -> Result<Self, NativeCompileError> {
         let constants = (0..code.constant_count())
             .map(|index| code.constant(index))
@@ -26,23 +99,52 @@ impl Words {
         let mut variables = BTreeMap::new();
         for slot in slots {
             let variable = b.declare_var(types::I64);
-            let value = if let Some(&word) = constants.get(&slot) {
+            let flags = flags(slot);
+            let value = if let Some(value) = initial(b, slot)? {
+                value
+            } else if let Some(&word) = constants.get(&slot) {
                 b.ins().iconst(types::I64, word as i64)
             } else {
-                b.ins()
-                    .load(types::I64, MemFlags::new(), locals, offset(slot)?)
+                b.ins().load(types::I64, flags, locals, offset(slot)?)
             };
             b.def_var(variable, value);
-            variables.insert(slot, variable);
+            variables.insert(slot, (variable, flags));
         }
-        Ok(Self { variables })
+        Ok(Self {
+            variables,
+            native_extent_slots: BTreeMap::new(),
+            native_extent_values: RefCell::new(BTreeMap::new()),
+        })
     }
     pub(in crate::native_artifact) fn read(
         &self,
         b: &mut FunctionBuilder<'_>,
         slot: usize,
     ) -> Value {
-        b.use_var(self.variables[&slot])
+        let value = b.use_var(self.variables[&slot].0);
+        if let Some(&upper) = self.native_extent_slots.get(&slot) {
+            self.native_extent_values
+                .borrow_mut()
+                .entry(value)
+                .and_modify(|old| *old = (*old).min(upper))
+                .or_insert(upper);
+        }
+        value
+    }
+    /// Only the numeric emitter's genuine packed slice length/capacity lanes
+    /// qualify. Shape axes and arbitrary words loaded from arrays do not.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn bound_native_extent(&mut self, slot: usize, upper: u64) {
+        assert!(self.variables.contains_key(&slot));
+        self.native_extent_slots.insert(slot, upper);
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn native_extent_bounds(&self) -> Vec<(Value, u64)> {
+        self.native_extent_values
+            .borrow()
+            .iter()
+            .map(|(&v, &upper)| (v, upper))
+            .collect()
     }
     pub(in crate::native_artifact) fn write(
         &self,
@@ -50,7 +152,7 @@ impl Words {
         slot: usize,
         value: Value,
     ) {
-        b.def_var(self.variables[&slot], value);
+        b.def_var(self.variables[&slot].0, value);
     }
     pub(in crate::native_artifact) fn spill_all(
         &self,
@@ -67,7 +169,8 @@ impl Words {
     ) -> Result<(), NativeCompileError> {
         for &slot in live {
             let value = self.read(b, slot);
-            b.ins().store(MemFlags::new(), value, locals, offset(slot)?);
+            b.ins()
+                .store(self.variables[&slot].1, value, locals, offset(slot)?);
         }
         Ok(())
     }
@@ -80,7 +183,7 @@ impl Words {
         for &slot in live {
             let value = b
                 .ins()
-                .load(types::I64, MemFlags::new(), locals, offset(slot)?);
+                .load(types::I64, self.variables[&slot].1, locals, offset(slot)?);
             self.write(b, slot, value);
         }
         Ok(())
