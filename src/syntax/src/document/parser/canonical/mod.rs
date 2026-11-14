@@ -1,4 +1,5 @@
 pub(crate) mod base;
+mod prediction;
 pub(crate) mod combinator;
 pub(crate) mod control_operators;
 pub(crate) mod declarations;

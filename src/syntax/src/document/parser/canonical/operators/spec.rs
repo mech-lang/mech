@@ -1,7 +1,7 @@
 //! Canonical operator selections, spacing, guards, and syntax-node ownership.
 use super::*;
 #[derive(Clone, Copy)]
-pub(super) enum Spec {
+pub(in super::super) enum Spec {
     Aggregate {
         kind: SyntaxKind,
         alternatives: &'static [RuleId],
@@ -15,7 +15,7 @@ pub(super) enum Spec {
     SpacedSubtract,
     Transpose,
 }
-pub(super) fn specification(rule: RuleId) -> Spec {
+pub(in super::super) fn specification(rule: RuleId) -> Spec {
     match rule {
         rules::ADD_SUB_OPERATOR => Spec::Aggregate {
             kind: SyntaxKind::AddSubOperator,
