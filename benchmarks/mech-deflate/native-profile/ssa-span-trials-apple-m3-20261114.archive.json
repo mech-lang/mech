@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-ssa-span-trials-20261114.tar.gz",
+  "bytes": 25485749,
+  "evidence_files": 833,
+  "files": 833,
+  "format": 1,
+  "manifest_sha256": "ad43f87140fd34d6e6b1369ed4f8d7f644a6cc3db9aeca50d63652124dc1b53d",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "479f4e6838cfbdd671687556f9112e89e02526f97390762b3be098f103c0d382",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-span-trials-20261114.tar.gz",
+  "sha256": "87935bd554800216828efa4642c4115b883a30302133d1bf5be061d9286ae22b",
+  "source_revision": "8e3c03512b4df9ae479fe7f586d195166791b3c5",
+  "uncompressed_bytes": 178518036,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "87935bd554800216828efa4642c4115b883a30302133d1bf5be061d9286ae22b",
+    "source_revision": "8e3c03512b4df9ae479fe7f586d195166791b3c5",
+    "verified_bytes": 178518036,
+    "verified_files": 833
+  }
+}

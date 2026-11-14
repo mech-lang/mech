@@ -171,6 +171,16 @@
       "sha256": "24f8e8cfcfe0c45b69099921252091c510482ee0b60162ccbaec8ecea1c919a2",
       "source_revision": "ee77e992e12f1880901c2e6b0745e23fcf7f1fe6",
       "summary": "benchmarks/mech-deflate/native-profile/nested-parser-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-span-trials-20261114.tar.gz",
+      "bytes": 25485749,
+      "decision": "Rejected: both local-span SSA storage variants slow construction and compiler work; production source restored.",
+      "files": 833,
+      "receipt": "benchmarks/mech-deflate/native-profile/ssa-span-trials-apple-m3-20261114.archive.json",
+      "sha256": "87935bd554800216828efa4642c4115b883a30302133d1bf5be061d9286ae22b",
+      "source_revision": "8e3c03512b4df9ae479fe7f586d195166791b3c5",
+      "summary": "benchmarks/mech-deflate/native-profile/ssa-span-trials-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
