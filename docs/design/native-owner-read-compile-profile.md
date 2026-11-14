@@ -88,3 +88,6 @@ Parsing remains about 2.5 seconds after the
 [predictive parser change](native-parser-prediction-profile.md). Frontend work
 takes about 8.3 seconds and native compilation about 36.4 seconds. Full
 compilation remains about 47 seconds; the sub-10-second goal remains open.
+
+The later [sparse SSA lookup change](native-ssa-sparse-compile-profile.md)
+reduces full compilation to about 42 seconds with the same generated program.

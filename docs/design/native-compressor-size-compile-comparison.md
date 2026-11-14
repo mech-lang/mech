@@ -10,11 +10,13 @@ compiler bootstrap and source/tool downloads.
 | --- | ---: | ---: | --- |
 | libdeflate 1.26 | 5,485 | 0.557 s | Encoder translation unit to Object, Clang O2 |
 | Roc, pinned reference | 6,187 | 2.249 s | Fixed level 12 with runtime input, `--no-cache --opt=speed --jobs=1`, static archive |
-| Mech, latest qualified flags | 1,930 | 47.247–48.484 s | Two fresh source-to-Object processes, compact compiler |
+| Mech, latest qualified flags | 1,930 | 42.190–43.045 s | Two fresh source-to-Object processes, compact compiler |
 
-The Mech compiler's own phase totals are **47.079–47.382 seconds** after the
-[bounded ownership-query change](native-owner-read-compile-profile.md), which
-reduces preparation by 19.7% with identical program bytes. Its preceding
+The Mech compiler's own phase totals are **41.859–41.883 seconds** after the
+[sparse SSA lookup change](native-ssa-sparse-compile-profile.md), which reduces
+source CFG construction by 67.9%. The preceding
+[bounded ownership-query change](native-owner-read-compile-profile.md)
+reduces preparation by 19.7%. Both preserve every emitted program byte. The earlier
 parser optimization is [qualified separately](native-parser-prediction-profile.md):
 parsing falls from 3.43–3.44 seconds to 2.45–2.49 seconds with identical program
 output. The [preceding parser change](native-parser-compile-profile.md) reduced
@@ -28,7 +30,7 @@ with different implementation scopes and optimization strategies.
 | --- | --- |
 | Clang | Frontend 55 ms; LLVM optimization 197 ms and code-generation passes 234 ms within a 432 ms backend |
 | Roc | Type checking 65 ms, including 6 ms parsing; shared lowering/evaluation 333 ms; specialization 1,235 ms, including 1,164 ms LIR passes; LLVM optimize/emit 642 ms |
-| Mech | Parsing 2.45–2.50 s; frontend 8.21–8.44 s; native compilation 36.34–36.37 s, including 11.31–11.35 s preparation. Remaining sampled costs include numeric liveness, source CFG/SSA and final emission |
+| Mech | Parsing 2.44–2.46 s; frontend 8.37–8.45 s; native compilation 30.86–31.00 s, including 11.33–11.34 s preparation, 2.46–2.54 s source CFG construction and 4.98–5.01 s cleanup |
 
 Nested entries in this table must not be added twice. Clang's instrumented
 process takes 0.549 seconds; Roc's takes 2.313 seconds. Profiled and unprofiled
@@ -40,7 +42,7 @@ reachability and SSA work before machine-code emission.
 The emitted `__text` sizes are **41,112 bytes for C**, **57,696 for Roc** and
 **1,101,332 for the latest Mech configuration**. Maximum resident memory in the
 clean process measurements is **75,038,720 bytes**, **445,988,864 bytes** and
-**7,600,701,440–7,765,082,112 bytes**, respectively. Mech's expanded native work and retained
+**7,593,771,008–7,595,196,416 bytes**, respectively. Mech's expanded native work and retained
 compiler data deserve attention; fewer source lines do not imply less compiler
 work. Runtime speed comparisons retain their own linked-worker qualification.
 
@@ -68,8 +70,8 @@ locally with Zig 0.17.0; its SHA-256 is
 The static archive excludes the Rust host and allocator inputs used by the linked
 runtime benchmark. Compiler build time is recorded outside program timings.
 
-The [current Mech result](../../benchmarks/mech-deflate/native-profile/owner-read-compile-apple-m3-20261113.json)
-and [receipt](../../benchmarks/mech-deflate/native-profile/owner-read-compile-apple-m3-20261113.archive.json)
+The [current Mech result](../../benchmarks/mech-deflate/native-profile/ssa-sparse-compile-apple-m3-20261113.json)
+and [receipt](../../benchmarks/mech-deflate/native-profile/ssa-sparse-compile-apple-m3-20261113.archive.json)
 pin its latest qualified cohort. The [peer compact result](../../benchmarks/mech-deflate/native-profile/parser-peer-compile-apple-m3-20261113.json)
 and [receipt](../../benchmarks/mech-deflate/native-profile/parser-peer-compile-apple-m3-20261113.archive.json)
 pin the commands, sources, traces, phase reports, samples and offline replay.
