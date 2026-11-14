@@ -117,3 +117,7 @@ path = "pending_schema_tests.rs"
 [[test]]
 name = "scope_graph"
 path = "scope_graph_tests.rs"
+
+[[test]]
+name = "helper_liveness"
+path = "helper_liveness_tests.rs"

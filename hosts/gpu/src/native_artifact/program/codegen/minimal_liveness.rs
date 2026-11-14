@@ -13,18 +13,10 @@ use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativeMatchTerminator as Branch, NativeProgramFacts,
 };
-#[derive(Default)]
-struct Effects {
-    reads: BTreeSet<usize>,
-    writes: BTreeSet<usize>,
-}
-impl Effects {
-    fn used(&mut self, word: usize) {
-        if !self.writes.contains(&word) {
-            self.reads.insert(word);
-        }
-    }
-}
+#[path = "minimal_liveness_dataflow.rs"]
+mod dataflow;
+use dataflow::Effects;
+
 impl WordAccess for Effects {
     fn read(
         &mut self,
@@ -201,29 +193,6 @@ pub(super) fn required(
     b.ins().return_(&[]);
     b.seal_all_blocks();
     b.finalize();
-    let mut live = effects
-        .iter()
-        .map(|(&s, e)| (s, e.reads.clone()))
-        .collect::<BTreeMap<_, _>>();
-    loop {
-        let mut changed = false;
-        for &site in proof.sites.iter().rev() {
-            let mut next = effects[&site].reads.clone();
-            if exits.contains(&site) {
-                next.extend(terminal.difference(&effects[&site].writes).copied());
-            }
-            for target in &edges[&site] {
-                next.extend(live[target].difference(&effects[&site].writes).copied());
-            }
-            if live[&site] != next {
-                live.insert(site, next);
-                changed = true;
-            }
-        }
-        if !changed {
-            break;
-        }
-    }
-    live.remove(&header)
+    dataflow::required(&proof.sites, &effects, &edges, &exits, &terminal, header)
         .ok_or_else(|| backend("native flow lacks root header"))
 }

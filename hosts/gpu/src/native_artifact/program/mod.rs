@@ -2,6 +2,8 @@
 #[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod compiled_module;
 #[cfg(feature = "canonical-native-program-runtime")]
+mod packed_liveness;
+#[cfg(feature = "canonical-native-program-runtime")]
 pub(in crate::native_artifact) mod prepare;
 pub(in crate::native_artifact) mod protocol;
 
