@@ -141,6 +141,16 @@
       "sha256": "950b12f41567139f122fb387af9b05f15b12d74311ab967e4fe33cd68746e92f",
       "source_revision": "ba9298bca36ca7879501060ad7d3e7c2d5222a7d",
       "summary": "benchmarks/mech-deflate/native-profile/helper-liveness-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-index-facts-20261114.tar.gz",
+      "bytes": 12551484,
+      "decision": "Retained: exact-analyzer definition facts lifetime; lazy first demand and unchanged range checks; identical program bytes.",
+      "files": 414,
+      "receipt": "benchmarks/mech-deflate/native-profile/index-facts-compile-apple-m3-20261114.archive.json",
+      "sha256": "b58a2c97ad3961c2297fd427729c0dd3bd0b347d38a06d59b8076a067a1a876c",
+      "source_revision": "4a451c748295164aa300d4e03ff9b6a4fdbd740f",
+      "summary": "benchmarks/mech-deflate/native-profile/index-facts-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

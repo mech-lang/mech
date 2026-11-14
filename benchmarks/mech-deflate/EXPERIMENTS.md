@@ -182,6 +182,15 @@ fixture pairs pass. Its fourteenth packet includes static source equivalence,
 all observations and the same pre-existing runtime-only lint failure on parent
 and candidate. Offline replay reproduces the result; older archives stay unchanged.
 
+The [index-range definition-facts qualification](../../docs/design/native-index-facts-compile-profile.md)
+retains one lazy descriptive facts object for each exact analyzer lifetime, with
+byte-identical range calculations. Eight matched 60-flag runs take 18.691–18.903
+seconds: 1.61% less process time, 10.74% less helper generation and 2.06% fewer
+instructions. Cleanup is an adverse 1.34% higher; memory ranges overlap. All
+compressor and fourteen fixture-pair outputs match. Its fifteenth packet retains
+both screens, all observations, constructor/source comparisons and offline replay.
+Earlier tests and feature-check failures keep their original source pins.
+
 Paths below name reports **inside the external bundle**. The full manifest also
 covers early implementation witnesses, profiling, failed attempts and non-numbered
 packets. Each report hash is SHA-256; its surrounding directory holds the complete
