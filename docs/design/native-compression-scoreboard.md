@@ -1,5 +1,26 @@
 # Current compression scoreboard
 
+The compiler now emits one allocation and one sequence of writes when the
+current borrowed output has room for a complete terminal byte append. Two
+matched matrices take **0.974266×** and **0.976169×** paired control. Both
+timing gates pass on every case. Each matrix validates 245,664 complete
+compression calls. [Terminal append proof and timing](native-terminal-byte-appends.md).
+
+| Peer result | Mech wins, full | Full repeat | Paired control, full / repeat |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **76/81 (93.8%)** | **74/81 (91.4%)** | 73 / 73 |
+| Faster than libdeflate | **36/81 (44.4%)** | **35/81 (43.2%)** | 34 / 35 |
+| Faster than both | **31/81 (38.3%)** | **28/81 (34.6%)** | 26 / 27 |
+| Faster than at least one | **81/81 (100%)** | **81/81 (100%)** | 81 / 81 |
+
+Empty, one stored byte, and seven stored bytes with a prefix take
+0.552×, 0.519× and 0.508× paired control on repeat. All three beat both
+peers twice. The largest remaining Roc gap is the 65,537-byte held-out
+slide case at 1.016263× and 1.015827×. Natural 1 MiB takes 1.002909× and
+1.006801×. Natural 32 KiB straddles parity at 0.998049× and 1.000093×.
+
+## Previous compiler baseline
+
 Moving the current match-record completion test to the loop's incoming edges
 speeds up the normally emitted compact executable. Two complete matrices
 take **0.993688×** and **0.996321×** paired control. Both timing gates pass

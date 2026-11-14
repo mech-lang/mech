@@ -9,6 +9,7 @@ use super::{
     owner_flow::OwnerFlow,
     packed, phase_storage, phases,
     recipes::{self, Recipe},
+    terminal_appends::TerminalAppends,
     widening_reduction, word_collections, word_packs,
 };
 use crate::native_artifact::codegen::{
@@ -337,6 +338,28 @@ pub(super) fn define_entry<M: Module>(
     } else {
         "mech_compact_closed_v1"
     });
+    let terminal_appends = (worker.is_none()
+        && memory
+        && !observe
+        && route_sites.is_empty()
+        && std::env::var_os("MECH_TERMINAL_BYTE_APPENDS").is_some())
+    .then(|| {
+        TerminalAppends::derive(
+            plan,
+            layout,
+            &flow,
+            actions,
+            &owner_flow,
+            initial,
+            &buffer_results,
+        )
+    })
+    .flatten();
+    let checked_symbol = if terminal_appends.is_some() {
+        "mech_compact_closed_checked"
+    } else {
+        symbol
+    };
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); if memory { 3 } else { 2 }];
     signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -1141,8 +1164,8 @@ pub(super) fn define_entry<M: Module>(
     eprintln!("compact-stage: machine code");
     let function = module
         .declare_function(
-            symbol,
-            if worker.is_some() {
+            checked_symbol,
+            if worker.is_some() || terminal_appends.is_some() {
                 Linkage::Local
             } else {
                 Linkage::Export
@@ -1182,8 +1205,14 @@ pub(super) fn define_entry<M: Module>(
     if let Some(function) = reduction_function {
         widening_reduction::define(module, function)?;
     }
+    let terminal_report = terminal_appends
+        .map(|appends| appends.define(module, symbol, &signature, function))
+        .transpose()?;
     Ok({
         let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":flow.outputs.iter().map(|&v|layout.ty(v).summary()).collect::<Vec<_>>(),"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"source_blocks":plan.blocks().len(),"reachable_blocks":flow.reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
+        if let Some(terminal) = terminal_report {
+            report["terminal_byte_appends"] = terminal;
+        }
         if read_borrows.iter().any(|slots| !slots.is_empty()) {
             report["borrowed_read_copy_sites"] = serde_json::json!(
                 read_borrows
