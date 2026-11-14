@@ -602,20 +602,26 @@ pub struct ProgramArtifact {
     slot_shape_hints: BTreeMap<CellSlotId, ShapeInstance>,
     // Only descriptive lookup metadata for this immutable artifact. Neither
     // draft/revision encoding nor factory/current-visit proof includes it.
-    #[cfg(any(
-        feature = "pure_text",
-        feature = "map_ops",
-        feature = "sequence_buffers"
+    #[cfg(all(
+        feature = "native-artifact",
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     collection_lexical_cache:
         crate::resident::general::native_collection_templates::NativeCollectionLexicalCache,
 }
 
 impl ProgramArtifact {
-    #[cfg(any(
-        feature = "pure_text",
-        feature = "map_ops",
-        feature = "sequence_buffers"
+    #[cfg(all(
+        feature = "native-artifact",
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     pub(crate) fn collection_lexical_cache(
         &self,
@@ -826,10 +832,13 @@ impl ProgramArtifactDraft {
             compute_regions: self.compute_regions,
             source_nominal_declarations: Box::new([]),
             slot_shape_hints: BTreeMap::new(),
-            #[cfg(any(
-                feature = "pure_text",
-                feature = "map_ops",
-                feature = "sequence_buffers"
+            #[cfg(all(
+                feature = "native-artifact",
+                any(
+                    feature = "pure_text",
+                    feature = "map_ops",
+                    feature = "sequence_buffers"
+                )
             ))]
             collection_lexical_cache: Default::default(),
         })
