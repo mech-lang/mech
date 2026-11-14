@@ -1,0 +1,1433 @@
+{
+  "base_commit": "51b18380c07cbbdd4e0c0ffd472c3820289dbc0d",
+  "control_source_commit": "ee77e992e12f1880901c2e6b0745e23fcf7f1fe6",
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "scope": [
+    "Separate serial ABBA/BAAB full-source cohorts: eight observations for deferred zero and sixteen for indexed homes, including a disclosed independent repeat. Original/repeat summaries and all four indexed-home block directions remain. Screens excluded; same 60 runtime flags and optimized compiler profile. Trials are not pooled.",
+    "Builds, tests, corpus preparation, copying, hashing and archive work do not overlap primary timings. Compiler rebuilds use existing caches and are excluded from Mech compilation; no cold-bootstrap comparison.",
+    "Deferred-zero initialization is not retained. Its Object is identical; only two diagnostic metadata instruction counts differ by two. Three focused tests include four identical machine-code comparisons. No new compressor-runtime latency campaign is claimed; the 81-case corpus was prepared but not executed.",
+    "The word-home lookup trial preserves declaration/initialization and all Words method bodies after private storage normalization. Dense capacity is bounded at twice the home count; sparse and overflow cases retain ordered maps. Two tests include 90000 randomized probes and actual boundary memory-region checks.",
+    "Every source, MBC, Object and complete metadata byte matches for the word-home trial and all fourteen fixture pairs of both trials. All fresh shape/factory/visit/ownership checks, constant validation, checked errors, resource admission, grammar, language and scalar emission remain.",
+    "The sub-ten-second full-compilation goal remains open. Offline replay checks stored data and reconstructs summaries without compilers, benchmark execution, scratch paths or network; it does not rerun original measurements."
+  ],
+  "source_commit": "51b18380c07cbbdd4e0c0ffd472c3820289dbc0d",
+  "trials": {
+    "deferred-zero": {
+      "blocks": [
+        {
+          "compiler_mean_change_percent": -0.57228075038398,
+          "order": [
+            "control-1",
+            "candidate-1",
+            "candidate-2",
+            "control-2"
+          ]
+        },
+        {
+          "compiler_mean_change_percent": -0.35812054616420896,
+          "order": [
+            "candidate-3",
+            "control-3",
+            "control-4",
+            "candidate-4"
+          ]
+        }
+      ],
+      "candidate_patch_sha256": "3748b180fa2aacdfde6421bf7b130f7bbae50f8982e3ffa33a309439b7ec6039",
+      "compiler_binary_sha256": {
+        "candidate": "38109436d760345f51901703a280f813367ecdeebdb24dff5c890cab405221cf",
+        "control": "82535f4b459290e25c0a2aa7ea9074b31e090d9861cabd46d630ffe58fc2be45"
+      },
+      "compiler_rebuild_seconds": 275.5148697500117,
+      "decision": {
+        "compiler_mean_change_percent": -0.46526046124407694,
+        "decision": "Do not retain deferred-zero initialization: targeted source-CFG time is effectively unchanged; instruction reduction is only 0.078%; small overall timing movement does not establish a useful gain for the new initialization policy. Preserve both favorable and adverse observations.",
+        "generated_object_identical": true,
+        "instructions_mean_change_percent": -0.07783412158846037,
+        "metadata_differences": {
+          "cleanup/after_instructions": {
+            "candidate": 141309,
+            "control": 141307
+          },
+          "cleanup/before_instructions": {
+            "candidate": 1263770,
+            "control": 1263768
+          }
+        },
+        "next_target": "Direct indexing for dense word-home lookup, retaining identical SSA definition/query order and sparse fallback.",
+        "source_cfg_mean_change_percent": 0.015008223869994453,
+        "whole_process_mean_change_percent": -1.1451626040385632
+      },
+      "fixtures_passed": 14,
+      "focused_tests_passed": 3,
+      "output_hashes": {
+        "candidate": {
+          "metadata.json": {
+            "bytes": 2292704,
+            "sha256": "10d8c7f15a1fad21ed0f306076ef33b016efeba1614891d501ab4f4a87db2eaa"
+          },
+          "program.mecb": {
+            "bytes": 4138627,
+            "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+          },
+          "program.o": {
+            "bytes": 1238328,
+            "sha256": "8a4c2b172798d06252055b20398cdbf9517b4b5be76730ea1824435ef89bbba4"
+          },
+          "source.mec": {
+            "bytes": 160857,
+            "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+          }
+        },
+        "control": {
+          "metadata.json": {
+            "bytes": 2292704,
+            "sha256": "0f6caeb3b18c65552dcda3e5fa460e1796884e4131e275473cfd2858339382cf"
+          },
+          "program.mecb": {
+            "bytes": 4138627,
+            "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+          },
+          "program.o": {
+            "bytes": 1238328,
+            "sha256": "8a4c2b172798d06252055b20398cdbf9517b4b5be76730ea1824435ef89bbba4"
+          },
+          "source.mec": {
+            "bytes": 160857,
+            "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+          }
+        }
+      },
+      "qualified": {
+        "artifact_seconds": {
+          "candidate": [
+            0.025956,
+            0.026619791,
+            0.026059291,
+            0.026171292
+          ],
+          "control": [
+            0.02618625,
+            0.025919958,
+            0.02572275,
+            0.025802584
+          ],
+          "mean_reduction_fraction": -0.011336625677151435
+        },
+        "canonical_lowering_seconds": {
+          "candidate": [
+            0.0988893338944763,
+            0.09935120912268758,
+            0.09904287499375641,
+            0.09928037505596876
+          ],
+          "control": [
+            0.0986612921115011,
+            0.0979790419805795,
+            0.09807883412577212,
+            0.09889991697855294
+          ],
+          "mean_reduction_fraction": -0.007481110498018806
+        },
+        "catalog_seconds": {
+          "candidate": [
+            0.03624225,
+            0.037074625,
+            0.037096792,
+            0.037300708
+          ],
+          "control": [
+            0.035235375,
+            0.037305959,
+            0.037293834,
+            0.037109833
+          ],
+          "mean_reduction_fraction": -0.005235795670245569
+        },
+        "cleanup_including_compaction_seconds": {
+          "candidate": [
+            3.358409582870081,
+            3.3488896670751274,
+            3.361137832980603,
+            3.379515999928117
+          ],
+          "control": [
+            3.4242432499304414,
+            3.37336316681467,
+            3.3589703750330955,
+            3.4497051250655204
+          ],
+          "mean_reduction_fraction": 0.011636451086155852
+        },
+        "cleanup_seconds": {
+          "candidate": [
+            3.194312792038545,
+            3.183929166989401,
+            3.196440457832068,
+            3.214974374976009
+          ],
+          "control": [
+            3.2577838338911533,
+            3.2089949168730527,
+            3.1942088750656694,
+            3.284580459119752
+          ],
+          "mean_reduction_fraction": 0.012043603810238723
+        },
+        "compaction_seconds": {
+          "candidate": [
+            0.16409679083153605,
+            0.16496050008572638,
+            0.16469737514853477,
+            0.16454162495210767
+          ],
+          "control": [
+            0.16645941603928804,
+            0.16436824994161725,
+            0.16476149996742606,
+            0.16512466594576836
+          ],
+          "mean_reduction_fraction": 0.003658983298812424
+        },
+        "compiler_seconds": {
+          "candidate": [
+            18.216473417,
+            18.20775475,
+            18.202941458,
+            18.258985209
+          ],
+          "control": [
+            18.360320584,
+            18.273556208,
+            18.182271583,
+            18.410702041
+          ],
+          "mean_reduction_fraction": 0.004652604612440769
+        },
+        "encode_seconds": {
+          "candidate": [
+            0.00925025,
+            0.009285292,
+            0.009292667,
+            0.0093065
+          ],
+          "control": [
+            0.009299792,
+            0.00924475,
+            0.009220375,
+            0.009252375
+          ],
+          "mean_reduction_fraction": -0.003171950017305525
+        },
+        "frontend_seconds": {
+          "candidate": [
+            2.458322375,
+            2.481670042,
+            2.458403875,
+            2.499901875
+          ],
+          "control": [
+            2.447816666,
+            2.438603709,
+            2.451776416,
+            2.454848292
+          ],
+          "mean_reduction_fraction": -0.010747738125163275
+        },
+        "instructions": {
+          "candidate": [
+            269661353911,
+            269611160955,
+            269539650015,
+            269717720569
+          ],
+          "control": [
+            269931753711,
+            269707269560,
+            269819180278,
+            269911800062
+          ],
+          "mean_reduction_fraction": 0.0007783412158846037
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            5912477696,
+            5910577152,
+            5911543808,
+            5912133632
+          ],
+          "control": [
+            5911429120,
+            5912002560,
+            5912018944,
+            5912199168
+          ],
+          "mean_reduction_fraction": 3.879895076552842e-05
+        },
+        "native_seconds": {
+          "candidate": [
+            13.612463209,
+            13.574323249999999,
+            13.586906833,
+            13.596218584
+          ],
+          "control": [
+            13.743832417,
+            13.667158125,
+            13.56875325,
+            13.796240875
+          ],
+          "mean_reduction_fraction": 0.007413336217845123
+        },
+        "numeric_generation_seconds": {
+          "candidate": [
+            2.122184250038117,
+            2.1156714998651296,
+            2.1221067919395864,
+            2.125770250102505
+          ],
+          "control": [
+            2.1354443340096623,
+            2.1404700418934226,
+            2.138296250021085,
+            2.1314771671313792
+          ],
+          "mean_reduction_fraction": 0.007015819271905976
+        },
+        "parse_seconds": {
+          "candidate": [
+            2.073616417,
+            2.078138459,
+            2.08454075,
+            2.089446209
+          ],
+          "control": [
+            2.097314166,
+            2.09467875,
+            2.08885375,
+            2.086754833
+          ],
+          "mean_reduction_fraction": 0.0050025881377120385
+        },
+        "peak_footprint_bytes": {
+          "candidate": [
+            5882074320,
+            5880157368,
+            5881140432,
+            5881730256
+          ],
+          "control": [
+            5880943800,
+            5881517240,
+            5881533624,
+            5881730256
+          ],
+          "mean_reduction_fraction": 2.6462266396354295e-05
+        },
+        "preparation_seconds": {
+          "candidate": [
+            3.001382250105962,
+            2.995718999998644,
+            2.982701250119135,
+            2.9997854998800904
+          ],
+          "control": [
+            3.0398264578543603,
+            3.046117375139147,
+            3.0087579579558223,
+            3.0048660829197615
+          ],
+          "mean_reduction_fraction": 0.009916046177514737
+        },
+        "source_cfg_seconds": {
+          "candidate": [
+            2.3658184590749443,
+            2.3641142500564456,
+            2.366504583042115,
+            2.376731124939397
+          ],
+          "control": [
+            2.4045626670122147,
+            2.3554868341889232,
+            2.318105834070593,
+            2.3935915408656
+          ],
+          "mean_reduction_fraction": -0.00015008223869994453
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            18.272879000054672,
+            18.273038416868076,
+            18.262491083005443,
+            18.46378062502481
+          ],
+          "control": [
+            18.476331915939227,
+            18.48253891686909,
+            18.468816542066634,
+            18.693307667039335
+          ],
+          "mean_reduction_fraction": 0.011451626040385632
+        }
+      },
+      "separate_cohorts": {}
+    },
+    "word-homes": {
+      "blocks": [
+        {
+          "compiler_mean_change_percent": -0.8413841131479916,
+          "order": [
+            "control-1",
+            "candidate-1",
+            "candidate-2",
+            "control-2"
+          ]
+        },
+        {
+          "compiler_mean_change_percent": -1.377996757279354,
+          "order": [
+            "candidate-3",
+            "control-3",
+            "control-4",
+            "candidate-4"
+          ]
+        },
+        {
+          "compiler_mean_change_percent": 1.2174730706937087,
+          "order": [
+            "control-5",
+            "candidate-5",
+            "candidate-6",
+            "control-6"
+          ]
+        },
+        {
+          "compiler_mean_change_percent": -0.4839261346387125,
+          "order": [
+            "candidate-7",
+            "control-7",
+            "control-8",
+            "candidate-8"
+          ]
+        }
+      ],
+      "candidate_patch_sha256": "dc160d3e34a49c5a006052d8a8ea60d044b254939459b8cb6892611a0506890a",
+      "compiler_binary_sha256": {
+        "candidate": "78b98dd42955119376aa7bc18929836541f2b10b4cd393f0c0c6941b5b1d5f20",
+        "control": "82535f4b459290e25c0a2aa7ea9074b31e090d9861cabd46d630ffe58fc2be45"
+      },
+      "compiler_rebuild_seconds": 271.4593109169509,
+      "decision": {
+        "compiler_mean_change_percent": -0.37675978847779845,
+        "decision": "Do not retain indexed word homes: no improvement in targeted source-CFG time across sixteen observations; tiny instruction difference and mixed repeat blocks do not establish a useful overall compilation saving. Preserve favorable original cohort and adverse repeat.",
+        "generated_object_and_complete_metadata_identical": true,
+        "instructions_mean_change_percent": -0.03092687110891612,
+        "next_target": "Measure exact liveness-query graph construction, repeated per-node read-set allocation, definitions and solver separately before choosing a preparation optimization.",
+        "source_cfg_mean_change_percent": 0.10721872109291652,
+        "whole_process_mean_change_percent": -0.18476468833515947
+      },
+      "fixtures_passed": 14,
+      "focused_tests_passed": 2,
+      "output_hashes": {
+        "candidate": {
+          "metadata.json": {
+            "bytes": 2292704,
+            "sha256": "0f6caeb3b18c65552dcda3e5fa460e1796884e4131e275473cfd2858339382cf"
+          },
+          "program.mecb": {
+            "bytes": 4138627,
+            "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+          },
+          "program.o": {
+            "bytes": 1238328,
+            "sha256": "8a4c2b172798d06252055b20398cdbf9517b4b5be76730ea1824435ef89bbba4"
+          },
+          "source.mec": {
+            "bytes": 160857,
+            "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+          }
+        },
+        "control": {
+          "metadata.json": {
+            "bytes": 2292704,
+            "sha256": "0f6caeb3b18c65552dcda3e5fa460e1796884e4131e275473cfd2858339382cf"
+          },
+          "program.mecb": {
+            "bytes": 4138627,
+            "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+          },
+          "program.o": {
+            "bytes": 1238328,
+            "sha256": "8a4c2b172798d06252055b20398cdbf9517b4b5be76730ea1824435ef89bbba4"
+          },
+          "source.mec": {
+            "bytes": 160857,
+            "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+          }
+        }
+      },
+      "qualified": {
+        "artifact_seconds": {
+          "candidate": [
+            0.025978291,
+            0.025737542,
+            0.025997292,
+            0.025954084,
+            0.025499792,
+            0.025678583,
+            0.025722125,
+            0.025691292
+          ],
+          "control": [
+            0.025824042,
+            0.026277208,
+            0.025787292,
+            0.025771417,
+            0.024862584,
+            0.025763292,
+            0.025715833,
+            0.025720875
+          ],
+          "mean_reduction_fraction": -0.0026076772733651943
+        },
+        "canonical_lowering_seconds": {
+          "candidate": [
+            0.09881612495519221,
+            0.09761833306401968,
+            0.09749375004321337,
+            0.0978752919472754,
+            0.09727350017055869,
+            0.097398417070508,
+            0.09791649994440377,
+            0.09718216699548066
+          ],
+          "control": [
+            0.09991208300925791,
+            0.0986990830861032,
+            0.0995597920846194,
+            0.1000184160657227,
+            0.09636358404532075,
+            0.098236583173275,
+            0.09891654085367918,
+            0.0978582079987973
+          ],
+          "mean_reduction_fraction": 0.010119766337099656
+        },
+        "catalog_seconds": {
+          "candidate": [
+            0.040437916,
+            0.037574125,
+            0.037963875,
+            0.0378445,
+            0.035454084,
+            0.036644542,
+            0.037682916,
+            0.037686792
+          ],
+          "control": [
+            0.037255625,
+            0.037252583,
+            0.038983667,
+            0.037008375,
+            0.034881375,
+            0.0373495,
+            0.035253792,
+            0.037303458
+          ],
+          "mean_reduction_fraction": -0.020320390194839222
+        },
+        "cleanup_including_compaction_seconds": {
+          "candidate": [
+            3.3826635000295937,
+            3.398365917149931,
+            3.37888295808807,
+            3.420043291989714,
+            3.4560600421391428,
+            3.4768480411730707,
+            3.4022832091432065,
+            3.4276449580211192
+          ],
+          "control": [
+            3.4852745831012726,
+            3.3920100000686944,
+            3.5730217499658465,
+            3.421678082784638,
+            3.421824124874547,
+            3.5068573330063373,
+            3.4243570000398904,
+            3.39876287500374
+          ],
+          "mean_reduction_fraction": 0.010172169508767204
+        },
+        "cleanup_seconds": {
+          "candidate": [
+            3.2129953750409186,
+            3.2292987080290914,
+            3.2094707919750363,
+            3.2457211250439286,
+            3.2835786670912057,
+            3.3068989580497146,
+            3.233086291933432,
+            3.25392441614531
+          ],
+          "control": [
+            3.3149359999224544,
+            3.2221285421401262,
+            3.4022492908407003,
+            3.2506077918224037,
+            3.2549224158283323,
+            3.3330652080476284,
+            3.2542929160408676,
+            3.229932083049789
+          ],
+          "mean_reduction_fraction": 0.010934370819801087
+        },
+        "compaction_seconds": {
+          "candidate": [
+            0.16966812498867512,
+            0.16906720912083983,
+            0.1694121661130339,
+            0.17432216694578528,
+            0.17248137504793704,
+            0.1699490831233561,
+            0.16919691720977426,
+            0.17372054187580943
+          ],
+          "control": [
+            0.17033858317881823,
+            0.16988145792856812,
+            0.17077245912514627,
+            0.17107029096223414,
+            0.16690170904621482,
+            0.17379212495870888,
+            0.17006408399902284,
+            0.16883079195395112
+          ],
+          "mean_reduction_fraction": -0.004528385763410636
+        },
+        "compiler_seconds": {
+          "candidate": [
+            18.385565084,
+            18.288116625,
+            18.300973625,
+            18.352779917,
+            18.430202542,
+            18.605012666,
+            18.256338459,
+            18.299756833
+          ],
+          "control": [
+            18.635660583,
+            18.349205917,
+            18.75989625,
+            18.406002167,
+            18.13426125,
+            18.455483667,
+            18.3756005,
+            18.358259541
+          ],
+          "mean_reduction_fraction": 0.0037675978847779845
+        },
+        "encode_seconds": {
+          "candidate": [
+            0.009267667,
+            0.009224125,
+            0.009226208,
+            0.009220834,
+            0.009251209,
+            0.009169708,
+            0.009272292,
+            0.009309
+          ],
+          "control": [
+            0.009251333,
+            0.009252875,
+            0.009308375,
+            0.009304125,
+            0.0089395,
+            0.009217,
+            0.009270625,
+            0.009223541
+          ],
+          "mean_reduction_fraction": -0.0023542792779909227
+        },
+        "frontend_seconds": {
+          "candidate": [
+            2.561574459,
+            2.544772875,
+            2.5480345,
+            2.524740667,
+            2.529867125,
+            2.630468958,
+            2.5418091670000003,
+            2.53433225
+          ],
+          "control": [
+            2.5482782090000002,
+            2.559535375,
+            2.555156625,
+            2.546775125,
+            2.4790024170000002,
+            2.542208917,
+            2.572513291,
+            2.547362208
+          ],
+          "mean_reduction_fraction": -0.0031825644017164922
+        },
+        "instructions": {
+          "candidate": [
+            270875859697,
+            270950255053,
+            270810343768,
+            270757541533,
+            270967738483,
+            270939364278,
+            270954859776,
+            271158421261
+          ],
+          "control": [
+            271049523261,
+            270904200736,
+            270987575038,
+            270998169011,
+            271085307993,
+            271069755112,
+            271123107900,
+            270867265622
+          ],
+          "mean_reduction_fraction": 0.0003092687110891612
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            5911265280,
+            5910659072,
+            5911740416,
+            5911674880,
+            5910626304,
+            5912395776,
+            5911265280,
+            5915213824
+          ],
+          "control": [
+            5912182784,
+            5911986176,
+            5912051712,
+            5912215552,
+            5912592384,
+            5912166400,
+            5912150016,
+            5912133632
+          ],
+          "mean_reduction_fraction": 5.5770922149700475e-05
+        },
+        "native_seconds": {
+          "candidate": [
+            13.659419208,
+            13.592628792,
+            13.586728292,
+            13.682963292,
+            13.752767167,
+            13.825574625,
+            13.555119167,
+            13.605354709
+          ],
+          "control": [
+            13.920812792,
+            13.631227041,
+            14.030001292,
+            13.694948583,
+            13.59745575,
+            13.748609625,
+            13.632572625,
+            13.645724708
+          ],
+          "mean_reduction_fraction": 0.005830657675389039
+        },
+        "numeric_generation_seconds": {
+          "candidate": [
+            2.1707259591203183,
+            2.1201909161172807,
+            2.122198124881834,
+            2.1170933751855046,
+            2.128398458007723,
+            2.1335920840501785,
+            2.1205255000386387,
+            2.1305819579865783
+          ],
+          "control": [
+            2.1377036250196397,
+            2.1325132080819458,
+            2.152000749949366,
+            2.1285038751084358,
+            2.1376668750308454,
+            2.150535374879837,
+            2.127630583010614,
+            2.1360908749047667
+          ],
+          "mean_reduction_fraction": 0.0034695680125206296
+        },
+        "parse_seconds": {
+          "candidate": [
+            2.088250667,
+            2.07751975,
+            2.091511875,
+            2.071401417,
+            2.076715333,
+            2.076823959,
+            2.086087084,
+            2.086741209
+          ],
+          "control": [
+            2.093580833,
+            2.085033084,
+            2.099977792,
+            2.091520959,
+            1.988493875,
+            2.0917164169999998,
+            2.099630792,
+            2.092300458
+          ],
+          "mean_reduction_fraction": -0.0007689513595043884
+        },
+        "peak_footprint_bytes": {
+          "candidate": [
+            5880927440,
+            5880304824,
+            5881402576,
+            5881337040,
+            5880272056,
+            5882041528,
+            5880927440,
+            5884875984
+          ],
+          "control": [
+            5881697464,
+            5881517264,
+            5881566392,
+            5881746640,
+            5882107064,
+            5881681080,
+            5881681104,
+            5881648312
+          ],
+          "mean_reduction_fraction": 3.307781978245661e-05
+        },
+        "preparation_seconds": {
+          "candidate": [
+            3.030724790878594,
+            2.9648949168622494,
+            2.9824387500993907,
+            2.9738378329202533,
+            3.0054249588865787,
+            2.997618290828541,
+            2.963464458938688,
+            2.9711792080197483
+          ],
+          "control": [
+            3.0687300418503582,
+            3.0079072918742895,
+            3.071268582949415,
+            3.051655124872923,
+            2.959400916006416,
+            3.014309999998659,
+            3.0027495841495693,
+            3.003554082941264
+          ],
+          "mean_reduction_fraction": 0.011993279853650618
+        },
+        "source_cfg_seconds": {
+          "candidate": [
+            2.324109209002927,
+            2.323929833015427,
+            2.3222117498517036,
+            2.405757708940655,
+            2.4063391250092536,
+            2.4024554579518735,
+            2.322839083150029,
+            2.321507125161588
+          ],
+          "control": [
+            2.414789958158508,
+            2.3257405410986394,
+            2.4070988330058753,
+            2.3288943751249462,
+            2.342823666986078,
+            2.3200063330587,
+            2.3285459170583636,
+            2.341082917060703
+          ],
+          "mean_reduction_fraction": -0.0010721872109291652
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            18.667101374827325,
+            18.480287957936525,
+            18.470505459001288,
+            18.45010141702369,
+            18.682570167118683,
+            18.894096000120044,
+            18.477688249899074,
+            18.480746624991298
+          ],
+          "control": [
+            18.903356665978208,
+            18.48306845780462,
+            18.892643333878368,
+            18.687662583077326,
+            18.272743250010535,
+            18.686256958870217,
+            18.47763729095459,
+            18.47480299999006
+          ],
+          "mean_reduction_fraction": 0.0018476468833515947
+        }
+      },
+      "separate_cohorts": {
+        "primary": {
+          "artifact_seconds": {
+            "candidate": [
+              0.025978291,
+              0.025737542,
+              0.025997292,
+              0.025954084
+            ],
+            "control": [
+              0.025824042,
+              0.026277208,
+              0.025787292,
+              0.025771417
+            ],
+            "mean_reduction_fraction": -6.994021674278095e-05
+          },
+          "canonical_lowering_seconds": {
+            "candidate": [
+              0.09881612495519221,
+              0.09761833306401968,
+              0.09749375004321337,
+              0.0978752919472754
+            ],
+            "control": [
+              0.09991208300925791,
+              0.0986990830861032,
+              0.0995597920846194,
+              0.1000184160657227
+            ],
+            "mean_reduction_fraction": 0.016037279367636104
+          },
+          "catalog_seconds": {
+            "candidate": [
+              0.040437916,
+              0.037574125,
+              0.037963875,
+              0.0378445
+            ],
+            "control": [
+              0.037255625,
+              0.037252583,
+              0.038983667,
+              0.037008375
+            ],
+            "mean_reduction_fraction": -0.02206086700852672
+          },
+          "cleanup_including_compaction_seconds": {
+            "candidate": [
+              3.3826635000295937,
+              3.398365917149931,
+              3.37888295808807,
+              3.420043291989714
+            ],
+            "control": [
+              3.4852745831012726,
+              3.3920100000686944,
+              3.5730217499658465,
+              3.421678082784638
+            ],
+            "mean_reduction_fraction": 0.02105169238281368
+          },
+          "cleanup_seconds": {
+            "candidate": [
+              3.2129953750409186,
+              3.2292987080290914,
+              3.2094707919750363,
+              3.2457211250439286
+            ],
+            "control": [
+              3.3149359999224544,
+              3.2221285421401262,
+              3.4022492908407003,
+              3.2506077918224037
+            ],
+            "mean_reduction_fraction": 0.022171141948903905
+          },
+          "compaction_seconds": {
+            "candidate": [
+              0.16966812498867512,
+              0.16906720912083983,
+              0.1694121661130339,
+              0.17432216694578528
+            ],
+            "control": [
+              0.17033858317881823,
+              0.16988145792856812,
+              0.17077245912514627,
+              0.17107029096223414
+            ],
+            "mean_reduction_fraction": -0.0005965374138863222
+          },
+          "compiler_seconds": {
+            "candidate": [
+              18.385565084,
+              18.288116625,
+              18.300973625,
+              18.352779917
+            ],
+            "control": [
+              18.635660583,
+              18.349205917,
+              18.75989625,
+              18.406002167
+            ],
+            "mean_reduction_fraction": 0.011103454791350997
+          },
+          "encode_seconds": {
+            "candidate": [
+              0.009267667,
+              0.009224125,
+              0.009226208,
+              0.009220834
+            ],
+            "control": [
+              0.009251333,
+              0.009252875,
+              0.009308375,
+              0.009304125
+            ],
+            "mean_reduction_fraction": 0.004792289229960667
+          },
+          "frontend_seconds": {
+            "candidate": [
+              2.561574459,
+              2.544772875,
+              2.5480345,
+              2.524740667
+            ],
+            "control": [
+              2.5482782090000002,
+              2.559535375,
+              2.555156625,
+              2.546775125
+            ],
+            "mean_reduction_fraction": 0.0029993728538969533
+          },
+          "instructions": {
+            "candidate": [
+              270875859697,
+              270950255053,
+              270810343768,
+              270757541533
+            ],
+            "control": [
+              271049523261,
+              270904200736,
+              270987575038,
+              270998169011
+            ],
+            "mean_reduction_fraction": 0.0005032273582429303
+          },
+          "max_rss_bytes": {
+            "candidate": [
+              5911265280,
+              5910659072,
+              5911740416,
+              5911674880
+            ],
+            "control": [
+              5912182784,
+              5911986176,
+              5912051712,
+              5912215552
+            ],
+            "mean_reduction_fraction": 0.00013094210419106744
+          },
+          "native_seconds": {
+            "candidate": [
+              13.659419208,
+              13.592628792,
+              13.586728292,
+              13.682963292
+            ],
+            "control": [
+              13.920812792,
+              13.631227041,
+              14.030001292,
+              13.694948583
+            ],
+            "mean_reduction_fraction": 0.013663011100814249
+          },
+          "numeric_generation_seconds": {
+            "candidate": [
+              2.1707259591203183,
+              2.1201909161172807,
+              2.122198124881834,
+              2.1170933751855046
+            ],
+            "control": [
+              2.1377036250196397,
+              2.1325132080819458,
+              2.152000749949366,
+              2.1285038751084358
+            ],
+            "mean_reduction_fraction": 0.00239898854790499
+          },
+          "parse_seconds": {
+            "candidate": [
+              2.088250667,
+              2.07751975,
+              2.091511875,
+              2.071401417
+            ],
+            "control": [
+              2.093580833,
+              2.085033084,
+              2.099977792,
+              2.091520959
+            ],
+            "mean_reduction_fraction": 0.004949629789141041
+          },
+          "peak_footprint_bytes": {
+            "candidate": [
+              5880927440,
+              5880304824,
+              5881402576,
+              5881337040
+            ],
+            "control": [
+              5881697464,
+              5881517264,
+              5881566392,
+              5881746640
+            ],
+            "mean_reduction_fraction": 0.00010863821580786581
+          },
+          "preparation_seconds": {
+            "candidate": [
+              3.030724790878594,
+              2.9648949168622494,
+              2.9824387500993907,
+              2.9738378329202533
+            ],
+            "control": [
+              3.0687300418503582,
+              3.0079072918742895,
+              3.071268582949415,
+              3.051655124872923
+            ],
+            "mean_reduction_fraction": 0.020301119847103366
+          },
+          "source_cfg_seconds": {
+            "candidate": [
+              2.324109209002927,
+              2.323929833015427,
+              2.3222117498517036,
+              2.405757708940655
+            ],
+            "control": [
+              2.414789958158508,
+              2.3257405410986394,
+              2.4070988330058753,
+              2.3288943751249462
+            ],
+            "mean_reduction_fraction": 0.010606759364606866
+          },
+          "whole_process_seconds": {
+            "candidate": [
+              18.667101374827325,
+              18.480287957936525,
+              18.470505459001288,
+              18.45010141702369
+            ],
+            "control": [
+              18.903356665978208,
+              18.48306845780462,
+              18.892643333878368,
+              18.687662583077326
+            ],
+            "mean_reduction_fraction": 0.011988449002282131
+          }
+        },
+        "repeat": {
+          "artifact_seconds": {
+            "candidate": [
+              0.025499792,
+              0.025678583,
+              0.025722125,
+              0.025691292
+            ],
+            "control": [
+              0.024862584,
+              0.025763292,
+              0.025715833,
+              0.025720875
+            ],
+            "mean_reduction_fraction": -0.005185132290987271
+          },
+          "canonical_lowering_seconds": {
+            "candidate": [
+              0.09727350017055869,
+              0.097398417070508,
+              0.09791649994440377,
+              0.09718216699548066
+            ],
+            "control": [
+              0.09636358404532075,
+              0.098236583173275,
+              0.09891654085367918,
+              0.0978582079987973
+            ],
+            "mean_reduction_fraction": 0.004099220017027783
+          },
+          "catalog_seconds": {
+            "candidate": [
+              0.035454084,
+              0.036644542,
+              0.037682916,
+              0.037686792
+            ],
+            "control": [
+              0.034881375,
+              0.0373495,
+              0.035253792,
+              0.037303458
+            ],
+            "mean_reduction_fraction": -0.018511248764358168
+          },
+          "cleanup_including_compaction_seconds": {
+            "candidate": [
+              3.4560600421391428,
+              3.4768480411730707,
+              3.4022832091432065,
+              3.4276449580211192
+            ],
+            "control": [
+              3.421824124874547,
+              3.5068573330063373,
+              3.4243570000398904,
+              3.39876287500374
+            ],
+            "mean_reduction_fraction": -0.0008024343345918172
+          },
+          "cleanup_seconds": {
+            "candidate": [
+              3.2835786670912057,
+              3.3068989580497146,
+              3.233086291933432,
+              3.25392441614531
+            ],
+            "control": [
+              3.2549224158283323,
+              3.3330652080476284,
+              3.2542929160408676,
+              3.229932083049789
+            ],
+            "mean_reduction_fraction": -0.0004035820411745217
+          },
+          "compaction_seconds": {
+            "candidate": [
+              0.17248137504793704,
+              0.1699490831233561,
+              0.16919691720977426,
+              0.17372054187580943
+            ],
+            "control": [
+              0.16690170904621482,
+              0.17379212495870888,
+              0.17006408399902284,
+              0.16883079195395112
+            ],
+            "mean_reduction_fraction": -0.008474548229819634
+          },
+          "compiler_seconds": {
+            "candidate": [
+              18.430202542,
+              18.605012666,
+              18.256338459,
+              18.299756833
+            ],
+            "control": [
+              18.13426125,
+              18.455483667,
+              18.3756005,
+              18.358259541
+            ],
+            "mean_reduction_fraction": -0.003651014460531954
+          },
+          "encode_seconds": {
+            "candidate": [
+              0.009251209,
+              0.009169708,
+              0.009272292,
+              0.009309
+            ],
+            "control": [
+              0.0089395,
+              0.009217,
+              0.009270625,
+              0.009223541
+            ],
+            "mean_reduction_fraction": -0.009591722016729642
+          },
+          "frontend_seconds": {
+            "candidate": [
+              2.529867125,
+              2.630468958,
+              2.5418091670000003,
+              2.53433225
+            ],
+            "control": [
+              2.4790024170000002,
+              2.542208917,
+              2.572513291,
+              2.547362208
+            ],
+            "mean_reduction_fraction": -0.00940635541050594
+          },
+          "instructions": {
+            "candidate": [
+              270967738483,
+              270939364278,
+              270954859776,
+              271158421261
+            ],
+            "control": [
+              271085307993,
+              271069755112,
+              271123107900,
+              270867265622
+            ],
+            "mean_reduction_fraction": 0.00011534691266978925
+          },
+          "max_rss_bytes": {
+            "candidate": [
+              5910626304,
+              5912395776,
+              5911265280,
+              5915213824
+            ],
+            "control": [
+              5912592384,
+              5912166400,
+              5912150016,
+              5912133632
+            ],
+            "mean_reduction_fraction": -1.939833299036131e-05
+          },
+          "native_seconds": {
+            "candidate": [
+              13.752767167,
+              13.825574625,
+              13.555119167,
+              13.605354709
+            ],
+            "control": [
+              13.59745575,
+              13.748609625,
+              13.632572625,
+              13.645724708
+            ],
+            "mean_reduction_fraction": -0.0020952731405183833
+          },
+          "numeric_generation_seconds": {
+            "candidate": [
+              2.128398458007723,
+              2.1335920840501785,
+              2.1205255000386387,
+              2.1305819579865783
+            ],
+            "control": [
+              2.1376668750308454,
+              2.150535374879837,
+              2.127630583010614,
+              2.1360908749047667
+            ],
+            "mean_reduction_fraction": 0.004539996972542482
+          },
+          "parse_seconds": {
+            "candidate": [
+              2.076715333,
+              2.076823959,
+              2.086087084,
+              2.086741209
+            ],
+            "control": [
+              1.988493875,
+              2.0917164169999998,
+              2.099630792,
+              2.092300458
+            ],
+            "mean_reduction_fraction": -0.006555260536183827
+          },
+          "peak_footprint_bytes": {
+            "candidate": [
+              5880272056,
+              5882041528,
+              5880927440,
+              5884875984
+            ],
+            "control": [
+              5882107064,
+              5881681080,
+              5881681104,
+              5881648312
+            ],
+            "mean_reduction_fraction": -4.248068202361566e-05
+          },
+          "preparation_seconds": {
+            "candidate": [
+              3.0054249588865787,
+              2.997618290828541,
+              2.963464458938688,
+              2.9711792080197483
+            ],
+            "control": [
+              2.959400916006416,
+              3.014309999998659,
+              3.0027495841495693,
+              3.003554082941264
+            ],
+            "mean_reduction_fraction": 0.0035331898912775994
+          },
+          "source_cfg_seconds": {
+            "candidate": [
+              2.4063391250092536,
+              2.4024554579518735,
+              2.322839083150029,
+              2.321507125161588
+            ],
+            "control": [
+              2.342823666986078,
+              2.3200063330587,
+              2.3285459170583636,
+              2.341082917060703
+            ],
+            "mean_reduction_fraction": -0.012931421317082359
+          },
+          "whole_process_seconds": {
+            "candidate": [
+              18.682570167118683,
+              18.894096000120044,
+              18.477688249899074,
+              18.480746624991298
+            ],
+            "control": [
+              18.272743250010535,
+              18.686256958870217,
+              18.47763729095459,
+              18.47480299999006
+            ],
+            "mean_reduction_fraction": -0.008437943274900217
+          }
+        }
+      }
+    }
+  }
+}

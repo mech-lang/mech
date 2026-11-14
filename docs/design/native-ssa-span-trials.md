@@ -162,3 +162,9 @@ candidate source from the retained base and patch, checks the stored tests,
 complete IR, counters and output bytes, and recreates the compact result without
 compilers, benchmark execution, original scratch paths or network. Replay checks
 stored measurements; it does not rerun them.
+
+The subsequent [word-home trials](native-word-home-compile-profile.md) test the
+zero-seed hypothesis and direct home lookup. Neither establishes a useful saving,
+and both are restored. Their complete measurements include a separate indexed
+repeat, all output comparisons and both candidate source snapshots. The next
+investigation measures exact liveness-query construction and read-set allocation.

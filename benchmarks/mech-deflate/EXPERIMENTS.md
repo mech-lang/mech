@@ -814,3 +814,13 @@ variant. Source is restored; all output bytes match. The eighteenth
 contains both source patches, every raw measurement, 17/18 passing focused tests,
 24 paired complete IR cases, fourteen fixture pairs per variant, layout probes
 and pure offline replay. The retained nested-parser timing result stays current.
+
+The [word-home compiler trials](../../docs/design/native-word-home-compile-profile.md)
+reject deferred-zero initialization (eight observations) and indexed home lookup
+(sixteen observations including an independent repeat). Source CFG time changes
++0.015% and +0.107%, while instructions change -0.078% and -0.031%. Favorable
+original and mixed repeat results are preserved. Objects match; two diagnostic
+metadata counts differ only in the zero trial. Both sources are restored. All
+measurements, tested sources, focused tests, fourteen fixture pairs per trial,
+unused runtime-corpus preparation and offline replay are in the nineteenth
+[complete repository packet](evidence/compiler-profile-20261114/README.md).
