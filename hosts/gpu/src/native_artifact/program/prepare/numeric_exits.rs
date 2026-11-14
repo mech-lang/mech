@@ -201,40 +201,7 @@ fn live_query(
         }
         reads.push(used);
     }
-    // Only a value read in this selected graph can seed a liveness fact, and
-    // only sites in this graph can kill one. Avoid materializing the entire
-    // program's definitions for each cold continuation.
-    let mut read_values = vec![false; plan.values().len()];
-    for &value in reads.iter().flatten() {
-        if let Some(read) = read_values.get_mut(value as usize) {
-            *read = true;
-        }
-    }
-    let mut definitions = vec![Vec::<u32>::new(); next.len()];
-    for value in 0..plan.values().len() {
-        if wanted.is_some_and(|wanted| !wanted.contains(&(value as u32))) {
-            continue;
-        }
-        // Preserve the original lookup/validation order even for values that
-        // cannot be live. An empty read set must not suppress an old error.
-        let sites = facts.definition_sites(value as u32)?;
-        if !read_values[value] {
-            continue;
-        }
-        for definition in sites {
-            if let Some(site) = definition.site()
-                && let Some(&index) = ordinals.get(site as usize)
-                && index != usize::MAX
-            {
-                let killed = &mut definitions[index];
-                // The outer value loop is ordered. Repeated definition records
-                // keep the original set semantics without allocating a tree.
-                if killed.last() != Some(&(value as u32)) {
-                    killed.push(value as u32);
-                }
-            }
-        }
-    }
+    let definitions = definitions::selected(facts, &ordinals, &reads, wanted)?;
     for successors in &mut next {
         for successor in successors {
             *successor = ordinals[*successor];
@@ -242,6 +209,9 @@ fn live_query(
     }
     Ok(liveness::live_before_indexed(&next, &reads, &definitions, ordinals[start]))
 }
+
+#[path = "numeric_exit_definitions.rs"]
+mod definitions;
 
 #[path = "numeric_liveness.rs"]
 mod liveness;
