@@ -86,3 +86,6 @@ replay.py` reproduce the compact result byte-for-byte without a compiler.
 The full compilation remains about 50 seconds. Frontend work takes about
 8.3 seconds and native compilation about 39.5 seconds; the sub-10-second goal
 remains open.
+
+The later [bounded ownership-query change](native-owner-read-compile-profile.md)
+reduces full compilation to about 47 seconds, with the same generated program.
