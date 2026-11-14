@@ -161,6 +161,16 @@
       "sha256": "d2f1e00174ad0437f5d7b2efe7018d3e5549bebfcf3201a91553d69a505f98d3",
       "source_revision": "414693ce793b1ea1e99a6dcac34cb2533d9c856c",
       "summary": "benchmarks/mech-deflate/native-profile/exit-definitions-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-nested-parser-20261114.tar.gz",
+      "bytes": 16998866,
+      "decision": "Retained: nested existing base predictions; unchanged grammar/accounting, exact cache owner and identical program bytes.",
+      "files": 1156,
+      "receipt": "benchmarks/mech-deflate/native-profile/nested-parser-compile-apple-m3-20261114.archive.json",
+      "sha256": "24f8e8cfcfe0c45b69099921252091c510482ee0b60162ccbaec8ecea1c919a2",
+      "source_revision": "ee77e992e12f1880901c2e6b0745e23fcf7f1fe6",
+      "summary": "benchmarks/mech-deflate/native-profile/nested-parser-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
