@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-compact-values-20261114.tar.gz",
+  "bytes": 29686320,
+  "evidence_files": 907,
+  "files": 907,
+  "format": 1,
+  "manifest_sha256": "a00cda12f11fa2218b7d8f07560ee33e26a224ed55af85570b344cf8d7b9d6ab",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "f58cfa7ef2d19d8fc53ec45623044a7d3d871c1ff3340b569a9a0c8cd998f171",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compact-values-20261114.tar.gz",
+  "sha256": "494832ac6beca385ced77297abb3b3d0814f0270368310db9a697dda0c37d0da",
+  "source_revision": "57376165608ec32729ff99a04b601d52d8f64950",
+  "uncompressed_bytes": 214288906,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "494832ac6beca385ced77297abb3b3d0814f0270368310db9a697dda0c37d0da",
+    "source_revision": "57376165608ec32729ff99a04b601d52d8f64950",
+    "verified_bytes": 214288906,
+    "verified_files": 907
+  }
+}
