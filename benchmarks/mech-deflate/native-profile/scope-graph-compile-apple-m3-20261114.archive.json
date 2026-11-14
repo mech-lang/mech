@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-scope-graph-20261114.tar.gz",
+  "bytes": 13919547,
+  "evidence_files": 472,
+  "files": 472,
+  "format": 1,
+  "manifest_sha256": "2b1e68a079a2482ecad7d52211d7eefbb6dd0ae72efaee06fbab8daa2d04abdd",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "6b57c1dc47c22182b72d95a093ea2e72b1a1eb89aafff906c23d91a1535049b0",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-scope-graph-20261114.tar.gz",
+  "sha256": "4acaf0934fb3df840744ab49453d6b2f838528895a177b2c8c962142057a355a",
+  "source_revision": "7feb94669905d3413d7a79fb9f8b89b851027226",
+  "uncompressed_bytes": 98101297,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "4acaf0934fb3df840744ab49453d6b2f838528895a177b2c8c962142057a355a",
+    "source_revision": "7feb94669905d3413d7a79fb9f8b89b851027226",
+    "verified_bytes": 98101297,
+    "verified_files": 472
+  }
+}
