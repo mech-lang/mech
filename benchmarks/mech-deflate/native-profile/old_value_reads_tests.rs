@@ -7,23 +7,29 @@ mod native_artifact {
     };
 }
 #[allow(dead_code)]
-struct NativeProgramFacts<'p>(mech_engine::native_artifact::NativeProgramFacts<'p>);
+struct NativeProgramFacts<'p> {
+    inner: mech_engine::native_artifact::NativeProgramFacts<'p>,
+    owner_reads: std::cell::RefCell<queries::ReadCache>,
+}
 #[allow(dead_code)]
 impl NativeProgramFacts<'_> {
     fn plan(&self) -> &native_artifact::NativeProgramArtifactPlan {
-        self.0.plan()
+        self.inner.plan()
     }
     fn read_roles(
         &self,
         value: native_artifact::NativeMatchValue,
     ) -> Result<&[NativeProgramReadRole], &'static str> {
-        self.0.read_roles(value)
+        self.inner.read_roles(value)
     }
     fn definition_sites(&self, value: u32) -> Result<&[NativeProgramDefinition], &'static str> {
-        self.0.definition_sites(value)
+        self.inner.definition_sites(value)
     }
     fn successors(&self, site: u32) -> Result<[Option<u32>; 2], &'static str> {
-        self.0.successors(site)
+        self.inner.successors(site)
+    }
+    fn predecessors(&self, site: u32) -> Result<&[u32], &'static str> {
+        self.inner.predecessors(site)
     }
 }
 #[allow(dead_code)]

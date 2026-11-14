@@ -85,6 +85,8 @@ pub struct NativeProgramFacts<'p> {
     graph: OnceCell<Result<Graph, &'static str>>,
     reads: OnceCell<Result<Vec<Vec<NativeProgramReadRole>>, &'static str>>,
     definitions: OnceCell<Result<Vec<Vec<NativeProgramDefinition>>, &'static str>>,
+    #[cfg(feature = "sequence_buffers")]
+    owner_reads: std::cell::RefCell<old_value_reads::ReadCache>,
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
     fusion_reads: OnceCell<Result<Vec<Vec<Read>>, &'static str>>,
     #[cfg(any(
@@ -103,6 +105,8 @@ impl Plan {
             graph: OnceCell::new(),
             reads: OnceCell::new(),
             definitions: OnceCell::new(),
+            #[cfg(feature = "sequence_buffers")]
+            owner_reads: std::cell::RefCell::new(old_value_reads::ReadCache::default()),
             #[cfg(any(feature = "pure_text", feature = "map_ops"))]
             fusion_reads: OnceCell::new(),
             #[cfg(any(
