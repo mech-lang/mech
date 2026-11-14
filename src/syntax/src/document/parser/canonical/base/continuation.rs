@@ -56,8 +56,7 @@ enum Frame {
 pub(crate) struct FrameStorage {
     frames: Vec<Frame>,
     scanner: Option<Box<Scanner>>,
-    pub(in super::super) prediction:
-        Option<Box<[Option<super::super::prediction::Plan>; super::NON_FIXED_RULES.len()]>>,
+    prediction: Option<Box<[Option<super::super::prediction::Plan>; super::NON_FIXED_RULES.len()]>>,
 }
 enum Scanner {
     Literal(LiteralScan<'static>),
@@ -241,16 +240,6 @@ impl Continuation {
         allowance: &mut u64,
     ) -> Progress {
         if let Some(rule) = self.initial.take() {
-            if final_input
-                && let Some(index) = non_fixed_index(rule)
-                && let Some((result, work)) =
-                    super::super::prediction::predict_base(parser, rule, index, *allowance)
-            {
-                *allowance -= work;
-                self.work += work;
-                self.result = result;
-                return Progress::Complete(result);
-            }
             self.storage = core::mem::take(&mut parser.state.base_storage);
             self.active = true;
             debug_assert!(self.storage.frames.is_empty());
@@ -267,6 +256,25 @@ impl Continuation {
             if *allowance == 0 {
                 self.push(frame);
                 return Progress::NeedsProcessing;
+            }
+            // Predict before charging this call frame: summaries include its
+            // original work, including every failed nested alternative. The
+            // cache belongs to this active continuation until storage returns.
+            if let Frame::Call(rule) = &frame
+                && final_input
+                && let Some(index) = non_fixed_index(*rule)
+                && let Some((result, work)) = super::super::prediction::predict_base(
+                    parser,
+                    *rule,
+                    index,
+                    *allowance,
+                    &mut self.storage.prediction,
+                )
+            {
+                *allowance -= work;
+                self.work += work;
+                self.result = result;
+                continue;
             }
             if !matches!(frame, Frame::Literal(..) | Frame::Grapheme(..)) {
                 *allowance -= 1;
@@ -604,6 +612,25 @@ mod tests {
         allowance_size: u64,
         fuel: u64,
     ) -> (bool, TextSize, String, crate::document::ParseStats, u64) {
+        run_with_prediction(
+            rule,
+            text,
+            chunks,
+            allowance_size,
+            fuel,
+            false,
+            allowance_size,
+        )
+    }
+    fn run_with_prediction(
+        rule: RuleId,
+        text: &str,
+        chunks: &[&str],
+        allowance_size: u64,
+        fuel: u64,
+        reference: bool,
+        final_allowance: u64,
+    ) -> (bool, TextSize, String, crate::document::ParseStats, u64) {
         let mut source = TextSnapshot::new(DocumentId(826), Revision(0), "").unwrap();
         let mut ids = IdGenerator::new();
         let mut config = ParseConfig::default();
@@ -614,6 +641,7 @@ mod tests {
             config,
             &mut ids,
         );
+        parser.state.disable_rejections_for_test = reference;
         let wrapper = parser.start();
         let mut state = parser.suspend();
         let mut continuation = Continuation::new(rule);
@@ -644,9 +672,9 @@ mod tests {
         let mut parser = Parser::resume(&source, state, &mut ids);
         let result = loop {
             let before = continuation.work;
-            let mut allowance = allowance_size;
+            let mut allowance = final_allowance;
             let progress = continuation.advance(&mut parser, true, &mut allowance);
-            assert!(continuation.work - before <= allowance_size);
+            assert!(continuation.work - before <= final_allowance);
             match progress {
                 Progress::Complete(result) => break result,
                 Progress::NeedInput | Progress::Limited => panic!("final input failed to drain"),
@@ -830,6 +858,57 @@ mod tests {
                 }
                 previous = Some(observed.4);
             }
+        }
+    }
+
+    #[test]
+    fn nested_predictions_survive_input_sealing_and_suspended_storage() {
+        for (rule, text) in [
+            (rules::IDENTIFIER, "alphaβe\u{301}123+tail!"),
+            (rules::IDENTIFIER, "alphabet123__more+tail!"),
+            (rules::TEXT, "letters 12_34,!? é👩\u{200d}💻"),
+            (rules::DIGIT_SEQUENCE, "12_34_56x"),
+            (rules::WHITESPACE0, " \r\n\t x"),
+            (rules::ESCAPED_CHAR, "\\u{0001f600}x"),
+        ] {
+            for split in text.char_indices().map(|(at, _)| at).chain([text.len()]) {
+                let chunks = [&text[..split], &text[split..]];
+                for fuel in [0, 1, 4, 16, u64::MAX] {
+                    assert_eq!(
+                        run_with_prediction(rule, text, &chunks, 1, fuel, false, 8192),
+                        run_with_prediction(rule, text, &chunks, 1, fuel, true, 8192),
+                        "rule {rule:?}, text {text:?}, split {split}, fuel {fuel}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn prediction_cache_returns_from_nested_calls_to_the_same_parser() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "alpha123 ").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let _wrapper = parser.start();
+        let mut continuation = Continuation::new(rules::IDENTIFIER);
+        let mut allowance = u64::MAX;
+        assert!(matches!(
+            continuation.advance(&mut parser, true, &mut allowance),
+            Progress::Complete(true)
+        ));
+        assert!(!continuation.active);
+        assert!(continuation.storage.prediction.is_none());
+        let cache = parser.state.base_storage.prediction.as_ref().unwrap();
+        for rule in [rules::IDENTIFIER, rules::ALPHA, rules::DIGIT] {
+            assert!(
+                cache[non_fixed_index(rule).unwrap()].is_some(),
+                "uncached nested rule {rule:?}"
+            );
         }
     }
 }
