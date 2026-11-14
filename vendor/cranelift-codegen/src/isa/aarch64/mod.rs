@@ -9,8 +9,8 @@ use crate::isa::{Builder as IsaBuilder, FunctionAlignment, IsaFlagsHashKey, Targ
 #[cfg(feature = "unwind")]
 use crate::machinst::CompiledCode;
 use crate::machinst::{
-    CompiledCodeStencil, MachInst, MachTextSectionBuilder, Reg, SigSet, TextSectionBuilder, VCode,
-    compile,
+    CompiledCodeStencil, MachInst, MachInstLabelUse, MachTextSectionBuilder, Reg, SigSet,
+    TextSectionBuilder, VCode, compile,
 };
 use crate::result::CodegenResult;
 use crate::settings as shared_settings;
@@ -18,9 +18,7 @@ use alloc::string::String;
 use alloc::{boxed::Box, vec::Vec};
 use core::fmt;
 use cranelift_control::ControlPlane;
-#[cfg(feature = "unwind")]
-use target_lexicon::OperatingSystem;
-use target_lexicon::{Aarch64Architecture, Architecture, Triple};
+use target_lexicon::{Aarch64Architecture, Architecture, OperatingSystem, Triple};
 
 // New backend:
 mod abi;
@@ -76,7 +74,22 @@ impl TargetIsa for AArch64Backend {
     ) -> CodegenResult<CompiledCodeStencil> {
         let (vcode, regalloc_result) = self.compile_vcode(func, domtree, ctrl_plane)?;
 
-        let emit_result = vcode.emit(&regalloc_result, want_disasm, &self.flags, ctrl_plane);
+        // The Apple AArch64 frame and return (including any authentication)
+        // are function-wide. Its epilogue emits no separate unwind records.
+        let cold_epilogue_branch_range = (func.share_cold_epilogues
+            && func.signature.call_conv == crate::isa::CallConv::AppleAarch64
+            && matches!(
+                self.triple.operating_system,
+                OperatingSystem::Darwin(_) | OperatingSystem::MacOSX { .. }
+            ))
+        .then(|| inst::LabelUse::Branch26.max_neg_range());
+        let emit_result = vcode.emit_with_cold_epilogue_sharing(
+            &regalloc_result,
+            want_disasm,
+            &self.flags,
+            ctrl_plane,
+            cold_epilogue_branch_range,
+        );
         let value_labels_ranges = emit_result.value_labels_ranges;
         let buffer = emit_result.buffer;
 
