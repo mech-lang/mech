@@ -26,6 +26,9 @@ pub mod inst;
 mod lower;
 pub mod settings;
 
+#[cfg(all(test, feature = "unwind"))]
+mod cold_epilogues_tests;
+
 use self::inst::EmitInfo;
 
 /// An AArch64 backend.
