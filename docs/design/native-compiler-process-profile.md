@@ -1,8 +1,13 @@
 # Current compiler pipeline versus libdeflate and Roc
 
-The current level-12 Mech program takes **36.52–37.14 seconds per complete
-source-to-Object process**, compared with **0.41–0.48 seconds for libdeflate** and
-**2.35–2.50 seconds for Roc** on the same Apple M3 Air. Mech's largest problem
+The latest qualified level-12 Mech program takes **30.24–30.66 seconds per complete
+source-to-Object process**, after the [lexical index](native-lexical-index-compile-profile.md)
+and [reusable visitation storage](native-thread-visits-compile-profile.md) changes.
+The measured peer builds take **0.41–0.48 seconds for libdeflate** and
+**2.35–2.50 seconds for Roc** on the same Apple M3 Air. The fresh latest Mech
+cohort uses 54 flags; the original profile below retains its 52-flag pins and
+**36.52–37.14-second** process observations. These configurations are not pooled.
+Mech's largest problem
 is the amount of semantic, analysis and temporary IR work before final machine
 code emission. A faster parser is necessary, but cannot by itself reach the
 sub-ten-second full-compilation goal.
@@ -174,3 +179,11 @@ implements the first target on the updated PR 973 branch. It reduces complete
 compiler time 12.6% to 31.49–31.53 seconds, preserving all emitted bytes between
 matched subjects. The observations and CPU windows above retain their original
 52-flag source/configuration pins.
+
+The later [ownership-join SSA trial](native-ssa-forwarding-compile-trial.md)
+reduces compile time but changes generated code and repeatedly slows some
+compressor cases; it is reverted. The retained visitation change reduces cleanup
+18.4% and compiler time 3.85% while preserving every emitted byte. Both newer
+cohorts use the same complete 54-flag runtime configuration for their controls
+and candidates. Their archives are locally verified and replayed; public export
+authorization is pending.

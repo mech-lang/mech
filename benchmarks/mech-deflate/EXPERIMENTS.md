@@ -59,6 +59,14 @@ acceptance decisions. Retain contrary cohorts and preserve every rejected attemp
 
 ## Historical packets
 
+The 2026-11-14 [SSA construction trial](../../docs/design/native-ssa-forwarding-compile-trial.md)
+is rejected after repeated compressor runtime slowdowns despite an 8.13% compiler
+saving. The [visitation-storage qualification](../../docs/design/native-thread-visits-compile-profile.md)
+is retained: 3.85% compiler and 18.41% cleanup savings with all emitted bytes
+identical, while peak RSS is higher. Both complete hash-addressed packets are
+archived locally, verified and replayed byte-identically. Their compact receipts
+record that public evidence export awaits authorization; raw data is outside Git.
+
 Paths below name reports **inside the external bundle**. The full manifest also
 covers early implementation witnesses, profiling, failed attempts and non-numbered
 packets. Each report hash is SHA-256; its surrounding directory holds the complete
