@@ -35,18 +35,23 @@ pub(super) fn derive(
         return Proof::default();
     };
     let mut facts = Proof::default();
-    for (iteration, control) in program.metadata().plan.iterations().iter().enumerate() {
-        let NativeControlLoop::Tail(tail) = control else {
+    // Group only this proof's sites, keeping their original relative order and
+    // the old ascending iteration order. Unrelated program loops cannot have
+    // their header in this proof and need no empty scope materialization.
+    let mut by_iteration = std::collections::BTreeMap::<u32, Vec<usize>>::new();
+    for &site in &numeric.sites {
+        if let Some(iteration) = code.blocks()[site].iteration() {
+            by_iteration.entry(iteration).or_default().push(site);
+        }
+    }
+    for (iteration, sites) in by_iteration {
+        let Some(NativeControlLoop::Tail(tail)) =
+            program.metadata().plan.iterations().get(iteration as usize)
+        else {
             continue;
         };
         // Use exact canonical iteration ownership. A nested loop has a fresh
         // scope, even when emitted as part of its parent's larger native phase.
-        let sites = numeric
-            .sites
-            .iter()
-            .copied()
-            .filter(|&site| code.blocks()[site].iteration() == Some(iteration as u32))
-            .collect::<Vec<_>>();
         if !sites.contains(&(tail.header() as usize)) {
             continue;
         }

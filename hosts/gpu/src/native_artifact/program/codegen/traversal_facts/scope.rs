@@ -56,14 +56,15 @@ impl Scope {
         // A continuation reachable from an omitted child/operation must not
         // borrow the facts of a different predecessor. Prune that continuation
         // and its descendants, even when another supported arm reaches it.
-        for (site, visit) in program.metadata().visits.iter().enumerate() {
-            if !kept.contains(&site) {
-                pending.extend(visit.successors().into_iter().flatten().filter_map(|edge| {
-                    (edge as usize != self.header && kept.contains(&(edge as usize)))
-                        .then_some(edge as usize)
-                }));
-            }
-        }
+        // The owner supplies only reverse topology. Membership is checked
+        // against this fresh kept set, and descendant pruning is unchanged.
+        // Seed order/duplicates cannot affect this monotone removal: every
+        // retained site's successor shape was checked in discovery above.
+        pending.extend(
+            program
+                .visit_predecessors()
+                .outside_targets(&kept, self.header),
+        );
         while let Some(site) = pending.pop() {
             if site == self.header || !kept.remove(&site) {
                 continue;
