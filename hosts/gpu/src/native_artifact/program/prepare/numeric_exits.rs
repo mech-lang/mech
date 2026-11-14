@@ -4,6 +4,9 @@
 use super::*;
 use crate::native_artifact::program::prepare::numeric_plan::{Exit, ExitKind};
 
+#[path = "numeric_reachability.rs"]
+mod reachability;
+
 fn identity(
     facts: &NativeProgramFacts<'_>,
     mut value: mech_engine::native_artifact::NativeMatchValue,
@@ -14,29 +17,28 @@ fn identity(
     value.get()
 }
 
-fn reaches(
+fn forest_reachability(
     plan: &Plan,
     forest: &super::super::numeric_phase::Forest,
-    target: usize,
-    avoid: Option<(usize, usize)>,
-) -> bool {
-    let mut pending = vec![forest.loops[0].header];
-    let mut seen = BTreeSet::new();
-    while let Some(site) = pending.pop() {
-        if site == target {
-            return true;
-        }
-        if !seen.insert(site) || site == forest.loops[0].latch {
+) -> reachability::Reachability {
+    let mut successors = vec![Vec::new(); plan.blocks().len()];
+    let root = &forest.loops[0];
+    for site in forest
+        .sites
+        .iter()
+        .copied()
+        .chain((!forest.sites.contains(&root.header)).then_some(root.header))
+    {
+        if site == root.latch {
             continue;
         }
-        pending.extend(
-            forest
-                .successors(plan, site)
-                .into_iter()
-                .filter(|&next| forest.sites.contains(&next) && avoid != Some((site, next))),
-        );
+        successors[site] = forest
+            .successors(plan, site)
+            .into_iter()
+            .filter(|next| forest.sites.contains(next))
+            .collect();
     }
-    false
+    reachability::Reachability::new(successors, root.header, root.latch)
 }
 
 fn known_predicates(
@@ -44,8 +46,9 @@ fn known_predicates(
     facts: &NativeProgramFacts<'_>,
     forest: &super::super::numeric_phase::Forest,
     from: usize,
+    reachability: &mut reachability::Reachability,
 ) -> BTreeMap<u32, bool> {
-    required_predicates(plan, facts, forest, from).0
+    required_predicates(plan, facts, forest, from, reachability).0
 }
 
 fn required_predicates(
@@ -53,6 +56,7 @@ fn required_predicates(
     facts: &NativeProgramFacts<'_>,
     forest: &super::super::numeric_phase::Forest,
     from: usize,
+    reachability: &mut reachability::Reachability,
 ) -> (BTreeMap<u32, bool>, bool) {
     let mut known = BTreeMap::new();
     let mut consistent = true;
@@ -81,7 +85,7 @@ fn required_predicates(
                 continue;
             };
             for (edge, truth) in [(no, false), (yes, true)] {
-                if !reaches(plan, forest, from, Some((site, edge as usize))) {
+                if !reachability.reaches(from, Some((site, edge as usize))) {
                     if known
                         .insert(root, truth)
                         .is_some_and(|previous| previous != truth)
@@ -105,9 +109,12 @@ pub(super) fn retains_native_backedge(
     forest: &super::super::numeric_phase::Forest,
 ) -> bool {
     let latch = tail.latch() as usize;
-    forest.sites.contains(&latch)
-        && reaches(plan, forest, latch, None)
-        && required_predicates(plan, facts, forest, latch).1
+    if !forest.sites.contains(&latch) {
+        return false;
+    }
+    let mut reachability = forest_reachability(plan, forest);
+    reachability.reaches(latch, None)
+        && required_predicates(plan, facts, forest, latch, &mut reachability).1
 }
 
 fn live_before(
@@ -245,6 +252,7 @@ pub(super) fn derive(
             ));
         }
     }
+    let mut reachability = None;
     for (to, from, kind) in boundaries {
         let from = if let Some(from) = from {
             from
@@ -254,10 +262,14 @@ pub(super) fn derive(
             };
             *from as usize
         };
-        if !forest.sites.contains(&from) || !reaches(plan, forest, from, None) {
+        if !forest.sites.contains(&from) {
             return Err("cold predecessor is outside the native traversal");
         }
-        let known = known_predicates(plan, provenance.facts, forest, from);
+        let reachability = reachability.get_or_insert_with(|| forest_reachability(plan, forest));
+        if !reachability.reaches(from, None) {
+            return Err("cold predecessor is outside the native traversal");
+        }
+        let known = known_predicates(plan, provenance.facts, forest, from, reachability);
         let live = live_before(plan, tail, provenance.facts, to, &known)?;
         let mut export = Exit {
             from,
