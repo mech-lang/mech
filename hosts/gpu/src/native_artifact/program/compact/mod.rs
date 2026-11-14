@@ -25,6 +25,7 @@ pub(in crate::native_artifact) use phases::{
 };
 mod map_index;
 mod maps;
+mod object;
 mod private_chains;
 mod recipes;
 mod strings;
@@ -35,6 +36,7 @@ mod word_collections;
 mod word_packs;
 
 pub(in crate::native_artifact) use emit::define;
+pub(super) use object::PreparedObject;
 
 use crate::native_artifact::NativeCompileError;
 use mech_engine::native_artifact::NativeProgramArtifactPlan;
