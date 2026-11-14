@@ -91,6 +91,16 @@
       "sha256": "494832ac6beca385ced77297abb3b3d0814f0270368310db9a697dda0c37d0da",
       "source_revision": "57376165608ec32729ff99a04b601d52d8f64950",
       "summary": "benchmarks/mech-deflate/native-profile/compact-values-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compiler-lto-20261114.tar.gz",
+      "bytes": 18716069,
+      "decision": "Retained: opt-in optimized compiler build; identical program bytes; slower frontend. Includes two discarded construction trials.",
+      "files": 514,
+      "receipt": "benchmarks/mech-deflate/native-profile/compiler-lto-compile-apple-m3-20261114.archive.json",
+      "sha256": "b25e5298f61e3db9aa061b54652bad3559cc562ba0577317b1c747c6dd00dd6f",
+      "source_revision": "7306a0097a2a8e52bf263bb9d600a5e4ed8b417d",
+      "summary": "benchmarks/mech-deflate/native-profile/compiler-lto-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
