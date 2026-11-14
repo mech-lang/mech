@@ -10,14 +10,14 @@ compiler bootstrap and source/tool downloads.
 | --- | ---: | ---: | --- |
 | libdeflate 1.26 | 5,485 | 0.557 s | Encoder translation unit to Object, Clang O2 |
 | Roc, pinned reference | 6,187 | 2.249 s | Fixed level 12 with runtime input, `--no-cache --opt=speed --jobs=1`, static archive |
-| Mech, latest qualified flags | 1,930 | 39.055–40.234 s | Two fresh source-to-Object processes, compact compiler |
+| Mech, latest qualified flags | 1,930 | 37.355–39.411 s | Two fresh source-to-Object processes, compact compiler |
 
-The Mech compiler's own phase totals are **38.903–39.112 seconds** after the
-[inline dimension-remapping change](native-frontend-affine-compile-profile.md),
-which reduces frontend time by 21.6% and complete compilation by 4.5% in its
-matched cohort. A subsequent PR merge retains byte-identical output in a
-separate integration check: **39.958 seconds** within compiler timers,
-**41.124 seconds** for the process. The preceding
+The Mech compiler's own phase totals are **37.113–38.223 seconds** after the
+[numeric forest reachability change](native-numeric-reachability-compile-profile.md),
+which reduces preparation by 17.1% and complete compilation by 4.6% in its
+matched cohort. The preceding
+[inline dimension-remapping change](native-frontend-affine-compile-profile.md)
+reduces frontend time by 21.6% and complete compilation by 4.5%. The preceding
 [scoped numeric-facts change](native-numeric-facts-compile-profile.md)
 reduces native compilation by 5.1%. The preceding
 [sparse SSA lookup change](native-ssa-sparse-compile-profile.md) reduces
@@ -37,7 +37,7 @@ with different implementation scopes and optimization strategies.
 | --- | --- |
 | Clang | Frontend 55 ms; LLVM optimization 197 ms and code-generation passes 234 ms within a 432 ms backend |
 | Roc | Type checking 65 ms, including 6 ms parsing; shared lowering/evaluation 333 ms; specialization 1,235 ms, including 1,164 ms LIR passes; LLVM optimize/emit 642 ms |
-| Mech | Parsing 2.46–2.48 s; frontend 6.83 s; native compilation 29.53–29.72 s, including 10.66–10.71 s preparation, 4.68–4.71 s numeric generation, 2.51–2.52 s source CFG construction and 4.98–5.05 s cleanup |
+| Mech | Parsing 2.45–2.68 s; frontend 6.69–7.46 s; native compilation 27.89–27.99 s, including 8.93–8.96 s preparation, 4.69–4.70 s numeric generation, 2.46–2.54 s source CFG construction and 5.01–5.08 s cleanup |
 
 Nested entries in this table must not be added twice. Clang's instrumented
 process takes 0.549 seconds; Roc's takes 2.313 seconds. Profiled and unprofiled
@@ -49,7 +49,7 @@ reachability and SSA work before machine-code emission.
 The emitted `__text` sizes are **41,112 bytes for C**, **57,696 for Roc** and
 **1,101,332 for the latest Mech configuration**. Maximum resident memory in the
 clean process measurements is **75,038,720 bytes**, **445,988,864 bytes** and
-**7,758,938,112–7,760,216,064 bytes**, respectively. Mech's expanded native work and retained
+**7,668,465,664–7,707,688,960 bytes**, respectively. Mech's expanded native work and retained
 compiler data deserve attention; fewer source lines do not imply less compiler
 work. Runtime speed comparisons retain their own linked-worker qualification.
 
@@ -77,8 +77,8 @@ locally with Zig 0.17.0; its SHA-256 is
 The static archive excludes the Rust host and allocator inputs used by the linked
 runtime benchmark. Compiler build time is recorded outside program timings.
 
-The [current Mech result](../../benchmarks/mech-deflate/native-profile/frontend-affine-compile-apple-m3-20261113.json)
-and [receipt](../../benchmarks/mech-deflate/native-profile/frontend-affine-compile-apple-m3-20261113.archive.json)
+The [current Mech result](../../benchmarks/mech-deflate/native-profile/numeric-reachability-compile-apple-m3-20261113.json)
+and [receipt](../../benchmarks/mech-deflate/native-profile/numeric-reachability-compile-apple-m3-20261113.archive.json)
 pin its latest qualified cohort. The [peer compact result](../../benchmarks/mech-deflate/native-profile/parser-peer-compile-apple-m3-20261113.json)
 and [receipt](../../benchmarks/mech-deflate/native-profile/parser-peer-compile-apple-m3-20261113.archive.json)
 pin the commands, sources, traces, phase reports, samples and offline replay.
