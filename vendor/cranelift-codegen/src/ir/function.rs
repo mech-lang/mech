@@ -179,6 +179,10 @@ pub struct FunctionStencil {
     /// Layout of blocks and instructions in the function body.
     pub layout: Layout,
 
+    /// Optional edge to place contiguously during final machine-code emission.
+    /// Lowering and register allocation continue to use their original order.
+    pub preferred_fallthrough: Option<(Block, Block)>,
+
     /// Source locations.
     ///
     /// Track the original source location for each instruction. The source locations are not
@@ -217,6 +221,7 @@ impl FunctionStencil {
         self.global_values.clear();
         self.dfg.clear();
         self.layout.clear();
+        self.preferred_fallthrough = None;
         self.srclocs.clear();
         self.debug_tags.clear();
         self.stack_limit = None;
@@ -409,6 +414,7 @@ impl Function {
                 global_values: PrimaryMap::new(),
                 dfg: DataFlowGraph::new(),
                 layout: Layout::new(),
+                preferred_fallthrough: None,
                 srclocs: SecondaryMap::new(),
                 stack_limit: None,
                 debug_tags: DebugTags::default(),

@@ -559,6 +559,45 @@ impl<I: VCodeInst> VCodeBuilder<I> {
         }
     }
 
+    fn rewrite_branch_successors(&mut self, vregs: &VRegAllocator<I>) {
+        for (index, range) in self.vcode.block_ranges.iter() {
+            let block = BlockIndex::new(index);
+            if range.len() < 2 || self.vcode.block_succs(block).len() != 2 {
+                continue;
+            }
+            let tail = range.end - 2..range.end;
+            for &target in self.vcode.block_succs(block) {
+                if target == block
+                    || target == self.vcode.entry
+                    || self.vcode.block_order.is_indirect_branch_target(target)
+                    || self.vcode.block_preds(target) != [block]
+                {
+                    continue;
+                }
+                let arms = self.vcode.block_ranges.get(target.index());
+                let source = self.vcode.srclocs[tail.start];
+                let count = self.vcode.srclocs[arms.clone()]
+                    .iter()
+                    .take(2)
+                    .take_while(|&&loc| loc == source)
+                    .count();
+                let canonical = |reg: Reg| Reg::from(vregs.resolve_vreg_alias(reg.into()));
+                if let Some(([first, branch], offset, replacement)) =
+                    I::preallocation_rewrite_branch(
+                        &self.vcode.insts[tail.clone()],
+                        &self.vcode.insts[arms.start..arms.start + count],
+                        canonical,
+                    )
+                {
+                    self.vcode.insts[tail.start] = first;
+                    self.vcode.insts[tail.start + 1] = branch;
+                    self.vcode.insts[arms.start + offset] = replacement;
+                    break;
+                }
+            }
+        }
+    }
+
     /// Build the final VCode.
     pub fn build(mut self, mut vregs: VRegAllocator<I>, flags: &settings::Flags) -> VCode<I> {
         self.vcode.vreg_types = take(&mut vregs.vreg_types);
@@ -589,9 +628,16 @@ impl<I: VCodeInst> VCodeBuilder<I> {
                 }
             }
         }
+        self.compute_preds_from_succs();
+        if I::preallocation_branch_rewrite_enabled(flags)
+            && self.vcode.debug_value_labels.is_empty()
+            && self.vcode.user_stack_maps.is_empty()
+            && self.vcode.debug_tags.is_empty()
+        {
+            self.rewrite_branch_successors(&vregs);
+        }
         self.collect_operands(&vregs);
 
-        self.compute_preds_from_succs();
         self.vcode.debug_value_labels.sort_unstable();
 
         // At this point, nothing in the vcode should mention any
@@ -749,6 +795,40 @@ impl<I: VCodeInst> VCode<I> {
         (clobbered_regs, function_calls)
     }
 
+    fn arrange_fallthrough(&self, order: &mut SmallVec<[BlockIndex; 16]>) -> Option<()> {
+        let (from, to) = self.block_order.preferred_fallthrough()?;
+        let from_index = order.iter().position(|&block| block == from)?;
+        let to_index = order.iter().position(|&block| block == to)?;
+        if to_index == 0 || from_index <= to_index || self.block_succs(from).len() != 2 {
+            return None;
+        }
+        let mut targets = self.block_succs(from).iter().copied().filter(|&edge| {
+            edge == to || (self.block_succs(edge) == [to] && self.block_preds(edge) == [from])
+        });
+        let edge = targets.next()?;
+        if targets.next().is_some() || !order.contains(&edge) {
+            return None;
+        }
+        // Moving a run of unconditional joins keeps their existing physical
+        // fallthrough. A critical edge moves with its actual allocation edits.
+        let mut first = from_index;
+        while first > to_index + 1 {
+            let prior = order[first - 1];
+            if prior == edge || self.block_succs(prior) != [order[first]] {
+                break;
+            }
+            first -= 1;
+        }
+        let mut run = order[first..=from_index].to_vec();
+        if edge != to {
+            run.push(edge);
+        }
+        order.retain(|block| !run.contains(block));
+        let at = order.iter().position(|&block| block == to)?;
+        order.insert_many(at, run);
+        Some(())
+    }
+
     /// Emit the instructions to a `MachBuffer`, containing fixed-up
     /// code and external reloc/trap/etc. records ready for use. Takes
     /// the regalloc results as well.
@@ -789,6 +869,13 @@ impl<I: VCodeInst> VCode<I> {
             } else {
                 final_order.push(block);
             }
+        }
+        if self.debug_value_labels.is_empty()
+            && self.user_stack_maps.is_empty()
+            && self.debug_tags.is_empty()
+            && !flags.machine_code_cfg_info()
+        {
+            self.arrange_fallthrough(&mut final_order);
         }
         final_order.extend(cold_blocks.clone());
 
