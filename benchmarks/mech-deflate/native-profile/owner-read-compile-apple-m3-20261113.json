@@ -1,0 +1,262 @@
+{
+  "base_commit": "be345df1cc0ba4cf5629473f3767121b03c36f51",
+  "candidate_patch_sha256": "798812ac46bd59f1c47f65c1d1b0a9148b5369ee47d73e3f30c6daeeea336c2d",
+  "compiler_binary_sha256": {
+    "candidate": "9b661e9a134823b2b4c9b820f1a3750d6e53cb5178e6654a786620431344935f",
+    "control": "08f7c0a4fabb8bef245ef6a81e764e8dfa4c2360ad74afbbbc0696fa6d1ab654",
+    "pilot": "00b82d70040de9dd73da28097ee9f3af5760148e77d625dca4a9a49fb62c309e"
+  },
+  "compiler_bootstrap_seconds": {
+    "bounded": 242.88073845789768,
+    "candidate": 245.91572949988768
+  },
+  "decision": "retain bounded forward walk and per-value reverse liveness; supersede cumulative whole-graph threshold",
+  "diagnostic_block_visit_reduction_fraction": 0.9827816276610578,
+  "diagnostic_queries": {
+    "all_results_match_original": true,
+    "cached_values": 6755,
+    "candidate_forward_block_visits": 908638,
+    "candidate_reverse_block_visits": 4517622,
+    "cap_bytes": 33554432,
+    "future_read_results": 6059,
+    "original_forward_block_visits": 315143609,
+    "queries": 14314,
+    "query_scope": "Every non-scalar action-read value and its action frontier, deduplicated in plan order; a diagnostic superset, not an exact census of preparation callers.",
+    "reverse_index_bytes": 33389136,
+    "reverse_indexes": 6501,
+    "timing_scope": "Relaxed-atomic diagnostics only; elapsed is not qualified."
+  },
+  "flags_count": 52,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "qualified": {
+    "compiler_seconds": {
+      "candidate": [
+        47.382358458,
+        47.078749667
+      ],
+      "control": [
+        50.63413075,
+        50.140404542
+      ],
+      "mean_reduction_fraction": 0.06264903280086065
+    },
+    "frontend_seconds": {
+      "candidate": [
+        8.437655375,
+        8.214718459
+      ],
+      "control": [
+        8.778105834,
+        8.433819875
+      ]
+    },
+    "instructions": {
+      "candidate": [
+        725494894032,
+        724521384889
+      ],
+      "control": [
+        773743440476,
+        773734164032
+      ],
+      "mean_reduction_fraction": 0.06298076644410411
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        7765082112,
+        7600701440
+      ],
+      "control": [
+        7380140032,
+        7762968576
+      ]
+    },
+    "native_seconds": {
+      "candidate": [
+        36.365669125,
+        36.33770075
+      ],
+      "control": [
+        39.350663792,
+        39.165301459
+      ]
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.496344792,
+        2.448160625
+      ],
+      "control": [
+        2.4298286669999998,
+        2.457095083
+      ]
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        7734434272,
+        7532763592
+      ],
+      "control": [
+        7555684808,
+        7732337096
+      ]
+    },
+    "preparation_seconds": {
+      "candidate": [
+        11.30880883289501,
+        11.348389833932742
+      ],
+      "control": [
+        14.191844208864495,
+        14.03336041700095
+      ],
+      "mean_reduction_fraction": 0.19727070300617755
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        48.48437570803799,
+        47.24710879102349
+      ],
+      "control": [
+        50.82573483302258,
+        50.374102958943695
+      ]
+    }
+  },
+  "scope": [
+    "Fresh full source-to-Object with the same 52 flags; compiler bootstrap is excluded.",
+    "Four serial ABBA observations per cohort; no builds, tests, counters or CPU sampling overlap primary timings.",
+    "Preparation is the difference between independently stamped preparation/native-module stage messages.",
+    "Two candidate/control pairs improve; four observations do not establish a statistical population.",
+    "Unrelated frontend timing differences remain in the total; only the ownership mechanism is changed.",
+    "The first candidate launch retains extra process startup outside compiler phase timers.",
+    "Candidate maximum RSS has a higher mean and overlapping ranges; no whole-compiler memory saving is established.",
+    "Original source, canonical bytecode, Object and complete metadata are byte-identical in every observation.",
+    "Runtime source and generated instructions are unchanged; no new runtime timing campaign is claimed.",
+    "The real-plan counter diagnostic is a superset of preparation callers, not an exact caller census; its elapsed is unqualified.",
+    "Reverse indexes are scoped to one immutable plan borrow and capped at 32 MiB; unsupported/global-invalid/over-budget cases retain original ordered traversal.",
+    "Parser grammar, source language, finite resource policies and ownership eligibility are unchanged.",
+    "Compiler/test executables are excluded from the public packet, with their hashes retained.",
+    "Full compilation remains about 47 seconds; the sub-10-second goal remains open."
+  ],
+  "source_commit": "ee9dc32f50c2000295e2d95f5d1cffdd175c791a",
+  "superseded_pilot": {
+    "compiler_seconds": {
+      "candidate": [
+        49.485868709,
+        49.767356084
+      ],
+      "control": [
+        50.9594425,
+        50.462786709
+      ],
+      "mean_reduction_fraction": 0.021385887816864457
+    },
+    "frontend_seconds": {
+      "candidate": [
+        8.248512417,
+        8.220051208
+      ],
+      "control": [
+        8.9236395,
+        8.43384475
+      ]
+    },
+    "instructions": {
+      "candidate": [
+        764583924612,
+        764859342202
+      ],
+      "control": [
+        773625697722,
+        773922109699
+      ],
+      "mean_reduction_fraction": 0.011698857069347257
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        7596769280,
+        7595884544
+      ],
+      "control": [
+        7406534656,
+        7762870272
+      ]
+    },
+    "native_seconds": {
+      "candidate": [
+        38.676659291,
+        39.039453917
+      ],
+      "control": [
+        39.490126833,
+        39.494977208
+      ]
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.478744792,
+        2.430841667
+      ],
+      "control": [
+        2.4647411249999998,
+        2.450631875
+      ]
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        7532403144,
+        7531665864
+      ],
+      "control": [
+        7557896672,
+        7732238792
+      ]
+    },
+    "preparation_seconds": {
+      "candidate": [
+        13.635485541075468,
+        13.974350624950603
+      ],
+      "control": [
+        14.287941290996969,
+        14.168114041211084
+      ],
+      "mean_reduction_fraction": 0.029737753750576523
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        50.58849170897156,
+        49.95387541688979
+      ],
+      "control": [
+        52.05018979194574,
+        50.60916483285837
+      ]
+    }
+  },
+  "tests": {
+    "focused_total": 61,
+    "old_value_tests": 8,
+    "real_plan_query_results": 14314,
+    "suites": 5
+  }
+}
