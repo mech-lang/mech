@@ -81,6 +81,6 @@ unchanged. Full compilation still exceeds ten seconds.
 
 The [compact result](../../benchmarks/mech-deflate/native-profile/live-definitions-compile-apple-m3-20261114.json)
 and [archive receipt](../../benchmarks/mech-deflate/native-profile/live-definitions-compile-apple-m3-20261114.archive.json)
-pin all 364 files. The complete local archive verifies every hash/Git blob and
-replays byte-identically without a compiler or generated executable. Public
-evidence export awaits authorization; raw data remains outside source Git.
+pin all 364 files. The [complete archive](../../benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-live-definitions-20261114.tar.gz)
+is published in benchmarks. Its repository copy verifies every hash/Git blob and
+replays byte-identically without a compiler or generated executable.

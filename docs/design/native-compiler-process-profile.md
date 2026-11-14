@@ -1,9 +1,10 @@
 # Current compiler pipeline versus libdeflate and Roc
 
-The latest matched level-12 Mech cohort takes **29.61–30.03 seconds per complete
+The latest matched level-12 Mech cohort takes **28.76–28.77 seconds per complete
 source-to-Object process**, after the [lexical index](native-lexical-index-compile-profile.md)
 and [reusable visitation storage](native-thread-visits-compile-profile.md) changes,
-followed by [selected liveness definitions](native-liveness-definitions-compile-profile.md).
+followed by [selected liveness definitions](native-liveness-definitions-compile-profile.md)
+and [borrowed schema finalization](native-borrowed-schema-compile-profile.md).
 The measured peer builds take **0.41–0.48 seconds for libdeflate** and
 **2.35–2.50 seconds for Roc** on the same Apple M3 Air. The fresh latest Mech
 cohort uses 54 flags; the original profile below retains its 52-flag pins and
@@ -186,8 +187,8 @@ reduces compile time but changes generated code and repeatedly slows some
 compressor cases; it is reverted. The retained visitation change reduces cleanup
 18.4% and compiler time 3.85% while preserving every emitted byte. Both newer
 cohorts use the same complete 54-flag runtime configuration for their controls
-and candidates. Their archives are locally verified and replayed; public export
-authorization is pending.
+and candidates. Their complete archives are [published in benchmarks](../../benchmarks/mech-deflate/evidence/compiler-profile-20261114/README.md),
+verified and replayed byte-identically offline.
 
 The next liveness diagnostic observes 790 distinct exact query contexts, a
 median 284 selected sites and 23,850 materialized definition facts per query.
@@ -201,4 +202,12 @@ transformation. The [combined-head integration and memory trace](native-current-
 reproduces its pinned native Object exactly. Its continuous samples locate the
 largest observed RSS in frontend semantic analysis at 6.913 GiB, close to the
 host process peak. These two memory diagnostics are excluded from primary timing
-and do not change the matched range above.
+and do not establish a new primary matched range.
+
+Borrowing schema environments during finalization then reduces frontend time
+24.33%, full compiler time 4.08% and peak RSS 7.62% in a new matched ABBA cohort.
+Every emitted byte matches that integrated runtime baseline. Complete process
+observations are 28.764–28.769 seconds versus 29.822–30.228 seconds for control;
+this is the latest range at the top of this report. All four observations,
+357 passing tests, no-std check and 14 fixture comparisons are in the fifth
+repository evidence packet. These fresh complete compiles use no cached Object.
