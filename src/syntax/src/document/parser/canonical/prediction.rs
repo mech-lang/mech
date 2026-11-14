@@ -363,6 +363,7 @@ pub(super) fn predict_base(
     rule: RuleId,
     index: usize,
     allowance: u64,
+    cache: &mut Option<alloc::boxed::Box<[Option<Plan>; base::NON_FIXED_RULES.len()]>>,
 ) -> Option<(bool, u64)> {
     #[cfg(test)]
     if p.state.disable_rejections_for_test {
@@ -375,11 +376,8 @@ pub(super) fn predict_base(
     if !(b' '..=b'~').contains(&byte) {
         return None;
     }
-    let cache = p
-        .state
-        .base_storage
-        .prediction
-        .get_or_insert_with(|| alloc::boxed::Box::new([None; base::NON_FIXED_RULES.len()]));
+    let cache =
+        cache.get_or_insert_with(|| alloc::boxed::Box::new([None; base::NON_FIXED_RULES.len()]));
     let plan = *cache[index].get_or_insert_with(|| base_plan(rule));
     if plan.mask & (1_u128 << byte) == 0 || plan.work > allowance {
         return None;

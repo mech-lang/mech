@@ -136,6 +136,17 @@ fn observe_base(
     fuel: u64,
     reference: bool,
 ) -> Observation {
+    observe_base_partitioned(rule, text, offset, max_events, fuel, reference, u64::MAX)
+}
+fn observe_base_partitioned(
+    rule: RuleId,
+    text: &str,
+    offset: u32,
+    max_events: u32,
+    fuel: u64,
+    reference: bool,
+    allowance_size: u64,
+) -> Observation {
     let source = TextSnapshot::new(DocumentId(0x42415345), Revision(1), text).unwrap();
     let mut ids = IdGenerator::new();
     let mut config = ParseConfig::default();
@@ -153,7 +164,11 @@ fn observe_base(
     let mut child = base::continuation::Continuation::new(rule);
     let mut first = true;
     let result = loop {
-        let mut allowance = if first && reference { 1 } else { u64::MAX };
+        let mut allowance = if first && reference {
+            1
+        } else {
+            allowance_size
+        };
         first = false;
         match child.advance(&mut parser, true, &mut allowance) {
             base::continuation::Progress::Complete(result) => {
@@ -163,7 +178,10 @@ fn observe_base(
                     Attempt::NoMatch
                 };
             }
-            base::continuation::Progress::NeedsProcessing => {}
+            base::continuation::Progress::NeedsProcessing => {
+                let state = parser.suspend();
+                parser = Parser::resume(&source, state, &mut ids);
+            }
             _ => panic!("sealed base control"),
         }
     };
@@ -240,6 +258,35 @@ fn long_whitespace_prefixes_decline_without_changing_parsing() {
                 observe(*rule, &text, 0, 100000, 100000, false),
                 observe(*rule, &text, 0, 100000, 100000, true)
             );
+        }
+    }
+}
+
+#[test]
+fn nested_base_predictions_keep_complete_traces_across_work_slices() {
+    let cases = [
+        (rules::IDENTIFIER, "alphabet123__more+tail!"),
+        (rules::IDENTIFIER_PATH_SEGMENT, "alpha-beta/next"),
+        (rules::IDENTIFIER, "alphaβe\u{301}123+tail!"),
+        (rules::DIGIT_SEQUENCE, "12_34_56_"),
+        (rules::TEXT, "letters 12_34,!? é\u{301}👩\u{200d}💻"),
+        (rules::RAW_TEXT, "letters 12_34,!? \\u{1}"),
+        (rules::WHITESPACE0, " \r\n\t  x"),
+        (rules::ESCAPED_CHAR, "\\u{0001f600}x"),
+        (rules::ESCAPED_CHAR, "\\u{110000}x"),
+    ];
+    for (rule, text) in cases {
+        for events in [3, 8, 16, 100000] {
+            for fuel in [0, 1, 16, 100000] {
+                let expected = observe_base(rule, text, 0, events, fuel, true);
+                for allowance in [1, 4095, 4096, 4097, 8192, u64::MAX] {
+                    assert_eq!(
+                        observe_base_partitioned(rule, text, 0, events, fuel, false, allowance),
+                        expected,
+                        "rule {rule:?}, text {text:?}, events {events}, fuel {fuel}, allowance {allowance}"
+                    );
+                }
+            }
         }
     }
 }
