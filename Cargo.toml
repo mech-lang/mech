@@ -21,6 +21,13 @@ required-features = ["cli_core"]
 [profile.release]
 debug = false
 
+# Build the compiler with cross-crate optimization without changing runtime
+# consumers of the ordinary release profile.
+[profile.compiler]
+inherits = "release"
+lto = "thin"
+codegen-units = 1
+
 [profile.test]
 # The exhaustive native-factory matrix otherwise produces multi-gigabyte
 # test executables that macOS cannot map alongside the shared dyld cache.

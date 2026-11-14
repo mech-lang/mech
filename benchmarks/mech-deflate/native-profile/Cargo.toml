@@ -46,6 +46,12 @@ path = "artifact_review.rs"
 [profile.release]
 debug = false
 
+# Match the production workspace's optimized compiler profile.
+[profile.compiler]
+inherits = "release"
+lto = "thin"
+codegen-units = 1
+
 [patch.crates-io]
 cranelift-codegen = { path = "../../../vendor/cranelift-codegen" }
 cranelift-frontend = { path = "../../../vendor/cranelift-frontend" }
