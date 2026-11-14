@@ -10021,7 +10021,8 @@ mod tests {
                 schema: SchemaDraft {
                     body,
                     dimension_parameters: Box::new([]),
-                }.into(),
+                }
+                .into(),
                 anchor,
             });
             let result = builder.control_block_with(

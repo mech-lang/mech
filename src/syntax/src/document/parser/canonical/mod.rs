@@ -1,5 +1,4 @@
 pub(crate) mod base;
-mod prediction;
 pub(crate) mod combinator;
 pub(crate) mod control_operators;
 pub(crate) mod declarations;
@@ -16,6 +15,7 @@ pub(crate) mod paths;
 pub(crate) mod pattern_primitives;
 #[cfg(test)]
 mod ports;
+mod prediction;
 mod primitives;
 pub(crate) mod prose;
 pub(crate) mod recursive_core;

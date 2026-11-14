@@ -207,7 +207,12 @@ fn live_query(
             *successor = ordinals[*successor];
         }
     }
-    Ok(liveness::live_before_indexed(&next, &reads, &definitions, ordinals[start]))
+    Ok(liveness::live_before_indexed(
+        &next,
+        &reads,
+        &definitions,
+        ordinals[start],
+    ))
 }
 
 #[path = "numeric_exit_definitions.rs"]
