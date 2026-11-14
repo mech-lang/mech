@@ -1,5 +1,22 @@
 # Current compression scoreboard
 
+Carrying the current reduction bound shortens four composed parser bodies. The
+two complete matrices take 0.995110× and 0.993968× paired control, with both
+timing gates passing on all 81 cases. [Compiler qualification and runtime profile](native-reduction-bound-carry.md).
+
+| Peer result | Mech wins, full | Full repeat | Previous published, full / repeat |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **64/81 (79.0%)** | **64/81 (79.0%)** | 64 / 64 |
+| Faster than libdeflate | **34/81 (42.0%)** | **35/81 (43.2%)** | 32 / 34 |
+| Faster than both | **17/81 (21.0%)** | **18/81 (22.2%)** | 15 / 17 |
+| Faster than at least one | **81/81 (100%)** | **81/81 (100%)** | 81 / 81 |
+
+Natural 64 KiB reaches 1.011236× and 1.009985× Roc. Natural 16 KiB
+beats both peers in both runs, and the three stored paths remain the largest
+misses against Roc.
+
+## Keep the first compact owner slot inline
+
 The compact runtime keeps the first output-owner slot inline. The two final
 81-case runs take 0.993514× and 0.993649× paired control, and both timing
 gates pass on all 81 cases. The three stored cases improve 14.0–17.1% and
