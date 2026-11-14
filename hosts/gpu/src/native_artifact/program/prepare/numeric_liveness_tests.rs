@@ -1,6 +1,57 @@
 use super::*;
 
 #[test]
+fn unread_and_unselected_definition_facts_do_not_affect_liveness() {
+    for seed in 0..256u32 {
+        let next = (0..9)
+            .map(|site| {
+                (
+                    site,
+                    vec![(site + seed as usize + 1) % 9, (site * 3 + 2) % 9],
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        let reads = (0..9)
+            .map(|site| {
+                let values = if (site as u32 + seed) % 5 == 0 {
+                    BTreeSet::new()
+                } else {
+                    BTreeSet::from([(site as u32 * 3 + seed) % 6])
+                };
+                (site, values)
+            })
+            .collect::<BTreeMap<_, _>>();
+        let mut definitions = (0..9)
+            .map(|site| {
+                (
+                    site,
+                    BTreeSet::from([(site as u32 + seed) % 6, 64, u32::MAX]),
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        // Definitions outside the selected graph, including definitions of
+        // actually read values, cannot kill a fact on a selected edge.
+        definitions.insert(100_000, (0..6).collect());
+        let read_values = reads.values().flatten().copied().collect::<BTreeSet<_>>();
+        let filtered = definitions
+            .iter()
+            .filter(|(site, _)| next.contains_key(*site))
+            .map(|(&site, values)| (site, values.intersection(&read_values).copied().collect()))
+            .collect::<BTreeMap<_, _>>();
+        let (expected, _, _) = reference_liveness(&next, &reads, &definitions);
+        let (sparse, _, _) = solve_liveness(&next, &reads, &filtered);
+        assert_eq!(sparse, expected, "sparse seed={seed}");
+        for start in 0..9 {
+            assert_eq!(
+                live_before(&next, &reads, &filtered, start),
+                expected[&start],
+                "dense seed={seed} start={start}"
+            );
+        }
+    }
+}
+
+#[test]
 fn liveness_agrees_with_read_before_definition_paths_through_cycles_and_branches() {
     for seed in 0..32usize {
         let next = (0..9)
