@@ -92,7 +92,7 @@ CARGO_TARGET_DIR=/tmp/mech-native-profile-target CARGO_INCREMENTAL=0 \
   cargo test --locked --offline --release \
   --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml \
   --test guard_state --test numeric_liveness --test ssa_builder \
-  --test dimension_remap --test old_value_reads
+  --test dimension_remap --test old_value_reads --test numeric_reachability
 ```
 
 The [Apple M3 compile-time report](../../../docs/design/native-compile-time-profile.md)
@@ -118,3 +118,5 @@ The [scoped numeric-facts report](../../../docs/design/native-numeric-facts-comp
 The [inline dimension-remapping report](../../../docs/design/native-frontend-affine-compile-profile.md) records frontend time falling 21.6% and complete compilation to 38.90–39.11 seconds, with identical outputs and 63 focused tests passing. The separately rebuilt PR integration preserves the same outputs in 39.96 seconds.
 
 The [scalar constructor trial](../../../docs/design/native-resolved-scalar-compile-trial.md) is rejected: frontend time rises 5.85% and instructions 1.72%, despite 271 passing Core tests and identical outputs. Production is restored; fresh retained-compiler samples identify repeated numeric-exit reachability as the next target.
+
+The [numeric forest reachability report](../../../docs/design/native-numeric-reachability-compile-profile.md) records preparation falling 17.1% and complete compilation to 37.11–38.22 seconds. All outputs remain identical, 66 focused tests pass, and the sub-10-second goal remains open.
