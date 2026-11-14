@@ -111,6 +111,16 @@
       "sha256": "2dd31a115aa5bb1e28698b6d1d5bf873fe943472e2c186617c29e8297b7d12f0",
       "source_revision": "610f3692c0ad0b894d6537f206a79a4de8833ede",
       "summary": "benchmarks/mech-deflate/native-profile/shared-schema-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-scope-graph-20261114.tar.gz",
+      "bytes": 13919547,
+      "decision": "Retained: scope-sized current-visit validation topology; identical program bytes; slightly higher RSS.",
+      "files": 472,
+      "receipt": "benchmarks/mech-deflate/native-profile/scope-graph-compile-apple-m3-20261114.archive.json",
+      "sha256": "4acaf0934fb3df840744ab49453d6b2f838528895a177b2c8c962142057a355a",
+      "source_revision": "7feb94669905d3413d7a79fb9f8b89b851027226",
+      "summary": "benchmarks/mech-deflate/native-profile/scope-graph-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

@@ -153,6 +153,15 @@ and codec tests pass. The eleventh packet retains both screens, fourteen fixture
 pairs, all observations, exact source and failures. Pure offline replay reproduces
 the result; prior archives remain unchanged.
 
+The [scope-sized validation qualification](../../docs/design/native-scope-graph-compile-profile.md)
+retains scope-local topology and definition-row owners with fresh proof checks
+and the original conservative admission limit. Eight matched 60-flag runs take
+20.368–20.777 seconds: 3.44% less whole-process time, 15.83% less preparation and
+2.37% fewer instructions. Peak RSS is an adverse 0.008% higher. All output bytes
+match; 152 engine tests pass. Its twelfth packet retains five diagnostic control
+CPU windows, both screens, fourteen fixture pairs, every observation and correction.
+The repository copy verifies and replays offline; earlier archives remain unchanged.
+
 Paths below name reports **inside the external bundle**. The full manifest also
 covers early implementation witnesses, profiling, failed attempts and non-numbered
 packets. Each report hash is SHA-256; its surrounding directory holds the complete
