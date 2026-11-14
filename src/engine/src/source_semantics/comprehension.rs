@@ -199,12 +199,7 @@ fn canonical_component_schema_draft(
     body: &SchemaBody,
     syntax: &SyntaxNode,
 ) -> Result<SchemaDraft, SourceSemanticError> {
-    let component = SchemaDraft {
-        body: body.clone(),
-        dimension_parameters: parent.dimension_parameters.clone(),
-    }
-    .finalize()
-    .map_err(|error| {
+    let component = parent.finalize_body(body.clone()).map_err(|error| {
         internal(
             SourceSemanticAnchor::for_node(syntax),
             format!("unable to canonicalize collection component schema: {error:?}"),
@@ -453,10 +448,9 @@ impl SemanticBuilder {
             || complete_context
                 && yield_context.as_ref().is_some_and(|expected| {
                     expected
-                        .clone()
-                        .finalize()
+                        .finalize_ref()
                         .ok()
-                        .zip(element.clone().finalize().ok())
+                        .zip(element.finalize_ref().ok())
                         .is_some_and(|(expected, actual)| expected.key() == actual.key())
                 });
         let row_source = if operation != "set/comprehension" && !explicit_elements {
@@ -1365,8 +1359,7 @@ pub(super) fn resolve_comprehension(
         schemas
             .find_by_key(
                 draft
-                    .clone()
-                    .finalize()
+                    .finalize_ref()
                     .expect("validated collection schema")
                     .key(),
             )

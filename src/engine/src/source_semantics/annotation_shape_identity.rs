@@ -16,8 +16,7 @@ pub(super) fn fresh_record(draft: SchemaDraft) -> SchemaDraft {
 }
 
 pub(super) fn equivalent(actual: &SchemaDraft, expected: &SchemaDraft) -> bool {
-    let (Ok(actual), Ok(expected)) = (actual.clone().finalize(), expected.clone().finalize())
-    else {
+    let (Ok(actual), Ok(expected)) = (actual.finalize_ref(), expected.finalize_ref()) else {
         return false;
     };
     mech_core::schema_dimension_parameter_mapping(
@@ -136,8 +135,8 @@ mod tests {
         let actual = buffers(1, 0);
         let expected = buffers(0, 1);
         assert_ne!(
-            actual.clone().finalize().unwrap(),
-            expected.clone().finalize().unwrap()
+            actual.finalize_ref().unwrap(),
+            expected.finalize_ref().unwrap()
         );
         assert!(equivalent(&actual, &expected));
         assert!(equivalent(&expected, &actual));

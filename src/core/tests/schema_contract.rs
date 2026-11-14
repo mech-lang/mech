@@ -14,6 +14,95 @@ fn nominal_key(byte: u8) -> NominalKey {
 }
 
 #[test]
+fn borrowed_component_finalization_keeps_the_selected_axis_relationship() {
+    let matrix = |id| SchemaBody::Matrix {
+        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W8)),
+        dimensions: Box::new([
+            DimensionExpr::Parameter(DimensionParameterId::new(id)),
+            DimensionExpr::Parameter(DimensionParameterId::new(id)),
+        ]),
+    };
+    let parent = SchemaDraft {
+        dimension_parameters: [32, 17]
+            .into_iter()
+            .enumerate()
+            .map(|(id, upper)| DimensionParameterDeclaration {
+                id: DimensionParameterId::new(id as u32),
+                origin: DimensionParameterOrigin::Explicit,
+                lifetime: DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: Some(DimensionExpr::Constant(upper)),
+            })
+            .collect(),
+        body: SchemaBody::Tuple(Box::new([matrix(0), matrix(1)])),
+    };
+    let component = parent.finalize_body(matrix(1)).unwrap();
+    assert_eq!(component.body(), &matrix(0));
+    assert_eq!(component.dimension_parameters().len(), 1);
+    assert_eq!(
+        component.dimension_parameters()[0].upper_bound(),
+        Some(&DimensionExpr::Constant(17))
+    );
+    assert_eq!(
+        parent.finalize_ref().unwrap().dimension_parameters().len(),
+        2
+    );
+    assert_eq!(
+        parent.dimension_parameters[1].id,
+        DimensionParameterId::new(1)
+    );
+}
+
+#[test]
+fn borrowed_finalization_preserves_body_first_and_unused_environment_errors() {
+    let mut draft = SchemaDraft {
+        body: SchemaBody::Record(Box::new([
+            SchemaField {
+                name: "x".into(),
+                schema: SchemaBody::Bool,
+            },
+            SchemaField {
+                name: "x".into(),
+                schema: SchemaBody::String,
+            },
+        ])),
+        dimension_parameters: Box::new([DimensionParameterDeclaration {
+            id: DimensionParameterId::new(0),
+            origin: DimensionParameterOrigin::Explicit,
+            lifetime: DimensionLifetime::CompileTime,
+            lower_bound: DimensionExpr::Constant(0),
+            upper_bound: None,
+        }]),
+    };
+    assert!(matches!(
+        draft.finalize_ref(),
+        Err(SemanticModelError::DuplicateSchemaNameV1 { .. })
+    ));
+    assert!(matches!(
+        draft.finalize_body(SchemaBody::Bool),
+        Err(SemanticModelError::CompileTimeDimensionParameterV1)
+    ));
+    draft.dimension_parameters[0].lifetime = DimensionLifetime::Turn;
+    draft.dimension_parameters[0].lower_bound = DimensionExpr::Hole;
+    assert!(matches!(
+        draft.finalize_body(SchemaBody::Bool),
+        Err(SemanticModelError::UnresolvedDimensionHole)
+    ));
+    draft.dimension_parameters[0].lower_bound = DimensionExpr::Constant(0);
+    assert!(
+        draft
+            .finalize_body(SchemaBody::Bool)
+            .unwrap()
+            .dimension_parameters()
+            .is_empty()
+    );
+    assert!(matches!(
+        draft.finalize_ref(),
+        Err(SemanticModelError::DuplicateSchemaNameV1 { .. })
+    ));
+}
+
+#[test]
 fn duplicate_names_and_non_keyable_collection_members_fail() {
     let duplicate = SchemaBody::Record(
         vec![
