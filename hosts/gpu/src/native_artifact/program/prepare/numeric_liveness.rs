@@ -8,9 +8,9 @@ use std::collections::{BTreeMap, BTreeSet, VecDeque};
 #[derive(Clone, Default)]
 struct Words(BTreeMap<u32, u64>);
 impl Words {
-    fn from_values(values: &BTreeSet<u32>) -> Self {
+    fn from_values(values: impl IntoIterator<Item = u32>) -> Self {
         let mut words = Self::default();
-        for &value in values {
+        for value in values {
             *words.0.entry(value / 64).or_default() |= 1u64 << (value % 64);
         }
         words
@@ -34,71 +34,63 @@ impl Words {
     }
 }
 
-struct Liveness {
-    sites: Vec<usize>,
-    live: Vec<Words>,
-}
-impl Liveness {
-    fn at(&self, site: usize) -> BTreeSet<u32> {
-        self.live[self.sites.binary_search(&site).unwrap()].values()
-    }
-}
-
-pub(super) fn live_before(
-    next: &BTreeMap<usize, Vec<usize>>,
-    reads: &BTreeMap<usize, BTreeSet<u32>>,
-    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+/// Nodes use query-local ordinals. No source-ID tree lookup or reindexing is
+/// needed while building predecessors or solving the selected graph. Definition
+/// lists are sorted/deduplicated by the caller's original ordered value loop.
+pub(super) fn live_before_indexed(
+    next: &[Vec<usize>],
+    reads: &[BTreeSet<u32>],
+    definitions: &[Vec<u32>],
     start: usize,
 ) -> BTreeSet<u32> {
-    if let Some(live) = dense_live_before(next, reads, definitions, start, MAX_DENSE_CELLS) {
+    if let Some(live) = dense_live_before_indexed(next, reads, definitions, start, MAX_DENSE_CELLS)
+    {
         return live;
     }
-    let (live, _, _) = solve(next, reads, definitions);
-    // Only the requested entry escapes the query. Do not expand the packed
-    // facts at every other reachable block into separately allocated sets.
-    live.at(start)
+    let (live, _, _) = solve_indexed(next, reads, definitions);
+    live[start].values()
 }
 
 // Two flat word planes use at most 256 MiB. Larger products retain the sparse
 // solver below. Value ordinals are local to this query, never raw source IDs.
 const MAX_DENSE_CELLS: usize = 16 * 1024 * 1024;
 
-fn dense_live_before(
-    next: &BTreeMap<usize, Vec<usize>>,
-    reads: &BTreeMap<usize, BTreeSet<u32>>,
-    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+fn dense_live_before_indexed(
+    next: &[Vec<usize>],
+    reads: &[BTreeSet<u32>],
+    definitions: &[Vec<u32>],
     start: usize,
     max_cells: usize,
 ) -> Option<BTreeSet<u32>> {
-    let sites = next.keys().copied().collect::<Vec<_>>();
-    let mut values = sites
+    let mut values = reads
         .iter()
-        .flat_map(|site| reads[site].iter().copied())
+        .flat_map(|values| values.iter().copied())
         .collect::<Vec<_>>();
     values.sort_unstable();
     values.dedup();
     let width = values.len().div_ceil(64);
-    let cells = sites.len().checked_mul(width)?;
+    let cells = next.len().checked_mul(width)?;
     if cells > max_cells {
         return None;
     }
     if width == 0 {
         return Some(BTreeSet::new());
     }
-    let mut parents = vec![Vec::new(); sites.len()];
-    for (index, successors) in next.values().enumerate() {
+    let mut parents = vec![Vec::new(); next.len()];
+    for (index, successors) in next.iter().enumerate() {
         for successor in successors {
-            parents[sites.binary_search(successor).unwrap()].push(index);
+            parents[*successor].push(index);
         }
     }
     let mut live = vec![0_u64; cells];
-    let mut kills = vec![Vec::<(usize, u64)>::new(); sites.len()];
-    for (index, site) in sites.iter().enumerate() {
-        for value in &reads[site] {
+    let mut kills = vec![Vec::<(usize, u64)>::new(); next.len()];
+    for index in 0..next.len() {
+        for value in &reads[index] {
             let id = values.binary_search(value).unwrap();
             live[index * width + id / 64] |= 1_u64 << (id % 64);
         }
-        if let Some(definitions) = definitions.get(site) {
+        {
+            let definitions = &definitions[index];
             for value in definitions {
                 // A value never read in this selected graph cannot be live.
                 let Ok(id) = values.binary_search(value) else {
@@ -121,7 +113,7 @@ fn dense_live_before(
         .chunks_exact(width)
         .map(|row| row.iter().any(|&bits| bits != 0))
         .collect::<Vec<_>>();
-    let mut pending = (0..sites.len())
+    let mut pending = (0..next.len())
         .rev()
         .filter(|&site| queued[site])
         .collect::<VecDeque<_>>();
@@ -149,7 +141,7 @@ fn dense_live_before(
             }
         }
     }
-    let offset = sites.binary_search(&start).unwrap() * width;
+    let offset = start * width;
     Some(
         values
             .iter()
@@ -161,34 +153,28 @@ fn dense_live_before(
     )
 }
 
-fn solve(
-    next: &BTreeMap<usize, Vec<usize>>,
-    reads: &BTreeMap<usize, BTreeSet<u32>>,
-    definitions: &BTreeMap<usize, BTreeSet<u32>>,
-) -> (Liveness, usize, usize) {
-    let sites = next.keys().copied().collect::<Vec<_>>();
-    let mut predecessors = vec![Vec::new(); sites.len()];
-    for (index, successors) in next.values().enumerate() {
+fn solve_indexed(
+    next: &[Vec<usize>],
+    reads: &[BTreeSet<u32>],
+    definitions: &[Vec<u32>],
+) -> (Vec<Words>, usize, usize) {
+    let mut predecessors = vec![Vec::new(); next.len()];
+    for (index, successors) in next.iter().enumerate() {
         for successor in successors {
-            predecessors[sites.binary_search(successor).unwrap()].push(index);
+            predecessors[*successor].push(index);
         }
     }
-    let mut live = sites
+    let mut live = reads
         .iter()
-        .map(|site| Words::from_values(&reads[site]))
+        .map(|values| Words::from_values(values.iter().copied()))
         .collect::<Vec<_>>();
     let mut differences = live.clone();
-    let kills = sites
+    let kills = definitions
         .iter()
-        .map(|site| {
-            definitions
-                .get(site)
-                .map(Words::from_values)
-                .unwrap_or_default()
-        })
+        .map(|values| Words::from_values(values.iter().copied()))
         .collect::<Vec<_>>();
-    let mut queued = vec![true; sites.len()];
-    let mut pending = (0..sites.len()).rev().collect::<VecDeque<_>>();
+    let mut queued = vec![true; next.len()];
+    let mut pending = (0..next.len()).rev().collect::<VecDeque<_>>();
     let mut visits = 0usize;
     let mut propagated_facts = 0usize;
     while let Some(site) = pending.pop_front() {
@@ -222,7 +208,96 @@ fn solve(
             }
         }
     }
-    (Liveness { sites, live }, visits, propagated_facts)
+    (live, visits, propagated_facts)
+}
+
+// Preserve the source-ID adapters for the independent reference/property tests.
+// Production constructs query-local ordinals directly in the original DFS order.
+#[cfg(test)]
+struct Liveness {
+    sites: Vec<usize>,
+    live: Vec<Words>,
+}
+#[cfg(test)]
+impl Liveness {
+    fn at(&self, site: usize) -> BTreeSet<u32> {
+        self.live[self.sites.binary_search(&site).unwrap()].values()
+    }
+}
+#[cfg(test)]
+fn indexed_inputs(
+    next: &BTreeMap<usize, Vec<usize>>,
+    reads: &BTreeMap<usize, BTreeSet<u32>>,
+    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+) -> (
+    Vec<usize>,
+    Vec<Vec<usize>>,
+    Vec<BTreeSet<u32>>,
+    Vec<Vec<u32>>,
+) {
+    let sites = next.keys().copied().collect::<Vec<_>>();
+    let edges = next
+        .values()
+        .map(|edges| {
+            edges
+                .iter()
+                .map(|site| sites.binary_search(site).unwrap())
+                .collect()
+        })
+        .collect();
+    let reads = sites.iter().map(|site| reads[site].clone()).collect();
+    let definitions = sites
+        .iter()
+        .map(|site| {
+            definitions
+                .get(site)
+                .map(|v| v.iter().copied().collect())
+                .unwrap_or_default()
+        })
+        .collect();
+    (sites, edges, reads, definitions)
+}
+#[cfg(test)]
+fn live_before(
+    next: &BTreeMap<usize, Vec<usize>>,
+    reads: &BTreeMap<usize, BTreeSet<u32>>,
+    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+    start: usize,
+) -> BTreeSet<u32> {
+    let (sites, next, reads, definitions) = indexed_inputs(next, reads, definitions);
+    live_before_indexed(
+        &next,
+        &reads,
+        &definitions,
+        sites.binary_search(&start).unwrap(),
+    )
+}
+#[cfg(test)]
+fn dense_live_before(
+    next: &BTreeMap<usize, Vec<usize>>,
+    reads: &BTreeMap<usize, BTreeSet<u32>>,
+    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+    start: usize,
+    max_cells: usize,
+) -> Option<BTreeSet<u32>> {
+    let (sites, next, reads, definitions) = indexed_inputs(next, reads, definitions);
+    dense_live_before_indexed(
+        &next,
+        &reads,
+        &definitions,
+        sites.binary_search(&start).unwrap(),
+        max_cells,
+    )
+}
+#[cfg(test)]
+fn solve(
+    next: &BTreeMap<usize, Vec<usize>>,
+    reads: &BTreeMap<usize, BTreeSet<u32>>,
+    definitions: &BTreeMap<usize, BTreeSet<u32>>,
+) -> (Liveness, usize, usize) {
+    let (sites, next, reads, definitions) = indexed_inputs(next, reads, definitions);
+    let (live, visits, facts) = solve_indexed(&next, &reads, &definitions);
+    (Liveness { sites, live }, visits, facts)
 }
 
 #[cfg(test)]

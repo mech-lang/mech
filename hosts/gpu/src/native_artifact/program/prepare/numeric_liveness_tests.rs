@@ -385,3 +385,114 @@ fn dense_local_ordinals_cross_word_boundaries_and_preserve_definition_kills() {
         );
     }
 }
+
+#[test]
+fn query_local_node_orders_match_reference_on_cycles_duplicates_and_high_ids() {
+    const N: usize = 17;
+    for seed in 0..128usize {
+        let labels = (0..N).map(|i| i * 1024 + seed % 7).collect::<Vec<_>>();
+        let next = (0..N)
+            .map(|i| {
+                (
+                    labels[i],
+                    vec![
+                        labels[(i + seed + 1) % N],
+                        labels[(i * 3 + 2) % N],
+                        labels[(i * 3 + 2) % N],
+                    ],
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        let values = [0, 1, 63, 64, 65, 127, 128, u32::MAX];
+        let reads = (0..N)
+            .map(|i| {
+                (
+                    labels[i],
+                    if (i + seed) % 5 == 0 {
+                        BTreeSet::new()
+                    } else {
+                        BTreeSet::from([
+                            values[(i + seed) % values.len()],
+                            values[(i * 3 + seed) % values.len()],
+                        ])
+                    },
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        let definitions = (0..N)
+            .filter(|i| (i + seed) % 3 != 0)
+            .map(|i| {
+                (
+                    labels[i],
+                    BTreeSet::from([values[(i + seed + 1) % values.len()]]),
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        let (expected, _, _) = reference_liveness(&next, &reads, &definitions);
+        for order in 0..4 {
+            let mut nodes = labels.clone();
+            match order {
+                1 => nodes.reverse(),
+                2 => nodes.rotate_left(seed % N),
+                3 => {
+                    for i in (1..N).rev() {
+                        nodes.swap(i, (seed * 19 + i * 7) % (i + 1));
+                    }
+                }
+                _ => {}
+            }
+            let ordinal = |label| nodes.iter().position(|&s| s == label).unwrap();
+            let edges = nodes
+                .iter()
+                .map(|site| next[site].iter().map(|&label| ordinal(label)).collect())
+                .collect::<Vec<Vec<usize>>>();
+            let uses = nodes
+                .iter()
+                .map(|site| reads[site].clone())
+                .collect::<Vec<_>>();
+            let kills = nodes
+                .iter()
+                .map(|site| {
+                    definitions
+                        .get(site)
+                        .map(|s| s.iter().copied().collect())
+                        .unwrap_or_default()
+                })
+                .collect::<Vec<_>>();
+            let (sparse, _, _) = solve_indexed(&edges, &uses, &kills);
+            for (start, site) in nodes.iter().enumerate() {
+                assert_eq!(
+                    sparse[start].values(),
+                    expected[site],
+                    "sparse seed={seed} order={order} site={site}"
+                );
+                assert_eq!(
+                    live_before_indexed(&edges, &uses, &kills, start),
+                    expected[site],
+                    "dense seed={seed} order={order} site={site}"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn indexed_definition_duplicates_preserve_read_before_kill_and_sparse_fallback() {
+    let edges = vec![vec![2], vec![0, 1], vec![1]];
+    let reads = vec![
+        BTreeSet::from([64]),
+        BTreeSet::from([u32::MAX]),
+        BTreeSet::from([0]),
+    ];
+    let kills = vec![vec![0, 0, 64, 64], vec![u32::MAX, u32::MAX], vec![]];
+    assert!(dense_live_before_indexed(&edges, &reads, &kills, 0, 0).is_none());
+    let (sparse, _, _) = solve_indexed(&edges, &reads, &kills);
+    for start in 0..edges.len() {
+        assert_eq!(
+            live_before_indexed(&edges, &reads, &kills, start),
+            sparse[start].values()
+        );
+    }
+    assert_eq!(sparse[0].values(), BTreeSet::from([64, u32::MAX]));
+    assert!(sparse[1].values().contains(&u32::MAX));
+}

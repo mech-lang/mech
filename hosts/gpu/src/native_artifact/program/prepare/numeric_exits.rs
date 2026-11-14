@@ -135,11 +135,14 @@ fn live_query(
     known: &BTreeMap<u32, bool>,
     wanted: Option<&BTreeSet<u32>>,
 ) -> Result<BTreeSet<u32>, &'static str> {
-    let mut next = BTreeMap::new();
-    let mut reads = BTreeMap::<usize, BTreeSet<u32>>::new();
+    // Query-local ordinals replace per-node source-ID tree allocations. Each
+    // query still visits and validates its exact graph in the original order.
+    let mut ordinals = vec![usize::MAX; plan.blocks().len()];
+    let mut next = Vec::new();
+    let mut reads = Vec::<BTreeSet<u32>>::new();
     let mut pending = vec![start];
     while let Some(site) = pending.pop() {
-        if next.contains_key(&site) {
+        if ordinals[site] != usize::MAX {
             continue;
         }
         let mut used = BTreeSet::new();
@@ -191,22 +194,23 @@ fn live_query(
             }
         }
         pending.extend(&successors);
-        next.insert(site, successors);
+        ordinals[site] = next.len();
+        next.push(successors);
         if let Some(wanted) = wanted {
             used.retain(|value| wanted.contains(value));
         }
-        reads.insert(site, used);
+        reads.push(used);
     }
     // Only a value read in this selected graph can seed a liveness fact, and
     // only sites in this graph can kill one. Avoid materializing the entire
     // program's definitions for each cold continuation.
     let mut read_values = vec![false; plan.values().len()];
-    for &value in reads.values().flatten() {
+    for &value in reads.iter().flatten() {
         if let Some(read) = read_values.get_mut(value as usize) {
             *read = true;
         }
     }
-    let mut definitions = BTreeMap::<usize, BTreeSet<u32>>::new();
+    let mut definitions = vec![Vec::<u32>::new(); next.len()];
     for value in 0..plan.values().len() {
         if wanted.is_some_and(|wanted| !wanted.contains(&(value as u32))) {
             continue;
@@ -219,16 +223,24 @@ fn live_query(
         }
         for definition in sites {
             if let Some(site) = definition.site()
-                && next.contains_key(&(site as usize))
+                && let Some(&index) = ordinals.get(site as usize)
+                && index != usize::MAX
             {
-                definitions
-                    .entry(site as usize)
-                    .or_default()
-                    .insert(value as u32);
+                let killed = &mut definitions[index];
+                // The outer value loop is ordered. Repeated definition records
+                // keep the original set semantics without allocating a tree.
+                if killed.last() != Some(&(value as u32)) {
+                    killed.push(value as u32);
+                }
             }
         }
     }
-    Ok(liveness::live_before(&next, &reads, &definitions, start))
+    for successors in &mut next {
+        for successor in successors {
+            *successor = ordinals[*successor];
+        }
+    }
+    Ok(liveness::live_before_indexed(&next, &reads, &definitions, ordinals[start]))
 }
 
 #[path = "numeric_liveness.rs"]
