@@ -496,6 +496,21 @@ pub(super) fn define<M: Module>(
                         eprintln!("{name} defaulted read setup: {changes:?}");
                     }
                 }
+                if admission.immutable_code_bytes.is_some()
+                    && std::env::var_os("MECH_CARRY_REDUCTION_BOUND").is_some()
+                {
+                    candidate.flowgraph();
+                    if cfg_cleanup::reduction_bound::carry(
+                        &mut candidate.func,
+                        &candidate.cfg,
+                        &candidate.domtree,
+                    ) {
+                        candidate.verify(module.isa()).map_err(backend)?;
+                        if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                            eprintln!("{name} carries an adjusted reduction bound");
+                        }
+                    }
+                }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
