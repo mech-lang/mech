@@ -1126,6 +1126,14 @@ pub(super) fn define_entry<M: Module>(
         context.set_disasm(true);
     }
     context.verify(module.isa()).map_err(backend)?;
+    // The builder is finished and no producer Value handles survive below.
+    // Drop retired SSA IDs before value-indexed cleanup/backend allocations.
+    eprintln!(
+        "compact-stage: compact values before={}",
+        context.func.dfg.num_values()
+    );
+    context.func.dfg.compact_values();
+    eprintln!("compact-values: retained={}", context.func.dfg.num_values());
     eprintln!("compact-stage: CFG cleanup");
     let controls = CompilationControls::new(OptimizationOptions::default());
     // Match pure numeric idioms only after SSA is sealed. A later pass also

@@ -24,6 +24,8 @@ use alloc::collections::BTreeMap;
 use serde_derive::{Deserialize, Serialize};
 use smallvec::SmallVec;
 
+mod compact;
+
 /// Storage for instructions within the DFG.
 #[derive(Clone, PartialEq, Hash)]
 #[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
@@ -417,9 +419,9 @@ impl DataFlowGraph {
         resolve_aliases(&self.values, value)
     }
 
-    /// Replace all uses of value aliases with their resolved values, and delete
-    /// the aliases.
-    pub fn resolve_all_aliases(&mut self) {
+    // Keep flattened targets available until all users have been rewritten.
+    // Value compaction also needs these targets for unreferenced side tables.
+    fn resolve_alias_chains(&mut self) {
         let invalid_value = ValueDataPacked::from(ValueData::Alias {
             ty: types::INVALID,
             original: Value::reserved_value(),
@@ -455,6 +457,16 @@ impl DataFlowGraph {
                 }
             }
         }
+    }
+
+    /// Replace all uses of value aliases with their resolved values, and delete
+    /// the aliases.
+    pub fn resolve_all_aliases(&mut self) {
+        self.resolve_alias_chains();
+        let invalid_value = ValueDataPacked::from(ValueData::Alias {
+            ty: types::INVALID,
+            original: Value::reserved_value(),
+        });
 
         // Now aliases don't point to other aliases, so we can replace any use
         // of an alias with the final value in constant time.
