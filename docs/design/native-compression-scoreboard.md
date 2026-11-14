@@ -17,7 +17,38 @@ misses against Roc.
 
 ## Compression runtime experiments
 
-The latest combined ARM64 experiment further shortens matcher decisions
+The direct-write ARM64 worker beats Roc on **79/81 (97.5%)** in both full
+comparisons, up from **64/81 (79.0%)** for the paired compiler control. It
+beats libdeflate on **33/81 (40.7%)** and both peers on **31/81 (38.3%)** in
+each run. The geometric means are **0.97077×** and **0.97006×** paired
+control. Both timing gates pass on all 81 cases in each run. Each matrix
+validates 245,664 calls with exact stream bytes, independent inflate,
+matching capacities, live aliases and cleanup.
+
+| Input | Mech / paired control, repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Empty | 0.5136× | 0.8610× / 0.8648× | 0.0068× |
+| Seven stored bytes with prefix | 0.4479× | 0.8432× / 0.8502× | 0.0071× |
+| Eight literals | 0.9984× | 0.1612× / 0.1623× | 2.0504× |
+| Reymont 32,769 bytes | 0.9756× | 0.9922× / 0.9918× | 0.9021× |
+| Natural 128 KiB | 0.9734× | 0.9936× / 0.9948× | 0.8191× |
+| Natural 256 KiB | 0.9777× | 0.9967× / 0.9994× | 0.8083× |
+| Natural 1 MiB | 0.9752× | 1.0092× / 1.0091× | 0.8141× |
+| Held-out slides | 0.9778× | 1.0116× / 1.0148× | 0.8870× |
+
+Periodic 1 MiB slows by 2.7% and 2.6% against its paired control. Two
+periodic sizes lose libdeflate wins on the first run and retain them on
+repeat. All three stored cases win against Roc twice. The exact worker
+passes 162 additional linked stream checks and 288 rejection/retry pairs.
+The experimental matcher, optimal parser and short write still require
+normal compiler emission. The archive includes the two profiles and the
+disposition of each trial, with 806 file hashes and 11 matched cohorts.
+SHA-256 `88b2a5a7a056ce7684bee4148adf0721942bf8c28022eeb9bec876de648b7b8c`.
+[Timing, correctness, exact worker receipts and profiles](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-packet-loads-88b2a5a7a056.tar.gz).
+
+### Previous combined ARM64 worker
+
+The previous combined ARM64 experiment shortens matcher decisions
 and the recurring parser record lookup. It takes **0.97445×** and **0.97390×**
 the published compiler's time across the two full matrices. It beats Roc on
 **75/81 (92.6%)** and **76/81 (93.8%)**, libdeflate on **34/81** in both, and
