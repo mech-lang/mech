@@ -61,6 +61,16 @@
       "sha256": "49cb259c7ce7eb114208ce5c12cc0854bb37d52e74f11ad4bce4f040c24bced6",
       "source_revision": "619386076692d819778fdc5c53579b3b7604b062",
       "summary": "benchmarks/mech-deflate/native-profile/indexed-liveness-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-constant-bounds-20261114.tar.gz",
+      "bytes": 9869447,
+      "decision": "Retained: independent constant bounds; unchanged validation and program bytes; lower time, instructions and memory.",
+      "files": 404,
+      "receipt": "benchmarks/mech-deflate/native-profile/constant-bounds-compile-apple-m3-20261114.archive.json",
+      "sha256": "d003a9041cd05ba1a2dd02365018f90059d1070afd06a5d743481b38a277dcaf",
+      "source_revision": "7d0c06d002758d029839c81a774d5e704e56d440",
+      "summary": "benchmarks/mech-deflate/native-profile/constant-bounds-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
