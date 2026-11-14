@@ -15,6 +15,28 @@ Natural 64 KiB reaches 1.011236× and 1.009985× Roc. Natural 16 KiB
 beats both peers in both runs, and the three stored paths remain the largest
 misses against Roc.
 
+## Compression runtime experiments
+
+The combined ARM64 trial keeps the reduction minimum live between match
+records and uses one backing acquisition for the admitted short write chain.
+It beats Roc on **69/81 (85.2%)** and **67/81 (82.7%)** in the two complete
+comparisons. It beats libdeflate on **35/81** in both, and both peers on
+**23/81** and **21/81**. Both timing gates pass on all 81 cases in both runs.
+
+| Input | Mech / paired control, first and repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Empty | 0.665× / 0.651× | 1.119× / 1.086× | 0.0086× |
+| One stored byte | 0.589× / 0.594× | 0.966× / 0.949× | 0.0086× |
+| Seven stored bytes with prefix | 0.583× / 0.615× | 1.063× / 1.145× | 0.0095× |
+| Eight literals | 1.007× / 0.991× | 0.167× / 0.164× | 2.087× |
+| Natural 64 KiB | 0.987× / 0.986× | 0.9977× / 0.9996× | 0.840× |
+| Natural 1 MiB | 0.989× / 0.988× | 1.021× / 1.021× | 0.823× |
+
+The normally emitted reduction trial had flat elapsed time and was declined.
+The published score above remains the compiler baseline. The measured code and
+timings use the existing compact benchmark entry. [Exact machine edits, two
+full comparison cohorts, adverse results and counter receipts](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-runtime-pilots-706a9fb3f8de.tar.gz).
+
 ## Keep the first compact owner slot inline
 
 The compact runtime keeps the first output-owner slot inline. The two final
