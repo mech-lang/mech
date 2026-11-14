@@ -81,6 +81,16 @@
       "sha256": "6ec4230f07deb3880ad2c57fe4bcf45aff897ee31d2d6a21ed117a9c4da6a8e7",
       "source_revision": "40c33f0c75865483fa6bc140fb9b4413d23d7cd0",
       "summary": "benchmarks/mech-deflate/native-profile/visit-predecessors-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compact-values-20261114.tar.gz",
+      "bytes": 29686320,
+      "decision": "Retained: retired SSA value compaction; cost included; identical current program bytes; small RSS increase.",
+      "files": 907,
+      "receipt": "benchmarks/mech-deflate/native-profile/compact-values-compile-apple-m3-20261114.archive.json",
+      "sha256": "494832ac6beca385ced77297abb3b3d0814f0270368310db9a697dda0c37d0da",
+      "source_revision": "57376165608ec32729ff99a04b601d52d8f64950",
+      "summary": "benchmarks/mech-deflate/native-profile/compact-values-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

@@ -123,6 +123,16 @@ fourteen fixture pairs, both screens, every raw observation and offline replay.
 All eight complete packets are published in benchmarks and the repository
 copies verify and replay byte-identically; the earlier archives remain unchanged.
 
+The [retired-SSA-value qualification](../../docs/design/native-compact-values-compile-profile.md)
+integrates PR 973's current short-reduction runtime optimization. Eight matched
+60-flag runs show 2.21% less compiler time, 9.44% less cleanup including compaction
+and 1.95% fewer instructions, with identical program bytes. Complete processes
+take 22.672–22.879 seconds; elapsed ranges overlap and RSS is 0.04% higher.
+Its ninth, 907-file packet also keeps eight historical 55-flag runs separately,
+all seven passing tests on both bases, both sets of fourteen fixture pairs,
+all screens, failed prototypes/corrections and both CPU profiles. The repository
+copy verifies and replays byte-identically. All earlier archives remain unchanged.
+
 Paths below name reports **inside the external bundle**. The full manifest also
 covers early implementation witnesses, profiling, failed attempts and non-numbered
 packets. Each report hash is SHA-256; its surrounding directory holds the complete
