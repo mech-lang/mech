@@ -122,3 +122,5 @@ The [scalar constructor trial](../../../docs/design/native-resolved-scalar-compi
 The [numeric forest reachability report](../../../docs/design/native-numeric-reachability-compile-profile.md) records preparation falling 17.1% and complete compilation to 37.11–38.22 seconds. All outputs remain identical, 66 focused tests pass, and the sub-10-second goal remains open.
 
 The [checked tail-finish role report](../../../docs/design/native-tail-role-compile-profile.md) records another 4.3% preparation reduction and complete compilation to 36.73–36.88 seconds. Fourteen existing engine validation tests and six complete fixture comparisons pass with identical outputs. The report retains the initial Cargo selection error and excludes a zero-test filter attempt from qualification.
+
+The [rootless dimension report](../../../docs/design/native-rootless-dimension-compile-profile.md) records frontend time falling 16.1% and complete compilation to 36.10–36.39 seconds. All outputs remain identical; 269 Core/type-system tests and `no_std` pass. The candidate's whole-compiler RSS is adverse and is retained in the report.
