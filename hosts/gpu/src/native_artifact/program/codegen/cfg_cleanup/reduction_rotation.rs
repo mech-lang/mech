@@ -24,6 +24,7 @@ struct Incoming {
 
 struct Plan {
     header: Block,
+    latch: Block,
     test: Inst,
     body: BlockCall,
     exit: Block,
@@ -140,6 +141,11 @@ fn plan(
     {
         return None;
     }
+    let latch = if loops.is_in_loop(first.block, region) {
+        first.block
+    } else {
+        second.block
+    };
     let incoming = [first, second].map(|edge| {
         let Data::Jump { destination, .. } = f.dfg.insts[edge.inst] else {
             return None;
@@ -214,6 +220,7 @@ fn plan(
     }
     Some(Plan {
         header,
+        latch,
         test,
         body,
         exit: exit_block,
@@ -248,6 +255,9 @@ fn apply(f: &mut Function, plan: Plan) {
     let body = plan.body.block(&f.dfg.value_lists);
     let args = plan.body.args(&f.dfg.value_lists).collect::<Vec<_>>();
     f.dfg.replace(plan.test).jump(body, &args);
+    if std::env::var_os("MECH_EMIT_REDUCTION_FALLTHROUGH").is_some() {
+        f.preferred_fallthrough = Some((plan.latch, plan.header));
+    }
     let location = f.srcloc(plan.test);
     for Incoming { jump, args } in plan.incoming {
         let mut cursor = FuncCursor::new(f).at_inst(jump);

@@ -187,3 +187,148 @@ pub(super) fn rewrite(block: &mut [Inst], canonical: impl Fn(Reg) -> Reg) {
     };
     *compare = Inst::Nop0;
 }
+
+/// Reuse the condition flags from a wrapping subtraction already needed on
+/// a one-predecessor edge. The inputs are exact SSA registers defined before
+/// the branch. NZCV is consumed within its producing VCode block on ARM64.
+pub(super) fn reuse_successor_subtract(
+    tail: &[Inst],
+    first: &Inst,
+    canonical: &impl Fn(Reg) -> Reg,
+) -> Option<([Inst; 2], Inst)> {
+    let [
+        Inst::AluRRR {
+            alu_op: ALUOp::SubS,
+            size: compare_size,
+            rd: discard,
+            rn: compare_left,
+            rm: compare_right,
+        },
+        Inst::CondBr {
+            taken,
+            not_taken,
+            kind: CondBrKind::Cond(cc),
+        },
+    ] = *tail
+    else {
+        return None;
+    };
+    let Inst::AluRRR {
+        alu_op: ALUOp::Sub,
+        size,
+        rd,
+        rn,
+        rm,
+    } = *first
+    else {
+        return None;
+    };
+    let (left, right, dst) = (canonical(rn), canonical(rm), canonical(rd.to_reg()));
+    if size != compare_size
+        || discard.to_reg() != zero_reg()
+        || !left.is_virtual()
+        || !right.is_virtual()
+        || !dst.is_virtual()
+        || dst == left
+        || dst == right
+    {
+        return None;
+    }
+    let cc = match (canonical(compare_left), canonical(compare_right)) {
+        operands if operands == (left, right) => cc,
+        operands if operands == (right, left) => match cc {
+            Cond::Eq | Cond::Ne => cc,
+            Cond::Lo => Cond::Hi,
+            Cond::Hs => Cond::Ls,
+            Cond::Hi => Cond::Lo,
+            Cond::Ls => Cond::Hs,
+            _ => return None,
+        },
+        _ => return None,
+    };
+    let difference = Inst::AluRRR {
+        alu_op: ALUOp::SubS,
+        size,
+        rd,
+        rn,
+        rm,
+    };
+    let branch = Inst::CondBr {
+        taken,
+        not_taken,
+        kind: CondBrKind::Cond(cc),
+    };
+    Some(([difference, branch], Inst::Nop0))
+}
+
+/// Fuse the branch over an admitted single visit with the remainder update.
+pub(super) fn reuse_successor_decrement(
+    tail: &[Inst],
+    head: &[Inst],
+    canonical: &impl Fn(Reg) -> Reg,
+) -> Option<([Inst; 2], usize, Inst)> {
+    let [
+        Inst::AluRRImm12 {
+            alu_op: ALUOp::SubS,
+            size: cmp_size,
+            rd: discard,
+            rn: cmp_src,
+            imm12: cmp_imm,
+        },
+        branch @ Inst::CondBr {
+            kind: CondBrKind::Cond(Cond::Eq | Cond::Ne),
+            ..
+        },
+    ] = tail
+    else {
+        return None;
+    };
+    let (index, update) = match head {
+        [
+            update @ Inst::AluRRImm12 {
+                alu_op: ALUOp::Sub, ..
+            },
+            ..,
+        ] => (0, update),
+        [
+            Inst::AluRRImm12 {
+                alu_op: ALUOp::Add,
+                rd,
+                rn,
+                ..
+            },
+            update,
+        ] if canonical(rd.to_reg()).is_virtual() && canonical(*rn).is_virtual() => (1, update),
+        _ => return None,
+    };
+    let Inst::AluRRImm12 {
+        alu_op: ALUOp::Sub,
+        size,
+        rd,
+        rn,
+        imm12,
+    } = *update
+    else {
+        return None;
+    };
+    let (src, dst) = (canonical(rn), canonical(rd.to_reg()));
+    if *cmp_size != size
+        || discard.to_reg() != zero_reg()
+        || cmp_imm.value() != 1
+        || imm12.value() != 1
+        || canonical(*cmp_src) != src
+        || !src.is_virtual()
+        || !dst.is_virtual()
+        || src == dst
+    {
+        return None;
+    }
+    let combined = Inst::AluRRImm12 {
+        alu_op: ALUOp::SubS,
+        size,
+        rd,
+        rn,
+        imm12,
+    };
+    Some(([combined, branch.clone()], index, Inst::Nop0))
+}

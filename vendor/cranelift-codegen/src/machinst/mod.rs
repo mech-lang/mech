@@ -124,6 +124,21 @@ pub trait MachInst: Clone + Debug {
     /// Rewrite a loop block without changing its instruction or successor ranges.
     fn preallocation_rewrite(_block: &mut [Self], _canonical: impl Fn(Reg) -> Reg) {}
 
+    /// Whether this backend can combine a branch and successor instruction.
+    fn preallocation_branch_rewrite_enabled(_flags: &settings::Flags) -> bool {
+        false
+    }
+
+    /// Replace the branch tail and one of the first two successor instructions.
+    /// The successor is distinct from the entry and has only this predecessor.
+    fn preallocation_rewrite_branch(
+        _tail: &[Self],
+        _head: &[Self],
+        _canonical: impl Fn(Reg) -> Reg,
+    ) -> Option<([Self; 2], usize, Self)> {
+        None
+    }
+
     /// Should this instruction's clobber-list be included in the
     /// clobber-set?
     fn is_included_in_clobbers(&self) -> bool;

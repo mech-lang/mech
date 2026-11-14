@@ -120,7 +120,16 @@ impl Reduction {
             });
             let mut reads = Vec::new();
             let cursor = if let Some((back, (front, other))) = wide {
-                let index = b.ins().iadd_imm(start, front.delta as i64);
+                let index = if front.delta <= 1
+                    && std::env::var_os("MECH_ORDERED_SHORT_NARROW_ORDINAL").is_some()
+                {
+                    // The selected entry proved start < stop <= U32::MAX.
+                    let narrow = b.ins().ireduce(types::I32, start);
+                    let narrow = b.ins().iadd_imm(narrow, front.delta as i64);
+                    b.ins().uextend(types::I64, narrow)
+                } else {
+                    b.ins().iadd_imm(start, front.delta as i64)
+                };
                 let base = words.read(b, shadow + proof.view(front.array));
                 let offset = b.ins().ishl_imm(index, 2);
                 reads.push((front, ScalarRead::LowWord(b.ins().iadd(base, offset))));
@@ -176,7 +185,13 @@ impl Reduction {
             let mut args = vec![next.into(), minimum.into(), item.into()];
             if let Some(window) = reverse {
                 let pointer = if let Some((base, offset, _, _)) = cursor {
-                    b.ins().iadd(base, offset)
+                    if std::env::var_os("MECH_ORDERED_LAZY_REVERSE_CURSOR").is_some() {
+                        // The same address expressed from the adjusted reverse
+                        // window base. Only the continuing edge needs this cursor.
+                        inputs.pointer(b, proof, window, start)
+                    } else {
+                        b.ins().iadd(base, offset)
+                    }
                 } else {
                     let (_, ScalarRead::LowWord(pointer)) =
                         reads.iter().find(|(read, _)| *read == window).unwrap()
@@ -189,7 +204,11 @@ impl Reduction {
             }
             if let Some(window) = forward {
                 let index = b.ins().iadd_imm(next, window.delta as i64);
-                let left = b.ins().isub(stop, next);
+                let left = if std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some() {
+                    b.ins().iadd_imm(remaining, -1)
+                } else {
+                    b.ins().isub(stop, next)
+                };
                 args[0] = index.into();
                 args.push(left.into());
             }
