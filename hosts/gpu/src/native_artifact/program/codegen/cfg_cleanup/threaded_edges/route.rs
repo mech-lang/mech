@@ -47,6 +47,7 @@ pub(super) fn find(
     dom: &DominatorTree,
     edge: Edge,
     mut known: BTreeMap<Value, Range>,
+    visits: &mut super::visits::Visits,
 ) -> Option<Plan> {
     let source = f.layout.inst_block(edge.inst)?;
     if !dom.is_reachable(source) {
@@ -175,11 +176,11 @@ pub(super) fn find(
     for value in definitions {
         let owner = values::owner(f, value)?;
         let mut pending = vec![target];
-        let mut visited = BTreeSet::new();
+        visits.begin();
         let mut used = false;
         while let Some(block) = pending.pop() {
             // A fresh visit to its definition ends this value's old activation.
-            if block == owner || !visited.insert(block) {
+            if block == owner || !visits.insert(block) {
                 continue;
             }
             for inst in f.layout.block_insts(block) {

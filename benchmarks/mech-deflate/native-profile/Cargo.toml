@@ -91,3 +91,7 @@ path = "old_value_reads_tests.rs"
 [[test]]
 name = "numeric_reachability"
 path = "numeric_reachability_tests.rs"
+
+[[test]]
+name = "loop_edge_visits"
+path = "loop_edge_visits_tests.rs"

@@ -2,6 +2,7 @@
 //! Dominated live-outs gain explicit phis; shared merges conservatively refuse.
 mod route;
 mod values;
+mod visits;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
@@ -132,9 +133,12 @@ pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &Dominator
         }
     }
     report.candidates = edges.len();
+    // Every route observes this same immutable CFG. Reuse only visitation
+    // storage; each live-out traversal still starts with an empty visited set.
+    let mut visits = visits::Visits::new(f.dfg.num_blocks());
     let plans = edges
         .into_iter()
-        .filter_map(|edge| route::find(f, dom, edge, known.clone()))
+        .filter_map(|edge| route::find(f, dom, edge, known.clone(), &mut visits))
         .collect::<Vec<_>>();
     let targets = plans.iter().map(|p| p.target).collect::<BTreeSet<_>>();
     // Preserve the original dominance of every new transport phi. No other
