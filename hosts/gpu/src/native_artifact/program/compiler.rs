@@ -858,11 +858,12 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     );
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     eprintln!("compact-stage: native module");
-    let mut module =
+    let object =
         codegen_backend::object("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
-    let metadata =
-        crate::native_artifact::program::compact::define(&mut module, &prepared, observe)?;
-    Ok((module.finish().emit().map_err(backend)?, metadata))
+    let mut module = super::compact::PreparedObject::new(object);
+    let metadata = super::compact::define(&mut module, &prepared, observe)?;
+    let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
+    Ok((bytes, metadata))
 }
 
 /// Diagnostic compilation only: compact typed numeric functions over the same
