@@ -116,3 +116,5 @@ The [sparse SSA lookup report](../../../docs/design/native-ssa-sparse-compile-pr
 The [scoped numeric-facts report](../../../docs/design/native-numeric-facts-compile-profile.md) records a further 5.1% native reduction and full compilation near 40.24 seconds, with identical output bytes, six matching smaller programs and a separate frontend CPU sample.
 
 The [inline dimension-remapping report](../../../docs/design/native-frontend-affine-compile-profile.md) records frontend time falling 21.6% and complete compilation to 38.90–39.11 seconds, with identical outputs and 63 focused tests passing. The separately rebuilt PR integration preserves the same outputs in 39.96 seconds.
+
+The [scalar constructor trial](../../../docs/design/native-resolved-scalar-compile-trial.md) is rejected: frontend time rises 5.85% and instructions 1.72%, despite 271 passing Core tests and identical outputs. Production is restored; fresh retained-compiler samples identify repeated numeric-exit reachability as the next target.
