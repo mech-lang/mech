@@ -159,3 +159,10 @@ The maintained verifier checks the published repository copy, manifest, safe
 paths and every file. Pure offline `python3 replay.py` reconstructs the result
 and checks stored outputs/samples without a compiler, benchmark execution,
 original scratch paths or network.
+
+The subsequent [local-span storage trials](native-ssa-span-trials.md) reject both
+variants: restoring the original record size still slows source CFG construction
+and compiler work. Their full measurements remain published. Source inspection
+finds shared word homes initialized together in entry; investigating unnecessary
+zero seeds is the next unimplemented hypothesis. This does not alter the retained
+parser results above.

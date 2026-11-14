@@ -352,3 +352,12 @@ document-module units, 1,667 identical full parse comparisons and fourteen fixtu
 pairs. Its seventeenth complete packet also includes seven separate CPU windows.
 Those point to SSA variable lookup/storage and CFG cleanup as further targets.
 The ten-second goal remains open.
+
+The subsequent [local-span SSA storage trials](native-ssa-span-trials.md) reject
+both layouts. In separate eight-observation cohorts, source CFG construction
+increases 5.53% and 5.07%, compiler phases 0.61% and 0.94%, and instructions
+0.55% and 0.48%. Both compiler-time blocks are slower for each variant. Tests,
+complete IR comparisons and every program/fixture output byte match, but no
+candidate change is retained. The eighteenth complete packet preserves both
+trials. Shared word homes have common entry definitions; deferring unnecessary
+zero seeds is a source-based next hypothesis with no saving credited.

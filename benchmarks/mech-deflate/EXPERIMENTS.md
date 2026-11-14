@@ -804,3 +804,13 @@ and fourteen fixture pairs pass. The [complete packet](evidence/compiler-profile
 keeps every observation, adverse counter, setup failure and seven separate CPU
 windows. The current profiles point to SSA lookup/storage and CFG cleanup.
 The ten-second goal remains open.
+
+The [local-span SSA storage trials](../../docs/design/native-ssa-span-trials.md)
+reject two candidate layouts after separate balanced full-source cohorts.
+Source CFG construction regresses 5.53% and 5.07%; compiler phases 0.61% and
+0.94%; retired instructions 0.55% and 0.48%. Both blocks are slower for each
+variant. Source is restored; all output bytes match. The eighteenth
+[complete repository packet](evidence/compiler-profile-20261114/README.md)
+contains both source patches, every raw measurement, 17/18 passing focused tests,
+24 paired complete IR cases, fourteen fixture pairs per variant, layout probes
+and pure offline replay. The retained nested-parser timing result stays current.
