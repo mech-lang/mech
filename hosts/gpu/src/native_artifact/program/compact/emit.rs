@@ -381,6 +381,9 @@ pub(super) fn define_entry<M: Module>(
     signature.returns = vec![AbiParam::new(types::I64); 2];
     let mut context = module.make_context();
     context.func.signature = signature.clone();
+    context.func.share_cold_epilogues = worker.is_none()
+        && !route_locations
+        && std::env::var_os("MECH_COMPACT_SHARE_COLD_EPILOGUES").is_some();
     let mut fb = FunctionBuilderContext::new();
     let mut output_words = 0;
     let mut omitted_copy_owners = Vec::new();

@@ -125,3 +125,7 @@ path = "helper_liveness_tests.rs"
 [[test]]
 name = "exit_definitions"
 path = "exit_definitions_tests.rs"
+
+[[test]]
+name = "cold_epilogues"
+path = "cold_epilogues_tests.rs"
