@@ -227,18 +227,14 @@ fn analyze(
             scope.order(code).is_some()
         );
     }
-    let sites = BTreeSet::from_iter(scope.sites.iter().copied());
-    // An outside edge may only enter at the fresh header. In particular no
-    // skipped case selection or cold resume can inherit a predecessor fact.
-    for (site, visit) in program.metadata().visits.iter().enumerate() {
-        if sites.contains(&site) || !captures.is_empty() {
-            continue;
-        }
-        if visit
-            .successors()
-            .into_iter()
-            .flatten()
-            .any(|next| sites.contains(&(next as usize)) && next as usize != scope.header)
+    // An outside edge may only enter at the fresh header. Use topology from
+    // this exact immutable prepared owner, but check the CURRENT scope anew.
+    // Captured windows retain their existing separate entry/fact contract.
+    if captures.is_empty() {
+        let sites = BTreeSet::from_iter(scope.sites.iter().copied());
+        if let Some(site) = program
+            .visit_predecessors()
+            .first_outside_entry(&sites, scope.header)
         {
             if !floors.is_empty() && std::env::var_os("MECH_TRAVERSAL_FLOOR_DIAGNOSTIC").is_some() {
                 eprintln!(

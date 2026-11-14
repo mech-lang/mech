@@ -20,6 +20,8 @@ pub(in crate::native_artifact) mod composition;
 pub(in crate::native_artifact) mod constant_owners;
 pub(in crate::native_artifact) mod frame_retirement;
 pub(in crate::native_artifact) mod numeric_phase;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod visit_predecessors;
 pub(in crate::native_artifact) mod worker_values;
 
 /// Canonical arguments are source operands or parent-piece owner pins. Numeric
@@ -147,6 +149,10 @@ pub(in crate::native_artifact) struct PreparedNativeProgram {
     producer_element_reads: std::cell::OnceCell<std::collections::BTreeSet<(usize, u32)>>,
     #[cfg(feature = "canonical-native-program")]
     boolean_branch_targets: std::cell::OnceCell<Vec<Option<u32>>>,
+    // Compiler-only reverse edges, bound to this immutable prepared owner.
+    // This is not a scope-validity or current-visit proof cache.
+    #[cfg(feature = "canonical-native-program")]
+    visit_predecessors: std::cell::OnceCell<visit_predecessors::VisitPredecessors>,
 }
 impl PreparedNativeProgram {
     pub(in crate::native_artifact) fn prepare(
@@ -522,6 +528,8 @@ impl PreparedNativeProgram {
             producer_element_reads: std::cell::OnceCell::new(),
             #[cfg(feature = "canonical-native-program")]
             boolean_branch_targets: std::cell::OnceCell::new(),
+            #[cfg(feature = "canonical-native-program")]
+            visit_predecessors: std::cell::OnceCell::new(),
         })
     }
 
@@ -531,6 +539,21 @@ impl PreparedNativeProgram {
             crate::native_artifact::codegen::common::boolean_branches::derive(
                 crate::native_artifact::codegen::control::plan::CodePlan::Program(self),
             )
+        })
+    }
+
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn visit_predecessors(
+        &self,
+    ) -> &visit_predecessors::VisitPredecessors {
+        self.visit_predecessors.get_or_init(|| {
+            let successors = self
+                .metadata
+                .visits
+                .iter()
+                .map(NativeIterationVisit::successors)
+                .collect::<Vec<_>>();
+            visit_predecessors::VisitPredecessors::new(&successors)
         })
     }
 
