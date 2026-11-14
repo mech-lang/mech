@@ -50,7 +50,7 @@ fn seal_auxiliary(
         None => b.func.layout.blocks().next(),
     };
     while let Some(block) = next {
-        if block != entry && !source.contains(&block) && !b.is_block_sealed(block) {
+        if block != entry && !source.contains(&block) {
             b.seal_block(block);
         }
         *last = Some(block);

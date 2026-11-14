@@ -401,28 +401,6 @@ impl<'a> FunctionBuilder<'a> {
         self.handle_ssa_side_effects(side_effects);
     }
 
-    /// Returns whether all predecessors of `block` have been declared.
-    ///
-    /// This permits a final sweep to skip blocks already sealed at their last
-    /// incoming branch. It does not seal a block or authorize new predecessors.
-    pub fn is_block_sealed(&self, block: Block) -> bool {
-        self.func_ctx.ssa.is_sealed(block)
-    }
-
-    /// Seal `block` and reuse a common incoming variable state if its filled
-    /// predecessors are proved unchanged paths from the same origin.
-    ///
-    /// Assignment tracking and a bounded predecessor walk establish this fact;
-    /// callers supply no unchecked equivalence assertion. Otherwise this is
-    /// ordinary SSA sealing. Memory effects are unaffected.
-    pub fn seal_block_with_forwarding(&mut self, block: Block) {
-        let side_effects = self
-            .func_ctx
-            .ssa
-            .seal_block_with_forwarding(block, self.func);
-        self.handle_ssa_side_effects(side_effects);
-    }
-
     /// Effectively calls [seal_block](Self::seal_block) on all unsealed blocks in the function.
     ///
     /// It's more efficient to seal [`Block`]s as soon as possible, during

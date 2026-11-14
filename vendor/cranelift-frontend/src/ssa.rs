@@ -200,11 +200,8 @@ struct SSABlockData {
     predecessors: EntityList<Inst>,
     // A block is sealed if all of its predecessors have been declared.
     sealed: Sealed,
-    // A sealed single predecessor, or a proven common incoming variable state.
-    // The latter is set only by opt-in sealing after checking unchanged paths.
+    // If this block is sealed and it has exactly one predecessor, this is that predecessor.
     single_predecessor: PackedOption<Block>,
-    // Actual frontend assignments, excluding cached inherited values/phis.
-    has_variable_definitions: bool,
 }
 
 impl SSABuilder {
@@ -313,7 +310,6 @@ impl SSABuilder {
     /// The SSA value is passed as an argument because it should be created with
     /// `ir::DataFlowGraph::append_result`.
     pub fn def_var(&mut self, var: Variable, val: Value, block: Block) {
-        self.ssa_blocks[block].has_variable_definitions = true;
         self.variables[var].insert(block, PackedOption::from(val));
     }
 
@@ -500,17 +496,7 @@ impl SSABuilder {
             !self.is_sealed(block),
             "Attempting to seal {block} which is already sealed."
         );
-        self.seal_one_block(block, func, false);
-        mem::take(&mut self.side_effects)
-    }
-
-    /// Seal a filled-predecessor join, reusing a common incoming variable state
-    /// when every predecessor has an unchanged path to the same origin.
-    /// Ordinary SSA construction remains the fallback for different definitions,
-    /// unknown predecessors, cycles, or paths beyond the bounded search.
-    pub fn seal_block_with_forwarding(&mut self, block: Block, func: &mut Function) -> SideEffects {
-        debug_assert!(!self.is_sealed(block));
-        self.seal_one_block(block, func, true);
+        self.seal_one_block(block, func);
         mem::take(&mut self.side_effects)
     }
 
@@ -525,13 +511,13 @@ impl SSABuilder {
         // and creation of new blocks, however such new blocks are sealed on
         // the fly, so we don't need to account for them here.
         for block in self.ssa_blocks.keys() {
-            self.seal_one_block(block, func, false);
+            self.seal_one_block(block, func);
         }
         mem::take(&mut self.side_effects)
     }
 
     /// Helper function for `seal_block` and `seal_all_blocks`.
-    fn seal_one_block(&mut self, block: Block, func: &mut Function, forward: bool) {
+    fn seal_one_block(&mut self, block: Block, func: &mut Function) {
         // For each undef var we look up values in the predecessors and create a block parameter
         // only if necessary.
         let mut undef_variables =
@@ -545,8 +531,6 @@ impl SSABuilder {
         if predecessors.len() == 1 {
             let pred = func.layout.inst_block(predecessors[0]).unwrap();
             self.ssa_blocks[block].single_predecessor = PackedOption::from(pred);
-        } else if forward && let Some(origin) = self.unchanged_origin(block, func) {
-            self.ssa_blocks[block].single_predecessor = PackedOption::from(origin);
         }
 
         // Note that begin_predecessors_lookup requires visiting these variables in the same order
@@ -576,37 +560,6 @@ impl SSABuilder {
         }
 
         undef_variables.clear(&mut self.variable_pool);
-    }
-
-    /// An SSA variable keeps its value across memory operations and branches
-    /// until the frontend actually calls def_var. Follow only sealed forwarding
-    /// links and stop at the first assignment or unknown incoming state.
-    fn unchanged_origin(&self, block: Block, func: &Function) -> Option<Block> {
-        let predecessors = self.predecessors(block);
-        // The native ownership diamonds have two or three incoming branches.
-        // These bounds only decline the fast path; they impose no CFG limit.
-        if !(2..=8).contains(&predecessors.len()) {
-            return None;
-        }
-        let mut common = None;
-        for &inst in predecessors {
-            let mut current = func.layout.inst_block(inst)?;
-            let mut origin = None;
-            for _ in 0..64 {
-                let data = &self.ssa_blocks[current];
-                if data.has_variable_definitions || data.single_predecessor.is_none() {
-                    origin = Some(current);
-                    break;
-                }
-                current = data.single_predecessor.expand()?;
-            }
-            let origin = origin?;
-            if origin == block || common.is_some_and(|previous| previous != origin) {
-                return None;
-            }
-            common = Some(origin);
-        }
-        common
     }
 
     /// Given the local SSA Value of a Variable in a Block, perform a recursive lookup on
