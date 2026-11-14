@@ -190,3 +190,13 @@ diagnostic counts differ for deferred zeros. Both sources are restored. The
 nineteenth [complete packet](../evidence/compiler-profile-20261114/README.md)
 includes all measurements, source snapshots, tests and fourteen fixture pairs per
 trial. No compiler saving or runtime-latency campaign is credited.
+
+The [bounded exit-liveness qualification](../../../docs/design/native-point-liveness-compile-profile.md)
+uses a fresh 61-flag control after private overwrite-result reuse. Complete
+source-to-Object processes take 17.420–17.638 seconds; compiler phases change
+-5.08%, preparation -32.52% and instructions -4.97%. Both balanced blocks improve.
+Objects and complete metadata match; compiler RSS increases 1.93%. Sixteen tests,
+790 independently re-solved exact graphs and fourteen fixture pairs pass. Every
+raw measurement, kernel budget, output and capture correction is in the twentieth
+[complete packet](../evidence/compiler-profile-20261114/README.md). The ten-second
+goal remains open.
