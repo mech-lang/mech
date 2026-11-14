@@ -5,7 +5,7 @@ use crate::native_artifact::program::prepare::readonly_numeric::Proof;
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativeMatchTerminator as Branch, NativeMatchValue,
-    NativeScalarOp as Op,
+    NativeProgramFacts, NativeScalarOp as Op,
 };
 use std::collections::BTreeMap;
 
@@ -217,6 +217,9 @@ pub(super) struct Indices<'a> {
     code: CodePlan<'a>,
     constants: BTreeMap<u32, u64>,
     ranges: BTreeMap<u32, (u64, u64)>,
+    // Descriptive definitions belong to this exact immutable code borrow.
+    // Their inventory stays lazy; no current range/guard answer is added.
+    definition_facts: Option<NativeProgramFacts<'a>>,
 }
 impl<'a> Indices<'a> {
     pub(super) fn new(code: CodePlan<'a>) -> Self {
@@ -230,14 +233,19 @@ impl<'a> Indices<'a> {
                         .and_then(|(v, n)| n.map(|n| (v.get(), n)))
                 })
                 .collect(),
+            definition_facts: match code {
+                CodePlan::Program(program) => Some(program.plan().facts()),
+                _ => None,
+            },
         }
     }
     fn definition(&self, value: u32) -> Option<&'a Scalar> {
-        let CodePlan::Program(program) = self.code else {
-            return None;
-        };
-        let facts = program.plan().facts();
-        let [definition] = facts.definition_sites(value).ok()? else {
+        let [definition] = self
+            .definition_facts
+            .as_ref()?
+            .definition_sites(value)
+            .ok()?
+        else {
             return None;
         };
         match self.code.blocks()[definition.site()? as usize].action() {
