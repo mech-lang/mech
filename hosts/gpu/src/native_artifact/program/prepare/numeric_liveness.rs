@@ -5,6 +5,9 @@ use crate::native_artifact::program::packed_liveness::{
 };
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
+#[path = "numeric_point_liveness.rs"]
+mod point;
+
 // Sparse words avoid storage proportional to the largest value ID or to the
 // full block/value product. Each entry represents up to 64 independently live
 // values, with no zero words retained.
@@ -46,6 +49,21 @@ pub(super) fn live_before_indexed(
     definitions: &[Vec<u32>],
     start: usize,
 ) -> BTreeSet<u32> {
+    // On broad graphs with sparse reads, solve only the requested start point.
+    // The caller still constructs and validates its complete exact query graph.
+    // A bounded search falls back to the existing packed/sparse solvers.
+    if next.len() >= 1024
+        && reads.iter().map(BTreeSet::len).sum::<usize>() <= next.len()
+        && let (Some(live), _) = point::solve(
+            next,
+            reads,
+            definitions,
+            start,
+            next.len().saturating_mul(64).min(point::MAX_SEARCH_STEPS),
+        )
+    {
+        return live;
+    }
     if let Some(live) = dense_live_before_indexed(next, reads, definitions, start, MAX_DENSE_CELLS)
     {
         return live;
