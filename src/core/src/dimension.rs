@@ -209,6 +209,24 @@ pub(crate) fn canonicalize_dimension_environment(
 ) -> Result<CanonicalDimensionEnvironment, SemanticModelError> {
     validate_declaration_ids(declarations)?;
     let count = declarations.len();
+    if root_references.is_empty() {
+        // With no roots, no declaration can be retained. Validate each bound
+        // in its original order, without retaining unused normalized data or
+        // constructing dependencies and DFS state. Unused cycles stay unused.
+        for declaration in declarations {
+            if declaration.lifetime == DimensionLifetime::CompileTime {
+                return Err(SemanticModelError::CompileTimeDimensionParameterV1);
+            }
+            normalize_dimension(&declaration.lower_bound, count)?;
+            if let Some(upper) = &declaration.upper_bound {
+                normalize_dimension(upper, count)?;
+            }
+        }
+        return Ok(CanonicalDimensionEnvironment {
+            parameters: Box::new([]),
+            old_to_new: vec![None; count],
+        });
+    }
     let mut normalized_bounds = Vec::with_capacity(count);
     let mut dependencies = Vec::with_capacity(count);
     for declaration in declarations {
@@ -784,6 +802,88 @@ mod vector_tests {
                 _ => panic!("canonicalization result changed at seed {seed}"),
             }
         }
+    }
+
+    #[test]
+    fn rootless_bounds_preserve_first_errors_and_unused_dependencies() {
+        let parameter = |id| DimensionExpr::Parameter(DimensionParameterId::new(id));
+        let expressions = [
+            DimensionExpr::Constant(0),
+            DimensionExpr::Constant(u64::MAX),
+            DimensionExpr::Hole,
+            parameter(0),
+            parameter(1),
+            parameter(u32::MAX),
+            DimensionExpr::Add(
+                vec![
+                    DimensionExpr::Constant(u64::MAX),
+                    DimensionExpr::Constant(1),
+                ]
+                .into_boxed_slice(),
+            ),
+            DimensionExpr::Multiply(
+                vec![
+                    DimensionExpr::Constant(u64::MAX),
+                    DimensionExpr::Constant(2),
+                ]
+                .into_boxed_slice(),
+            ),
+            DimensionExpr::Multiply(
+                vec![DimensionExpr::Constant(0), DimensionExpr::Hole].into_boxed_slice(),
+            ),
+            DimensionExpr::Min(Box::new([])),
+            DimensionExpr::Max(vec![parameter(0), DimensionExpr::Constant(3)].into_boxed_slice()),
+        ];
+        for seed in 0..4096_u64 {
+            let mut random = seed + 1;
+            let mut next = || {
+                random = random
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
+                (random >> 32) as usize
+            };
+            let count = next() % 9;
+            let mut declarations = Vec::new();
+            for index in 0..count {
+                let mut value = declaration(index as u32);
+                value.lower_bound = expressions[next() % expressions.len()].clone();
+                if next() % 2 == 0 {
+                    value.upper_bound = Some(expressions[next() % expressions.len()].clone());
+                }
+                if next() % 2 == 0 {
+                    value.origin = DimensionParameterOrigin::Explicit;
+                }
+                if next() % 11 == 0 {
+                    value.lifetime = DimensionLifetime::CompileTime;
+                }
+                if next() % 13 == 0 {
+                    value.id = DimensionParameterId::new(u32::MAX);
+                }
+                declarations.push(value);
+            }
+            match (
+                canonicalize_dimension_environment(&declarations, &[]),
+                reference_canonicalize_dimension_environment(&declarations, &[]),
+            ) {
+                (Ok(actual), Ok(expected)) => {
+                    assert!(actual.parameters.is_empty());
+                    assert_eq!(actual.parameters, expected.parameters, "seed {seed}");
+                    assert_eq!(actual.old_to_new, expected.old_to_new, "seed {seed}");
+                }
+                (Err(actual), Err(expected)) => assert_eq!(actual, expected, "seed {seed}"),
+                _ => panic!("rootless result changed at seed {seed}"),
+            }
+        }
+        let mut unused_cycle = vec![declaration(0), declaration(1)];
+        unused_cycle[0].lower_bound = parameter(1);
+        unused_cycle[1].lower_bound = parameter(0);
+        let empty = canonicalize_dimension_environment(&unused_cycle, &[]).unwrap();
+        assert!(empty.parameters.is_empty());
+        assert_eq!(empty.old_to_new, vec![None, None]);
+        assert!(
+            canonicalize_dimension_environment(&unused_cycle, &[DimensionParameterId::new(0)])
+                .is_err()
+        );
     }
 
     fn reference_canonicalize_dimension_environment(
