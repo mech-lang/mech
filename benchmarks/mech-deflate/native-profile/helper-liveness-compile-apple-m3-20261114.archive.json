@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-helper-liveness-20261114.tar.gz",
+  "bytes": 12578129,
+  "evidence_files": 443,
+  "files": 443,
+  "format": 1,
+  "manifest_sha256": "aa48f895e377940df5427c752d0af32e9c13ade5e20cdb819df566922a8b0f87",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "4ccc6d925b98915721d48c920633e8a3940d6d200e311ad3559573d997b0a5c9",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-helper-liveness-20261114.tar.gz",
+  "sha256": "950b12f41567139f122fb387af9b05f15b12d74311ab967e4fe33cd68746e92f",
+  "source_revision": "ba9298bca36ca7879501060ad7d3e7c2d5222a7d",
+  "uncompressed_bytes": 88586018,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "950b12f41567139f122fb387af9b05f15b12d74311ab967e4fe33cd68746e92f",
+    "source_revision": "ba9298bca36ca7879501060ad7d3e7c2d5222a7d",
+    "verified_bytes": 88586018,
+    "verified_files": 443
+  }
+}
