@@ -91,7 +91,7 @@ impl SemanticBuilder {
                 );
             }
             let expected = self.schema_draft_of(base)?;
-            return self.conform_assignment_value(replacement, expected, value_syntax);
+            return self.conform_assignment_value(replacement, expected.into(), value_syntax);
         };
         let schema = self.schema_draft_of(base)?;
         if !matches!(
@@ -149,7 +149,7 @@ impl SemanticBuilder {
                 );
                 (
                     Some(selected),
-                    self.schema_draft_of(selected)?,
+                    self.schema_draft_of(selected)?.into_owned(),
                     vec![selector],
                     "core/assign/collection-entry",
                 )
@@ -296,11 +296,11 @@ impl SemanticBuilder {
                 _ => unreachable!("selection validation checks arity"),
             };
             let (_, selectors, next_schema) =
-                self.prepare_selection_schema(selected_schema, selectors, item.syntax())?;
+                self.prepare_selection_schema(selected_schema.into(), selectors, item.syntax())?;
             selection_plan
                 .push(self.constant_exact(SchemaBody::Index, ValueDataDraft::Index(mode)));
             selection_plan.extend(selectors);
-            selected_schema = next_schema;
+            selected_schema = next_schema.into();
         }
         let declaration = self.source_type_declaration(arithmetic).map_err(|_| {
             internal(
@@ -313,7 +313,7 @@ impl SemanticBuilder {
             vec![base, replacement],
             statement,
             declaration,
-            Some(selected_schema),
+            Some(selected_schema.into()),
         )?;
         let operation = format!(
             "core/assign/nested/{}",
@@ -378,7 +378,7 @@ impl SemanticBuilder {
             PendingSelection {
                 operation: None,
                 inputs: vec![base],
-                schema: self.schema_draft_of(base)?,
+                schema: self.schema_draft_of(base)?.into(),
             }
         } else {
             self.prepare_selection(base, selectors.clone(), syntax)?

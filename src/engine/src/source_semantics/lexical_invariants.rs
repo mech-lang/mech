@@ -20,7 +20,7 @@ impl SemanticBuilder {
             body: PendingNodeBody::LocalAssert,
             inferable_projection: false,
             inputs: vec![condition],
-            schema: builtin_schema_draft(BuiltinSchema::Bool),
+            schema: builtin_schema_draft(BuiltinSchema::Bool).into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {

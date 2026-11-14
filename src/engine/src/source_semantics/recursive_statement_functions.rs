@@ -77,15 +77,15 @@ impl SemanticBuilder {
         error: &impl Fn(&'static str, String) -> SourceSemanticError,
         compile: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let argument_schema = if let [argument] = arguments {
-            self.schema_draft_of(*argument)?
+        let argument_schema: SchemaDraft = if let [argument] = arguments {
+            self.schema_draft_of(*argument)?.into_owned()
         } else {
             let mut dimensions = Vec::new();
             let fields = arguments
                 .iter()
                 .map(|value| {
                     function_argument_shape::embed(
-                        &self.schema_draft_of(*value)?,
+                        self.schema_draft_of(*value)?.as_ref(),
                         &mut dimensions,
                         SourceSemanticAnchor::for_node(call),
                     )
@@ -147,7 +147,9 @@ impl SemanticBuilder {
         }
         let binding_start = self.nodes.len();
         let mut bindings = BTreeMap::new();
-        let mut fields = Vec::new();
+        let mut fields: Vec<
+            crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
+        > = Vec::new();
         if !capture_arguments {
             for (local, ((parameter, _), argument)) in parameters.iter().zip(arguments).enumerate()
             {
@@ -183,7 +185,10 @@ impl SemanticBuilder {
                     PendingBinding::Value(PendingValue::Node(index)),
                 );
                 bindings.insert(index, local);
-                fields.push(crate::CollectionPattern::Bind { local, schema });
+                fields.push(crate::CollectionPattern::Bind {
+                    local,
+                    schema: schema.into(),
+                });
             }
         }
         let mut pattern = if capture_arguments {
@@ -217,7 +222,7 @@ impl SemanticBuilder {
                 if !captures.iter().any(|(existing, _, _)| *existing == input) {
                     captures.push((
                         input,
-                        self.schema_draft_of(*argument)?,
+                        self.schema_draft_of(*argument)?.into_owned(),
                         !matches!(argument, PendingValue::Input(_)),
                     ));
                 }
@@ -274,7 +279,7 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema,
+            schema: schema.into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {

@@ -521,7 +521,7 @@ impl SemanticBuilder {
                     .iter()
                     .map(|argument| {
                         function_argument_shape::embed(
-                            &self.schema_draft_of(*argument)?,
+                            self.schema_draft_of(*argument)?.as_ref(),
                             &mut dimensions,
                             SourceSemanticAnchor::for_node(call),
                         )
@@ -544,7 +544,7 @@ impl SemanticBuilder {
                 body: PendingNodeBody::RecursiveCall(ancestor),
                 inferable_projection: false,
                 inputs: vec![argument],
-                schema: expected,
+                schema: expected.into(),
                 exposes_output: true,
                 state: None,
                 semantic: SourceSemanticNode {
@@ -614,7 +614,7 @@ impl SemanticBuilder {
                     input,
                     &source_element,
                     PatternLiftOutput::Matrix {
-                        source_schema: actual,
+                        source_schema: actual.into(),
                     },
                     call,
                 )?;
@@ -835,7 +835,7 @@ impl SemanticBuilder {
             body: PendingNodeBody::CollectionBinding,
             inferable_projection: false,
             inputs: Vec::new(),
-            schema: element.clone(),
+            schema: element.clone().into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
@@ -971,7 +971,7 @@ impl SemanticBuilder {
                         .into_iter()
                         .map(&mut capture)
                         .collect::<Result<Box<[_]>, _>>()?,
-                    schema: node.schema,
+                    schema: node.schema.into(),
                 },
             ));
         }
@@ -982,7 +982,7 @@ impl SemanticBuilder {
                 SchemaDraft {
                     dimension_parameters: Box::new([]),
                     body: SchemaBody::Set {
-                        element: Box::new(output_element.body),
+                        element: Box::new(output_element.body.clone()),
                         cardinality: CardinalitySpec::Dynamic { upper_bound },
                     },
                 },
@@ -997,7 +997,7 @@ impl SemanticBuilder {
                     SchemaDraft {
                         dimension_parameters: source_schema.dimension_parameters,
                         body: SchemaBody::Matrix {
-                            element: Box::new(output_element.body),
+                            element: Box::new(output_element.body.clone()),
                             dimensions,
                         },
                     },
@@ -1014,7 +1014,7 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema,
+            schema: schema.into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
@@ -1119,7 +1119,7 @@ impl SemanticBuilder {
             .iter()
             .map(|value| {
                 embed_schema_draft(
-                    &self.schema_draft_of(*value)?,
+                    self.schema_draft_of(*value)?.as_ref(),
                     &mut dimensions,
                     SourceSemanticAnchor::for_node(call),
                 )
@@ -1162,7 +1162,7 @@ impl SemanticBuilder {
                 .iter()
                 .map(|argument| {
                     function_argument_shape::embed(
-                        &self.schema_draft_of(*argument)?,
+                        self.schema_draft_of(*argument)?.as_ref(),
                         &mut dimensions,
                         SourceSemanticAnchor::for_node(call),
                     )

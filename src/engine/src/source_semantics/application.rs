@@ -237,7 +237,7 @@ impl SemanticBuilder {
                     body: *element.clone(),
                     dimension_parameters: Box::new([]),
                 },
-                _ => seed_schema.clone(),
+                _ => seed_schema.clone().into(),
             }
         } else {
             match &callable {
@@ -281,7 +281,7 @@ impl SemanticBuilder {
             body: PendingNodeBody::CollectionBinding,
             inferable_projection: false,
             inputs: Vec::new(),
-            schema: carrier.clone(),
+            schema: carrier.clone().into(),
             exposes_output: false,
             state: None,
             semantic: SourceSemanticNode {
@@ -373,9 +373,12 @@ impl SemanticBuilder {
                         let capture = u16::try_from(captures.len()).map_err(|_| error())?;
                         // A counted invocation retains every lexical capture
                         // once, including a document signal input.
-                        captures.push((input, schema.clone(), true));
+                        captures.push((input, schema.clone().into(), true));
                         let ordinal = u16::try_from(parameters.len()).map_err(|_| error())?;
-                        parameters.push((crate::ControlParameterSource::Capture(capture), schema));
+                        parameters.push((
+                            crate::ControlParameterSource::Capture(capture),
+                            schema.into_owned(),
+                        ));
                         parameter_values.push(value);
                         Ok(PendingControlValue::Parameter(ordinal))
                     }
@@ -434,7 +437,11 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema: if elementwise { seed_schema } else { carrier },
+            schema: if elementwise {
+                seed_schema
+            } else {
+                carrier.into()
+            },
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {

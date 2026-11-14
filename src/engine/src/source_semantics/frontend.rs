@@ -40,6 +40,10 @@ use comprehension::{PendingComprehension, resolve_comprehension};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+#[path = "pending_schema.rs"]
+mod pending_schema;
+use pending_schema::{FinalizeSourceSchema, PendingSchema};
+
 #[path = "document_lowering.rs"]
 mod document_lowering;
 
@@ -1541,13 +1545,13 @@ struct SourceSchemas {
     declarations: Box<[crate::SourceNominalDeclaration]>,
 }
 
-fn retain_schema_tree(
+fn retain_schema_tree<S: FinalizeSourceSchema + ?Sized>(
     anchor: SourceSemanticAnchor,
     builder: &mut SchemaTableBuilder,
-    draft: &SchemaDraft,
+    draft: &S,
 ) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
     let schema = draft
-        .finalize_ref()
+        .finalize_source_schema()
         .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
     retain_finalized_schema_tree(anchor, builder, schema)
 }
@@ -2105,7 +2109,7 @@ fn declared_call_argument_contexts(
                 common = Some(kind);
             }
             let resolved = ResolvedType::new(common?.clone(), Box::new([])).ok()?;
-            schema_draft_from_resolved(&resolved, anchor, &[]).ok()
+            schema_draft_from_resolved(&resolved, anchor, &[] as &[SchemaDraft]).ok()
         })
         .collect()
 }
@@ -2364,10 +2368,10 @@ fn remap_schema_body(
     })
 }
 
-fn schema_draft_from_resolved(
+fn schema_draft_from_resolved<K: std::borrow::Borrow<SchemaDraft>>(
     resolved: &ResolvedType,
     anchor: SourceSemanticAnchor,
-    known: &[SchemaDraft],
+    known: &[K],
 ) -> Result<SchemaDraft, SourceSemanticError> {
     fn enum_body(body: &SchemaBody, key: NominalKey) -> Option<SchemaBody> {
         match body {
@@ -2394,10 +2398,10 @@ fn schema_draft_from_resolved(
             _ => None,
         }
     }
-    fn body(
+    fn body<K: std::borrow::Borrow<SchemaDraft>>(
         kind: &KindExpr,
         anchor: SourceSemanticAnchor,
-        known: &[SchemaDraft],
+        known: &[K],
     ) -> Result<SchemaBody, SourceSemanticError> {
         Ok(match kind {
             KindExpr::Wildcard => SchemaBody::Dynamic,
@@ -2414,9 +2418,12 @@ fn schema_draft_from_resolved(
             KindExpr::IntegerInterval(interval) => SchemaBody::IntegerInterval(*interval),
             KindExpr::Atom(key) => SchemaBody::Atom(*key),
             KindExpr::Enum(key) => {
-                let mut witnesses = known
-                    .iter()
-                    .filter_map(|draft| enum_body(&draft.body, *key));
+                let mut witnesses = known.iter().filter_map(|draft| {
+                    enum_body(
+                        &<K as std::borrow::Borrow<SchemaDraft>>::borrow(draft).body,
+                        *key,
+                    )
+                });
                 let first = witnesses.next().ok_or_else(|| {
                     internal(
                         anchor,
@@ -2505,10 +2512,10 @@ fn schema_draft_from_resolved(
     })
 }
 
-fn materialize_source_output_draft(
+fn materialize_source_output_draft<K: std::borrow::Borrow<SchemaDraft>>(
     resolved: &ResolvedType,
     rule: &ResolvedOutputSchemaRule,
-    inputs: &[SchemaDraft],
+    inputs: &[K],
     anchor: SourceSemanticAnchor,
 ) -> Result<SchemaDraft, SourceSemanticError> {
     match rule {
@@ -2578,6 +2585,7 @@ fn materialize_source_output_draft(
                     format!("output schema input {index} is unavailable"),
                 )
             })?;
+            let input = <K as std::borrow::Borrow<SchemaDraft>>::borrow(input);
             let draft = schema_draft_from_resolved(resolved, anchor, inputs)?;
             let (
                 SchemaBody::Set {
@@ -2678,6 +2686,7 @@ fn materialize_source_output_draft(
                     format!("transpose schema input {index} is unavailable"),
                 )
             })?;
+            let input = <K as std::borrow::Borrow<SchemaDraft>>::borrow(input);
             let SchemaBody::Matrix {
                 element,
                 dimensions,
@@ -2718,6 +2727,8 @@ fn materialize_source_output_draft(
                     ),
                 ));
             };
+            let left = <K as std::borrow::Borrow<SchemaDraft>>::borrow(left);
+            let right = <K as std::borrow::Borrow<SchemaDraft>>::borrow(right);
             let set_element = |input: &SchemaDraft| {
                 let SchemaBody::Set { element, .. } = &input.body else {
                     return Err(internal(
@@ -2745,6 +2756,7 @@ fn materialize_source_output_draft(
             let input = inputs
                 .first()
                 .ok_or_else(|| internal(anchor, "set powerset requires one input".to_owned()))?;
+            let input = <K as std::borrow::Borrow<SchemaDraft>>::borrow(input);
             let SchemaBody::Set {
                 element,
                 cardinality,
@@ -2831,7 +2843,7 @@ enum PendingBinding {
 }
 
 struct PendingConstant {
-    schema: SchemaDraft,
+    schema: PendingSchema,
     data: ValueDataDraft,
     dynamic_payload: Option<(SchemaDraft, ValueDataDraft)>,
     embedded_constant: Option<(usize, bool)>,
@@ -2840,7 +2852,7 @@ struct PendingConstant {
 #[derive(Clone)]
 struct PendingInput {
     name: String,
-    schema: SchemaDraft,
+    schema: PendingSchema,
     anchor: SourceSemanticAnchor,
 }
 
@@ -3321,7 +3333,7 @@ enum PendingControlValue {
 struct PendingControlOperation {
     body: PendingControlOperationBody,
     inputs: Vec<PendingControlValue>,
-    schema: SchemaDraft,
+    schema: PendingSchema,
 }
 
 enum PendingControlOperationBody {
@@ -3372,7 +3384,7 @@ impl PendingControlBlock {
         if !annotation_shape_identity::equivalent(&specialized, result) {
             return false;
         }
-        operation.schema = result.clone();
+        operation.schema = result.clone().into();
         true
     }
 }
@@ -3381,7 +3393,7 @@ struct PendingNode {
     body: PendingNodeBody,
     inferable_projection: bool,
     inputs: Vec<PendingValue>,
-    schema: SchemaDraft,
+    schema: PendingSchema,
     exposes_output: bool,
     state: Option<u32>,
     semantic: SourceSemanticNode,
@@ -4372,14 +4384,14 @@ impl SemanticBuilder {
         if let PendingValue::Input(index) = value {
             let input = &mut self.inputs[index as usize];
             if !self.input_declarations.contains_key(&input.name) {
-                input.schema = target.clone();
+                input.schema = target.clone().into();
                 return Ok(value);
             }
         }
         if let PendingValue::Node(index) = value {
             let node = &mut self.nodes[index as usize];
             if node.inferable_projection {
-                node.schema = target.clone();
+                node.schema = target.clone().into();
                 node.inferable_projection = false;
                 return Ok(value);
             }
@@ -4858,14 +4870,14 @@ impl SemanticBuilder {
                 (true, false) => {
                     inputs[0] = self.conform_dynamic_to_schema(
                         inputs[0],
-                        &self.schema_draft_of(inputs[1])?,
+                        self.schema_draft_of(inputs[1])?.as_ref(),
                         syntax,
                     )?;
                 }
                 (false, true) => {
                     let expected = match &destination {
                         Some(selected) => selected.clone(),
-                        None => self.schema_draft_of(inputs[0])?,
+                        None => self.schema_draft_of(inputs[0])?.into(),
                     };
                     inputs[1] = self.conform_dynamic_to_schema(inputs[1], &expected, syntax)?;
                 }
@@ -4879,7 +4891,7 @@ impl SemanticBuilder {
                 let schema = if index == 0 && destination.is_some() {
                     destination.clone().unwrap()
                 } else {
-                    self.schema_draft_of(*input)?
+                    self.schema_draft_of(*input)?.into_owned()
                 };
                 if matches!(schema.body, SchemaBody::Dynamic) {
                     return Err(SourceSemanticError {
@@ -4994,7 +5006,7 @@ impl SemanticBuilder {
             .map(|input| self.schema_draft_of(*input))
             .collect::<Result<Vec<_>, _>>()?;
         if let Some(destination) = destination {
-            input_schemas[0] = destination;
+            input_schemas[0] = destination.into();
         }
         Ok((
             inputs,
@@ -5232,7 +5244,7 @@ impl SemanticBuilder {
         self.input_by_name.insert(name.clone(), index);
         self.inputs.push(PendingInput {
             name,
-            schema: declared,
+            schema: declared.into(),
             anchor: SourceSemanticAnchor::for_node(&syntax),
         });
         Ok(PendingValue::Input(index))
@@ -5964,7 +5976,7 @@ impl SemanticBuilder {
                     // each block's own dimensions when constraining its elements.
                     let actual = match lowered {
                         PendingValue::UnresolvedEmpty(_) => None,
-                        value => Some(self.schema_draft_of(value)?),
+                        value => Some(self.schema_draft_of(value)?.into_owned()),
                     };
                     let target = match actual {
                         Some(SchemaDraft {
@@ -6072,7 +6084,7 @@ impl SemanticBuilder {
                 return Ok(self.constant_draft(
                     SchemaDraft {
                         body: SchemaBody::Matrix {
-                            element: Box::new(element_schema.body),
+                            element: Box::new(element_schema.body.clone()),
                             dimensions: vec![
                                 DimensionExpr::Constant(row_count),
                                 DimensionExpr::Constant(column_count),
@@ -6182,7 +6194,7 @@ impl SemanticBuilder {
                             }),
                         ),
                         Some(value) => {
-                            let actual = self.schema_draft_of(value)?;
+                            let actual = self.schema_draft_of(value)?.into_owned();
                             let target = match actual.body {
                                 SchemaBody::Matrix { dimensions, .. } => {
                                     let mut parameters = actual.dimension_parameters.into_vec();
@@ -6622,7 +6634,7 @@ impl SemanticBuilder {
             fields.push(SchemaField {
                 name,
                 schema: embed_schema_draft(
-                    &self.schema_draft_of(value)?,
+                    self.schema_draft_of(value)?.as_ref(),
                     &mut parameters,
                     SourceSemanticAnchor::for_node(record.syntax()),
                 )?,
@@ -6769,7 +6781,7 @@ impl SemanticBuilder {
             .iter()
             .map(|value| {
                 embed_schema_draft(
-                    &self.schema_draft_of(*value)?,
+                    self.schema_draft_of(*value)?.as_ref(),
                     &mut parameters,
                     SourceSemanticAnchor::for_node(tuple.syntax()),
                 )
@@ -6818,7 +6830,7 @@ impl SemanticBuilder {
             if let PendingValue::Constant(index) = value {
                 let embedded = self.constants.len();
                 self.constants.push(PendingConstant {
-                    schema: variant.schema,
+                    schema: variant.schema.into(),
                     data: ValueDataDraft::Enum(EnumDraft {
                         ordinal: variant.ordinal,
                         payload: None,
@@ -6873,7 +6885,7 @@ impl SemanticBuilder {
         let tag = self.constant_exact(tag_schema.clone(), ValueDataDraft::Atom);
         let mut parameters = Vec::new();
         let payload = embed_schema_draft(
-            &self.schema_draft_of(value)?,
+            self.schema_draft_of(value)?.as_ref(),
             &mut parameters,
             SourceSemanticAnchor::for_node(tuple.syntax()),
         )?;
@@ -6943,7 +6955,7 @@ impl SemanticBuilder {
                 for name in names {
                     let selected = self.select_field(source, &name, item.syntax())?;
                     fields.push(embed_schema_draft(
-                        &self.schema_draft_of(selected)?,
+                        self.schema_draft_of(selected)?.as_ref(),
                         &mut parameters,
                         SourceSemanticAnchor::for_node(item.syntax()),
                     )?);
@@ -6985,7 +6997,7 @@ impl SemanticBuilder {
         name: &str,
         syntax: &SyntaxNode,
     ) -> Result<PendingValue, SourceSemanticError> {
-        let mut schema = self.schema_draft_of(source)?;
+        let mut schema = self.schema_draft_of(source)?.into_owned();
         let body = match &schema.body {
             SchemaBody::Record(fields) => fields
                 .iter()
@@ -7033,7 +7045,10 @@ impl SemanticBuilder {
         Ok(self.emit_with_schema_draft(
             "access/column",
             vec![source, selector],
-            SchemaDraft { body, ..schema },
+            SchemaDraft {
+                body,
+                ..schema.into()
+            },
             syntax,
             "slice",
             None,
@@ -7071,7 +7086,7 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
     ) -> Result<PendingSelection, SourceSemanticError> {
         let (operation, selected, schema) =
-            self.prepare_selection_schema(self.schema_draft_of(source)?, selectors, syntax)?;
+            self.prepare_selection_schema(self.schema_draft_of(source)?.into(), selectors, syntax)?;
         let mut inputs = vec![source];
         inputs.extend(selected);
         Ok(PendingSelection {
@@ -7117,7 +7132,7 @@ impl SemanticBuilder {
                 }
                 Some(value) => {
                     let selector = embed_schema_draft(
-                        &self.schema_draft_of(*value)?,
+                        self.schema_draft_of(*value)?.as_ref(),
                         &mut parameters,
                         SourceSemanticAnchor::for_node(syntax),
                     )?;
@@ -7425,7 +7440,7 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema: builtin_schema_draft(BuiltinSchema::Dynamic),
+            schema: builtin_schema_draft(BuiltinSchema::Dynamic).into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
@@ -7553,7 +7568,7 @@ impl SemanticBuilder {
         self.input_by_name.insert(name.clone(), index);
         self.inputs.push(PendingInput {
             name,
-            schema,
+            schema: schema.into(),
             anchor: SourceSemanticAnchor::for_node(node),
         });
         Ok(PendingValue::Input(index))
@@ -7573,7 +7588,7 @@ impl SemanticBuilder {
         for value in values {
             let schema = self.schema_draft_of(value)?;
             if !matches!(schema.body, SchemaBody::Dynamic) {
-                return Ok(Some(schema));
+                return Ok(Some(schema.into()));
             }
         }
         Ok(None)
@@ -7597,8 +7612,19 @@ impl SemanticBuilder {
         })
     }
 
-    fn schema_draft_of(&self, value: PendingValue) -> Result<SchemaDraft, SourceSemanticError> {
-        Ok(self.schema_draft(value)?.clone())
+    fn schema_draft_of(&self, value: PendingValue) -> Result<PendingSchema, SourceSemanticError> {
+        Ok(match value.resolved()? {
+            PendingValue::Constant(index) => &self.constants[index].schema,
+            PendingValue::Input(index) | PendingValue::LexicalInput(index) => {
+                &self.inputs[index as usize].schema
+            }
+            PendingValue::State(index) => {
+                &self.nodes[self.states[index as usize].producer_node as usize].schema
+            }
+            PendingValue::Node(index) => &self.nodes[index as usize].schema,
+            PendingValue::UnresolvedEmpty(_) => unreachable!("resolved above"),
+        }
+        .clone())
     }
 
     fn promote_operands(
@@ -7756,22 +7782,22 @@ impl SemanticBuilder {
             }
             return Err(unresolved_empty(anchor));
         }
-        let actual = self.schema_draft_of(value)?;
+        let actual = self.schema_draft(value)?;
         let specialized;
         let expected = if !expected.dimension_parameters.is_empty()
             && !matches!(actual.body, SchemaBody::Dynamic)
         {
-            specialized = specialize_annotation_dimensions(&actual, expected, syntax)?;
+            specialized = specialize_annotation_dimensions(actual, expected, syntax)?;
             &specialized
         } else {
             expected
         };
         if is_dynamic_schema_draft(expected)
-            || actual == *expected
+            || actual == expected
             || schema_annotation_accepts(&actual.body, &expected.body)
             // Projection drafts may retain unused axes or independently
             // number the same free axes. Neither requires a value conversion.
-            || annotation_shape_identity::equivalent(&actual, expected)
+            || annotation_shape_identity::equivalent(actual, expected)
         {
             return Ok(value);
         }
@@ -7805,12 +7831,11 @@ impl SemanticBuilder {
                 let value =
                     self.conform_schema_draft(value, &payload_schema, syntax, code, message)?;
                 if let PendingValue::Constant(index) = value {
-                    let actual_payload = self.constants[index].schema.clone();
                     let wrap_dynamic = matches!(payload.as_ref(), SchemaBody::Dynamic)
-                        && !matches!(actual_payload.body, SchemaBody::Dynamic);
+                        && !matches!(self.constants[index].schema.body, SchemaBody::Dynamic);
                     let embedded = self.constants.len();
                     self.constants.push(PendingConstant {
-                        schema: expected.clone(),
+                        schema: expected.clone().into(),
                         data: ValueDataDraft::Option(OptionDraft {
                             present: true,
                             value: None,
@@ -7871,7 +7896,12 @@ impl SemanticBuilder {
         )
     }
 
-    fn constant_draft(&mut self, schema: SchemaDraft, data: ValueDataDraft) -> PendingValue {
+    fn constant_draft(
+        &mut self,
+        schema: impl Into<PendingSchema>,
+        data: ValueDataDraft,
+    ) -> PendingValue {
+        let schema = schema.into();
         let index = self.constants.len();
         self.constants.push(PendingConstant {
             schema,
@@ -7885,7 +7915,7 @@ impl SemanticBuilder {
     fn constant(&mut self, schema: BuiltinSchema, data: ValueDataDraft) -> PendingValue {
         let index = self.constants.len();
         self.constants.push(PendingConstant {
-            schema: builtin_schema_draft(schema),
+            schema: builtin_schema_draft(schema).into(),
             data,
             dynamic_payload: None,
             embedded_constant: None,
@@ -7899,7 +7929,8 @@ impl SemanticBuilder {
             schema: SchemaDraft {
                 body: schema_body,
                 dimension_parameters: Box::new([]),
-            },
+            }
+            .into(),
             data,
             dynamic_payload: None,
             embedded_constant: None,
@@ -7914,7 +7945,7 @@ impl SemanticBuilder {
     ) -> PendingValue {
         let index = self.constants.len();
         self.constants.push(PendingConstant {
-            schema: builtin_schema_draft(BuiltinSchema::OptionDynamic),
+            schema: builtin_schema_draft(BuiltinSchema::OptionDynamic).into(),
             data: ValueDataDraft::Option(OptionDraft {
                 present: true,
                 value: None,
@@ -7948,11 +7979,12 @@ impl SemanticBuilder {
         &mut self,
         operation: &str,
         inputs: Vec<PendingValue>,
-        schema: SchemaDraft,
+        schema: impl Into<PendingSchema>,
         syntax: &SyntaxNode,
         role: &'static str,
         detail: Option<String>,
     ) -> PendingValue {
+        let schema = schema.into();
         let index = self.nodes.len() as u32;
         // Keep the operation contract with the selected identity, converted
         // arguments and exact output schema. Artifact handoff only transports
@@ -8037,7 +8069,8 @@ impl SemanticBuilder {
             schema: SchemaDraft {
                 body: SchemaBody::Tuple(Box::new([])),
                 dimension_parameters: Box::new([]),
-            },
+            }
+            .into(),
             exposes_output: false,
             state: None,
             semantic: SourceSemanticNode {
@@ -9329,13 +9362,19 @@ fn specialize_annotation_dimensions(
         message,
         anchor,
     };
-    let mut actual = actual.clone();
-    if matches!(expected.body, SchemaBody::Option(_))
+    let wrapped;
+    let actual = if matches!(expected.body, SchemaBody::Option(_))
         && !matches!(actual.body, SchemaBody::Option(_))
     {
-        actual.body = SchemaBody::Option(Box::new(actual.body));
-    }
-    let known = [actual.clone(), expected.clone()];
+        wrapped = SchemaDraft {
+            body: SchemaBody::Option(Box::new(actual.body.clone())),
+            dimension_parameters: actual.dimension_parameters.clone(),
+        };
+        &wrapped
+    } else {
+        actual
+    };
+    let known = [actual, expected];
     let actual = ResolvedType::from_schema_body(&actual.body, &actual.dimension_parameters)
         .map_err(|failure| error(failure.to_string()))?;
     let expected = ResolvedType::from_schema_body(&expected.body, &expected.dimension_parameters)
@@ -9870,7 +9909,7 @@ mod tests {
             let index = builder.inputs.len() as u32;
             builder.inputs.push(PendingInput {
                 name: name.into(),
-                schema,
+                schema: schema.into(),
                 anchor,
             });
             builder.bindings.insert(
@@ -9947,7 +9986,7 @@ mod tests {
             operations: vec![PendingControlOperation {
                 body: PendingControlOperationBody::Recur(0),
                 inputs: Vec::new(),
-                schema: expected,
+                schema: expected.into(),
             }],
             yield_value: PendingControlValue::Local(0),
         };
@@ -9982,7 +10021,7 @@ mod tests {
                 schema: SchemaDraft {
                     body,
                     dimension_parameters: Box::new([]),
-                },
+                }.into(),
                 anchor,
             });
             let result = builder.control_block_with(
@@ -10082,7 +10121,7 @@ mod tests {
                     operations: vec![PendingControlOperation {
                         body: PendingControlOperationBody::Comprehension(comprehension),
                         inputs: Vec::new(),
-                        schema: schema(SchemaBody::String),
+                        schema: schema(SchemaBody::String).into(),
                     }],
                     yield_value: PendingControlValue::Local(0),
                 },
@@ -10314,7 +10353,7 @@ impl SemanticBuilder {
             crate::CollectionPattern::Wildcard => crate::CollectionPattern::Wildcard,
             crate::CollectionPattern::Bind { local, schema } => crate::CollectionPattern::Bind {
                 local: *local,
-                schema: self.schema_draft_of(*schema)?,
+                schema: self.schema_draft_of(*schema)?.into(),
             },
             crate::CollectionPattern::Equal(value) => {
                 let value = match value {
@@ -10341,7 +10380,7 @@ impl SemanticBuilder {
                         if !captures.iter().any(|(existing, _, _)| *existing == input) {
                             captures.push((
                                 input,
-                                schema,
+                                schema.into(),
                                 !matches!(value, PendingValue::Input(_)),
                             ));
                         }
@@ -10591,7 +10630,7 @@ impl SemanticBuilder {
                                 pattern_bindings.insert(node, 0);
                                 crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
                                     local: 0,
-                                    schema: scrutinee_schema.clone(),
+                                    schema: scrutinee_schema.clone().into_owned(),
                                 })
                             } else {
                                 let start = self.nodes.len();
@@ -10961,7 +11000,7 @@ impl SemanticBuilder {
             },
             inferable_projection: false,
             inputs,
-            schema: result_schema.expect("exhaustive match has arms"),
+            schema: result_schema.expect("exhaustive match has arms").into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
@@ -11000,7 +11039,7 @@ impl SemanticBuilder {
                 contract,
             },
             inputs: vec![body.yield_value],
-            schema: selected.clone(),
+            schema: selected.clone().into(),
         });
         body.yield_value = PendingControlValue::Local(index);
         Ok(())
@@ -11159,7 +11198,7 @@ impl SemanticBuilder {
                                 None => {
                                     captures.push((
                                         input,
-                                        schema.clone(),
+                                        schema.clone().into(),
                                         !matches!(value, PendingValue::Input(_)),
                                     ));
                                     captures.len() - 1
@@ -11171,7 +11210,7 @@ impl SemanticBuilder {
                         };
                         let ordinal = u16::try_from(parameters.len()).map_err(|_| rejected("source-semantics/control-parameter-limit", "selected block exceeds the representable input, capture, or parameter count (65536)".to_owned()))?;
                         parameter_values.push(value);
-                        parameters.push((source, schema));
+                        parameters.push((source, schema.into()));
                         Ok(PendingControlValue::Parameter(ordinal))
                     }
                 }
@@ -11268,7 +11307,7 @@ impl SemanticBuilder {
                 operations,
                 yield_value,
             },
-            schema,
+            schema.into(),
         ))
     }
 }
