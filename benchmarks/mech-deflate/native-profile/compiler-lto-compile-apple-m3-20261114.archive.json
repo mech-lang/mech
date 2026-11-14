@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-compiler-lto-20261114.tar.gz",
+  "bytes": 18716069,
+  "evidence_files": 514,
+  "files": 514,
+  "format": 1,
+  "manifest_sha256": "089623c8b6ea7027f0ac3e6898f86cd355c7c8eaa49b19a9743b2e33750db75d",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "c50fb243358738388c51615dda5fbcd896e2d6edcc24a91c249e4661aa5ce4bd",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compiler-lto-20261114.tar.gz",
+  "sha256": "b25e5298f61e3db9aa061b54652bad3559cc562ba0577317b1c747c6dd00dd6f",
+  "source_revision": "7306a0097a2a8e52bf263bb9d600a5e4ed8b417d",
+  "uncompressed_bytes": 133952759,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "b25e5298f61e3db9aa061b54652bad3559cc562ba0577317b1c747c6dd00dd6f",
+    "source_revision": "7306a0097a2a8e52bf263bb9d600a5e4ed8b417d",
+    "verified_bytes": 133952759,
+    "verified_files": 514
+  }
+}
