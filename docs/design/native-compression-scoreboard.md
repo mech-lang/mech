@@ -1,5 +1,23 @@
 # Current compression scoreboard
 
+The compact runtime keeps the first output-owner slot inline. The two final
+81-case runs take 0.993514× and 0.993649× paired control, and both timing
+gates pass on all 81 cases. The three stored cases improve 14.0–17.1% and
+remain the largest misses. [Runtime qualification, paired observations and parser pilot](native-inline-owner-slot.md).
+
+| Peer result | Mech wins, full | Full repeat | Previous published |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **64/81 (79.0%)** | **64/81 (79.0%)** | 64 |
+| Faster than libdeflate | **32/81 (39.5%)** | **34/81 (42.0%)** | 35 |
+| Faster than both | **15/81 (18.5%)** | **17/81 (21.0%)** | 18 |
+| Faster than at least one | **81/81 (100%)** | **81/81 (100%)** | 81 |
+
+Periodic 65,536 bytes crosses from 0.998430× to 1.000881× libdeflate in
+the full run. The repeat gains periodic 65,535 bytes at 0.996621×. The
+predecessor's 35/81 result is a separate full comparison.
+
+## Normalize the checked read setup
+
 The compact compiler reuses the current header ordinal and narrows the guarded previous-node read. **All 81 level-12 cases beat at least one peer in three full comparisons.** The final compiler build takes **0.990152×** paired control across the suite. Both timing gates pass on all 81 cases in the final and repeat runs. The first run's empty-input pooled gate miss is preserved in the qualification.
 
 | Peer result | Mech wins, final | Previous published | Full repeat |
