@@ -948,7 +948,7 @@ fn check_scope(
         if plan.blocks()[id as usize].iteration() != scope {
             return Err(BAD);
         }
-        for next in collapsed_successors(plan, id as usize)
+        for next in collapsed_successors(plan, roles, id as usize)
             .into_iter()
             .flatten()
         {
@@ -1408,7 +1408,7 @@ fn check_scope(
             }
         }
         ends[id] = known;
-        for next in collapsed_successors(plan, id).into_iter().flatten() {
+        for next in collapsed_successors(plan, roles, id).into_iter().flatten() {
             degrees[next as usize] -= 1;
             if degrees[next as usize] == 0 {
                 ready.push_back(next as usize);
@@ -1420,10 +1420,14 @@ fn check_scope(
     }
     Ok(())
 }
-fn collapsed_successors(plan: &impl ControlPlan, id: usize) -> [Option<u32>; 2] {
-    if (0..plan.iteration_count()).any(|loop_id|
-        matches!(plan.iteration(loop_id), Loop::Tail(tail) if tail.finish() as usize == id))
-    {
+fn collapsed_successors(
+    plan: &impl ControlPlan,
+    roles: &[Option<(u32, u8)>],
+    id: usize,
+) -> [Option<u32>; 2] {
+    // Role 4 is assigned only to a checked tail finish. Role validation has
+    // completed before either scope traversal asks for collapsed successors.
+    if roles[id].is_some_and(|(_, role)| role == 4) {
         return [None, None];
     }
     match plan.blocks()[id].action() {
