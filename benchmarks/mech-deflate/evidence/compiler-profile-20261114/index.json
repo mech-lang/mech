@@ -51,7 +51,17 @@
       "sha256": "b6d8363213d5a47daa8b3aa7eb726f1478a9141426067dd0f81caf7ddb273492",
       "source_revision": "2f4134024e19ed316437334331a837874b1701b5",
       "summary": "benchmarks/mech-deflate/native-profile/borrowed-schema-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-indexed-liveness-20261114.tar.gz",
+      "bytes": 15213143,
+      "decision": "Retained: indexed liveness graphs; identical current program bytes. Includes two rejected backend prototypes.",
+      "files": 771,
+      "receipt": "benchmarks/mech-deflate/native-profile/indexed-liveness-compile-apple-m3-20261114.archive.json",
+      "sha256": "49cb259c7ce7eb114208ce5c12cc0854bb37d52e74f11ad4bce4f040c24bced6",
+      "source_revision": "619386076692d819778fdc5c53579b3b7604b062",
+      "summary": "benchmarks/mech-deflate/native-profile/indexed-liveness-compile-apple-m3-20261114.json"
     }
   ],
-  "scope": "Complete compiler-profile evidence packets explicitly requested in benchmarks; compiler executables excluded and hash-pinned inside each packet."
+  "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
 }
