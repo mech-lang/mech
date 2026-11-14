@@ -162,6 +162,16 @@ match; 152 engine tests pass. Its twelfth packet retains five diagnostic control
 CPU windows, both screens, fourteen fixture pairs, every observation and correction.
 The repository copy verifies and replays offline; earlier archives remain unchanged.
 
+The [proof-local traversal qualification](../../docs/design/native-local-traversal-compile-profile.md)
+retains current-proof loop grouping and indexed omitted-predecessor seeds, with
+fresh membership/header checks and unchanged descendant pruning. Eight matched
+60-flag runs take 19.741–20.163 seconds: 2.77% less process time, 18.01% less helper
+generation and 4.88% fewer instructions. Peak RSS is an adverse 0.028% higher.
+All output bytes match; five topology tests and fourteen fixture pairs pass.
+Its thirteenth packet retains both screens, every observation and a separate
+current helper CPU window. The repository copy verifies/replays offline; older
+archives remain unchanged.
+
 Paths below name reports **inside the external bundle**. The full manifest also
 covers early implementation witnesses, profiling, failed attempts and non-numbered
 packets. Each report hash is SHA-256; its surrounding directory holds the complete

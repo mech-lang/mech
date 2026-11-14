@@ -121,6 +121,16 @@
       "sha256": "4acaf0934fb3df840744ab49453d6b2f838528895a177b2c8c962142057a355a",
       "source_revision": "7feb94669905d3413d7a79fb9f8b89b851027226",
       "summary": "benchmarks/mech-deflate/native-profile/scope-graph-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-local-traversal-20261114.tar.gz",
+      "bytes": 13738387,
+      "decision": "Retained: proof-local numeric traversal and indexed pruning seeds; identical program bytes; slightly higher RSS.",
+      "files": 446,
+      "receipt": "benchmarks/mech-deflate/native-profile/local-traversal-compile-apple-m3-20261114.archive.json",
+      "sha256": "95a3de83a966f20940b8fb81fc3de16cea876f942cbc59ab89859fb8ae46e71d",
+      "source_revision": "1774ca003111a511d9f961fded0005412e1f39df",
+      "summary": "benchmarks/mech-deflate/native-profile/local-traversal-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-local-traversal-20261114.tar.gz",
+  "bytes": 13738387,
+  "evidence_files": 446,
+  "files": 446,
+  "format": 1,
+  "manifest_sha256": "59e387b17422daa7d36399597833118fa423b7d0b99bf9a195ffa0f597793c10",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "5bb96544c62c281712656016a3201032cbaf6067ab24c753e7d19cc1e6d2045f",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-local-traversal-20261114.tar.gz",
+  "sha256": "95a3de83a966f20940b8fb81fc3de16cea876f942cbc59ab89859fb8ae46e71d",
+  "source_revision": "1774ca003111a511d9f961fded0005412e1f39df",
+  "uncompressed_bytes": 96921892,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "95a3de83a966f20940b8fb81fc3de16cea876f942cbc59ab89859fb8ae46e71d",
+    "source_revision": "1774ca003111a511d9f961fded0005412e1f39df",
+    "verified_bytes": 96921892,
+    "verified_files": 446
+  }
+}
