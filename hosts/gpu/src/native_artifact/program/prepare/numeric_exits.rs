@@ -197,13 +197,30 @@ fn live_query(
         }
         reads.insert(site, used);
     }
+    // Only a value read in this selected graph can seed a liveness fact, and
+    // only sites in this graph can kill one. Avoid materializing the entire
+    // program's definitions for each cold continuation.
+    let mut read_values = vec![false; plan.values().len()];
+    for &value in reads.values().flatten() {
+        if let Some(read) = read_values.get_mut(value as usize) {
+            *read = true;
+        }
+    }
     let mut definitions = BTreeMap::<usize, BTreeSet<u32>>::new();
     for value in 0..plan.values().len() {
         if wanted.is_some_and(|wanted| !wanted.contains(&(value as u32))) {
             continue;
         }
-        for definition in facts.definition_sites(value as u32)? {
-            if let Some(site) = definition.site() {
+        // Preserve the original lookup/validation order even for values that
+        // cannot be live. An empty read set must not suppress an old error.
+        let sites = facts.definition_sites(value as u32)?;
+        if !read_values[value] {
+            continue;
+        }
+        for definition in sites {
+            if let Some(site) = definition.site()
+                && next.contains_key(&(site as usize))
+            {
                 definitions
                     .entry(site as usize)
                     .or_default()
