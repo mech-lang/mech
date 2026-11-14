@@ -1,25 +1,27 @@
 # Current compression scoreboard
 
-Carrying the current reduction bound shortens four composed parser bodies. The
-two complete matrices take 0.995110× and 0.993968× paired control, with both
-timing gates passing on all 81 cases. [Compiler qualification and runtime profile](native-reduction-bound-carry.md).
+Moving the current match-record completion test to the loop's incoming edges
+speeds up the normally emitted compact executable. Two complete matrices
+take **0.993688×** and **0.996321×** paired control. Both timing gates pass
+on every case. [Review and matched compression timing](native-reduction-rotation.md).
 
-| Peer result | Mech wins, full | Full repeat | Previous published, full / repeat |
+| Peer result | Mech wins, full | Full repeat | Paired control, full / repeat |
 | --- | ---: | ---: | ---: |
-| Faster than Roc | **64/81 (79.0%)** | **64/81 (79.0%)** | 64 / 64 |
-| Faster than libdeflate | **34/81 (42.0%)** | **35/81 (43.2%)** | 32 / 34 |
-| Faster than both | **17/81 (21.0%)** | **18/81 (22.2%)** | 15 / 17 |
-| Faster than at least one | **81/81 (100%)** | **81/81 (100%)** | 81 / 81 |
+| Faster than Roc | **72/81 (88.9%)** | **73/81 (90.1%)** | 64 / 64 |
+| Faster than libdeflate | **35/81 (43.2%)** | **34/81 (42.0%)** | 34 / 34 |
+| Faster than both | **26/81 (32.1%)** | **27/81 (33.3%)** | 17 / 17 |
+| Faster than at least one | **81/81 (100%)** | **80/81 (98.8%)** | 81 / 81 |
 
-Natural 64 KiB reaches 1.011236× and 1.009985× Roc. Natural 16 KiB
-beats both peers in both runs, and the three stored paths remain the largest
-misses against Roc.
+Natural 1 MiB reaches 1.007860× and 1.006525× Roc. The held-out slide
+case reaches 1.014728× and 1.017101×. Random 1 MiB crosses above 1× in
+the second run and returns to 0.988357× in the adverse confirmation.
+The three stored routes remain the largest misses against Roc.
 
 ## Compression runtime experiments
 
 ### Match-record continuation and selected matcher reuse
 
-The combined ARM64 experiment beats Roc on **81/81 (100%)** in both full
+The combined ARM64 experiment beats Roc on **81/81 (100%)** in all three full
 comparisons. It beats libdeflate on **33/81 (40.7%)** in each. The combined
 worker falls through from a completed match record to the next record's
 checked read. It also reuses the selected masked distance and already-read
@@ -36,22 +38,24 @@ capacities, live aliases and cleanup.
 | Held-out slides | 0.9608× | 0.9962× / 0.9950× | 0.8696× |
 | Repeated 32 KiB | 1.0086× | 0.5264× / 0.4832× | 0.9500× |
 
-Against the published compiler, the two geometric means are **0.96964×**
+Against the paired compiler, the first two geometric means are **0.96964×**
 and **0.96935×**. Repeated 32 KiB misses both 1.05 gates in the first
 run at 1.0820× its paired control. Both gates pass all 81 on repeat.
 Periodic 32,767 bytes has an adverse repeat geometric block ratio of
 1.1178× paired control while passing the existing two median gates. Two
-libdeflate wins are lost against each same-run control. The archival
-report preserves all rows and the order-conditioned results.
+libdeflate wins are lost against each same-run control in the first two runs.
+The third run takes 0.96938× with both gates passing on all 81 and a worst
+paired block ratio of 1.02072×. It also passes both gates on all 11 inputs
+in the adverse confirmation. [Independent confirmation and compiler layout trial](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-compiler-layout-314d9e8342bb.tar.gz).
 
 With the parser layout alone, the two full runs beat Roc on **79/81** and
 **81/81**, passing both gates on every case. That worker also passed
 68,096 direct parser positions and 288 rejection/retry checks. The
 combined worker passes 162 additional linked streams. Both results
-use fixed ARM64 instruction layouts in the compact experiment, and
-equivalent compiler emission is still in progress. The checked-in
-compiler score remains **64/81**. The evidence archive verifies 756 file
-hashes and 11 matched cohorts. SHA-256
+use fixed ARM64 instruction layouts in the compact experiment. The
+compiler-produced loop rotation above integrates the continuation change.
+The matcher and direct-write experiments still use linked edits. The first
+archive verifies 756 file hashes and 11 matched cohorts. SHA-256
 `db71df8e5022fb2b821ee4d9ea65ce11f5c9b05b0125fad0d7dad91b814ef012`.
 [Exact measurement and qualification receipts](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-record-layout-db71df8e5022.tar.gz).
 

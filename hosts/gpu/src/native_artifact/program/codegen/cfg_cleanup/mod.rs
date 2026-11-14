@@ -17,6 +17,7 @@ mod local_phis;
 pub(in crate::native_artifact) mod packed_halfword_reads;
 mod preheaders;
 pub(in crate::native_artifact) mod reduction_bound;
+pub(in crate::native_artifact) mod reduction_rotation;
 mod repeated_bounds;
 pub(in crate::native_artifact) mod selected_continuations;
 mod selected_homes;
