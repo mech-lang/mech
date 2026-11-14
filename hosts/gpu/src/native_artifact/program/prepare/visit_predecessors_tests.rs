@@ -36,6 +36,20 @@ fn every_small_graph_scope_and_header_matches_the_original_scan() {
                     reference(&edges, &sites, header),
                     "edges={edges:?} sites={sites:?} header={header}"
                 );
+                let targets = edges
+                    .iter()
+                    .enumerate()
+                    .filter(|(source, _)| !sites.contains(source))
+                    .flat_map(|(_, row)| row.iter().flatten().map(|&target| target as usize))
+                    .filter(|target| *target != header && sites.contains(target))
+                    .collect::<BTreeSet<_>>();
+                assert_eq!(
+                    index
+                        .outside_targets(&sites, header)
+                        .collect::<BTreeSet<_>>(),
+                    targets,
+                    "targets edges={edges:?} sites={sites:?} header={header}"
+                );
             }
         }
     }
@@ -101,6 +115,60 @@ fn empty_graph_and_overflow_targets_preserve_full_scan_behavior() {
                 index.first_outside_entry(&sites, header),
                 reference(&edges, &sites, header)
             );
+        }
+    }
+}
+
+#[test]
+fn omitted_predecessor_pruning_matches_full_scan_through_branches_and_cycles() {
+    fn prune(
+        edges: &[[Option<u32>; 2]],
+        mut kept: BTreeSet<usize>,
+        header: usize,
+        latch: usize,
+        mut pending: Vec<usize>,
+    ) -> BTreeSet<usize> {
+        while let Some(site) = pending.pop() {
+            if site == header || !kept.remove(&site) {
+                continue;
+            }
+            if site != latch {
+                pending.extend(edges[site].into_iter().flatten().map(|site| site as usize));
+            }
+        }
+        kept
+    }
+
+    for seed in 0..128usize {
+        let edges = (0..9)
+            .map(|site| {
+                [
+                    Some(((site * 7 + seed) % 9) as u32),
+                    (site % 3 != seed % 3).then_some(((site + 1 + seed % 4) % 9) as u32),
+                ]
+            })
+            .collect::<Vec<_>>();
+        let index = VisitPredecessors::new(&edges);
+        for mask in 0..1 << 9 {
+            let kept = (0..9)
+                .filter(|site| mask & (1 << site) != 0)
+                .collect::<BTreeSet<_>>();
+            for header in [0, 4, 8] {
+                // The original scan is source ordered and may seed duplicates.
+                let original = edges
+                    .iter()
+                    .enumerate()
+                    .filter(|(source, _)| !kept.contains(source))
+                    .flat_map(|(_, row)| row.iter().flatten().map(|&target| target as usize))
+                    .filter(|target| *target != header && kept.contains(target))
+                    .collect::<Vec<_>>();
+                let indexed = index.outside_targets(&kept, header).collect();
+                assert_eq!(
+                    prune(&edges, kept.clone(), header, seed % 9, original),
+                    prune(&edges, kept.clone(), header, seed % 9, indexed),
+                    "seed={seed} kept={kept:?} header={header}"
+                );
+            }
         }
     }
 }

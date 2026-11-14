@@ -46,18 +46,37 @@ impl VisitPredecessors {
         }
     }
 
+    fn sources(&self, target: usize) -> &[usize] {
+        if target < self.offsets.len() - 1 {
+            &self.incoming[self.offsets[target]..self.offsets[target + 1]]
+        } else {
+            self.outside.get(&target).map(Vec::as_slice).unwrap_or(&[])
+        }
+    }
+
+    /// Recheck the current set/header, retaining no scope-validity answer.
+    /// These targets seed order-independent omitted-predecessor pruning.
+    pub fn outside_targets<'a>(
+        &'a self,
+        sites: &'a BTreeSet<usize>,
+        header: usize,
+    ) -> impl Iterator<Item = usize> + 'a {
+        sites.iter().copied().filter(move |&target| {
+            target != header
+                && self
+                    .sources(target)
+                    .iter()
+                    .any(|source| !sites.contains(source))
+        })
+    }
+
     pub fn first_outside_entry(&self, sites: &BTreeSet<usize>, header: usize) -> Option<usize> {
         let mut first = None;
         for &target in sites {
             if target == header {
                 continue;
             }
-            let sources = if target < self.offsets.len() - 1 {
-                &self.incoming[self.offsets[target]..self.offsets[target + 1]]
-            } else {
-                self.outside.get(&target).map(Vec::as_slice).unwrap_or(&[])
-            };
-            for &source in sources {
+            for &source in self.sources(target) {
                 if !sites.contains(&source) {
                     // Preserve the original source-ordered scan's first refusal,
                     // including diagnostics, rather than target iteration order.
