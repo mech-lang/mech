@@ -14,6 +14,8 @@ use std::collections::VecDeque;
 #[path = "definition_set.rs"]
 mod definitions;
 use definitions::DefinitionSet;
+#[path = "scope_graph.rs"]
+mod scope_graph;
 
 pub(crate) trait ControlType: Eq {
     fn is_bool(&self) -> bool;
@@ -904,7 +906,16 @@ pub(crate) fn validate_detailed(plan: &impl ControlPlan) -> Result<(), Validatio
     super::collection_validation::validate(plan)?;
     validate_fusions(plan)?;
     let mut visited = vec![false; blocks.len()];
-    check_scope(plan, None, plan.entry(), initial, &roles, &mut visited)?;
+    let mut scope_scratch = scope_graph::Scratch::new(blocks.len());
+    check_scope(
+        plan,
+        None,
+        plan.entry(),
+        initial,
+        &roles,
+        &mut visited,
+        &mut scope_scratch,
+    )?;
     // Unreachable fail-closed Reject blocks still have checked structure/types;
     // no operation with a read or write is silently omitted from the proof.
     for (id, block) in blocks.iter().enumerate() {
@@ -936,42 +947,36 @@ fn check_scope(
     initial: DefinitionSet,
     roles: &[Option<(u32, u8)>],
     visited: &mut [bool],
+    scratch: &mut scope_graph::Scratch,
 ) -> Result<(), &'static str> {
-    let mut incoming = vec![Vec::new(); plan.blocks().len()];
-    let mut degrees = vec![0usize; plan.blocks().len()];
-    let mut reachable = vec![false; plan.blocks().len()];
-    let mut pending = vec![entry];
-    while let Some(id) = pending.pop() {
-        if std::mem::replace(&mut reachable[id as usize], true) {
-            continue;
-        }
-        if plan.blocks()[id as usize].iteration() != scope {
-            return Err(BAD);
-        }
-        for next in collapsed_successors(plan, roles, id as usize)
-            .into_iter()
-            .flatten()
-        {
-            incoming[next as usize].push(id as usize);
-            degrees[next as usize] = degrees[next as usize].checked_add(1).ok_or(BAD)?;
-            pending.push(next);
-        }
-    }
-    let mut ends = vec![DefinitionSet::empty(); plan.blocks().len()];
-    let mut ready = (0..degrees.len())
-        .filter(|&i| reachable[i] && degrees[i] == 0)
-        .collect::<VecDeque<_>>();
+    let mut graph = scratch
+        .discover(entry, |id| {
+            if plan.blocks()[id].iteration() != scope {
+                return Err(BAD);
+            }
+            Ok(collapsed_successors(plan, roles, id))
+        })
+        .map_err(|_| BAD)?;
+    // Only this scope's reachable blocks own definition rows and edge lists.
+    // Keep the old initial source-ID ordering and subsequent edge-ready order.
+    let mut ends = vec![DefinitionSet::empty(); graph.len()];
+    let mut ready = (0..graph.len())
+        .filter(|&i| graph[i].degree == 0)
+        .collect::<Vec<_>>();
+    ready.sort_unstable_by_key(|&i| graph[i].site);
+    let mut ready = VecDeque::from(ready);
     let mut seen = 0;
-    while let Some(id) = ready.pop_front() {
+    while let Some(ordinal) = ready.pop_front() {
         seen += 1;
+        let id = graph[ordinal].site;
         visited[id] = true;
         let block = &plan.blocks()[id];
-        let mut known = if let Some(&first) = incoming[id].first() {
+        let mut known = if let Some(&first) = graph[ordinal].incoming.first() {
             ends[first].clone()
         } else {
             initial.clone()
         };
-        for &previous in incoming[id].iter().skip(1) {
+        for &previous in graph[ordinal].incoming.iter().skip(1) {
             known.intersect(&ends[previous])?;
         }
         let read = |v: Value, known: &DefinitionSet| -> Result<(), &'static str> {
@@ -1118,6 +1123,7 @@ fn check_scope(
                     body_initial,
                     roles,
                     visited,
+                    scratch,
                 )?;
                 if let Loop::Iteration(fold) = child {
                     known.set(fold.carrier().get() as usize, true)?;
@@ -1407,15 +1413,15 @@ fn check_scope(
                 _ => {}
             }
         }
-        ends[id] = known;
-        for next in collapsed_successors(plan, roles, id).into_iter().flatten() {
-            degrees[next as usize] -= 1;
-            if degrees[next as usize] == 0 {
-                ready.push_back(next as usize);
+        ends[ordinal] = known;
+        for next in graph[ordinal].successors.into_iter().flatten() {
+            graph[next].degree -= 1;
+            if graph[next].degree == 0 {
+                ready.push_back(next);
             }
         }
     }
-    if seen != reachable.into_iter().filter(|v| *v).count() {
+    if seen != graph.len() {
         return Err(BAD);
     }
     Ok(())

@@ -113,3 +113,7 @@ path = "compact_values_tests.rs"
 [[test]]
 name = "pending_schema"
 path = "pending_schema_tests.rs"
+
+[[test]]
+name = "scope_graph"
+path = "scope_graph_tests.rs"
