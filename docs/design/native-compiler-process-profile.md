@@ -1,8 +1,9 @@
 # Current compiler pipeline versus libdeflate and Roc
 
-The latest qualified level-12 Mech program takes **30.24–30.66 seconds per complete
+The latest qualified level-12 Mech program takes **29.61–30.03 seconds per complete
 source-to-Object process**, after the [lexical index](native-lexical-index-compile-profile.md)
-and [reusable visitation storage](native-thread-visits-compile-profile.md) changes.
+and [reusable visitation storage](native-thread-visits-compile-profile.md) changes,
+followed by [selected liveness definitions](native-liveness-definitions-compile-profile.md).
 The measured peer builds take **0.41–0.48 seconds for libdeflate** and
 **2.35–2.50 seconds for Roc** on the same Apple M3 Air. The fresh latest Mech
 cohort uses 54 flags; the original profile below retains its 52-flag pins and
@@ -187,3 +188,10 @@ compressor cases; it is reverted. The retained visitation change reduces cleanup
 cohorts use the same complete 54-flag runtime configuration for their controls
 and candidates. Their archives are locally verified and replayed; public export
 authorization is pending.
+
+The next liveness diagnostic observes 790 distinct exact query contexts, a
+median 284 selected sites and 23,850 materialized definition facts per query.
+Filtering unused definition facts retains original validation and generated
+bytes while reducing preparation 11.39% and full compiler time another 2.52%.
+Its complete-process observations are 29.61–30.03 seconds; these retain their
+own 54-flag pins and are not pooled with the older cohorts above.
