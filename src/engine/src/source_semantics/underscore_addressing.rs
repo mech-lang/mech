@@ -32,13 +32,13 @@ impl SemanticBuilder {
             };
             return Ok(Some((
                 AddressBase::Binding(binding),
-                self.schema_draft_of(value)?,
+                self.schema_draft_of(value)?.into(),
             )));
         }
         if let Some(&input) = self.input_by_name.get(name) {
             return Ok(Some((
                 AddressBase::Input(input),
-                self.inputs[input as usize].schema.clone(),
+                self.inputs[input as usize].schema.clone().into(),
             )));
         }
         Ok(self
@@ -214,7 +214,7 @@ impl SemanticBuilder {
                     .insert(selection.base_name.clone(), input);
                 self.inputs.push(PendingInput {
                     name: selection.base_name,
-                    schema,
+                    schema: schema.into(),
                     anchor: SourceSemanticAnchor::for_node(syntax),
                 });
                 PendingValue::Input(input)

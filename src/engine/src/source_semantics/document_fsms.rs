@@ -1308,7 +1308,7 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema: machine.output.clone(),
+            schema: machine.output.clone().into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
@@ -1395,7 +1395,7 @@ impl SemanticBuilder {
                         body: PendingNodeBody::Publish,
                         inferable_projection: false,
                         inputs: vec![value],
-                        schema: machine.output.clone(),
+                        schema: machine.output.clone().into(),
                         exposes_output: false,
                         state: None,
                         semantic: SourceSemanticNode {
@@ -1429,7 +1429,7 @@ impl SemanticBuilder {
                         body: PendingNodeBody::RecursiveCall(0),
                         inferable_projection: false,
                         inputs: vec![state],
-                        schema: machine.output.clone(),
+                        schema: machine.output.clone().into(),
                         exposes_output: true,
                         state: None,
                         semantic: SourceSemanticNode {
@@ -1458,7 +1458,7 @@ impl SemanticBuilder {
                         body: PendingNodeBody::Suspend,
                         inferable_projection: false,
                         inputs: vec![state],
-                        schema: machine.output.clone(),
+                        schema: machine.output.clone().into(),
                         exposes_output: false,
                         state: None,
                         semantic: SourceSemanticNode {

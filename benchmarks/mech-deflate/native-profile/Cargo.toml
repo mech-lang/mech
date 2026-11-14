@@ -109,3 +109,7 @@ path = "visit_predecessors_tests.rs"
 [[test]]
 name = "compact_values"
 path = "compact_values_tests.rs"
+
+[[test]]
+name = "pending_schema"
+path = "pending_schema_tests.rs"

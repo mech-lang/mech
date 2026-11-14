@@ -751,7 +751,7 @@ fn compile_collected_document(
                 .map_err(|_| internal(anchor, "input identity exhausted".to_owned()))?;
             builder.inputs.push(PendingInput {
                 name: name.clone(),
-                schema,
+                schema: schema.into(),
                 anchor,
             });
             builder.input_by_name.insert(name.clone(), ordinal);
@@ -1667,7 +1667,7 @@ impl SemanticBuilder {
             .iter()
             .map(|value| {
                 embed_schema_draft(
-                    &self.schema_draft_of(*value)?,
+                    self.schema_draft_of(*value)?.as_ref(),
                     &mut parameters,
                     SourceSemanticAnchor::for_node(syntax),
                 )
@@ -1981,7 +1981,7 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema,
+            schema: schema.into(),
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
@@ -2448,7 +2448,8 @@ pub(super) fn compile_ordered_documents(
                                 .closed_body(value.shape())
                                 .map_err(|error| internal(anchor, format!("{error:?}")))?,
                             dimension_parameters: Box::new([]),
-                        },
+                        }
+                        .into(),
                         anchor,
                     });
                     constants.insert(input_name, value.clone());

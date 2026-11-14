@@ -323,7 +323,7 @@ impl SemanticBuilder {
                         SchemaBody::Matrix { element, .. } | SchemaBody::Set { element, .. } => {
                             canonical_component_schema_draft(&schema, element, generator.syntax())?
                         }
-                        SchemaBody::String | SchemaBody::Dynamic => schema,
+                        SchemaBody::String | SchemaBody::Dynamic => schema.into(),
                         _ => {
                             return Err(unsupported(
                                 generator.syntax(),
@@ -485,7 +485,7 @@ impl SemanticBuilder {
             };
             let fixed_source = row_source.and_then(|source| {
                 let source = self.schema_draft_of(source).ok()?;
-                let SchemaBody::Matrix { dimensions, .. } = source.body else {
+                let SchemaBody::Matrix { dimensions, .. } = &source.body else {
                     return None;
                 };
                 dimensions.iter().try_fold(1u64, |count, axis| match axis {
@@ -509,6 +509,7 @@ impl SemanticBuilder {
                 "collection elements require a closed shape",
             ));
         }
+        let element: SchemaDraft = element.into();
         let output = if is_dynamic_schema_draft(&element) {
             element
         } else if kind == crate::ComprehensionKind::Set {
@@ -596,7 +597,8 @@ impl SemanticBuilder {
                     dimensions: Box::new([rows, columns]),
                 },
             }
-        };
+        }
+        .into();
         // Canonical local identities follow executable declaration order, not
         // raw semantic-node order. A computed pattern may create operations
         // after an earlier binder node, but those operations execute before
@@ -687,6 +689,7 @@ impl SemanticBuilder {
                         &|value| {
                             self.schema_draft_of(*value)
                                 .expect("retained lexical binding")
+                                .into_owned()
                         },
                         &|value| {
                             converted[values
@@ -757,7 +760,7 @@ impl SemanticBuilder {
                         PendingComprehensionOperation {
                             local: scheduled_local,
                             body: PendingControlOperationBody::Assert,
-                            schema: node.schema,
+                            schema: node.schema.into(),
                             inputs,
                         },
                     ));
@@ -784,7 +787,7 @@ impl SemanticBuilder {
                                 operation,
                                 contract,
                             },
-                            schema: node.schema,
+                            schema: node.schema.into(),
                             inputs,
                         },
                     ));
@@ -802,7 +805,7 @@ impl SemanticBuilder {
                         PendingComprehensionOperation {
                             local: scheduled_local,
                             body: PendingControlOperationBody::Match(control),
-                            schema: node.schema,
+                            schema: node.schema.into(),
                             inputs,
                         },
                     ));
@@ -820,7 +823,7 @@ impl SemanticBuilder {
                         PendingComprehensionOperation {
                             local: scheduled_local,
                             body: PendingControlOperationBody::Comprehension(control),
-                            schema: node.schema,
+                            schema: node.schema.into(),
                             inputs,
                         },
                     ));
@@ -838,7 +841,7 @@ impl SemanticBuilder {
                         PendingComprehensionOperation {
                             local: scheduled_local,
                             body: PendingControlOperationBody::Iteration(control),
-                            schema: node.schema,
+                            schema: node.schema.into(),
                             inputs,
                         },
                     ));
@@ -1031,7 +1034,7 @@ impl SemanticBuilder {
                                 body: PendingNodeBody::CollectionBinding,
                                 inferable_projection: variable.annotation().is_none(),
                                 inputs: Vec::new(),
-                                schema,
+                                schema: schema.into(),
                                 exposes_output: true,
                                 state: None,
                                 semantic: SourceSemanticNode {

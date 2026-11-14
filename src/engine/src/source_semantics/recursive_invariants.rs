@@ -299,7 +299,7 @@ fn rewrite(
     for edit in edits.iter().filter(|edit| edit.block == block.id) {
         let operation = &mut block.operations[edit.operation];
         operation.inputs = kept.iter().map(|index| operation.inputs[*index]).collect();
-        operation.schema = schema.clone();
+        operation.schema = schema.clone().into();
         let PendingControlOperationBody::Operation {
             contract: current, ..
         } = &mut operation.body
@@ -467,7 +467,7 @@ impl SemanticBuilder {
                 Some(capture) if !new_captures[capture].2 => return Ok(()),
                 Some(capture) => capture,
                 None => {
-                    new_captures.push((input, actual_schemas[index].clone(), true));
+                    new_captures.push((input, actual_schemas[index].clone().into(), true));
                     new_captures.len() - 1
                 }
             };
