@@ -2189,7 +2189,7 @@ fn embed_schema_draft(
     }
     for declaration in draft.dimension_parameters.iter() {
         output.push(DimensionParameterDeclaration {
-            id: replacements[&declaration.id],
+            id: replacements.at(&declaration.id),
             origin: declaration.origin,
             lifetime: declaration.lifetime,
             lower_bound: remap_dimension_expr(&declaration.lower_bound, &replacements).map_err(
@@ -2228,7 +2228,7 @@ fn remap_dimension_expr(
     Ok(match expression {
         DimensionExpr::Hole => DimensionExpr::Hole,
         DimensionExpr::Constant(value) => DimensionExpr::Constant(*value),
-        DimensionExpr::Parameter(id) => DimensionExpr::Parameter(*replacements.get(id).ok_or(())?),
+        DimensionExpr::Parameter(id) => DimensionExpr::Parameter(replacements.get(id).ok_or(())?),
         DimensionExpr::Add(children) => DimensionExpr::Add(
             children
                 .iter()
@@ -2549,7 +2549,7 @@ fn materialize_source_output_draft(
                 .filter(|declaration| Some(declaration.id) != removed)
                 .map(|declaration| {
                     Ok(DimensionParameterDeclaration {
-                        id: replacements[&declaration.id],
+                        id: replacements.at(&declaration.id),
                         origin: declaration.origin,
                         lifetime: declaration.lifetime,
                         lower_bound: remap_dimension_expr(&declaration.lower_bound, &replacements)
@@ -2644,7 +2644,7 @@ fn materialize_source_output_draft(
                 .filter(|declaration| declaration.id != dynamic_parameter)
                 .map(|declaration| {
                     Ok(DimensionParameterDeclaration {
-                        id: replacements[&declaration.id],
+                        id: replacements.at(&declaration.id),
                         origin: declaration.origin,
                         lifetime: declaration.lifetime,
                         lower_bound: remap_dimension_expr(&declaration.lower_bound, &replacements)
