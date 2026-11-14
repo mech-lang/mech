@@ -355,7 +355,7 @@ fn derive_with_children(
         if forest.checked_children {
             Vec::new()
         } else {
-            forest.bounded_children(plan, frames, aggregates, calls)?
+            forest.bounded_children(facts, frames, aggregates, calls)?
         }
     } else {
         Vec::new()

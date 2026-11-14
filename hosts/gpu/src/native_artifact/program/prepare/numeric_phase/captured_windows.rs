@@ -19,12 +19,13 @@ pub(in crate::native_artifact) struct Coordinates {
 }
 
 pub(in crate::native_artifact) fn derive(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
     tail: &NativeTailLoop,
     reads: &[Read],
 ) -> Option<Coordinates> {
+    let plan = facts.plan();
     if reads.len() < 2 {
         return None;
     }
@@ -32,12 +33,14 @@ pub(in crate::native_artifact) fn derive(
     let root = forest.loops.first()?;
     let resolver = Resolver {
         plan,
+        facts,
         frames,
         aggregates,
         forest: &forest,
     };
     let flow = flow::Flow {
         plan,
+        facts,
         frames,
         aggregates,
         forest: &forest,
@@ -49,7 +52,7 @@ pub(in crate::native_artifact) fn derive(
         return None;
     }
     let (_, guards) = forest
-        .candidate_guards(plan, frames, aggregates)
+        .candidate_guards(facts, frames, aggregates)
         .into_iter()
         .find(|(id, _)| *id == root.iteration)?;
     for guard in guards {
@@ -71,7 +74,7 @@ pub(in crate::native_artifact) fn derive(
                     let Atom::Scalar(value) = value else {
                         return false;
                     };
-                    let Some((op, operands)) = primitive(plan, value) else {
+                    let Some((op, operands)) = primitive(facts, value) else {
                         return false;
                     };
                     matches!(op, NativeScalarOp::U64Add | NativeScalarOp::U64WrappingAdd)
@@ -93,7 +96,7 @@ pub(in crate::native_artifact) fn derive(
                 {
                     return None;
                 }
-                let (op, operands) = primitive(plan, read.base)?;
+                let (op, operands) = primitive(facts, read.base)?;
                 if !matches!(op, NativeScalarOp::U64Add | NativeScalarOp::U64WrappingAdd)
                     || operands.len() != 2
                 {
@@ -127,8 +130,8 @@ pub(in crate::native_artifact) fn derive(
     None
 }
 
-fn primitive(plan: &Plan, value: u32) -> Option<(NativeScalarOp, Vec<u32>)> {
-    let facts = plan.facts();
+fn primitive(facts: &NativeProgramFacts<'_>, value: u32) -> Option<(NativeScalarOp, Vec<u32>)> {
+    let plan = facts.plan();
     let [definition] = facts.definition_sites(value).ok()? else {
         return None;
     };

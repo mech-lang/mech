@@ -6,12 +6,13 @@ use super::{
 };
 
 pub(in crate::native_artifact) fn unit_append_countdown(
-    plan: &Plan,
+    facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
     aggregates: &NativeScalarAggregates,
     append: usize,
 ) -> Option<usize> {
+    let plan = facts.plan();
     if matches!(
         plan.values()[tail.carrier().get() as usize]
             .definition()
@@ -32,6 +33,7 @@ pub(in crate::native_artifact) fn unit_append_countdown(
     }
     let flow = Flow {
         plan,
+        facts,
         frames,
         aggregates,
         forest: &forest,
@@ -39,12 +41,12 @@ pub(in crate::native_artifact) fn unit_append_countdown(
     };
     let resolver = Resolver {
         plan,
+        facts,
         frames,
         aggregates,
         forest: &forest,
     };
-    let facts = plan.facts();
-    let guards = forest.candidate_guards(plan, frames, aggregates);
+    let guards = forest.candidate_guards(facts, frames, aggregates);
     guards
         .iter()
         .find(|(id, _)| *id == root.iteration)?
@@ -63,7 +65,7 @@ pub(in crate::native_artifact) fn unit_append_countdown(
                 flow: &flow,
                 resolver: &resolver,
                 guard,
-                facts: &facts,
+                facts,
             };
             let next = Atom::Field(tail.next().get(), guard.field);
             let mut fuel = 256;
@@ -80,13 +82,13 @@ enum Expected {
     One,
 }
 
-struct Selected<'a, 'b> {
-    flow: &'a Flow<'b>,
-    resolver: &'a Resolver<'b>,
+struct Selected<'a, 'b, 'p> {
+    flow: &'a Flow<'b, 'p>,
+    resolver: &'a Resolver<'b, 'p>,
     guard: &'a Guard,
-    facts: &'a NativeProgramFacts<'b>,
+    facts: &'a NativeProgramFacts<'p>,
 }
-impl Selected<'_, '_> {
+impl Selected<'_, '_, '_> {
     fn prove(&self, atom: Atom, expected: Expected, fuel: &mut usize) -> bool {
         let Some(next) = fuel.checked_sub(1) else {
             return false;
