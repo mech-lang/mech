@@ -106,3 +106,5 @@ the current qualified worker, unchanged native output and offline replay.
 The [canonical parser profile](../../../docs/design/native-parser-compile-profile.md) records the grammar-preserving parser speedup and the fresh pinned C/Roc comparison.
 
 The [parser execution-work follow-up](../../../docs/design/native-parser-work-amplification.md) records continuation/checkpoint counts and two rejected frontend schema screens.
+
+The [predictive parser report](../../../docs/design/native-parser-prediction-profile.md) qualifies another 28% parse-time reduction, identical emitted program bytes and the remaining roughly 50-second full compile.
