@@ -777,3 +777,17 @@ separate and retains execution. Measured binaries remain unchanged by the repair
 Raw failures, exact commands, source pins, all cohorts and numerical replay stay
 in immutable archives. Prepared schema headers are next; their148-request target
 is conditional and overlaps the larger constructor family by132 requests.
+
+## Selected exit definitions, 2026-11-14
+
+The [qualification report](../../docs/design/native-exit-definitions-compile-profile.md)
+records sixteen serial matched complete level-12 compiles:
+18.690–19.107 seconds, process change
+-0.27%, preparation -0.60%,
+instructions -0.29%. Compiler time is effectively flat with
+two slower and two faster balanced blocks. All output bytes match; seventeen focused
+Rust tests and fourteen fixture pairs pass. The original first definition demand
+still validates unused malformed producers. All phase/counter observations and
+the failed initial test setup remain in the
+[complete repository packet](evidence/compiler-profile-20261114/README.md).
+The ten-second goal remains open.

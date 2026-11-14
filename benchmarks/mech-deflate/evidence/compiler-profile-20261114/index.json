@@ -151,6 +151,16 @@
       "sha256": "b58a2c97ad3961c2297fd427729c0dd3bd0b347d38a06d59b8076a067a1a876c",
       "source_revision": "4a451c748295164aa300d4e03ff9b6a4fdbd740f",
       "summary": "benchmarks/mech-deflate/native-profile/index-facts-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-exit-definitions-20261114.tar.gz",
+      "bytes": 21460998,
+      "decision": "Retained small work reduction; overall compiler-time improvement unestablished: selected exit-query definitions; original whole-inventory validation demand and current graph; identical program bytes.",
+      "files": 536,
+      "receipt": "benchmarks/mech-deflate/native-profile/exit-definitions-compile-apple-m3-20261114.archive.json",
+      "sha256": "d2f1e00174ad0437f5d7b2efe7018d3e5549bebfcf3201a91553d69a505f98d3",
+      "source_revision": "414693ce793b1ea1e99a6dcac34cb2533d9c856c",
+      "summary": "benchmarks/mech-deflate/native-profile/exit-definitions-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
