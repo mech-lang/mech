@@ -3,11 +3,14 @@
 use super::{node_inputs, node_output_slot};
 #[path = "native_collection_template_image.rs"]
 mod image;
+#[path = "native_collection_lexical_index.rs"]
+mod lexical_index;
 #[path = "native_collection_shared_templates.rs"]
 mod shared_image;
 use crate::native_artifact::NativeArtifactLoweringError as Error;
 pub use crate::resident::native_collection_semantics::NativeCollectionPrimitive;
 use crate::{ArtifactSource, ExecutableNodeBody, OperationReference, ProgramArtifact};
+pub(crate) use lexical_index::NativeCollectionLexicalCache;
 use mech_core::{
     CellSlotId, FunctionCatalog, ImplementationMemoryClass, NodeId, OperationContractId,
     ProgramRevision, ResidentOperationKey, ResolvedOperationContract, Schema, SchemaBody, SchemaId,
@@ -980,43 +983,10 @@ fn bind_pattern_schemas(
     Ok(())
 }
 
-fn lexical_template(
-    artifact: &ProgramArtifact,
-    owner: NodeId,
-    block: crate::ControlBlockId,
-    local: u32,
-    sources: Box<[NativeCollectionLexicalSource]>,
-    input_ids: &[SchemaId],
-    output_id: SchemaId,
-    body: &crate::ControlOperationBody,
-    catalog: &FunctionCatalog,
-) -> Result<NativeCollectionLexicalTemplate, Error> {
-    let crate::ControlOperationBody::Operation {
-        operation,
-        contract,
-    } = body
-    else {
-        return Err(unsupported(
-            owner,
-            "lexical collection site is not a pure library operation",
-        ));
-    };
-    let leaf = select_leaf(
-        artifact, owner, operation, *contract, input_ids, output_id, catalog,
-    )?;
-    Ok(NativeCollectionLexicalTemplate {
-        revision: artifact.revision(),
-        owner,
-        block,
-        local,
-        sources,
-        leaf,
-    })
-}
-
-/// Select a leaf at its genuine lexical site. This statically walks the
-/// immutable declaration tree; it never executes a guard, generator, pattern,
-/// loop, recursive call, binder or kernel. Full native CFG/current-visit and
+/// Select a leaf at its genuine lexical site. Immutable descriptive sites are
+/// indexed once per artifact owner; selection still checks the actual catalog
+/// and contracts on every call. No guard, generator, pattern, loop, recursive
+/// call, binder or kernel executes here. Full native CFG/current-visit and
 /// NativeHost storage/work proof remain mandatory at later compiler stages.
 pub fn native_collection_lexical_template(
     artifact: &ProgramArtifact,
@@ -1025,113 +995,9 @@ pub fn native_collection_lexical_template(
     local: u32,
     catalog: &FunctionCatalog,
 ) -> Result<NativeCollectionLexicalTemplate, Error> {
-    let fail = || Error::InvalidBinding { node: Some(owner) };
-    let root = artifact
-        .nodes()
-        .get(owner.get() as usize)
-        .filter(|root| root.node == owner)
-        .ok_or_else(fail)?;
-    let mut pending = Vec::new();
-    match &root.body {
-        ExecutableNodeBody::Match(declaration) | ExecutableNodeBody::Activation(declaration) => {
-            push_match(declaration, &mut pending)
-        }
-        ExecutableNodeBody::Iteration(declaration) => {
-            pending.push(LexicalScope::Block(&declaration.body))
-        }
-        ExecutableNodeBody::Comprehension(declaration) => {
-            let inputs = node_inputs(artifact, owner)?
-                .iter()
-                .map(|source| source_schema_id(artifact, *source))
-                .collect::<Result<Vec<_>, _>>()?;
-            pending.push(LexicalScope::Comprehension(declaration, inputs));
-        }
-        _ => {
-            return Err(unsupported(
-                owner,
-                "root has no lexical collection declaration tree",
-            ));
-        }
-    }
-    while let Some(scope) = pending.pop() {
-        match scope {
-            LexicalScope::Block(block) => {
-                for operation in &block.operations {
-                    let inputs = operation
-                        .inputs
-                        .iter()
-                        .map(|value| {
-                            control_source_schema(artifact, owner, block, operation.node, *value)
-                        })
-                        .collect::<Result<Vec<_>, _>>()?;
-                    if block.id == block_id && operation.node == local {
-                        return lexical_template(
-                            artifact,
-                            owner,
-                            block_id,
-                            local,
-                            operation
-                                .inputs
-                                .iter()
-                                .copied()
-                                .map(NativeCollectionLexicalSource::Control)
-                                .collect(),
-                            &inputs,
-                            operation.schema,
-                            &operation.body,
-                            catalog,
-                        );
-                    }
-                    push_children(&operation.body, inputs, &mut pending);
-                }
-            }
-            LexicalScope::Comprehension(declaration, inputs) => {
-                let mut locals = std::collections::BTreeMap::new();
-                for step in &declaration.steps {
-                    match step {
-                        crate::ComprehensionStep::Generator { pattern, .. } => {
-                            bind_pattern_schemas(owner, pattern, &mut locals)?
-                        }
-                        crate::ComprehensionStep::Operation(operation) => {
-                            let actual_inputs = operation
-                                .inputs
-                                .iter()
-                                .map(|value| {
-                                    comprehension_source_schema(
-                                        artifact, owner, &inputs, &locals, *value,
-                                    )
-                                })
-                                .collect::<Result<Vec<_>, _>>()?;
-                            if declaration.id == block_id && operation.local == local {
-                                return lexical_template(
-                                    artifact,
-                                    owner,
-                                    block_id,
-                                    local,
-                                    operation
-                                        .inputs
-                                        .iter()
-                                        .copied()
-                                        .map(NativeCollectionLexicalSource::Comprehension)
-                                        .collect(),
-                                    &actual_inputs,
-                                    operation.schema,
-                                    &operation.body,
-                                    catalog,
-                                );
-                            }
-                            if locals.insert(operation.local, operation.schema).is_some() {
-                                return Err(fail());
-                            }
-                            push_children(&operation.body, actual_inputs, &mut pending);
-                        }
-                        crate::ComprehensionStep::Filter(_) => {}
-                    }
-                }
-            }
-        }
-    }
-    Err(fail())
+    artifact
+        .collection_lexical_cache()
+        .select(artifact, owner, block_id, local, catalog)
 }
 
 #[cfg(all(test, feature = "pure_text"))]
