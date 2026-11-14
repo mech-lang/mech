@@ -1,5 +1,35 @@
 # Current compression scoreboard
 
+## Selected ordered-reduction span and cursor
+
+The compact compiler reuses the selected subtraction flags, places the
+next record's checked read on the completing loop's fallthrough, and
+keeps the short reverse cursor setup on its continuing edge. Its enabled
+image takes **0.998113×** and **0.997352×** paired control in two balanced
+81-case runs. Both existing 1.05 timing gates pass throughout.
+[Machine proof, validation and measurement receipts](native-short-reduction-edges.md).
+
+| Peer result | Mech wins, full | Full repeat | Paired control, full / repeat |
+| --- | ---: | ---: | ---: |
+| Faster than Roc | **80/81 (98.8%)** | **80/81 (98.8%)** | 73 / 75 |
+| Faster than libdeflate | **34/81 (42.0%)** | **36/81 (44.4%)** | 34 / 35 |
+| Faster than both | **33/81 (40.7%)** | **35/81 (43.2%)** | 26 / 29 |
+| Faster than at least one | **81/81 (100%)** | **81/81 (100%)** | 81 / 81 |
+
+| Input | Full / Roc | Repeat / Roc | Repeat / libdeflate | Repeat / paired control |
+| --- | ---: | ---: | ---: | ---: |
+| Held-out slide, 65,537 bytes | 1.007915× | 1.008794× | 0.877581× | 0.990236× |
+| Natural 1 MiB | 0.999666× | 0.997914× | 0.805754× | 0.992113× |
+| Natural 32 KiB | 0.992489× | 0.993128× | 0.900313× | 0.994318× |
+| Eight literals | 0.163148× | 0.161808× | 2.062454× | 1.006122× |
+
+The slide is the only case above Roc in both runs. Its gap is 70–78 µs
+per call. Periodic 8 KiB slows by 2.21% against the paired control in
+the repeat and stays below Roc. The archive retains the earlier one-byte
+timing-gate miss and all losing experiments.
+
+## Terminal byte appends baseline
+
 The compiler now emits one allocation and one sequence of writes when the
 current borrowed output has room for a complete terminal byte append. Two
 matched matrices take **0.974266×** and **0.976169×** paired control. Both

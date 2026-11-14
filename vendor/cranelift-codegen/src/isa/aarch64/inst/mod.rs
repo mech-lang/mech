@@ -952,6 +952,31 @@ impl MachInst for Inst {
         loop_live_ranges::rewrite(block, canonical);
     }
 
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    fn preallocation_branch_rewrite_enabled(flags: &settings::Flags) -> bool {
+        flags.opt_level() != settings::OptLevel::None
+            && (std::env::var_os("MECH_ARM64_SUBTRACT_BRANCH").is_some()
+                || std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some())
+    }
+
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    fn preallocation_rewrite_branch(
+        tail: &[Self],
+        head: &[Self],
+        canonical: impl Fn(Reg) -> Reg,
+    ) -> Option<([Self; 2], usize, Self)> {
+        if std::env::var_os("MECH_ARM64_SUBTRACT_BRANCH").is_some()
+            && let Some((rewritten, successor)) =
+                loop_live_ranges::reuse_successor_subtract(tail, head.first()?, &canonical)
+        {
+            return Some((rewritten, 0, successor));
+        }
+        if std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some() {
+            return loop_live_ranges::reuse_successor_decrement(tail, head, &canonical);
+        }
+        None
+    }
+
     type ABIMachineSpec = AArch64MachineDeps;
     type LabelUse = LabelUse;
 
