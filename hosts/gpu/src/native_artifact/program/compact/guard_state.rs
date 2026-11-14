@@ -188,6 +188,24 @@ impl PartialEq for State {
 }
 impl Eq for State {}
 impl State {
+    pub(super) fn contradicts_where(&self, other: &Self, stable: impl Fn(u32) -> bool) -> bool {
+        self.known
+            .words
+            .iter()
+            .zip(other.known.words.iter())
+            .enumerate()
+            .any(|(word, (&a, &b))| {
+                let mut conflicts = ((a ^ b) & ((a ^ b) >> 1)) & 0x5555_5555_5555_5555;
+                while conflicts != 0 {
+                    let bit = conflicts.trailing_zeros();
+                    if stable(word as u32 * 32 + bit / 2) {
+                        return true;
+                    }
+                    conflicts &= conflicts - 1;
+                }
+                false
+            })
+    }
     pub(super) fn truth(&self, value: u32) -> Option<bool> {
         self.known.get(&value).copied()
     }
