@@ -181,6 +181,16 @@
       "sha256": "87935bd554800216828efa4642c4115b883a30302133d1bf5be061d9286ae22b",
       "source_revision": "8e3c03512b4df9ae479fe7f586d195166791b3c5",
       "summary": "benchmarks/mech-deflate/native-profile/ssa-span-trials-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-word-home-trials-20261114.tar.gz",
+      "bytes": 39038284,
+      "decision": "Rejected: deferred-zero seeds and indexed word homes do not establish useful compile savings; original and repeat results preserved; source restored.",
+      "files": 1135,
+      "receipt": "benchmarks/mech-deflate/native-profile/word-home-trials-apple-m3-20261114.archive.json",
+      "sha256": "8d2c2270276ae32a4a431b76303362158f17a59a399468fca53e04909ea0aefd",
+      "source_revision": "51b18380c07cbbdd4e0c0ffd472c3820289dbc0d",
+      "summary": "benchmarks/mech-deflate/native-profile/word-home-trials-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

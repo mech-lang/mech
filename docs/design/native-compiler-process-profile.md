@@ -361,3 +361,13 @@ complete IR comparisons and every program/fixture output byte match, but no
 candidate change is retained. The eighteenth complete packet preserves both
 trials. Shared word homes have common entry definitions; deferring unnecessary
 zero seeds is a source-based next hypothesis with no saving credited.
+
+The subsequent [word-home trials](native-word-home-compile-profile.md) do not
+establish a useful saving: deferred zero seeds leave source CFG time effectively
+unchanged, and an independent indexed-home repeat does not confirm its original
+improvement. Across sixteen indexed-home observations, source CFG changes
++0.107% and instructions -0.031%; repeat blocks are mixed. Both candidates are
+restored to the retained source. Every level-12 Object matches. The nineteenth
+complete packet keeps all favorable/adverse observations, tests and fixture
+outputs. Exact liveness-query graph construction and per-node read-set allocation
+are the next preparation investigation; no saving is credited yet.

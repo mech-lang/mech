@@ -180,3 +180,13 @@ All output bytes match; 17/18 focused tests, 24 paired complete IR cases and
 fourteen fixture pairs pass per variant. Both compiler-time blocks are slower.
 Source is restored to the retained nested-parser compiler. Every observation,
 patch and probe is in the eighteenth [complete packet](../evidence/compiler-profile-20261114/README.md).
+
+The [word-home trials](../../../docs/design/native-word-home-compile-profile.md)
+reject deferred entry zeros and direct indexed lookup. Source CFG time changes
++0.015% over eight observations and +0.107% over sixteen; instructions change
+-0.078% and -0.031%. The favorable original indexed-home cohort and mixed repeat
+both remain. Objects match; all metadata matches for indexed homes and only two
+diagnostic counts differ for deferred zeros. Both sources are restored. The
+nineteenth [complete packet](../evidence/compiler-profile-20261114/README.md)
+includes all measurements, source snapshots, tests and fourteen fixture pairs per
+trial. No compiler saving or runtime-latency campaign is credited.
