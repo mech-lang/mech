@@ -1,5 +1,9 @@
 # Canonical parser compilation profile
 
+The [predictive-dispatch follow-up](native-parser-prediction-profile.md) now
+qualifies 2.452–2.494-second parsing and identical program output. This report
+records the preceding parser optimization.
+
 On the Apple M3 Air, the level-12 compressor's parser falls from
 **10.13–10.29 seconds to 3.47–3.48 seconds**, a **2.94× speedup**.
 Fresh source-to-Object compilation falls from **57.89–58.56 seconds to

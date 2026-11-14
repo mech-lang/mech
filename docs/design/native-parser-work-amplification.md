@@ -1,6 +1,7 @@
 # Parser execution work amplification
 
-The level-12 compressor takes about **3.5 seconds to parse 160,857 bytes** after
+Before [predictive dispatch](native-parser-prediction-profile.md), the level-12
+compressor took about **3.5 seconds to parse 160,857 bytes** after
 the [2.94× parser improvement](native-parser-compile-profile.md). A new diagnostic
 probe counts the machinery behind that remaining time:
 
