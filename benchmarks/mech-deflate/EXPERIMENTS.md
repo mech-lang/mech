@@ -114,6 +114,15 @@ passing tests, no-std check, both screens, fourteen fixture pairs and all primar
 and contrary observations. Every declaration's original possible errors and
 canonical parameter order remain unchanged.
 
+The [prepared-owner reverse-edge qualification](../../docs/design/native-visit-predecessors-compile-profile.md)
+retains 1.87% lower compiler time, 11.39% lower numeric generation time and 3.34%
+fewer instructions. Fresh complete processes take 23.087–23.092 seconds with
+identical output bytes and the same 55 flags. Its eighth, 360-file packet includes
+all four passing production-module tests (7,464,960 exhaustive comparisons),
+fourteen fixture pairs, both screens, every raw observation and offline replay.
+All eight complete packets are published in benchmarks and the repository
+copies verify and replay byte-identically; the earlier archives remain unchanged.
+
 Paths below name reports **inside the external bundle**. The full manifest also
 covers early implementation witnesses, profiling, failed attempts and non-numbered
 packets. Each report hash is SHA-256; its surrounding directory holds the complete
