@@ -66,6 +66,8 @@ const CACHE_WORDS: usize = 1_500_513;
 pub struct Heap {
     pub parallel_peak_workers: u64,
     pub parallel_batches: u64,
+    // Slot zero is inline. The vectors use zero-based indices for slots one and up.
+    first_owner: *mut Owner,
     owners: Vec<*mut Owner>,
     free: Vec<usize>,
     pub counters: Counters,
@@ -76,7 +78,38 @@ impl Heap {
     pub fn new() -> Self {
         Self::default()
     }
+    fn owner_at(&self, slot: usize) -> Option<*mut Owner> {
+        if slot == 0 {
+            Some(self.first_owner)
+        } else {
+            self.owners.get(slot - 1).copied()
+        }
+    }
+
+    /// The pointer is a fresh or transferred owner, exclusively held here.
+    unsafe fn register(&mut self, owner: *mut Owner) {
+        let slot = if self.first_owner.is_null() {
+            self.first_owner = owner;
+            0
+        } else if let Some(index) = self.free.pop() {
+            self.owners[index] = owner;
+            index + 1
+        } else {
+            self.owners.push(owner);
+            self.owners.len()
+        };
+        unsafe { (*owner).slot = slot };
+    }
+
     pub fn discard_private(&mut self) {
+        if !self.first_owner.is_null() {
+            let owner = self.first_owner;
+            unsafe {
+                (*owner).references = 0;
+                self.release(owner)
+                    .expect("owned diagnostic backing cleanup");
+            }
+        }
         for index in 0..self.owners.len() {
             let owner = self.owners[index];
             if !owner.is_null() {
@@ -142,13 +175,9 @@ impl Heap {
                 }
             }
         }
-        let slot = self.free.pop().unwrap_or_else(|| {
-            self.owners.push(ptr::null_mut());
-            self.owners.len() - 1
-        });
         let owner = Box::into_raw(Box::new(Owner {
             references: 0,
-            slot,
+            slot: 0,
             data,
             capacity,
             stride,
@@ -158,7 +187,8 @@ impl Heap {
                 alignment
             },
         }));
-        self.owners[slot] = owner;
+        // SAFETY: this fresh owner is transferred to the scope of this heap.
+        unsafe { self.register(owner) };
         self.counters.payload_requests += 1;
         self.counters.requested_payload_bytes += bytes as u64;
         self.counters.live_payload_bytes += bytes as u64;
@@ -184,7 +214,7 @@ impl Heap {
         // SAFETY: only the owning native transaction supplies concrete owner
         // pointers, and a zero refcount is required before physical release.
         let record = unsafe { &*owner };
-        if record.references != 0 || self.owners.get(record.slot).copied() != Some(owner) {
+        if record.references != 0 || self.owner_at(record.slot) != Some(owner) {
             return Err(INVALID);
         }
         let bytes = record.capacity.checked_mul(record.stride).ok_or(INVALID)?;
@@ -217,8 +247,13 @@ impl Heap {
             unsafe { dealloc(data, layout) };
         }
         unsafe { drop(Box::from_raw(owner)) };
-        self.owners[slot] = ptr::null_mut();
-        self.free.push(slot);
+        if slot == 0 {
+            self.first_owner = ptr::null_mut();
+        } else {
+            let index = slot - 1;
+            self.owners[index] = ptr::null_mut();
+            self.free.push(index);
+        }
         self.counters.live_payload_bytes -= bytes as u64;
         Ok(())
     }
@@ -240,7 +275,7 @@ impl Heap {
             // SAFETY: current private owner came from this live transaction;
             // native last-use permits replacing this source, not a live alias.
             let record = unsafe { &*owner };
-            if self.owners.get(record.slot).copied() != Some(owner)
+            if self.owner_at(record.slot) != Some(owner)
                 || record.stride != stride
                 || record.alignment() != alignment
                 || record.data as u64 != source[0]
@@ -356,6 +391,41 @@ pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn inline_owner_transfers_with_live_tail_and_reuses_its_slot() {
+        let mut heap = Heap::new();
+        let mut result = heap.allocate(13, 1, 1, false).unwrap();
+        let owner = result[5] as *mut Owner;
+        assert_eq!(heap.owner_at(0), Some(owner));
+        assert_eq!(heap.owners.capacity(), 0);
+        assert_eq!(heap.free.capacity(), 0);
+        let scratch = heap.allocate(4, 8, 8, false).unwrap();
+        let scratch_owner = scratch[5] as *mut Owner;
+        assert_eq!(heap.owner_at(1), Some(scratch_owner));
+        unsafe {
+            (result[0] as *mut u8).write(17);
+            (*owner).references = 2;
+        }
+        result[1] = 1;
+        result[4] = 1;
+        assert_eq!(unsafe { heap.take_u8(result) }, Err(INVALID));
+        assert_eq!(heap.owner_at(0), Some(owner));
+        unsafe { (*owner).references = 1 };
+        let published = unsafe { heap.take_u8(result) }.unwrap();
+        assert_eq!(published, [17]);
+        assert_eq!(published.capacity(), 13);
+        assert_eq!(heap.owner_at(0), Some(ptr::null_mut()));
+        assert_eq!(heap.owner_at(1), Some(scratch_owner));
+        assert_eq!(heap.free.capacity(), 0);
+        let next = heap.allocate(9, 2, 2, false).unwrap();
+        assert_eq!(heap.owner_at(0), Some(next[5] as *mut Owner));
+        heap.discard_private();
+        assert_eq!(heap.counters.live_payload_bytes, 0);
+        assert_eq!(heap.owner_at(0), Some(ptr::null_mut()));
+        assert_eq!(heap.owner_at(1), Some(ptr::null_mut()));
+        assert_eq!(published, [17]);
+    }
+
     #[test]
     fn live_alias_copies_initialized_prefix_and_keeps_capacity() {
         let mut heap = Heap::new();
@@ -484,7 +554,7 @@ impl Heap {
         // current heap slot, exact backing geometry and sole reference are all
         // checked before removing that owner and constructing the Vec.
         let record = unsafe { &*owner };
-        if self.owners.get(record.slot).copied() != Some(owner)
+        if self.owner_at(record.slot) != Some(owner)
             || record.references != 1
             || record.stride != 1
             || record.alignment_and_mapping != 1
@@ -494,11 +564,14 @@ impl Heap {
             return Err(INVALID);
         }
         let slot = record.slot;
-        if slot + 1 == self.owners.len() {
-            let _ = self.owners.pop();
+        if slot == 0 {
+            self.first_owner = ptr::null_mut();
+        } else if slot == self.owners.len() {
+            self.owners.pop();
         } else {
-            self.owners[slot] = ptr::null_mut();
-            self.free.push(slot);
+            let index = slot - 1;
+            self.owners[index] = ptr::null_mut();
+            self.free.push(index);
         }
         self.counters.live_payload_bytes -= capacity;
         let record = unsafe { Box::from_raw(owner) };
@@ -606,20 +679,13 @@ struct Completed {
 unsafe impl Send for Completed {}
 impl Heap {
     fn adopt(&mut self, other: &mut Self) {
-        for &owner in &other.owners {
+        for owner in std::iter::once(other.first_owner).chain(other.owners.iter().copied()) {
             if owner.is_null() {
                 continue;
             }
-            let slot = self.free.pop().unwrap_or_else(|| {
-                self.owners.push(ptr::null_mut());
-                self.owners.len() - 1
-            });
             // SAFETY: the joined worker transfers each live concrete allocation
             // once. No other job or thread can subsequently touch its owner.
-            unsafe {
-                (*owner).slot = slot;
-            }
-            self.owners[slot] = owner;
+            unsafe { self.register(owner) };
         }
         self.counters.payload_requests += other.counters.payload_requests;
         self.counters.requested_payload_bytes += other.counters.requested_payload_bytes;
@@ -637,6 +703,7 @@ impl Heap {
             .counters
             .peak_payload_bytes
             .max(self.counters.live_payload_bytes);
+        other.first_owner = ptr::null_mut();
         other.owners.clear();
         other.free.clear();
         other.counters.live_payload_bytes = 0;
@@ -759,7 +826,7 @@ mod parallel_tests {
         deny_test_mapping(false);
         assert_eq!(denied.unwrap_err(), ALLOCATION);
         assert_eq!(heap.counters.live_payload_bytes, 24);
-        assert!(heap.owners.contains(&(existing[5] as *mut Owner)));
+        assert_eq!(heap.first_owner, existing[5] as *mut Owner);
         heap.allocate(32768, 8, 8, true).unwrap();
         heap.discard_private();
     }
@@ -829,7 +896,7 @@ mod parallel_tests {
                 24 + count as u64 * 32768 * 8
             );
             assert_eq!(parent.counters.payload_requests, 1 + count as u64);
-            assert!(parent.owners.contains(&(existing[5] as *mut Owner)));
+            assert_eq!(parent.first_owner, existing[5] as *mut Owner);
             for (i, view) in output.iter().enumerate() {
                 assert!(parent.owners.contains(&(view[5] as *mut Owner)));
                 let values = unsafe { std::slice::from_raw_parts(view[0] as *const u64, 3) };
@@ -876,8 +943,8 @@ mod parallel_tests {
         assert_eq!(status.status, 72);
         assert_eq!(status.origin, 101);
         assert_eq!(parent.counters.live_payload_bytes, 24);
-        assert_eq!(parent.owners.iter().filter(|p| !p.is_null()).count(), 1);
-        assert!(parent.owners.contains(&(existing[5] as *mut Owner)));
+        assert_eq!(parent.first_owner, existing[5] as *mut Owner);
+        assert!(parent.owners.iter().all(|p| p.is_null()));
         parent.discard_private();
     }
     #[test]
