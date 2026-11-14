@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-indexed-liveness-20261114.tar.gz",
+  "bytes": 15213143,
+  "evidence_files": 771,
+  "files": 771,
+  "format": 1,
+  "manifest_sha256": "55b56a8aebd3a8c9a59c2ada9a8953d3abdaba898e3b1d34478b4590167ae95e",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "4696bcd853c66079b5587bf9a6a524fd7c92417511369d8aefcce3f229ca6dd5",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-indexed-liveness-20261114.tar.gz",
+  "sha256": "49cb259c7ce7eb114208ce5c12cc0854bb37d52e74f11ad4bce4f040c24bced6",
+  "source_revision": "619386076692d819778fdc5c53579b3b7604b062",
+  "uncompressed_bytes": 106283661,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "49cb259c7ce7eb114208ce5c12cc0854bb37d52e74f11ad4bce4f040c24bced6",
+    "source_revision": "619386076692d819778fdc5c53579b3b7604b062",
+    "verified_bytes": 106283661,
+    "verified_files": 771
+  }
+}
