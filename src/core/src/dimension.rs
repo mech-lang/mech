@@ -209,6 +209,18 @@ pub(crate) fn canonicalize_dimension_environment(
 ) -> Result<CanonicalDimensionEnvironment, SemanticModelError> {
     validate_declaration_ids(declarations)?;
     let count = declarations.len();
+    // Constant bounds are already normalized and have no dependency edges.
+    // Avoid materializing normalized/dependency arrays for unused declarations,
+    // while retaining full ID/lifetime validation and canonical root ordering.
+    if declarations.iter().all(|declaration| {
+        matches!(declaration.lower_bound, DimensionExpr::Constant(_))
+            && declaration
+                .upper_bound
+                .as_ref()
+                .is_none_or(|upper| matches!(upper, DimensionExpr::Constant(_)))
+    }) {
+        return canonicalize_constant_bounds(declarations, root_references);
+    }
     if root_references.is_empty() {
         // With no roots, no declaration can be retained. Validate each bound
         // in its original order, without retaining unused normalized data or
@@ -311,6 +323,64 @@ pub(crate) fn canonicalize_dimension_environment(
                 .map(|value| normalize_dimension(value, retained_count))
                 .transpose()?,
         });
+    }
+    Ok(CanonicalDimensionEnvironment {
+        parameters: parameters.into_boxed_slice(),
+        old_to_new,
+    })
+}
+
+fn canonicalize_constant_bounds(
+    declarations: &[DimensionParameterDeclaration],
+    root_references: &[DimensionParameterId],
+) -> Result<CanonicalDimensionEnvironment, SemanticModelError> {
+    // IDs were checked for the entire environment before selecting this path.
+    // An unused compile-time declaration still precedes an unknown root error.
+    for declaration in declarations {
+        if declaration.lifetime == DimensionLifetime::CompileTime {
+            return Err(SemanticModelError::CompileTimeDimensionParameterV1);
+        }
+    }
+    let count = declarations.len();
+    ensure_known_references(root_references, count)?;
+    let mut old_to_new = vec![None; count];
+    if root_references.is_empty() {
+        return Ok(CanonicalDimensionEnvironment {
+            parameters: Box::new([]),
+            old_to_new,
+        });
+    }
+    let mut selected = vec![false; count];
+    let mut retained_count = 0;
+    for root in root_references {
+        if !core::mem::replace(&mut selected[root.get() as usize], true) {
+            retained_count += 1;
+        }
+    }
+    let mut parameters = Vec::with_capacity(retained_count);
+    let mut retain = |old: usize| {
+        let declaration = &declarations[old];
+        old_to_new[old] = Some(DimensionParameterId::new(parameters.len() as u32));
+        parameters.push(DimensionParameter {
+            lifetime: declaration.lifetime,
+            lower_bound: declaration.lower_bound.clone(),
+            upper_bound: declaration.upper_bound.clone(),
+        });
+    };
+    // Explicit parameters retain declaration order, before the inferred suffix.
+    for (old, declaration) in declarations.iter().enumerate() {
+        if selected[old] && declaration.origin == DimensionParameterOrigin::Explicit {
+            retain(old);
+        }
+    }
+    // Independent inferred parameters retain their first occurrence in roots.
+    for root in root_references {
+        let old = root.get() as usize;
+        if declarations[old].origin == DimensionParameterOrigin::Inferred
+            && core::mem::replace(&mut selected[old], false)
+        {
+            retain(old);
+        }
     }
     Ok(CanonicalDimensionEnvironment {
         parameters: parameters.into_boxed_slice(),
@@ -884,6 +954,117 @@ mod vector_tests {
             canonicalize_dimension_environment(&unused_cycle, &[DimensionParameterId::new(0)])
                 .is_err()
         );
+    }
+
+    #[test]
+    fn constant_bound_environments_preserve_reference_parameters_and_root_order() {
+        for seed in 0..256usize {
+            let count = [0, 1, 2, 17, 64, 257][seed % 6];
+            let declarations = (0..count)
+                .map(|index| {
+                    let mut declaration = declaration(index as u32);
+                    declaration.origin = if (index + seed) % 3 == 0 {
+                        DimensionParameterOrigin::Explicit
+                    } else {
+                        DimensionParameterOrigin::Inferred
+                    };
+                    declaration.lifetime = if (index + seed) % 2 == 0 {
+                        DimensionLifetime::Activation
+                    } else {
+                        DimensionLifetime::Turn
+                    };
+                    declaration.lower_bound = DimensionExpr::Constant((index * 7 + seed) as u64);
+                    declaration.upper_bound =
+                        (index % 3 != 0).then_some(DimensionExpr::Constant(if seed % 5 == 0 {
+                            u64::MAX
+                        } else {
+                            (index + seed) as u64
+                        }));
+                    declaration
+                })
+                .collect::<Vec<_>>();
+            let mut roots = if count == 0 {
+                Vec::new()
+            } else {
+                (0..seed % 36)
+                    .map(|i| DimensionParameterId::new(((seed * 17 + i * 13) % count) as u32))
+                    .collect::<Vec<_>>()
+            };
+            if seed % 11 == 0 {
+                roots.push(DimensionParameterId::new(count as u32));
+            }
+            let describe = |result: Result<CanonicalDimensionEnvironment, SemanticModelError>| {
+                result.map(|value| (value.parameters, value.old_to_new))
+            };
+            assert_eq!(
+                describe(canonicalize_dimension_environment(&declarations, &roots)),
+                describe(reference_canonicalize_dimension_environment(
+                    &declarations,
+                    &roots
+                )),
+                "seed={seed}"
+            );
+        }
+    }
+
+    #[test]
+    fn constant_bound_selection_preserves_unused_validation_and_fallback_error_priority() {
+        let root = [DimensionParameterId::new(0)];
+        let unknown = [DimensionParameterId::new(9)];
+        let mut declarations = vec![declaration(0), declaration(1), declaration(2)];
+        let check = |declarations: &[DimensionParameterDeclaration],
+                     roots: &[DimensionParameterId]| {
+            let describe = |result: Result<CanonicalDimensionEnvironment, SemanticModelError>| {
+                result.map(|value| (value.parameters, value.old_to_new))
+            };
+            assert_eq!(
+                describe(canonicalize_dimension_environment(declarations, roots)),
+                describe(reference_canonicalize_dimension_environment(
+                    declarations,
+                    roots
+                ))
+            );
+        };
+        declarations[2].lifetime = DimensionLifetime::CompileTime;
+        for roots in [root.as_slice(), unknown.as_slice(), &[]] {
+            check(&declarations, roots);
+            assert!(matches!(
+                canonicalize_dimension_environment(&declarations, roots),
+                Err(SemanticModelError::CompileTimeDimensionParameterV1)
+            ));
+        }
+        declarations[0].id = DimensionParameterId::new(1);
+        check(&declarations, &unknown);
+        assert!(
+            matches!(canonicalize_dimension_environment(&declarations, &unknown), Err(SemanticModelError::UnknownDimensionParameterV1 { id }) if id.get() == 1)
+        );
+        declarations[0].id = DimensionParameterId::new(0);
+        declarations[2].lifetime = DimensionLifetime::Turn;
+        check(&declarations, &unknown);
+        for expression in [
+            DimensionExpr::Hole,
+            DimensionExpr::Add(
+                vec![
+                    DimensionExpr::Constant(u64::MAX),
+                    DimensionExpr::Constant(1),
+                ]
+                .into_boxed_slice(),
+            ),
+            DimensionExpr::Multiply(
+                vec![DimensionExpr::Constant(0), DimensionExpr::Hole].into_boxed_slice(),
+            ),
+            DimensionExpr::Parameter(DimensionParameterId::new(2)),
+        ] {
+            declarations[2].upper_bound = Some(expression);
+            for roots in [
+                root.as_slice(),
+                unknown.as_slice(),
+                &[DimensionParameterId::new(2)],
+                &[],
+            ] {
+                check(&declarations, roots);
+            }
+        }
     }
 
     fn reference_canonicalize_dimension_environment(
