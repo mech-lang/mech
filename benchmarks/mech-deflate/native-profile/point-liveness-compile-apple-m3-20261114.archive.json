@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-point-liveness-20261114.tar.gz",
+  "bytes": 56714650,
+  "evidence_files": 1346,
+  "files": 1346,
+  "format": 1,
+  "manifest_sha256": "06108a8bf36163d4e3dd8a0afcd10eb0e5a566ff9e03f2c9b84ca1e44e262c0c",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "6f5b2cb5a6e0204f22bad3c6d0e799377332fe70fb8e7ce0a5453c9601c5f3bf",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-point-liveness-20261114.tar.gz",
+  "sha256": "c3eb9f419a7fcc0c7aff19f225f793082522e21086ccec23e7e293e751ba2a49",
+  "source_revision": "ab4e6d8bc6f0128b1899c292838c36470295424a",
+  "uncompressed_bytes": 312554081,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "c3eb9f419a7fcc0c7aff19f225f793082522e21086ccec23e7e293e751ba2a49",
+    "source_revision": "ab4e6d8bc6f0128b1899c292838c36470295424a",
+    "verified_bytes": 312554081,
+    "verified_files": 1346
+  }
+}

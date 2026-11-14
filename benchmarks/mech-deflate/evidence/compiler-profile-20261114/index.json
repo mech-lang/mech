@@ -191,6 +191,16 @@
       "sha256": "8d2c2270276ae32a4a431b76303362158f17a59a399468fca53e04909ea0aefd",
       "source_revision": "51b18380c07cbbdd4e0c0ffd472c3820289dbc0d",
       "summary": "benchmarks/mech-deflate/native-profile/word-home-trials-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-point-liveness-20261114.tar.gz",
+      "bytes": 56714650,
+      "decision": "Retained: bounded exact liveness at the requested start; compiler time -5.08%, instructions -4.97%, identical program bytes; compiler RSS +1.93%.",
+      "files": 1346,
+      "receipt": "benchmarks/mech-deflate/native-profile/point-liveness-compile-apple-m3-20261114.archive.json",
+      "sha256": "c3eb9f419a7fcc0c7aff19f225f793082522e21086ccec23e7e293e751ba2a49",
+      "source_revision": "ab4e6d8bc6f0128b1899c292838c36470295424a",
+      "summary": "benchmarks/mech-deflate/native-profile/point-liveness-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

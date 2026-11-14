@@ -204,3 +204,9 @@ from the base and patches, checks stored tests, SSA counts, allowed diagnostic
 metadata changes, output bytes, fixture outputs and every numerical summary.
 It needs no compiler, benchmark execution, original scratch paths or network.
 Replay checks stored measurements; it does not rerun them.
+
+The subsequent [61-flag preparation profile and solver change](native-point-liveness-compile-profile.md)
+measures the repeated exact-query work and retains bounded liveness at the
+requested start. It preserves graph/validation construction and every output
+byte, reduces matched compiler time 5.08%, and records compiler RSS +1.93%.
+The earlier word-home trials above remain rejected and are not pooled with it.
