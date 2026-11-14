@@ -18,6 +18,7 @@ pub(super) fn derive(
     let CodePlan::Program(program) = code else {
         return Vec::new();
     };
+    let plan_facts = program.plan().facts();
     let mut versions = Vec::new();
     for (id, control) in program.plan().iterations().iter().enumerate() {
         let NativeControlLoop::Tail(tail) = control else {
@@ -54,7 +55,7 @@ pub(super) fn derive(
                 })
                 .collect::<Vec<_>>();
             let current = coordinates::derive(
-                program.plan(),
+                &plan_facts,
                 &program.metadata().buffer_frames,
                 &program.metadata().scalar_aggregates,
                 tail,

@@ -245,7 +245,7 @@ fn qualify_nested_inventory(jit: &JitProgramArtifact) {
     );
     let bounds = forest
         .bounded_children(
-            plan,
+            &plan.facts(),
             &metadata.buffer_frames,
             &metadata.scalar_aggregates,
             &metadata.calls,

@@ -22,6 +22,7 @@ use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, MemFlags, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
+use mech_engine::native_artifact::NativeProgramFacts;
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "phase_function.rs"]
 mod function;
@@ -80,6 +81,7 @@ pub(in crate::native_artifact) struct NoGrowth {
 impl NoGrowth {
     fn derive(
         prepared: &PreparedNativeProgram,
+        facts: &NativeProgramFacts<'_>,
         region: &crate::native_artifact::program::prepare::tail::Region,
     ) -> Option<Self> {
         let proof = region.numeric.as_ref()?;
@@ -104,7 +106,7 @@ impl NoGrowth {
             return None;
         }
         let field = crate::native_artifact::program::prepare::numeric_phase::unit_append_countdown(
-            prepared.plan(),
+            facts,
             &region.tail,
             &prepared.metadata().buffer_frames,
             &prepared.metadata().scalar_aggregates,
@@ -628,6 +630,7 @@ pub(super) fn define<M: Module>(
     literals: &LiteralViews,
     observe: bool,
 ) -> Result<Vec<Phase>, NativeCompileError> {
+    let facts = prepared.plan().facts();
     let closed = &prepared.metadata().closed_tails;
     let mut result = vec![];
     let mut dense_tables = cfg_cleanup::composed_reads::DenseTables::default();
@@ -867,7 +870,7 @@ pub(super) fn define<M: Module>(
         let no_growth = if std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
             && vector.is_none()
             && private.is_none()
-            && let Some(contract) = NoGrowth::derive(prepared, region)
+            && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
             && entry_bounds
                 .iter()
                 .any(|&(array, _, row)| array == contract.array && row)

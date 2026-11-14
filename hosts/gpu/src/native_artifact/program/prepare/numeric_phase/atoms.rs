@@ -11,13 +11,14 @@ pub(super) enum Atom {
     Field(u32, usize),
     Constant(u64),
 }
-pub(super) struct Resolver<'a> {
-    pub plan: &'a Plan,
+pub(super) struct Resolver<'a, 'p> {
+    pub plan: &'p Plan,
+    pub facts: &'a NativeProgramFacts<'p>,
     pub frames: &'a NativeBufferFrames,
     pub aggregates: &'a NativeScalarAggregates,
     pub forest: &'a Forest,
 }
-impl Resolver<'_> {
+impl Resolver<'_, '_> {
     pub fn atom(&self, atom: Atom) -> Option<Atom> {
         self.resolve(atom, &mut BTreeSet::new())
     }
@@ -55,7 +56,7 @@ impl Resolver<'_> {
                     _ => Some(atom),
                 };
             }
-            let facts = self.plan.facts();
+            let facts = self.facts;
             let defs = facts.definition_sites(value).ok()?;
             if defs.is_empty() {
                 return Some(atom);
@@ -162,7 +163,7 @@ impl Resolver<'_> {
         if !active.insert(value) {
             return None;
         }
-        let facts = self.plan.facts();
+        let facts = self.facts;
         let mut out = Vec::new();
         for d in facts.definition_sites(value).ok()? {
             let site = d.site()? as usize;

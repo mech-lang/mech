@@ -1,15 +1,15 @@
 //! Upper envelopes for current, immutable source operands. Overflow in an
 //! envelope declines admission; it is not source arithmetic and cannot trap.
 use super::*;
-pub(super) struct Upper<'a, 'p> {
-    pub flow: &'a Flow<'p>,
-    pub resolver: &'a Resolver<'p>,
+pub(super) struct Upper<'a, 'b, 'p> {
+    pub flow: &'a Flow<'b, 'p>,
+    pub resolver: &'a Resolver<'b, 'p>,
     pub prior: &'a [Trips],
     pub calls: &'a [Option<NativePreparedLibraryCall>],
     pub tag: Option<u64>,
     pub active: BTreeSet<(Atom, usize)>,
 }
-impl Upper<'_, '_> {
+impl Upper<'_, '_, '_> {
     pub fn value(&mut self, original: Atom, context: usize) -> Option<Bound> {
         let atom = self.resolver.atom(original)?;
         if !self.active.insert((atom, context)) {
@@ -23,7 +23,7 @@ impl Upper<'_, '_> {
         match atom {
             Atom::Constant(n) => Some(Bound::Constant(n)),
             Atom::Scalar(value) => {
-                if let Some((op, args)) = primitive(self.flow.plan, value) {
+                if let Some((op, args)) = primitive(self.flow.facts, value) {
                     match (op, args.as_slice()) {
                         (NativeScalarOp::U64BitAnd, [a, b]) => {
                             for v in [a, b] {
@@ -52,7 +52,7 @@ impl Upper<'_, '_> {
                         _ => {}
                     }
                 }
-                let facts = self.flow.plan.facts();
+                let facts = self.flow.facts;
                 if let [d] = facts.definition_sites(value).ok()?
                     && let Some(site) = d.site().map(|s| s as usize)
                     && self
@@ -95,7 +95,7 @@ impl Upper<'_, '_> {
                     let candidate = self
                         .flow
                         .forest
-                        .candidate_guards(self.flow.plan, self.flow.frames, self.flow.aggregates)
+                        .candidate_guards(self.flow.facts, self.flow.frames, self.flow.aggregates)
                         .into_iter()
                         .find(|(id, _)| *id == loop_.iteration)?
                         .1
@@ -103,6 +103,7 @@ impl Upper<'_, '_> {
                         .find(|g| Some(g.site) == trip.map(|p| p.guard))?;
                     let flow = Flow {
                         plan: self.flow.plan,
+                        facts: self.flow.facts,
                         frames: self.flow.frames,
                         aggregates: self.flow.aggregates,
                         forest: self.flow.forest,
@@ -197,7 +198,7 @@ impl Upper<'_, '_> {
                 Some(false)
             }
             Atom::Scalar(value) => {
-                let facts = self.flow.plan.facts();
+                let facts = self.flow.facts;
                 let [d] = facts.definition_sites(value).ok()? else {
                     return None;
                 };
@@ -221,7 +222,7 @@ impl Upper<'_, '_> {
                     }
                     return Some(definition.is_none());
                 }
-                if let Some((_, args)) = primitive(self.flow.plan, value) {
+                if let Some((_, args)) = primitive(self.flow.facts, value) {
                     return Some(
                         args.into_iter()
                             .all(|v| self.stable(Atom::Scalar(v), active) == Some(true)),

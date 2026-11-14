@@ -3,14 +3,15 @@
 use super::*;
 use mech_engine::native_artifact::{NativeMatchValue, NativeScalarAggregateAction as Aggregate};
 
-pub(super) struct Flow<'a> {
-    pub plan: &'a Plan,
+pub(super) struct Flow<'a, 'p> {
+    pub plan: &'p Plan,
+    pub facts: &'a NativeProgramFacts<'p>,
     pub frames: &'a NativeBufferFrames,
     pub aggregates: &'a NativeScalarAggregates,
     pub forest: &'a Forest,
     pub loop_: &'a Loop,
 }
-impl Flow<'_> {
+impl Flow<'_, '_> {
     pub fn tail(&self) -> &NativeTailLoop {
         let NativeControlLoop::Tail(tail) = &self.plan.iterations()[self.loop_.iteration as usize]
         else {
@@ -89,7 +90,7 @@ impl Flow<'_> {
         tag: Option<u64>,
         predicate: Option<(u32, bool)>,
     ) -> Option<bool> {
-        let facts = self.plan.facts();
+        let facts = self.facts;
         let mut seen = BTreeSet::new();
         loop {
             if let Some((expected, truth)) = predicate
@@ -129,7 +130,7 @@ impl Flow<'_> {
             {
                 let resolver = words::Words {
                     plan: self.plan,
-                    facts: &facts,
+                    facts,
                     frames: self.frames,
                     aggregates: self.aggregates,
                     tail: self.tail(),
@@ -143,7 +144,7 @@ impl Flow<'_> {
         }
     }
     pub fn edge_dominates(&self, guard: &Guard, target: usize, tag: Option<u64>) -> bool {
-        let facts = self.plan.facts();
+        let facts = self.facts;
         let Ok([definition]) = facts.definition_sites(guard.predicate) else {
             return false;
         };

@@ -72,22 +72,25 @@ pub(in crate::native_artifact) struct Trips {
 impl Forest {
     pub(in crate::native_artifact) fn bounded_children(
         &self,
-        plan: &Plan,
+        facts: &NativeProgramFacts<'_>,
         frames: &NativeBufferFrames,
         aggregates: &NativeScalarAggregates,
         calls: &[Option<NativePreparedLibraryCall>],
     ) -> Result<Vec<Trips>, &'static str> {
+        let plan = facts.plan();
         let resolver = Resolver {
             plan,
+            facts,
             frames,
             aggregates,
             forest: self,
         };
-        let candidates = self.candidate_guards(plan, frames, aggregates);
+        let candidates = self.candidate_guards(facts, frames, aggregates);
         let mut trips = Vec::new();
         for loop_ in self.loops.iter().skip(1) {
             let flow = Flow {
                 plan,
+                facts,
                 frames,
                 aggregates,
                 forest: self,
@@ -106,8 +109,8 @@ impl Forest {
         Ok(trips)
     }
 }
-fn primitive(plan: &Plan, value: u32) -> Option<(NativeScalarOp, Vec<u32>)> {
-    let facts = plan.facts();
+fn primitive(facts: &NativeProgramFacts<'_>, value: u32) -> Option<(NativeScalarOp, Vec<u32>)> {
+    let plan = facts.plan();
     let [definition] = facts.definition_sites(value).ok()? else {
         return None;
     };
@@ -129,9 +132,9 @@ fn tagged(plan: &Plan, tail: &NativeTailLoop) -> bool {
         mech_core::SchemaBody::Enum { .. }
     )
 }
-fn prove(
-    flow: &Flow<'_>,
-    resolver: &Resolver<'_>,
+fn prove<'p>(
+    flow: &Flow<'_, 'p>,
+    resolver: &Resolver<'_, 'p>,
     guard: &Guard,
     prior: &[Trips],
     calls: &[Option<NativePreparedLibraryCall>],
@@ -184,7 +187,7 @@ fn prove(
         let Atom::Scalar(step) = words[usize::from(is_tagged)] else {
             return None;
         };
-        let (op, args) = primitive(flow.plan, step)?;
+        let (op, args) = primitive(flow.facts, step)?;
         if !matches!(op, NativeScalarOp::U64Add | NativeScalarOp::U64WrappingAdd)
             || args.len() != 2
             || resolver.atom(Atom::Scalar(args[0]))? != coordinate
@@ -245,7 +248,7 @@ fn prove(
                 let Atom::Scalar(start) = words[usize::from(is_tagged)] else {
                     return None;
                 };
-                let (op, args) = primitive(flow.plan, start)?;
+                let (op, args) = primitive(flow.facts, start)?;
                 if op != NativeScalarOp::U64WrappingSub
                     || args.len() != 2
                     || resolver.atom(Atom::Scalar(args[0]))? != other

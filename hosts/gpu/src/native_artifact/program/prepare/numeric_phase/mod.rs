@@ -85,13 +85,14 @@ pub(in crate::native_artifact) struct Forest {
 impl Forest {
     pub(in crate::native_artifact) fn candidate_guards(
         &self,
-        plan: &Plan,
+        facts: &NativeProgramFacts<'_>,
         frames: &NativeBufferFrames,
         aggregates: &NativeScalarAggregates,
     ) -> Vec<(u32, Vec<Guard>)> {
-        let facts = plan.facts();
+        let plan = facts.plan();
         let resolver = atoms::Resolver {
             plan,
+            facts,
             frames,
             aggregates,
             forest: self,
@@ -105,7 +106,7 @@ impl Forest {
                 };
                 let words = words::Words {
                     plan,
-                    facts: &facts,
+                    facts,
                     frames,
                     aggregates,
                     tail,
