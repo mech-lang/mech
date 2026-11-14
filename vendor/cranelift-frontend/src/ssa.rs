@@ -8,8 +8,9 @@
 //! <https://link.springer.com/content/pdf/10.1007/978-3-642-37051-9_6.pdf>
 
 use crate::Variable;
-use alloc::{collections::BTreeMap, vec::Vec};
+use alloc::vec::Vec;
 use core::mem;
+use cranelift_codegen::FxHashMap;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::entity::{EntityList, ListPool, SecondaryMap};
 use cranelift_codegen::ir::immediates::{Ieee16, Ieee32, Ieee64, Ieee128};
@@ -64,7 +65,7 @@ pub struct SSABuilder {
 #[derive(Clone, Default)]
 struct VariableDefs {
     dense: Vec<Option<PackedOption<Value>>>,
-    sparse: BTreeMap<Block, PackedOption<Value>>,
+    sparse: FxHashMap<Block, PackedOption<Value>>,
     len: usize,
 }
 impl VariableDefs {
@@ -106,20 +107,27 @@ impl VariableDefs {
         previous
     }
     fn values(&self) -> impl Iterator<Item = &PackedOption<Value>> {
+        // Definition enumeration retains block order for stack-map propagation.
+        // Sparse point queries need no ordering; sort only this uncommon scan.
+        let mut sparse = self.sparse.iter().collect::<Vec<_>>();
+        sparse.sort_unstable_by_key(|(block, _)| block.as_u32());
         self.dense
             .iter()
             .filter_map(Option::as_ref)
-            .chain(self.sparse.values())
+            .chain(sparse.into_iter().map(|(_, value)| value))
     }
     #[cfg(test)]
     fn keys(&self) -> Vec<Block> {
         use cranelift_codegen::entity::EntityRef;
-        self.dense
+        let mut keys = self
+            .dense
             .iter()
             .enumerate()
             .filter_map(|(index, value)| value.is_some().then(|| Block::new(index)))
             .chain(self.sparse.keys().copied())
-            .collect()
+            .collect::<Vec<_>>();
+        keys.sort_unstable();
+        keys
     }
 }
 
