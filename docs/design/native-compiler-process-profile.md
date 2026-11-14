@@ -168,3 +168,9 @@ narrative was wrong; both raw candidates have higher maximum RSS than both raw
 controls, with nonoverlapping ranges. The original public archive remains available
 for provenance. No memory saving or new compressor runtime-speed measurement is
 claimed here. No source or runtime-code change is part of this profiling report.
+
+The subsequent [lexical-site index qualification](native-lexical-index-compile-profile.md)
+implements the first target on the updated PR 973 branch. It reduces complete
+compiler time 12.6% to 31.49–31.53 seconds, preserving all emitted bytes between
+matched subjects. The observations and CPU windows above retain their original
+52-flag source/configuration pins.
