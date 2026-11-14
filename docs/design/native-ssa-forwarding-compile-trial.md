@@ -2,7 +2,7 @@
 
 The provisional SSA construction change reduces full compiler time **8.13%**,
 but repeated compressor runtime cohorts show slowdowns. It is **reverted before
-updating PR 973**. The trial and revert remain in local Git ancestry; no SSA
+updating PR 973**. The trial and revert remain in published Git ancestry; no SSA
 forwarding change remains in the resulting source.
 
 Source `d4efd4465c5a8689016abd5b42e16f73e475af63` seals array helper blocks
@@ -84,8 +84,8 @@ primary runtime timing. No builds, tests or profiles overlap primary timing.
 
 The [complete replayed result](../../benchmarks/mech-deflate/native-profile/ssa-forwarding-rejected-apple-m3-20261114.json)
 and [archive receipt](../../benchmarks/mech-deflate/native-profile/ssa-forwarding-rejected-apple-m3-20261114.archive.json)
-pin 4,114 files and all observations. The archive remains local pending public
-export authorization. Local extraction verifies every hash/Git blob and its
-pure offline replay reconstructs the result byte-identically. Raw evidence and
-executables are outside source Git. No grammar or language change is retained;
+pin 4,114 files and all observations. The [complete archive](../../benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-forwarding-rejected-20261114.tar.gz)
+is published in benchmarks. Its repository copy verifies every hash/Git blob and
+replays the result byte-identically offline. Compiler executables are excluded
+and hash-pinned. No grammar or language change is retained;
 the full-compilation sub-ten-second goal remains open.

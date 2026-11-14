@@ -64,7 +64,7 @@ continuation/checkpoint work. Their savings require separate qualification.
 The [compact result](../../benchmarks/mech-deflate/native-profile/thread-visits-compile-apple-m3-20261114.json)
 and [archive receipt](../../benchmarks/mech-deflate/native-profile/thread-visits-compile-apple-m3-20261114.archive.json)
 pin all 339 files, commands, source patch, contrary counters and fixture outputs.
-The archive is local pending public export authorization. Local extraction
-verifies every hash/Git blob; pure offline replay reconstructs the result
-byte-identically without a compiler or generated executable. Raw data remains
-outside source Git, and source/evidence changes are separate commits.
+The [complete archive](../../benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-thread-visits-20261114.tar.gz)
+is published in benchmarks. Its repository copy verifies every hash/Git blob;
+pure offline replay reconstructs the result byte-identically without a compiler
+or generated executable. Source and evidence changes are separate commits.

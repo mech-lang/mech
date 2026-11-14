@@ -3,6 +3,8 @@
 
 Raw evidence belongs in the ignored .experiments directory or external storage.
 Only the compact index and hash-addressed archive receipts belong in source Git.
+The explicitly requested compiler-profile-20261114 bundles are a documented
+exception under benchmarks/mech-deflate/evidence/; see EXPERIMENTS.md.
 Historical scripts remain in the verified archives; this is the maintained entry.
 """
 

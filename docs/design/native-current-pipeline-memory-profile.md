@@ -60,6 +60,6 @@ before the independent runtime change. The sub-ten-second goal remains open.
 The [compact result](../../benchmarks/mech-deflate/native-profile/current-pipeline-memory-apple-m3-20261114.json)
 and [archive receipt](../../benchmarks/mech-deflate/native-profile/current-pipeline-memory-apple-m3-20261114.archive.json)
 pin all 64 files, commands, source snapshots, input/output hashes, rebuild and
-raw process observations. The local archive verifies every hash/Git blob and
-replays byte-identically without a compiler or generated executable. Public
-export awaits authorization; raw data and executables remain outside source Git.
+raw process observations. The [complete archive](../../benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-current-pipeline-memory-20261114.tar.gz)
+is published in benchmarks. Its repository copy verifies every hash/Git blob and
+replays byte-identically without a compiler or generated executable.
