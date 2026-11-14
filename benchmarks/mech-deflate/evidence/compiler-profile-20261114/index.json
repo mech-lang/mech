@@ -101,6 +101,16 @@
       "sha256": "b25e5298f61e3db9aa061b54652bad3559cc562ba0577317b1c747c6dd00dd6f",
       "source_revision": "7306a0097a2a8e52bf263bb9d600a5e4ed8b417d",
       "summary": "benchmarks/mech-deflate/native-profile/compiler-lto-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-shared-schema-20261114.tar.gz",
+      "bytes": 13222203,
+      "decision": "Retained: shared pending frontend schemas and pure canonicalization; identical program bytes; slower native phase.",
+      "files": 459,
+      "receipt": "benchmarks/mech-deflate/native-profile/shared-schema-compile-apple-m3-20261114.archive.json",
+      "sha256": "2dd31a115aa5bb1e28698b6d1d5bf873fe943472e2c186617c29e8297b7d12f0",
+      "source_revision": "610f3692c0ad0b894d6537f206a79a4de8833ede",
+      "summary": "benchmarks/mech-deflate/native-profile/shared-schema-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

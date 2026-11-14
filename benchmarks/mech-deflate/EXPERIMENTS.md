@@ -144,6 +144,15 @@ frontend time is an adverse 2.76% higher. The separate compiler bootstrap takes
 fresh CPU profile and both discarded SSA trials. Its repository copy verifies
 and replays byte-identically using Python 3.11+. Earlier archives remain unchanged.
 
+The [shared-pending-schema qualification](../../docs/design/native-shared-schema-compile-profile.md)
+retains private copy-on-write draft owners and pure exact-owner canonicalization.
+Eight matched 60-flag runs take 21.196–21.415 seconds: 2.46% less whole-process
+time, 18.85% less frontend time, 3.27% fewer instructions and 1.38% lower peak RSS.
+Native time is an adverse 0.46% higher. All output bytes match; 66 unique frontend
+and codec tests pass. The eleventh packet retains both screens, fourteen fixture
+pairs, all observations, exact source and failures. Pure offline replay reproduces
+the result; prior archives remain unchanged.
+
 Paths below name reports **inside the external bundle**. The full manifest also
 covers early implementation witnesses, profiling, failed attempts and non-numbered
 packets. Each report hash is SHA-256; its surrounding directory holds the complete
