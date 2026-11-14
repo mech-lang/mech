@@ -2,10 +2,14 @@
 //! source word banks or canonical Value identities participate in these calls.
 use std::{
     alloc::{Layout, alloc, alloc_zeroed, dealloc},
-    ptr,
+    marker::PhantomData,
+    mem::MaybeUninit,
+    ptr::{self, NonNull},
 };
+mod terminal_appends;
 #[path = "zero_pages.rs"]
 mod zero_pages;
+pub use terminal_appends::mech_compact_finish_byte_appends;
 pub const ALLOCATION: u64 = 0x19402;
 pub const INVALID: u64 = 0x19403;
 pub type View = [u64; 6];
@@ -62,22 +66,45 @@ pub struct ScratchAudit {
 // cannot be a legal packed level-12 match/header.
 const CACHE_WORDS: usize = 1_500_513;
 
+/// Storage for one owner descriptor borrowed by an opaque native invocation.
+pub struct OwnerStorage(MaybeUninit<Owner>);
+
+impl Default for OwnerStorage {
+    fn default() -> Self {
+        Self(MaybeUninit::uninit())
+    }
+}
+
 #[derive(Default)]
-pub struct Heap {
+pub struct Heap<'storage> {
     pub parallel_peak_workers: u64,
     pub parallel_batches: u64,
     // Slot zero is inline. The vectors use zero-based indices for slots one and up.
     first_owner: *mut Owner,
+    owner_storage: Option<NonNull<Owner>>,
+    owner_loan: PhantomData<&'storage mut OwnerStorage>,
     owners: Vec<*mut Owner>,
     free: Vec<usize>,
     pub counters: Counters,
     pub scratch_audit: ScratchAudit,
     pub scratch_poison: Option<u32>,
 }
-impl Heap {
+impl Heap<'static> {
     pub fn new() -> Self {
         Self::default()
     }
+}
+
+impl<'storage> Heap<'storage> {
+    /// Keep the first record at a stable address owned by the caller. The heap
+    /// cannot outlive that exclusive loan. Scratch payload allocation and the
+    /// owner token exposed to generated code keep their existing representation.
+    pub fn with_owner_storage(storage: &'storage mut OwnerStorage) -> Self {
+        let mut heap = Self::default();
+        heap.owner_storage = Some(NonNull::from(&mut storage.0).cast());
+        heap
+    }
+
     fn owner_at(&self, slot: usize) -> Option<*mut Owner> {
         if slot == 0 {
             Some(self.first_owner)
@@ -175,7 +202,7 @@ impl Heap {
                 }
             }
         }
-        let owner = Box::into_raw(Box::new(Owner {
+        let owner = Owner {
             references: 0,
             slot: 0,
             data,
@@ -186,7 +213,17 @@ impl Heap {
             } else {
                 alignment
             },
-        }));
+        };
+        let owner = if self.first_owner.is_null()
+            && let Some(storage) = self.owner_storage
+        {
+            // SAFETY: the heap holds the exclusive storage loan. A free first
+            // slot means that no live token points into the loan.
+            unsafe { storage.as_ptr().write(owner) };
+            storage.as_ptr()
+        } else {
+            Box::into_raw(Box::new(owner))
+        };
         // SAFETY: this fresh owner is transferred to the scope of this heap.
         unsafe { self.register(owner) };
         self.counters.payload_requests += 1;
@@ -246,7 +283,8 @@ impl Heap {
             // SAFETY: this pointer retains its original allocator layout.
             unsafe { dealloc(data, layout) };
         }
-        unsafe { drop(Box::from_raw(owner)) };
+        // SAFETY: this owner belongs to the heap and its payload is retired.
+        unsafe { self.retire_record(owner) };
         if slot == 0 {
             self.first_owner = ptr::null_mut();
         } else {
@@ -257,6 +295,20 @@ impl Heap {
         self.counters.live_payload_bytes -= bytes as u64;
         Ok(())
     }
+    unsafe fn retire_record(&self, owner: *mut Owner) {
+        if self
+            .owner_storage
+            .is_some_and(|storage| storage.as_ptr() == owner)
+        {
+            // SAFETY: the current registered record was initialized in this
+            // slot. End its lifetime while retaining the storage loan.
+            unsafe { owner.drop_in_place() };
+        } else {
+            // SAFETY: all other records are allocated as Box<Owner>.
+            unsafe { drop(Box::from_raw(owner)) };
+        }
+    }
+
     fn writable(
         &mut self,
         source: View,
@@ -307,7 +359,7 @@ impl Heap {
         Ok(result)
     }
 }
-impl Drop for Heap {
+impl Drop for Heap<'_> {
     fn drop(&mut self) {
         // A failed private transaction publishes no roots. Generated values
         // and views cannot escape this lifetime; discard all remaining scratch.
@@ -391,6 +443,35 @@ pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn borrowed_owner_storage_survives_heap_moves_and_failure_retries() {
+        let mut storage = OwnerStorage::default();
+        let address = storage.0.as_mut_ptr();
+        let mut heap = Heap::with_owner_storage(&mut storage);
+        let mut output = heap.allocate(13, 1, 1, false).unwrap();
+        let owner = output[5] as *mut Owner;
+        assert_eq!(owner, address);
+        let scratch = heap.allocate(4, 8, 8, false).unwrap();
+        assert_ne!(scratch[5] as *mut Owner, owner);
+        unsafe {
+            (output[0] as *mut u8).write(17);
+            (*owner).references = 2;
+        }
+        output[1] = 1;
+        output[4] = 1;
+        let mut moved = heap;
+        assert_eq!(unsafe { moved.take_u8(output) }, Err(INVALID));
+        unsafe { (*owner).references = 1 };
+        let published = unsafe { moved.take_u8(output) }.unwrap();
+        assert_eq!(published, [17]);
+        assert_eq!(published.capacity(), 13);
+        let retry = moved.allocate(3, 2, 2, false).unwrap();
+        assert_eq!(retry[5] as *mut Owner, address);
+        moved.discard_private();
+        assert_eq!(moved.counters.live_payload_bytes, 0);
+        assert_eq!(published, [17]);
+    }
+
     #[test]
     fn inline_owner_transfers_with_live_tail_and_reuses_its_slot() {
         let mut heap = Heap::new();
@@ -537,7 +618,7 @@ mod tests {
     }
 }
 
-impl Heap {
+impl Heap<'_> {
     /// Transfer the sole final U8 allocation without a payload copy. All view
     /// aliases are counted by the generated typed source-value lifetime code.
     ///
@@ -574,12 +655,12 @@ impl Heap {
             self.free.push(index);
         }
         self.counters.live_payload_bytes -= capacity;
-        let record = unsafe { Box::from_raw(owner) };
+        // SAFETY: the validated record is sole and belongs to the current heap.
+        unsafe { self.retire_record(owner) };
         // Allocation uses this exact U8 layout through the pinned global
-        // allocator; the Vec becomes its sole owner and retains full capacity.
+        // allocator. The Vec becomes its sole owner and retains full capacity.
         let result =
-            unsafe { Vec::from_raw_parts(record.data, length as usize, capacity as usize) };
-        drop(record);
+            unsafe { Vec::from_raw_parts(pointer as *mut u8, length as usize, capacity as usize) };
         Ok(result)
     }
 }
@@ -670,15 +751,19 @@ pub struct NativeStatus {
     pub origin: u64,
 }
 struct Completed {
-    heap: Heap,
+    heap: Heap<'static>,
     status: NativeStatus,
 }
 // SAFETY: after its native call returns, this job exclusively owns every live
 // allocation in this heap. Borrowed captures have no owner records here. The
 // scoped join transfers this exclusive ownership to its invoking thread.
 unsafe impl Send for Completed {}
-impl Heap {
-    fn adopt(&mut self, other: &mut Self) {
+impl Heap<'_> {
+    fn adopt(&mut self, other: &mut Heap<'static>) {
+        debug_assert!(
+            other.owner_storage.is_none(),
+            "workers use owned descriptors"
+        );
         for owner in std::iter::once(other.first_owner).chain(other.owners.iter().copied()) {
             if owner.is_null() {
                 continue;

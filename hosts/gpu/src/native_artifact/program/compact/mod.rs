@@ -28,6 +28,7 @@ mod maps;
 mod private_chains;
 mod recipes;
 mod strings;
+mod terminal_appends;
 mod utf8_classes;
 mod widening_reduction;
 mod word_collections;
