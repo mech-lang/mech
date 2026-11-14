@@ -47,6 +47,7 @@ fn import<M: Module>(
 fn success(b: &mut FunctionBuilder<'_>, status: Value, error: Block) {
     let next = b.create_block();
     b.ins().brif(status, error, &[status.into()], next, &[]);
+    b.seal_block(next);
     b.switch_to_block(next);
 }
 fn checked_add(b: &mut FunctionBuilder<'_>, left: Value, right: Value, error: Block) -> Value {
@@ -133,11 +134,13 @@ impl Arrays {
         let yes = b.create_block();
         let done = b.create_block();
         b.ins().brif(owner, yes, &[], done, &[]);
+        b.seal_block(yes);
         b.switch_to_block(yes);
         let refs = b.ins().load(types::I64, MemFlags::new(), owner, 0);
         let refs = b.ins().iadd_imm(refs, 1);
         b.ins().store(MemFlags::new(), refs, owner, 0);
         b.ins().jump(done, &[]);
+        b.seal_block_with_forwarding(done);
         b.switch_to_block(done);
     }
     /// Private scratch has no language-value reference. Its concrete heap
@@ -146,11 +149,13 @@ impl Arrays {
         let present = b.create_block();
         let done = b.create_block();
         b.ins().brif(owner, present, &[], done, &[]);
+        b.seal_block(present);
         b.switch_to_block(present);
         let call = b.ins().call(self.free, &[self.heap, owner]);
         let status = b.inst_results(call)[0];
         success(b, status, error);
         b.ins().jump(done, &[]);
+        b.seal_block_with_forwarding(done);
         b.switch_to_block(done);
     }
     pub fn release(&self, b: &mut FunctionBuilder<'_>, owner: Value, error: Block) {
@@ -158,16 +163,19 @@ impl Arrays {
         let deallocate = b.create_block();
         let done = b.create_block();
         b.ins().brif(owner, yes, &[], done, &[]);
+        b.seal_block(yes);
         b.switch_to_block(yes);
         let refs = b.ins().load(types::I64, MemFlags::new(), owner, 0);
         let refs = b.ins().iadd_imm(refs, -1);
         b.ins().store(MemFlags::new(), refs, owner, 0);
         b.ins().brif(refs, done, &[], deallocate, &[]);
+        b.seal_block(deallocate);
         b.switch_to_block(deallocate);
         let call = b.ins().call(self.free, &[self.heap, owner]);
         let status = b.inst_results(call)[0];
         success(b, status, error);
         b.ins().jump(done, &[]);
+        b.seal_block_with_forwarding(done);
         b.switch_to_block(done);
     }
     pub fn retire(
