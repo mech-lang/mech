@@ -90,6 +90,7 @@ pub struct BlockLoweringOrder {
     cold_blocks: FxHashSet<BlockIndex>,
     /// Lowered blocks that are indirect branch targets.
     indirect_branch_targets: FxHashSet<BlockIndex>,
+    preferred_fallthrough: Option<(BlockIndex, BlockIndex)>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -297,7 +298,13 @@ impl BlockLoweringOrder {
                 (opt_inst, start..end)
             }));
 
+        let preferred_fallthrough = f.preferred_fallthrough.and_then(|(from, to)| {
+            let from = blockindex_by_block[from];
+            let to = blockindex_by_block[to];
+            (from.is_valid() && to.is_valid()).then_some((from, to))
+        });
         let result = BlockLoweringOrder {
+            preferred_fallthrough,
             lowered_order,
             lowered_succ_indices,
             lowered_succ_ranges,
@@ -328,6 +335,11 @@ impl BlockLoweringOrder {
     pub fn succ_indices(&self, block: BlockIndex) -> (Option<Inst>, &[BlockIndex]) {
         let (opt_inst, range) = &self.lowered_succ_ranges[block.index()];
         (*opt_inst, &self.lowered_succ_indices[range.clone()])
+    }
+
+    /// Lowered endpoints of the optional final-layout preference.
+    pub fn preferred_fallthrough(&self) -> Option<(BlockIndex, BlockIndex)> {
+        self.preferred_fallthrough
     }
 
     /// Determine whether the given lowered-block index is cold.
