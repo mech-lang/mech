@@ -17,6 +17,46 @@ misses against Roc.
 
 ## Compression runtime experiments
 
+### Match-record continuation and selected matcher reuse
+
+The combined ARM64 experiment beats Roc on **81/81 (100%)** in both full
+comparisons. It beats libdeflate on **33/81 (40.7%)** in each. The combined
+worker falls through from a completed match record to the next record's
+checked read. It also reuses the selected masked distance and already-read
+bytes in the matcher. The pinned program and complete compression boundary
+are identical across the measurements. Each full matrix validates 245,664
+timed calls with exact compressed bytes, independent inflate, matching
+capacities, live aliases and cleanup.
+
+| Input | Mech / paired control, repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Eight literals | 1.0104× | 0.1669× / 0.1674× | 2.1399× |
+| Natural 128 KiB | 0.9571× | 0.9788× / 0.9789× | 0.8039× |
+| Natural 1 MiB | 0.9590× | 0.9904× / 0.9891× | 0.7989× |
+| Held-out slides | 0.9608× | 0.9962× / 0.9950× | 0.8696× |
+| Repeated 32 KiB | 1.0086× | 0.5264× / 0.4832× | 0.9500× |
+
+Against the published compiler, the two geometric means are **0.96964×**
+and **0.96935×**. Repeated 32 KiB misses both 1.05 gates in the first
+run at 1.0820× its paired control. Both gates pass all 81 on repeat.
+Periodic 32,767 bytes has an adverse repeat geometric block ratio of
+1.1178× paired control while passing the existing two median gates. Two
+libdeflate wins are lost against each same-run control. The archival
+report preserves all rows and the order-conditioned results.
+
+With the parser layout alone, the two full runs beat Roc on **79/81** and
+**81/81**, passing both gates on every case. That worker also passed
+68,096 direct parser positions and 288 rejection/retry checks. The
+combined worker passes 162 additional linked streams. Both results
+use fixed ARM64 instruction layouts in the compact experiment, and
+equivalent compiler emission is still in progress. The checked-in
+compiler score remains **64/81**. The evidence archive verifies 756 file
+hashes and 11 matched cohorts. SHA-256
+`db71df8e5022fb2b821ee4d9ea65ce11f5c9b05b0125fad0d7dad91b814ef012`.
+[Exact measurement and qualification receipts](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-record-layout-db71df8e5022.tar.gz).
+
+### Direct-write ARM64 worker
+
 The direct-write ARM64 worker beats Roc on **79/81 (97.5%)** in both full
 comparisons, up from **64/81 (79.0%)** for the paired compiler control. It
 beats libdeflate on **33/81 (40.7%)** and both peers on **31/81 (38.3%)** in
