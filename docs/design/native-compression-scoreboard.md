@@ -17,6 +17,36 @@ misses against Roc.
 
 ## Compression runtime experiments
 
+The latest combined ARM64 experiment further shortens matcher decisions
+and the recurring parser record lookup. It takes **0.97445×** and **0.97390×**
+the published compiler's time across the two full matrices. It beats Roc on
+**75/81 (92.6%)** and **76/81 (93.8%)**, libdeflate on **34/81** in both, and
+both peers on **28/81** and **29/81**. All 81 cases pass both timing gates in
+both runs, with the same exact compressed bytes, capacities, aliases and
+independent decompression.
+
+| Input | Mech / paired control, repeat | Mech / Roc, first and repeat | Mech / libdeflate, repeat |
+| --- | ---: | ---: | ---: |
+| Eight literals | 0.9970× | 0.1610× / 0.1616× | 2.0480× |
+| Reymont 32,769 bytes | 0.9791× | 0.9936× / 0.9925× | 0.9013× |
+| Natural 64 KiB | 0.9736× | 0.9878× / 0.9876× | 0.8298× |
+| Natural 128 KiB | 0.9751× | 1.0021× / 0.9998× | 0.8216× |
+| Natural 256 KiB | 0.9777× | 1.0005× / 1.0011× | 0.8108× |
+| Natural 1 MiB | 0.9796× | 1.0101× / 1.0107× | 0.8157× |
+| Held-out slides | 0.9786× | 1.0167× / 1.0123× | 0.8858× |
+| Seven stored bytes with prefix | 0.5489× | 1.0217× / 1.0330× | 0.0086× |
+| Empty | 0.6096× | 1.0476× / 1.0354× | 0.0082× |
+
+Periodic 8 KiB is the largest slowdown at 1.0188× control on repeat.
+Periodic 65,537 bytes loses a libdeflate win in the first run. The parser
+and matcher edits still need normal compiler emission. The published
+compiler baseline remains 64/81. The archive retains all 20 matched cohorts
+and 1,075 file hashes. SHA-256
+`9eb2ae52738b4bc9dac89e001a489e3ce48d274ab7a0985bdc819c6bcee53b62`.
+[Timing, exact worker receipts and correctness evidence](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/native-compression-runtime-followup-9eb2ae52738b.tar.gz).
+
+### Earlier combined experiment
+
 The combined ARM64 trial keeps the reduction minimum live between match
 records and uses one backing acquisition for the admitted short write chain.
 It beats Roc on **69/81 (85.2%)** and **67/81 (82.7%)** in the two complete
