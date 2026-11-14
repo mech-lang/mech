@@ -77,3 +77,6 @@ stay local; source, Object and metadata evidence remain retrievable.
 The [preceding ownership change](native-owner-read-compile-profile.md) reduced
 preparation. Native compilation now takes about 31 seconds, frontend work about
 8.4 seconds and parsing about 2.5 seconds. The sub-10-second goal remains open.
+
+The later [scoped numeric-facts change](native-numeric-facts-compile-profile.md)
+reduces full compilation to about 40.24 seconds with the same generated program.

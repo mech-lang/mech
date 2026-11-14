@@ -112,3 +112,5 @@ The [predictive parser report](../../../docs/design/native-parser-prediction-pro
 The [bounded ownership-query report](../../../docs/design/native-owner-read-compile-profile.md) records a further 19.7% preparation reduction and 6.3% full-compile reduction to about 47 seconds, with identical output bytes and 14,314 matching real-plan query results.
 
 The [sparse SSA lookup report](../../../docs/design/native-ssa-sparse-compile-profile.md) records source CFG construction falling 67.9% and full compilation falling 11.0% to about 42 seconds, with identical emitted bytes and all 61 focused tests passing.
+
+The [scoped numeric-facts report](../../../docs/design/native-numeric-facts-compile-profile.md) records a further 5.1% native reduction and full compilation near 40.24 seconds, with identical output bytes, six matching smaller programs and a separate frontend CPU sample.
