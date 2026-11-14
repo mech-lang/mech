@@ -85,6 +85,8 @@ pub(crate) struct CursorScope {
 /// Input-independent ownership of a live parse. Moving this state never
 /// finalizes events, loses rule/marker context, or replenishes resource fuel.
 pub(crate) struct ParserState {
+    #[cfg(test)]
+    disable_rejections_for_test: bool,
     lexical_mode: LexicalMode,
     parse_range: TextRange,
     events: Journal<Event>,
@@ -135,6 +137,8 @@ impl ParserState {
         input_frontier: bool,
     ) -> Self {
         Self {
+            #[cfg(test)]
+            disable_rejections_for_test: false,
             lexical_mode,
             parse_range: range,
             events: Journal::default(),

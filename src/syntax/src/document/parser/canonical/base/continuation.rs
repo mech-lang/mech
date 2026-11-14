@@ -56,6 +56,8 @@ enum Frame {
 pub(crate) struct FrameStorage {
     frames: Vec<Frame>,
     scanner: Option<Box<Scanner>>,
+    pub(in super::super) prediction:
+        Option<Box<[Option<super::super::prediction::Plan>; super::NON_FIXED_RULES.len()]>>,
 }
 enum Scanner {
     Literal(LiteralScan<'static>),
@@ -191,98 +193,47 @@ impl Continuation {
             self.push(Frame::Fixed(spec));
             return;
         }
-        match rule {
-            rules::TRANSITION_OPERATOR => {
-                self.choice(&[rules::TRANSITION_OPERATOR_A, rules::TRANSITION_OPERATOR_U])
+        match specification(rule).expect("supported non-fixed base rule") {
+            Spec::Alias(rule) => self.push(Frame::Call(rule)),
+            Spec::Choice(rules) => self.choice(rules),
+            Spec::Sequence(rules) => self.sequence(rules),
+            Spec::Repeat { required, choices } => {
+                if required {
+                    self.one_or_more(choices)
+                } else {
+                    self.repeat(parser, choices)
+                }
             }
-            rules::OUTPUT_OPERATOR => {
-                self.choice(&[rules::OUTPUT_OPERATOR_A, rules::OUTPUT_OPERATOR_U])
+            Spec::RepeatedNode {
+                kind,
+                first,
+                rest,
+                single_first,
+            } => {
+                self.node(parser, kind);
+                self.push(Frame::FirstRepeat(rest));
+                if single_first {
+                    self.push(Frame::Call(first[0]));
+                } else {
+                    self.choice(first);
+                }
             }
-            rules::EMOJI_GRAPHEME => self.push(Frame::Classified(SyntaxKind::Emoji, is_emoji)),
-            rules::ALPHA => self.push(Frame::Classified(SyntaxKind::Alpha, char::is_alphabetic)),
-            rules::DIGIT => self.push(Frame::Classified(SyntaxKind::Digit, char::is_numeric)),
-            rules::ANY => self.push(Frame::Raw(Some(SyntaxKind::Any))),
-            rules::ANY_TOKEN => self.push(Frame::Call(rules::ANY)),
-            rules::ALPHA_TOKEN => self.push(Frame::Call(rules::ALPHA)),
-            rules::DIGIT_TOKEN => self.push(Frame::Call(rules::DIGIT)),
-            rules::FORBIDDEN_EMOJI => self.choice(FORBIDDEN_EMOJI_RULES),
-            rules::EMOJI => self.unless(parser, &[rules::FORBIDDEN_EMOJI], rules::EMOJI_GRAPHEME),
-            rules::ALPHANUMERIC => self.choice(&[rules::ALPHA_TOKEN, rules::DIGIT_TOKEN]),
-            rules::UNDERSCORE_DIGIT => self.sequence(&[rules::UNDERSCORE, rules::DIGIT_TOKEN]),
-            rules::DIGIT_SEQUENCE => {
-                self.node(parser, SyntaxKind::DigitSequence);
-                self.push(Frame::FirstRepeat(&[
-                    rules::UNDERSCORE_DIGIT,
-                    rules::DIGIT_TOKEN,
-                ]));
-                self.push(Frame::Call(rules::DIGIT_TOKEN));
+            Spec::Classified(kind, classify) => self.push(Frame::Classified(kind, classify)),
+            Spec::Raw(kind) => self.push(Frame::Raw(kind)),
+            Spec::Unless { excluded, rule } => self.unless(parser, excluded, rule),
+            Spec::NewlineIndent => {
+                self.push(Frame::FirstRepeat(&[rules::SPACE_TAB]));
+                self.push(Frame::Call(rules::NEW_LINE));
             }
-            rules::GROUPING_SYMBOL => self.choice(GROUPING_SYMBOL_RULES),
-            rules::PUNCTUATION => self.choice(PUNCTUATION_RULES),
-            rules::ESCAPED_CHAR => {
+            Spec::Escape => {
                 self.node(parser, SyntaxKind::EscapedCharacter);
                 self.push(Frame::EscapeAfterSlash);
                 self.push(Frame::Call(rules::BACKSLASH));
             }
-            rules::SYMBOL => self.choice(SYMBOL_RULES),
-            rules::IDENTIFIER_SYMBOL => self.choice(IDENTIFIER_SYMBOL_RULES),
-            rules::TEXT => self.choice(TEXT_RULES),
-            rules::RAW_TEXT => self.choice(RAW_TEXT_RULES),
-            rules::NEW_LINE => self.choice(&[
-                rules::CARRIAGE_RETURN_NEW_LINE,
-                rules::NEW_LINE_CHAR,
-                rules::CARRIAGE_RETURN,
-            ]),
-            rules::WHITESPACE => self.choice(&[rules::SPACE, rules::TAB, rules::NEW_LINE]),
-            rules::WHITESPACE0 => self.repeat(parser, &[rules::WHITESPACE]),
-            rules::WHITESPACE1 => self.one_or_more(&[rules::WHITESPACE]),
-            rules::NEWLINE_INDENT => {
-                self.push(Frame::FirstRepeat(&[rules::SPACE_TAB]));
-                self.push(Frame::Call(rules::NEW_LINE));
-            }
-            rules::WS1E | rules::SPACE_TAB1 => self.one_or_more(&[rules::SPACE_TAB]),
-            rules::WS0E | rules::SPACE_TAB0 => self.repeat(parser, &[rules::SPACE_TAB]),
-            rules::SPACE_TAB => {
-                self.choice(&[rules::SPACE, rules::TAB, rules::NBSP, rules::THIN_SPACE])
-            }
-            rules::LIST_SEPARATOR => {
-                self.sequence(&[rules::WHITESPACE0, rules::COMMA, rules::WHITESPACE0])
-            }
-            rules::ENUM_SEPARATOR => {
-                self.sequence(&[rules::WHITESPACE0, rules::BAR, rules::WHITESPACE0])
-            }
-            rules::IDENTIFIER => {
-                self.node(parser, SyntaxKind::Identifier);
-                self.push(Frame::FirstRepeat(&[
-                    rules::ALPHA_TOKEN,
-                    rules::DIGIT_TOKEN,
-                    rules::UNDERSCORE,
-                    rules::IDENTIFIER_SYMBOL,
-                    rules::EMOJI,
-                ]));
-                self.choice(&[rules::ALPHA_TOKEN, rules::EMOJI]);
-            }
-            rules::IDENTIFIER_PATH_SEGMENT_EMOJI => {
-                self.unless(parser, PATH_EMOJI_EXCLUSIONS, rules::EMOJI)
-            }
-            rules::IDENTIFIER_PATH_SEGMENT => {
-                self.node(parser, SyntaxKind::IdentifierPathSegment);
-                self.push(Frame::FirstRepeat(&[
-                    rules::ALPHA_TOKEN,
-                    rules::DIGIT_TOKEN,
-                    rules::DASH,
-                    rules::IDENTIFIER_PATH_SEGMENT_EMOJI,
-                ]));
-                self.choice(&[rules::ALPHA_TOKEN, rules::IDENTIFIER_PATH_SEGMENT_EMOJI]);
-            }
-            rules::LEFT_ANGLE => self.choice(&[rules::LEFT_ANGLE1, rules::LEFT_ANGLE2]),
-            rules::RIGHT_ANGLE => self.choice(&[rules::RIGHT_ANGLE1, rules::RIGHT_ANGLE2]),
-            rules::BOX_DRAWING_CHAR => self.choice(BOX_DRAWING_CHAR_RULES),
-            rules::BOX_DRAWING_EMOJI => self.choice(BOX_DRAWING_EMOJI_RULES),
-            rules::TAG => self.result = false,
-            _ => unreachable!("supported base rule"),
+            Spec::Never => self.result = false,
         }
     }
+
     pub fn advance(
         &mut self,
         parser: &mut Parser<'_>,
@@ -290,6 +241,16 @@ impl Continuation {
         allowance: &mut u64,
     ) -> Progress {
         if let Some(rule) = self.initial.take() {
+            if final_input
+                && let Some(index) = non_fixed_index(rule)
+                && let Some((result, work)) =
+                    super::super::prediction::predict_base(parser, rule, index, *allowance)
+            {
+                *allowance -= work;
+                self.work += work;
+                self.result = result;
+                return Progress::Complete(result);
+            }
             self.storage = core::mem::take(&mut parser.state.base_storage);
             self.active = true;
             debug_assert!(self.storage.frames.is_empty());

@@ -44,6 +44,7 @@ enum Frame {
 pub(crate) struct FrameStorage {
     frames: Vec<Frame>,
     scanner: Option<Box<LiteralScan<'static>>>,
+    pub(in super::super) prediction: Option<Box<super::super::prediction::OperatorCache>>,
 }
 pub(crate) struct Continuation {
     initial: Option<RuleId>,
@@ -90,6 +91,16 @@ impl Continuation {
         allowance: &mut u64,
     ) -> Progress {
         if let Some(rule) = self.initial.take() {
+            if final_input
+                && let Some(work) =
+                    super::super::prediction::predict_operator(parser, rule, *allowance)
+            {
+                *allowance -= work;
+                self.work += work;
+                self.result = Attempt::NoMatch;
+                self.matched = false;
+                return Progress::Complete(self.result);
+            }
             self.storage = core::mem::take(&mut parser.state.operator_storage);
             self.active = true;
             debug_assert!(self.storage.frames.is_empty());

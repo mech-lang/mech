@@ -79,6 +79,8 @@ impl RuleStack {
         self.rules.last().and_then(|frame| frame.context)
     }
 
+    pub(crate) fn note_peak(&mut self, depth: usize) {self.peak_depth=self.peak_depth.max(depth);}
+
     pub(crate) fn peak_depth(&self) -> usize {
         self.peak_depth
     }
