@@ -1547,8 +1547,7 @@ fn retain_schema_tree(
     draft: &SchemaDraft,
 ) -> Result<mech_core::SchemaHandle, SourceSemanticError> {
     let schema = draft
-        .clone()
-        .finalize()
+        .finalize_ref()
         .map_err(|error| internal(anchor, format!("invalid source schema: {error:?}")))?;
     retain_finalized_schema_tree(anchor, builder, schema)
 }
@@ -2957,12 +2956,7 @@ fn structural_component_schema_draft(
     parent: &SchemaDraft,
     body: &SchemaBody,
 ) -> Option<SchemaDraft> {
-    let component = SchemaDraft {
-        body: body.clone(),
-        dimension_parameters: parent.dimension_parameters.clone(),
-    }
-    .finalize()
-    .ok()?;
+    let component = parent.finalize_body(body.clone()).ok()?;
     Some(SchemaDraft {
         body: component.body().clone(),
         dimension_parameters: component
@@ -3012,7 +3006,7 @@ fn structural_array_rest_schema(
 }
 
 fn fixed_matrix_element_count(schema: &SchemaDraft) -> Option<usize> {
-    let schema = schema.clone().finalize().ok()?;
+    let schema = schema.finalize_ref().ok()?;
     let shape = schema.instantiate_shape(Box::new([])).ok()?;
     let SchemaBody::Matrix { dimensions, .. } = schema.body() else {
         return None;
@@ -3713,7 +3707,7 @@ impl SemanticBuilder {
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = Self::with_function_catalog(anchor, function_catalog)?;
         for schema in input_schemas.values() {
-            schema.clone().finalize().map_err(|error| {
+            schema.finalize_ref().map_err(|error| {
                 internal(anchor, format!("invalid declared input schema: {error:?}"))
             })?;
         }
@@ -9868,8 +9862,8 @@ mod tests {
         let mut retained = record(DimensionParameterOrigin::Explicit);
         retained.dimension_parameters[1].origin = DimensionParameterOrigin::Inferred;
         assert_ne!(
-            rebuilt.clone().finalize().unwrap(),
-            retained.clone().finalize().unwrap()
+            rebuilt.finalize_ref().unwrap(),
+            retained.finalize_ref().unwrap()
         );
         assert!(annotation_shape_identity::equivalent(&rebuilt, &retained));
         for (name, schema) in [("rebuilt", rebuilt), ("retained", retained)] {
@@ -10512,7 +10506,7 @@ impl SemanticBuilder {
         // A selected scalar can carry unused source-axis declarations in its
         // draft. Literal compatibility follows the same finalized schema
         // identity later used by the artifact, not those unused declarations.
-        let literal_scrutinee_schema = scrutinee_schema.clone().finalize().map_err(|error| {
+        let literal_scrutinee_schema = scrutinee_schema.finalize_ref().map_err(|error| {
             internal(SourceSemanticAnchor::for_node(syntax), format!("{error:?}"))
         })?;
         let mut inputs = vec![scrutinee];
@@ -10614,12 +10608,7 @@ impl SemanticBuilder {
                                     ));
                                 };
                                 if self.constants[index].schema != scrutinee_schema
-                                    && self.constants[index]
-                                        .schema
-                                        .clone()
-                                        .finalize()
-                                        .ok()
-                                        .as_ref()
+                                    && self.constants[index].schema.finalize_ref().ok().as_ref()
                                         != Some(&literal_scrutinee_schema)
                                 {
                                     return Err(error(
@@ -10698,8 +10687,7 @@ impl SemanticBuilder {
                 if (matches!(pattern, crate::MatchPattern::Bind)
                     || matches!(pattern, crate::MatchPattern::Structural(_)))
                     && !scrutinee_schema
-                        .clone()
-                        .finalize()
+                        .finalize_ref()
                         .is_ok_and(|schema| crate::is_control_pattern_schema(&schema))
                 {
                     return Err(error(
@@ -10796,7 +10784,7 @@ impl SemanticBuilder {
                 // Selection drafts can retain unused source-axis declarations.
                 // Match results require the exact canonical schema later used
                 // by the artifact, rather than an identical draft environment.
-                let candidate_identity = schema.clone().finalize().map_err(|error| {
+                let candidate_identity = schema.finalize_ref().map_err(|error| {
                     internal(
                         SourceSemanticAnchor::for_node(&arm.syntax),
                         format!("unable to finalize match result schema: {error:?}"),
@@ -10825,11 +10813,7 @@ impl SemanticBuilder {
                     && !body.tail_recur_result()
                     && lowered.iter().all(|arm| !arm.body.tail_recur_result())
                     && result_schema_identity.as_ref().is_some_and(|expected| {
-                        expected
-                            != &schema
-                                .clone()
-                                .finalize()
-                                .expect("validated candidate schema")
+                        expected != &schema.finalize_ref().expect("validated candidate schema")
                     })
                 {
                     let expected = result_schema.as_ref().unwrap();
@@ -10837,13 +10821,13 @@ impl SemanticBuilder {
                         selected_matrix_result_schema(expected).unwrap_or_else(|| expected.clone());
                     let candidate =
                         selected_matrix_result_schema(&schema).unwrap_or_else(|| schema.clone());
-                    let common_identity = common.clone().finalize().map_err(|error| {
+                    let common_identity = common.finalize_ref().map_err(|error| {
                         internal(
                             SourceSemanticAnchor::for_node(&arm.syntax),
                             format!("invalid selected matrix schema: {error:?}"),
                         )
                     })?;
-                    let candidate_identity = candidate.clone().finalize().map_err(|error| {
+                    let candidate_identity = candidate.finalize_ref().map_err(|error| {
                         internal(
                             SourceSemanticAnchor::for_node(&arm.syntax),
                             format!("invalid selected matrix schema: {error:?}"),
@@ -10859,10 +10843,7 @@ impl SemanticBuilder {
                                 )?;
                             }
                         }
-                        if schema
-                            .clone()
-                            .finalize()
-                            .expect("validated candidate schema")
+                        if schema.finalize_ref().expect("validated candidate schema")
                             != common_identity
                         {
                             self.reify_selected_matrix_result(&mut body, &common, &arm.syntax)?;
@@ -10875,7 +10856,7 @@ impl SemanticBuilder {
                 // Dimension specialization supplies the concrete schema for
                 // terminal recursion; every arm still passes this exact final
                 // semantic check before it enters the canonical artifact.
-                let schema_identity = schema.clone().finalize().map_err(|error| {
+                let schema_identity = schema.finalize_ref().map_err(|error| {
                     internal(
                         SourceSemanticAnchor::for_node(&arm.syntax),
                         format!("unable to finalize match result schema: {error:?}"),
@@ -11094,14 +11075,12 @@ impl SemanticBuilder {
         let (value, schema) = result?;
         let result_value = |schema: &SchemaDraft| {
             schema
-                .clone()
-                .finalize()
+                .finalize_ref()
                 .is_ok_and(|schema| crate::is_control_result_schema(&schema))
         };
         let intermediate_value = |schema: &SchemaDraft| {
             schema
-                .clone()
-                .finalize()
+                .finalize_ref()
                 .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
         };
         if !result_value(&schema) {
@@ -11145,8 +11124,7 @@ impl SemanticBuilder {
                         // captures and must retain that live schema into the block.
                         if pattern_binding.is_none()
                             && !schema
-                                .clone()
-                                .finalize()
+                                .finalize_ref()
                                 .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
                         {
                             return Err(rejected(
@@ -11304,8 +11282,7 @@ fn resolve_pending_control_block(
         schemas
             .find_by_key(
                 draft
-                    .clone()
-                    .finalize()
+                    .finalize_ref()
                     .expect("validated control schema")
                     .key(),
             )
@@ -11386,8 +11363,7 @@ fn resolve_pending_match(
         schemas
             .find_by_key(
                 draft
-                    .clone()
-                    .finalize()
+                    .finalize_ref()
                     .expect("validated control schema")
                     .key(),
             )

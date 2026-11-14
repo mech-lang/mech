@@ -2416,7 +2416,7 @@ pub(super) fn compile_ordered_documents(
         builder.resource_writes = root.resource_writes.clone();
         builder.resolved_source_modules = root.resolved_modules.clone();
         for schema in root.input_schemas.values() {
-            schema.clone().finalize().map_err(|error| {
+            schema.finalize_ref().map_err(|error| {
                 internal(anchor, format!("invalid declared input schema: {error:?}"))
             })?;
         }

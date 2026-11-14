@@ -58,7 +58,21 @@ impl From<DimensionExpr> for CardinalitySpec {
 
 impl SchemaDraft {
     pub fn finalize(self) -> Result<Schema, SemanticModelError> {
-        validation::finalize_schema(self)
+        validation::finalize_schema(self.body, &self.dimension_parameters)
+    }
+
+    /// Finalize this draft without cloning its dimension environment. All
+    /// declarations, including unused ones, retain the ordinary validation.
+    #[inline]
+    pub fn finalize_ref(&self) -> Result<Schema, SemanticModelError> {
+        validation::finalize_schema(self.body.clone(), &self.dimension_parameters)
+    }
+
+    /// Finalize a replacement body in this draft's borrowed environment.
+    /// This is equivalent to finalizing a new draft with cloned declarations.
+    #[inline]
+    pub fn finalize_body(&self, body: SchemaBody) -> Result<Schema, SemanticModelError> {
+        validation::finalize_schema(body, &self.dimension_parameters)
     }
 }
 

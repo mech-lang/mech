@@ -98,8 +98,7 @@ impl SemanticBuilder {
         };
         let recursive = calls_function(body, name)?;
         let supported_carrier = argument_schema
-            .clone()
-            .finalize()
+            .finalize_ref()
             .is_ok_and(|schema| crate::is_control_pattern_schema(&schema));
         if recursive && !supported_carrier {
             return Err(error(

@@ -385,8 +385,7 @@ impl SemanticBuilder {
             } else {
                 numeric_body(&schema.body, 0) && has_numeric_matrix(&schema.body)
             }) && actual_schemas[index]
-                .clone()
-                .finalize()
+                .finalize_ref()
                 .is_ok_and(|schema| crate::is_control_capture_schema(&schema));
         }
         let kept = proof
@@ -430,8 +429,7 @@ impl SemanticBuilder {
         } else {
             numeric_body(&state.body, 0)
                 && state
-                    .clone()
-                    .finalize()
+                    .finalize_ref()
                     .is_ok_and(|schema| crate::is_control_pattern_schema(&schema))
         }) || !validate_packs(block, &proof.packs, &kept, &schemas, anchor)
         {
