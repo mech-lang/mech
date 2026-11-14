@@ -319,6 +319,22 @@ pub(super) fn define_entry<M: Module>(
     } else {
         Vec::new()
     };
+    let overwrite_reuse = if worker.is_none()
+        && memory
+        && std::env::var_os("MECH_COMPACT_REUSE_OVERWRITTEN_RESULT").is_some()
+    {
+        super::overwrite_reuse::derive(
+            plan,
+            layout,
+            &flow,
+            actions,
+            &guards,
+            &owner_flow,
+            &consuming,
+        )
+    } else {
+        Vec::new()
+    };
     let reduction_function = (!reductions.is_empty())
         .then(|| widening_reduction::declare(module))
         .transpose()?;
@@ -391,11 +407,20 @@ pub(super) fn define_entry<M: Module>(
             .map(|id| module.declare_func_in_func(id, b.func));
         let classes = super::utf8_classes::State::reserve(&mut b, &shared.classes, &flow);
         let collections = Collections::new(&mut b, plan, zero)?;
+        let reuse_state = overwrite_reuse
+            .iter()
+            .map(|proof| super::overwrite_reuse::State::declare(module, &mut b, proof, zero))
+            .collect::<Result<Vec<_>, _>>()?;
         let phase_packets = phase_geometry
             .map(|geometry| geometry.reserve(&mut b))
             .transpose()?;
         let transfer_observer = phases::observer(module, &mut b, observe)?;
         let route_observer = phases::observer(module, &mut b, !route_sites.is_empty())?;
+        let overwrite_reuse_observer = phases::observer(
+            module,
+            &mut b,
+            !overwrite_reuse.is_empty() && std::env::var_os("MECH_COMPACT_REUSE_CENSUS").is_some(),
+        )?;
         let mut slots = BTreeSet::new();
         for (value, ty) in layout.types.iter().enumerate() {
             slots.extend(layout.base[value]..layout.base[value] + ty.words);
@@ -469,6 +494,10 @@ pub(super) fn define_entry<M: Module>(
         }
         for chain in &chains {
             remaining[chain.exit()] += 1;
+        }
+
+        for proof in &overwrite_reuse {
+            remaining[proof.exit] += 1;
         }
         let mut last_layout = None;
         b.ins().jump(blocks[flow.entry].unwrap(), &[]);
@@ -829,6 +858,31 @@ pub(super) fn define_entry<M: Module>(
             let error = b.create_block();
             b.append_block_param(error, types::I64);
             b.set_cold_block(error);
+            for state in &reuse_state {
+                if state.proof.initialize == site {
+                    state.reset(&mut b);
+                }
+                if state.proof.exit == site {
+                    state.record_success(&mut b, arrays.as_ref().unwrap().heap);
+                }
+                if state.proof.clear == site {
+                    let exit = state.proof.exit;
+                    state.emit(
+                        &mut b,
+                        &words,
+                        layout,
+                        arrays.as_ref().unwrap(),
+                        &owner_flow,
+                        blocks[exit].unwrap(),
+                        error,
+                        overwrite_reuse_observer,
+                    );
+                    remaining[exit] -= 1;
+                    if remaining[exit] == 0 {
+                        b.seal_block(blocks[exit].unwrap());
+                    }
+                }
+            }
             if let Some(phase) = phases.iter().find(|phase| phase.header == site) {
                 phase.emit(
                     module,
@@ -1218,6 +1272,14 @@ pub(super) fn define_entry<M: Module>(
         .transpose()?;
     Ok({
         let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":flow.outputs.iter().map(|&v|layout.ty(v).summary()).collect::<Vec<_>>(),"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"source_blocks":plan.blocks().len(),"reachable_blocks":flow.reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
+        if !overwrite_reuse.is_empty() {
+            report["overwrite_result_reuse"] = serde_json::json!(
+                overwrite_reuse
+                    .iter()
+                    .map(|proof| proof.summary())
+                    .collect::<Vec<_>>()
+            );
+        }
         if let Some(terminal) = terminal_report {
             report["terminal_byte_appends"] = terminal;
         }

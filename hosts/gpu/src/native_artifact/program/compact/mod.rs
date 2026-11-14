@@ -100,3 +100,5 @@ pub(in crate::native_artifact) fn inventory(
 mod owner_flow;
 
 mod guards;
+
+mod overwrite_reuse;

@@ -1,5 +1,24 @@
 # Current compression scoreboard
 
+## Private overwrite result reuse
+
+Two full native compact runs score **81/81 (100%) faster than the
+pinned reference**, with **38/81** and **35/81** faster than libdeflate
+as well. Both timing gates pass on all cases with exact output bytes.
+See [the compiler proof and full evidence](native-private-overwrite-reuse.md).
+
+| Input | Full / pinned reference | Repeat / pinned reference | Repeat / libdeflate | Repeat / paired control |
+| --- | ---: | ---: | ---: | ---: |
+| Held-out slides, 65,537 bytes | 0.970861× | 0.954116× | 0.849983× | 0.987205× |
+| Natural 256 KiB | 0.900394× | 0.900275× | 0.730675× | 0.914877× |
+| Natural 1 MiB | 0.913648× | 0.912731× | 0.735904× | 0.913173× |
+| Natural 32 KiB + 1 byte | 0.993963× | 0.996489× | 0.902547× | 1.003598× |
+| Eight literals | 0.164584× | 0.160349× | 2.042962× | 0.996761× |
+
+Both execution-order groups are below parity on all 81 cases. Three
+repeat sampling intervals include parity, including the 65,537-byte
+slide. The exact samples and adverse counter-cohort result are retained.
+
 ## Selected ordered-reduction span and cursor
 
 The compact compiler reuses the selected subtraction flags, places the

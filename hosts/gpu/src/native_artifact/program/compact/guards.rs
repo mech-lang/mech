@@ -124,6 +124,15 @@ impl Guards {
         result.known = states.into_iter().map(Option::unwrap_or_default).collect();
         result
     }
+    pub fn contradictory_at(
+        &self,
+        first: usize,
+        second: usize,
+        stable: impl Fn(u32) -> bool,
+    ) -> bool {
+        self.known(first)
+            .contradicts_where(self.known(second), stable)
+    }
     pub fn known(&self, site: usize) -> &State {
         &self.known[site]
     }
