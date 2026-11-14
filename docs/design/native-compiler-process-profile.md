@@ -1,6 +1,6 @@
 # Current compiler pipeline versus libdeflate and Roc
 
-The latest qualified level-12 Mech program takes **29.61–30.03 seconds per complete
+The latest matched level-12 Mech cohort takes **29.61–30.03 seconds per complete
 source-to-Object process**, after the [lexical index](native-lexical-index-compile-profile.md)
 and [reusable visitation storage](native-thread-visits-compile-profile.md) changes,
 followed by [selected liveness definitions](native-liveness-definitions-compile-profile.md).
@@ -195,3 +195,10 @@ Filtering unused definition facts retains original validation and generated
 bytes while reducing preparation 11.39% and full compiler time another 2.52%.
 Its complete-process observations are 29.61–30.03 seconds; these retain their
 own 54-flag pins and are not pooled with the older cohorts above.
+
+PR 973 subsequently adds an independently measured nested-reduction runtime
+transformation. The [combined-head integration and memory trace](native-current-pipeline-memory-profile.md)
+reproduces its pinned native Object exactly. Its continuous samples locate the
+largest observed RSS in frontend semantic analysis at 6.913 GiB, close to the
+host process peak. These two memory diagnostics are excluded from primary timing
+and do not change the matched range above.

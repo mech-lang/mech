@@ -1,0 +1,92 @@
+{
+  "compiler_binary_sha256": "355f6c9a44444be3a1db893d7b2298a415bc84675d88eaf896bad95d57011376",
+  "compiler_bootstrap_seconds": 81.2258570000995,
+  "decision": "Combined compiler reproduces independently qualified runtime Object; prioritize frontend dimension environment work after resident-memory trace",
+  "diagnostics": {
+    "stage-memory": {
+      "compiler_seconds_diagnostic_only": 29.808220375,
+      "errors": 0,
+      "max_rss_bytes": 7484145664,
+      "numeric_function_boundaries": 344,
+      "peak_footprint_bytes": 7729584608,
+      "samples": 373,
+      "selected_boundaries": [
+        {
+          "rss_bytes": 2829975552,
+          "stage": "compact-stage: canonical lowering"
+        },
+        {
+          "rss_bytes": 3053453312,
+          "stage": "compact-stage: native module"
+        },
+        {
+          "rss_bytes": 845070336,
+          "stage": "compact-stage: source CFG"
+        },
+        {
+          "rss_bytes": 2506047488,
+          "stage": "compact-stage: finalize SSA"
+        },
+        {
+          "rss_bytes": 2702016512,
+          "stage": "compact-stage: CFG cleanup"
+        },
+        {
+          "rss_bytes": 3398402048,
+          "stage": "compact-stage: machine code"
+        },
+        {
+          "rss_bytes": 5294866432,
+          "stage": "compact-stage: machine code complete"
+        }
+      ]
+    },
+    "trace-memory": {
+      "compiler_seconds_diagnostic_only": 29.667952958,
+      "errors": 0,
+      "frontend_max_rss_bytes": 7422836736,
+      "largest_sample": {
+        "last_stage": {
+          "elapsed": 2.3453041668981314,
+          "line": "compile-profile: phase=frontend"
+        },
+        "observed_elapsed": 8.801925749983639,
+        "rss_bytes": 7422836736,
+        "virtual_bytes": 453425135616
+      },
+      "machine_code_max_rss_bytes": 5268258816,
+      "max_rss_bytes": 7445020672,
+      "peak_footprint_bytes": 7729666552,
+      "samples": 244
+    }
+  },
+  "flags_count": 54,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "759807181a96a242c61fc4ad27f76f94369287b3c8debc7429a5027cf57d9c86"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "8f33516fb93e1614a02f64d6dec1bd92f68abc6c4824b468c71840da494141a7"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "scope": [
+    "The source already contains both qualified compiler-only changes and the independent nested-reduction runtime change. Source and MBC match our own prior profiling input; Object matches the new runtime reference exactly. No bytecode identity with the independently authored runtime packet is claimed.",
+    "Two separately executed memory diagnostics, not primary timings or a new matched cohort. Both produce all four outputs byte-identically. Bootstrap and all PS overhead are excluded from prior primary compile ranges.",
+    "373 asynchronous stage-boundary snapshots include 344 numeric function starts. A separate trace uses requested 100 ms sleeps between PS calls; its 244 actual timestamps, commands and active-stage labels are retained.",
+    "The largest continuous RSS sample occurs during frontend semantic analysis and is close to the host process peak. Main machine-code samples reach less resident memory. Snapshots are not allocation attribution and cannot exclude unobserved intervening peaks or distinguish retained/shared/compressed pages.",
+    "The source snapshots identify dimension cloning/canonicalization and backend reservations sized by historical DFG value counts as next hypotheses. No memory optimization or causal allocation claim is made by these diagnostics.",
+    "Compiler source has no diagnostic patch. Full compilation remains above ten seconds. Raw data and executable remain outside source Git, with exact source/build/command/hash records. Public export awaits authorization."
+  ],
+  "source_commit": "342937b4cba43ed57d08ca78648dde4b188d82b7"
+}

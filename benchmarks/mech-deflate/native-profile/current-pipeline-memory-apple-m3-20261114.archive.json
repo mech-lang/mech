@@ -1,0 +1,24 @@
+{
+  "archive_name": "mech-current-pipeline-memory-20261114.tar.gz",
+  "bytes": 2512649,
+  "evidence_files": 64,
+  "files": 64,
+  "format": 1,
+  "local_archive": "/private/tmp/mech-current-pipeline-memory-20261114.tar.gz",
+  "local_replay_byte_identical": true,
+  "manifest_sha256": "e8ebca56efda762f7a2e7cbf44fd20d884a38b6be7af17cce7ccf173b9050877",
+  "publication": "local; public evidence export awaits authorization",
+  "release_tag": "evidence-native-compression-experiments-6",
+  "replay_sha256": "5d8b368a57e07a67698c3a52c94f6a613dd545ba550bc32d590be27f032ca66a",
+  "repository": "mech-lang/mech",
+  "sha256": "55777558d546366e061b4bbdf07706e7d57d34241241cf20466b7e7a57c73d40",
+  "source_revision": "342937b4cba43ed57d08ca78648dde4b188d82b7",
+  "uncompressed_bytes": 17185324,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "55777558d546366e061b4bbdf07706e7d57d34241241cf20466b7e7a57c73d40",
+    "source_revision": "342937b4cba43ed57d08ca78648dde4b188d82b7",
+    "verified_bytes": 17185324,
+    "verified_files": 64
+  }
+}
