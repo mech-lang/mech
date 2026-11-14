@@ -1,0 +1,174 @@
+{
+  "base_commit": "16f97650e1a615cdd15ed13f207098f1827eb854",
+  "candidate_patch_sha256": "77a1897d28ce05c78cf0e229ae14a747d9248c07344bd7ce6498da505b64a624",
+  "compiler_binary_sha256": {
+    "candidate": "5b0d3cd1d501dba52bff93d77ba012af1d1f37b379b852d1bfe2a274e1491b7b",
+    "control": "9b661e9a134823b2b4c9b820f1a3750d6e53cb5178e6654a786620431344935f"
+  },
+  "compiler_bootstrap_seconds": {
+    "comment_correction": 80.13980233320035,
+    "initial_candidate": 78.79372616694309
+  },
+  "decision": "retain fast sparse SSA lookups with unchanged dense admission and ordered enumeration",
+  "flags_count": 52,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "initial_candidate_patch_sha256": "c280f7061d34a2abf0a6d5b74757cc45ff845cbd1b494ecdd2d75e152630f1f6",
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "qualified": {
+    "cleanup_seconds": {
+      "candidate": [
+        4.983968541957438,
+        5.00910058291629
+      ],
+      "control": [
+        4.8281721249222755,
+        4.9297149169724435
+      ],
+      "mean_reduction_fraction": -0.024101742720455066
+    },
+    "compiler_seconds": {
+      "candidate": [
+        41.859448916,
+        41.882921667
+      ],
+      "control": [
+        46.860580375,
+        47.233147625
+      ],
+      "mean_reduction_fraction": 0.11001113078440261
+    },
+    "frontend_seconds": {
+      "candidate": [
+        8.453283333,
+        8.372892209
+      ],
+      "control": [
+        8.488899792,
+        8.289718709
+      ]
+    },
+    "instructions": {
+      "candidate": [
+        662861283502,
+        662587589865
+      ],
+      "control": [
+        726194007243,
+        725252667217
+      ],
+      "mean_reduction_fraction": 0.08680842590367743
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        7595196416,
+        7593771008
+      ],
+      "control": [
+        7737819136,
+        7600635904
+      ]
+    },
+    "native_seconds": {
+      "candidate": [
+        30.861680542,
+        30.995610333
+      ],
+      "control": [
+        35.962843042,
+        36.411952958
+      ]
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.4633557919999998,
+        2.436851042
+      ],
+      "control": [
+        2.33358425,
+        2.4493495
+      ]
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        7549426144,
+        7533337032
+      ],
+      "control": [
+        7736793568,
+        7532698056
+      ]
+    },
+    "preparation_seconds": {
+      "candidate": [
+        11.32903379178606,
+        11.335492165992036
+      ],
+      "control": [
+        11.201518833870068,
+        11.420109833125025
+      ]
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.4615320418961346,
+        2.5432072919793427
+      ],
+      "control": [
+        7.776461374945939,
+        7.833694666158408
+      ],
+      "mean_reduction_fraction": 0.6793921008414587
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        43.044956458965316,
+        42.189576166914776
+      ],
+      "control": [
+        47.01052491692826,
+        47.45197758404538
+      ]
+    }
+  },
+  "scope": [
+    "Fresh full source-to-Object, the same 52 flags, compiler bootstrap excluded.",
+    "Four serial ABBA observations; no builds, tests, counters or CPU sampling overlap primary timings.",
+    "Source CFG and cleanup use independently stamped stage-message boundaries; both are included in native time.",
+    "Both elapsed pairs improve; four observations do not establish a statistical population.",
+    "The initial candidate launch retains extra process startup outside compiler phase timers.",
+    "Cleanup has a 2.41 percent higher mean in this cohort; this adverse phase result remains and its cause is not isolated.",
+    "Compiler RSS observations remain explicit; no causal whole-compiler memory improvement is established.",
+    "Source, canonical bytecode, native Object and complete metadata are byte-identical in all four observations.",
+    "Runtime implementation and generated instructions are unchanged; no new compression-runtime timing campaign is claimed.",
+    "Sparse storage uses the existing Cranelift fast hash type; no dependency or feature selection changes.",
+    "Dense prefix occupancy and allocation admission stay unchanged, with no block-arena product allocation.",
+    "Definition enumeration retains block order, including None-valued facts and extreme block identities.",
+    "A final explanatory comment correction rebuilds to a byte-identical compiler; both patches and builds remain recorded.",
+    "Three earlier sampled windows are diagnostic only; their elapsed is unqualified.",
+    "Compiler and test executables are excluded from the public packet, with hashes retained.",
+    "Full compilation remains about 42 seconds; the sub-10-second goal remains open."
+  ],
+  "source_commit": "7c30083b39b25e7e3945bdbb532653370fb9765c",
+  "tests": {
+    "focused_total": 61,
+    "ssa_tests": 14,
+    "suites": 5
+  }
+}
