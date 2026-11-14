@@ -74,5 +74,6 @@ compact result byte-for-byte with `python3 replay.py`. Compiler executables
 stay local; source, Object and metadata evidence remain retrievable.
 
 The [preceding SSA storage change](native-ssa-sparse-compile-profile.md) reduced
-source CFG construction. Full compilation now remains about 40.24 seconds;
-the sub-10-second goal remains open.
+source CFG construction. The subsequent
+[inline dimension-remapping change](native-frontend-affine-compile-profile.md)
+reduces full compilation to about 39–40 seconds; the sub-10-second goal remains open.
