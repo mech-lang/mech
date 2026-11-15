@@ -74,6 +74,29 @@ pub(in crate::native_artifact) fn define<M: Module>(
     prepared: &PreparedNativeProgram,
     observe: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
+    define_with_pool(module, prepared, observe, None)
+}
+
+pub(in crate::native_artifact) fn define_with_isa<M: Module>(
+    module: &mut M,
+    prepared: &PreparedNativeProgram,
+    observe: bool,
+    isa: cranelift_codegen::isa::OwnedTargetIsa,
+    threads: usize,
+) -> Result<serde_json::Value, NativeCompileError> {
+    if threads == 0 {
+        return define(module, prepared, observe);
+    }
+    let pool = super::compile_jobs::Pool::new(isa, threads)?;
+    define_with_pool(module, prepared, observe, Some(&pool))
+}
+
+fn define_with_pool<M: Module>(
+    module: &mut M,
+    prepared: &PreparedNativeProgram,
+    observe: bool,
+    pool: Option<&super::compile_jobs::Pool>,
+) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
     let actions = (0..plan.blocks().len())
@@ -85,7 +108,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     } else {
         super::immutable_arrays::LiteralViews::default()
     };
-    let phases = phases::define(module, prepared, &layout, &literals, observe)?;
+    let phases = phases::define(module, prepared, &layout, &literals, observe, pool)?;
     let kernels = word_collections::define(module, prepared, &layout, observe)?;
     let initial = constants::prepare(module, plan, &layout)?;
     let histogram = super::histogram::define(module, &actions)?;

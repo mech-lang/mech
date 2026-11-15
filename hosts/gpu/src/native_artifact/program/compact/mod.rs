@@ -10,6 +10,7 @@
 //! until an invocation-owned native String representation is implemented.
 pub(in crate::native_artifact) mod arrays;
 mod collections;
+mod compile_jobs;
 mod constants;
 mod emit;
 mod flow;
@@ -34,7 +35,7 @@ mod widening_reduction;
 mod word_collections;
 mod word_packs;
 
-pub(in crate::native_artifact) use emit::define;
+pub(in crate::native_artifact) use emit::{define, define_with_isa};
 
 use crate::native_artifact::NativeCompileError;
 use mech_engine::native_artifact::NativeProgramArtifactPlan;
