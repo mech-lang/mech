@@ -902,3 +902,20 @@ zero/one/two-worker full-output gates pass. The twenty-fifth
 [complete packet](evidence/compiler-profile-20261114/README.md) preserves all
 raw data, exact source/patch, full outputs, native inputs and replay. Main CFG,
 cleanup and frontend remain serial; the ten-second goal remains open.
+
+The [independent compiler PGO result](../../docs/design/native-pgo-compile-profile.md)
+qualifies instrumentation PGO on frozen `fad53` source. Eight balanced complete
+source-to-executable builds improve 17.606 to 15.973 seconds (9.27%), with the
+fixed adapter cached and both blocks about 9.3% faster. Every program and
+executable byte matches. A separate eight-run source-to-Object cohort improves
+process time 11.30% and instructions 10.18%; its slow first control remains.
+Frontend and encoding time regress and footprint increases slightly. Fourteen
+fixture pairs match, and seven held-out programs receive 56 additional balanced
+compiles with lower internal time/instructions. Two tiny scalar process blocks
+are mixed and a startup outlier remains. Profile use reports 18,352 functions
+without training data; all diagnostics remain. The twenty-sixth
+[complete packet](evidence/compiler-profile-20261114/README.md) includes raw and
+merged profiles, all builds/training/timings, output bytes, source configuration,
+native inputs, packaging failures and pure replay. This source predates the
+schema reuse and integrated workers; combined PGO performance is unqualified,
+and gains must not be added. Complete compilation below ten seconds remains open.

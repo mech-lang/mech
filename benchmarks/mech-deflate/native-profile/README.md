@@ -241,5 +241,19 @@ variant-choice dependencies. Its twenty-second
 controls with precise process timing, separate schema/SSA/cleanup counters,
 the failed diagnostic build, and the frozen runtime/entry adapter. Three warm
 native links take 0.081–0.093 seconds and reproduce every final executable byte;
-three earlier attempts fail the byte gate and remain recorded. No parallel Mech
-compiler saving or PGO gain is claimed. The PGO setup/control build is separate.
+three earlier attempts fail the byte gate and remain recorded. At that
+publication no parallel Mech compiler saving or PGO gain was established.
+The later integrated-worker and independent-PGO qualifications are separate.
+
+The [independent compiler PGO result](../../../docs/design/native-pgo-compile-profile.md)
+reduces complete source-to-executable compilation 17.606 to 15.973 seconds
+(9.27%) across eight balanced serial builds with a cached fixed adapter.
+Every program and executable byte matches. A separate source-to-Object cohort
+improves process time 11.30% and instructions 10.18%, with its slow control
+retained; frontend and encoding regress slightly. Fourteen fixture pairs match,
+and seven held-out programs receive 56 additional balanced compiles. All raw
+profiles, build/training/timing logs, outputs, configuration and pure replay
+are in the twenty-sixth [complete packet](../evidence/compiler-profile-20261114/README.md).
+This pair uses frozen `fad53` source before schema reuse and phase workers;
+combined PGO performance remains unqualified and gains must not be added.
+The ten-second complete-compilation goal remains open.

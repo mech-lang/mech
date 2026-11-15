@@ -251,8 +251,18 @@
       "sha256": "e87d16ef4e691e7eb4271c60b1bff68ab3200dd8836a14de956653299fbcddc5",
       "source_revision": "1090de011646c92e30c2d4b648ed0792c50f300d",
       "summary": "benchmarks/mech-deflate/native-profile/parallel-phases-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-round2-pgo-20261114.tar.gz",
+      "bytes": 96602322,
+      "decision": "Qualified independent compiler PGO: complete executable build -9.27%, identical program/executable bytes; slower frontend; current-source/worker combination remains unqualified.",
+      "files": 1273,
+      "receipt": "benchmarks/mech-deflate/native-profile/pgo-compile-apple-m3-20261114.archive.json",
+      "sha256": "44df6b20c41773afcb5eab3a4214ea1122969fc79e94c46804b1a9834b1877e0",
+      "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+      "summary": "benchmarks/mech-deflate/native-profile/pgo-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 455109580
+  "total_archive_bytes": 551711902
 }
