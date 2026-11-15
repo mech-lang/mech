@@ -65,6 +65,22 @@ scalar controls. It is not part of the timing feature configuration.
 by existing GPU unit-test helpers. It retains the selected operation catalog;
 it does not activate the GPU package's full-catalog dev dependencies.
 
+## Tiny fixed-block qualification
+
+`short_literal_proof` runs the maintained compressor predicate through original
+and decoded artifacts with the established finite native qualification policy:
+
+```sh
+CARGO_TARGET_DIR=/tmp/mech-native-profile-target CARGO_INCREMENTAL=0 \
+  RUSTFLAGS='-D warnings' cargo +nightly-2026-03-03 test --locked --offline \
+  --release -j2 --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml \
+  --test short_literal_proof -- --nocapture
+```
+
+The [cost proof and measurement status](../../../docs/design/native-tiny-fixed-block.md)
+separate the source shortcut, allocator crossover, primary elapsed samples,
+instruction/memory cohort and remaining full-matrix timing gate.
+
 ## Compile-time profiling
 
 `compile_profile` measures parsing, the source catalog, checked source compilation,

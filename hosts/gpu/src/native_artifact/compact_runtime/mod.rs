@@ -670,6 +670,39 @@ mod mapped_tests {
     use super::*;
 
     #[test]
+    fn smaller_numeric_zeros_keep_allocator_backing_and_recover_after_release() {
+        let count = zero_pages::minimum_mapping_bytes() / 2 / 2;
+        let mut heap = Heap::new();
+        zero_pages::DENY.with(|deny| deny.set(true));
+        let first = heap.allocate(count, 2, 2, true);
+        zero_pages::DENY.with(|deny| deny.set(false));
+        let mut first = first.unwrap();
+        let words = unsafe { std::slice::from_raw_parts_mut(first[0] as *mut u16, count) };
+        assert!(words.iter().all(|word| *word == 0));
+        words[0] = 17;
+        words[count - 1] = 29;
+        first[1] = count as u64;
+        first[4] = count as u64;
+        unsafe { (*(first[5] as *mut Owner)).references = 2 };
+        let copied = heap.writable(first, true, count, 2, 2).unwrap();
+        assert_ne!(copied[0], first[0]);
+        unsafe { (copied[0] as *mut u16).write(73) };
+        assert_eq!((words[0], words[count - 1]), (17, 29));
+        assert_eq!(heap.counters.mapped_payload_requests, 0);
+        heap.discard_private();
+        assert_eq!(heap.counters.live_payload_bytes, 0);
+        let retry = heap.allocate(count, 2, 2, true).unwrap();
+        assert!(
+            unsafe { std::slice::from_raw_parts(retry[0] as *const u16, count) }
+                .iter()
+                .all(|word| *word == 0)
+        );
+        heap.discard_private();
+        assert_eq!(heap.counters.live_payload_bytes, 0);
+        assert_eq!(heap.counters.live_mapped_payload_bytes, 0);
+    }
+
+    #[test]
     fn mapped_numeric_zeros_remain_readable_and_live_aliases_keep_their_words() {
         assert_eq!(
             std::mem::size_of::<Owner>(),
@@ -901,18 +934,29 @@ pub unsafe extern "C" fn mech_compact_parallel(
 #[cfg(test)]
 mod parallel_tests {
     use super::*;
+
+    fn mapped_words() -> usize {
+        #[cfg(target_os = "macos")]
+        {
+            zero_pages::minimum_mapping_bytes() / 8
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            32768
+        }
+    }
     #[cfg(target_os = "macos")]
     #[test]
     fn refused_mapping_preserves_existing_storage_and_recovers() {
         let mut heap = Heap::new();
         let existing = heap.allocate(3, 8, 8, false).unwrap();
         deny_test_mapping(true);
-        let denied = heap.allocate(32768, 8, 8, true);
+        let denied = heap.allocate(mapped_words(), 8, 8, true);
         deny_test_mapping(false);
         assert_eq!(denied.unwrap_err(), ALLOCATION);
         assert_eq!(heap.counters.live_payload_bytes, 24);
         assert_eq!(heap.first_owner, existing[5] as *mut Owner);
-        heap.allocate(32768, 8, 8, true).unwrap();
+        heap.allocate(mapped_words(), 8, 8, true).unwrap();
         heap.discard_private();
     }
     unsafe extern "C" fn copy_borrow(
@@ -923,7 +967,7 @@ mod parallel_tests {
         // SAFETY: the test passes four initialized words per packet.
         let packet = unsafe { std::slice::from_raw_parts(input, 4) };
         let heap = unsafe { &mut *context };
-        let mut view = heap.allocate(32768, 8, 8, true).unwrap();
+        let mut view = heap.allocate(mapped_words(), 8, 8, true).unwrap();
         view[1] = 3;
         view[4] = 3;
         // The native writer initializes its own storage; the shared input is
@@ -978,7 +1022,7 @@ mod parallel_tests {
             assert_eq!(parent.parallel_batches, 1);
             assert_eq!(
                 parent.counters.live_payload_bytes,
-                24 + count as u64 * 32768 * 8
+                24 + count as u64 * mapped_words() as u64 * 8
             );
             assert_eq!(parent.counters.payload_requests, 1 + count as u64);
             assert_eq!(parent.first_owner, existing[5] as *mut Owner);
@@ -992,7 +1036,7 @@ mod parallel_tests {
             #[cfg(target_os = "macos")]
             assert_eq!(
                 parent.counters.live_mapped_payload_bytes,
-                count as u64 * 32768 * 8
+                count as u64 * mapped_words() as u64 * 8
             );
             parent.discard_private();
             assert_eq!(parent.counters.live_payload_bytes, 0);

@@ -1,0 +1,440 @@
+{
+  "status": "Eight-literal target met; complete 81-case timing adoption remains pending because four monitored attempts were interrupted by independent jobs.",
+  "compiler": {
+    "base": "56f12da6f8515f395c4314e1ea78468664175c9d",
+    "compiler_binary": "/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/parity-progress/current-head/target/release/compile_profile",
+    "compiler_sha256": "e1f4d2480062cf938a305d8b9b2dee8db224b38f20f05feb3ef631bb4c1c8929",
+    "working_tree_patch_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "source_sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "build",
+      "--locked",
+      "--offline",
+      "--release",
+      "-j2",
+      "--manifest-path",
+      "/private/tmp/mech-pr973-publish-20261112/benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--bin",
+      "artifact_review",
+      "--message-format=json"
+    ],
+    "configuration": {
+      "CARGO_TARGET_DIR": "/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/parity-progress/current-head/target",
+      "CARGO_INCREMENTAL": "0",
+      "RUSTFLAGS": "-D warnings"
+    },
+    "finished_utc": "2026-11-15T04:58:20.572709+00:00"
+  },
+  "source": {
+    "source_sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4",
+    "complete_source_sha256": "742567bc0abc6f37209ac5f82c1e2a05647f35db8ea6368bef81d04b9a03b552",
+    "change_from_pilot": "Correct terminology: 18 explicit precode lengths means encoded HCLEN is 14; no executable source statements changed."
+  },
+  "compiler_parent": "ab59d593f4dcc3e457d8c462b459f60eaf80851e",
+  "commits": {
+    "allocator": "d11b88dec670106c978e2f53e6935a73e29ba210",
+    "source": "090e98046d935e17bb2800914b135114dbd62e00"
+  },
+  "paired_primary_eight_byte_measurements": [
+    {
+      "file": "current-terminal-combined-1.json",
+      "id": "current-terminal-combined",
+      "repeat": 1,
+      "mech_x_libdeflate": 0.6979247203348881,
+      "median_seconds": {
+        "mech": 1.45e-05,
+        "libdeflate": 2.4583e-05
+      }
+    },
+    {
+      "file": "current-terminal-combined-2.json",
+      "id": "current-terminal-combined",
+      "repeat": 2,
+      "mech_x_libdeflate": 0.6533015417136531,
+      "median_seconds": {
+        "mech": 1.425e-05,
+        "libdeflate": 2.475e-05
+      }
+    },
+    {
+      "file": "current-terminal-source-only-1.json",
+      "id": "current-terminal-source-only",
+      "repeat": 1,
+      "mech_x_libdeflate": 0.708230549261802,
+      "median_seconds": {
+        "mech": 1.7166e-05,
+        "libdeflate": 2.5166e-05
+      }
+    },
+    {
+      "file": "current-terminal-source-only-2.json",
+      "id": "current-terminal-source-only",
+      "repeat": 2,
+      "mech_x_libdeflate": 0.9144727012312867,
+      "median_seconds": {
+        "mech": 1.91455e-05,
+        "libdeflate": 2.4417e-05
+      }
+    },
+    {
+      "file": "final-1.json",
+      "id": "final",
+      "repeat": 1,
+      "mech_x_libdeflate": 2.0777635443334423,
+      "median_seconds": {
+        "mech": 4.8584e-05,
+        "libdeflate": 2.3958e-05
+      }
+    },
+    {
+      "file": "final-2.json",
+      "id": "final",
+      "repeat": 2,
+      "mech_x_libdeflate": 2.1099658708873115,
+      "median_seconds": {
+        "mech": 5.07085e-05,
+        "libdeflate": 2.48125e-05
+      }
+    }
+  ],
+  "counter_cohort": {
+    "samples_per_actor": 120,
+    "primary_elapsed_claim": false,
+    "scope": "per-invocation rusage difference; resident and lifetime memory include worker setup and warmup, not just compressor live payload",
+    "summary": {
+      "retained": {
+        "instructions": 607811.0,
+        "cycles": 163843.0,
+        "rss_after": 43646976.0,
+        "physical_after": 42320704.0,
+        "lifetime_peak_physical": 42451776.0,
+        "payload_allocation_requests": 111.0,
+        "requested_payload_bytes": 9024420.0,
+        "initialized_bytes_copied": 2188.0,
+        "zeroed_bytes": 6579087.0,
+        "peak_private_payload_bytes": 8982372.0,
+        "nonreturned_private_bytes_at_return": 0.0
+      },
+      "current-terminal-source-only": {
+        "instructions": 137457.0,
+        "cycles": 58025.5,
+        "rss_after": 47693824.0,
+        "physical_after": 46842624.0,
+        "lifetime_peak_physical": 46973696.0,
+        "payload_allocation_requests": 20.0,
+        "requested_payload_bytes": 8976585.0,
+        "initialized_bytes_copied": 0.0,
+        "zeroed_bytes": 6534476.0,
+        "peak_private_payload_bytes": 8976572.0,
+        "nonreturned_private_bytes_at_return": 0.0
+      },
+      "current-terminal-combined": {
+        "instructions": 119112.0,
+        "cycles": 50711.0,
+        "rss_after": 47677440.0,
+        "physical_after": 46826240.0,
+        "lifetime_peak_physical": 46842624.0,
+        "payload_allocation_requests": 20.0,
+        "requested_payload_bytes": 8976585.0,
+        "initialized_bytes_copied": 0.0,
+        "zeroed_bytes": 6534476.0,
+        "peak_private_payload_bytes": 8976572.0,
+        "nonreturned_private_bytes_at_return": 0.0
+      },
+      "roc": {
+        "instructions": 1361940.0,
+        "cycles": 924869.0,
+        "rss_after": 8781824.0,
+        "physical_after": 8110784.0,
+        "lifetime_peak_physical": 8110784.0
+      },
+      "libdeflate": {
+        "instructions": 162859.0,
+        "cycles": 74558.0,
+        "rss_after": 2801664.0,
+        "physical_after": 2081472.0,
+        "lifetime_peak_physical": 2081472.0
+      }
+    }
+  },
+  "instruction_reduction_fraction": 0.8040311873263235,
+  "cycle_reduction_fraction": 0.6904902864327436,
+  "payload_request_reduction_fraction": 0.8198198198198199,
+  "worker_lifetime_peak_growth_fraction": 0.1034314324093295,
+  "qualification": {
+    "runtime_tests": 14,
+    "finite_predicate_visits_original": 2303,
+    "finite_predicate_visits_decoded": 2303,
+    "complete_matrix_cases": 81,
+    "complete_calls_per_variant": 162,
+    "broader_complete_cases": 1570,
+    "broader_eligible_cases": 1122,
+    "broader_fallback_cases": 448,
+    "complete_calls_per_actor": 3140,
+    "independent_inflation": true,
+    "input_and_output_alias_checks": true,
+    "cleanup": 0,
+    "final_compiler_object_byte_identical_to_pilot": true,
+    "final_compiler_bytecode_byte_identical_to_pilot": true
+  },
+  "full_timing_interference": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/run_acceptance.py",
+        "pinned-full-a-1",
+        "merged-terminal-combined"
+      ],
+      "started_utc": "2026-11-15T05:21:58.511535+00:00",
+      "finished_utc": "2026-11-15T05:22:08.121814+00:00",
+      "total_seconds": 11.8155785840936,
+      "monitor_period_seconds": 0.5,
+      "checks": 19,
+      "overlap": [
+        {
+          "utc": "2026-11-15T05:22:08.120382+00:00",
+          "processes": [
+            {
+              "pid": 30641,
+              "parent": 30640,
+              "group": 30631,
+              "command": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc"
+            }
+          ]
+        }
+      ],
+      "exit": -15,
+      "timings_usable": false,
+      "monitor_note": "Read-only process inventory, excluding this cohort process group. Only our group is terminated on interference. Sub-0.5-second jobs may be unobserved."
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/run_acceptance.py",
+        "pinned-full-a-2",
+        "merged-terminal-combined"
+      ],
+      "started_utc": "2026-11-15T05:23:04.952218+00:00",
+      "finished_utc": "2026-11-15T05:23:41.714667+00:00",
+      "total_seconds": 92.5085964165628,
+      "monitor_period_seconds": 0.5,
+      "checks": 70,
+      "overlap": [
+        {
+          "utc": "2026-11-15T05:23:41.713012+00:00",
+          "processes": [
+            {
+              "pid": 30919,
+              "parent": 30798,
+              "group": 30631,
+              "command": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc"
+            }
+          ]
+        }
+      ],
+      "exit": -15,
+      "timings_usable": false,
+      "monitor_note": "Read-only process inventory, excluding this cohort process group. Only our group is terminated on interference. Sub-0.5-second jobs may be unobserved."
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/run_acceptance.py",
+        "pinned-full-a-3",
+        "merged-terminal-combined"
+      ],
+      "started_utc": "2026-11-15T05:23:52.915263+00:00",
+      "finished_utc": "2026-11-15T05:25:03.568805+00:00",
+      "total_seconds": 77.66040470916778,
+      "monitor_period_seconds": 0.5,
+      "checks": 134,
+      "overlap": [
+        {
+          "utc": "2026-11-15T05:25:03.567200+00:00",
+          "processes": [
+            {
+              "pid": 31171,
+              "parent": 31098,
+              "group": 31083,
+              "command": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc"
+            }
+          ]
+        }
+      ],
+      "exit": -15,
+      "timings_usable": false,
+      "monitor_note": "Read-only process inventory, excluding this cohort process group. Only our group is terminated on interference. Sub-0.5-second jobs may be unobserved."
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/run_acceptance.py",
+        "pinned-full-a-4",
+        "merged-terminal-combined"
+      ],
+      "started_utc": "2026-11-15T05:26:14.624858+00:00",
+      "finished_utc": "2026-11-15T05:26:32.159349+00:00",
+      "total_seconds": 84.39807554194704,
+      "monitor_period_seconds": 0.5,
+      "checks": 34,
+      "overlap": [
+        {
+          "utc": "2026-11-15T05:26:32.157738+00:00",
+          "processes": [
+            {
+              "pid": 31451,
+              "parent": 31450,
+              "group": 31441,
+              "command": ".qualification/vector-facts-direct-allocation/mech-worker"
+            },
+            {
+              "pid": 31452,
+              "parent": 31450,
+              "group": 31441,
+              "command": ".qualification/vector-facts-refusal-passthrough-allocation/mech-worker"
+            },
+            {
+              "pid": 31453,
+              "parent": 31450,
+              "group": 31441,
+              "command": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/roc-worker"
+            },
+            {
+              "pid": 31454,
+              "parent": 31450,
+              "group": 31441,
+              "command": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker"
+            }
+          ]
+        }
+      ],
+      "exit": -15,
+      "timings_usable": false,
+      "monitor_note": "Read-only process inventory, excluding this cohort process group. Only our group is terminated on interference. Sub-0.5-second jobs may be unobserved."
+    }
+  ],
+  "adverse_trials": {
+    "batched_literal_writer": "Rejected: 1.35x versus retained source pilot 1.27x libdeflate in the same cohort.",
+    "worker_memory": "Lifetime peak physical footprint rose from 42,451,776 to 46,842,624 bytes. Private payload peak stayed essentially unchanged.",
+    "initial_test_profiles": "New predicate test initially used smaller defaults and was rejected: compute 12,085,608 > 1,000,000; then memory 1,463,923 > 1,048,576. Corrected to the pre-existing finite native qualification profile; no established allowance or timing gate changed.",
+    "environment": "Exact-head linking initially hit ENOSPC; an expired temporary allocator source and a deleted historical C smoke receipt required restoring/pinning test support. No compiler semantic repair was needed."
+  },
+  "contract": "Existing compact diagnostic execution contract. Source arithmetic/assertions/bounds and ownership cleanup remain. Exact ordinary resource admission/accounting/publication recovery are omitted by this pre-existing timing entry.",
+  "test_commands": {
+    "allocation-final-tests.json": {
+      "command": [
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/runtime-tests",
+        "--test-threads=1"
+      ],
+      "exit": 0,
+      "stage_seconds": 0.4320985423400998
+    },
+    "merged-short-proof-tests.json": {
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j2",
+        "--manifest-path",
+        "/private/tmp/mech-pr973-publish-20261112/benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--test",
+        "short_literal_proof",
+        "--",
+        "--nocapture"
+      ],
+      "exit": 0,
+      "stage_seconds": 6.713814833201468
+    },
+    "merged-codec-review.json": {
+      "command": [
+        "/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/parity-progress/current-head/target/release/artifact_review",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/merged-terminal/source.mec",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/merged-terminal/program.mecb"
+      ],
+      "exit": 0,
+      "stage_seconds": 13.975183375179768
+    },
+    "merged-terminal-source-only-81-correctness.json": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-pr973-merged-compression-20261112/verify-worker.py",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/merged-terminal-source-only/mech-worker",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/merged-terminal/metadata.json",
+        "merged-terminal-source-only"
+      ],
+      "exit": 0,
+      "stage_seconds": 1.4134855838492513
+    },
+    "merged-terminal-combined-81-correctness.json": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-pr973-merged-compression-20261112/verify-worker.py",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/merged-terminal-combined/mech-worker",
+        "/Users/coreymontella/mech-lang/mech/output/eight-byte-libdeflate-20261114/merged-terminal/metadata.json",
+        "merged-terminal-combined"
+      ],
+      "exit": 0,
+      "stage_seconds": 1.1060146247036755
+    }
+  },
+  "startup_memory": {
+    "scope": "process resident memory after descriptor/fixture parsing, before any compression; RSS differs from physical footprint",
+    "rows": [
+      {
+        "id": "final",
+        "startup_rss_bytes_before_any_compression": 42926080,
+        "metadata_bytes": 2292881,
+        "compressed_calls": 0
+      },
+      {
+        "id": "current-terminal-source-only",
+        "startup_rss_bytes_before_any_compression": 47464448,
+        "metadata_bytes": 2519706,
+        "compressed_calls": 0
+      },
+      {
+        "id": "current-terminal-combined",
+        "startup_rss_bytes_before_any_compression": 47464448,
+        "metadata_bytes": 2519706,
+        "compressed_calls": 0
+      }
+    ]
+  },
+  "object_bytes": {
+    "before": 1238656,
+    "after": 1419832
+  },
+  "metadata_bytes": {
+    "before": 2292881,
+    "after": 2519706
+  },
+  "published_implementation_revision": "090e98046d935e17bb2800914b135114dbd62e00",
+  "published_compiler_parent": "213d90cc8e076938a2703411390b702539dd5d5a",
+  "rebased_source_equivalence": {
+    "qualified_revision": "56f12da6f8515f395c4314e1ea78468664175c9d",
+    "current_implementation_revision": "090e98046d935e17bb2800914b135114dbd62e00",
+    "method": "git diff --quiet over all production source paths passed after preserving intervening documentation/evidence-only commits.",
+    "identical": true
+  },
+  "evidence": {
+    "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/mech-eight-literal-fixed-block-20261115.tar.gz",
+    "sha256": "e93eca6a510db43970a0889057e70071e45e6a51d9efea1656d01d2051c3874a",
+    "bytes": 5644539,
+    "hash_listed_files": 456,
+    "native_binaries": false,
+    "bytecode": false
+  }
+}
