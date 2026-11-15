@@ -461,8 +461,18 @@
       "sha256": "49d34cba959ef6dd3b17e1783c47c226c85aa4a4a6d46e26adeaba7f94279c7a",
       "source_revision": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
       "summary": "benchmarks/mech-deflate/native-profile/ssa-descending-chain-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parser-event-cursor-20261115.tar.gz",
+      "bytes": 47441654,
+      "decision": "Rejected borrowed parser event iterator: parser1.869500->1.842458s(-1.45%), both parser blocks faster, but complete build15.215777->15.229858s(+0.09%) with mixed blocks. Object compiler-0.052%, instructions-0.0318%; source CFG+0.84%, frontend+0.29%, compaction+2.80%. Exact outputs/full metadata/whole executable,526document units and1780complete parse/identity/accounting pairs pass. Setup failures retained/excluded. Previous source and standard6CE restored; selected6fc PGO13.596783 unchanged. No useful full-build gain or subten claim.",
+      "files": 1472,
+      "receipt": "benchmarks/mech-deflate/native-profile/parser-event-cursor-apple-m3-20261115.archive.json",
+      "sha256": "8b4d4b647c1c557110033e3277b4185dd332198ec34a71c2224a968ccf49827c",
+      "source_revision": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+      "summary": "benchmarks/mech-deflate/native-profile/parser-event-cursor-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1451303508
+  "total_archive_bytes": 1498745162
 }
