@@ -289,14 +289,19 @@ fn plan(
         return Err("live outputs exceed the call boundary budget");
     }
     let passthrough = dominance
+        .filter(|_| packed_inputs)
         .map(|dom| {
+            let resume = candidate
+                .resume
+                .iter()
+                .flat_map(|&block| f.dfg.block_params(block));
             controller_passthrough(
                 f,
                 cfg,
                 dom,
                 candidate.start,
                 &blocks,
-                finish.iter().chain(&outputs).copied(),
+                finish.iter().chain(&outputs).chain(resume).copied(),
             )
         })
         .unwrap_or_default();
@@ -321,6 +326,16 @@ impl Traversal {
             .chain(&self.outputs)
             .filter(|v| !self.passthrough.contains_key(v))
             .count()
+    }
+
+    fn resume_output_words(&self, f: &Function) -> usize {
+        self.candidate.resume.map_or(0, |resume| {
+            f.dfg
+                .block_params(resume)
+                .iter()
+                .filter(|v| !self.passthrough.contains_key(v))
+                .count()
+        })
     }
 
     fn signature(&self, f: &Function) -> Signature {
@@ -540,15 +555,18 @@ impl Traversal {
         for (tag, stub) in stubs.into_iter().enumerate() {
             let Some(stub) = stub else { continue };
             body.layout.append_block(stub);
-            let mut words = body.dfg.block_params(stub).to_vec();
+            let original = exit_blocks[tag].unwrap();
+            let mut words = body
+                .dfg
+                .block_params(stub)
+                .iter()
+                .copied()
+                .zip(f.dfg.block_params(original))
+                .filter_map(|(param, value)| {
+                    (!self.passthrough.contains_key(value)).then_some(param)
+                })
+                .collect::<Vec<_>>();
             if tag == 1 {
-                words = words
-                    .into_iter()
-                    .zip(&self.finish)
-                    .filter_map(|(param, value)| {
-                        (!self.passthrough.contains_key(value)).then_some(param)
-                    })
-                    .collect();
                 words.extend(
                     self.outputs
                         .iter()
@@ -831,7 +849,8 @@ fn share_families<M: Module>(
     let mut proven = BTreeSet::new();
     let cfg = ControlFlowGraph::with_function(root);
     let users = use_blocks(root);
-    let dominance = (!refusal_regions).then(|| DominatorTree::with_function(root, &cfg));
+    let dominance =
+        (!refusal_regions || pack_large_refusals).then(|| DominatorTree::with_function(root, &cfg));
     for candidate in families.into_iter().flatten() {
         if excluded.contains(&candidate.header) {
             continue;
@@ -957,11 +976,7 @@ fn share_families<M: Module>(
         .flat_map(|group| &group.traversals)
         .flat_map(|t| {
             let finish = t.output_words();
-            let resume = t
-                .candidate
-                .resume
-                .map_or(0, |block| root.dfg.block_params(block).len());
-            [finish, resume]
+            [finish, t.resume_output_words(root)]
         })
         .max()
         .unwrap_or(0)
@@ -1030,6 +1045,15 @@ fn share_families<M: Module>(
                     .map(|t| [t.live_captures.len(), t.output_words()])
                     .collect::<Vec<_>>()
             );
+            if refusal_regions {
+                entry["resume_packet_words"] = serde_json::json!(
+                    selected
+                        .traversals
+                        .iter()
+                        .map(|t| t.resume_output_words(root))
+                        .collect::<Vec<_>>()
+                );
+            }
         }
         report.push(entry);
     }

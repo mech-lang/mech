@@ -126,8 +126,9 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
         if extra_inputs != 0 {
             assert_eq!(
                 report[0]["packet_words"],
-                serde_json::json!([[47, 45], [47, 45]])
+                serde_json::json!([[47, 1], [47, 1]])
             );
+            assert_eq!(report[0]["resume_packet_words"], serde_json::json!([1, 1]));
         }
     }
     ctx.verify(module.isa()).unwrap();
