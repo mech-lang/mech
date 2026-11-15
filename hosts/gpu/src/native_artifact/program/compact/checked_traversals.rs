@@ -177,6 +177,13 @@ fn in_use_order<T: Copy + Ord>(
     order
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RegionKind {
+    Refusal,
+    Controller,
+    Phase,
+}
+
 fn plan(
     f: &Function,
     cfg: &ControlFlowGraph,
@@ -185,6 +192,7 @@ fn plan(
     candidate: Candidate,
     pack_large_refusals: bool,
     order_captures: bool,
+    kind: RegionKind,
 ) -> Result<Traversal, &'static str> {
     let exits = candidate.exits();
     let controller = candidate.resume.is_none();
@@ -252,16 +260,23 @@ fn plan(
                 .block_insts(block)
                 .flat_map(|inst| f.dfg.inst_results(inst).iter().copied()),
         );
-        for value in definitions.filter(|value| {
-            users[value.as_u32() as usize]
+        for value in definitions {
+            let mut outside = users[value.as_u32() as usize]
                 .iter()
-                .any(|user| !blocks.contains(user))
-        }) {
-            // Direct SSA uses can be repaired only on the single continuation
-            // dominated by the old definition and entered solely by this region.
-            if !controller
-                || !single_exit_dominance
-                    .is_some_and(|dom| dom.dominates(block, candidate.exit, &f.layout))
+                .copied()
+                .filter(|user| !blocks.contains(user))
+                .peekable();
+            if outside.peek().is_none() {
+                continue;
+            }
+            // The result packet restores direct uses on the normal exit. If
+            // there is also a resume edge, its code must never need that value.
+            if !(controller || kind == RegionKind::Phase)
+                || !single_exit_dominance.is_some_and(|dom| {
+                    dom.dominates(block, candidate.exit, &f.layout)
+                        && (controller
+                            || outside.all(|user| dom.dominates(candidate.exit, user, &f.layout)))
+                })
             {
                 return Err("value escapes without a dominated continuation");
             }
@@ -308,6 +323,7 @@ fn plan(
         .map_or(0, |resume| f.dfg.block_params(resume).len());
     // A refusal that fits the original bounds keeps its existing native ABI.
     let packed_inputs = controller
+        || kind == RegionKind::Phase
         || pack_large_refusals && (input_words > 40 || output_words.max(resume_words) > 32);
     let (input_limit, output_limit) = if packed_inputs {
         (MAX_PACKET_WORDS, MAX_PACKET_WORDS)
@@ -884,7 +900,14 @@ pub(super) fn share<M: Module>(
         families.truncate(1);
     }
     let pack_large_refusals = std::env::var_os("MECH_COMPACT_PACK_LARGE_REFUSALS").is_some();
-    share_families(module, root, families, true, pack_large_refusals, false)
+    share_families(
+        module,
+        root,
+        families,
+        RegionKind::Refusal,
+        pack_large_refusals,
+        false,
+    )
 }
 
 pub(super) fn share_controllers<M: Module>(
@@ -896,17 +919,44 @@ pub(super) fn share_controllers<M: Module>(
     if families.iter().map(Vec::len).sum::<usize>() < 2 {
         return Ok(None);
     }
-    share_families(module, root, families, false, false, bind_literals)
+    share_families(
+        module,
+        root,
+        families,
+        RegionKind::Controller,
+        false,
+        bind_literals,
+    )
+}
+
+pub(super) fn share_phase_regions<M: Module>(
+    module: &mut M,
+    root: &mut Function,
+    families: Vec<Vec<Candidate>>,
+    bind_literals: bool,
+) -> Result<Option<serde_json::Value>, NativeCompileError> {
+    // The resume path can be a shared failure continuation inside the phase.
+    // Its original block arguments and preceding stores travel through the
+    // same checked boundary as any other partial continuation.
+    share_families(
+        module,
+        root,
+        families,
+        RegionKind::Phase,
+        true,
+        bind_literals,
+    )
 }
 
 fn share_families<M: Module>(
     module: &mut M,
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
-    refusal_regions: bool,
+    region_kind: RegionKind,
     pack_large_refusals: bool,
     bind_literals: bool,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
+    let refusal_regions = region_kind == RegionKind::Refusal;
     if families.is_empty() {
         return Ok(None);
     }
@@ -944,6 +994,7 @@ fn share_families<M: Module>(
                 candidate,
                 pack_large_refusals,
                 order_layout_captures && candidate.origin_base.is_some(),
+                region_kind,
             ) {
                 Ok(traversal) => traversal,
                 Err(reason) => {
@@ -1165,7 +1216,12 @@ fn share_families<M: Module>(
                     .map(|t| [t.live_captures.len(), t.output_words()])
                     .collect::<Vec<_>>()
             );
-            if refusal_regions {
+            if refusal_regions
+                || selected
+                    .traversals
+                    .iter()
+                    .any(|t| t.candidate.resume.is_some())
+            {
                 entry["resume_packet_words"] = serde_json::json!(
                     selected
                         .traversals

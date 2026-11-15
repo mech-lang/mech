@@ -1,4 +1,7 @@
-use super::{Candidate, controller_candidates, share, share_controllers, share_families};
+use super::{
+    Candidate, RegionKind, controller_candidates, share, share_controllers, share_families,
+    share_phase_regions,
+};
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, StackSlotData, StackSlotKind, condcodes::IntCC, types,
 };
@@ -119,14 +122,14 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
                     module,
                     &mut ctx.func,
                     vec![parts.clone()],
-                    true,
+                    RegionKind::Refusal,
                     false,
                     false
                 )
                 .unwrap()
                 .is_none()
             );
-            share_families(module, &mut ctx.func, vec![parts], true, true, false)
+            share_phase_regions(module, &mut ctx.func, vec![parts], false)
         }
         .unwrap()
         .expect("both traversals selected");
@@ -342,4 +345,74 @@ fn shared_controller_preserves_loop_value_and_direct_uses_after_exit() {
 #[test]
 fn shared_controller_keeps_each_callers_bound_and_error_origin() {
     check_controller(true, [5, 9]);
+}
+
+#[test]
+fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
+    let id = module
+        .declare_function("phase_uses", Linkage::Export, &context.func.signature)
+        .unwrap();
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    let entry = b.create_block();
+    let left = b.create_block();
+    let right = b.create_block();
+    let failure = b.create_block();
+    b.append_block_params_for_function_params(entry);
+    b.append_block_param(failure, types::I64);
+    b.append_block_param(failure, types::I64);
+
+    b.switch_to_block(entry);
+    let [choice, reject, input] = *b.block_params(entry) else {
+        unreachable!()
+    };
+    b.ins().brif(choice, right, &[], left, &[]);
+    b.switch_to_block(failure);
+    let [status, origin] = *b.block_params(failure) else {
+        unreachable!()
+    };
+    b.ins().return_(&[status, origin]);
+    let mut sites = Vec::new();
+    for (start, header) in [(left, 60), (right, 80)] {
+        let exit = b.create_block();
+        b.switch_to_block(start);
+        let value = b.ins().iadd_imm(input, 23);
+        let status = b.ins().iconst(types::I64, 19);
+        let origin = b.ins().iconst(types::I64, header as i64);
+        b.ins()
+            .brif(reject, failure, &[status.into(), origin.into()], exit, &[]);
+        b.switch_to_block(exit);
+        let zero = b.ins().iconst(types::I64, 0);
+        b.ins().return_(&[zero, value]);
+        sites.push(Candidate {
+            start,
+            exit,
+            resume: Some(failure),
+            header,
+            origin_base: Some(0),
+            span: 0,
+        });
+    }
+    b.seal_all_blocks();
+    b.finalize();
+    let report = share_phase_regions(&mut module, &mut context.func, vec![sites], true)
+        .unwrap()
+        .expect("both phase regions share a body");
+    assert_eq!(report[0]["headers"], serde_json::json!([60, 80]));
+    context.verify(module.isa()).unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    let run = unsafe {
+        std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
+            module.get_finalized_function(id),
+        )
+    };
+    for (choice, origin) in [(0, 60), (1, 80)] {
+        assert_eq!(run(choice, 0, 100), ResultPair(0, 123));
+        assert_eq!(run(choice, 1, 100), ResultPair(19, origin));
+    }
 }

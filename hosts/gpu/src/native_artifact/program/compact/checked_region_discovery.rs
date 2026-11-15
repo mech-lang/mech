@@ -47,6 +47,48 @@ pub(super) fn candidates(
         .collect()
 }
 
+pub(super) fn phase_candidates(
+    function: &Function,
+    windows: &str,
+    first_header: usize,
+) -> Result<Vec<Vec<Candidate>>, NativeCompileError> {
+    let block = |field: &str| {
+        let id = field.parse::<u32>().map_err(backend)?;
+        if id as usize >= function.dfg.num_blocks() {
+            return Err(backend(
+                "checked phase boundary is outside the current function",
+            ));
+        }
+        Ok(Block::from_u32(id))
+    };
+    windows
+        .split(';')
+        .map(|family| {
+            family
+                .split(',')
+                .map(|window| {
+                    let fields = window.split(':').collect::<Vec<_>>();
+                    let [entry, continuation, resume] = fields.as_slice() else {
+                        return Err(backend("expected phase entry:continuation:resume"));
+                    };
+                    let start = block(entry)?;
+                    let header = first_header
+                        .checked_add(start.as_u32() as usize)
+                        .ok_or_else(|| backend("checked phase region identifier overflow"))?;
+                    Ok(Candidate {
+                        start,
+                        exit: block(continuation)?,
+                        resume: (*resume != "-").then(|| block(resume)).transpose()?,
+                        header,
+                        origin_base: Some(0),
+                        span: 0,
+                    })
+                })
+                .collect()
+        })
+        .collect()
+}
+
 fn immediate(function: &Function, value: Value) -> Option<i64> {
     let ValueDef::Result(producer, _) = function.dfg.value_def(function.dfg.resolve_aliases(value))
     else {
