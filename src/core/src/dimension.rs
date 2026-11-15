@@ -207,18 +207,15 @@ pub(crate) fn canonicalize_dimension_environment(
     declarations: &[DimensionParameterDeclaration],
     root_references: &[DimensionParameterId],
 ) -> Result<CanonicalDimensionEnvironment, SemanticModelError> {
-    validate_declaration_ids(declarations)?;
+    let (constant_bounds, has_compile_time) = inspect_dimension_declarations(declarations)?;
     let count = declarations.len();
-    // Constant bounds are already normalized and have no dependency edges.
-    // Avoid materializing normalized/dependency arrays for unused declarations,
-    // while retaining full ID/lifetime validation and canonical root ordering.
-    if declarations.iter().all(|declaration| {
-        matches!(declaration.lower_bound, DimensionExpr::Constant(_))
-            && declaration
-                .upper_bound
-                .as_ref()
-                .is_none_or(|upper| matches!(upper, DimensionExpr::Constant(_)))
-    }) {
+    // IDs, constant-bound classification and lifetime facts share one scan.
+    // A declaration-ID failure anywhere still precedes every bound/lifetime
+    // error. Mixed bounds retain their original per-declaration error order.
+    if constant_bounds {
+        if has_compile_time {
+            return Err(SemanticModelError::CompileTimeDimensionParameterV1);
+        }
         return canonicalize_constant_bounds(declarations, root_references);
     }
     if root_references.is_empty() {
@@ -334,13 +331,7 @@ fn canonicalize_constant_bounds(
     declarations: &[DimensionParameterDeclaration],
     root_references: &[DimensionParameterId],
 ) -> Result<CanonicalDimensionEnvironment, SemanticModelError> {
-    // IDs were checked for the entire environment before selecting this path.
-    // An unused compile-time declaration still precedes an unknown root error.
-    for declaration in declarations {
-        if declaration.lifetime == DimensionLifetime::CompileTime {
-            return Err(SemanticModelError::CompileTimeDimensionParameterV1);
-        }
-    }
+    // The entire environment's IDs and lifetimes were checked before entry.
     let count = declarations.len();
     ensure_known_references(root_references, count)?;
     let mut old_to_new = vec![None; count];
@@ -388,9 +379,11 @@ fn canonicalize_constant_bounds(
     })
 }
 
-pub(crate) fn validate_declaration_ids(
+fn inspect_dimension_declarations(
     declarations: &[DimensionParameterDeclaration],
-) -> Result<(), SemanticModelError> {
+) -> Result<(bool, bool), SemanticModelError> {
+    let mut constant_bounds = true;
+    let mut has_compile_time = false;
     for (index, declaration) in declarations.iter().enumerate() {
         // Every accepted prefix has IDs 0..index. A smaller ID is therefore
         // a duplicate; a larger ID is the first unknown ordinal. Preserve
@@ -402,8 +395,15 @@ pub(crate) fn validate_declaration_ids(
         if ordinal != index {
             return Err(SemanticModelError::UnknownDimensionParameterV1 { id: declaration.id });
         }
+        constant_bounds = constant_bounds
+            && matches!(declaration.lower_bound, DimensionExpr::Constant(_))
+            && declaration
+                .upper_bound
+                .as_ref()
+                .is_none_or(|upper| matches!(upper, DimensionExpr::Constant(_)));
+        has_compile_time |= declaration.lifetime == DimensionLifetime::CompileTime;
     }
-    Ok(())
+    Ok((constant_bounds, has_compile_time))
 }
 
 fn ensure_known_references(
@@ -807,21 +807,74 @@ mod vector_tests {
                     })
                     .collect::<Vec<_>>();
                 assert_eq!(
-                    validate_declaration_ids(&declarations),
+                    inspect_dimension_declarations(&declarations).map(|_| ()),
                     reference_validate_declaration_ids(&declarations),
                 );
             }
         }
         let mut sparse = vec![declaration(0), declaration(u32::MAX)];
         assert_eq!(
-            validate_declaration_ids(&sparse),
+            inspect_dimension_declarations(&sparse).map(|_| ()),
             reference_validate_declaration_ids(&sparse)
         );
         sparse[1].id = DimensionParameterId::new(0);
         assert_eq!(
-            validate_declaration_ids(&sparse),
+            inspect_dimension_declarations(&sparse).map(|_| ()),
             reference_validate_declaration_ids(&sparse)
         );
+    }
+
+    #[test]
+    fn fused_declaration_scan_preserves_competing_first_errors() {
+        let describe = |result: Result<CanonicalDimensionEnvironment, SemanticModelError>| {
+            result.map(|value| (value.parameters, value.old_to_new))
+        };
+        for seed in 0..8192_u64 {
+            let count = (seed % 7) as usize;
+            let mut declarations = (0..count)
+                .map(|index| declaration(index as u32))
+                .collect::<Vec<_>>();
+            for (index, declaration) in declarations.iter_mut().enumerate() {
+                let pattern = seed.rotate_right((index * 7) as u32);
+                if pattern % 5 == 0 {
+                    declaration.id = DimensionParameterId::new(u32::MAX);
+                } else if pattern % 7 == 0 {
+                    declaration.id = DimensionParameterId::new(0);
+                }
+                if pattern % 3 == 0 {
+                    declaration.lifetime = DimensionLifetime::CompileTime;
+                }
+                if pattern % 11 == 0 {
+                    declaration.lower_bound = DimensionExpr::Hole;
+                } else if pattern % 13 == 0 {
+                    declaration.lower_bound =
+                        DimensionExpr::Parameter(DimensionParameterId::new(count as u32));
+                }
+                if pattern % 17 == 0 {
+                    declaration.upper_bound = Some(DimensionExpr::Add(
+                        vec![
+                            DimensionExpr::Constant(u64::MAX),
+                            DimensionExpr::Constant(1),
+                        ]
+                        .into_boxed_slice(),
+                    ));
+                }
+            }
+            for roots in [
+                Vec::new(),
+                vec![DimensionParameterId::new(0)],
+                vec![DimensionParameterId::new(count as u32)],
+            ] {
+                assert_eq!(
+                    describe(canonicalize_dimension_environment(&declarations, &roots)),
+                    describe(reference_canonicalize_dimension_environment(
+                        &declarations,
+                        &roots
+                    )),
+                    "seed={seed}, roots={roots:?}"
+                );
+            }
+        }
     }
 
     #[test]
