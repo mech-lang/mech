@@ -104,6 +104,42 @@ impl PartialEq<PendingSchema> for SchemaDraft {
 pub(super) trait FinalizeSourceSchema {
     fn finalize_source_schema(&self) -> Result<Schema, SemanticModelError>;
 }
+
+/// Preserve a pending owner's pure canonicalization cache through mixed visitors.
+/// Schemas without a pending owner retain their uncached finalization path.
+pub(super) enum SourceSchemaRef<'a> {
+    Pending(&'a PendingSchema),
+    Draft(&'a SchemaDraft),
+}
+
+impl<'a> From<&'a PendingSchema> for SourceSchemaRef<'a> {
+    fn from(schema: &'a PendingSchema) -> Self {
+        Self::Pending(schema)
+    }
+}
+impl<'a> From<&'a SchemaDraft> for SourceSchemaRef<'a> {
+    fn from(schema: &'a SchemaDraft) -> Self {
+        Self::Draft(schema)
+    }
+}
+impl Deref for SourceSchemaRef<'_> {
+    type Target = SchemaDraft;
+    fn deref(&self) -> &SchemaDraft {
+        match self {
+            Self::Pending(schema) => schema,
+            Self::Draft(schema) => schema,
+        }
+    }
+}
+impl FinalizeSourceSchema for SourceSchemaRef<'_> {
+    fn finalize_source_schema(&self) -> Result<Schema, SemanticModelError> {
+        match self {
+            Self::Pending(schema) => schema.finalize_source_schema(),
+            Self::Draft(schema) => schema.finalize_source_schema(),
+        }
+    }
+}
+
 impl FinalizeSourceSchema for PendingSchema {
     fn finalize_source_schema(&self) -> Result<Schema, SemanticModelError> {
         self.finalize_ref()
@@ -208,6 +244,29 @@ mod tests {
         assert_eq!(base.finalize_ref(), expected);
         let unique = PendingSchema::from(owned.clone()).into_owned();
         assert_eq!(unique, owned);
+    }
+
+    #[test]
+    fn unique_owner_mutation_invalidates_a_successful_borrowed_finalization() {
+        let mut schema = PendingSchema::from(draft());
+        let expected = schema.as_ref().finalize_ref();
+        assert_eq!(
+            SourceSchemaRef::from(&schema).finalize_source_schema(),
+            expected
+        );
+        assert!(schema.0.canonical.get().is_some());
+        assert_eq!(Arc::strong_count(&schema.0), 1);
+        schema.body = SchemaBody::Bool;
+        assert!(schema.0.canonical.get().is_none());
+        let changed = schema.as_ref().finalize_ref();
+        assert_ne!(changed, expected);
+        assert_eq!(
+            SourceSchemaRef::from(&schema).finalize_source_schema(),
+            changed
+        );
+        let raw = schema.as_ref();
+        assert_eq!(SourceSchemaRef::from(raw).finalize_source_schema(), changed);
+        assert_eq!(SourceSchemaRef::from(&schema).body, raw.body);
     }
 
     #[test]
