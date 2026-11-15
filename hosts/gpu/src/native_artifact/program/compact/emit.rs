@@ -1271,8 +1271,12 @@ pub(super) fn define_entry<M: Module>(
     } else {
         None
     };
-    let checked_controllers =
-        checked_traversals::share_controllers(module, &mut context.func, vec![controllers], false)?;
+    let checked_controllers = checked_traversals::share_controllers(
+        module,
+        &mut context.func,
+        vec![controllers],
+        checked_traversals::CaptureBindings::default(),
+    )?;
     if checked_controllers.is_some() {
         context.flowgraph();
         context.verify(module.isa()).map_err(backend)?;
@@ -1286,9 +1290,12 @@ pub(super) fn define_entry<M: Module>(
                 super::checked_region_discovery::candidates(&context.func, list, plan.blocks().len())
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let bind_literals = std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some();
-        let shared =
-            checked_traversals::share_controllers(module, &mut context.func, families, bind_literals)?;
+        let shared = checked_traversals::share_controllers(
+            module,
+            &mut context.func,
+            families,
+            checked_traversals::CaptureBindings::from_environment(),
+        )?;
         if shared.is_some() {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
