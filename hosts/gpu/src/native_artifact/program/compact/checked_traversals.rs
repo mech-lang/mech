@@ -21,6 +21,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 #[path = "checked_region_body.rs"]
 mod region_body;
+#[path = "checked_region_literals.rs"]
+mod region_literals;
+
+const MAX_PACKET_WORDS: usize = 256;
 
 #[derive(Clone, Copy)]
 pub(super) struct Candidate {
@@ -83,6 +87,7 @@ struct Traversal {
     packed_inputs: bool,
     constants: Vec<Value>,
     slots: Vec<StackSlot>,
+    literals: Vec<region_literals::Capture>,
 }
 
 #[derive(Clone, Copy)]
@@ -303,7 +308,11 @@ fn plan(
     // A refusal that fits the original bounds keeps its existing native ABI.
     let packed_inputs = controller
         || pack_large_refusals && (input_words > 40 || output_words.max(resume_words) > 32);
-    let (input_limit, output_limit) = if packed_inputs { (256, 256) } else { (40, 32) };
+    let (input_limit, output_limit) = if packed_inputs {
+        (MAX_PACKET_WORDS, MAX_PACKET_WORDS)
+    } else {
+        (40, 32)
+    };
     if controller {
         eprintln!(
             "compact checked controller {} boundary: {} blocks, {} inputs, {} outputs",
@@ -386,6 +395,7 @@ fn plan(
         packed_inputs,
         constants,
         slots,
+        literals: Vec::new(),
     })
 }
 
@@ -448,7 +458,8 @@ impl Traversal {
                 .inputs
                 .iter()
                 .map(|&v| f.dfg.value_type(v))
-                .chain(std::iter::repeat_n(types::I64, self.slots.len()));
+                .chain(std::iter::repeat_n(types::I64, self.slots.len()))
+                .chain(self.literals.iter().map(|literal| literal.ty));
             let mut pos = FuncCursor::new(&mut body);
             pos.goto_bottom(entry);
             params = capture_types
@@ -485,7 +496,16 @@ impl Traversal {
             .copied()
             .zip(params.by_ref())
             .collect::<BTreeMap<_, _>>();
+        map.extend(
+            self.literals
+                .iter()
+                .map(|literal| literal.value)
+                .zip(params),
+        );
         for &constant in &self.constants {
+            if map.contains_key(&constant) {
+                continue;
+            }
             let ValueDef::Result(inst, _) = f.dfg.value_def(constant) else {
                 unreachable!()
             };
@@ -765,6 +785,11 @@ impl Traversal {
             args.push(pos.ins().stack_addr(types::I64, slot, 0));
         }
         if self.packed_inputs {
+            args.extend(
+                self.literals
+                    .iter()
+                    .map(|literal| pos.ins().iconst(literal.ty, literal.bits)),
+            );
             let capture = packets.captures.expect("packed region input slot");
             for (index, &source) in self.live_captures.iter().enumerate() {
                 pos.ins()
@@ -881,18 +906,19 @@ pub(super) fn share<M: Module>(
         families.truncate(1);
     }
     let pack_large_refusals = std::env::var_os("MECH_COMPACT_PACK_LARGE_REFUSALS").is_some();
-    share_families(module, root, families, true, pack_large_refusals)
+    share_families(module, root, families, true, pack_large_refusals, false)
 }
 
 pub(super) fn share_controllers<M: Module>(
     module: &mut M,
     root: &mut Function,
-    candidates: Vec<Candidate>,
+    families: Vec<Vec<Candidate>>,
+    bind_literals: bool,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
-    if candidates.len() < 2 {
+    if families.iter().map(Vec::len).sum::<usize>() < 2 {
         return Ok(None);
     }
-    share_families(module, root, vec![candidates], false, false)
+    share_families(module, root, families, false, false, bind_literals)
 }
 
 fn share_families<M: Module>(
@@ -901,6 +927,7 @@ fn share_families<M: Module>(
     families: Vec<Vec<Candidate>>,
     refusal_regions: bool,
     pack_large_refusals: bool,
+    bind_literals: bool,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
     if families.is_empty() {
         return Ok(None);
@@ -924,31 +951,44 @@ fn share_families<M: Module>(
     let users = use_blocks(root);
     let dominance =
         (!refusal_regions || pack_large_refusals).then(|| DominatorTree::with_function(root, &cfg));
-    for candidate in families.into_iter().flatten() {
-        if excluded.contains(&candidate.header) {
-            continue;
-        }
-        let mut traversal = match plan(
-            root,
-            &cfg,
-            &users,
-            dominance.as_ref(),
-            candidate,
-            pack_large_refusals,
-            order_layout_captures && candidate.origin_base.is_some(),
-        ) {
-            Ok(traversal) => traversal,
-            Err(reason) => {
-                eprintln!(
-                    "compact checked region {} declined: {reason}",
-                    candidate.header
-                );
+    let mut traversals = Vec::new();
+    for family in families {
+        let first = traversals.len();
+        for candidate in family {
+            if excluded.contains(&candidate.header) {
                 continue;
             }
-        };
-        if !proven.is_disjoint(&traversal.blocks) {
-            continue;
+            let traversal = match plan(
+                root,
+                &cfg,
+                &users,
+                dominance.as_ref(),
+                candidate,
+                pack_large_refusals,
+                order_layout_captures && candidate.origin_base.is_some(),
+            ) {
+                Ok(traversal) => traversal,
+                Err(reason) => {
+                    eprintln!(
+                        "compact checked region {} declined: {reason}",
+                        candidate.header
+                    );
+                    continue;
+                }
+            };
+            if !proven.is_disjoint(&traversal.blocks) {
+                continue;
+            }
+            proven.extend(&traversal.blocks);
+            traversals.push(traversal);
         }
+        if bind_literals {
+            region_literals::bind(root, &mut traversals[first..]);
+        }
+    }
+    drop((cfg, users, proven));
+    for mut traversal in traversals {
+        let candidate = traversal.candidate;
         let kind = if refusal_regions {
             "traversal"
         } else if layout_regions_last && candidate.origin_base.is_some() {
@@ -1029,7 +1069,6 @@ fn share_families<M: Module>(
                 .join("\n");
             std::fs::write(folder.join(format!("{stem}.relocs")), relocations).map_err(backend)?;
         }
-        proven.extend(&traversal.blocks);
         if let Some(winner) = groups.iter_mut().find(|other| {
             other.signature == signature
                 && other.alignment == alignment
@@ -1054,7 +1093,7 @@ fn share_families<M: Module>(
             });
         }
     }
-    drop((cfg, users, dominance));
+    drop(dominance);
     let groups = groups
         .into_iter()
         .filter(|group| group.traversals.len() > 1)
@@ -1136,6 +1175,15 @@ fn share_families<M: Module>(
             "code_bytes":selected.bytes.len(),"stack_bytes":selected.stack,
             "input_words":selected.signature.params.len(),
         });
+        if selected.traversals.iter().any(|t| !t.literals.is_empty()) {
+            entry["literal_inputs"] = serde_json::json!(
+                selected
+                    .traversals
+                    .iter()
+                    .map(|t| t.literals.iter().map(|c| c.bits).collect::<Vec<_>>())
+                    .collect::<Vec<_>>()
+            );
+        }
         if selected.traversals.iter().any(|t| t.packed_inputs) {
             entry["packet_words"] = serde_json::json!(
                 selected

@@ -115,11 +115,18 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
             share(module, &mut ctx.func, BTreeMap::from([(id, parts)]), false)
         } else {
             assert!(
-                share_families(module, &mut ctx.func, vec![parts.clone()], true, false)
-                    .unwrap()
-                    .is_none()
+                share_families(
+                    module,
+                    &mut ctx.func,
+                    vec![parts.clone()],
+                    true,
+                    false,
+                    false
+                )
+                .unwrap()
+                .is_none()
             );
-            share_families(module, &mut ctx.func, vec![parts], true, true)
+            share_families(module, &mut ctx.func, vec![parts], true, true, false)
         }
         .unwrap()
         .expect("both traversals selected");
@@ -197,7 +204,7 @@ fn packed_refusal_preserves_partial_resume_and_failure_origin() {
     }
 }
 
-fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
+fn define_controller(module: &mut JITModule, enabled: bool, varying_bounds: bool) -> FuncId {
     let mut ctx = module.make_context();
     ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];
     ctx.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -240,7 +247,12 @@ fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
         b.ins().return_(&[status, origin]);
         b.switch_to_block(body);
         let next = b.ins().iadd(sum, remaining);
-        let more = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, remaining, 1);
+        let more = if varying_bounds {
+            let limit = b.ins().iconst(types::I64, if header == 30 { 5 } else { 9 });
+            b.ins().icmp(IntCC::UnsignedGreaterThan, remaining, limit)
+        } else {
+            b.ins().icmp_imm(IntCC::UnsignedGreaterThan, remaining, 1)
+        };
         let decreased = b.ins().iadd_imm(remaining, -1);
         b.ins().brif(
             more,
@@ -277,26 +289,29 @@ fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
             candidate.origin_base = Some(candidate.header as u32 - 7);
             candidate.header += 100;
         }
-        let report = share_controllers(module, &mut ctx.func, candidates)
+        let report = share_controllers(module, &mut ctx.func, vec![candidates], varying_bounds)
             .unwrap()
             .expect("both controllers selected");
         assert_eq!(report[0]["headers"], serde_json::json!([130, 190]));
+        let input_words = if varying_bounds { 4 } else { 3 };
         assert_eq!(
             report[0]["packet_words"],
-            serde_json::json!([[3, 3], [3, 3]])
+            serde_json::json!([[input_words, 3], [input_words, 3]])
         );
+        if varying_bounds {
+            assert_eq!(report[0]["literal_inputs"], serde_json::json!([[5], [9]]));
+        }
     }
     ctx.verify(module.isa()).unwrap();
     module.define_function(id, &mut ctx).unwrap();
     id
 }
 
-#[test]
-fn shared_controller_preserves_loop_value_and_direct_uses_after_exit() {
+fn check_controller(varying_bounds: bool, bounds: [u64; 2]) {
     let builder = JITBuilder::new(default_libcall_names()).unwrap();
     let mut module = JITModule::new(builder);
-    let original = define_controller(&mut module, false);
-    let outlined = define_controller(&mut module, true);
+    let original = define_controller(&mut module, false, varying_bounds);
+    let outlined = define_controller(&mut module, true, varying_bounds);
     module.finalize_definitions().unwrap();
     let bind = |id| unsafe {
         std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
@@ -305,15 +320,26 @@ fn shared_controller_preserves_loop_value_and_direct_uses_after_exit() {
     };
     let old = bind(original);
     let new = bind(outlined);
-    for (choice, origin) in [(0, 34), (1, 94)] {
+    for (choice, origin, bound) in [(0, 34, bounds[0]), (1, 94, bounds[1])] {
         for count in 0..17 {
-            let total = count * (count + 1) / 2;
-            let sum = total - u64::from(count != 0);
+            let terminal = count.min(bound);
+            let total = (terminal..=count).sum::<u64>();
             let hold = count + 21;
-            let expected = ResultPair(sum + hold, total * 2 + hold);
+            let expected = ResultPair(total - terminal + hold, total * 2 + hold);
             assert_eq!(old(choice, count, 0), expected);
             assert_eq!(new(choice, count, 0), expected);
+            assert_eq!(old(choice, count, 1), ResultPair(17, origin));
             assert_eq!(new(choice, count, 1), ResultPair(17, origin));
         }
     }
+}
+
+#[test]
+fn shared_controller_preserves_loop_value_and_direct_uses_after_exit() {
+    check_controller(false, [1, 1]);
+}
+
+#[test]
+fn shared_controller_keeps_each_callers_bound_and_error_origin() {
+    check_controller(true, [5, 9]);
 }
