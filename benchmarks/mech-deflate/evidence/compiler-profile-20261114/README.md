@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Forty-two complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,251,344,667 bytes (1,251.3 MB).
+Forty-three complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,285,470,680 bytes (1,285.5 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-two repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-three repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -48,6 +48,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Current-source CPU-native compiler and PGO | Retained build configuration: complete build -10.20%, compiler -9.93%, instructions -13.00%, parser -18.23%; both blocks faster; all seven held-out cases faster; exact complete executable. Includes raw/merged profiles, all adverse fields and serial-helper setup failure. | [mech-refreshed-native-pgo-20261115.tar.gz](mech-refreshed-native-pgo-20261115.tar.gz) | [Receipt](../../native-profile/refreshed-native-pgo-apple-m3-20261115.archive.json) / [result](../../native-profile/refreshed-native-pgo-apple-m3-20261115.json) | 1,603 |
 | Dense-prefix SSA absence lookup | Retained small work reduction: complete build -0.51%, both blocks faster; source CFG -4.31%, instructions -0.47%; exact bytes. Object compiler mixed, cleanup +1.11%, link +8.20%; standard configuration only. Includes 29 units, 304 IR/machine pairs and separate current-PGO profiles. | [mech-dense-hole-lookups-20261115.tar.gz](mech-dense-hole-lookups-20261115.tar.gz) | [Receipt](../../native-profile/dense-hole-lookups-apple-m3-20261115.archive.json) / [result](../../native-profile/dense-hole-lookups-apple-m3-20261115.json) | 781 |
 | Stable batch constant-phi parameter removal | Rejected: complete build +0.19% with mixed blocks despite Object compiler -0.66%, cleanup -2.58%, instructions -0.82%. Exact outputs/executables; source/tool restored. Includes 2,047 masks, 20 wide cases and 128 full IR/machine pairs. | [mech-batch-phi-params-20261115.tar.gz](mech-batch-phi-params-20261115.tar.gz) | [Receipt](../../native-profile/batch-phi-params-apple-m3-20261115.archive.json) / [result](../../native-profile/batch-phi-params-apple-m3-20261115.json) | 750 |
+| Imported-cleanup analysis owner | Rejected: complete build -0.04% with mixed blocks, compiler component +0.05%; Object compiler -0.35%, cleanup -1.01%, instructions -0.38%. Exact outputs/executables; source/tool restored. Includes fresh-analysis ordering/layout/alias tests and audited pass sources. | [mech-imported-analysis-owner-20261115.tar.gz](mech-imported-analysis-owner-20261115.tar.gz) | [Receipt](../../native-profile/imported-analysis-owner-apple-m3-20261115.archive.json) / [result](../../native-profile/imported-analysis-owner-apple-m3-20261115.json) | 702 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -284,3 +285,22 @@ selection diagnostics and restoration receipt. Fresh extraction verifies and
 replays byte-identically. No source optimization is retained and no new PGO,
 parallel or sub-ten-second saving is claimed; the separate best qualified PGO
 result remains 14.027481 seconds.
+
+The [imported-cleanup analysis-owner trial](../../../../docs/design/native-imported-analysis-owner-compile-trial.md) is rejected and both
+source files and the immutable standard compiler are restored. Eight complete
+builds are effectively flat: **15.287110 to 15.281101 seconds (-0.04%)**, with
+mixed blocks. Their compiler-process component increases 0.05%, while final
+linking falls 10.58%. The separate Object cohort lowers compiler time 0.35%,
+cleanup including compaction 1.01% and instructions 0.38%; source CFG +1.20%,
+compaction +4.33%, RSS +0.0127% and all other movement remain. Every artifact,
+complete metadata, 14 fixture pairs and full executable byte matches. Three
+focused actual-Cranelift tests compare fresh graph/dominator/alias/IR state for
+64 unchanged seeds, 16 successor-order/layout seeds and 16 graph-only alias
+seeds. The candidate shares descriptive analyses across the audited five-pass
+suffix, preserves all enable checks/pass order/verification, and invalidates
+on every mutation including successor ordering. No useful complete-build gain
+is established. The forty-third packet keeps source/patch, exact tests, audited
+pass sources, metadata selection, every command/log/observation/output, native
+inputs and restoration receipt. Fresh extraction verifies and replays exactly.
+No source optimization is retained; the separate best qualified PGO result
+remains 14.027481 seconds and the sub-ten-second goal stays open.

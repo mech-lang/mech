@@ -521,3 +521,22 @@ selection diagnostics and restoration receipt. Fresh extraction verifies and
 replays byte-identically. No source optimization is retained and no new PGO,
 parallel or sub-ten-second saving is claimed; the separate best qualified PGO
 result remains 14.027481 seconds.
+
+The [imported-cleanup analysis-owner trial](../../../docs/design/native-imported-analysis-owner-compile-trial.md) is rejected and both
+source files and the immutable standard compiler are restored. Eight complete
+builds are effectively flat: **15.287110 to 15.281101 seconds (-0.04%)**, with
+mixed blocks. Their compiler-process component increases 0.05%, while final
+linking falls 10.58%. The separate Object cohort lowers compiler time 0.35%,
+cleanup including compaction 1.01% and instructions 0.38%; source CFG +1.20%,
+compaction +4.33%, RSS +0.0127% and all other movement remain. Every artifact,
+complete metadata, 14 fixture pairs and full executable byte matches. Three
+focused actual-Cranelift tests compare fresh graph/dominator/alias/IR state for
+64 unchanged seeds, 16 successor-order/layout seeds and 16 graph-only alias
+seeds. The candidate shares descriptive analyses across the audited five-pass
+suffix, preserves all enable checks/pass order/verification, and invalidates
+on every mutation including successor ordering. No useful complete-build gain
+is established. The forty-third packet keeps source/patch, exact tests, audited
+pass sources, metadata selection, every command/log/observation/output, native
+inputs and restoration receipt. Fresh extraction verifies and replays exactly.
+No source optimization is retained; the separate best qualified PGO result
+remains 14.027481 seconds and the sub-ten-second goal stays open.
