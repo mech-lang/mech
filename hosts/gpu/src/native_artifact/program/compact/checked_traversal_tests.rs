@@ -140,12 +140,14 @@ fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
         unreachable!()
     };
     let zero = b.ins().iconst(types::I64, 0);
+    let invariant = b.ins().iadd_imm(count, 21);
     let entries = [b.create_block(), b.create_block()];
     for block in entries {
         b.append_block_param(block, types::I64);
         b.append_block_param(block, types::I64);
+        b.append_block_param(block, types::I64);
     }
-    let args = [count.into(), zero.into()];
+    let args = [count.into(), zero.into(), invariant.into()];
     b.ins().brif(choice, entries[1], &args, entries[0], &args);
     let mut source = vec![None; 92];
     for (start, header) in entries.into_iter().zip([30, 90]) {
@@ -155,8 +157,9 @@ fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
         source[header] = Some(start);
         source[header + 1] = Some(exit);
         b.append_block_param(exit, types::I64);
+        b.append_block_param(exit, types::I64);
         b.switch_to_block(start);
-        let [remaining, sum] = *b.block_params(start) else {
+        let [remaining, sum, unchanged] = *b.block_params(start) else {
             unreachable!()
         };
         b.ins().brif(reject, error, &[], body, &[]);
@@ -172,14 +175,18 @@ fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
         b.ins().brif(
             more,
             start,
-            &[decreased.into(), next.into()],
+            &[decreased.into(), next.into(), unchanged.into()],
             exit,
-            &[next.into()],
+            &[next.into(), unchanged.into()],
         );
         b.switch_to_block(exit);
-        let explicit = b.block_params(exit)[0];
+        let [explicit, hold] = *b.block_params(exit) else {
+            unreachable!()
+        };
         let doubled = b.ins().iadd(explicit, next);
-        b.ins().return_(&[sum, doubled]);
+        let with_hold = b.ins().iadd(doubled, hold);
+        let with_unchanged = b.ins().iadd(sum, unchanged);
+        b.ins().return_(&[with_unchanged, with_hold]);
     }
     b.seal_all_blocks();
     b.finalize();
@@ -200,6 +207,10 @@ fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
             .unwrap()
             .expect("both controllers selected");
         assert_eq!(report[0]["headers"], serde_json::json!([30, 90]));
+        assert_eq!(
+            report[0]["packet_words"],
+            serde_json::json!([[3, 3], [3, 3]])
+        );
     }
     ctx.verify(module.isa()).unwrap();
     module.define_function(id, &mut ctx).unwrap();
@@ -224,8 +235,10 @@ fn shared_controller_preserves_loop_value_and_direct_uses_after_exit() {
         for count in 0..17 {
             let total = count * (count + 1) / 2;
             let sum = total - u64::from(count != 0);
-            assert_eq!(old(choice, count, 0), ResultPair(sum, total * 2));
-            assert_eq!(new(choice, count, 0), ResultPair(sum, total * 2));
+            let hold = count + 21;
+            let expected = ResultPair(sum + hold, total * 2 + hold);
+            assert_eq!(old(choice, count, 0), expected);
+            assert_eq!(new(choice, count, 0), expected);
             assert_eq!(new(choice, count, 1), ResultPair(17, origin));
         }
     }

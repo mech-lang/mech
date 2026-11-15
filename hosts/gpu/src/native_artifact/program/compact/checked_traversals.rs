@@ -2,6 +2,7 @@
 use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, compiled_stack_bytes},
+    program::codegen::cfg_cleanup::{controller_passthrough, eliminate_dead_values},
 };
 use cranelift_codegen::{
     Context,
@@ -67,6 +68,9 @@ struct Traversal {
     blocks: BTreeSet<Block>,
     inputs: Vec<Value>,
     outputs: Vec<Value>,
+    finish: Vec<Value>,
+    passthrough: BTreeMap<Value, Value>,
+    live_captures: Vec<usize>,
     constants: Vec<Value>,
     slots: Vec<StackSlot>,
 }
@@ -279,19 +283,38 @@ fn plan(
     {
         return Err("live outputs exceed the call boundary budget");
     }
+    let passthrough = dominance
+        .map(|dom| {
+            controller_passthrough(
+                f,
+                cfg,
+                dom,
+                candidate.start,
+                &blocks,
+                finish.iter().chain(&outputs).copied(),
+            )
+        })
+        .unwrap_or_default();
     Ok(Traversal {
         candidate,
         blocks,
         inputs: arguments.into_iter().collect(),
         outputs,
+        finish: finish.to_vec(),
+        passthrough,
+        live_captures: Vec::new(),
         constants: constants.into_iter().collect(),
         slots: slots.into_iter().collect(),
     })
 }
 
 impl Traversal {
-    fn capture_words(&self) -> usize {
-        self.inputs.len() + self.slots.len()
+    fn output_words(&self) -> usize {
+        self.finish
+            .iter()
+            .chain(&self.outputs)
+            .filter(|v| !self.passthrough.contains_key(v))
+            .count()
     }
 
     fn signature(&self, f: &Function) -> Signature {
@@ -314,7 +337,7 @@ impl Traversal {
         result
     }
 
-    fn body(&self, f: &Function, signature: &Signature) -> Function {
+    fn body(&mut self, f: &Function, signature: &Signature) -> Function {
         let mut body = f.clone();
         body.layout = Layout::new();
         body.sized_stack_slots = Default::default();
@@ -327,6 +350,7 @@ impl Traversal {
             .map(|p| body.dfg.append_block_param(entry, p.value_type))
             .collect::<Vec<_>>();
         let packet = params.pop().unwrap();
+        let mut capture_loads = Vec::new();
         if self.candidate.resume.is_none() {
             let capture = params[0];
             let capture_types = self
@@ -345,6 +369,15 @@ impl Traversal {
                         capture,
                         (index * 8) as i32,
                     )
+                })
+                .collect();
+            capture_loads = params
+                .iter()
+                .map(|&value| {
+                    let ValueDef::Result(inst, _) = body.dfg.value_def(value) else {
+                        unreachable!()
+                    };
+                    inst
                 })
                 .collect();
         }
@@ -503,7 +536,18 @@ impl Traversal {
             body.layout.append_block(stub);
             let mut words = body.dfg.block_params(stub).to_vec();
             if tag == 1 {
-                words.extend(&self.outputs);
+                words = words
+                    .into_iter()
+                    .zip(&self.finish)
+                    .filter_map(|(param, value)| {
+                        (!self.passthrough.contains_key(value)).then_some(param)
+                    })
+                    .collect();
+                words.extend(
+                    self.outputs
+                        .iter()
+                        .filter(|v| !self.passthrough.contains_key(v)),
+                );
             }
             let mut pos = FuncCursor::new(&mut body);
             pos.goto_bottom(stub);
@@ -515,7 +559,38 @@ impl Traversal {
             let zero = pos.ins().iconst(types::I64, 0);
             pos.ins().return_(&[tag, zero]);
         }
+        if self.candidate.resume.is_none() {
+            eliminate_dead_values(&mut body);
+            // DCE removes captures used only to transport an unchanged value.
+            // The caller initializes only the surviving, densely packed lanes.
+            for (index, inst) in capture_loads.into_iter().enumerate() {
+                if body.layout.inst_block(inst).is_none() {
+                    continue;
+                }
+                let InstructionData::Load { ref mut offset, .. } = body.dfg.insts[inst] else {
+                    unreachable!()
+                };
+                *offset = ((self.live_captures.len() * 8) as i32).into();
+                self.live_captures.push(index);
+            }
+        }
         body
+    }
+
+    fn restore_word(
+        &self,
+        pos: &mut FuncCursor<'_>,
+        slot: StackSlot,
+        original: Value,
+        next: &mut i32,
+    ) -> Value {
+        if let Some(&source) = self.passthrough.get(&original) {
+            return source;
+        }
+        let ty = pos.func.dfg.value_type(original);
+        let value = pos.ins().stack_load(ty, slot, *next);
+        *next += 8;
+        value
     }
 
     fn replace<M: Module>(
@@ -530,7 +605,7 @@ impl Traversal {
         let candidate = self.candidate;
         let mut args = self.inputs.clone();
         for arg in &mut args {
-            if self.outputs.contains(arg) {
+            if self.outputs.contains(arg) && self.passthrough.get(arg) != Some(&*arg) {
                 // The incoming value may be different from the one leaving the
                 // controller after a backedge. Keep an independent entry parameter.
                 let ty = root.dfg.value_type(*arg);
@@ -596,9 +671,11 @@ impl Traversal {
             args.push(pos.ins().stack_addr(types::I64, slot, 0));
         }
         if let Some(capture) = packets.captures {
-            for (index, arg) in args.drain(..).enumerate() {
-                pos.ins().stack_store(arg, capture, (index * 8) as i32);
+            for (index, &source) in self.live_captures.iter().enumerate() {
+                pos.ins()
+                    .stack_store(args[source], capture, (index * 8) as i32);
             }
+            args.clear();
             args.push(pos.ins().stack_addr(types::I64, capture, 0));
         }
         args.push(pos.ins().stack_addr(types::I64, packets.result, 0));
@@ -618,29 +695,26 @@ impl Traversal {
             pos.ins().brif(repeat, resume, &[], finish, &[]);
         }
         for (block, exit) in continuations.into_iter().flatten() {
-            let types = pos
-                .func
-                .dfg
-                .block_params(exit)
-                .iter()
-                .map(|&v| pos.func.dfg.value_type(v))
-                .collect::<Vec<_>>();
+            let params = if exit == candidate.exit {
+                self.finish.clone()
+            } else {
+                pos.func.dfg.block_params(exit).to_vec()
+            };
             pos.goto_bottom(block);
-            let args = types
+            let mut next = 0;
+            let args = params
                 .into_iter()
-                .enumerate()
-                .map(|(i, ty)| {
-                    pos.ins()
-                        .stack_load(ty, packets.result, (i * 8) as i32)
+                .map(|value| {
+                    self.restore_word(&mut pos, packets.result, value, &mut next)
                         .into()
                 })
                 .collect::<Vec<_>>();
             if exit == candidate.exit {
-                for (index, &value) in self.outputs.iter().enumerate() {
-                    let ty = pos.func.dfg.value_type(value);
-                    let offset = ((args.len() + index) * 8) as i32;
-                    let loaded = pos.ins().stack_load(ty, packets.result, offset);
-                    pos.func.dfg.change_to_alias(value, loaded);
+                for &value in &self.outputs {
+                    let restored = self.restore_word(&mut pos, packets.result, value, &mut next);
+                    if restored != value {
+                        pos.func.dfg.change_to_alias(value, restored);
+                    }
                 }
             }
             pos.ins().jump(exit, &args);
@@ -753,7 +827,7 @@ fn share_families<M: Module>(
         if excluded.contains(&candidate.header) {
             continue;
         }
-        let traversal = match plan(root, &cfg, &users, dominance.as_ref(), candidate) {
+        let mut traversal = match plan(root, &cfg, &users, dominance.as_ref(), candidate) {
             Ok(traversal) => traversal,
             Err(reason) => {
                 eprintln!(
@@ -768,6 +842,14 @@ fn share_families<M: Module>(
         }
         let signature = traversal.signature(root);
         let mut context = Context::for_function(traversal.body(root, &signature));
+        if !refusal_regions {
+            eprintln!(
+                "compact checked controller {} packet: {} captures, {} results",
+                candidate.header,
+                traversal.live_captures.len(),
+                traversal.output_words()
+            );
+        }
         context.verify(module.isa()).map_err(backend)?;
         context
             .compile(module.isa(), &mut ControlPlane::default())
@@ -858,7 +940,7 @@ fn share_families<M: Module>(
         .iter()
         .flat_map(|group| &group.traversals)
         .flat_map(|t| {
-            let finish = root.dfg.block_params(t.candidate.exit).len() + t.outputs.len();
+            let finish = t.output_words();
             let resume = t
                 .candidate
                 .resume
@@ -879,7 +961,7 @@ fn share_families<M: Module>(
         let words = groups
             .iter()
             .flat_map(|group| &group.traversals)
-            .map(Traversal::capture_words)
+            .map(|t| t.live_captures.len())
             .max()
             .unwrap_or(0)
             .max(1);
@@ -920,11 +1002,21 @@ fn share_families<M: Module>(
         for traversal in &selected.traversals {
             traversal.replace(module, root, selected.function, packets, observer, cold);
         }
-        report.push(serde_json::json!({
+        let mut entry = serde_json::json!({
             "headers":selected.traversals.iter().map(|t| t.candidate.header).collect::<Vec<_>>(),
             "code_bytes":selected.bytes.len(),"stack_bytes":selected.stack,
             "input_words":selected.signature.params.len(),
-        }));
+        });
+        if !refusal_regions {
+            entry["packet_words"] = serde_json::json!(
+                selected
+                    .traversals
+                    .iter()
+                    .map(|t| [t.live_captures.len(), t.output_words()])
+                    .collect::<Vec<_>>()
+            );
+        }
+        report.push(entry);
     }
     Ok((!report.is_empty()).then_some(serde_json::Value::Array(report)))
 }
