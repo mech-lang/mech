@@ -42,6 +42,136 @@ pub(super) struct Pending {
     ticket: super::super::compile_jobs::Ticket,
     details: Details,
 }
+pub(super) enum General {
+    Ready(Prepared),
+    Deferred(DeferredGeneral),
+}
+pub(super) struct DeferredGeneral {
+    context: Context,
+    controls: CompilationControls,
+    report: std::sync::Arc<numeric_compact::Report>,
+    private: bool,
+    input: SummaryInput,
+}
+pub(super) enum GeneralPending {
+    Ready(Pending),
+    Deferred {
+        ticket: super::super::compile_jobs::Ticket<(Context, PhaseCleanup)>,
+        report: std::sync::Arc<numeric_compact::Report>,
+        input: SummaryInput,
+    },
+}
+impl General {
+    pub(super) fn entry_bounds(&self) -> &[(usize, u64, bool)] {
+        match self {
+            Self::Ready(ready) => ready.entry_bounds(),
+            Self::Deferred(ready) => &ready.input.entry_bounds,
+        }
+    }
+    pub(super) fn define<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
+        match self {
+            Self::Ready(ready) => ready.define(module),
+            Self::Deferred(ready) => ready.optimize(module.isa())?.define(module),
+        }
+    }
+    pub(super) fn start(
+        self,
+        pool: &super::super::compile_jobs::Pool,
+    ) -> Result<GeneralPending, NativeCompileError> {
+        match self {
+            Self::Ready(ready) => ready.start(pool).map(GeneralPending::Ready),
+            Self::Deferred(ready) => {
+                let DeferredGeneral {
+                    mut context,
+                    controls,
+                    report,
+                    private,
+                    input,
+                } = ready;
+                let worker_report = report.clone();
+                let symbol = input.symbol.clone();
+                let input_words = input.input_words;
+                let output_words = input.output_words;
+                let ticket = pool.submit_work(move |isa| {
+                    let cleanup = optimize_phase(
+                        &mut context,
+                        &controls,
+                        isa,
+                        &worker_report,
+                        &symbol,
+                        input_words,
+                        output_words,
+                        None,
+                        private,
+                        None,
+                        true,
+                    )?;
+                    let context = super::super::compile_jobs::compile(context, isa)?;
+                    Ok((context, cleanup))
+                })?;
+                Ok(GeneralPending::Deferred {
+                    ticket,
+                    report,
+                    input,
+                })
+            }
+        }
+    }
+}
+impl DeferredGeneral {
+    fn optimize(mut self, isa: &dyn TargetIsa) -> Result<Prepared, NativeCompileError> {
+        let cleanup = optimize_phase(
+            &mut self.context,
+            &self.controls,
+            isa,
+            &self.report,
+            &self.input.symbol,
+            self.input.input_words,
+            self.input.output_words,
+            None,
+            self.private,
+            None,
+            true,
+        )?;
+        Ok(finish_preparation(
+            self.context,
+            &self.report,
+            cleanup,
+            self.input,
+            Vec::new(),
+            None,
+            None,
+            None,
+        ))
+    }
+}
+impl GeneralPending {
+    pub(super) fn finish<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
+        match self {
+            Self::Ready(pending) => pending.finish(module),
+            Self::Deferred {
+                ticket,
+                report,
+                input,
+            } => {
+                let (context, cleanup) = ticket.wait()?;
+                let Prepared { context, details } = finish_preparation(
+                    context,
+                    &report,
+                    cleanup,
+                    input,
+                    Vec::new(),
+                    None,
+                    None,
+                    None,
+                );
+                super::super::compile_jobs::publish(module, details.function, &context)?;
+                details.finish(context)
+            }
+        }
+    }
+}
+
 impl Prepared {
     pub(super) fn entry_bounds(&self) -> &[(usize, u64, bool)] {
         &self.details.entry_bounds
@@ -143,6 +273,77 @@ pub(super) fn prepare<M: Module>(
     dense_tables: &mut DenseTables,
     suffix: &str,
 ) -> Result<Prepared, NativeCompileError> {
+    match prepare_impl(
+        module,
+        prepared,
+        id,
+        observe,
+        input_words,
+        output_words,
+        fixed_count,
+        vectors,
+        private,
+        no_growth,
+        literal_views,
+        dense_tables,
+        suffix,
+        false,
+    )? {
+        General::Ready(ready) => Ok(ready),
+        General::Deferred(_) => unreachable!("serial preparation cannot defer cleanup"),
+    }
+}
+
+pub(super) fn prepare_general<M: Module>(
+    module: &mut M,
+    prepared: &PreparedNativeProgram,
+    id: usize,
+    observe: bool,
+    input_words: usize,
+    output_words: usize,
+    fixed_count: usize,
+    vectors: Option<&VectorContract>,
+    private: Option<&PrivatePhase>,
+    no_growth: Option<&NoGrowth>,
+    literal_views: &BTreeMap<usize, Literal>,
+    dense_tables: &mut DenseTables,
+    suffix: &str,
+    defer: bool,
+) -> Result<General, NativeCompileError> {
+    prepare_impl(
+        module,
+        prepared,
+        id,
+        observe,
+        input_words,
+        output_words,
+        fixed_count,
+        vectors,
+        private,
+        no_growth,
+        literal_views,
+        dense_tables,
+        suffix,
+        defer,
+    )
+}
+
+fn prepare_impl<M: Module>(
+    module: &mut M,
+    prepared: &PreparedNativeProgram,
+    id: usize,
+    observe: bool,
+    input_words: usize,
+    output_words: usize,
+    fixed_count: usize,
+    vectors: Option<&VectorContract>,
+    private: Option<&PrivatePhase>,
+    no_growth: Option<&NoGrowth>,
+    literal_views: &BTreeMap<usize, Literal>,
+    dense_tables: &mut DenseTables,
+    suffix: &str,
+    defer_general: bool,
+) -> Result<General, NativeCompileError> {
     let code = CodePlan::Program(prepared);
     let closed = &prepared.metadata().closed_tails;
     let region = &closed.regions[id];
@@ -177,15 +378,50 @@ pub(super) fn prepare<M: Module>(
         }
         return Err(backend(format!("{symbol}: {error:?}")));
     }
-    let PhaseCleanup {
-        bit_counts,
-        cleanup,
-        equality,
-        threaded,
-        vector_predicates,
-        width_guards,
-        window_bounds,
-    } = optimize_phase(
+    let possible_histogram = std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
+        && !observe
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && proof.arrays.iter().all(|array| !array.appends)
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little;
+    if defer_general
+        && vectors.is_none()
+        && no_growth.is_none()
+        && literal_views.is_empty()
+        && !possible_histogram
+        && [
+            "MECH_INSPECT_PHASE_CLIF",
+            "MECH_INSPECT_PHASE_VCODE",
+            "MECH_COMPACT_FAILURE_DIR",
+        ]
+        .iter()
+        .all(|name| std::env::var_os(name).is_none())
+    {
+        let input = SummaryInput {
+            function,
+            entry_bounds: report
+                .phase_entry_bounds
+                .iter()
+                .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
+                .collect(),
+            header,
+            exit: region.tail.exit(),
+            symbol,
+            input_words,
+            output_words,
+            fixed_count,
+            actual_unit_append_growth: true,
+        };
+        return Ok(General::Deferred(DeferredGeneral {
+            context,
+            controls,
+            report: std::sync::Arc::new(report),
+            private: private.is_some(),
+            input,
+        }));
+    }
+    let phase_cleanup = optimize_phase(
         &mut context,
         &controls,
         module.isa(),
@@ -194,10 +430,11 @@ pub(super) fn prepare<M: Module>(
         input_words,
         output_words,
         vectors,
-        private,
+        private.is_some(),
         no_growth,
         true,
     )?;
+    let cleanup = &phase_cleanup.cleanup;
     let pack_halfwords = cfg!(target_arch = "aarch64")
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
         && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
@@ -386,11 +623,6 @@ pub(super) fn prepare<M: Module>(
         }
     }
     let word_loops = &report;
-    let pack_sites = word_loops.read_pack_sites.clone();
-    let read_guards = word_loops.proven_scalar_read_guards.clone();
-    let write_guards = word_loops.proven_scalar_write_guards.clone();
-    let reused_reads = word_loops.reused_scalar_reads.clone();
-    let reused_operands = word_loops.reused_scalar_operands.clone();
     let mut histogram = None;
     if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
         && !observe
@@ -535,7 +767,7 @@ pub(super) fn prepare<M: Module>(
                         input_words,
                         output_words,
                         vectors,
-                        private,
+                        private.is_some(),
                         no_growth,
                         false,
                     )?;
@@ -688,10 +920,77 @@ pub(super) fn prepare<M: Module>(
         .iter()
         .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
         .collect::<Vec<_>>();
+    Ok(General::Ready(finish_preparation(
+        context,
+        &report,
+        phase_cleanup,
+        SummaryInput {
+            function,
+            entry_bounds,
+            header,
+            exit: region.tail.exit(),
+            symbol,
+            input_words,
+            output_words,
+            fixed_count,
+            actual_unit_append_growth: no_growth.is_none(),
+        },
+        future_write_hints,
+        histogram,
+        composed,
+        vcode_path,
+    )))
+}
+
+pub(super) struct SummaryInput {
+    function: FuncId,
+    entry_bounds: Vec<(usize, u64, bool)>,
+    header: usize,
+    exit: u32,
+    symbol: String,
+    input_words: usize,
+    output_words: usize,
+    fixed_count: usize,
+    actual_unit_append_growth: bool,
+}
+
+fn finish_preparation(
+    context: Context,
+    report: &numeric_compact::Report,
+    phase_cleanup: PhaseCleanup,
+    input: SummaryInput,
+    future_write_hints: Vec<cfg_cleanup::future_store::Hint>,
+    histogram: Option<serde_json::Value>,
+    composed: Option<Composed>,
+    vcode_path: Option<std::path::PathBuf>,
+) -> Prepared {
+    let SummaryInput {
+        function,
+        entry_bounds,
+        header,
+        exit,
+        symbol,
+        input_words,
+        output_words,
+        fixed_count,
+        actual_unit_append_growth,
+    } = input;
+    let PhaseCleanup {
+        bit_counts,
+        cleanup,
+        equality,
+        threaded,
+        vector_predicates,
+        width_guards,
+        window_bounds,
+    } = phase_cleanup;
+    let pack_sites = report.read_pack_sites.clone();
+    let read_guards = report.proven_scalar_read_guards.clone();
+    let write_guards = report.proven_scalar_write_guards.clone();
+    let reused_reads = report.reused_scalar_reads.clone();
+    let reused_operands = report.reused_scalar_operands.clone();
     let changed_writes = report.proven_changed_writes.clone();
     let private_writes = report.private_write_sites.clone();
-    let exit = region.tail.exit();
-    let actual_unit_append_growth = no_growth.is_none();
     let finish_report: FinishReport = Box::new(move |compiled, entry_bounds| {
         let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":exit,"symbol":symbol,
         "code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,
@@ -741,7 +1040,7 @@ pub(super) fn prepare<M: Module>(
 
         Ok(summary)
     });
-    Ok(Prepared {
+    Prepared {
         context,
         details: Details {
             function,
@@ -750,7 +1049,7 @@ pub(super) fn prepare<M: Module>(
             composed,
             vcode_path,
         },
-    })
+    }
 }
 
 fn phase_ir<M: Module>(
@@ -806,7 +1105,7 @@ fn phase_ir<M: Module>(
     Ok((context, report))
 }
 
-struct PhaseCleanup {
+pub(super) struct PhaseCleanup {
     bit_counts: usize,
     cleanup: CfgCleanup,
     equality: wide_equal::Outcome,
@@ -825,7 +1124,7 @@ fn optimize_phase(
     input_words: usize,
     output_words: usize,
     vectors: Option<&VectorContract>,
-    private: Option<&PrivatePhase>,
+    private: bool,
     no_growth: Option<&NoGrowth>,
     report_diagnostics: bool,
 ) -> Result<PhaseCleanup, NativeCompileError> {
@@ -845,9 +1144,7 @@ fn optimize_phase(
     let equality = crate::native_artifact::program::codegen::wide_equal::optimize(
         context,
         &word_loops.compact_word_loops,
-        private.is_some()
-            && vectors.is_some()
-            && std::env::var_os("MECH_REUSE_EQUALITY_PREFIX").is_some(),
+        private && vectors.is_some() && std::env::var_os("MECH_REUSE_EQUALITY_PREFIX").is_some(),
     );
     // Named experimental condition: growth state is absent from this callee.
     let threaded = if no_growth.is_some()
@@ -895,7 +1192,7 @@ fn optimize_phase(
             );
         }
     }
-    let vector_predicates = if private.is_some()
+    let vector_predicates = if private
         && vectors.is_some()
         && std::env::var_os("MECH_PRIVATE_VECTOR_PREDICATES").is_some()
     {
@@ -910,24 +1207,23 @@ fn optimize_phase(
     } else {
         None
     };
-    let width_guards = if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_PRIVATE_VECTOR_WIDTHS").is_some()
-    {
-        let removed = cfg_cleanup::fold_proved_widths(controls, context, isa)?;
-        if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} proved-width guards: {removed}");
-        }
-        removed
-    } else {
-        0
-    };
-    let window_bounds = if private.is_some() && vectors.is_some() {
+    let width_guards =
+        if private && vectors.is_some() && std::env::var_os("MECH_PRIVATE_VECTOR_WIDTHS").is_some()
+        {
+            let removed = cfg_cleanup::fold_proved_widths(controls, context, isa)?;
+            if removed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} proved-width guards: {removed}");
+            }
+            removed
+        } else {
+            0
+        };
+    let window_bounds = if private && vectors.is_some() {
         cfg_cleanup::combine_window_bounds(controls, context, isa)?
     } else {
         0
     };
-    let paired_spans = if private.is_some()
+    let paired_spans = if private
         && vectors.is_some()
         && !equality.reused.is_empty()
         && std::env::var_os("MECH_ORDERED_CAPTURE_SPANS").is_some()
@@ -939,10 +1235,7 @@ fn optimize_phase(
     if paired_spans != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
         eprintln!("{symbol} ordered capture spans: {paired_spans}");
     }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_ADJACENT_ADDRESSES").is_some()
-    {
+    if private && vectors.is_some() && std::env::var_os("MECH_ADJACENT_ADDRESSES").is_some() {
         let changed = cfg_cleanup::reuse_adjacent_addresses(controls, context, isa)?;
         if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} adjacent typed accesses: {changed}");
@@ -954,10 +1247,7 @@ fn optimize_phase(
             eprintln!("{symbol} repeated bounds checks: {changed}");
         }
     }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS").is_some()
-    {
+    if private && vectors.is_some() && std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS").is_some() {
         let changed = super::phase_storage::sink_exit_packet_words(
             &mut context.func,
             input_words,
@@ -970,7 +1260,7 @@ fn optimize_phase(
             }
         }
     }
-    if private.is_some()
+    if private
         && vectors.is_some()
         && std::env::var_os("MECH_REUSE_DOMINATING_WINDOW_FACTS").is_some()
     {
@@ -979,34 +1269,26 @@ fn optimize_phase(
             eprintln!("{symbol} reused dominating window facts: {changed}");
         }
     }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_PROVE_SCALAR_SPANS").is_some()
-    {
+    if private && vectors.is_some() && std::env::var_os("MECH_PROVE_SCALAR_SPANS").is_some() {
         let changed = cfg_cleanup::prove_scalar_spans(controls, context, isa)?;
         if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} proved scalar spans: {changed}");
         }
     }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS").is_some()
-    {
+    if private && vectors.is_some() && std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS").is_some() {
         let proved = cfg_cleanup::prove_packed_bases(controls, context, isa)?;
         if proved != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} proved packed base spans: {proved}");
         }
     }
-    if private.is_some()
-        && vectors.is_some()
-        && std::env::var_os("MECH_REUSE_SELECTED_READ_BOUND").is_some()
+    if private && vectors.is_some() && std::env::var_os("MECH_REUSE_SELECTED_READ_BOUND").is_some()
     {
         let changed = cfg_cleanup::reuse_selected_read_bounds(controls, context, isa)?;
         if changed != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} reused selected readable bounds: {changed}");
         }
     }
-    if private.is_some()
+    if private
         && vectors.is_some()
         && std::env::var_os("MECH_COALESCE_EQUAL_JOIN_ARGUMENTS").is_some()
     {
@@ -1015,7 +1297,7 @@ fn optimize_phase(
             eprintln!("{symbol} merged equal block arguments: {removed}");
         }
     }
-    if private.is_some()
+    if private
         && vectors.is_some()
         && cleanup.enabled
         && std::env::var_os("MECH_FORWARD_SELECTED_CONTINUATIONS").is_some()

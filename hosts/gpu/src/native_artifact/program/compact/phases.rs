@@ -813,7 +813,7 @@ pub(super) fn define<M: Module>(
         let input_words = inputs.len() + writable + fixed_arrays.len();
         let output_words = (1 + result_words + writable * 6)
             .max(private.as_ref().map_or(0, PrivatePhase::packet_words));
-        let ready = function::prepare(
+        let ready = function::prepare_general(
             module,
             prepared,
             id,
@@ -827,6 +827,7 @@ pub(super) fn define<M: Module>(
             &BTreeMap::new(),
             &mut dense_tables,
             "",
+            pool.is_some(),
         )?;
         let entry_bounds = ready.entry_bounds().to_vec();
         let vector_contract = if std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some() {
