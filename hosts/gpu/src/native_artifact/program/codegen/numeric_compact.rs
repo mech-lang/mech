@@ -116,7 +116,19 @@ pub(in crate::native_artifact) fn emit(
     let bailout = b.create_block();
     let failed = b.create_block();
     b.append_block_param(failed, types::I64);
-    let shared_failure = std::env::var_os("MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS").is_some();
+    let failure_scope = std::env::var("MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS").ok();
+    let shared_failure = match failure_scope.as_deref() {
+        Some("1" | "all") => true,
+        Some(scope) => {
+            vectors.is_none()
+                && no_growth.is_none()
+                && scope
+                    .strip_prefix("general:")
+                    .and_then(|site| site.parse().ok())
+                    == Some(site)
+        }
+        None => false,
+    };
     if shared_failure {
         b.append_block_param(failed, types::I64);
     }
