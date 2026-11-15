@@ -300,7 +300,19 @@ impl Traversal {
                             unreachable!()
                         };
                         let mut pos = FuncCursor::new(&mut body).at_inst(inst);
-                        let relative = pos.ins().iadd_imm(origin, -(self.candidate.header as i64));
+                        let base = self.candidate.header as i64;
+                        let relative = match pos.func.dfg.value_def(origin) {
+                            ValueDef::Result(producer, _) => match pos.func.dfg.insts[producer] {
+                                InstructionData::UnaryImm {
+                                    opcode: Opcode::Iconst,
+                                    imm,
+                                } => pos
+                                    .ins()
+                                    .iconst(types::I64, i64::from(imm).wrapping_sub(base)),
+                                _ => pos.ins().iadd_imm(origin, -base),
+                            },
+                            _ => pos.ins().iadd_imm(origin, -base),
+                        };
                         pos.ins().store(MemFlags::new(), relative, packet, 0);
                         let tag = pos.ins().iconst(types::I64, 2);
                         pos.func.dfg.replace(inst).return_(&[tag, status]);
@@ -469,17 +481,21 @@ pub(super) fn share<M: Module>(
     module: &mut M,
     root: &mut Function,
     families: BTreeMap<FuncId, Vec<Candidate>>,
+    all_families: bool,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
-    let Some(family) = families
+    let mut families = families
         .into_values()
         .filter(|group| group.len() > 1)
-        .max_by_key(|group| (group.iter().map(|t| t.span).sum::<usize>(), group[0].header))
-    else {
-        return Ok(None);
-    };
+        .collect::<Vec<_>>();
+    families.sort_by_key(|group| {
+        std::cmp::Reverse((group.iter().map(|t| t.span).sum::<usize>(), group[0].header))
+    });
+    if !all_families {
+        families.truncate(1);
+    }
     let mut groups: Vec<Prepared> = Vec::new();
     let mut proven = BTreeSet::new();
-    for candidate in family {
+    for candidate in families.into_iter().flatten() {
         let Some(traversal) = plan(root, candidate) else {
             eprintln!(
                 "compact checked traversal {} declined by boundary proof",
@@ -589,3 +605,7 @@ pub(super) fn share<M: Module>(
     }
     Ok((!report.is_empty()).then_some(serde_json::Value::Array(report)))
 }
+
+#[cfg(test)]
+#[path = "checked_traversal_tests.rs"]
+mod tests;
