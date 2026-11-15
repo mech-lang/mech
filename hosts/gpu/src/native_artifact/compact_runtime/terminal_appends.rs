@@ -69,42 +69,32 @@ pub unsafe extern "C" fn mech_compact_finish_byte_appends(
             ptr::copy_nonoverlapping(source[0] as *const u8, dest, length);
         }
         let tail = dest.add(length);
-        if packed_len & 8 != 0 {
-            tail.cast::<u64>().write_unaligned(packed.to_le());
-        }
-        if packed_len & 4 != 0 {
+        // The first and last words cover the exact extent. Overlapping
+        // writes store the same bytes where they meet.
+        if packed_len >= 4 {
+            let last = packed_len - 4;
             tail.cast::<u32>().write_unaligned((packed as u32).to_le());
-        }
-        if packed_len & 2 != 0 {
-            let at = packed_len & 4;
-            tail.add(at)
+            tail.add(last)
+                .cast::<u32>()
+                .write_unaligned(((packed >> (last * 8)) as u32).to_le());
+        } else if packed_len >= 2 {
+            let last = packed_len - 2;
+            tail.cast::<u16>().write_unaligned((packed as u16).to_le());
+            tail.add(last)
                 .cast::<u16>()
-                .write_unaligned(((packed >> (at * 8)) as u16).to_le());
-        }
-        if packed_len & 1 != 0 {
-            let at = packed_len & 6;
-            tail.add(at).write((packed >> (at * 8)) as u8);
+                .write_unaligned(((packed >> (last * 8)) as u16).to_le());
+        } else {
+            tail.write(packed as u8);
         }
         let dest = tail.add(packed_len);
-        if span_len & 8 != 0 {
-            dest.cast::<u64>()
-                .write_unaligned(span.cast::<u64>().read_unaligned());
-        }
-        if span_len & 4 != 0 {
-            let at = span_len & 8;
-            dest.add(at)
-                .cast::<u32>()
-                .write_unaligned(span.add(at).cast::<u32>().read_unaligned());
-        }
-        if span_len & 2 != 0 {
-            let at = span_len & 12;
-            dest.add(at)
-                .cast::<u16>()
-                .write_unaligned(span.add(at).cast::<u16>().read_unaligned());
-        }
-        if span_len & 1 != 0 {
-            let at = span_len & 14;
-            dest.add(at).write(span.add(at).read());
+        if span_len >= 8 {
+            copy_ends::<u64>(span, dest, span_len);
+        } else if span_len >= 4 {
+            copy_ends::<u32>(span, dest, span_len);
+        } else if span_len >= 2 {
+            copy_ends::<u16>(span, dest, span_len);
+        } else if span_len == 1 {
+            dest.write(span.read());
         }
     }
     heap.counters.initialized_bytes_copied += length as u64;
@@ -116,4 +106,121 @@ pub unsafe extern "C" fn mech_compact_finish_byte_appends(
         output.write(result);
     }
     0
+}
+
+/// Copy the first and last words of a span, including a possible overlap.
+///
+/// # Safety
+/// The source and destination ranges are valid for `bytes` and have disjoint
+/// backing. A word of type `T` fits within the span and covers at least half
+/// of it. Both source words are initialized and valid instances of `T`.
+#[inline]
+unsafe fn copy_ends<T: Copy>(span: *const u8, dest: *mut u8, bytes: usize) {
+    let last = bytes - std::mem::size_of::<T>();
+    // SAFETY: both ranges have bytes initialized for reading or allocated
+    // for writing as appropriate. Their backing allocations are disjoint.
+    // If the destination stores overlap, they write the same bytes.
+    unsafe {
+        dest.cast::<T>()
+            .write_unaligned(span.cast::<T>().read_unaligned());
+        dest.add(last)
+            .cast::<T>()
+            .write_unaligned(span.add(last).cast::<T>().read_unaligned());
+    }
+}
+
+#[cfg(test)]
+mod copy_ends_tests {
+    use super::*;
+    use crate::native_artifact::compact_runtime::OwnerStorage;
+
+    #[test]
+    fn all_packed_and_span_extents_preserve_bytes_prefix_and_counters() {
+        let packed = 0xb382_7160_5948_3726u64;
+        let packed_bytes = packed.to_le_bytes();
+        let borrowed = b"immutable-prefix-and-source-span";
+        for packed_len in 1..=8 {
+            for span_len in 0..16 {
+                for (prefix_len, extra) in [(0, 0), (3, 2), (8, 32)] {
+                    for use_owner_storage in [false, true] {
+                        let length = prefix_len + packed_len + span_len;
+                        let capacity = length + extra;
+                        let prefix = [
+                            borrowed.as_ptr() as u64,
+                            prefix_len as u64,
+                            capacity as u64,
+                            1,
+                            prefix_len as u64,
+                            0,
+                        ];
+                        let mut storage = OwnerStorage::default();
+                        let mut heap = if use_owner_storage {
+                            Heap::with_owner_storage(&mut storage)
+                        } else {
+                            Heap::new()
+                        };
+                        let mut output = [0; 6];
+                        // The live copied span and prefix may come from the same
+                        // backing. The generated result acquires a distinct allocation.
+                        assert_eq!(
+                            unsafe {
+                                mech_compact_finish_byte_appends(
+                                    &mut heap,
+                                    &mut output,
+                                    &prefix,
+                                    packed,
+                                    packed_len,
+                                    borrowed.as_ptr(),
+                                    span_len,
+                                )
+                            },
+                            0
+                        );
+                        assert_eq!(
+                            [output[1], output[2], output[3], output[4]],
+                            [length as u64, capacity as u64, 1, length as u64]
+                        );
+                        let result = unsafe { heap.take_u8(output).unwrap() };
+                        assert_ne!(result.as_ptr(), borrowed.as_ptr());
+                        assert_eq!(&result[..prefix_len], &borrowed[..prefix_len]);
+                        assert_eq!(
+                            &result[prefix_len..prefix_len + packed_len],
+                            &packed_bytes[..packed_len]
+                        );
+                        assert_eq!(&result[prefix_len + packed_len..], &borrowed[..span_len]);
+                        assert_eq!(result.capacity(), capacity);
+                        assert_eq!(heap.counters.payload_requests, 1);
+                        assert_eq!(heap.counters.requested_payload_bytes, capacity as u64);
+                        assert_eq!(heap.counters.initialized_bytes_copied, prefix_len as u64);
+                        assert_eq!(heap.counters.zeroed_bytes, 0);
+                        assert_eq!(heap.counters.live_payload_bytes, 0);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn invalid_allocation_preserves_the_result_packet() {
+        let borrowed = [0xabu8];
+        let prefix = [borrowed.as_ptr() as u64, 1, usize::MAX as u64, 1, 1, 0];
+        let mut storage = OwnerStorage::default();
+        let mut heap = Heap::with_owner_storage(&mut storage);
+        let mut output = [u64::MAX; 6];
+        let status = unsafe {
+            mech_compact_finish_byte_appends(
+                &mut heap,
+                &mut output,
+                &prefix,
+                1,
+                1,
+                borrowed.as_ptr(),
+                0,
+            )
+        };
+        assert_eq!(status, 1);
+        assert_eq!(output, [u64::MAX; 6]);
+        assert_eq!(heap.counters.payload_requests, 0);
+        assert_eq!(borrowed, [0xab]);
+    }
 }
