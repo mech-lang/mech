@@ -391,8 +391,18 @@
       "sha256": "ee7e67554605ca7f873ccb641b5c043d7c3c3dd48f7b0fd24fc515a9ef0c9d38",
       "source_revision": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
       "summary": "benchmarks/mech-deflate/native-profile/reachability-worklist-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-refreshed-native-pgo-20261115.tar.gz",
+      "bytes": 91483159,
+      "decision": "Retained current-source compiler-nativeCPU+PGO: completebuild15.620738->14.027481s(-10.20%),bothblocks10.2%faster;Objectcompiler-9.93%,instructions-13.00%,parser-18.23%. All7heldout cases fasterinbothprocessblocks. All4outputs/fullmetadata/fullD6exe exact. Encoding+14.27%/link+5.78% and18,617coldmissingprofilewarnings/zeroCFGmismatch retained. Includesraw/mergedprofiles andcorrecteddefault-serialhelperpathsetupfailure. StandardB72toolpreserved; selectedPGO5a1687 separate.",
+      "files": 1603,
+      "receipt": "benchmarks/mech-deflate/native-profile/refreshed-native-pgo-apple-m3-20261115.archive.json",
+      "sha256": "6eafdfff9b3ddc8eebf7ade8ef5f0e1d5e7b15b840a75d6154cd8708e5def28c",
+      "source_revision": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+      "summary": "benchmarks/mech-deflate/native-profile/refreshed-native-pgo-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1076558214
+  "total_archive_bytes": 1168041373
 }
