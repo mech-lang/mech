@@ -25,10 +25,15 @@ pub(super) struct Candidate {
     pub start: Block,
     pub exit: Block,
     pub header: usize,
+    pub origin_base: Option<u32>,
     pub span: usize,
 }
 
 impl Candidate {
+    fn origin_base(self) -> i64 {
+        self.origin_base.map_or(self.header as i64, i64::from)
+    }
+
     fn exits(self) -> [Option<Block>; 2] {
         [self.resume, Some(self.exit)]
     }
@@ -57,6 +62,7 @@ pub(super) fn controller_candidates(
             start,
             exit,
             header,
+            origin_base: None,
             span: end - header,
         });
     }
@@ -502,7 +508,7 @@ impl Traversal {
                             unreachable!()
                         };
                         let mut pos = FuncCursor::new(&mut body).at_inst(inst);
-                        let base = self.candidate.header as i64;
+                        let base = self.candidate.origin_base();
                         let relative = match pos.func.dfg.value_def(origin) {
                             ValueDef::Result(producer, _) => match pos.func.dfg.insts[producer] {
                                 InstructionData::UnaryImm {
@@ -712,7 +718,7 @@ impl Traversal {
         pos.ins().brif(failed, failure, &[], cont, &[]);
         pos.goto_bottom(failure);
         let origin = pos.ins().stack_load(types::I64, packets.result, 0);
-        let origin = pos.ins().iadd_imm(origin, candidate.header as i64);
+        let origin = pos.ins().iadd_imm(origin, candidate.origin_base());
         pos.ins().return_(&[status, origin]);
         if let Some((resume, finish, _)) = arms {
             pos.goto_bottom(cont);

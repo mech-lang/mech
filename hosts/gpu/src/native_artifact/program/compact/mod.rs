@@ -9,6 +9,7 @@
 //! Operations that need a new String allocation remain explicit compiler gaps
 //! until an invocation-owned native String representation is implemented.
 pub(in crate::native_artifact) mod arrays;
+mod checked_region_discovery;
 mod checked_traversals;
 mod collections;
 mod constants;
