@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-ssa-lookup-trials-20261115.tar.gz",
+  "bytes": 36681583,
+  "evidence_files": 1024,
+  "files": 1024,
+  "format": 1,
+  "manifest_sha256": "d2b0f1f63e1eaf5efdd7f9036dbc90ff2b3b0ddd24c721323229d89a6be4ffdc",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "00855ffa0edcc403fe8f502611f530060c7d0929280dffb6e8a37a0e21ef552b",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-lookup-trials-20261115.tar.gz",
+  "sha256": "15ccb12a3d7e281213802f4df53882a4259255b6d0518c4c14e717ea339275dd",
+  "source_revision": "f19531c3b016b551fb7d4bb8f2a3d4adca4f42d7",
+  "uncompressed_bytes": 232064160,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "15ccb12a3d7e281213802f4df53882a4259255b6d0518c4c14e717ea339275dd",
+    "source_revision": "f19531c3b016b551fb7d4bb8f2a3d4adca4f42d7",
+    "verified_bytes": 232064160,
+    "verified_files": 1024
+  }
+}
