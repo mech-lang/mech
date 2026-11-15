@@ -9,10 +9,12 @@ A separate same-binary comparison isolates enabling the current parallel path:
 **15.553768 seconds serial versus 15.218166 seconds with two workers (2.16%,
 0.336 seconds saved)**, again with both blocks faster. Default
 `MECH_COMPACT_COMPILE_THREADS=0` remains serial; `=2` enables the measured mode.
-These two experiments remain separate. The separately qualified native-CPU/PGO
-artifact on d26 source remains the best complete-build configuration at
-14.027481 seconds; the new source has not received combined PGO qualification.
-Compilation below ten seconds remains open.
+These two experiments remain separate. At publication, the separately qualified
+native-CPU/PGO artifact on d26 source measured 14.027481 seconds. The later
+[Deflate-trained PGO qualification](native-parallel-pgo-compile-profile.md) on this
+exact expanded-worker source measures 13.596783 seconds, with a separate
+same-PGO-binary serial/two-worker comparison. Its seven small heldouts do not
+establish broad generalization. Compilation below ten seconds remains open.
 
 Qualified source `0c949505cc708c233e27c094aa67e105068d6823` contains exactly
 the measured three-file diff from `7c4d62ee9a45992246e2e06e843bdf235351c222`:

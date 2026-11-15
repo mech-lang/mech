@@ -19,6 +19,8 @@ Module effects, variant decisions and ordered publication stay on the coordinato
 Main construction/cleanup and frontend remain serial; the full staged design
 below still contains work beyond this implemented boundary.
 
+The fresh [Deflate-trained PGO qualification](native-parallel-pgo-compile-profile.md) on this source measures 13.597-second complete builds. Its separate same-PGO-binary comparison measures 13.960 seconds serial versus 13.557 seconds with two workers (2.88% faster). PGO includes Deflate in training; seven small heldouts do not establish broad generalization. Standard compiler results above remain separate.
+
 The first [integrated implementation](native-parallel-phases-compile-profile.md)
 is now qualified with `MECH_COMPACT_COMPILE_THREADS=2` (default `0` stays serial).
 It queues 340 real phase Contexts, overlaps machine compilation with later
