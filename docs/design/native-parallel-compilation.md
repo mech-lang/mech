@@ -87,6 +87,11 @@ native preparation on their current paths. It parallelizes function-local
 work after those checks. Independent runtime/adapter preparation can run
 alongside the program compilation; a validated prebuilt adapter can be reused.
 
+Start with two workers. Even an ideal two-way split of the entire 2.128-second
+helper interval would save only about 1.064 seconds, before coordination costs
+and phase barriers. Reaching ten seconds also requires reducing serial frontend,
+main-function construction, cleanup and backend work.
+
 ## Separate construction, compilation and publication
 
 Introduce explicit internal types rather than requiring every emitter to finish
@@ -136,6 +141,16 @@ Record declaration, data-definition and function-definition events, including
 their order. Replay them on the real Object module and assert the expected IDs.
 Publishing only functions in order is insufficient if intervening data
 definitions affect section or symbol ordering.
+
+A separate [backend boundary probe](native-schema-cache-view-compile-profile.md#parallel-backend-boundary-probe)
+now exercises this split on two synthetic functions with local/imported calls,
+data references and a function-address data relocation. It retains a data
+definition between function publications. Serial `define_function` and one,
+two and four workers produce identical complete Object bytes, optimized IR and
+compiled metrics in all 24 comparisons. The first standalone link setup fails
+on mismatched LLVM bitcode/system LTO; Rust ThinLTO resolves it, with both logs
+preserved. This validates the backend API boundary, not Mech phase dependencies,
+competing errors, memory limits or a Deflate parallel speedup.
 
 ## Make dependencies explicit
 
@@ -215,6 +230,13 @@ baseline executable byte. A cache must pin these inputs along with the code;
 moving the same object contents is insufficient for the current identity gate.
 These are link-only observations, not an end-to-end compiler speedup or a
 qualified parallel function-compilation result.
+
+Two later, separately measured complete source-to-executable builds take
+17.526 and 17.514 seconds using the frozen adapter objects. They include fresh
+source analysis, program code generation and Object/metadata writes, Object
+handoff and the final native link. Adapter first-use construction is excluded.
+They are observations outside the balanced source-to-Object qualification
+cohort, not evidence of a parallel compiler improvement.
 
 ## Implementation and qualification
 
