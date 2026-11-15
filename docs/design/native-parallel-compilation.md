@@ -26,6 +26,13 @@ with mixed blocks and identical executables. It establishes no useful parallel
 gain on that workload. Default remains serial; the earlier result stays pinned
 to its original program/runtime image.
 
+The [current compiler comparison](native-current-parallel-compile-profile.md)
+uses the retained allocator and schema-owner changes at `12c500108660`.
+Eight complete builds average **16.183 seconds serial versus 16.016 seconds
+with two workers**, saving **0.167 seconds (1.03%)**, with both blocks faster.
+Every output and complete executable byte matches. Only worker count changes;
+these results are separate from the earlier cohorts. Default stays serial.
+
 ## Current work and limits
 
 The [published 61-flag baseline](native-point-liveness-compile-profile.md) spends

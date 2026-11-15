@@ -361,8 +361,18 @@
       "sha256": "ed61677c57fade226949d9112b0a7124518fb69b704a2bbf3de1db12825a1a43",
       "source_revision": "12c50010866066952345c63223bce770cf7578b1",
       "summary": "benchmarks/mech-deflate/native-profile/control-schema-owners-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-current-parallel-20261115.tar.gz",
+      "bytes": 29974986,
+      "decision": "Current unchanged compiler scheduling comparison: serial 16.182550 s vs two workers 16.015580 s (-1.03%, 0.167 s); both blocks faster. All outputs/complete executables exact; default serial. Includes two excluded current-compiler profiles and pre-compiler setup failure.",
+      "files": 361,
+      "receipt": "benchmarks/mech-deflate/native-profile/current-parallel-apple-m3-20261115.archive.json",
+      "sha256": "a56ac6d14567d5205c6fa64b6d953a18af06b0754e08bc7dd81b3053e6f54d90",
+      "source_revision": "12c50010866066952345c63223bce770cf7578b1",
+      "summary": "benchmarks/mech-deflate/native-profile/current-parallel-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 973665805
+  "total_archive_bytes": 1003640791
 }

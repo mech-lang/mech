@@ -1065,3 +1065,19 @@ means; corrected call-graph analysis and demangling replay exactly. The
 thirty-sixth packet retains all source/patches, tests, observations/outputs,
 profiles, native inputs, entire-commit proof and pure offline replay. Complete
 compilation below ten seconds remains open.
+
+The [current compiler parallel comparison](../../docs/design/native-current-parallel-compile-profile.md) measures the implemented
+workers on the retained allocator/schema-owner compiler, changing only worker
+count zero/two. Eight complete fresh source-to-executable builds average
+**16.182550 seconds serial versus 16.015580 seconds with two workers**:
+**0.167 seconds saved (1.03%)**, with both blocks faster. All four outputs,
+complete metadata and full executables are identical. Default remains serial.
+The fixed runtime/adapter is cached; its first use is excluded. This is separate
+from earlier program/compiler cohorts. Parsing increases 0.15%, catalog time
+1.01% and handoff 9.46% (0.108 ms); all observations remain. Helper machine-code
+compilation runs in workers; construction/cleanup and the other main stages
+remain serial. The thirty-seventh packet includes all commands/logs, outputs,
+native inputs, unchanged worker sources, two separate current-compiler stack
+diagnostics and the setup filename failure before compiler execution. Fresh
+extraction/verification and pure replay reproduce the compact result exactly.
+No new compiler source change, runtime timing or sub-ten-second result is claimed.

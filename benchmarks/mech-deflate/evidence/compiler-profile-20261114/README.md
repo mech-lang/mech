@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-six complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 973,665,805 bytes (973.7 MB).
+Thirty-seven complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,003,640,791 bytes (1,003.6 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-six repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-seven repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -42,6 +42,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Late known-origin SSA, two prototypes | Rejected larger trial: compiler +1.92%, source CFG +18.67%, both blocks slower despite 5.28M fewer temporary values; exact bytes and restored source/tool. Pending-only superseded before primary timing. | [mech-known-origin-ssa-trials-20261115.tar.gz](mech-known-origin-ssa-trials-20261115.tar.gz) | [Receipt](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.json) | 657 |
 | Compiler executable mimalloc | Retained: complete build -8.49%, instructions -13.57%, parser -12.08%, both blocks faster; exact program/executable. Compiler RSS +10.04%; default CLI failure reproduced on baseline, native CLI check passes. | [mech-compiler-mimalloc-20261115.tar.gz](mech-compiler-mimalloc-20261115.tar.gz) | [Receipt](../../native-profile/compiler-mimalloc-apple-m3-20261115.archive.json) / [result](../../native-profile/compiler-mimalloc-apple-m3-20261115.json) | 746 |
 | Private control schema owners and borrowed selection | Retained: complete build -4.85%, frontend -34.41%, instructions -4.39%, compiler RSS -32.99%; both blocks faster; exact program/executable. Fresh profiles, adverse stages and foundation-test scope retained. | [mech-control-schema-owners-20261115.tar.gz](mech-control-schema-owners-20261115.tar.gz) | [Receipt](../../native-profile/control-schema-owners-apple-m3-20261115.archive.json) / [result](../../native-profile/control-schema-owners-apple-m3-20261115.json) | 789 |
+| Current compiler parallel comparison | Diagnostic: serial 16.183 s vs two workers 16.016 s (-1.03%, 0.167 s), both blocks faster; exact complete executable; default serial. Includes separate profiles and setup failure. | [mech-current-parallel-20261115.tar.gz](mech-current-parallel-20261115.tar.gz) | [Receipt](../../native-profile/current-parallel-apple-m3-20261115.archive.json) / [result](../../native-profile/current-parallel-apple-m3-20261115.json) | 361 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -165,3 +166,19 @@ cmp /tmp/mech-point-liveness-replayed.json benchmarks/mech-deflate/native-profil
 Use the corresponding archive, receipt and result from the table to replay another packet. The maintained verifier rejects unsafe archive paths, duplicate entries and non-file entries, then checks the archive, manifest, every file SHA-256 and Git blob identity. Offline replay independently reconstructs the numerical summaries and checks retained output bytes and logs; it does not rerun original measurements.
 
 The earlier archives are preserved byte-for-byte. Their internal snapshots may describe local publication as it stood when sealed; the repository receipts and this index record the current destination. Historical peer profiles and earlier compiler packets remain available through their existing release receipts. See the [pipeline comparison](../../../../docs/design/native-compiler-process-profile.md) and [experiment index](../../EXPERIMENTS.md).
+
+The [current compiler parallel comparison](../../../../docs/design/native-current-parallel-compile-profile.md) measures the implemented
+workers on the retained allocator/schema-owner compiler, changing only worker
+count zero/two. Eight complete fresh source-to-executable builds average
+**16.182550 seconds serial versus 16.015580 seconds with two workers**:
+**0.167 seconds saved (1.03%)**, with both blocks faster. All four outputs,
+complete metadata and full executables are identical. Default remains serial.
+The fixed runtime/adapter is cached; its first use is excluded. This is separate
+from earlier program/compiler cohorts. Parsing increases 0.15%, catalog time
+1.01% and handoff 9.46% (0.108 ms); all observations remain. Helper machine-code
+compilation runs in workers; construction/cleanup and the other main stages
+remain serial. The thirty-seventh packet includes all commands/logs, outputs,
+native inputs, unchanged worker sources, two separate current-compiler stack
+diagnostics and the setup filename failure before compiler execution. Fresh
+extraction/verification and pure replay reproduce the compact result exactly.
+No new compiler source change, runtime timing or sub-ten-second result is claimed.
