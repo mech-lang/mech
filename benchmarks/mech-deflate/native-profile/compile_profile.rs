@@ -1,4 +1,7 @@
 //! Measure complete level-12 source compilation separately from building the compiler.
+#[path = "../../../src/compiler_allocator.rs"]
+mod compiler_allocator;
+
 use mech_engine::CanonicalSourceFrontend;
 use mech_gpu::native_artifact::{
     NativeCompileLimits, emit_compact_closed_object_for_diagnostic, emit_program_object_with_limits,
