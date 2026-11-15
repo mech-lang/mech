@@ -9,6 +9,13 @@ This design applies to compiling the level-12 Deflate program into an
 executable. Cargo job counts control rebuilding the Rust compiler itself and
 do not implement this architecture.
 
+The latest [qualified compiler](native-dimension-pgo-compile-profile.md) compiles
+the complete program to an executable in **13.415 seconds** on the Apple M3.
+It uses source `ef5e255e81`, native CPU tuning, PGO and two workers. Every
+executable byte matches. A separate comparison on that same compiler measures
+13.633 seconds serial versus 13.397 seconds with two workers (1.73% faster),
+with both balanced blocks improving. PGO counts toward the sub-ten-second goal.
+
 The [expanded implementation on source 0c949505cc](native-parallel-phase-cleanup-compile-profile.md)
 now overlaps eligible general numeric-phase cleanup and machine generation with
 vector preparation. A real diagnostic records 344 submitted jobs, 48 including
@@ -19,7 +26,10 @@ Module effects, variant decisions and ordered publication stay on the coordinato
 Main construction/cleanup and frontend remain serial; the full staged design
 below still contains work beyond this implemented boundary.
 
-The fresh [Deflate-trained PGO qualification](native-parallel-pgo-compile-profile.md) on this source measures 13.597-second complete builds. Its separate same-PGO-binary comparison measures 13.960 seconds serial versus 13.557 seconds with two workers (2.88% faster). PGO includes Deflate in training; seven small heldouts do not establish broad generalization. Standard compiler results above remain separate.
+The earlier [PGO qualification](native-parallel-pgo-compile-profile.md) on source
+`0c949505cc` measured 13.597-second complete builds. Its separate worker-count
+comparison measured 13.960 seconds serial versus 13.557 seconds with two workers
+(2.88% faster). Those observations remain attached to their original source.
 
 The first [integrated implementation](native-parallel-phases-compile-profile.md)
 is now qualified with `MECH_COMPACT_COMPILE_THREADS=2` (default `0` stays serial).
@@ -47,18 +57,22 @@ these results are separate from the earlier cohorts. Default stays serial.
 
 ## Current work and limits
 
-The [published 61-flag baseline](native-point-liveness-compile-profile.md) spends
-2.128 seconds generating numeric helpers, 2.358 seconds constructing the main
-source CFG, and 3.386 seconds cleaning it up, including value compaction.
-Internal compilation averages 17.402 seconds. These intervals have a shared
-measurement cohort; newer diagnostic clocks are kept separate.
+The latest [Object cohort](native-dimension-pgo-compile-profile.md) spends
+1.510 seconds generating numeric helpers, 1.999 seconds constructing the main
+source CFG, and 2.673 seconds cleaning it up, including value compaction.
+Internal compilation averages 13.153 seconds. These observations are separate
+from the complete-build cohort; nested stage intervals must not be added.
 
-The current Deflate metadata contains 170 numeric phases and 170 vector
-candidates, with four no-growth and four composed variants. Forty-three phases
-have private nested contracts. A separate diagnostic records 351 SSA-builder
-instances. The helpers offer parallel work; the large main function remains a
-substantial serial dependency. Parallel helper generation alone cannot recover
-the approximately 7.4 seconds needed to reach a ten-second internal compile.
+The current Deflate metadata contains 172 numeric phases and 172 vector
+candidates, with four no-growth and four composed variants. Forty-four phases
+have private nested contracts. The helpers offer parallel work; the large main
+function remains a substantial serial dependency. Complete builds need another
+3.415 seconds of savings to reach ten seconds.
+
+The implemented loop waits for each general/vector pair before preparing the
+next pair. A bounded queue spanning successive pairs is an unmeasured next
+candidate. It must retain the original declaration/data/publication order,
+variant decisions and first compilation error.
 
 A fresh, separately instrumented compile preserves every program output byte
 and records the following work. These counters justify continuing the schema
