@@ -139,6 +139,18 @@ impl PreparedObject {
         });
     }
 
+    pub(in crate::native_artifact::program) fn place_layout_regions_last(&mut self) {
+        let declarations = &self.declarations;
+        self.definition_order.sort_by_key(|id| match *id {
+            FuncOrDataId::Func(id) => declarations
+                .get_function_decl(id)
+                .name
+                .as_deref()
+                .is_some_and(|name| name.starts_with("mech_compact_checked_layout_")),
+            FuncOrDataId::Data(_) => false,
+        });
+    }
+
     pub(in crate::native_artifact::program) fn finish(mut self) -> ModuleResult<ObjectProduct> {
         let reachable = self.reachable()?;
         let mut symbols = BTreeMap::new();
@@ -441,10 +453,13 @@ mod tests {
     fn places_exported_entry_before_its_local_dependency() {
         let mut module = module();
         let local = function(&mut module, "checked_fallback", Linkage::Local);
+        let layout = function(&mut module, "mech_compact_checked_layout_1", Linkage::Local);
         let entry = function(&mut module, "entry", Linkage::Export);
+        define(&mut module, layout, &[]);
         define(&mut module, local, &[]);
-        define(&mut module, entry, &[local]);
+        define(&mut module, entry, &[local, layout]);
         module.place_exports_first();
+        module.place_layout_regions_last();
 
         let product = module.finish().unwrap();
         let position = |name| {
@@ -452,6 +467,7 @@ mod tests {
             product.object.symbol(symbol).value
         };
         assert!(position(b"entry") < position(b"checked_fallback"));
+        assert!(position(b"checked_fallback") < position(b"mech_compact_checked_layout_1"));
         assert!(!product.emit().unwrap().is_empty());
     }
 
