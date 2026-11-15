@@ -1,0 +1,501 @@
+{
+  "completion_calibration": [
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_seconds": 1.038438708987087,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 1.1081617909949273,
+      "repeat": 0,
+      "variant": "before"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_seconds": 0.211646500043571,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.32467787503264844,
+      "repeat": 1,
+      "variant": "before"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_seconds": 0.21177350007928908,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.330371666001156,
+      "repeat": 2,
+      "variant": "before"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_seconds": 0.21173070813529193,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.32826979202218354,
+      "repeat": 3,
+      "variant": "before"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_seconds": 0.21676620794460177,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.33044587494805455,
+      "repeat": 4,
+      "variant": "before"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 0.08969187503680587,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.1948260001372546,
+      "repeat": 0,
+      "variant": "after"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 0.08528025005944073,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.15814391593448818,
+      "repeat": 1,
+      "variant": "after"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 0.07991379196755588,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.14482054207473993,
+      "repeat": 2,
+      "variant": "after"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 0.07556058303453028,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.13966854196041822,
+      "repeat": 3,
+      "variant": "after"
+    },
+    {
+      "driver_receipt": {
+        "binary": "/private/tmp/mech-round2-baseline-20261114/fake-compiler",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 0.08009741688147187,
+        "exit_code": 0,
+        "mode": "frontend",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "unused"
+      },
+      "outer_command_seconds": 0.1412233749870211,
+      "repeat": 4,
+      "variant": "after"
+    }
+  ],
+  "control_source_commit": "ab4e6d8bc6f0128b1899c292838c36470295424a",
+  "diagnostic_build_seconds": 250.68073995783925,
+  "failed_diagnostic_build_seconds": 228.940004959004,
+  "final_link": {
+    "adapter_build": {
+      "binary_bytes": 1878568,
+      "binary_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "command": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "--crate-name",
+        "frozen_level12_worker",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "lto=thin",
+        "-C",
+        "codegen-units=1",
+        "-D",
+        "warnings",
+        "-L",
+        "dependency=/private/tmp/mech-round2-baseline-20261114/link/deps",
+        "/private/tmp/mech-round2-baseline-20261114/link/worker.rs",
+        "-o",
+        "/private/tmp/mech-round2-baseline-20261114/link/worker",
+        "--extern",
+        "mech_gpu=/private/tmp/mech-round2-baseline-20261114/link/deps/libmech_gpu-6bd3939c968bd94f.rlib",
+        "--extern",
+        "mech_engine=/private/tmp/mech-round2-baseline-20261114/link/deps/libmech_engine-c345139a11814b47.rlib",
+        "--extern",
+        "serde=/private/tmp/mech-round2-baseline-20261114/link/deps/libserde-e5533fb6134801ee.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-round2-baseline-20261114/link/deps/libserde_json-48aaccce9784a4ea.rlib",
+        "--extern",
+        "miniz_oxide=/private/tmp/mech-round2-baseline-20261114/link/deps/libminiz_oxide-80881691edf588d8.rlib",
+        "-C",
+        "link-arg=/private/tmp/mech-round2-baseline-20261114/link/libmimalloc.a",
+        "-C",
+        "link-arg=/private/tmp/mech-round2-baseline-20261114/link/program.o"
+      ],
+      "exit_code": 0,
+      "label": "baseline",
+      "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+      "scope": "Separate frozen Rust wrapper compilation and final link; excluded from Mech source-to-Object timing.",
+      "seconds": 14.390357832890004
+    },
+    "decision": {
+      "ZERO_AR_DATE": "1",
+      "canonical_object_bytes": 3408848,
+      "canonical_object_paths_and_deterministic_link_environment_required": true,
+      "canonical_objects": 138,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "failed_direct_link_trials": 3,
+      "next": "Use a stable adapter cache directory, preserving object paths and the Rust link environment; schedule adapter preparation independently of program generation.",
+      "rejected_trial_hashes": {
+        "relink-canonical-results.json": "93107cb5aa692b553301ad7983b75911ea9d683809a2726f2b323ea29037e421",
+        "relink-results.json": "bc640a056d5a76c68fed9ed20a42d2772b9124d9ea6beb0f9e9673843b06f93f",
+        "relink-stable-basenames-results.json": "5279ccbbffc2022a23177e453c9066b2de333ad427670186b503178b8cf5bb14"
+      },
+      "retain_as_design_proof": true,
+      "scope": "Three warm native-link observations, not a matched full compiler timing cohort. All final executable bytes equal the frozen baseline."
+    },
+    "native_link_observations": [
+      {
+        "ZERO_AR_DATE": "1",
+        "binary_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+        "exit_code": 0,
+        "matches_baseline_executable": true,
+        "repeat": 0,
+        "seconds": 0.09263475006446242
+      },
+      {
+        "ZERO_AR_DATE": "1",
+        "binary_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+        "exit_code": 0,
+        "matches_baseline_executable": true,
+        "repeat": 1,
+        "seconds": 0.08501541684381664
+      },
+      {
+        "ZERO_AR_DATE": "1",
+        "binary_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+        "exit_code": 0,
+        "matches_baseline_executable": true,
+        "repeat": 2,
+        "seconds": 0.08123412518762052
+      }
+    ],
+    "rejected_direct_link_trials": {
+      "relink-canonical-results.json": [
+        {
+          "binary_sha256": "93107cb5aa692b553301ad7983b75911ea9d683809a2726f2b323ea29037e421",
+          "exit_code": 0,
+          "matches_baseline_executable": false,
+          "repeat": 0,
+          "seconds": 0.09347787499427795
+        }
+      ],
+      "relink-results.json": [
+        {
+          "binary_sha256": "bc640a056d5a76c68fed9ed20a42d2772b9124d9ea6beb0f9e9673843b06f93f",
+          "exit_code": 0,
+          "matches_baseline_executable": false,
+          "repeat": 0,
+          "seconds": 0.11200912483036518
+        }
+      ],
+      "relink-stable-basenames-results.json": [
+        {
+          "binary_sha256": "5279ccbbffc2022a23177e453c9066b2de333ad427670186b503178b8cf5bb14",
+          "exit_code": 0,
+          "matches_baseline_executable": false,
+          "repeat": 0,
+          "seconds": 0.09946350008249283
+        }
+      ]
+    }
+  },
+  "flags_count": 61,
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292881,
+      "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1238656,
+      "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "parallel_mech_compilation_implemented": false,
+  "pgo_setup": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-round2-pgo-20261114/target",
+    "binary": "/private/tmp/mech-round2-pgo-20261114/control",
+    "binary_sha256": "9a902224d8a3fce21dfed00abba0c7a9aed153257bce67e3db9d62f5c3e7ab81",
+    "cargo_jobs": 4,
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "build",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "--target",
+      "aarch64-apple-darwin",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "mode": "control",
+    "rustflags": [
+      "-D",
+      "warnings"
+    ],
+    "seconds": 470.88115654187277,
+    "source_commit": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+    "target": "aarch64-apple-darwin"
+  },
+  "precise_controls": [
+    {
+      "compiler_seconds": 17.149654917,
+      "name": "precise-control-1",
+      "process_seconds": 18.29495249991305
+    },
+    {
+      "compiler_seconds": 17.164625208,
+      "name": "precise-control-2",
+      "process_seconds": 17.25160524994135
+    }
+  ],
+  "process_boundary": "driver_start_to_process_wait_completion",
+  "program_structure": {
+    "composed_variants": 4,
+    "no_growth_variants": 4,
+    "numeric_phases": 170,
+    "private_phases": 43,
+    "vector_candidates": 170
+  },
+  "scope": [
+    "Precise process completion replaces the old polling tail; no compiler optimization is credited to the clock correction. Two controls reproduce the frozen current outputs. Their startup gaps differ; they are baseline observations, not a matched improvement cohort.",
+    "Separate diagnostic code records schema requests/clones, SSA work and partial cleanup component clocks. All four output files match. Instrumentation is removed. Context pass clocks include nested verification; the built-in Cranelift pass table is empty and supplies no timings. Resolver counts include the added cached-predecessor probe.",
+    "Cloned dimension entries are repeated entries across materializations, not distinct declarations. SSA suffix shifts concern builder sentinel removal, not constant-phi cleanup. Only 264011 of 20078161 sealed sentinels meet the cached-predecessor opportunity; no broader shortcut is implemented.",
+    "The frozen runtime/adapter and three warm native links reproduce every complete executable byte. Three earlier direct-link trials fail the byte gate; paths and N_OSO timestamps explain required link-input identity. These are link-only observations, not a matched complete source-to-executable gain or implemented parallel compiler speedup.",
+    "Program executables and native linker inputs remain in this packet. Compiler executables and the 989580160-byte coherent Rust dependency bundle are excluded and hash-pinned. Pure replay validates stored bytes/counters/measurements and source patches without compiling or rerunning timings.",
+    "The PGO control is built from a separate pinned source snapshot with an explicit target and warnings-as-errors. Matching LLVM profile tools are installed. No instrumented training/profile-use build or PGO performance result is claimed; bootstrap/adapter builds overlap and are not isolated comparisons.",
+    "The parallel architecture keeps declarations, shared tables, variant choices and Object publication ordered, with bounded function-local workers. This design and the separate unqualified borrowing candidate do not establish the sub-ten-second objective."
+  ],
+  "source_commit": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+  "work_counters": {
+    "cleanup": {
+      "main": {
+        "context.compute_cfg": {
+          "calls": 21,
+          "seconds": 0.050115915
+        },
+        "context.compute_domtree": {
+          "calls": 21,
+          "seconds": 0.085718418
+        },
+        "context.eliminate_unreachable_code": {
+          "calls": 10,
+          "seconds": 0.37729325
+        },
+        "context.func.dfg.resolve_all_aliases": {
+          "calls": 11,
+          "seconds": 0.092738669
+        },
+        "context.remove_constant_phis": {
+          "calls": 10,
+          "seconds": 0.652540793
+        },
+        "dead_values::eliminate": {
+          "calls": 4,
+          "seconds": 0.077350668
+        },
+        "fold": {
+          "calls": 6,
+          "seconds": 0.032294624
+        },
+        "fold_identities": {
+          "calls": 6,
+          "seconds": 0.021497248
+        },
+        "known_widths::fold": {
+          "calls": 5,
+          "seconds": 0.061689499999999994
+        },
+        "local_phis::simplify": {
+          "calls": 4,
+          "seconds": 0.168026958
+        },
+        "preheaders::normalize": {
+          "calls": 4,
+          "seconds": 0.002746583
+        },
+        "selected_ranges::fold": {
+          "calls": 4,
+          "seconds": 0.126377708
+        },
+        "unsigned_intervals::combine": {
+          "calls": 4,
+          "seconds": 0.004152958
+        }
+      },
+      "other": {
+        "context.compute_cfg": {
+          "calls": 5747,
+          "seconds": 0.025492507
+        },
+        "context.compute_domtree": {
+          "calls": 5704,
+          "seconds": 0.03665841
+        },
+        "context.eliminate_unreachable_code": {
+          "calls": 1413,
+          "seconds": 0.169721775
+        },
+        "context.func.dfg.resolve_all_aliases": {
+          "calls": 3624,
+          "seconds": 0.032217354
+        },
+        "context.remove_constant_phis": {
+          "calls": 1413,
+          "seconds": 0.125525481
+        },
+        "dead_values::eliminate": {
+          "calls": 778,
+          "seconds": 0.016795746
+        },
+        "fold": {
+          "calls": 1011,
+          "seconds": 0.007831416
+        },
+        "fold_identities": {
+          "calls": 1010,
+          "seconds": 0.007322783
+        },
+        "known_widths::fold": {
+          "calls": 1177,
+          "seconds": 0.014720372
+        },
+        "local_phis::simplify": {
+          "calls": 778,
+          "seconds": 0.005124701
+        },
+        "preheaders::normalize": {
+          "calls": 778,
+          "seconds": 0.000732203
+        },
+        "selected_ranges::fold": {
+          "calls": 778,
+          "seconds": 0.02246842
+        },
+        "unsigned_intervals::combine": {
+          "calls": 778,
+          "seconds": 0.00140233
+        }
+      }
+    },
+    "schema_totals": {
+      "into_owned": {
+        "calls": 43758,
+        "dimensions": 83135989
+      },
+      "into_owned_shared_clone": {
+        "calls": 43509,
+        "dimensions": 83135976
+      },
+      "pending_hit": {
+        "calls": 4777,
+        "dimensions": 14550768
+      },
+      "pending_miss": {
+        "calls": 7467,
+        "dimensions": 17668560
+      },
+      "raw_finalization": {
+        "calls": 45645,
+        "dimensions": 76515960
+      }
+    },
+    "scope": "Instrumented diagnostic only; clocks and counter work excluded from performance qualification.",
+    "ssa_function_records": 351,
+    "ssa_totals": {
+      "alias_links": 32662594,
+      "alias_resolutions": 54826786,
+      "candidate_predecessors": 528316,
+      "equal_cached_candidates": 264011,
+      "find_calls": 53081978,
+      "max_alias_chain": 3,
+      "predecessor_steps": 103418361,
+      "retained_sentinels": 549498,
+      "retired_sentinels": 19787451,
+      "sealed_sentinels": 20078161,
+      "shifted_suffix_values": 2140006,
+      "unsealed_sentinels": 258788
+    }
+  }
+}

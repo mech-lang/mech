@@ -1,0 +1,246 @@
+# Parallel compilation of a Mech program
+
+Compile independent native functions concurrently, with one coordinator owning
+symbol allocation, shared descriptive tables, variant decisions and ordered
+Object publication. Build the fixed runtime/entry adapter independently and
+join it with the program Object at the final native link.
+
+This design applies to compiling the level-12 Deflate program into an
+executable. Cargo job counts control rebuilding the Rust compiler itself and
+do not implement this architecture.
+
+## Current work and limits
+
+The [published 61-flag baseline](native-point-liveness-compile-profile.md) spends
+2.128 seconds generating numeric helpers, 2.358 seconds constructing the main
+source CFG, and 3.386 seconds cleaning it up, including value compaction.
+Internal compilation averages 17.402 seconds. These intervals have a shared
+measurement cohort; newer diagnostic clocks are kept separate.
+
+The current Deflate metadata contains 170 numeric phases and 170 vector
+candidates, with four no-growth and four composed variants. Forty-three phases
+have private nested contracts. A separate diagnostic records 351 SSA-builder
+instances. The helpers offer parallel work; the large main function remains a
+substantial serial dependency. Parallel helper generation alone cannot recover
+the approximately 7.4 seconds needed to reach a ten-second internal compile.
+
+A fresh, separately instrumented compile preserves every program output byte
+and records the following work. These counters justify continuing the schema
+and cleanup investigations alongside scheduling:
+
+| Work | Count |
+| --- | ---: |
+| Shared schema materializations through `into_owned` | 43,509 |
+| Dimension-declaration entries copied by those materializations | 83,135,976 |
+| Raw schema finalizations | 45,645 |
+| Pending canonicalization hits / misses | 4,777 / 7,467 |
+| SSA nonlocal find calls | 53,081,978 |
+| Single-predecessor steps | 103,418,361 |
+| Sealed-block sentinels | 20,078,161 |
+| Fully cached equal-predecessor opportunities | 264,011 |
+| Suffix elements shifted by SSA sentinel removal | 2,140,006 |
+
+Declaration entries include repeated copies of the same environment. Only
+about 1.3% of sealed sentinels meet the proposed cached-predecessor case; these
+counts do not justify broadening that shortcut. Partial main-cleanup clocks
+record ten constant-phi wrapper calls totaling 0.653 seconds, 21 CFG rebuilds
+totaling 0.050 seconds and 21 dominator rebuilds totaling 0.086 seconds. Wrapper
+clocks include nested verification and are not exclusive algorithm timings.
+The built-in Cranelift timing table is empty in this diagnostic; it supplies no
+pass timings. Full raw counters and all setup failures are preserved in the
+[planning evidence](../../benchmarks/mech-deflate/native-profile/parallel-planning-apple-m3-20261114.json).
+
+Existing phase generation is interleaved:
+
+1. Derive contracts and construct IR.
+2. Declare functions, imports and data in a mutable module.
+3. Run cleanup and compile machine code.
+4. Read code bytes, stack size and code size.
+5. Choose variants and construct metadata.
+
+In particular, general and vector machine-code bytes are compared before the
+no-growth alternative is selected. `DenseTables` also belongs to the ordered
+phase-generation invocation. Concurrency must represent these dependencies.
+
+## Build graph
+
+```mermaid
+flowchart TD
+    S[Mech source] --> F[Parser and checked frontend]
+    F --> P[Prepared native plan]
+    P --> C[Coordinator: declarations and function jobs]
+    C --> Q[Bounded ready queue]
+    Q --> W1[Function worker 1]
+    Q --> W2[Function worker 2]
+    W1 --> R[Results indexed by job identity]
+    W2 --> R
+    R --> D[Variant decisions]
+    D --> C
+    R --> O[Publish Object events in original order]
+    O --> L[Final native link]
+    A[Fixed runtime and entry adapter] --> L
+    L --> E[Executable]
+```
+
+The first implementation keeps source parsing, checked frontend processing and
+native preparation on their current paths. It parallelizes function-local
+work after those checks. Independent runtime/adapter preparation can run
+alongside the program compilation; a validated prebuilt adapter can be reused.
+
+## Separate construction, compilation and publication
+
+Introduce explicit internal types rather than requiring every emitter to finish
+machine compilation while it owns `&mut Module`:
+
+```rust
+struct FunctionJob {
+    id: DefinitionId,
+    function: cranelift_codegen::Context,
+    // Exact ISA shared through OwnedTargetIsa; no mutable Object module.
+    isa: cranelift_codegen::isa::OwnedTargetIsa,
+    report: PendingReport,
+}
+
+struct CompiledDefinition {
+    id: DefinitionId,
+    context: cranelift_codegen::Context,
+    relocations: Vec<cranelift_module::ModuleReloc>,
+}
+
+enum Publication {
+    DeclareFunction(/* original request */),
+    DeclareData(/* original request */),
+    DefineData(/* owned description */),
+    DefineFunction(DefinitionId),
+}
+```
+
+These are proposed interfaces, not implemented API declarations. Jobs move their
+Context into a worker; they do not clone the large function graph. A worker owns
+its CFG, dominator tree, optimization state and control plane. It cannot mutate
+the Object or a compilation-wide cache.
+
+The existing backend already separates the required operations internally:
+`ObjectModule::define_function_with_control_plane` calls `Context::compile`,
+collects alignment/code/relocations and publishes the definition.
+`Module::define_function_bytes` exposes the publication half. The new boundary
+must reproduce this exact alignment and relocation conversion, including the
+original function identity.
+
+The backend factory should retain an `OwnedTargetIsa` clone alongside the
+Object module. Workers then share the same immutable ISA without borrowing the
+mutable coordinator. Rebuilding an ISA independently in each worker is
+unnecessary.
+
+Record declaration, data-definition and function-definition events, including
+their order. Replay them on the real Object module and assert the expected IDs.
+Publishing only functions in order is insufficient if intervening data
+definitions affect section or symbol ordering.
+
+## Make dependencies explicit
+
+Fields known from checked IR, such as entry bounds and packet layouts, can be
+available when a job is constructed. Machine-derived fields remain deferred:
+code bytes, stack bytes, code size and any decision that consumes them. Do not
+fabricate a compiled Context or substitute estimated metrics.
+
+General and vector jobs can compile concurrently after their IR and declarations
+are ready. Their comparison is a dependency node. No-growth selection waits for
+that node; nested helper choices with machine-dependent inputs get equivalent
+dependencies. Error results also flow through this graph.
+
+There are two implementation scopes:
+
+- **First:** compile ready jobs within a phase in parallel, preserving the
+  current declaration sequence and choice barriers. Keep `DenseTables` and all
+  module mutations with the coordinator. This is the smaller equivalence proof.
+- **Later:** overlap different phases across unresolved choices. This needs
+  stable logical symbol handles and ordered assignment of final `FuncId` and
+  `DataId`. Conditional declarations cannot simply be reserved in the real
+  Object: unused reservations would change IDs and output bytes. The logical
+  handle layer needs its own single-worker equivalence qualification.
+
+The first scope may expose only two ready jobs at some barriers. Measure its
+occupancy before implementing the larger symbol-planning layer. A shared mutex
+around the existing synchronous compilation call would serialize the work.
+
+Main entry construction currently consumes selected phase descriptors. Keep
+that dependency. Earlier entry work may overlap helper compilation only after
+its inputs are explicitly separated from machine-dependent phase choices.
+
+## Scheduling and correctness
+
+Start with two persistent workers and measure one, two and four. Bound both the
+number of ready jobs and retained IR. Apply backpressure before constructing
+another large Context. Run an oversized job alone rather than adding a new
+language or resource refusal. The main function already has a substantial
+transient value population; an unbounded queue would trade time for memory.
+
+No worker waits for another job while holding coordinator state. Dependencies
+make jobs ready before dispatch. Results carry stable ordinals; the coordinator
+reports the original first error and anchor regardless of completion order.
+Source checks and per-function verification remain. Workers retain the existing
+pass sequence, optimization settings and transformation decisions.
+
+Caches belong to one compilation and the same immutable plan/function owner.
+Shared descriptive table requests need one ordered owner; proof outcomes must
+not be reused across source visits, factories or ownership contexts. Direct
+scalar emission, checked errors, finite admission and runtime accounting remain
+on their maintained paths.
+
+## Runtime adapter and final executable
+
+The adapter has its own frozen inputs: Rust toolchain, runtime libraries,
+allocator, wrapper source, ABI and linker arguments. Its Rust compilation can
+produce reusable native objects without a completed Deflate Object. The final
+link joins those objects with the newly compiled program.
+
+Freeze and hash the adapter objects and full native linker inputs. This caches
+shared runtime build work; every Mech compilation still performs its current
+source analysis, proofs, optimization and program code generation. Measure
+first-use adapter preparation, source-to-Object time, final native link and
+steady-state source-to-executable completion separately.
+
+The initial frozen adapter compile/link observation is 14.390 seconds while a
+separate compiler bootstrap is running. It is not an isolated link measurement
+or a source-to-executable timing. Capturing that invocation and retaining its
+native objects permits three warm native links of **0.081–0.093 seconds**, all
+reproducing the complete 1,878,568-byte executable with SHA-256
+`557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c`.
+
+Three earlier direct-link attempts changed output metadata and remain in the
+evidence. Mach-O `N_OSO` entries include object paths and timestamps. Keeping
+the original canonical object paths and using `ZERO_AR_DATE=1` reproduces every
+baseline executable byte. A cache must pin these inputs along with the code;
+moving the same object contents is insufficient for the current identity gate.
+These are link-only observations, not an end-to-end compiler speedup or a
+qualified parallel function-compilation result.
+
+## Implementation and qualification
+
+1. Finish precise process timing and freeze source, 61 flags, Object, metadata
+   and final-link inputs. Preserve the old polling measurements unchanged.
+2. Split function compilation/publication and run the new path with one worker.
+   Compare every Object and metadata byte against the existing implementation.
+   Compare per-function optimized IR with symbol identities resolved.
+3. Enable two workers for independent ready jobs. Preserve declaration/event
+   order, choice dependencies, cache ownership and first-error selection.
+4. Test four workers only after queue occupancy and memory measurements justify
+   it. Keep one-worker execution available as a scheduling configuration.
+5. Compare complete final executables using the same frozen adapter/linker
+   inputs, then run balanced serial timing cohorts with no concurrent builds,
+   profiling, tests or archive work. Report memory and adverse observations.
+6. Apply representative held-out programs and maintain the pure/reference
+   comparisons for scheduler order, dependent variants, imports, data tables,
+   relocations and competing errors.
+
+No parallel Mech code-generation gain has been measured yet. Retain the schema
+borrowing/cache work and constant-phi work as separate investigations: reducing
+the serial work and adding concurrency address different parts of the budget.
+
+Relevant implementation boundaries are
+[`phases.rs`](../../hosts/gpu/src/native_artifact/program/compact/phases.rs),
+[`phase_function.rs`](../../hosts/gpu/src/native_artifact/program/compact/phase_function.rs),
+[`emit.rs`](../../hosts/gpu/src/native_artifact/program/compact/emit.rs),
+[`backend.rs`](../../hosts/gpu/src/native_artifact/codegen/backend.rs) and
+[`compiler.rs`](../../hosts/gpu/src/native_artifact/program/compiler.rs).
