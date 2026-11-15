@@ -1,4 +1,5 @@
 //! Share repeated checked regions with explicit continuation boundaries.
+use super::body_relocations::matching_relocations;
 use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, compiled_stack_bytes},
@@ -16,7 +17,7 @@ use cranelift_codegen::{
         condcodes::IntCC, types,
     },
 };
-use cranelift_module::{FuncId, Linkage, Module, ModuleError, ModuleReloc, ModuleRelocTarget};
+use cranelift_module::{FuncId, Linkage, Module, ModuleError, ModuleReloc};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[path = "checked_region_body.rs"]
@@ -866,29 +867,6 @@ struct Prepared {
     traversals: Vec<Traversal>,
 }
 
-fn same_relocation(a: &ModuleReloc, b: &ModuleReloc) -> bool {
-    use ModuleRelocTarget::{FunctionOffset, KnownSymbol, LibCall, User};
-    a.offset == b.offset
-        && a.kind == b.kind
-        && a.addend == b.addend
-        && match (&a.name, &b.name) {
-            (FunctionOffset(_, a), FunctionOffset(_, b)) => a == b,
-            (
-                User {
-                    namespace: a,
-                    index: x,
-                },
-                User {
-                    namespace: b,
-                    index: y,
-                },
-            ) => a == b && x == y,
-            (KnownSymbol(a), KnownSymbol(b)) => a == b,
-            (LibCall(a), LibCall(b)) => a == b,
-            _ => false,
-        }
-}
-
 pub(super) fn share<M: Module>(
     module: &mut M,
     root: &mut Function,
@@ -1073,12 +1051,7 @@ fn share_families<M: Module>(
             other.signature == signature
                 && other.alignment == alignment
                 && other.bytes.as_ref() == bytes
-                && other.relocs.len() == relocs.len()
-                && other
-                    .relocs
-                    .iter()
-                    .zip(&relocs)
-                    .all(|(a, b)| same_relocation(a, b))
+                && matching_relocations(other.function, &other.relocs, function, &relocs)
         }) {
             winner.traversals.push(traversal);
         } else {
