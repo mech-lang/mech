@@ -367,6 +367,9 @@ impl Drop for Heap<'_> {
     }
 }
 
+/// Successful allocation publishes the empty row geometry (length 0,
+/// one row, zero columns), even with zero backing capacity.
+///
 /// # Safety
 /// Current owning Heap and a disjoint six-word output lane outlive the call.
 #[unsafe(no_mangle)]
@@ -395,6 +398,9 @@ pub unsafe extern "C" fn mech_compact_allocate(
         Err(status) => status,
     }
 }
+/// A successful writable view keeps the source's length, rows, and columns,
+/// whether its backing was reused or copied.
+///
 /// # Safety
 /// Both lanes and the current concrete backing owners belong to this live
 /// transaction. `consume` additionally requires the compiler's last-use proof.
@@ -443,6 +449,43 @@ pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn allocation_and_writable_results_keep_their_abi_geometry() {
+        let mut heap = Heap::new();
+        for capacity in [0, 12] {
+            let mut view = [u64::MAX; 6];
+            assert_eq!(
+                unsafe { mech_compact_allocate(&mut heap, capacity, 1, 1, 1, view.as_mut_ptr()) },
+                0
+            );
+            assert_eq!([view[1], view[3], view[4]], [0, 1, 0]);
+        }
+        let mut source = heap.allocate(12, 1, 1, true).unwrap();
+        source[1] = 6;
+        source[3] = 2;
+        source[4] = 3;
+        unsafe { (*(source[5] as *mut Owner)).references = 1 };
+        for (consume, capacity, reuses) in [(0, 12, false), (1, 12, true), (1, 20, false)] {
+            let mut view = [u64::MAX; 6];
+            assert_eq!(
+                unsafe {
+                    mech_compact_writable(
+                        &mut heap,
+                        source.as_ptr(),
+                        consume,
+                        capacity,
+                        1,
+                        1,
+                        view.as_mut_ptr(),
+                    )
+                },
+                0
+            );
+            assert_eq!([view[1], view[3], view[4]], [6, 2, 3]);
+            assert_eq!(view[5] == source[5], reuses);
+        }
+    }
+
     #[test]
     fn borrowed_owner_storage_survives_heap_moves_and_failure_retries() {
         let mut storage = OwnerStorage::default();

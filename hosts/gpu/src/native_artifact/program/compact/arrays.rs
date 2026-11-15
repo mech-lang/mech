@@ -29,6 +29,7 @@ pub(in crate::native_artifact) struct Arrays {
     result: StackSlot,
     pub heap: Value,
     retirement_observer: Option<FuncRef>,
+    forward_view_geometry: bool,
 }
 fn import<M: Module>(
     module: &mut M,
@@ -122,6 +123,7 @@ impl Arrays {
                 3,
             )),
             heap,
+            forward_view_geometry: std::env::var_os("MECH_COMPACT_FORWARD_VIEW_GEOMETRY").is_some(),
             retirement_observer: if observe {
                 Some(import(module, b, "mech_compact_phase_observe", 3)?)
             } else {
@@ -184,9 +186,17 @@ impl Arrays {
             self.release(b, owner, error);
         }
     }
-    fn result(&self, b: &mut FunctionBuilder<'_>) -> Vec<Value> {
+    fn result(&self, b: &mut FunctionBuilder<'_>, geometry: Option<[Value; 3]>) -> Vec<Value> {
         (0..6)
-            .map(|i| b.ins().stack_load(types::I64, self.result, (i * 8) as i32))
+            .map(|i| {
+                let known = match i {
+                    1 => geometry.map(|lanes| lanes[0]),
+                    3 => geometry.map(|lanes| lanes[1]),
+                    4 => geometry.map(|lanes| lanes[2]),
+                    _ => None,
+                };
+                known.unwrap_or_else(|| b.ins().stack_load(types::I64, self.result, (i * 8) as i32))
+            })
             .collect()
     }
     pub(super) fn allocate(
@@ -210,7 +220,14 @@ impl Arrays {
         );
         let status = b.inst_results(call)[0];
         success(b, status, error);
-        Ok(self.result(b))
+        let geometry = self.forward_view_geometry.then(|| {
+            // Successful allocation starts with an empty row, including
+            // when the requested capacity is zero.
+            let zero = b.ins().iconst(types::I64, 0);
+            let one = b.ins().iconst(types::I64, 1);
+            [zero, one, zero]
+        });
+        Ok(self.result(b, geometry))
     }
     pub(super) fn writable(
         &self,
@@ -264,7 +281,11 @@ impl Arrays {
         );
         let status = b.inst_results(call)[0];
         success(b, status, error);
-        let result = self.result(b);
+        // Both the reused and copied writable views retain this geometry.
+        let geometry = self
+            .forward_view_geometry
+            .then_some([view[1], view[3], view[4]]);
+        let result = self.result(b, geometry);
         b.ins().jump(
             done,
             &result.iter().copied().map(Into::into).collect::<Vec<_>>(),
