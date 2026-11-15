@@ -329,6 +329,7 @@ jobs:
           python3 scripts/run-native-plan-stage.py --stage cold-epilogues --timeout-secs 600 -- \
             cargo +nightly-2026-03-03 test --locked --offline \
             --manifest-path vendor/cranelift-codegen/Cargo.toml \
+            --target-dir target/cold-epilogues \
             --no-default-features --features std,unwind,arm64,experimental-cmp-reuse \
             --lib isa::aarch64::cold_epilogues_tests::
           python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/cold-epilogues.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("8", "0", "0")]'
