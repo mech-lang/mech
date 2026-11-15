@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-nine complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,076,558,214 bytes (1,076.6 MB).
+Forty complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,168,041,373 bytes (1,168.0 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-nine repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -45,6 +45,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Current compiler parallel comparison | Diagnostic: serial 16.183 s vs two workers 16.016 s (-1.03%, 0.167 s), both blocks faster; exact complete executable; default serial. Includes separate profiles and setup failure. | [mech-current-parallel-20261115.tar.gz](mech-current-parallel-20261115.tar.gz) | [Receipt](../../native-profile/current-parallel-apple-m3-20261115.archive.json) / [result](../../native-profile/current-parallel-apple-m3-20261115.json) | 361 |
 | Shared action-output inventory | Retained: complete build -2.13%, preparation -20.48%, instructions -2.03%; both blocks faster; exact complete executable; RSS +0.0042%. Includes seven focused tests and failed test-link setup. | [mech-action-output-inventory-20261115.tar.gz](mech-action-output-inventory-20261115.tar.gz) | [Receipt](../../native-profile/action-output-inventory-apple-m3-20261115.archive.json) / [result](../../native-profile/action-output-inventory-apple-m3-20261115.json) | 719 |
 | Once-queued reachability worklist | Retained: complete build -1.47%, cleanup -5.45%, compiler -1.39%, instructions -0.41%; both blocks faster; exact complete executable; RSS +0.0029%. Three graph tests and address/disassembly selection proof. | [mech-reachability-worklist-20261115.tar.gz](mech-reachability-worklist-20261115.tar.gz) | [Receipt](../../native-profile/reachability-worklist-apple-m3-20261115.archive.json) / [result](../../native-profile/reachability-worklist-apple-m3-20261115.json) | 729 |
+| Current-source CPU-native compiler and PGO | Retained build configuration: complete build -10.20%, compiler -9.93%, instructions -13.00%, parser -18.23%; both blocks faster; all seven held-out cases faster; exact complete executable. Includes raw/merged profiles, all adverse fields and serial-helper setup failure. | [mech-refreshed-native-pgo-20261115.tar.gz](mech-refreshed-native-pgo-20261115.tar.gz) | [Receipt](../../native-profile/refreshed-native-pgo-apple-m3-20261115.archive.json) / [result](../../native-profile/refreshed-native-pgo-apple-m3-20261115.json) | 1,603 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -221,3 +222,27 @@ keeps all commands/logs, sources/patch, tests, observations/outputs/executables,
 native inputs and raw/demangled/address/disassembly selection evidence. Its
 repository copy verifies and replays exactly. No language or emitted-program
 change, additional parallel gain or sub-ten-second result is claimed.
+
+The [current-source CPU-native PGO qualification](../../../../docs/design/native-refreshed-pgo-compile-profile.md) retains the combined
+compiler build configuration on source d26cf2c65e and the current larger program/
+runtime. Eight balanced complete builds improve **15.620738 to 14.027481 seconds
+(10.20%)**, with both blocks about 10.2% faster. The standard B72 control is reused;
+three new compiler builds preserve warnings-as-errors, explicit target and the
+compiler ThinLTO profile. Eight fixed training programs produce matching artifacts;
+matching LLVM merges eight raw profiles into a 100,519,368-byte profile. The
+profile-use compiler reports 18,617 functions without training data and no hash/
+control-flow mismatches. Every main/fixture/training/held-out artifact, complete
+metadata and full D6 executable matches. Fourteen fixture pairs and 56 balanced
+held-out compiles pass; all seven held-out cases improve process time in both
+blocks. The Object cohort lowers compiler time 9.93%, instructions 13.00% and
+parsing 18.23%; encoding increases 14.27% and native link 5.78%. All observations
+remain separate from earlier source/parallel/PGO cohorts. The extra default-serial
+gate first uses an incorrect helper path and fails before compilation; the
+corrected frozen configuration passes every artifact and executable byte check.
+The selected local PGO tool is root/use (5a1687); the Cargo-managed standard tool
+is preserved. The fortieth packet includes profiles, source configuration, all
+commands/logs, outputs/executables, native inputs and pure replay. Its repository
+copy verifies every manifest/file/Git blob and replays byte-identically. Gzip
+level 6 preserves the exact tar stream while reducing transport size. No compiler
+source or emitted-program change, component/additive gain or sub-ten-second
+result is claimed; the fixed runtime/adapter is cached during primary runs.
