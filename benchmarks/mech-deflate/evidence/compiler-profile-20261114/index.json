@@ -261,8 +261,18 @@
       "sha256": "44df6b20c41773afcb5eab3a4214ea1122969fc79e94c46804b1a9834b1877e0",
       "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
       "summary": "benchmarks/mech-deflate/native-profile/pgo-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-constant-phi-trials-20261114.tar.gz",
+      "bytes": 46625561,
+      "decision": "Rejected two constant-phi worklist layouts: first increases cleanup/instructions; compact revision lowers work slightly but complete executable build is slower with mixed blocks. Original solver restored; every program/executable byte matches.",
+      "files": 1129,
+      "receipt": "benchmarks/mech-deflate/native-profile/constant-phi-trials-apple-m3-20261114.archive.json",
+      "sha256": "60d1d520e79cc76589e88185574ea60a360ab90ece6c04900b2b08127a573a52",
+      "source_revision": "ab59d593f4dcc3e457d8c462b459f60eaf80851e",
+      "summary": "benchmarks/mech-deflate/native-profile/constant-phi-trials-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 551711902
+  "total_archive_bytes": 598337463
 }

@@ -919,3 +919,17 @@ merged profiles, all builds/training/timings, output bytes, source configuration
 native inputs, packaging failures and pure replay. This source predates the
 schema reuse and integrated workers; combined PGO performance is unqualified,
 and gains must not be added. Complete compilation below ten seconds remains open.
+
+The [constant-phi propagation trials](../../docs/design/native-constant-phi-compile-trials.md)
+reject two worklist layouts and restore the original solver. The first increases
+cleanup 0.47% and instructions 0.07%, with mixed compiler-time blocks. The compact
+revision reduces compiler phases 0.41%, cleanup 0.74% and instructions 0.17% in
+both source-to-Object blocks, but its separate complete-executable cohort averages
+0.46% slower with mixed blocks. All observations remain; no useful complete-build
+gain is claimed. Each layout passes four tests with 512 graph cases and 72
+complete IR pairs, 1,782 full-map oracle invocations, fourteen fixture pairs and
+exact executable link gates. Both use the same 61 flags and two workers, without
+PGO. The twenty-seventh [complete packet](evidence/compiler-profile-20261114/README.md)
+preserves both source snapshots/patches, harness failures, tests, raw timings,
+output/executable bytes, native inputs and pure replay. The ten-second goal
+remains open.
