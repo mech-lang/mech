@@ -868,6 +868,9 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     if !observe && std::env::var_os("MECH_COMPACT_EXPORTS_FIRST").is_some() {
         module.place_exports_first();
     }
+    if !observe && std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some() {
+        module.place_layout_regions_last();
+    }
     let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
     Ok((bytes, metadata))
 }

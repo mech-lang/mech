@@ -19,6 +19,9 @@ use cranelift_codegen::{
 use cranelift_module::{FuncId, Linkage, Module, ModuleError, ModuleReloc, ModuleRelocTarget};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "checked_region_body.rs"]
+mod region_body;
+
 #[derive(Clone, Copy)]
 pub(super) struct Candidate {
     pub resume: Option<Block>,
@@ -851,6 +854,8 @@ fn share_families<M: Module>(
         })
         .transpose()?
         .unwrap_or_default();
+    let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
+    let layout_regions_last = std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some();
     let mut groups: Vec<Prepared> = Vec::new();
     let mut proven = BTreeSet::new();
     let cfg = ControlFlowGraph::with_function(root);
@@ -883,11 +888,28 @@ fn share_families<M: Module>(
         }
         let kind = if refusal_regions {
             "traversal"
+        } else if layout_regions_last && candidate.origin_base.is_some() {
+            "layout"
         } else {
             "controller"
         };
         let signature = traversal.signature(root);
-        let mut context = Context::for_function(traversal.body(root, &signature));
+        let body = if compact_layout_bodies
+            && candidate.origin_base.is_some()
+            && let Some(dominance) = dominance.as_ref()
+            && let Some((seed, mut local)) = region_body::prepare(root, &traversal, dominance)
+        {
+            let body = local.body(&seed, &signature);
+            traversal.live_captures = local.live_captures;
+            eprintln!(
+                "compact checked controller {} prepared local IR",
+                candidate.header
+            );
+            body
+        } else {
+            traversal.body(root, &signature)
+        };
+        let mut context = Context::for_function(body);
         if traversal.packed_inputs {
             eprintln!(
                 "compact checked {kind} {} packet: {} captures, {} results",
