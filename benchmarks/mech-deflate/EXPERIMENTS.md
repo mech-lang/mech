@@ -978,3 +978,19 @@ then passes two complete cached relink gates. The thirtieth
 raw observations, commands/logs, source/runtime/worker snapshots, output/native
 bytes and pure replay. Earlier smaller-program and PGO cohorts remain separate.
 No new runtime campaign or sub-ten-second result is claimed.
+
+The [scoped source-facts result](../../docs/design/native-scoped-source-facts-compile-profile.md)
+retains `972039beaa`, removing whole-map copying for each candidate edge while
+restoring its one branch fact on every exit. Eight complete builds improve
+**19.161 to 18.646 seconds (2.68%)**, with both blocks faster and every executable
+identical. A separate eight-run Object cohort improves compiler phases 2.45%,
+cleanup 13.21% and instructions 3.26%; RSS/footprint rise about 0.06% and some
+other stages regress. Five focused tests cover 112 complete IR/machine pairs,
+1,760 route queries and exact source-map restoration; fourteen fixture pairs,
+default-serial outputs and full executable gates pass. Two subsequent stack
+samples are separate diagnostics. The thirty-first
+[complete packet](evidence/compiler-profile-20261114/README.md) includes all
+source/proof, predecessor builds and harness failures, raw measurements, output/
+native bytes, samples and replay. Both subjects use the same 61 flags and two
+workers on the updated Deflate/runtime; PGO/earlier cohorts stay separate. The
+ten-second goal remains open.

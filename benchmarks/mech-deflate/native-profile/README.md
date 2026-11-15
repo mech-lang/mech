@@ -324,3 +324,16 @@ from `1090`; default remains serial. Every observation, source/runtime/worker
 snapshot, output/native byte and replay is in the thirtieth
 [complete packet](../evidence/compiler-profile-20261114/README.md). Earlier
 smaller-workload and PGO timings stay separate; the ten-second goal remains open.
+
+The [scoped source-facts qualification](../../../docs/design/native-scoped-source-facts-compile-profile.md)
+retains `972039beaa`: complete builds improve 19.161 to 18.646 seconds (2.68%),
+with both blocks faster and every program/executable byte identical. Eight
+separate Object runs reduce cleanup 13.21%, instructions 3.26% and compiler
+phases 2.45%, with slight RSS/footprint and other-stage regressions retained.
+Five tests compare 112 complete IR/machine pairs and 1,760 route queries with
+full map restoration. Fourteen fixture pairs, default-serial outputs and full
+native gates pass. Two later stack samples are diagnostic. The thirty-first
+[complete packet](../evidence/compiler-profile-20261114/README.md) contains all
+source/patches, proofs/failures, measurements/outputs, native inputs and replay.
+This removes per-edge source-map clones, keeps all proofs fresh, and changes no
+grammar/language. Complete compilation below ten seconds remains open.
