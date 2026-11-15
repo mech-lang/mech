@@ -1218,3 +1218,9 @@ and native inputs. Fresh extraction verifies and replays byte-identically.
 Default0 remains serial; two workers are opt-in. The new source is not combined-
 PGO qualified; the separate 14.027481-second d26 PGO configuration remains best.
 The sub-ten-second goal stays open; no percentages or cohorts are pooled.
+
+## Fresh PGO for expanded workers: Deflate-trained
+
+The fresh [PGO qualification](../../docs/design/native-parallel-pgo-compile-profile.md) on source `0c949505cc` measures complete source-to-executable builds **15.241434 to 13.596783 seconds (10.79% faster)**. A separate same-PGO-binary serial/two-worker comparison measures **13.959954 to 13.557414 seconds (2.88% faster)**. Both preserve every executable byte; the experiments remain separate.
+
+Deflate is included in training. All seven disjoint small heldouts improve, which does not establish broad gains on unrelated substantial programs. The standard compiler remains separately reported. The forty-fifth packet includes raw/merged profiles, every adverse field, all outputs and 20 authoritative executables, the interrupted/excluded wrapper attempt and the corrected stage audit. Fresh repository extraction verifies and replays exactly. No source/language/runtime changes or sub-ten claim.

@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Forty-four complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,339,519,056 bytes (1,339.5 MB).
+Forty-five complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,404,964,141 bytes (1,405.0 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-four repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-five repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -50,6 +50,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Stable batch constant-phi parameter removal | Rejected: complete build +0.19% with mixed blocks despite Object compiler -0.66%, cleanup -2.58%, instructions -0.82%. Exact outputs/executables; source/tool restored. Includes 2,047 masks, 20 wide cases and 128 full IR/machine pairs. | [mech-batch-phi-params-20261115.tar.gz](mech-batch-phi-params-20261115.tar.gz) | [Receipt](../../native-profile/batch-phi-params-apple-m3-20261115.archive.json) / [result](../../native-profile/batch-phi-params-apple-m3-20261115.json) | 750 |
 | Imported-cleanup analysis owner | Rejected: complete build -0.04% with mixed blocks, compiler component +0.05%; Object compiler -0.35%, cleanup -1.01%, instructions -0.38%. Exact outputs/executables; source/tool restored. Includes fresh-analysis ordering/layout/alias tests and audited pass sources. | [mech-imported-analysis-owner-20261115.tar.gz](mech-imported-analysis-owner-20261115.tar.gz) | [Receipt](../../native-profile/imported-analysis-owner-apple-m3-20261115.archive.json) / [result](../../native-profile/imported-analysis-owner-apple-m3-20261115.json) | 702 |
 | Expanded general-phase cleanup workers | Retained: old2/new2 full build -1.74%, helper generation -12.68%; separate same-binary serial/2-worker full build -2.16%, both blocks faster. Diagnostic 344 jobs/48 cleanup; exact outputs/20 executables, 36 Object comparisons; instructions +0.0352%. Default serial, opt-in2; PGO separate. | [mech-parallel-phase-cleanup-20261115.tar.gz](mech-parallel-phase-cleanup-20261115.tar.gz) | [Receipt](../../native-profile/parallel-phase-cleanup-apple-m3-20261115.archive.json) / [result](../../native-profile/parallel-phase-cleanup-apple-m3-20261115.json) | 865 |
+| Fresh PGO for expanded workers (Deflate-trained) | Complete build 13.597s; matched standard improvement 10.79%; separate PGO serial/two-worker gain 2.88%. Seven small heldouts improve; no broad generalization claim. All outputs/20 authoritative executables exact; interrupted wrapper attempt retained/excluded. | [mech-parallel-native-pgo-20261115.tar.gz](mech-parallel-native-pgo-20261115.tar.gz) | [Receipt](../../native-profile/parallel-native-pgo-apple-m3-20261115.archive.json) / [result](../../native-profile/parallel-native-pgo-apple-m3-20261115.json) | 2,083 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -326,3 +327,9 @@ and native inputs. Fresh extraction verifies and replays byte-identically.
 Default0 remains serial; two workers are opt-in. The new source is not combined-
 PGO qualified; the separate 14.027481-second d26 PGO configuration remains best.
 The sub-ten-second goal stays open; no percentages or cohorts are pooled.
+
+## Fresh PGO for expanded workers: Deflate-trained
+
+The fresh [PGO qualification](../../../../docs/design/native-parallel-pgo-compile-profile.md) on source `0c949505cc` measures complete source-to-executable builds **15.241434 to 13.596783 seconds (10.79% faster)**. A separate same-PGO-binary serial/two-worker comparison measures **13.959954 to 13.557414 seconds (2.88% faster)**. Both preserve every executable byte; the experiments remain separate.
+
+Deflate is included in training. All seven disjoint small heldouts improve, which does not establish broad gains on unrelated substantial programs. The standard compiler remains separately reported. The forty-fifth packet includes raw/merged profiles, every adverse field, all outputs and 20 authoritative executables, the interrupted/excluded wrapper attempt and the corrected stage audit. Fresh repository extraction verifies and replays exactly. No source/language/runtime changes or sub-ten claim.

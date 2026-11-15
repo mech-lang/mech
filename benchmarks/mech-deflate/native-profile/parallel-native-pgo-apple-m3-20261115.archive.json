@@ -1,0 +1,31 @@
+{
+  "archive_name": "mech-parallel-native-pgo-20261115.tar.gz",
+  "bytes": 65445085,
+  "compression": {
+    "codec": "gzip",
+    "intermediate_bytes": 83475147,
+    "intermediate_sha256": "976748b222fb40e13f07c0882aaa09524ee3cb0043a43545761180edee43ac1d",
+    "level": 9,
+    "method": "Recompress exact tar stream from maintained pack tool; manifest/Git blobs/file bytes unchanged.",
+    "mtime": 0
+  },
+  "evidence_files": 2083,
+  "files": 2083,
+  "format": 1,
+  "manifest_sha256": "a26fcd37cc07a4829bebc6c224eaa13336089e7a8fd0ba0fa40e1fc84fb89613",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "ad6249b1de6d0954f87e32c6e747753e7d4081e1d9f45a53015ebc006deed590",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parallel-native-pgo-20261115.tar.gz",
+  "sha256": "f0629e08cfa50ef996709505da515fd8d6357415020c2e8e1c62fa116cb5c2a2",
+  "source_revision": "0c949505cc708c233e27c094aa67e105068d6823",
+  "uncompressed_bytes": 465530613,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "f0629e08cfa50ef996709505da515fd8d6357415020c2e8e1c62fa116cb5c2a2",
+    "source_revision": "0c949505cc708c233e27c094aa67e105068d6823",
+    "verified_bytes": 465530613,
+    "verified_files": 2083
+  }
+}
