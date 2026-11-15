@@ -401,8 +401,18 @@
       "sha256": "6eafdfff9b3ddc8eebf7ade8ef5f0e1d5e7b15b840a75d6154cd8708e5def28c",
       "source_revision": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
       "summary": "benchmarks/mech-deflate/native-profile/refreshed-native-pgo-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-dense-hole-lookups-20261115.tar.gz",
+      "bytes": 44312703,
+      "decision": "Retained small SSA work reduction: complete build15.500449->15.421547s(-0.51%), both blocks faster; source CFG-4.31%, instructions-0.47%. Object compiler-0.30% with mixed blocks; cleanup+1.11%, link+8.20%. All raw/compacted IR, artifacts/full metadata/full executable exact. Standard B72 versus dd7, same61 flags/two workers; new source is not combined-PGO qualified. Includes29 units,304 paired IR/machine cases and separate current5a1 stack diagnostics.",
+      "files": 781,
+      "receipt": "benchmarks/mech-deflate/native-profile/dense-hole-lookups-apple-m3-20261115.archive.json",
+      "sha256": "4b9a0b3cedf4591cba65489ed499bc18200a5c8e64b1c11f0051bcb88f94410d",
+      "source_revision": "931b63c878622ea397aac3b0b5da9755bce8f3ff",
+      "summary": "benchmarks/mech-deflate/native-profile/dense-hole-lookups-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1168041373
+  "total_archive_bytes": 1212354076
 }

@@ -1142,3 +1142,21 @@ copy verifies every manifest/file/Git blob and replays byte-identically. Gzip
 level 6 preserves the exact tar stream while reducing transport size. No compiler
 source or emitted-program change, component/additive gain or sub-ten-second
 result is claimed; the fixed runtime/adapter is cached during primary runs.
+
+The [dense-prefix SSA lookup qualification](../../docs/design/native-dense-hole-lookups-compile-profile.md) retains source
+931b63c878, whose entire one-file commit equals the frozen measured patch.
+Eight complete builds improve **15.500449 to 15.421547 seconds (0.51%)**,
+with both blocks faster and every executable byte identical. The standard
+B72/dd7 compiler comparison uses the same 61 flags and two workers. Source
+CFG construction improves 4.31% and instructions 0.47%; Object compiler time
+improves 0.30% with mixed blocks, cleanup increases 1.11% and final linking
+8.20%. All observations remain. Dense-prefix holes now prove absence without
+a sparse-tail probe; storage, sealing, value allocation and proof paths are
+unchanged. All 29 production-module units, 304 paired raw/compacted IR and
+machine-code cases, 14 fixture pairs, native CLI check and default-serial byte
+gate pass. Two separate current-PGO stack diagnostics, address/disassembly,
+symbol bridge, all commands/logs, source/patch/whole-commit proof, outputs and
+native inputs are in the forty-first packet. Fresh extraction verifies and
+replays byte-identically. The new source is not combined-PGO qualified; the
+separate 14.027481-second d26 result remains the best qualified configuration.
+No grammar or emitted-program change or sub-ten-second result is claimed.
