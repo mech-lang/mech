@@ -32,6 +32,9 @@ def main():
     sampling = args.sampling == "sample"
     sampling_error = None
 
+    finished = threading.Event()
+    completion = []
+
     with (out / "stdout.jsonl").open("w") as stdout:
         process = subprocess.Popen(
             ["/usr/bin/time", "-lp", args.binary, args.source, str(out), args.mode],
@@ -68,9 +71,16 @@ def main():
                     ):
                         print(json.dumps(row), flush=True)
 
+        def wait_for_completion():
+            status = process.wait()
+            completion.append((status, time.monotonic()))
+            finished.set()
+
         reader = threading.Thread(target=read_stages)
         reader.start()
-        while process.poll() is None:
+        waiter = threading.Thread(target=wait_for_completion)
+        waiter.start()
+        while not finished.is_set():
             if sampling and compiler_pid:
                 samples += 1
                 path = out / f"sample-{samples:03d}.txt"
@@ -104,13 +114,15 @@ def main():
                     flush=True,
                 )
             else:
-                time.sleep(0.2)
+                finished.wait(0.2)
+        waiter.join()
+        status, completed = completion[0]
         reader.join()
-        status = process.wait()
 
     receipt = {
         "exit_code": status,
-        "elapsed_seconds": time.monotonic() - started,
+        "elapsed_seconds": completed - started,
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
         "samples": samples,
         "sampling_error": sampling_error,
         "binary": args.binary,
