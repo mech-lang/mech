@@ -1260,6 +1260,17 @@ pub(super) fn define_entry<M: Module>(
             context.verify(module.isa()).map_err(backend)?;
         }
     }
+    if outline_allowed && let Some(mode) = std::env::var_os("MECH_COMPACT_FOLD_UNIT_BRANCHES") {
+        let apply = mode != std::ffi::OsStr::new("trace");
+        let proved = vector_guard_facts::fold_unit_branches(&mut context, apply);
+        eprintln!("compact unit branches proved: {proved}");
+        if apply && proved != 0 {
+            context
+                .eliminate_unreachable_code(module.isa())
+                .map_err(backend)?;
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
     let checked_traversals = if outline_traversals {
         let all = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("all"));
         let shared = checked_traversals::share(module, &mut context.func, traversals, all)?;
