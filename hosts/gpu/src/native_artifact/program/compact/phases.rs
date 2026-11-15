@@ -156,6 +156,9 @@ pub(super) struct Phase {
     relative_error_origins: bool,
 }
 impl Phase {
+    pub fn checked_traversal_key(&self) -> Option<FuncId> {
+        self.relative_error_origins.then_some(self.function)
+    }
     pub fn summary(&self, owners: &OwnerFlow) -> serde_json::Value {
         let mut summary = self.summary.clone();
         if std::env::var_os("MECH_PHASE_OWNER_TRANSFER").is_some()
