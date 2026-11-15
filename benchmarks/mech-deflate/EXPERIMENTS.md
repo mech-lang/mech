@@ -835,3 +835,14 @@ The twentieth [complete repository packet](evidence/compiler-profile-20261114/RE
 contains all timing observations, 790 exact graph inputs/expected sets, independent
 oracle, 12,640 kernel observations, 16 passing tests, fourteen fixture pairs and
 the failed short-link attempt. Historical 60-flag cohorts remain separate.
+
+The [batched SSA sealing trial](../../docs/design/native-ssa-batch-seal-trial.md)
+is rejected after eight serial matched 61-flag compiles: source CFG construction
++1.59%, compiler phases +0.39%, instructions +0.006%, compiler RSS +0.94%.
+Both balanced compiler-time blocks are slower. All source/MBC/Object/metadata
+bytes match; fifteen tests, 88 paired complete IR cases and fourteen fixture
+pairs pass. Production source is restored to the retained point-liveness
+compiler. The twenty-first [complete packet](evidence/compiler-profile-20261114/README.md)
+contains all measurements, tested source/patch and replay. Its separate
+275.189-second compiler rebuild used two Cargo jobs; four are selected for later
+rebuilds, with no measured four-job build speedup claimed.

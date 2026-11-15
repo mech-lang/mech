@@ -26,6 +26,22 @@ offline experiment, also select its toolchain and pass `--offline`. Record the
 Cargo JSON output to identify the actual linked libraries; do not select an
 arbitrary similarly named file from the target directory.
 
+For subsequent optimized compiler rebuilds on the eight-core, 16 GB Apple M3
+profiling host, use four Cargo jobs and the existing optimized profile:
+
+```sh
+CARGO_TARGET_DIR=/tmp/mech-native-profile-target CARGO_INCREMENTAL=0 \
+  cargo build --locked --offline --profile compiler -j4 \
+  --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml \
+  --bin compile_profile --message-format=json
+```
+
+Cargo jobs schedule independent crates. The latest warm-cache rebuild took
+275.189 seconds with two jobs; its three rebuilt crates form a dependency chain.
+No four-job speedup has been measured. Thin LTO and one codegen unit remain in
+the profile. Rust compiler rebuilding and Mech program compilation have separate
+timings; increasing Cargo jobs does not parallelize Mech's compiler process.
+
 `native_frame_transport` uses the existing example source without a copy.
 `artifact_review SOURCE ARTIFACT` compiles the full compressor source through
 the ordinary catalog, requires byte-for-byte agreement with the pinned artifact,
@@ -200,3 +216,11 @@ Objects and complete metadata match; compiler RSS increases 1.93%. Sixteen tests
 raw measurement, kernel budget, output and capture correction is in the twentieth
 [complete packet](../evidence/compiler-profile-20261114/README.md). The ten-second
 goal remains open.
+
+The [batched SSA sealing trial](../../../docs/design/native-ssa-batch-seal-trial.md)
+is rejected: source CFG construction increases 1.59%, compiler phases 0.39%,
+and instructions are effectively unchanged across eight matched 61-flag compiles.
+Both compiler-time blocks are slower. All output bytes match; fifteen focused
+tests, 88 paired complete IR cases and fourteen fixture pairs pass. Production
+source is restored. All measurements and the four-job rebuild selection are in
+the twenty-first [complete packet](../evidence/compiler-profile-20261114/README.md).
