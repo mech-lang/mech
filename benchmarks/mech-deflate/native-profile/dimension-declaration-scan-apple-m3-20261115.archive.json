@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-dimension-declaration-scan-20261115.tar.gz",
+  "bytes": 38234872,
+  "evidence_files": 794,
+  "files": 794,
+  "format": 1,
+  "manifest_sha256": "7d14352148996b906c7b14db4a2287ec6d80dc8858e205c95d30a1216d92bfa2",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "e59275e9c6f1f58f773ed320508a1c5d12b21196f1c8032ac4de0c17a3fa19ef",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-dimension-declaration-scan-20261115.tar.gz",
+  "sha256": "3d867da6b702721a2a81bfc6ad76821dd0d3c7b8ab8414b805db1c40a3a22f05",
+  "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+  "uncompressed_bytes": 223020762,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "3d867da6b702721a2a81bfc6ad76821dd0d3c7b8ab8414b805db1c40a3a22f05",
+    "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+    "verified_bytes": 223020762,
+    "verified_files": 794
+  }
+}

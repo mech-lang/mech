@@ -471,8 +471,18 @@
       "sha256": "8b4d4b647c1c557110033e3277b4185dd332198ec34a71c2224a968ccf49827c",
       "source_revision": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
       "summary": "benchmarks/mech-deflate/native-profile/parser-event-cursor-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-dimension-declaration-scan-20261115.tar.gz",
+      "bytes": 38234872,
+      "decision": "Retained fresh fused declaration scan: complete build15.120963->14.971381s(-0.99%), both blocks faster. Frontend1.611125->1.422237s(-11.72%), Object compiler-1.28%, instructions-0.2344%; both compiler/frontend/instruction blocks improve. Source CFG+2.12%,RSS+0.1367%,footprint+0.1376%, artifact/encoding/link adverse fields retained. All outputs/full metadata/whole executable,14fixtures/default0/344jobs-48cleanup gates pass.303actual core tests,no_std,24576new competing-error comparisons andbyte-identical original oracle. No cache, inventory pruning, first-error/grammar/runtime change. Entire source commit matches frozen patch. New source not PGO-qualified; prior13.596783s Deflate-trained PGO remains separate; no subten claim.",
+      "files": 794,
+      "receipt": "benchmarks/mech-deflate/native-profile/dimension-declaration-scan-apple-m3-20261115.archive.json",
+      "sha256": "3d867da6b702721a2a81bfc6ad76821dd0d3c7b8ab8414b805db1c40a3a22f05",
+      "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+      "summary": "benchmarks/mech-deflate/native-profile/dimension-declaration-scan-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1498745162
+  "total_archive_bytes": 1536980034
 }

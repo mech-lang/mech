@@ -1,0 +1,1014 @@
+{
+  "algorithm_audit": {
+    "all_existing_tests_identical_except_helper_result_projection": true,
+    "all_other_production_tokens_identical": true,
+    "constant_bound_selection_mapping_and_root_order_identical": true,
+    "full_original_id_check_order_identical": true,
+    "mixed_bounds_normalization_rootless_and_dependency_paths_identical": true,
+    "new_competing_error_cases": 24576,
+    "original_reference_oracle_byte_identical": true,
+    "scope": "One fresh full declaration scan collects ID validity and pure constant/lifetime facts. Only constant-only lifetime refusal moves to the entry; mixed bounds retain original error order. No cached admission or pruned inventory.",
+    "source_patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423"
+  },
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.008249333477579,
+      "control": 15.12341783347074,
+      "mean_reduction_fraction": 0.007615242881028661
+    },
+    {
+      "candidate": 14.934513416490518,
+      "control": 15.118507603998296,
+      "mean_reduction_fraction": 0.01217012897880998
+    }
+  ],
+  "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+      "binary": "/private/tmp/mech-dimension-declaration-scan-20261115/candidate",
+      "binary_sha256": "3c09f358909db5ab07d09a9ee78a16d3de83f58d9f181f750985e7f3a88653f3",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+      "seconds": 439.63217066717334
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+      "seconds": 25.707694625016302
+    },
+    "candidate-cli-check": {
+      "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+      "seconds": 47.619869832880795
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66983520,
+      "path": "/private/tmp/mech-dimension-declaration-scan-20261115/candidate",
+      "sha256": "3c09f358909db5ab07d09a9ee78a16d3de83f58d9f181f750985e7f3a88653f3"
+    },
+    "control": {
+      "bytes": 66983520,
+      "path": "/private/tmp/mech-dimension-declaration-scan-20261115/control",
+      "sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae"
+    },
+    "core-test-products/contracts-0": {
+      "bytes": 923824,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/canonical_schema_vectors-e51ac2539b5ba290",
+      "sha256": "4b38563ac8635ded9e4d8859f11809240d847beeeef2768b2825fdcc19ef8b3b"
+    },
+    "core-test-products/contracts-1": {
+      "bytes": 923824,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/canonical_type_contract-fbf3b6bfb350981a",
+      "sha256": "88a5e87fd69e4c120d3ea15eb00a6f1251f5c56dc8892b206b18d3a94444153a"
+    },
+    "core-test-products/contracts-2": {
+      "bytes": 1096224,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/dimension_contract-99a475a76338e5b5",
+      "sha256": "bba5520dc189d922bb91e1e377ce346fd553753d78ca26d7848f6eb51fc7290d"
+    },
+    "core-test-products/contracts-3": {
+      "bytes": 1052112,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/kind_scheme_contract-d0dfc4d314dae91e",
+      "sha256": "8ba6591ea922fcd1905a7f97b4736edb5394a25744ec5b93e354a26435aaa207"
+    },
+    "core-test-products/contracts-4": {
+      "bytes": 1209760,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/schema_contract-7667330a97243fe7",
+      "sha256": "14d02f825250635cf80ac2da0bd886a41cac39c06c89f3ba531aa53a2a67002e"
+    },
+    "core-test-products/contracts-5": {
+      "bytes": 1166128,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/schema_dimension_relations-08db67f59e8f5ace",
+      "sha256": "8f86c604b8629c55d13b2c2412e6273a784aa7425b6d287efb5307dc78bb0934"
+    },
+    "core-test-products/contracts-6": {
+      "bytes": 1623168,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_builtin-ece4e2a741f2920a",
+      "sha256": "e501dc1677f9fd5eff44aeafc71651550e08bb8d1a7212c1ee66fad7821e24a5"
+    },
+    "core-test-products/contracts-7": {
+      "bytes": 1996128,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_contract-7b61e92d29c11aec",
+      "sha256": "34eca5584e943a63c89fe85943601dff3a1ca716f47245d50f76825a40a04926"
+    },
+    "core-test-products/contracts-8": {
+      "bytes": 1878480,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_conversion-00989b1a81cf85d5",
+      "sha256": "6341ead01fae5a4aa56c3adf0b912f2eb45f8957c87031252631d8df82edbf07"
+    },
+    "core-test-products/contracts-9": {
+      "bytes": 1733280,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_solver-744eac0eeb6617ce",
+      "sha256": "95e63714ff164ded61e3ba079cb96c864342a20d67bbee689c1b51336183c937"
+    },
+    "core-test-products/serde-vectors-0": {
+      "bytes": 1192832,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/canonical_schema_vectors-8e3ce3ec7a47b4e9",
+      "sha256": "d9f2c5dbe1dc91a37e50d65d5ac8bd9b420f0547bd29d9597dcd7765880969dc"
+    },
+    "core-test-products/unit-0": {
+      "bytes": 4098672,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/mech_core-706b0f3e64ef1a8a",
+      "sha256": "ef88c59775860709d5e46916fa4ea421f9005f903e8ceb4a14a826c5205cb1d6"
+    }
+  },
+  "core_test_products": {
+    "contracts-0": {
+      "bytes": 923824,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/canonical_schema_vectors-e51ac2539b5ba290",
+      "sha256": "4b38563ac8635ded9e4d8859f11809240d847beeeef2768b2825fdcc19ef8b3b"
+    },
+    "contracts-1": {
+      "bytes": 923824,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/canonical_type_contract-fbf3b6bfb350981a",
+      "sha256": "88a5e87fd69e4c120d3ea15eb00a6f1251f5c56dc8892b206b18d3a94444153a"
+    },
+    "contracts-2": {
+      "bytes": 1096224,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/dimension_contract-99a475a76338e5b5",
+      "sha256": "bba5520dc189d922bb91e1e377ce346fd553753d78ca26d7848f6eb51fc7290d"
+    },
+    "contracts-3": {
+      "bytes": 1052112,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/kind_scheme_contract-d0dfc4d314dae91e",
+      "sha256": "8ba6591ea922fcd1905a7f97b4736edb5394a25744ec5b93e354a26435aaa207"
+    },
+    "contracts-4": {
+      "bytes": 1209760,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/schema_contract-7667330a97243fe7",
+      "sha256": "14d02f825250635cf80ac2da0bd886a41cac39c06c89f3ba531aa53a2a67002e"
+    },
+    "contracts-5": {
+      "bytes": 1166128,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/schema_dimension_relations-08db67f59e8f5ace",
+      "sha256": "8f86c604b8629c55d13b2c2412e6273a784aa7425b6d287efb5307dc78bb0934"
+    },
+    "contracts-6": {
+      "bytes": 1623168,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_builtin-ece4e2a741f2920a",
+      "sha256": "e501dc1677f9fd5eff44aeafc71651550e08bb8d1a7212c1ee66fad7821e24a5"
+    },
+    "contracts-7": {
+      "bytes": 1996128,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_contract-7b61e92d29c11aec",
+      "sha256": "34eca5584e943a63c89fe85943601dff3a1ca716f47245d50f76825a40a04926"
+    },
+    "contracts-8": {
+      "bytes": 1878480,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_conversion-00989b1a81cf85d5",
+      "sha256": "6341ead01fae5a4aa56c3adf0b912f2eb45f8957c87031252631d8df82edbf07"
+    },
+    "contracts-9": {
+      "bytes": 1733280,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/type_system_solver-744eac0eeb6617ce",
+      "sha256": "95e63714ff164ded61e3ba079cb96c864342a20d67bbee689c1b51336183c937"
+    },
+    "serde-vectors-0": {
+      "bytes": 1192832,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/canonical_schema_vectors-8e3ce3ec7a47b4e9",
+      "sha256": "d9f2c5dbe1dc91a37e50d65d5ac8bd9b420f0547bd29d9597dcd7765880969dc"
+    },
+    "unit-0": {
+      "bytes": 4098672,
+      "path": "/private/tmp/mech-level12-core-test-target/release/deps/mech_core-706b0f3e64ef1a8a",
+      "sha256": "ef88c59775860709d5e46916fa4ea421f9005f903e8ceb4a14a826c5205cb1d6"
+    }
+  },
+  "core_tests": [
+    {
+      "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j2",
+        "--manifest-path",
+        "src/core/Cargo.toml",
+        "--no-default-features",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "passed": 191,
+      "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+      "seconds": 15.673837708076462,
+      "stage": "unit",
+      "started_utc": "2026-11-15T20:18:04.545804+00:00",
+      "state": "complete",
+      "suites": 1
+    },
+    {
+      "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j2",
+        "--manifest-path",
+        "src/core/Cargo.toml",
+        "--no-default-features",
+        "--test",
+        "type_system_builtin",
+        "--test",
+        "type_system_contract",
+        "--test",
+        "type_system_conversion",
+        "--test",
+        "type_system_solver",
+        "--test",
+        "schema_contract",
+        "--test",
+        "dimension_contract",
+        "--test",
+        "schema_dimension_relations",
+        "--test",
+        "canonical_schema_vectors",
+        "--test",
+        "kind_scheme_contract",
+        "--test",
+        "canonical_type_contract"
+      ],
+      "exit_code": 0,
+      "passed": 110,
+      "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+      "seconds": 20.578574874904007,
+      "stage": "contracts",
+      "started_utc": "2026-11-15T20:18:20.277838+00:00",
+      "state": "complete",
+      "suites": 10
+    },
+    {
+      "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j2",
+        "--manifest-path",
+        "src/core/Cargo.toml",
+        "--no-default-features",
+        "--features",
+        "serde",
+        "--test",
+        "canonical_schema_vectors"
+      ],
+      "exit_code": 0,
+      "passed": 2,
+      "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+      "seconds": 17.46911850012839,
+      "stage": "serde-vectors",
+      "started_utc": "2026-11-15T20:18:40.944639+00:00",
+      "state": "complete",
+      "suites": 1
+    },
+    {
+      "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--release",
+        "-j1",
+        "--manifest-path",
+        "src/core/Cargo.toml",
+        "--no-default-features",
+        "--features",
+        "no_std",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+      "seconds": 2.1717988329473883,
+      "stage": "no-std",
+      "started_utc": "2026-11-15T20:18:58.491539+00:00",
+      "state": "complete"
+    }
+  ],
+  "decision": {
+    "best_qualified_pgo_seconds": 13.596783062268514,
+    "best_qualified_pgo_source": "0c949505cc708c233e27c094aa67e105068d6823",
+    "candidate_complete_seconds": 14.971381374984048,
+    "control_complete_seconds": 15.120962718734518,
+    "decision": "retain",
+    "description": "Retained fresh fused declaration scan: complete build15.120963->14.971381s(-0.99%), both blocks faster. Frontend1.611125->1.422237s(-11.72%), Object compiler-1.28%, instructions-0.2344%; both compiler/frontend/instruction blocks improve. Source CFG+2.12%,RSS+0.1367%,footprint+0.1376%, artifact/encoding/link adverse fields retained. All outputs/full metadata/whole executable,14fixtures/default0/344jobs-48cleanup gates pass.303actual core tests,no_std,24576new competing-error comparisons andbyte-identical original oracle. No cache, inventory pruning, first-error/grammar/runtime change. Entire source commit matches frozen patch. New source not PGO-qualified; prior13.596783s Deflate-trained PGO remains separate; no subten claim.",
+    "goal_sub10_achieved": false,
+    "native_adverse_fields": {
+      "native_link_seconds": {
+        "candidate": [
+          0.13213629205711186,
+          0.12880587484687567,
+          0.13559241592884064,
+          0.13030737498775125
+        ],
+        "control": [
+          0.1329414581414312,
+          0.13055433402769268,
+          0.13452600012533367,
+          0.12757995794527233
+        ],
+        "mean_reduction_fraction": -0.0023595956069093482
+      },
+      "object_handoff_seconds": {
+        "candidate": [
+          0.0009777501691132784,
+          0.0009439161513000727,
+          0.0009732500184327364,
+          0.0009817092213779688
+        ],
+        "control": [
+          0.0009618750773370266,
+          0.0009261658415198326,
+          0.0009498340077698231,
+          0.0009487499482929707
+        ],
+        "mean_reduction_fraction": -0.02376804892940787
+      }
+    },
+    "native_blocks": [
+      {
+        "candidate": 15.008249333477579,
+        "control": 15.12341783347074,
+        "mean_reduction_fraction": 0.007615242881028661
+      },
+      {
+        "candidate": 14.934513416490518,
+        "control": 15.118507603998296,
+        "mean_reduction_fraction": 0.01217012897880998
+      }
+    ],
+    "native_reduction": 0.009892316152935288,
+    "new_source_pgo_qualified": false,
+    "object_adverse_fields": {
+      "artifact_seconds": {
+        "candidate": [
+          0.023167584,
+          0.023258167,
+          0.023225875,
+          0.023149875
+        ],
+        "control": [
+          0.02295,
+          0.023261583,
+          0.023136291,
+          0.023043959
+        ],
+        "mean_reduction_fraction": -0.004434028276070645
+      },
+      "encode_seconds": {
+        "candidate": [
+          0.009091625,
+          0.009107167,
+          0.009087916,
+          0.009269709
+        ],
+        "control": [
+          0.009160833,
+          0.009110291,
+          0.00912525,
+          0.009113209
+        ],
+        "mean_reduction_fraction": -0.0012827864947129175
+      },
+      "max_rss_bytes": {
+        "candidate": [
+          4493656064,
+          4495491072,
+          4495491072,
+          4495491072
+        ],
+        "control": [
+          4490002432,
+          4487790592,
+          4490002432,
+          4487790592
+        ],
+        "mean_reduction_fraction": -0.0013668855995225826
+      },
+      "peak_footprint_bytes": {
+        "candidate": [
+          4470902480,
+          4472737488,
+          4472737488,
+          4472721080
+        ],
+        "control": [
+          4467232440,
+          4465020600,
+          4467248848,
+          4465020600
+        ],
+        "mean_reduction_fraction": -0.0013756901712043135
+      },
+      "source_cfg_seconds": {
+        "candidate": [
+          2.3056477080099285,
+          2.227859125006944,
+          2.2999364158604294,
+          2.227223791880533
+        ],
+        "control": [
+          2.220613499870524,
+          2.215330250095576,
+          2.2212420001160353,
+          2.2150796251371503
+        ],
+        "mean_reduction_fraction": -0.021234899720737
+      }
+    },
+    "retained_source_commit": "ef5e255e817eb5bbc6df61b094a3741b31c49da2"
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "jobs_diagnostic": {
+    "all_outputs_and_complete_executable_identical": true,
+    "excluded_from_primary": true,
+    "rows": [
+      {
+        "cleanup": 48,
+        "submitted": 344,
+        "workers": 2
+      }
+    ]
+  },
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.13213629205711186,
+        0.12880587484687567,
+        0.13559241592884064,
+        0.13030737498775125
+      ],
+      "control": [
+        0.1329414581414312,
+        0.13055433402769268,
+        0.13452600012533367,
+        0.12757995794527233
+      ],
+      "mean_reduction_fraction": -0.0023595956069093482
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0009777501691132784,
+        0.0009439161513000727,
+        0.0009732500184327364,
+        0.0009817092213779688
+      ],
+      "control": [
+        0.0009618750773370266,
+        0.0009261658415198326,
+        0.0009498340077698231,
+        0.0009487499482929707
+      ],
+      "mean_reduction_fraction": -0.02376804892940787
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.07654166710563,
+        14.939956999849528,
+        14.912168707931414,
+        14.95685812504962
+      ],
+      "control": [
+        15.138586125103757,
+        15.108249541837722,
+        15.107259541982785,
+        15.129755666013807
+      ],
+      "mean_reduction_fraction": 0.009892316152935288
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        14.943427624879405,
+        14.810207208851352,
+        14.77560304198414,
+        14.825569040840492
+      ],
+      "control": [
+        15.004682791884989,
+        14.97676904196851,
+        14.971783707849681,
+        15.001226958120242
+      ],
+      "mean_reduction_fraction": 0.010001850709107751
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.023167584,
+        0.023258167,
+        0.023225875,
+        0.023149875
+      ],
+      "control": [
+        0.02295,
+        0.023261583,
+        0.023136291,
+        0.023043959
+      ],
+      "mean_reduction_fraction": -0.004434028276070645
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09314987482503057,
+        0.09282729192636907,
+        0.09299954096786678,
+        0.09288208396174014
+      ],
+      "control": [
+        0.09370524995028973,
+        0.09376962506212294,
+        0.09383358317427337,
+        0.09571316698566079
+      ],
+      "mean_reduction_fraction": 0.013693733055710533
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.035240625,
+        0.035291833,
+        0.04053575,
+        0.035438209
+      ],
+      "control": [
+        0.03686275,
+        0.037272625,
+        0.039476208,
+        0.03711075
+      ],
+      "mean_reduction_fraction": 0.027971408855514412
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.0133615829981863,
+        2.9592921249568462,
+        3.021637750091031,
+        2.954697708133608
+      ],
+      "control": [
+        3.0886427499353886,
+        3.02915995917283,
+        2.9678800420369953,
+        2.9706535420846194
+      ],
+      "mean_reduction_fraction": 0.008903793361374812
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.8708977079950273,
+        2.816911624977365,
+        2.877296583959833,
+        2.8121370831504464
+      ],
+      "control": [
+        2.932713415939361,
+        2.881188000086695,
+        2.8202220839448273,
+        2.822803125018254
+      ],
+      "mean_reduction_fraction": 0.006955061118456007
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14246387500315905,
+        0.1423804999794811,
+        0.1443411661311984,
+        0.1425606249831617
+      ],
+      "control": [
+        0.1559293339960277,
+        0.14797195908613503,
+        0.14765795809216797,
+        0.14785041706636548
+      ],
+      "mean_reduction_fraction": 0.04615124448174157
+    },
+    "compiler_seconds": {
+      "candidate": [
+        14.888632041,
+        14.690813041,
+        14.92783775,
+        14.699902458
+      ],
+      "control": [
+        15.110353291,
+        15.04518925,
+        14.895262625,
+        14.925190208
+      ],
+      "mean_reduction_fraction": 0.012818629840252505
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009091625,
+        0.009107167,
+        0.009087916,
+        0.009269709
+      ],
+      "control": [
+        0.009160833,
+        0.009110291,
+        0.00912525,
+        0.009113209
+      ],
+      "mean_reduction_fraction": -0.0012827864947129175
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.424490875,
+        1.423784209,
+        1.4205995,
+        1.420073208
+      ],
+      "control": [
+        1.615174125,
+        1.6161946249999999,
+        1.607159333,
+        1.605972916
+      ],
+      "mean_reduction_fraction": 0.11723998601555641
+    },
+    "instructions": {
+      "candidate": [
+        220392317196,
+        220398479412,
+        220400833586,
+        220367611481
+      ],
+      "control": [
+        220940076869,
+        220894256484,
+        220918806968,
+        220877324932
+      ],
+      "mean_reduction_fraction": 0.002343992946652107
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4493656064,
+        4495491072,
+        4495491072,
+        4495491072
+      ],
+      "control": [
+        4490002432,
+        4487790592,
+        4490002432,
+        4487790592
+      ],
+      "mean_reduction_fraction": -0.0013668855995225826
+    },
+    "native_seconds": {
+      "candidate": [
+        11.524153334,
+        11.327540291,
+        11.560610542,
+        11.339807333
+      ],
+      "control": [
+        11.551532292,
+        11.48887525,
+        11.337211834,
+        11.380170125
+      ],
+      "mean_reduction_fraction": 0.00012408818393372378
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        1.7835344169288874,
+        1.7775439168326557,
+        1.7821832499466836,
+        1.777912582969293
+      ],
+      "control": [
+        1.7860363328363746,
+        1.7913892921060324,
+        1.7795659168623388,
+        1.7945834589190781
+      ],
+      "mean_reduction_fraction": 0.0042509285078080605
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.8709166659999998,
+        1.8703159999999999,
+        1.872393084,
+        1.871423958
+      ],
+      "control": [
+        1.873928583,
+        1.868888125,
+        1.878417709,
+        1.869032125
+      ],
+      "mean_reduction_fraction": 0.0006964817567903792
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4470902480,
+        4472737488,
+        4472737488,
+        4472721080
+      ],
+      "control": [
+        4467232440,
+        4465020600,
+        4467248848,
+        4465020600
+      ],
+      "mean_reduction_fraction": -0.0013756901712043135
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.588571666041389,
+        1.5894275831524283,
+        1.5861227922141552,
+        1.5906227079685777
+      ],
+      "control": [
+        1.6008379170671105,
+        1.600781749933958,
+        1.5991462080273777,
+        1.618192041059956
+      ],
+      "mean_reduction_fraction": 0.01000367466982588
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.3056477080099285,
+        2.227859125006944,
+        2.2999364158604294,
+        2.227223791880533
+      ],
+      "control": [
+        2.220613499870524,
+        2.215330250095576,
+        2.2212420001160353,
+        2.2150796251371503
+      ],
+      "mean_reduction_fraction": -0.021234899720737
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        14.955877375090495,
+        14.757858291035518,
+        14.99330783286132,
+        14.768234791932628
+      ],
+      "control": [
+        15.176476708147675,
+        15.111157374922186,
+        14.965192459058017,
+        14.995706874877214
+      ],
+      "mean_reduction_fraction": 0.012834422387232425
+    }
+  },
+  "object_balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 14.789722541,
+        "control": 15.0777712705,
+        "mean_reduction_fraction": 0.019104198116042137
+      },
+      "frontend_seconds": {
+        "candidate": 1.424137542,
+        "control": 1.6156843749999998,
+        "mean_reduction_fraction": 0.11855461126186839
+      },
+      "instructions": {
+        "candidate": 220395398304,
+        "control": 220917166676.5,
+        "mean_reduction_fraction": 0.0023618281021322574
+      },
+      "parse_seconds": {
+        "candidate": 1.8706163329999999,
+        "control": 1.8714083540000002,
+        "mean_reduction_fraction": 0.00042322190039789653
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.266753416508436,
+        "control": 2.21797187498305,
+        "mean_reduction_fraction": -0.021993760189479072
+      },
+      "whole_process_seconds": {
+        "candidate": 14.856867833063006,
+        "control": 15.14381704153493,
+        "mean_reduction_fraction": 0.018948274908823115
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 14.813870104,
+        "control": 14.9102264165,
+        "mean_reduction_fraction": 0.006462431207172714
+      },
+      "frontend_seconds": {
+        "candidate": 1.420336354,
+        "control": 1.6065661245,
+        "mean_reduction_fraction": 0.11591789946271835
+      },
+      "instructions": {
+        "candidate": 220384222533.5,
+        "control": 220898065950,
+        "mean_reduction_fraction": 0.0023261562489926835
+      },
+      "parse_seconds": {
+        "candidate": 1.871908521,
+        "control": 1.873724917,
+        "mean_reduction_fraction": 0.0009694037708098957
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.2635801038704813,
+        "control": 2.218160812626593,
+        "mean_reduction_fraction": -0.020476103889918607
+      },
+      "whole_process_seconds": {
+        "candidate": 14.880771312396973,
+        "control": 14.980449666967615,
+        "mean_reduction_fraction": 0.0066538960302664485
+      }
+    }
+  ],
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+  "qualification_pipeline": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-dimension-declaration-scan-20261115/qualification-scripts/mech-screen-dimension-declaration-scan-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 32.146238582907245,
+      "stage": "screens",
+      "started_utc": "2026-11-15T20:29:18.929591+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-dimension-declaration-scan-20261115/qualification-scripts/mech-cached-native-link-dimension-declaration-scan-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.29890312487259507,
+      "stage": "executable-gates",
+      "started_utc": "2026-11-15T20:29:51.076335+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-dimension-declaration-scan-20261115/qualification-scripts/mech-qualify-dimension-declaration-scan-serial-stage-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.62107866606675,
+      "stage": "default-serial-byte-gate",
+      "started_utc": "2026-11-15T20:29:51.375554+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-dimension-declaration-scan-20261115/qualification-scripts/mech-qualify-dimension-declaration-scan-jobs-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.31839141715318,
+      "stage": "jobs-diagnostic",
+      "started_utc": "2026-11-15T20:30:06.997021+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-dimension-declaration-scan-20261115/qualification-scripts/mech-qualify-dimension-declaration-scan-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 123.774845500011,
+      "stage": "fixtures-object-cohort",
+      "started_utc": "2026-11-15T20:30:22.315788+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-dimension-declaration-scan-20261115/qualification-scripts/mech-native-cohort-dimension-declaration-scan-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 121.12464999989606,
+      "stage": "native-cohort",
+      "started_utc": "2026-11-15T20:32:26.090877+00:00",
+      "state": "complete"
+    }
+  ],
+  "restoration": null,
+  "scope": "One fresh full declaration scan collects complete ID validity, constant-bound classification and lifetime facts. Constant-only lifetime errors still follow all declaration-ID errors and precede root checks; mixed-bound normalization and first errors unchanged. No cache, inventory pruning, permission, storage layout, parameter/root identity or grammar/program-runtime change. Standard control/candidate same61flags/twoworkers, no nativeCPU/PGO overrides; all4outputs/fullmetadata/wholeexe and default0/344-48 gates. Actual current core unit/contract/serde/no_std checks and byte-identical reference oracle. No subten claim.",
+  "source_commit": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+  "source_state": {
+    "base_commit": "74d50336ff80175921d45a627d354782ec5963ed",
+    "control": {
+      "bytes": 66983520,
+      "sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae"
+    },
+    "files": [
+      {
+        "candidate": {
+          "bytes": 47234,
+          "sha256": "c5ff02be5cc827e229cb03d97544ad5b132318acb46a52840bd696c3e1519e63"
+        },
+        "path": "src/core/src/dimension.rs",
+        "reference": {
+          "bytes": 44829,
+          "sha256": "aeea9b7e524dec79afb7f140298fefb805b2c9e2ea2ab611454827196d60f769"
+        }
+      }
+    ],
+    "patch_sha256": "57d00ade5de3607bddebefce7e823357bbd8a79cb4a668b138b8ca6df0b46423",
+    "scope": "Fuse declaration ID validation, constant-bound classification and lifetime facts in one fresh full slice scan. Constant-only compile-time error still follows all ID errors and precedes root checks; mixed-bound fallback retains exact per-declaration normalization/error order. No cache, inventory pruning, permission, layout, parameter/root ordering, grammar or program-runtime change. All4outputs/fullmetadata/fullD6exe, default0 and344/48 worker gates; standard control/candidate same61flags+2workers."
+  }
+}
