@@ -7,6 +7,7 @@ use cranelift_codegen::{
     Context,
     control::ControlPlane,
     cursor::{Cursor, FuncCursor},
+    flowgraph::ControlFlowGraph,
     ir::{
         AbiParam, Block, BlockArg, Function, Inst, InstBuilder, InstructionData, Layout, MemFlags,
         Opcode, Signature, StackSlot, StackSlotData, StackSlotKind, Value, ValueDef,
@@ -65,7 +66,27 @@ fn value_block(f: &Function, value: Value) -> Option<Block> {
     }
 }
 
-fn plan(f: &Function, candidate: Candidate) -> Option<Traversal> {
+fn use_blocks(f: &Function) -> Vec<Vec<Block>> {
+    let mut users = vec![Vec::new(); f.dfg.num_values()];
+    for block in f.layout.blocks() {
+        for inst in f.layout.block_insts(block) {
+            for value in inputs(f, inst).map(|v| f.dfg.resolve_aliases(v)) {
+                let blocks = &mut users[value.as_u32() as usize];
+                if blocks.last() != Some(&block) {
+                    blocks.push(block);
+                }
+            }
+        }
+    }
+    users
+}
+
+fn plan(
+    f: &Function,
+    cfg: &ControlFlowGraph,
+    users: &[Vec<Block>],
+    candidate: Candidate,
+) -> Option<Traversal> {
     let exits = [candidate.guard, candidate.exit];
     if candidate.start == candidate.guard
         || candidate.guard == candidate.exit
@@ -100,31 +121,35 @@ fn plan(f: &Function, candidate: Candidate) -> Option<Traversal> {
     let mut arguments = BTreeSet::new();
     let mut constants = BTreeSet::new();
     let mut slots = BTreeSet::new();
-    let mut entered = false;
-    for block in f.layout.blocks() {
-        let inside = blocks.contains(&block);
+    if cfg.pred_iter(candidate.start).next().is_none() {
+        return None;
+    }
+    for &block in &blocks {
+        let entry = block == candidate.start;
+        if cfg
+            .pred_iter(block)
+            .any(|pred| blocks.contains(&pred.block) == entry)
+        {
+            return None;
+        }
+        let definitions = f.dfg.block_params(block).iter().copied().chain(
+            f.layout
+                .block_insts(block)
+                .flat_map(|inst| f.dfg.inst_results(inst).iter().copied()),
+        );
+        // A region result may leave only through a continuation argument.
+        if definitions.into_iter().any(|value| {
+            users[value.as_u32() as usize]
+                .iter()
+                .any(|user| !blocks.contains(user))
+        }) {
+            return None;
+        }
         for inst in f.layout.block_insts(block) {
-            let outgoing = targets(f, inst);
-            for edge in outgoing {
-                let target = edge.block(&f.dfg.value_lists);
-                if !inside && blocks.contains(&target) {
-                    if target != candidate.start {
-                        return None;
-                    }
-                    entered = true;
-                } else if inside && target == candidate.start {
-                    return None;
-                }
-            }
-            for value in inputs(f, inst).map(|v| f.dfg.resolve_aliases(v)) {
-                let defined_inside = value_block(f, value).is_some_and(|b| blocks.contains(&b));
-                if inside == defined_inside {
-                    continue;
-                }
-                if !inside {
-                    // A region result may leave only through a continuation argument.
-                    return None;
-                }
+            for value in inputs(f, inst)
+                .map(|v| f.dfg.resolve_aliases(v))
+                .filter(|&v| !value_block(f, v).is_some_and(|b| blocks.contains(&b)))
+            {
                 if let ValueDef::Result(producer, _) = f.dfg.value_def(value)
                     && matches!(
                         f.dfg.insts[producer].opcode(),
@@ -136,22 +161,20 @@ fn plan(f: &Function, candidate: Candidate) -> Option<Traversal> {
                     arguments.insert(value);
                 }
             }
-            if inside {
-                if matches!(
-                    f.dfg.insts[inst].opcode(),
-                    Opcode::DynamicStackLoad
-                        | Opcode::DynamicStackStore
-                        | Opcode::DynamicStackAddr
-                        | Opcode::ReturnCall
-                        | Opcode::ReturnCallIndirect
-                        | Opcode::TryCall
-                        | Opcode::TryCallIndirect
-                        | Opcode::BrTable
-                ) {
-                    return None;
-                }
-                slots.extend(referenced_slot(&f.dfg.insts[inst]));
+            if matches!(
+                f.dfg.insts[inst].opcode(),
+                Opcode::DynamicStackLoad
+                    | Opcode::DynamicStackStore
+                    | Opcode::DynamicStackAddr
+                    | Opcode::ReturnCall
+                    | Opcode::ReturnCallIndirect
+                    | Opcode::TryCall
+                    | Opcode::TryCallIndirect
+                    | Opcode::BrTable
+            ) {
+                return None;
             }
+            slots.extend(referenced_slot(&f.dfg.insts[inst]));
         }
     }
     arguments.extend(f.dfg.block_params(candidate.start));
@@ -162,7 +185,7 @@ fn plan(f: &Function, candidate: Candidate) -> Option<Traversal> {
                 .iter()
                 .all(|&v| f.dfg.value_type(v).bytes() <= 8)
     });
-    if !entered || arguments.len() + slots.len() > 40 || !output_bounded {
+    if arguments.len() + slots.len() > 40 || !output_bounded {
         return None;
     }
     Some(Traversal {
@@ -505,6 +528,9 @@ pub(super) fn share<M: Module>(
     if !all_families {
         families.truncate(1);
     }
+    if families.is_empty() {
+        return Ok(None);
+    }
     let excluded = std::env::var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS")
         .ok()
         .map(|list| {
@@ -516,11 +542,13 @@ pub(super) fn share<M: Module>(
         .unwrap_or_default();
     let mut groups: Vec<Prepared> = Vec::new();
     let mut proven = BTreeSet::new();
+    let cfg = ControlFlowGraph::with_function(root);
+    let users = use_blocks(root);
     for candidate in families.into_iter().flatten() {
         if excluded.contains(&candidate.header) {
             continue;
         }
-        let Some(traversal) = plan(root, candidate) else {
+        let Some(traversal) = plan(root, &cfg, &users, candidate) else {
             eprintln!(
                 "compact checked traversal {} declined by boundary proof",
                 candidate.header
@@ -586,6 +614,7 @@ pub(super) fn share<M: Module>(
             });
         }
     }
+    drop((cfg, users));
     let groups = groups
         .into_iter()
         .filter(|group| group.traversals.len() > 1)
