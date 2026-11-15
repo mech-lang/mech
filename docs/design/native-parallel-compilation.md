@@ -9,6 +9,16 @@ This design applies to compiling the level-12 Deflate program into an
 executable. Cargo job counts control rebuilding the Rust compiler itself and
 do not implement this architecture.
 
+The first [integrated implementation](native-parallel-phases-compile-profile.md)
+is now qualified with `MECH_COMPACT_COMPILE_THREADS=2` (default `0` stays serial).
+It queues 340 real phase Contexts, overlaps machine compilation with later
+variant preparation, and records/replays all later Object events in order.
+Eight balanced complete builds improve **17.657 to 17.379 seconds (1.57%)**
+with the adapter cached; every executable byte matches. A separate eight-run
+source-to-Object cohort reduces helper time 5.72% and complete process 0.97%.
+The single reversed-direction executable pilot pair and all adverse observations
+remain. Main IR construction/cleanup and the frontend remain serial.
+
 ## Current work and limits
 
 The [published 61-flag baseline](native-point-liveness-compile-profile.md) spends
@@ -120,7 +130,11 @@ enum Publication {
 }
 ```
 
-These are proposed interfaces, not implemented API declarations. Jobs move their
+These sketches describe the broader pipeline; the implemented boundary is in
+[`compile_jobs.rs`](../../hosts/gpu/src/native_artifact/program/compact/compile_jobs.rs)
+with owned Context jobs, tickets and an ordered `RecordedModule`. Report
+completion remains with the coordinator and reads actual compiled metrics.
+Jobs move their
 Context into a worker; they do not clone the large function graph. A worker owns
 its CFG, dominator tree, optimization state and control plane. It cannot mutate
 the Object or a compilation-wide cache.
@@ -256,9 +270,11 @@ cohort, not evidence of a parallel compiler improvement.
    comparisons for scheduler order, dependent variants, imports, data tables,
    relocations and competing errors.
 
-No parallel Mech code-generation gain has been measured yet. Retain the schema
-borrowing/cache work and constant-phi work as separate investigations: reducing
-the serial work and adding concurrency address different parts of the budget.
+The first machine-compilation worker boundary has a small measured gain. Moving
+more helper construction/cleanup into workers and overlapping different phases
+still require the dependency and ownership work above. Retain schema reuse and
+constant-phi work as separate investigations; substantial serial work remains
+before complete compilation can fall below ten seconds.
 
 Relevant implementation boundaries are
 [`phases.rs`](../../hosts/gpu/src/native_artifact/program/compact/phases.rs),

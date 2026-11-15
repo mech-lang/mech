@@ -886,3 +886,19 @@ This establishes the backend API boundary, not integrated Mech scheduling or a
 Deflate parallel speedup. The twenty-fourth
 [complete packet](evidence/compiler-profile-20261114/README.md) preserves all
 raw observations, source/patches, output bytes, probe source and pure replay.
+
+The [integrated phase worker result](../../docs/design/native-parallel-phases-compile-profile.md)
+implements the real compiler path with `MECH_COMPACT_COMPILE_THREADS=2`, an
+internal scheduling option separate from the same 61 program flags; default 0
+retains serial execution. It queues 340 real Contexts and preserves ordered
+declaration/data/function publication. Eight balanced complete executable builds
+improve 17.657 to 17.379 seconds (1.57%) with the adapter cached; both blocks improve.
+A separate eight-run source-to-Object cohort improves complete process 0.97%
+and helper generation 5.72%, with RSS +0.08%. The reversed single executable pilot,
+slower frontend/compaction and all other observations remain. Every source,
+bytecode, Object, complete metadata and executable byte matches. Two focused
+tests with 24 ordered Object comparisons, fourteen paired fixtures and
+zero/one/two-worker full-output gates pass. The twenty-fifth
+[complete packet](evidence/compiler-profile-20261114/README.md) preserves all
+raw data, exact source/patch, full outputs, native inputs and replay. Main CFG,
+cleanup and frontend remain serial; the ten-second goal remains open.
