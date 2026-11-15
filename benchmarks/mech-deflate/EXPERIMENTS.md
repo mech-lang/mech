@@ -846,3 +846,15 @@ compiler. The twenty-first [complete packet](evidence/compiler-profile-20261114/
 contains all measurements, tested source/patch and replay. Its separate
 275.189-second compiler rebuild used two Cargo jobs; four are selected for later
 rebuilds, with no measured four-job build speedup claimed.
+
+The [parallel compilation architecture](../../docs/design/native-parallel-compilation.md)
+is supported by the twenty-second
+[complete packet](evidence/compiler-profile-20261114/README.md): precise process
+completion, two fresh controls, separate current schema/SSA/cleanup counters,
+and a frozen final-link boundary. It records 43,509 shared schema clones with
+83.1 million copied declaration entries and 264,011 fully cached joins among
+20.1 million sealed sentinels. Three native links reproduce the complete
+executable in 0.081–0.093 seconds using retained adapter objects; three earlier
+metadata-changing attempts remain. No parallel Mech compilation or PGO speedup
+is established. All output bytes, source patches, build failures and replay are
+preserved; the ten-second goal remains open.

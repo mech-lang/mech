@@ -211,6 +211,16 @@
       "sha256": "4c945c812a9c68e11d9418b87f4dea3c34bb9f6f16030cfb75fd2a9d6e970ba4",
       "source_revision": "8dc06bea88ec709ca5f690013811d710ee3024d3",
       "summary": "benchmarks/mech-deflate/native-profile/ssa-batch-seal-trial-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-round2-planning-20261114.tar.gz",
+      "bytes": 15968949,
+      "decision": "Diagnostic/design: precise completion timing and current schema/SSA/cleanup counters; exact executable from retained adapter objects; no parallel compiler or PGO gain claimed.",
+      "files": 747,
+      "receipt": "benchmarks/mech-deflate/native-profile/parallel-planning-apple-m3-20261114.archive.json",
+      "sha256": "15a1773c8e16928d6a4577db666ecf58c21d15e4f216ca4e0eb7d8ddfebc5a0a",
+      "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+      "summary": "benchmarks/mech-deflate/native-profile/parallel-planning-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."

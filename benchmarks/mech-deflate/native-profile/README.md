@@ -233,3 +233,13 @@ Both compiler-time blocks are slower. All output bytes match; fifteen focused
 tests, 88 paired complete IR cases and fourteen fixture pairs pass. Production
 source is restored. All measurements and the four-job rebuild selection are in
 the twenty-first [complete packet](../evidence/compiler-profile-20261114/README.md).
+
+The [parallel compilation design](../../../docs/design/native-parallel-compilation.md)
+separates function jobs from ordered module publication and records the current
+variant-choice dependencies. Its twenty-second
+[evidence packet](../evidence/compiler-profile-20261114/README.md) contains two
+controls with precise process timing, separate schema/SSA/cleanup counters,
+the failed diagnostic build, and the frozen runtime/entry adapter. Three warm
+native links take 0.081–0.093 seconds and reproduce every final executable byte;
+three earlier attempts fail the byte gate and remain recorded. No parallel Mech
+compiler saving or PGO gain is claimed. The PGO setup/control build is separate.
