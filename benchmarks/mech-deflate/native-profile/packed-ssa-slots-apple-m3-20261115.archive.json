@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-packed-ssa-slots-20261115.tar.gz",
+  "bytes": 41733196,
+  "evidence_files": 794,
+  "files": 794,
+  "format": 1,
+  "manifest_sha256": "16c859708694dfccc460010a28fdd184bdf67a4fd2e61a69f92a6321fda2e545",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "a5316289a9c28528b2135e5a63809b999f672790a4171f3fafe2a7c69998661f",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-packed-ssa-slots-20261115.tar.gz",
+  "sha256": "12d2c77bedfca5ba26fdece4a9d0e9869c46d67274cfb84f81f6a54af30ddf16",
+  "source_revision": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+  "uncompressed_bytes": 238888469,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "12d2c77bedfca5ba26fdece4a9d0e9869c46d67274cfb84f81f6a54af30ddf16",
+    "source_revision": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+    "verified_bytes": 238888469,
+    "verified_files": 794
+  }
+}

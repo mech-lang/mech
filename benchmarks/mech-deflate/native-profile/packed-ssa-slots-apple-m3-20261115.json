@@ -1,0 +1,924 @@
+{
+  "algorithm_audit": {
+    "algorithm_tokens_sha256": "1680c4e2f935fcf7ceebd1516858c29715c9b32e4f188411dca74d4658e052fd",
+    "no_unsafe_or_identity_range_restriction": true,
+    "scope": "Representation only. Separate presence byte preserves absent versus presentNone. Packed fields copied by value; existing map oracle and raw/compacted IR/machine comparison are independent behavior gates.",
+    "ssa_algorithm_tokens_identical_after_two_get_copy_projections": true,
+    "unchanged_generation_cycles_sealing_value_allocation_and_predecessor_algorithms": true,
+    "unchanged_source_prefix": true,
+    "unchanged_sparse_map_and_promotion_algorithm": true
+  },
+  "balanced_native_blocks": [
+    {
+      "candidate": 14.90935466659721,
+      "control": 15.018703125533648,
+      "mean_reduction_fraction": 0.007280818990990756
+    },
+    {
+      "candidate": 14.873984395409934,
+      "control": 14.878631229512393,
+      "mean_reduction_fraction": 0.00031231596715985965
+    }
+  ],
+  "base_commit": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+      "binary": "/private/tmp/mech-packed-ssa-slots-20261115/candidate",
+      "binary_sha256": "6b577656c3e00adfd6386480355de9a82d8130b34065ccb96bbbeff46135dae4",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "beffbe05a6afbd867c8704fbbaacc69a4750f98ec669cef1d330eb2f66b932d8",
+      "seconds": 254.68328695790842
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "beffbe05a6afbd867c8704fbbaacc69a4750f98ec669cef1d330eb2f66b932d8",
+      "seconds": 7.444718124810606
+    },
+    "candidate-cli-check": {
+      "base_commit": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "beffbe05a6afbd867c8704fbbaacc69a4750f98ec669cef1d330eb2f66b932d8",
+      "seconds": 9.274094500113279
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66983536,
+      "path": "/private/tmp/mech-packed-ssa-slots-20261115/candidate",
+      "sha256": "6b577656c3e00adfd6386480355de9a82d8130b34065ccb96bbbeff46135dae4"
+    },
+    "control": {
+      "bytes": 66983520,
+      "path": "/private/tmp/mech-packed-ssa-slots-20261115/control",
+      "sha256": "3c09f358909db5ab07d09a9ee78a16d3de83f58d9f181f750985e7f3a88653f3"
+    },
+    "focused/tests": {
+      "bytes": 1462072,
+      "path": "/private/tmp/mech-packed-ssa-slots-20261115/focused/tests",
+      "sha256": "fdd4b3a121acfaf494f6a8fb129260f48e04f84832fb9cbdefbcdb740c4cff93"
+    },
+    "ir-comparison/probe": {
+      "bytes": 2803240,
+      "path": "/private/tmp/mech-packed-ssa-slots-20261115/ir-comparison/probe",
+      "sha256": "74457d689ec4adf1a56655cbb15b4c66acd3e1248a37c4780d7459b18d69a00f"
+    }
+  },
+  "decision": {
+    "candidate_complete_seconds": 14.891669531003572,
+    "control_complete_seconds": 14.94866717752302,
+    "current_best_seconds": 13.414824520470574,
+    "current_best_sha256": "8043d93d27b948371aee38027df898a9024e47a1ffa112b47a1913f8329e40ad",
+    "decision": "reject",
+    "description": "Rejected packed dense SSA slots: standard complete compilation 14.948667->14.891670s (-0.381%); all31units/328paired raw+compactedIR/machine cases and every full output/metadata/executable match. Same61flags/2workers, build configuration unchanged. All adverse fields retained. Current best optimized8043 remains13.414825s; this source is not yet separately PGO-qualified.",
+    "native_blocks": [
+      {
+        "candidate": 14.90935466659721,
+        "control": 15.018703125533648,
+        "mean_reduction_fraction": 0.007280818990990756
+      },
+      {
+        "candidate": 14.873984395409934,
+        "control": 14.878631229512393,
+        "mean_reduction_fraction": 0.00031231596715985965
+      }
+    ],
+    "native_reduction": 0.003812891533577667,
+    "new_source_pgo_qualified": false,
+    "object_adverse_fields": {
+      "canonical_lowering_seconds": {
+        "candidate": [
+          0.09413754194974899,
+          0.09368891711346805,
+          0.09350483305752277,
+          0.09401454101316631
+        ],
+        "control": [
+          0.09371791710145772,
+          0.09412562497891486,
+          0.09381170896813273,
+          0.0936642091255635
+        ],
+        "mean_reduction_fraction": -7.026803199883247e-05
+      },
+      "catalog_seconds": {
+        "candidate": [
+          0.0357525,
+          0.036094583,
+          0.035730042,
+          0.035938458
+        ],
+        "control": [
+          0.03521075,
+          0.035587,
+          0.035321291,
+          0.035685583
+        ],
+        "mean_reduction_fraction": -0.01206560795930045
+      },
+      "cleanup_including_compaction_seconds": {
+        "candidate": [
+          2.9705057500395924,
+          2.968138874974102,
+          3.06149520794861,
+          2.956357166869566
+        ],
+        "control": [
+          2.953418874880299,
+          2.9521289160475135,
+          2.8977051249239594,
+          2.9613426660653204
+        ],
+        "mean_reduction_fraction": -0.016311773454392497
+      },
+      "cleanup_seconds": {
+        "candidate": [
+          2.827409042045474,
+          2.8056932920590043,
+          2.9202947500161827,
+          2.8136432499159127
+        ],
+        "control": [
+          2.8106584169436246,
+          2.8093484579585493,
+          2.755412665894255,
+          2.8189861660357565
+        ],
+        "mean_reduction_fraction": -0.015421508896986458
+      },
+      "compaction_seconds": {
+        "candidate": [
+          0.14309670799411833,
+          0.16244558291509748,
+          0.14120045793242753,
+          0.1427139169536531
+        ],
+        "control": [
+          0.14276045793667436,
+          0.14278045808896422,
+          0.14229245902970433,
+          0.1423565000295639
+        ],
+        "mean_reduction_fraction": -0.03379013123921326
+      },
+      "compiler_seconds": {
+        "candidate": [
+          14.704046584,
+          14.813688917,
+          15.016498833,
+          14.644624542
+        ],
+        "control": [
+          14.7467455,
+          14.735064708,
+          14.703295333,
+          14.757899083
+        ],
+        "mean_reduction_fraction": -0.004001395135937225
+      },
+      "encode_seconds": {
+        "candidate": [
+          0.009190833,
+          0.009188042,
+          0.009284875,
+          0.009127458
+        ],
+        "control": [
+          0.009087416,
+          0.009076833,
+          0.009139667,
+          0.009103084
+        ],
+        "mean_reduction_fraction": -0.010553135386052181
+      },
+      "frontend_seconds": {
+        "candidate": [
+          1.4217528750000001,
+          1.425453583,
+          1.423578084,
+          1.422368708
+        ],
+        "control": [
+          1.41992575,
+          1.420083167,
+          1.42429,
+          1.418707708
+        ],
+        "mean_reduction_fraction": -0.0017854325482156153
+      },
+      "instructions": {
+        "candidate": [
+          220560688806,
+          220547954863,
+          220559960803,
+          220593460055
+        ],
+        "control": [
+          220495271127,
+          220489676747,
+          220469877786,
+          220451436294
+        ],
+        "mean_reduction_fraction": -0.0004034471557234909
+      },
+      "native_seconds": {
+        "candidate": [
+          11.339978334,
+          11.443138042,
+          11.655717667,
+          11.278361
+        ],
+        "control": [
+          11.386690458,
+          11.373703958,
+          11.337666208,
+          11.399222375
+        ],
+        "mean_reduction_fraction": -0.00483352036658613
+      },
+      "numeric_generation_seconds": {
+        "candidate": [
+          1.777299084002152,
+          1.7804027090314776,
+          1.849905916955322,
+          1.7744457919616252
+        ],
+        "control": [
+          1.7840609578415751,
+          1.7847499169874936,
+          1.7793619590811431,
+          1.790743499994278
+        ],
+        "mean_reduction_fraction": -0.006042537274350446
+      },
+      "parse_seconds": {
+        "candidate": [
+          1.873531708,
+          1.876132084,
+          1.868497458,
+          1.874964625
+        ],
+        "control": [
+          1.872019917,
+          1.872777667,
+          1.8731905,
+          1.8712940420000002
+        ],
+        "mean_reduction_fraction": -0.0005132333026494074
+      },
+      "source_cfg_seconds": {
+        "candidate": [
+          2.1854520419146866,
+          2.2996831671334803,
+          2.3108886659611017,
+          2.1837542499415576
+        ],
+        "control": [
+          2.2737490839790553,
+          2.2289215829223394,
+          2.228944957954809,
+          2.2227940410375595
+        ],
+        "mean_reduction_fraction": -0.0028330688458100273
+      },
+      "whole_process_seconds": {
+        "candidate": [
+          14.772721708053723,
+          14.880747749935836,
+          15.083514584228396,
+          14.711864165961742
+        ],
+        "control": [
+          14.812486124923453,
+          14.803558208979666,
+          14.77208699984476,
+          14.826613458106294
+        ],
+        "mean_reduction_fraction": -0.003953464920745997
+      }
+    },
+    "object_compiler_blocks": [
+      {
+        "candidate": 14.7588677505,
+        "control": 14.740905104,
+        "mean_reduction_fraction": -0.0012185579089798448
+      },
+      {
+        "candidate": 14.830561687500001,
+        "control": 14.730597207999999,
+        "mean_reduction_fraction": -0.006786179683584859
+      }
+    ],
+    "restoration": {
+      "cache_note": "Canonical standard3c09 restored; Cargo rlibs still reflect rejected packed candidate. Fresh restored source mtime forces genuine rebuild before treating cached libraries as reference.",
+      "canonical_sha256": "3c09f358909db5ab07d09a9ee78a16d3de83f58d9f181f750985e7f3a88653f3",
+      "selected_pgo_sha256": "8043d93d27b948371aee38027df898a9024e47a1ffa112b47a1913f8329e40ad",
+      "source_restored": true,
+      "source_sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d"
+    },
+    "source_commit": null
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "focused_tests": 31,
+  "jobs_diagnostic": {
+    "all_outputs_and_complete_executable_identical": true,
+    "excluded_from_primary": true,
+    "rows": [
+      {
+        "cleanup": 48,
+        "submitted": 344,
+        "workers": 2
+      }
+    ]
+  },
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.1305743339471519,
+        0.12975179101340473,
+        0.12959149992093444,
+        0.12642374983988702
+      ],
+      "control": [
+        0.12895050016231835,
+        0.14047358301468194,
+        0.12528845807537436,
+        0.12904466688632965
+      ],
+      "mean_reduction_fraction": 0.014158914287175417
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0009418330155313015,
+        0.0009021249134093523,
+        0.0009048751089721918,
+        0.0009126251097768545
+      ],
+      "control": [
+        0.0009360839612782001,
+        0.000944624887779355,
+        0.0009267919231206179,
+        0.0009775420185178518
+      ],
+      "mean_reduction_fraction": 0.03265079150759054
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        14.90812912513502,
+        14.9105802080594,
+        14.881101249950007,
+        14.866867540869862
+      ],
+      "control": [
+        14.91468020901084,
+        15.122726042056456,
+        14.89167487504892,
+        14.865587583975866
+      ],
+      "mean_reduction_fraction": 0.003812891533577667
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        14.776612958172336,
+        14.779926292132586,
+        14.7506048749201,
+        14.739531165920198
+      ],
+      "control": [
+        14.784793624887243,
+        14.981307834153995,
+        14.765459625050426,
+        14.735565375071019
+      ],
+      "mean_reduction_fraction": 0.0037196196473159304
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.0230885,
+        0.02290225,
+        0.022952916,
+        0.023094375
+      ],
+      "control": [
+        0.022980125,
+        0.023100583,
+        0.022940292,
+        0.023138417
+      ],
+      "mean_reduction_fraction": 0.0013170222203120474
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09413754194974899,
+        0.09368891711346805,
+        0.09350483305752277,
+        0.09401454101316631
+      ],
+      "control": [
+        0.09371791710145772,
+        0.09412562497891486,
+        0.09381170896813273,
+        0.0936642091255635
+      ],
+      "mean_reduction_fraction": -7.026803199883247e-05
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.0357525,
+        0.036094583,
+        0.035730042,
+        0.035938458
+      ],
+      "control": [
+        0.03521075,
+        0.035587,
+        0.035321291,
+        0.035685583
+      ],
+      "mean_reduction_fraction": -0.01206560795930045
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        2.9705057500395924,
+        2.968138874974102,
+        3.06149520794861,
+        2.956357166869566
+      ],
+      "control": [
+        2.953418874880299,
+        2.9521289160475135,
+        2.8977051249239594,
+        2.9613426660653204
+      ],
+      "mean_reduction_fraction": -0.016311773454392497
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.827409042045474,
+        2.8056932920590043,
+        2.9202947500161827,
+        2.8136432499159127
+      ],
+      "control": [
+        2.8106584169436246,
+        2.8093484579585493,
+        2.755412665894255,
+        2.8189861660357565
+      ],
+      "mean_reduction_fraction": -0.015421508896986458
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14309670799411833,
+        0.16244558291509748,
+        0.14120045793242753,
+        0.1427139169536531
+      ],
+      "control": [
+        0.14276045793667436,
+        0.14278045808896422,
+        0.14229245902970433,
+        0.1423565000295639
+      ],
+      "mean_reduction_fraction": -0.03379013123921326
+    },
+    "compiler_seconds": {
+      "candidate": [
+        14.704046584,
+        14.813688917,
+        15.016498833,
+        14.644624542
+      ],
+      "control": [
+        14.7467455,
+        14.735064708,
+        14.703295333,
+        14.757899083
+      ],
+      "mean_reduction_fraction": -0.004001395135937225
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009190833,
+        0.009188042,
+        0.009284875,
+        0.009127458
+      ],
+      "control": [
+        0.009087416,
+        0.009076833,
+        0.009139667,
+        0.009103084
+      ],
+      "mean_reduction_fraction": -0.010553135386052181
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.4217528750000001,
+        1.425453583,
+        1.423578084,
+        1.422368708
+      ],
+      "control": [
+        1.41992575,
+        1.420083167,
+        1.42429,
+        1.418707708
+      ],
+      "mean_reduction_fraction": -0.0017854325482156153
+    },
+    "instructions": {
+      "candidate": [
+        220560688806,
+        220547954863,
+        220559960803,
+        220593460055
+      ],
+      "control": [
+        220495271127,
+        220489676747,
+        220469877786,
+        220451436294
+      ],
+      "mean_reduction_fraction": -0.0004034471557234909
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4471537664,
+        4471537664,
+        4471537664,
+        4471537664
+      ],
+      "control": [
+        4489986048,
+        4489986048,
+        4490002432,
+        4489986048
+      ],
+      "mean_reduction_fraction": 0.004109692762835571
+    },
+    "native_seconds": {
+      "candidate": [
+        11.339978334,
+        11.443138042,
+        11.655717667,
+        11.278361
+      ],
+      "control": [
+        11.386690458,
+        11.373703958,
+        11.337666208,
+        11.399222375
+      ],
+      "mean_reduction_fraction": -0.00483352036658613
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        1.777299084002152,
+        1.7804027090314776,
+        1.849905916955322,
+        1.7744457919616252
+      ],
+      "control": [
+        1.7840609578415751,
+        1.7847499169874936,
+        1.7793619590811431,
+        1.790743499994278
+      ],
+      "mean_reduction_fraction": -0.006042537274350446
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.873531708,
+        1.876132084,
+        1.868497458,
+        1.874964625
+      ],
+      "control": [
+        1.872019917,
+        1.872777667,
+        1.8731905,
+        1.8712940420000002
+      ],
+      "mean_reduction_fraction": -0.0005132333026494074
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4448767672,
+        4448767672,
+        4448767672,
+        4448767672
+      ],
+      "control": [
+        4467216056,
+        4467232464,
+        4467248848,
+        4467216056
+      ],
+      "mean_reduction_fraction": 0.004132469291659335
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.5919923328328878,
+        1.5910076659638435,
+        1.6006941669620574,
+        1.5934985419735312
+      ],
+      "control": [
+        1.592134458012879,
+        1.5981045830994844,
+        1.6311960408929735,
+        1.5929079158231616
+      ],
+      "mean_reduction_fraction": 0.005791752968114627
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.1854520419146866,
+        2.2996831671334803,
+        2.3108886659611017,
+        2.1837542499415576
+      ],
+      "control": [
+        2.2737490839790553,
+        2.2289215829223394,
+        2.228944957954809,
+        2.2227940410375595
+      ],
+      "mean_reduction_fraction": -0.0028330688458100273
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        14.772721708053723,
+        14.880747749935836,
+        15.083514584228396,
+        14.711864165961742
+      ],
+      "control": [
+        14.812486124923453,
+        14.803558208979666,
+        14.77208699984476,
+        14.826613458106294
+      ],
+      "mean_reduction_fraction": -0.003953464920745997
+    }
+  },
+  "object_balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 14.7588677505,
+        "control": 14.740905104,
+        "mean_reduction_fraction": -0.0012185579089798448
+      },
+      "instructions": {
+        "candidate": 220554321834.5,
+        "control": 220492473937,
+        "mean_reduction_fraction": -0.0002804989049995932
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.2425676045240834,
+        "control": 2.2513353334506974,
+        "mean_reduction_fraction": 0.003894457123442052
+      },
+      "whole_process_seconds": {
+        "candidate": 14.82673472899478,
+        "control": 14.80802216695156,
+        "mean_reduction_fraction": -0.0012636773386915934
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 14.830561687500001,
+        "control": 14.730597207999999,
+        "mean_reduction_fraction": -0.006786179683584859
+      },
+      "instructions": {
+        "candidate": 220576710429,
+        "control": 220460657040,
+        "mean_reduction_fraction": -0.0005264131503470715
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.2473214579513296,
+        "control": 2.2258694994961843,
+        "mean_reduction_fraction": -0.009637563415106243
+      },
+      "whole_process_seconds": {
+        "candidate": 14.89768937509507,
+        "control": 14.799350228975527,
+        "mean_reduction_fraction": -0.006644828630854693
+      }
+    }
+  ],
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "paired_ir": {
+    "cases_sha256": "ef9376744f122e460ff8f2b71b1d3ddae9b0850e0e4f42ad1d41e0d62725a926",
+    "identical_complete_ir_aliases_types_definitions_queries_effects_and_enumerations": true,
+    "paired_cases": 328,
+    "verified_functions": 656
+  },
+  "patch_sha256": "beffbe05a6afbd867c8704fbbaacc69a4750f98ec669cef1d330eb2f66b932d8",
+  "qualification_pipeline": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-packed-ssa-slots-20261115/qualification-scripts/mech-screen-packed-ssa-slots-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 31.72657191613689,
+      "stage": "screens",
+      "started_utc": "2026-11-15T21:35:54.848255+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-packed-ssa-slots-20261115/qualification-scripts/mech-cached-native-link-packed-ssa-slots-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.30596595793031156,
+      "stage": "executable-gates",
+      "started_utc": "2026-11-15T21:36:26.575409+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-packed-ssa-slots-20261115/qualification-scripts/mech-qualify-packed-ssa-slots-serial-stage-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.484166833106428,
+      "stage": "default-serial-byte-gate",
+      "started_utc": "2026-11-15T21:36:26.881717+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-packed-ssa-slots-20261115/qualification-scripts/mech-qualify-packed-ssa-slots-jobs-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.062273582909256,
+      "stage": "jobs-diagnostic",
+      "started_utc": "2026-11-15T21:36:42.366243+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-packed-ssa-slots-20261115/qualification-scripts/mech-qualify-packed-ssa-slots-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 122.76157466694713,
+      "stage": "fixtures-object-cohort",
+      "started_utc": "2026-11-15T21:36:57.429368+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-packed-ssa-slots-20261115/qualification-scripts/mech-native-cohort-packed-ssa-slots-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 120.11993916705251,
+      "stage": "native-cohort",
+      "started_utc": "2026-11-15T21:39:00.191453+00:00",
+      "state": "complete"
+    }
+  ],
+  "restoration": {
+    "cache_note": "Canonical standard3c09 restored; Cargo rlibs still reflect rejected packed candidate. Fresh restored source mtime forces genuine rebuild before treating cached libraries as reference.",
+    "canonical_sha256": "3c09f358909db5ab07d09a9ee78a16d3de83f58d9f181f750985e7f3a88653f3",
+    "selected_pgo_sha256": "8043d93d27b948371aee38027df898a9024e47a1ffa112b47a1913f8329e40ad",
+    "source_restored": true,
+    "source_sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d"
+  },
+  "scope": "Dense SSA slots store packed values plus presence in five bytes, preserving presentNone. Unchanged sparse map/promotion, SSA algorithm, errors and identities; only copied return projections. Standard3c09 versus standard candidate with same61flags/2workers and pinnedmimalloc. Current best optimized8043/profile8691 preserved; no fresh candidate PGO qualification or inferred historical gain. No new sampling. All full source/MBC/Object/metadata/executable gates; default0/344-48jobs. No grammar/proof/runtime changes.",
+  "selection_inspection": {
+    "broader_helper_pipeline": {
+      "candidate": "Bounded pending helper pairs may overlap machine work across iterations, but summaries, code-equality decisions, no-growth variants, current dense tables, declarations/data events and the original first error must stay ordered. Current finish closures remain coordinator-owned. No unsafe Send or broader proof eligibility.",
+      "fact": "The general/vector pair starts work in the pool but finishes both functions before the next helper iteration. RecordedModule journals later events to preserve publication and first-error order.",
+      "files": [
+        "hosts/gpu/src/native_artifact/program/compact/phases.rs",
+        "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
+        "hosts/gpu/src/native_artifact/program/compact/compile_jobs.rs"
+      ],
+      "unresolved": "No measured coordinator wait time or expected saving; no prototype yet. Do not infer a removable-time budget from cumulative stage/sample counts."
+    },
+    "not_repeated": "Imported-cleanup analysis-owner trial43 already reused five unchanged suffix analyses and was rejected for flat full builds. Revisit only with a materially different measured target.",
+    "source_commit": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+    "ssa_storage": {
+      "candidate": "A packed slot containing PackedOption<Value> plus an explicit presence byte can preserve every current state without padding each slot to a second word. Return copies rather than references to packed fields. Check actual sizes on the pinned target; no unsafe aligned reference or identity-space restriction.",
+      "facts": [
+        "VariableDefs dense storage is Vec<Option<PackedOption<Value>>>.",
+        "The three production insertion sites at def_var/use_var_nonlocal/find_var all wrap a real Value.",
+        "The private storage tests deliberately cover explicit None entries. Preserve those states and all existing enumeration/replacement/occupancy behavior.",
+        "Previously rejected inline-first/span/shared-root layouts are different experiments; do not repeat them."
+      ],
+      "file": "vendor/cranelift-frontend/src/ssa.rs",
+      "gates": [
+        "Existing full mixed-None ordered-map oracle, dense/sparse promotion, maximum IDs, cloning and ordered enumeration.",
+        "Same private-record size, same capacity/promotion thresholds and all pending None states.",
+        "Paired complete raw and compacted IR/value IDs/aliases/side effects/machine code before any performance retention.",
+        "All four full program outputs, complete metadata, complete executable and balanced uncontended timing. No guessed memory/time gain."
+      ]
+    },
+    "state": "Inspection only; no implementation, test, timing or speedup claim"
+  },
+  "source_commit": null,
+  "source_state": {
+    "base_commit": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+    "created_utc": "2026-11-15T21:29:16.825223+00:00",
+    "files": [
+      {
+        "candidate": {
+          "bytes": 64949,
+          "sha256": "137684915e9c08a1d2f6fbcc5f660271e7bd26300ec0b565ad41157212bbca44"
+        },
+        "candidate_sha256": "137684915e9c08a1d2f6fbcc5f660271e7bd26300ec0b565ad41157212bbca44",
+        "path": "vendor/cranelift-frontend/src/ssa.rs",
+        "reference": {
+          "bytes": 62822,
+          "sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d"
+        },
+        "reference_sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d"
+      }
+    ],
+    "patch_sha256": "beffbe05a6afbd867c8704fbbaacc69a4750f98ec669cef1d330eb2f66b932d8",
+    "scope": "Frozen one-file dense-definition representation only. Keep explicit presentNone, sparse map and promotion thresholds/order, SSA traversal/sealing/cycle detection/IDs/machine construction unchanged. No grammar/proof/runtime changes. New get/values copy packed values instead of borrowing unaligned fields; all test adaptations only copy projection plus layout/presence test."
+  }
+}
