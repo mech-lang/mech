@@ -40,6 +40,7 @@ impl DirectRuntimeCalls {
                 matches!(self, Self::AllocationAndByteAppends)
             }
             Some("mech_compact_free") => matches!(self, Self::Free | Self::All),
+            Some("mech_compact_release_owner") => !matches!(self, Self::Disabled),
             _ => false,
         }
     }

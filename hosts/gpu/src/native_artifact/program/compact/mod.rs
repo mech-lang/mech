@@ -31,6 +31,7 @@ pub(in crate::native_artifact) use phases::{
 mod map_index;
 mod maps;
 mod object;
+mod owner_retirement;
 mod private_chains;
 mod recipes;
 mod strings;

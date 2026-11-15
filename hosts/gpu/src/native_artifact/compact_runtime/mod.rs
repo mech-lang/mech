@@ -446,9 +446,42 @@ pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner
     }
 }
 
+/// Retire one live reference, returning the status of any final release.
+///
+/// # Safety
+/// The owner is nonnull and holds a reference from the current exclusive heap.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_release_owner(context: *mut Heap, owner: *mut Owner) -> u64 {
+    let references = unsafe { &mut (*owner).references };
+    *references = references.wrapping_sub(1);
+    if *references == 0 {
+        unsafe { mech_compact_free(context, owner) }
+    } else {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_retirement_keeps_the_live_alias_until_its_final_release() {
+        let mut heap = Heap::new();
+        let view = heap.allocate(12, 1, 1, true).unwrap();
+        let owner = view[5] as *mut Owner;
+        unsafe {
+            (*owner).references = 2;
+            (*owner).data.write(37);
+        }
+        assert_eq!(unsafe { mech_compact_release_owner(&mut heap, owner) }, 0);
+        assert_eq!(unsafe { (*owner).references }, 1);
+        assert_eq!(unsafe { (*owner).data.read() }, 37);
+        assert_eq!(heap.counters.live_payload_bytes, 12);
+        assert_eq!(unsafe { mech_compact_release_owner(&mut heap, owner) }, 0);
+        assert!(heap.first_owner.is_null());
+        assert_eq!(heap.counters.live_payload_bytes, 0);
+    }
+
     #[test]
     fn allocation_and_writable_results_keep_their_abi_geometry() {
         let mut heap = Heap::new();

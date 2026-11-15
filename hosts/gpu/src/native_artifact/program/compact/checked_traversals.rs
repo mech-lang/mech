@@ -1073,6 +1073,8 @@ fn prepare_bodies<M: Module>(
 ) -> Result<Vec<Prepared>, NativeCompileError> {
     let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
     let layout_regions_last = std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some();
+    let share_retirements = std::env::var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
+        .is_some_and(|scope| scope == "helpers" || scope == "all");
     let mut groups: Vec<Prepared> = Vec::new();
     for mut traversal in traversals {
         traversal.live_captures.clear();
@@ -1101,6 +1103,12 @@ fn prepare_bodies<M: Module>(
             traversal.body(root, &signature)
         };
         let mut context = Context::for_function(body);
+        if share_retirements {
+            let shared = super::owner_retirement::share(module, &mut context.func)?;
+            if shared != 0 {
+                eprintln!("compact checked {kind} {} retirement sites shared: {shared}", candidate.header);
+            }
+        }
         if traversal.packed_inputs {
             eprintln!(
                 "compact checked {kind} {} packet: {} captures, {} results",

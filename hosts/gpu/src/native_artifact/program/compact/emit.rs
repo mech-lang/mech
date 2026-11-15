@@ -1315,6 +1315,17 @@ pub(super) fn define_entry<M: Module>(
     } else {
         None
     };
+    if outline_allowed
+        && std::env::var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
+            .is_some_and(|scope| scope != "helpers")
+    {
+        let shared = super::owner_retirement::share(module, &mut context.func)?;
+        if shared != 0 {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("compact owner retirements shared: {shared}");
+    }
     if outline_allowed && let Some(path) = std::env::var_os("MECH_COMPACT_LAYOUT_REGION_REPORT") {
         super::checked_region_discovery::report(&context.func, path.as_ref()).map_err(backend)?;
     }
