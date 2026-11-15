@@ -341,8 +341,18 @@
       "sha256": "341ec1831f02c559d6b1d787532f93fa771178c0df49f358f60e0d8b65a4a809",
       "source_revision": "bfe3ee58198a18c6039c638e434c7aa3800c4d5f",
       "summary": "benchmarks/mech-deflate/native-profile/known-origin-ssa-trials-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compiler-mimalloc-20261115.tar.gz",
+      "bytes": 37968342,
+      "decision": "Retained compiler-executable allocator: complete build 18.538->16.965s (-8.49%), both blocks faster; instructions -13.57%, parse -12.08%,exact outputs/complete executable. Compiler RSS +10.04%; existing default CLI feature error compared to baseline, explicit native CLI check passes. No emitted-program allocator change.",
+      "files": 746,
+      "receipt": "benchmarks/mech-deflate/native-profile/compiler-mimalloc-apple-m3-20261115.archive.json",
+      "sha256": "c9d0fd024106fbc0f1e82478745a4e54ba68e0b26eb505d0733fb166aabfc51d",
+      "source_revision": "d834508336e4533320cea8587b3e0e7a53124a94",
+      "summary": "benchmarks/mech-deflate/native-profile/compiler-mimalloc-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 894219462
+  "total_archive_bytes": 932187804
 }

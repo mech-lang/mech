@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-four complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 894,219,462 bytes (894.2 MB).
+Thirty-five complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 932,187,804 bytes (932.2 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-four repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-five repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -40,6 +40,22 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | SSA lookup, inline-first and shared-root trials | Rejected: compiler +0.79%/+0.38%, source CFG +4.50%/+1.02%, instructions +1.00%/+0.26%; both blocks adverse, sources/tool restored; exact outputs/executable. | [mech-ssa-lookup-trials-20261115.tar.gz](mech-ssa-lookup-trials-20261115.tar.gz) | [Receipt](../../native-profile/ssa-lookup-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/ssa-lookup-trials-apple-m3-20261115.json) | 1,024 |
 | Frontend normalized-type and annotation-owner caches | Rejected: targeted frontend/instruction savings, but no useful complete-build gain; type-cache compiler +0.40%, annotation full build +0.13% with mixed blocks; exact bytes; sources/tool restored. | [mech-frontend-cache-trials-20261115.tar.gz](mech-frontend-cache-trials-20261115.tar.gz) | [Receipt](../../native-profile/frontend-cache-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/frontend-cache-trials-apple-m3-20261115.json) | 1,129 |
 | Late known-origin SSA, two prototypes | Rejected larger trial: compiler +1.92%, source CFG +18.67%, both blocks slower despite 5.28M fewer temporary values; exact bytes and restored source/tool. Pending-only superseded before primary timing. | [mech-known-origin-ssa-trials-20261115.tar.gz](mech-known-origin-ssa-trials-20261115.tar.gz) | [Receipt](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.json) | 657 |
+| Compiler executable mimalloc | Retained: complete build -8.49%, instructions -13.57%, parser -12.08%, both blocks faster; exact program/executable. Compiler RSS +10.04%; default CLI failure reproduced on baseline, native CLI check passes. | [mech-compiler-mimalloc-20261115.tar.gz](mech-compiler-mimalloc-20261115.tar.gz) | [Receipt](../../native-profile/compiler-mimalloc-apple-m3-20261115.archive.json) / [result](../../native-profile/compiler-mimalloc-apple-m3-20261115.json) | 746 |
+
+The [compiler allocator qualification](../../../../docs/design/native-compiler-allocator-compile-profile.md)
+retains source `d834508336`, whose entire seven-file diff matches the measured
+patch. Eight complete builds improve 18.538 to 16.965 seconds (8.49%), with both
+blocks faster and identical executable bytes. A separate eight-run Object
+cohort reduces compiler time 9.45%, instructions 13.57%, parsing 12.08% and
+preparation 16.71%. Compiler maximum RSS rises 10.04% (about 0.61 GB); footprint
+rises 10.24%. All observations remain. The shared pinned allocator module is
+registered in compiler executables; libraries and emitted programs keep their
+allocators. Fourteen fixture pairs and default-serial full-output/executable
+gates pass. The real native CLI check passes with `cranelift_build`; the same
+existing default-feature errors are reproduced on the original baseline and
+candidate. The thirty-fifth packet preserves all source/patches, builds/checks,
+crate archives, failures, observations/outputs, native inputs, whole-commit
+proof and pure offline replay. The sub-ten-second goal remains open.
 
 The [late known-origin SSA trials](../../../../docs/design/native-known-origin-ssa-trials.md)
 keep original sealing and fallback paths. The larger shortcut removes 5.28 million
