@@ -22,6 +22,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 #[path = "checked_region_body.rs"]
 mod region_body;
+#[path = "checked_region_inputs.rs"]
+mod region_inputs;
 #[path = "checked_region_literals.rs"]
 mod region_literals;
 
@@ -81,6 +83,7 @@ struct Traversal {
     candidate: Candidate,
     blocks: BTreeSet<Block>,
     inputs: Vec<Value>,
+    input_roles: BTreeMap<Inst, Vec<Option<usize>>>,
     outputs: Vec<Value>,
     finish: Vec<Value>,
     passthrough: BTreeMap<Value, Value>,
@@ -405,6 +408,7 @@ fn plan(
         candidate,
         blocks,
         inputs: captures,
+        input_roles: BTreeMap::new(),
         outputs,
         finish: finish.to_vec(),
         passthrough,
@@ -500,6 +504,11 @@ impl Traversal {
                 })
                 .collect();
         }
+        let input_roles = if self.input_roles.is_empty() {
+            Vec::new()
+        } else {
+            params[..self.inputs.len()].to_vec()
+        };
         let mut params = params.into_iter();
         let mut map = self
             .inputs
@@ -560,7 +569,15 @@ impl Traversal {
             }
             for inst in f.layout.block_insts(block) {
                 body.layout.append_inst(inst, block);
+                let mut roles = self.input_roles.get(&inst).into_iter().flatten();
                 body.dfg.map_inst_values(inst, |value| {
+                    if let Some(Some(index)) = roles.next() {
+                        debug_assert_eq!(
+                            f.dfg.resolve_aliases(value),
+                            f.dfg.resolve_aliases(self.inputs[*index])
+                        );
+                        return input_roles[*index];
+                    }
                     if value.as_u32() >= f.dfg.num_values() as u32 {
                         return value;
                     }
@@ -906,15 +923,30 @@ pub(super) fn share<M: Module>(
         families,
         RegionKind::Refusal,
         pack_large_refusals,
-        false,
+        CaptureBindings::default(),
     )
+}
+
+#[derive(Clone, Copy, Default)]
+pub(super) struct CaptureBindings {
+    pub(super) literals: bool,
+    pub(super) input_roles: bool,
+}
+
+impl CaptureBindings {
+    pub(super) fn from_environment() -> Self {
+        Self {
+            literals: std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some(),
+            input_roles: std::env::var_os("MECH_COMPACT_BIND_REGION_INPUT_ROLES").is_some(),
+        }
+    }
 }
 
 pub(super) fn share_controllers<M: Module>(
     module: &mut M,
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
-    bind_literals: bool,
+    bindings: CaptureBindings,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
     if families.iter().map(Vec::len).sum::<usize>() < 2 {
         return Ok(None);
@@ -925,7 +957,7 @@ pub(super) fn share_controllers<M: Module>(
         families,
         RegionKind::Controller,
         false,
-        bind_literals,
+        bindings,
     )
 }
 
@@ -933,19 +965,12 @@ pub(super) fn share_phase_regions<M: Module>(
     module: &mut M,
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
-    bind_literals: bool,
+    bindings: CaptureBindings,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
     // The resume path can be a shared failure continuation inside the phase.
     // Its original block arguments and preceding stores travel through the
     // same checked boundary as any other partial continuation.
-    share_families(
-        module,
-        root,
-        families,
-        RegionKind::Phase,
-        true,
-        bind_literals,
-    )
+    share_families(module, root, families, RegionKind::Phase, true, bindings)
 }
 
 fn share_families<M: Module>(
@@ -954,7 +979,7 @@ fn share_families<M: Module>(
     families: Vec<Vec<Candidate>>,
     region_kind: RegionKind,
     pack_large_refusals: bool,
-    bind_literals: bool,
+    bindings: CaptureBindings,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
     let refusal_regions = region_kind == RegionKind::Refusal;
     if families.is_empty() {
@@ -1011,8 +1036,12 @@ fn share_families<M: Module>(
             proven.extend(&traversal.blocks);
             traversals.push(traversal);
         }
-        if bind_literals {
-            region_literals::bind(root, &mut traversals[first..]);
+        let family = &mut traversals[first..];
+        if bindings.literals {
+            region_literals::bind(root, family);
+        }
+        if bindings.input_roles {
+            region_inputs::bind(root, family);
         }
     }
     drop((cfg, users, proven));
@@ -1199,6 +1228,19 @@ fn share_families<M: Module>(
             "code_bytes":selected.bytes.len(),"stack_bytes":selected.stack,
             "input_words":selected.signature.params.len(),
         });
+        if selected
+            .traversals
+            .iter()
+            .any(|t| !t.input_roles.is_empty())
+        {
+            entry["aligned_input_words"] = serde_json::json!(
+                selected
+                    .traversals
+                    .iter()
+                    .map(|t| t.inputs.len())
+                    .collect::<Vec<_>>()
+            );
+        }
         if selected.traversals.iter().any(|t| !t.literals.is_empty()) {
             entry["literal_inputs"] = serde_json::json!(
                 selected

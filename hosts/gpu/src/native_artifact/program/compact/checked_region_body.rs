@@ -158,6 +158,8 @@ pub(super) fn prepare(
         values.insert(value, seed.dfg.first_result(local));
     }
 
+    let mut input_roles = BTreeMap::new();
+
     // Definitions precede uses in reverse postorder. Keep the source layout
     // order in the seed, independently of when each instruction is copied.
     for &block in dominance
@@ -181,6 +183,9 @@ pub(super) fn prepare(
                 lists: &mut seed.dfg.value_lists,
             });
             let local = seed.dfg.make_inst(mapped);
+            if let Some(roles) = traversal.input_roles.get(&inst) {
+                input_roles.insert(local, roles.clone());
+            }
             seed.dfg
                 .make_inst_results(local, source.dfg.ctrl_typevar(inst));
             seed.layout.append_inst(local, local_block);
@@ -209,6 +214,7 @@ pub(super) fn prepare(
         },
         blocks: traversal.blocks.iter().map(|b| blocks[b]).collect(),
         inputs: traversal.inputs.iter().copied().map(value).collect(),
+        input_roles,
         outputs: traversal.outputs.iter().copied().map(value).collect(),
         finish: traversal.finish.iter().copied().map(value).collect(),
         passthrough: traversal

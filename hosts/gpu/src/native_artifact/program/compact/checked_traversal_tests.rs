@@ -1,6 +1,6 @@
 use super::{
-    Candidate, RegionKind, controller_candidates, share, share_controllers, share_families,
-    share_phase_regions,
+    Candidate, CaptureBindings, RegionKind, controller_candidates, share, share_controllers,
+    share_families, share_phase_regions,
 };
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, StackSlotData, StackSlotKind, condcodes::IntCC, types,
@@ -124,12 +124,17 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
                     vec![parts.clone()],
                     RegionKind::Refusal,
                     false,
-                    false
+                    CaptureBindings::default()
                 )
                 .unwrap()
                 .is_none()
             );
-            share_phase_regions(module, &mut ctx.func, vec![parts], false)
+            share_phase_regions(
+                module,
+                &mut ctx.func,
+                vec![parts],
+                CaptureBindings::default(),
+            )
         }
         .unwrap()
         .expect("both traversals selected");
@@ -292,9 +297,17 @@ fn define_controller(module: &mut JITModule, enabled: bool, varying_bounds: bool
             candidate.origin_base = Some(candidate.header as u32 - 7);
             candidate.header += 100;
         }
-        let report = share_controllers(module, &mut ctx.func, vec![candidates], varying_bounds)
-            .unwrap()
-            .expect("both controllers selected");
+        let report = share_controllers(
+            module,
+            &mut ctx.func,
+            vec![candidates],
+            CaptureBindings {
+                literals: varying_bounds,
+                ..CaptureBindings::default()
+            },
+        )
+        .unwrap()
+        .expect("both controllers selected");
         assert_eq!(report[0]["headers"], serde_json::json!([130, 190]));
         let input_words = if varying_bounds { 4 } else { 3 };
         assert_eq!(
@@ -399,9 +412,17 @@ fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
     }
     b.seal_all_blocks();
     b.finalize();
-    let report = share_phase_regions(&mut module, &mut context.func, vec![sites], true)
-        .unwrap()
-        .expect("both phase regions share a body");
+    let report = share_phase_regions(
+        &mut module,
+        &mut context.func,
+        vec![sites],
+        CaptureBindings {
+            literals: true,
+            ..CaptureBindings::default()
+        },
+    )
+    .unwrap()
+    .expect("both phase regions share a body");
     assert_eq!(report[0]["headers"], serde_json::json!([60, 80]));
     context.verify(module.isa()).unwrap();
     module.define_function(id, &mut context).unwrap();
@@ -415,4 +436,68 @@ fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
         assert_eq!(run(choice, 0, 100), ResultPair(0, 123));
         assert_eq!(run(choice, 1, 100), ResultPair(19, origin));
     }
+}
+
+#[test]
+fn shared_body_takes_distinct_operand_roles_even_when_a_caller_repeats_a_value() {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
+    let id = module
+        .declare_function("operand_roles", Linkage::Export, &context.func.signature)
+        .unwrap();
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    let entry = b.create_block();
+    let left = b.create_block();
+    let right = b.create_block();
+    b.append_block_params_for_function_params(entry);
+    b.switch_to_block(entry);
+    let [choice, a, other] = *b.block_params(entry) else {
+        unreachable!()
+    };
+    b.ins().brif(choice, right, &[], left, &[]);
+    let mut sites = Vec::new();
+    for (start, header, second) in [(left, 60, a), (right, 80, other)] {
+        let exit = b.create_block();
+        b.switch_to_block(start);
+        let result = b.ins().isub(a, second);
+        b.ins().jump(exit, &[]);
+        b.switch_to_block(exit);
+        let zero = b.ins().iconst(types::I64, 0);
+        b.ins().return_(&[zero, result]);
+        sites.push(Candidate {
+            start,
+            exit,
+            resume: None,
+            header,
+            origin_base: Some(0),
+            span: 0,
+        });
+    }
+    b.seal_all_blocks();
+    b.finalize();
+    let report = share_controllers(
+        &mut module,
+        &mut context.func,
+        vec![sites],
+        CaptureBindings {
+            input_roles: true,
+            ..CaptureBindings::default()
+        },
+    )
+    .unwrap()
+    .expect("both operand roles use a shared body");
+    assert_eq!(report[0]["aligned_input_words"], serde_json::json!([2, 2]));
+    context.verify(module.isa()).unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    let run = unsafe {
+        std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
+            module.get_finalized_function(id),
+        )
+    };
+    assert_eq!(run(0, 9, 4), ResultPair(0, 0));
+    assert_eq!(run(1, 9, 4), ResultPair(0, 5));
 }

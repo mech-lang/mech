@@ -617,12 +617,11 @@ pub(super) fn define<M: Module>(
             windows,
             base.parse().map_err(backend)?,
         )?;
-        let bind_literals = std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some();
         let checked = checked_traversals::share_phase_regions(
             module,
             &mut context.func,
             families,
-            bind_literals,
+            checked_traversals::CaptureBindings::from_environment(),
         )?;
         if checked.is_some() {
             context.flowgraph();
