@@ -329,7 +329,7 @@ impl SemanticBuilder {
         block: &mut PendingControlBlock,
         result: &SchemaDraft,
         inputs: &mut Vec<PendingValue>,
-        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+        captures: &mut Vec<(u16, PendingSchema, bool)>,
         call: &SyntaxNode,
     ) -> Result<(), SourceSemanticError> {
         let map_result = map_payload(result);

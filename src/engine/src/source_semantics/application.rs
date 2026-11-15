@@ -20,7 +20,7 @@ enum ApplicationCount {
 
 pub(super) struct PendingIteration {
     pub(super) count: crate::IterationCount,
-    pub(super) captures: Vec<(u16, SchemaDraft, bool)>,
+    pub(super) captures: Vec<(u16, PendingSchema, bool)>,
     pub(super) carrier: SchemaDraft,
     pub(super) body: PendingControlBlock,
 }
@@ -330,10 +330,10 @@ impl SemanticBuilder {
                 crate::IterationCount::Elements { input }
             }
         };
-        let mut captures = Vec::<(u16, SchemaDraft, bool)>::new();
+        let mut captures = Vec::<(u16, PendingSchema, bool)>::new();
         let mut parameters = vec![(
             crate::ControlParameterSource::IterationCarrier,
-            carrier.clone(),
+            PendingSchema::from(carrier.clone()),
         )];
         let mut parameter_values = vec![carrier_value];
         let mut resolve =
@@ -377,7 +377,7 @@ impl SemanticBuilder {
                         let ordinal = u16::try_from(parameters.len()).map_err(|_| error())?;
                         parameters.push((
                             crate::ControlParameterSource::Capture(capture),
-                            schema.into_owned(),
+                            schema,
                         ));
                         parameter_values.push(value);
                         Ok(PendingControlValue::Parameter(ordinal))
