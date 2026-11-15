@@ -22,6 +22,7 @@ enum Body {
 enum DirectRuntimeCalls {
     Disabled,
     Allocation,
+    AllocationAndByteAppends,
     Free,
     All,
 }
@@ -30,7 +31,13 @@ impl DirectRuntimeCalls {
     fn includes(&self, name: Option<&str>) -> bool {
         match name {
             Some("mech_compact_allocate" | "mech_compact_writable") => {
-                matches!(self, Self::Allocation | Self::All)
+                matches!(
+                    self,
+                    Self::Allocation | Self::AllocationAndByteAppends | Self::All
+                )
+            }
+            Some("mech_compact_finish_byte_appends") => {
+                matches!(self, Self::AllocationAndByteAppends)
             }
             Some("mech_compact_free") => matches!(self, Self::Free | Self::All),
             _ => false,
@@ -67,6 +74,7 @@ impl PreparedObject {
             self.direct_runtime_calls = match mode {
                 "1" => DirectRuntimeCalls::All,
                 "allocation" => DirectRuntimeCalls::Allocation,
+                "allocation-and-byte-appends" => DirectRuntimeCalls::AllocationAndByteAppends,
                 "free" => DirectRuntimeCalls::Free,
                 _ => DirectRuntimeCalls::Disabled,
             };
@@ -460,28 +468,39 @@ mod tests {
     #[test]
     fn compact_runtime_imports_can_use_direct_branches() {
         use cranelift_codegen::binemit::Reloc;
-        let mut module = module();
-        module.use_direct_runtime_calls("free");
-        let entry = function(&mut module, "entry", Linkage::Export);
-        let free = function(&mut module, "mech_compact_free", Linkage::Import);
-        let allocate = function(&mut module, "mech_compact_allocate", Linkage::Import);
-        let external = function(&mut module, "unrelated_import", Linkage::Import);
-        define(&mut module, entry, &[free, allocate, external]);
-        let Body::Text(body) = module.bodies.get(&FuncOrDataId::Func(entry)).unwrap() else {
-            unreachable!();
-        };
-        let direct: Vec<_> = body
-            .relocs
-            .iter()
-            .filter(|r| r.kind == Reloc::Arm64Call)
-            .collect();
-        assert_eq!(direct.len(), 1);
-        assert_eq!(symbol(&direct[0].name), Some(FuncOrDataId::Func(free)));
-        assert!(
-            body.relocs
-                .iter()
-                .any(|r| symbol(&r.name) == Some(FuncOrDataId::Func(external)))
-        );
-        assert!(!module.finish().unwrap().emit().unwrap().is_empty());
+        let names = [
+            "mech_compact_free",
+            "mech_compact_allocate",
+            "mech_compact_finish_byte_appends",
+            "unrelated_import",
+        ];
+        for (mode, expected) in [
+            ("free", &[0][..]),
+            ("allocation-and-byte-appends", &[1, 2][..]),
+        ] {
+            let mut module = module();
+            module.use_direct_runtime_calls(mode);
+            let entry = function(&mut module, "entry", Linkage::Export);
+            let providers = names.map(|name| function(&mut module, name, Linkage::Import));
+            define(&mut module, entry, &providers);
+            let Body::Text(body) = module.bodies.get(&FuncOrDataId::Func(entry)).unwrap() else {
+                unreachable!();
+            };
+            for (index, provider) in providers.into_iter().enumerate() {
+                let relocs = body
+                    .relocs
+                    .iter()
+                    .filter(|r| symbol(&r.name) == Some(FuncOrDataId::Func(provider)))
+                    .collect::<Vec<_>>();
+                assert!(!relocs.is_empty());
+                assert_eq!(
+                    relocs.iter().any(|r| r.kind == Reloc::Arm64Call),
+                    expected.contains(&index),
+                    "function {} in {mode}",
+                    names[index]
+                );
+            }
+            assert!(!module.finish().unwrap().emit().unwrap().is_empty());
+        }
     }
 }
