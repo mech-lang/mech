@@ -1,5 +1,5 @@
 //! Retry near-identical packed refusals with their repeated bound in one lane.
-use super::{Prepared, matching_relocations, prepare_bodies, region_literals};
+use super::{Prepared, RegionKind, matching_relocations, prepare_bodies, region_literals};
 use crate::native_artifact::NativeCompileError;
 use cranelift_codegen::{dominator_tree::DominatorTree, ir::Function};
 use cranelift_module::Module;
@@ -79,7 +79,8 @@ pub(super) fn retry<M: Module>(
             continue;
         }
         let size = trials.len();
-        let mut replacement = prepare_bodies(module, function, trials, dominance, true)?;
+        let mut replacement =
+            prepare_bodies(module, function, trials, dominance, RegionKind::Refusal)?;
         // Reserve room for materializing the bound and storing the packet word
         // at each caller. The complete Object is measured after replacement.
         if replacement.len() != 1 || replacement[0].bytes.len() + 20 * size >= before {
