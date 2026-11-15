@@ -1019,3 +1019,17 @@ preserves all raw measurements, sources/patches, tests, outputs, native inputs,
 selection diagnostics and offline replay. Initial exploratory profile parsing
 and a test-count description correction remain. No complete-build improvement
 or sub-ten-second result is established.
+
+The [late known-origin SSA trials](../../docs/design/native-known-origin-ssa-trials.md)
+keep original sealing and fallback paths. The larger shortcut removes 5.28 million
+temporary values but increases compiler time 1.92% and source CFG 18.67% in eight
+balanced Object observations; both blocks are slower. Instructions fall 0.56%
+and compaction 25.67%, with a small RSS increase. Source/tool are restored;
+all four outputs and complete metadata, fourteen fixtures and both complete executable gates match.
+No primary full-native cohort is run. The pending-only predecessor is built
+and tested, then superseded without primary program timing. Each has 304 paired
+compacted IR/machine cases and 30 or 32 unit tests. Comparing the old early-sealing
+implementation after current compaction still finds 87 IR and 30 machine differences.
+The thirty-fourth packet retains both sources/patches, every test/setup failure,
+all observations/outputs, native inputs and pure replay. Sub-ten-second
+compilation remains open.
