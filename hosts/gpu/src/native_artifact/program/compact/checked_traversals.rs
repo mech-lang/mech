@@ -28,6 +28,7 @@ mod region_inputs;
 mod region_literals;
 
 const MAX_PACKET_WORDS: usize = 256;
+const FIRST_ERROR_TAG: i64 = 2;
 
 #[derive(Clone, Copy)]
 pub(super) struct Candidate {
@@ -89,6 +90,7 @@ struct Traversal {
     passthrough: BTreeMap<Value, Value>,
     live_captures: Vec<usize>,
     packed_inputs: bool,
+    return_error_origin: bool,
     constants: Vec<Value>,
     slots: Vec<StackSlot>,
     literals: Vec<region_literals::Capture>,
@@ -130,6 +132,23 @@ fn value_block(f: &Function, value: Value) -> Option<Block> {
         ValueDef::Result(inst, _) => f.layout.inst_block(inst),
         _ => None,
     }
+}
+
+fn bounded_relative_origin(f: &Function, origin: Value, base: i64) -> Option<i64> {
+    let ValueDef::Result(inst, _) = f.dfg.value_def(f.dfg.resolve_aliases(origin)) else {
+        return None;
+    };
+    let InstructionData::UnaryImm {
+        opcode: Opcode::Iconst,
+        imm,
+    } = f.dfg.insts[inst]
+    else {
+        return None;
+    };
+    u32::try_from(i64::from(imm))
+        .ok()?
+        .checked_sub(u32::try_from(base).ok()?)
+        .map(i64::from)
 }
 
 fn use_blocks(f: &Function) -> Vec<Vec<Block>> {
@@ -414,6 +433,7 @@ fn plan(
         passthrough,
         live_captures: Vec::new(),
         packed_inputs,
+        return_error_origin: false,
         constants,
         slots,
         literals: Vec::new(),
@@ -421,6 +441,22 @@ fn plan(
 }
 
 impl Traversal {
+    fn has_bounded_error_origins(&self, f: &Function) -> bool {
+        let mut returns = self
+            .blocks
+            .iter()
+            .filter_map(|&block| f.layout.last_inst(block))
+            .filter(|&inst| f.dfg.insts[inst].opcode() == Opcode::Return)
+            .peekable();
+        returns.peek().is_some()
+            && returns.all(|inst| {
+                let [_, origin] = *f.dfg.inst_args(inst) else {
+                    return false;
+                };
+                bounded_relative_origin(f, origin, self.candidate.origin_base()).is_some()
+            })
+    }
+
     fn output_words(&self) -> usize {
         self.finish
             .iter()
@@ -627,20 +663,29 @@ impl Traversal {
                         };
                         let mut pos = FuncCursor::new(&mut body).at_inst(inst);
                         let base = self.candidate.origin_base();
-                        let relative = match pos.func.dfg.value_def(origin) {
-                            ValueDef::Result(producer, _) => match pos.func.dfg.insts[producer] {
-                                InstructionData::UnaryImm {
-                                    opcode: Opcode::Iconst,
-                                    imm,
-                                } => pos
-                                    .ins()
-                                    .iconst(types::I64, i64::from(imm).wrapping_sub(base)),
+                        let tag = if self.return_error_origin {
+                            // Zero and one are the two continuations. A proved
+                            // relative u32 origin fits above them without wrap.
+                            let relative = bounded_relative_origin(pos.func, origin, base)
+                                .expect("proved origin must survive region lowering");
+                            pos.ins().iconst(types::I64, relative + FIRST_ERROR_TAG)
+                        } else {
+                            let relative = match pos.func.dfg.value_def(origin) {
+                                ValueDef::Result(producer, _) => match pos.func.dfg.insts[producer]
+                                {
+                                    InstructionData::UnaryImm {
+                                        opcode: Opcode::Iconst,
+                                        imm,
+                                    } => pos
+                                        .ins()
+                                        .iconst(types::I64, i64::from(imm).wrapping_sub(base)),
+                                    _ => pos.ins().iadd_imm(origin, -base),
+                                },
                                 _ => pos.ins().iadd_imm(origin, -base),
-                            },
-                            _ => pos.ins().iadd_imm(origin, -base),
+                            };
+                            pos.ins().store(MemFlags::new(), relative, packet, 0);
+                            pos.ins().iconst(types::I64, FIRST_ERROR_TAG)
                         };
-                        pos.ins().store(MemFlags::new(), relative, packet, 0);
-                        let tag = pos.ins().iconst(types::I64, 2);
                         pos.func.dfg.replace(inst).return_(&[tag, status]);
                     }
                     InstructionData::Jump {
@@ -837,11 +882,21 @@ impl Traversal {
         let [tag, status] = *pos.func.dfg.inst_results(call) else {
             unreachable!()
         };
-        let failed = pos.ins().icmp_imm(IntCC::Equal, tag, 2);
+        let condition = if self.return_error_origin {
+            IntCC::UnsignedGreaterThanOrEqual
+        } else {
+            IntCC::Equal
+        };
+        let failed = pos.ins().icmp_imm(condition, tag, FIRST_ERROR_TAG);
         pos.ins().brif(failed, failure, &[], cont, &[]);
         pos.goto_bottom(failure);
-        let origin = pos.ins().stack_load(types::I64, packets.result, 0);
-        let origin = pos.ins().iadd_imm(origin, candidate.origin_base());
+        let origin = if self.return_error_origin {
+            pos.ins()
+                .iadd_imm(tag, candidate.origin_base() - FIRST_ERROR_TAG)
+        } else {
+            let relative = pos.ins().stack_load(types::I64, packets.result, 0);
+            pos.ins().iadd_imm(relative, candidate.origin_base())
+        };
         pos.ins().return_(&[status, origin]);
         if let Some((resume, finish, _)) = arms {
             pos.goto_bottom(cont);
@@ -931,6 +986,7 @@ pub(super) fn share<M: Module>(
 pub(super) struct CaptureBindings {
     pub(super) literals: bool,
     pub(super) input_roles: bool,
+    pub(super) return_error_origin: bool,
 }
 
 impl CaptureBindings {
@@ -938,6 +994,8 @@ impl CaptureBindings {
         Self {
             literals: std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some(),
             input_roles: std::env::var_os("MECH_COMPACT_BIND_REGION_INPUT_ROLES").is_some(),
+            return_error_origin: std::env::var_os("MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN")
+                .is_some(),
         }
     }
 }
@@ -1011,7 +1069,7 @@ fn share_families<M: Module>(
             if excluded.contains(&candidate.header) {
                 continue;
             }
-            let traversal = match plan(
+            let mut traversal = match plan(
                 root,
                 &cfg,
                 &users,
@@ -1034,6 +1092,9 @@ fn share_families<M: Module>(
                 continue;
             }
             proven.extend(&traversal.blocks);
+            traversal.return_error_origin = bindings.return_error_origin
+                && traversal.packed_inputs
+                && traversal.has_bounded_error_origins(root);
             traversals.push(traversal);
         }
         let family = &mut traversals[first..];
@@ -1129,6 +1190,7 @@ fn share_families<M: Module>(
         }
         if let Some(winner) = groups.iter_mut().find(|other| {
             other.signature == signature
+                && other.traversals[0].return_error_origin == traversal.return_error_origin
                 && other.alignment == alignment
                 && other.bytes.as_ref() == bytes
                 && matching_relocations(other.function, &other.relocs, function, &relocs)
@@ -1228,6 +1290,9 @@ fn share_families<M: Module>(
             "code_bytes":selected.bytes.len(),"stack_bytes":selected.stack,
             "input_words":selected.signature.params.len(),
         });
+        if selected.traversals[0].return_error_origin {
+            entry["returns_error_origin"] = serde_json::json!(true);
+        }
         if selected
             .traversals
             .iter()
