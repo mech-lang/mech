@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-frontend-cache-trials-20261115.tar.gz",
+  "bytes": 50679144,
+  "evidence_files": 1129,
+  "files": 1129,
+  "format": 1,
+  "manifest_sha256": "fa34ef3dd662435b87900217c7044bdf5aab8cdd9e76674993a85ab6916c391f",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "f585d503a43e62e6f6ee3d20a014d416955f8b248a55fa9864236ac8c6ba4812",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-frontend-cache-trials-20261115.tar.gz",
+  "sha256": "273d3bf64c62ba957c4c34e1f2e2cb27ed0495d3cefaad544cef681a4d1108a9",
+  "source_revision": "f6cdecef644a7eb9e2091b685542b2ae5e405da8",
+  "uncompressed_bytes": 311756944,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "273d3bf64c62ba957c4c34e1f2e2cb27ed0495d3cefaad544cef681a4d1108a9",
+    "source_revision": "f6cdecef644a7eb9e2091b685542b2ae5e405da8",
+    "verified_bytes": 311756944,
+    "verified_files": 1129
+  }
+}
