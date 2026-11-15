@@ -1081,3 +1081,22 @@ native inputs, unchanged worker sources, two separate current-compiler stack
 diagnostics and the setup filename failure before compiler execution. Fresh
 extraction/verification and pure replay reproduce the compact result exactly.
 No new compiler source change, runtime timing or sub-ten-second result is claimed.
+
+The [shared action-output inventory qualification](../../docs/design/native-action-output-inventory-compile-profile.md) retains a lazy,
+complete sorted inventory for one immutable plan owner while each phase keeps
+its original liveness, scope, type, definition and read checks in order. Eight
+balanced complete builds improve **16.032216 to 15.689968 seconds (2.13%)**,
+with both blocks faster. A separate Object cohort reduces preparation 20.48%,
+compiler instructions 2.03% and compiler time 1.93%. RSS increases 0.0042% and
+footprint 0.0061%; parsing, cleanup, source CFG and link regressions remain in
+the report, including the first slightly slower complete pair. Every source,
+bytecode, Object, complete metadata and full executable matches, together with
+14 fixture pairs and a separate default-serial byte gate. Seven focused tests
+and the real native CLI check pass. The first focused harness link fails on
+an LLVM bitcode-version mismatch before tests execute; matching Rust ThinLTO
+fixes setup without changing the frozen compiler patch. Source commit f077bec331
+contains exactly the measured three-file diff. The thirty-eighth packet keeps
+all commands/logs, sources/patch, tests/failure, observations/outputs/executables,
+native inputs and pure replay. Its repository copy verifies and replays exactly.
+No language or emitted-program change, additional parallel gain or sub-ten-second
+result is claimed; the fixed runtime/adapter remains cached during primary runs.
