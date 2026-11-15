@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-route-work-trial-20261115.tar.gz",
+  "bytes": 20010260,
+  "evidence_files": 619,
+  "files": 619,
+  "format": 1,
+  "manifest_sha256": "0ae506e6bd522baf8921140bc14186a099540e1f9ca1391be03520d8c5c1ebaa",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "27a58b626a8353ee37c1aeecbb3e9821dbb798a07c18bb21860feecd805bdb43",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-route-work-trial-20261115.tar.gz",
+  "sha256": "3e1c4debe1c32ac370290aa5b13862bc2feceb2bf80536cc6cd48f98107379de",
+  "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+  "uncompressed_bytes": 128595908,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "3e1c4debe1c32ac370290aa5b13862bc2feceb2bf80536cc6cd48f98107379de",
+    "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+    "verified_bytes": 128595908,
+    "verified_files": 619
+  }
+}

@@ -271,8 +271,18 @@
       "sha256": "60d1d520e79cc76589e88185574ea60a360ab90ece6c04900b2b08127a573a52",
       "source_revision": "ab59d593f4dcc3e457d8c462b459f60eaf80851e",
       "summary": "benchmarks/mech-deflate/native-profile/constant-phi-trials-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-route-work-trial-20261115.tar.gz",
+      "bytes": 20010260,
+      "decision": "Rejected empty repair-walk shortcut: compiler/cleanup slower in both blocks, higher RSS; source/tool restored. Includes128 paired IR/machine comparisons and two current-worker stack diagnostics with exact outputs.",
+      "files": 619,
+      "receipt": "benchmarks/mech-deflate/native-profile/route-work-trial-apple-m3-20261115.archive.json",
+      "sha256": "3e1c4debe1c32ac370290aa5b13862bc2feceb2bf80536cc6cd48f98107379de",
+      "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+      "summary": "benchmarks/mech-deflate/native-profile/route-work-trial-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 598337463
+  "total_archive_bytes": 618347723
 }

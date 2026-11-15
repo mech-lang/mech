@@ -269,3 +269,16 @@ source/patches and replay are in the twenty-seventh
 [complete packet](../evidence/compiler-profile-20261114/README.md). Both subjects
 use the same 61 flags plus two workers, with PGO disabled. No useful complete-build
 gain or sub-ten-second result is claimed.
+
+The [empty repair traversal trial](../../../docs/design/native-route-work-compile-trial.md)
+is rejected and source/tool are restored. Eight source-to-Object compiles increase
+compiler phases 0.59% and cleanup 0.45%, with both blocks slower and RSS +0.98%;
+instructions fall only 0.04%. One differential test passes 128 complete
+IR/alias/machine comparisons; fourteen fixture pairs and cached full-executable
+gates match. No balanced complete-executable cohort is run. Two separate
+current-worker stack samples preserve every program byte and show per-edge
+source range-map copying for subsequent investigation. Sampled times are
+diagnostic, excluded from primary means. The twenty-eighth
+[complete packet](../evidence/compiler-profile-20261114/README.md) includes
+source/patches, tests/failure, every observation, native inputs, samples and replay.
+No additional parallel gain or sub-ten-second result is established.
