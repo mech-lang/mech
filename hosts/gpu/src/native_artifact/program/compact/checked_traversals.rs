@@ -26,6 +26,8 @@ mod region_body;
 mod region_inputs;
 #[path = "checked_region_literals.rs"]
 mod region_literals;
+#[path = "checked_region_outputs.rs"]
+mod region_outputs;
 
 const MAX_PACKET_WORDS: usize = 256;
 const FIRST_ERROR_TAG: i64 = 2;
@@ -86,6 +88,7 @@ struct Traversal {
     inputs: Vec<Value>,
     input_roles: BTreeMap<Inst, Vec<Option<usize>>>,
     outputs: Vec<Value>,
+    aligned_outputs: Vec<Value>,
     finish: Vec<Value>,
     passthrough: BTreeMap<Value, Value>,
     live_captures: Vec<usize>,
@@ -429,6 +432,7 @@ fn plan(
         inputs: captures,
         input_roles: BTreeMap::new(),
         outputs,
+        aligned_outputs: Vec::new(),
         finish: finish.to_vec(),
         passthrough,
         live_captures: Vec::new(),
@@ -458,6 +462,9 @@ impl Traversal {
     }
 
     fn output_words(&self) -> usize {
+        if !self.aligned_outputs.is_empty() {
+            return self.aligned_outputs.len();
+        }
         self.finish
             .iter()
             .chain(&self.outputs)
@@ -725,23 +732,35 @@ impl Traversal {
             let Some(stub) = stub else { continue };
             body.layout.append_block(stub);
             let original = exit_blocks[tag].unwrap();
-            let mut words = body
-                .dfg
-                .block_params(stub)
-                .iter()
-                .copied()
-                .zip(f.dfg.block_params(original))
-                .filter_map(|(param, value)| {
-                    (!self.passthrough.contains_key(value)).then_some(param)
-                })
-                .collect::<Vec<_>>();
-            if tag == 1 {
-                words.extend(
-                    self.outputs
-                        .iter()
-                        .filter(|v| !self.passthrough.contains_key(v)),
-                );
-            }
+            let params = body.dfg.block_params(stub);
+            let words = if tag == 1 && !self.aligned_outputs.is_empty() {
+                self.aligned_outputs
+                    .iter()
+                    .map(|&value| {
+                        self.finish
+                            .iter()
+                            .position(|&formal| formal == value)
+                            .map_or(value, |index| params[index])
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                let mut words = params
+                    .iter()
+                    .copied()
+                    .zip(f.dfg.block_params(original))
+                    .filter_map(|(param, value)| {
+                        (!self.passthrough.contains_key(value)).then_some(param)
+                    })
+                    .collect::<Vec<_>>();
+                if tag == 1 {
+                    words.extend(
+                        self.outputs
+                            .iter()
+                            .filter(|v| !self.passthrough.contains_key(v)),
+                    );
+                }
+                words
+            };
             let mut pos = FuncCursor::new(&mut body);
             pos.goto_bottom(stub);
             for (index, value) in words.into_iter().enumerate() {
@@ -781,9 +800,19 @@ impl Traversal {
             return source;
         }
         let ty = pos.func.dfg.value_type(original);
-        let value = pos.ins().stack_load(ty, slot, *next);
-        *next += 8;
-        value
+        let offset = if self.aligned_outputs.is_empty() {
+            let offset = *next;
+            *next += 8;
+            offset
+        } else {
+            let position = self
+                .aligned_outputs
+                .iter()
+                .position(|&value| value == original)
+                .expect("original result is in the shared output packet");
+            (position * 8) as i32
+        };
+        pos.ins().stack_load(ty, slot, offset)
     }
 
     fn replace<M: Module>(
@@ -987,6 +1016,7 @@ pub(super) struct CaptureBindings {
     pub(super) literals: bool,
     pub(super) input_roles: bool,
     pub(super) return_error_origin: bool,
+    pub(super) align_outputs: bool,
 }
 
 impl CaptureBindings {
@@ -996,6 +1026,7 @@ impl CaptureBindings {
             input_roles: std::env::var_os("MECH_COMPACT_BIND_REGION_INPUT_ROLES").is_some(),
             return_error_origin: std::env::var_os("MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN")
                 .is_some(),
+            align_outputs: std::env::var_os("MECH_COMPACT_ALIGN_REGION_OUTPUTS").is_some(),
         }
     }
 }
@@ -1031,82 +1062,18 @@ pub(super) fn share_phase_regions<M: Module>(
     share_families(module, root, families, RegionKind::Phase, true, bindings)
 }
 
-fn share_families<M: Module>(
+fn prepare_bodies<M: Module>(
     module: &mut M,
-    root: &mut Function,
-    families: Vec<Vec<Candidate>>,
-    region_kind: RegionKind,
-    pack_large_refusals: bool,
-    bindings: CaptureBindings,
-) -> Result<Option<serde_json::Value>, NativeCompileError> {
-    let refusal_regions = region_kind == RegionKind::Refusal;
-    if families.is_empty() {
-        return Ok(None);
-    }
-    let excluded = refusal_regions
-        .then(|| std::env::var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS").ok())
-        .flatten()
-        .map(|list| {
-            list.split(',')
-                .map(|part| part.parse::<usize>().map_err(backend))
-                .collect::<Result<BTreeSet<_>, _>>()
-        })
-        .transpose()?
-        .unwrap_or_default();
+    root: &Function,
+    traversals: impl IntoIterator<Item = Traversal>,
+    dominance: Option<&DominatorTree>,
+    refusal_regions: bool,
+) -> Result<Vec<Prepared>, NativeCompileError> {
     let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
     let layout_regions_last = std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some();
-    let order_layout_captures = std::env::var_os("MECH_COMPACT_ORDER_REGION_CAPTURES").is_some();
     let mut groups: Vec<Prepared> = Vec::new();
-    let mut proven = BTreeSet::new();
-    let cfg = ControlFlowGraph::with_function(root);
-    let users = use_blocks(root);
-    let dominance =
-        (!refusal_regions || pack_large_refusals).then(|| DominatorTree::with_function(root, &cfg));
-    let mut traversals = Vec::new();
-    for family in families {
-        let first = traversals.len();
-        for candidate in family {
-            if excluded.contains(&candidate.header) {
-                continue;
-            }
-            let mut traversal = match plan(
-                root,
-                &cfg,
-                &users,
-                dominance.as_ref(),
-                candidate,
-                pack_large_refusals,
-                order_layout_captures && candidate.origin_base.is_some(),
-                region_kind,
-            ) {
-                Ok(traversal) => traversal,
-                Err(reason) => {
-                    eprintln!(
-                        "compact checked region {} declined: {reason}",
-                        candidate.header
-                    );
-                    continue;
-                }
-            };
-            if !proven.is_disjoint(&traversal.blocks) {
-                continue;
-            }
-            proven.extend(&traversal.blocks);
-            traversal.return_error_origin = bindings.return_error_origin
-                && traversal.packed_inputs
-                && traversal.has_bounded_error_origins(root);
-            traversals.push(traversal);
-        }
-        let family = &mut traversals[first..];
-        if bindings.literals {
-            region_literals::bind(root, family);
-        }
-        if bindings.input_roles {
-            region_inputs::bind(root, family);
-        }
-    }
-    drop((cfg, users, proven));
     for mut traversal in traversals {
+        traversal.live_captures.clear();
         let candidate = traversal.candidate;
         let kind = if refusal_regions {
             "traversal"
@@ -1118,7 +1085,7 @@ fn share_families<M: Module>(
         let signature = traversal.signature(root);
         let body = if compact_layout_bodies
             && candidate.origin_base.is_some()
-            && let Some(dominance) = dominance.as_ref()
+            && let Some(dominance) = dominance
             && let Some((seed, mut local)) = region_body::prepare(root, &traversal, dominance)
         {
             let body = local.body(&seed, &signature);
@@ -1208,7 +1175,123 @@ fn share_families<M: Module>(
             });
         }
     }
-    drop(dominance);
+    Ok(groups)
+}
+
+fn share_families<M: Module>(
+    module: &mut M,
+    root: &mut Function,
+    families: Vec<Vec<Candidate>>,
+    region_kind: RegionKind,
+    pack_large_refusals: bool,
+    bindings: CaptureBindings,
+) -> Result<Option<serde_json::Value>, NativeCompileError> {
+    let refusal_regions = region_kind == RegionKind::Refusal;
+    if families.is_empty() {
+        return Ok(None);
+    }
+    let excluded = refusal_regions
+        .then(|| std::env::var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS").ok())
+        .flatten()
+        .map(|list| {
+            list.split(',')
+                .map(|part| part.parse::<usize>().map_err(backend))
+                .collect::<Result<BTreeSet<_>, _>>()
+        })
+        .transpose()?
+        .unwrap_or_default();
+    let order_layout_captures = std::env::var_os("MECH_COMPACT_ORDER_REGION_CAPTURES").is_some();
+    let mut proven = BTreeSet::new();
+    let cfg = ControlFlowGraph::with_function(root);
+    let users = use_blocks(root);
+    let dominance =
+        (!refusal_regions || pack_large_refusals).then(|| DominatorTree::with_function(root, &cfg));
+    let mut traversals = Vec::new();
+    let mut family_ids = BTreeMap::new();
+    for (family_index, family) in families.into_iter().enumerate() {
+        let first = traversals.len();
+        for candidate in family {
+            if excluded.contains(&candidate.header) {
+                continue;
+            }
+            let mut traversal = match plan(
+                root,
+                &cfg,
+                &users,
+                dominance.as_ref(),
+                candidate,
+                pack_large_refusals,
+                order_layout_captures && candidate.origin_base.is_some(),
+                region_kind,
+            ) {
+                Ok(traversal) => traversal,
+                Err(reason) => {
+                    eprintln!(
+                        "compact checked region {} declined: {reason}",
+                        candidate.header
+                    );
+                    continue;
+                }
+            };
+            if !proven.is_disjoint(&traversal.blocks) {
+                continue;
+            }
+            proven.extend(&traversal.blocks);
+            traversal.return_error_origin = bindings.return_error_origin
+                && traversal.packed_inputs
+                && traversal.has_bounded_error_origins(root);
+            if bindings.align_outputs {
+                family_ids.insert(candidate.header, family_index);
+            }
+            traversals.push(traversal);
+        }
+        let family = &mut traversals[first..];
+        if bindings.literals {
+            region_literals::bind(root, family);
+        }
+        if bindings.input_roles {
+            region_inputs::bind(root, family);
+        }
+    }
+    drop((users, proven));
+    let mut groups = prepare_bodies(
+        module,
+        root,
+        traversals,
+        dominance.as_ref(),
+        refusal_regions,
+    )?;
+    if bindings.align_outputs
+        && let Some(dom) = dominance.as_ref()
+    {
+        // Preserve exact matches with their original packets. Only unmatched
+        // members can justify wider output packets and another compilation.
+        let mut unmatched = BTreeMap::<_, Vec<_>>::new();
+        groups.retain_mut(|group| {
+            if group.traversals.len() > 1 {
+                return true;
+            }
+            let traversal = group.traversals.pop().unwrap();
+            let family = family_ids[&traversal.candidate.header];
+            unmatched.entry(family).or_default().push(traversal);
+            false
+        });
+        for family in unmatched.values_mut() {
+            region_outputs::bind(root, &cfg, dom, family);
+        }
+        let aligned = unmatched
+            .into_values()
+            .flatten()
+            .filter(|traversal| !traversal.aligned_outputs.is_empty());
+        groups.extend(prepare_bodies(
+            module,
+            root,
+            aligned,
+            Some(dom),
+            refusal_regions,
+        )?);
+    }
+    drop((cfg, dominance));
     let groups = groups
         .into_iter()
         .filter(|group| group.traversals.len() > 1)
@@ -1292,6 +1375,13 @@ fn share_families<M: Module>(
         });
         if selected.traversals[0].return_error_origin {
             entry["returns_error_origin"] = serde_json::json!(true);
+        }
+        if selected
+            .traversals
+            .iter()
+            .any(|t| !t.aligned_outputs.is_empty())
+        {
+            entry["aligned_outputs"] = serde_json::json!(true);
         }
         if selected
             .traversals
