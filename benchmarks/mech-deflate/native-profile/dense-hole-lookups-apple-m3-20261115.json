@@ -1,0 +1,563 @@
+{
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.37952008342836,
+      "control": 15.509152729529887,
+      "mean_reduction_fraction": 0.00835846086257841
+    },
+    {
+      "candidate": 15.463574770605192,
+      "control": 15.491745749954134,
+      "mean_reduction_fraction": 0.0018184509224227208
+    }
+  ],
+  "base_commit": "55016698865eb95ec14a38ef35342b3b86bf4ba3",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "55016698865eb95ec14a38ef35342b3b86bf4ba3",
+      "binary": "/private/tmp/mech-dense-hole-lookups-20261115/candidate",
+      "binary_sha256": "dd7dc5bc906325a213422a127a2e87ec134a3f8564b713dbbe50e1d1308571a0",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "8158330e494efff74b5bdd0e6b73515590563d7d103a4046025d00a6d993a9cd",
+      "seconds": 253.7724348749034
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "55016698865eb95ec14a38ef35342b3b86bf4ba3",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "8158330e494efff74b5bdd0e6b73515590563d7d103a4046025d00a6d993a9cd",
+      "seconds": 7.210878333076835
+    },
+    "candidate-cli-check": {
+      "base_commit": "55016698865eb95ec14a38ef35342b3b86bf4ba3",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "8158330e494efff74b5bdd0e6b73515590563d7d103a4046025d00a6d993a9cd",
+      "seconds": 10.507357999915257
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66939952,
+      "path": "/private/tmp/mech-dense-hole-lookups-20261115/candidate",
+      "sha256": "dd7dc5bc906325a213422a127a2e87ec134a3f8564b713dbbe50e1d1308571a0"
+    },
+    "control": {
+      "bytes": 66939952,
+      "path": "/private/tmp/mech-dense-hole-lookups-20261115/control",
+      "sha256": "b72ff590c3ea6760f9a77372ba2bb6761f3b2d2885cdbef029ee040509bb51ba"
+    },
+    "focused/tests": {
+      "bytes": 1444680,
+      "path": "/private/tmp/mech-dense-hole-lookups-20261115/focused/tests",
+      "sha256": "be9e887a48530fbd8f902c07aa03fa98ffa7d35e30f87d003df06bf4d611fdff"
+    },
+    "ir-comparison/probe": {
+      "bytes": 2801768,
+      "path": "/private/tmp/mech-dense-hole-lookups-20261115/ir-comparison/probe",
+      "sha256": "538d4ae596b9c8d857f9af8d728c472f1f16dc9187b5283aaf1110b1915bdb91"
+    }
+  },
+  "decision": {
+    "all_four_outputs_complete_metadata_whole_exe_identical": true,
+    "combined_new_source_pgo_qualified": false,
+    "current_best_pgo_seconds": 14.027480958262458,
+    "current_best_pgo_source": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+    "focused_tests": 29,
+    "full_native_balanced_blocks": [
+      {
+        "candidate": 15.37952008342836,
+        "control": 15.509152729529887,
+        "mean_reduction_fraction": 0.00835846086257841
+      },
+      {
+        "candidate": 15.463574770605192,
+        "control": 15.491745749954134,
+        "mean_reduction_fraction": 0.0018184509224227208
+      }
+    ],
+    "object_balanced_compiler_blocks": [
+      {
+        "candidate": 15.365081438,
+        "control": 15.273994645999998,
+        "mean_reduction_fraction": -0.005963521273320449
+      },
+      {
+        "candidate": 15.190948979000002,
+        "control": 15.3724713335,
+        "mean_reduction_fraction": 0.011808274060945645
+      }
+    ],
+    "paired_ir_cases": 304,
+    "primary_runs_uncontended": true,
+    "program_runtime_campaign": false,
+    "reason": "Dense-prefix absence follows the unchanged insertion/promotion invariant. Complete native cohort improves0.5090% inmean andbothblocks; instructions-.4676%,SSAconstruction-4.3075%. All raw/compactedIR/machine/output/fullmetadata/wholeexecutables identical. Objecttotal0.2951% improvement hasmixedblocks andretainedcleanup/linkadverse movement. Small saving only; no new bestPGO orsub-ten result.",
+    "retain_source_change": true,
+    "source_paths": [
+      "vendor/cranelift-frontend/src/ssa.rs"
+    ],
+    "standard_configuration_only": true
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "focused_tests": 29,
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.13803887483663857,
+        0.1380702080205083,
+        0.13694720808416605,
+        0.14783412497490644
+      ],
+      "control": [
+        0.13693441706709564,
+        0.11973554198630154,
+        0.13216029200702906,
+        0.12954070791602135
+      ],
+      "mean_reduction_fraction": -0.08202515245786302
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0009279591031372547,
+        0.000949749955907464,
+        0.001026791986078024,
+        0.0008827920537441969
+      ],
+      "control": [
+        0.001002082834020257,
+        0.0009353749919682741,
+        0.0009457920677959919,
+        0.0014074579812586308
+      ],
+      "mean_reduction_fraction": 0.11732674207543226
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.314080291893333,
+        15.444959874963388,
+        15.452732208184898,
+        15.474417333025485
+      ],
+      "control": [
+        15.304529417073354,
+        15.71377604198642,
+        15.503093667095527,
+        15.480397832812741
+      ],
+      "mean_reduction_fraction": 0.005090291997662644
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        15.175113457953557,
+        15.305939916986972,
+        15.314758208114654,
+        15.325700415996835
+      ],
+      "control": [
+        15.166592917172238,
+        15.593105125008151,
+        15.369987583020702,
+        15.349449666915461
+      ],
+      "mean_reduction_fraction": 0.005816986386768419
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.023337666,
+        0.023061666,
+        0.023034792,
+        0.023231834
+      ],
+      "control": [
+        0.023375792,
+        0.023034,
+        0.023210083,
+        0.023377833
+      ],
+      "mean_reduction_fraction": 0.0035672922175673527
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09403145778924227,
+        0.09314370807260275,
+        0.09325820789672434,
+        0.09398758294992149
+      ],
+      "control": [
+        0.09415520797483623,
+        0.09384345798753202,
+        0.09392583300359547,
+        0.09480995894409716
+      ],
+      "mean_reduction_fraction": 0.006140933362995815
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.036229709,
+        0.036081292,
+        0.036342584,
+        0.036120916
+      ],
+      "control": [
+        0.03613225,
+        0.03635775,
+        0.036268541,
+        0.036233583
+      ],
+      "mean_reduction_fraction": 0.001500929802228379
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.0419565001502633,
+        3.0572696251329035,
+        2.964961542049423,
+        2.9729177081026137
+      ],
+      "control": [
+        2.9764528339728713,
+        2.9624139999505132,
+        3.0300983330234885,
+        2.9364961250685155
+      ],
+      "mean_reduction_fraction": -0.011057453398139572
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.8990132911130786,
+        2.9111661659553647,
+        2.8220020420849323,
+        2.8301054160110652
+      ],
+      "control": [
+        2.8293023339938372,
+        2.8154947080183774,
+        2.882618624949828,
+        2.7895777500234544
+      ],
+      "mean_reduction_fraction": -0.01283852458205681
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14294320903718472,
+        0.14610345917753875,
+        0.14295949996449053,
+        0.14281229209154844
+      ],
+      "control": [
+        0.14715049997903407,
+        0.14691929193213582,
+        0.14747970807366073,
+        0.1469183750450611
+      ],
+      "mean_reduction_fraction": 0.023194834141856857
+    },
+    "compiler_seconds": {
+      "candidate": [
+        15.389402042,
+        15.340760834,
+        15.188447416,
+        15.193450542
+      ],
+      "control": [
+        15.259422542,
+        15.28856675,
+        15.453772334,
+        15.291170333
+      ],
+      "mean_reduction_fraction": 0.00295092956429277
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009119458,
+        0.009125875,
+        0.009136042,
+        0.00906825
+      ],
+      "control": [
+        0.009148167,
+        0.0092125,
+        0.009158209,
+        0.009232208
+      ],
+      "mean_reduction_fraction": 0.00820272403393607
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.585197083,
+        1.572012916,
+        1.584411583,
+        1.571168417
+      ],
+      "control": [
+        1.5768259580000001,
+        1.582204167,
+        1.575851792,
+        1.5818115000000001
+      ],
+      "mean_reduction_fraction": 0.000617952739244032
+    },
+    "instructions": {
+      "candidate": [
+        220645979502,
+        220650216016,
+        220690675596,
+        220625661876
+      ],
+      "control": [
+        221692686030,
+        221722863616,
+        221664732741,
+        221678978364
+      ],
+      "mean_reduction_fraction": 0.0046762722923109346
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4489756672,
+        4489756672,
+        4489756672,
+        4489756672
+      ],
+      "control": [
+        4490264576,
+        4489756672,
+        4489756672,
+        4489756672
+      ],
+      "mean_reduction_fraction": 2.8280465587671166e-05
+    },
+    "native_seconds": {
+      "candidate": [
+        11.866239708,
+        11.839180042,
+        11.66816675,
+        11.685679041
+      ],
+      "control": [
+        11.744096167,
+        11.768680542,
+        11.940357167,
+        11.762993792
+      ],
+      "mean_reduction_fraction": 0.0033222149877044638
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.055516250198707,
+        2.051750374957919,
+        2.0888748329598457,
+        2.050554082961753
+      ],
+      "control": [
+        2.0450748750008643,
+        2.0487019999418408,
+        2.052165291039273,
+        2.059727249899879
+      ],
+      "mean_reduction_fraction": -0.004999729225864558
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.868511583,
+        1.860544,
+        1.8666097499999998,
+        1.867393917
+      ],
+      "control": [
+        1.869099375,
+        1.868330042,
+        1.868196584,
+        1.87671225
+      ],
+      "mean_reduction_fraction": 0.0025766011042636094
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4467052216,
+        4467068624,
+        4467052216,
+        4467068624
+      ],
+      "control": [
+        4467576528,
+        4467052216,
+        4467052216,
+        4467052216
+      ],
+      "mean_reduction_fraction": 2.7505923064552462e-05
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.604925625026226,
+        1.6004816249478608,
+        1.6003100001253188,
+        1.6011030420195311
+      ],
+      "control": [
+        1.6034010420553386,
+        1.6036031669937074,
+        1.6032139169983566,
+        1.6338585000485182
+      ],
+      "mean_reduction_fraction": 0.005781485252070229
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.315028832992539,
+        2.232418208150193,
+        2.2303261670749635,
+        2.254629834089428
+      ],
+      "control": [
+        2.315736166900024,
+        2.368249250110239,
+        2.398735750000924,
+        2.3562663751654327
+      ],
+      "mean_reduction_fraction": 0.04307501181167339
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        15.457466833060607,
+        15.409637165954337,
+        15.25639474997297,
+        15.262221165932715
+      ],
+      "control": [
+        15.32730875001289,
+        15.355925500160083,
+        15.520022083073854,
+        15.360068083973601
+      ],
+      "mean_reduction_fraction": 0.002884907596869768
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "paired_ir": {
+    "cases_sha256": "21ed18254f2e1851fa9e67be8cb0202368a79597eff94488f3dee82cab20bee7",
+    "identical_complete_ir_aliases_types_definitions_queries_effects_and_enumerations": true,
+    "paired_cases": 304,
+    "verified_functions": 608
+  },
+  "patch_sha256": "8158330e494efff74b5bdd0e6b73515590563d7d103a4046025d00a6d993a9cd",
+  "scope": "Dense prefix holes return absence without redundant sparse-map probes, using unchanged promotion invariant. Same storage/layout/thresholds/SSA scheduling/value creation,61flags/two workers/pinnedmimalloc. StandardB72 control versus standardcandidate, no PGO/nativeCPU. SelectedPGO5a1 profile diagnostics remain separate and excluded from primary means. Complete output/metadata/whole-exe identity required. No grammar/proof/program-runtime change or sub-ten-second claim.",
+  "selection_profile": [
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-1",
+      "process": {
+        "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/use",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 14.503281333018094,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    },
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-2",
+      "process": {
+        "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/use",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 13.509747124975547,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    }
+  ],
+  "source_commit": "931b63c878622ea397aac3b0b5da9755bce8f3ff",
+  "source_state": {
+    "base_commit": "55016698865eb95ec14a38ef35342b3b86bf4ba3",
+    "files": [
+      {
+        "candidate_sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d",
+        "path": "vendor/cranelift-frontend/src/ssa.rs",
+        "sha256": "5589ceb3c038b2b5f9c146f276c38e2071c8fb3b0fe920387f1e9f048fb2b8ba"
+      }
+    ],
+    "patch_sha256": "8158330e494efff74b5bdd0e6b73515590563d7d103a4046025d00a6d993a9cd",
+    "scope": "Skip sparse.get for an empty slot inside the dense prefix. Every sparse key is outside the prefix by unchanged insert/promotion invariant. Storage/thresholds/SSAsealing/valuecreation/errors/grammar/proofs unchanged. Firstqualify standardB72 control versus standardcandidate; selectedPGO5a1 remains separate until combinedrequalification."
+  }
+}

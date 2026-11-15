@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Forty complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,168,041,373 bytes (1,168.0 MB).
+Forty-one complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,212,354,076 bytes (1,212.4 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-one repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -46,6 +46,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Shared action-output inventory | Retained: complete build -2.13%, preparation -20.48%, instructions -2.03%; both blocks faster; exact complete executable; RSS +0.0042%. Includes seven focused tests and failed test-link setup. | [mech-action-output-inventory-20261115.tar.gz](mech-action-output-inventory-20261115.tar.gz) | [Receipt](../../native-profile/action-output-inventory-apple-m3-20261115.archive.json) / [result](../../native-profile/action-output-inventory-apple-m3-20261115.json) | 719 |
 | Once-queued reachability worklist | Retained: complete build -1.47%, cleanup -5.45%, compiler -1.39%, instructions -0.41%; both blocks faster; exact complete executable; RSS +0.0029%. Three graph tests and address/disassembly selection proof. | [mech-reachability-worklist-20261115.tar.gz](mech-reachability-worklist-20261115.tar.gz) | [Receipt](../../native-profile/reachability-worklist-apple-m3-20261115.archive.json) / [result](../../native-profile/reachability-worklist-apple-m3-20261115.json) | 729 |
 | Current-source CPU-native compiler and PGO | Retained build configuration: complete build -10.20%, compiler -9.93%, instructions -13.00%, parser -18.23%; both blocks faster; all seven held-out cases faster; exact complete executable. Includes raw/merged profiles, all adverse fields and serial-helper setup failure. | [mech-refreshed-native-pgo-20261115.tar.gz](mech-refreshed-native-pgo-20261115.tar.gz) | [Receipt](../../native-profile/refreshed-native-pgo-apple-m3-20261115.archive.json) / [result](../../native-profile/refreshed-native-pgo-apple-m3-20261115.json) | 1,603 |
+| Dense-prefix SSA absence lookup | Retained small work reduction: complete build -0.51%, both blocks faster; source CFG -4.31%, instructions -0.47%; exact bytes. Object compiler mixed, cleanup +1.11%, link +8.20%; standard configuration only. Includes 29 units, 304 IR/machine pairs and separate current-PGO profiles. | [mech-dense-hole-lookups-20261115.tar.gz](mech-dense-hole-lookups-20261115.tar.gz) | [Receipt](../../native-profile/dense-hole-lookups-apple-m3-20261115.archive.json) / [result](../../native-profile/dense-hole-lookups-apple-m3-20261115.json) | 781 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -246,3 +247,21 @@ copy verifies every manifest/file/Git blob and replays byte-identically. Gzip
 level 6 preserves the exact tar stream while reducing transport size. No compiler
 source or emitted-program change, component/additive gain or sub-ten-second
 result is claimed; the fixed runtime/adapter is cached during primary runs.
+
+The [dense-prefix SSA lookup qualification](../../../../docs/design/native-dense-hole-lookups-compile-profile.md) retains source
+931b63c878, whose entire one-file commit equals the frozen measured patch.
+Eight complete builds improve **15.500449 to 15.421547 seconds (0.51%)**,
+with both blocks faster and every executable byte identical. The standard
+B72/dd7 compiler comparison uses the same 61 flags and two workers. Source
+CFG construction improves 4.31% and instructions 0.47%; Object compiler time
+improves 0.30% with mixed blocks, cleanup increases 1.11% and final linking
+8.20%. All observations remain. Dense-prefix holes now prove absence without
+a sparse-tail probe; storage, sealing, value allocation and proof paths are
+unchanged. All 29 production-module units, 304 paired raw/compacted IR and
+machine-code cases, 14 fixture pairs, native CLI check and default-serial byte
+gate pass. Two separate current-PGO stack diagnostics, address/disassembly,
+symbol bridge, all commands/logs, source/patch/whole-commit proof, outputs and
+native inputs are in the forty-first packet. Fresh extraction verifies and
+replays byte-identically. The new source is not combined-PGO qualified; the
+separate 14.027481-second d26 result remains the best qualified configuration.
+No grammar or emitted-program change or sub-ten-second result is claimed.
