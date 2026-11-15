@@ -201,6 +201,16 @@
       "sha256": "c3eb9f419a7fcc0c7aff19f225f793082522e21086ccec23e7e293e751ba2a49",
       "source_revision": "ab4e6d8bc6f0128b1899c292838c36470295424a",
       "summary": "benchmarks/mech-deflate/native-profile/point-liveness-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-batch-seal-20261114.tar.gz",
+      "bytes": 13234844,
+      "decision": "Rejected: batched SSA parameter sealing; source CFG +1.59%, compiler phases +0.39%, instructions effectively unchanged; every output byte matches; source restored.",
+      "files": 421,
+      "receipt": "benchmarks/mech-deflate/native-profile/ssa-batch-seal-trial-apple-m3-20261114.archive.json",
+      "sha256": "4c945c812a9c68e11d9418b87f4dea3c34bb9f6f16030cfb75fd2a9d6e970ba4",
+      "source_revision": "8dc06bea88ec709ca5f690013811d710ee3024d3",
+      "summary": "benchmarks/mech-deflate/native-profile/ssa-batch-seal-trial-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
