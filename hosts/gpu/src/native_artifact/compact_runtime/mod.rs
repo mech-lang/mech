@@ -433,8 +433,13 @@ pub unsafe extern "C" fn mech_compact_writable(
         Err(status) => status,
     }
 }
+// Keep this as a tail-call target for the shared decrement. An inlined
+// final release would require a frame even when another reference stays live.
+/// Release a registered owner after its last reference is retired.
+///
 /// # Safety
-/// The generated final release has decremented this current owner's count to0.
+/// The generated final release has decremented this current owner's count to zero.
+#[inline(never)]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner) -> u64 {
     if context.is_null() {
