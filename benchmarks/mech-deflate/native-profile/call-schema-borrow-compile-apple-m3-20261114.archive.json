@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-call-schema-borrow-20261114.tar.gz",
+  "bytes": 16465194,
+  "evidence_files": 544,
+  "files": 544,
+  "format": 1,
+  "manifest_sha256": "1e34b685e8df0d0cc64bfc0efe53486543952e6f3c60b93f1b7b8dbdecea6e8e",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "d46c2b2624f8878ff5d1f6752e663aaac20ba3618244b9d58c65c4cbc0d33ac8",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-call-schema-borrow-20261114.tar.gz",
+  "sha256": "d24fdab4c22394833154c9aa0015ef46d0c75691ceed28c51b8d47c4d24b5c38",
+  "source_revision": "f9786cb1ad4479727c1af8bf013f357a6e3ab01c",
+  "uncompressed_bytes": 101094836,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "d24fdab4c22394833154c9aa0015ef46d0c75691ceed28c51b8d47c4d24b5c38",
+    "source_revision": "f9786cb1ad4479727c1af8bf013f357a6e3ab01c",
+    "verified_bytes": 101094836,
+    "verified_files": 544
+  }
+}

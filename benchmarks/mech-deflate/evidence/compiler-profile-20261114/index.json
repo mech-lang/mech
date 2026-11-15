@@ -221,7 +221,18 @@
       "sha256": "15a1773c8e16928d6a4577db666ecf58c21d15e4f216ca4e0eb7d8ddfebc5a0a",
       "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
       "summary": "benchmarks/mech-deflate/native-profile/parallel-planning-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-call-schema-borrow-20261114.tar.gz",
+      "bytes": 16465194,
+      "decision": "Retained: borrowed call-argument schemas; small frontend and instruction reduction; identical complete outputs and executable.",
+      "files": 544,
+      "receipt": "benchmarks/mech-deflate/native-profile/call-schema-borrow-compile-apple-m3-20261114.archive.json",
+      "sha256": "d24fdab4c22394833154c9aa0015ef46d0c75691ceed28c51b8d47c4d24b5c38",
+      "source_revision": "f9786cb1ad4479727c1af8bf013f357a6e3ab01c",
+      "summary": "benchmarks/mech-deflate/native-profile/call-schema-borrow-compile-apple-m3-20261114.json"
     }
   ],
-  "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet."
+  "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
+  "total_archive_bytes": 398528336
 }
