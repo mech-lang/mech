@@ -241,8 +241,18 @@
       "sha256": "1e61f63fd42db8aa653127bc571c5e3bd1d757157a1c53e5123d975c311a1845",
       "source_revision": "2822e6d8905f73873936a108b0d7c6b20231217d",
       "summary": "benchmarks/mech-deflate/native-profile/schema-cache-view-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parallel-phases-20261114.tar.gz",
+      "bytes": 36327248,
+      "decision": "Retained opt-in integrated phase workers: helper time -5.72%, source-to-Object -0.97%, complete source-to-executable -1.57% in separate balanced cohorts; exact complete program/executable bytes; small RSS increase.",
+      "files": 731,
+      "receipt": "benchmarks/mech-deflate/native-profile/parallel-phases-compile-apple-m3-20261114.archive.json",
+      "sha256": "e87d16ef4e691e7eb4271c60b1bff68ab3200dd8836a14de956653299fbcddc5",
+      "source_revision": "1090de011646c92e30c2d4b648ed0792c50f300d",
+      "summary": "benchmarks/mech-deflate/native-profile/parallel-phases-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 418782332
+  "total_archive_bytes": 455109580
 }
