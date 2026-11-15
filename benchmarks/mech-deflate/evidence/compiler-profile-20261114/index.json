@@ -501,8 +501,18 @@
       "sha256": "12d2c77bedfca5ba26fdece4a9d0e9869c46d67274cfb84f81f6a54af30ddf16",
       "source_revision": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
       "summary": "benchmarks/mech-deflate/native-profile/packed-ssa-slots-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parser-frame-payloads-20261115.tar.gz",
+      "bytes": 94232155,
+      "decision": "Rejected parser frame80->32B payload-storage candidate. Direct current-fastest8043 versus candidate with own PGO: 13.275817->13.478050s (-1.523% reduction). Separate standard comparison: 14.908641->15.048180s (-0.936% reduction); parser 5.134% and instructions 0.739% lower. All full outputs/metadata/whole executables and parser identity/accounting checks exact. Every adverse phase, block, heldout and setup failure retained. No added component gains or subten claim.",
+      "files": 3246,
+      "receipt": "benchmarks/mech-deflate/native-profile/parser-frame-payloads-apple-m3-20261115.archive.json",
+      "sha256": "4e33a7419ed7deab2ca31b5046500b6ed3b4e72609c8df856a1a07c245d47822",
+      "source_revision": "25615f1d575fd5cb7c91d4dcd3d8d01edf9e3ef3",
+      "summary": "benchmarks/mech-deflate/native-profile/parser-frame-payloads-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1634023219
+  "total_archive_bytes": 1728255374
 }
