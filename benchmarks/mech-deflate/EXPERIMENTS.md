@@ -858,3 +858,16 @@ executable in 0.081–0.093 seconds using retained adapter objects; three earlie
 metadata-changing attempts remain. No parallel Mech compilation or PGO speedup
 is established. All output bytes, source patches, build failures and replay are
 preserved; the ten-second goal remains open.
+
+The [call-argument schema borrowing result](../../docs/design/native-call-schema-borrow-compile-profile.md)
+removes a whole-draft materialization before the unchanged type constructor.
+Eight serial 61-flag compiles reduce frontend 0.87%, compiler phases 0.57%,
+complete source-to-Object process 0.63% and instructions 0.11%; both balanced
+blocks improve. Every program byte, fourteen paired scalar/numeric fixtures
+and the complete executable match. Parsing, catalog and cleanup means increase
+slightly; unrelated native movement is not attributed to borrowing. The
+twenty-third [complete packet](evidence/compiler-profile-20261114/README.md)
+retains all observations, exact source/patch, native linker inputs and replay.
+Candidate internal compilation averages 17.428 seconds; complete process
+averages 17.482 seconds using precise completion. Native link observations are
+separate. Parallel function compilation and sub-ten-second completion remain open.

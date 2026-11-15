@@ -1,0 +1,561 @@
+{
+  "balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 17.463350187499998,
+        "control": 17.542239396,
+        "mean_reduction_fraction": 0.004497100211617755
+      },
+      "frontend_seconds": {
+        "candidate": 2.5204586875,
+        "control": 2.524386833,
+        "mean_reduction_fraction": 0.0015560790638935451
+      },
+      "instructions": {
+        "candidate": 257333422783,
+        "control": 257599798819,
+        "mean_reduction_fraction": 0.0010340692703225685
+      },
+      "whole_process_seconds": {
+        "candidate": 17.51856106251944,
+        "control": 17.59685654193163,
+        "mean_reduction_fraction": 0.0044494014726789155
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 17.393118354,
+        "control": 17.515184666499998,
+        "mean_reduction_fraction": 0.006969170740943831
+      },
+      "frontend_seconds": {
+        "candidate": 2.5253402080000003,
+        "control": 2.5659207915,
+        "mean_reduction_fraction": 0.015815212860205596
+      },
+      "instructions": {
+        "candidate": 257427598550.5,
+        "control": 257718059777.5,
+        "mean_reduction_fraction": 0.0011270503404020582
+      },
+      "whole_process_seconds": {
+        "candidate": 17.446415542042814,
+        "control": 17.588777667027898,
+        "mean_reduction_fraction": 0.00809391804707138
+      }
+    }
+  ],
+  "base_commit": "bb9c4b35919174c6d5daf28542609ff4f7682bc8",
+  "build": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "binary": "/private/tmp/mech-call-schema-borrow-20261114/candidate",
+    "binary_sha256": "9550643da36c23bd025cf1aabf4fc04461adcaa1c73384fa2fae657af3dd433d",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "head": "bb9c4b35919174c6d5daf28542609ff4f7682bc8",
+    "patch_sha256": "0cd7fb394fce73b63b91310b37b0b1e37ccedeca898e895d46a533c852f953bc",
+    "seconds": 374.22026091604494
+  },
+  "compiler_binary_sha256": {
+    "candidate": "9550643da36c23bd025cf1aabf4fc04461adcaa1c73384fa2fae657af3dd433d",
+    "control": "78084c5e5f14b8a9484d5665d8602e7fb9d98fd9c6aa92e46c137332e35b9310"
+  },
+  "decision": "Retained: borrowed call-argument schemas, unchanged program bytes and exact complete executable; small frontend and instruction reduction.",
+  "final_links": [
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.12213829183019698,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "control"
+    },
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.08894770895130932,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "candidate"
+    }
+  ],
+  "fixture_pairs": 14,
+  "flags_count": 61,
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.0257545,
+        0.027551458,
+        0.025879958,
+        0.026860583
+      ],
+      "control": [
+        0.026407917,
+        0.02655375,
+        0.026778792,
+        0.026737
+      ],
+      "mean_reduction_fraction": 0.00404742941884062
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09767183312214911,
+        0.09881808399222791,
+        0.09770466689951718,
+        0.09878837503492832
+      ],
+      "control": [
+        0.10030595795251429,
+        0.09797266684472561,
+        0.0996395000256598,
+        0.09823083295486867
+      ],
+      "mean_reduction_fraction": 0.007991940068972525
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.036846166,
+        0.037350209,
+        0.03755075,
+        0.039749334
+      ],
+      "control": [
+        0.03490925,
+        0.037269916,
+        0.03750075,
+        0.037305166
+      ],
+      "mean_reduction_fraction": -0.03069275424835305
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.4106809578370303,
+        3.4824220000300556,
+        3.401324207894504,
+        3.4037846671417356
+      ],
+      "control": [
+        3.3808010830543935,
+        3.4883784169796854,
+        3.4281212501227856,
+        3.3510147500783205
+      ],
+      "mean_reduction_fraction": -0.0036558601438603233
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        3.2437074158806354,
+        3.3034316250123084,
+        3.232304458040744,
+        3.2359907920472324
+      ],
+      "control": [
+        3.212879082886502,
+        3.3185623749159276,
+        3.258188708219677,
+        3.1790585410781205
+      ],
+      "mean_reduction_fraction": -0.003604495792631779
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.1669735419563949,
+        0.17899037501774728,
+        0.16901974985376,
+        0.16779387509450316
+      ],
+      "control": [
+        0.16792200016789138,
+        0.16981604206375778,
+        0.16993254190310836,
+        0.17195620900020003
+      ],
+      "mean_reduction_fraction": -0.004635998491045568
+    },
+    "compiler_seconds": {
+      "candidate": [
+        17.324075708,
+        17.602624667,
+        17.371537542,
+        17.414699166
+      ],
+      "control": [
+        17.411351042,
+        17.67312775,
+        17.587658917,
+        17.442710416
+      ],
+      "mean_reduction_fraction": 0.005732181595593966
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009294541,
+        0.009566041,
+        0.009258292,
+        0.00932175
+      ],
+      "control": [
+        0.009407584,
+        0.009319292,
+        0.009387833,
+        0.009247459
+      ],
+      "mean_reduction_fraction": -0.002099878144116163
+    },
+    "frontend_seconds": {
+      "candidate": [
+        2.503438708,
+        2.5374786670000002,
+        2.511889583,
+        2.538790833
+      ],
+      "control": [
+        2.509399958,
+        2.539373708,
+        2.577065833,
+        2.55477575
+      ],
+      "mean_reduction_fraction": 0.008743819093717575
+    },
+    "instructions": {
+      "candidate": [
+        257353502319,
+        257313343247,
+        257418841361,
+        257436355740
+      ],
+      "control": [
+        257755448042,
+        257444149596,
+        257766336643,
+        257669782912
+      ],
+      "mean_reduction_fraction": 0.0010805704745350253
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        5911838720,
+        5907398656,
+        5912215552,
+        5910921216
+      ],
+      "control": [
+        5910593536,
+        5915967488,
+        5910528000,
+        5912051712
+      ],
+      "mean_reduction_fraction": 0.00028612422225127165
+    },
+    "native_seconds": {
+      "candidate": [
+        12.679472542,
+        12.908274084,
+        12.695482458,
+        12.711429541
+      ],
+      "control": [
+        12.756938375,
+        12.972220167,
+        12.8588685,
+        12.729209208
+      ],
+      "mean_reduction_fraction": 0.006285950853403555
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.1302330000326037,
+        2.1372637080494314,
+        2.1354170830454677,
+        2.1344622501637787
+      ],
+      "control": [
+        2.135058832820505,
+        2.142201791051775,
+        2.1490535838529468,
+        2.1415955000557005
+      ],
+      "mean_reduction_fraction": 0.0035637241207054915
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.068606292,
+        2.081739,
+        2.090829917,
+        2.087911833
+      ],
+      "control": [
+        2.073614375,
+        2.087741791,
+        2.077379333,
+        2.084789083
+      ],
+      "mean_reduction_fraction": -0.0006682818012011538
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        5881533648,
+        5877077176,
+        5881910480,
+        5880616144
+      ],
+      "control": [
+        5880272080,
+        5885646032,
+        5880190136,
+        5881713848
+      ],
+      "mean_reduction_fraction": 0.0002841167351880225
+    },
+    "preparation_seconds": {
+      "candidate": [
+        2.0102638339158148,
+        2.036781207891181,
+        2.006993666989729,
+        2.0350449588149786
+      ],
+      "control": [
+        2.044249291997403,
+        2.0295102919917554,
+        2.0409058751538396,
+        2.0267935420852154
+      ],
+      "mean_reduction_fraction": 0.006433163098728212
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.3338845421094447,
+        2.3821301669813693,
+        2.352432999992743,
+        2.3392491249833256
+      ],
+      "control": [
+        2.360256665851921,
+        2.461922749876976,
+        2.402044208953157,
+        2.3720260409172624
+      ],
+      "mean_reduction_fraction": 0.019648595868483776
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        17.379743083147332,
+        17.657379041891545,
+        17.42595741711557,
+        17.46687366697006
+      ],
+      "control": [
+        17.462514333892614,
+        17.731198749970645,
+        17.675579292001203,
+        17.501976042054594
+      ],
+      "mean_reduction_fraction": 0.006271241356254675
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292881,
+      "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1238656,
+      "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "preliminary_screens": [
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.0725855,
+            "total_seconds": 2.0726435
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.042133125,
+            "total_seconds": 2.114824708
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.49061925,
+            "total_seconds": 4.605459042
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.026512125,
+            "total_seconds": 4.631984458
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009343875,
+            "total_seconds": 4.641340583
+          },
+          {
+            "phase": "native",
+            "seconds": 12.657565875,
+            "total_seconds": 17.299487167
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 17.299499708
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "control-screen",
+      "process": {
+        "binary": "/private/tmp/mech-call-schema-borrow-20261114/control",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 18.567724250024185,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "control"
+    },
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.106632625,
+            "total_seconds": 2.106676875
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.039742375,
+            "total_seconds": 2.1464635420000002
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.472668417,
+            "total_seconds": 4.619147709
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.026995458,
+            "total_seconds": 4.646157709
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009732791,
+            "total_seconds": 4.655907125
+          },
+          {
+            "phase": "native",
+            "seconds": 12.674187083,
+            "total_seconds": 17.330647917
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 17.330663792
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "candidate-screen",
+      "process": {
+        "binary": "/private/tmp/mech-call-schema-borrow-20261114/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 18.37796025001444,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "candidate"
+    }
+  ],
+  "scope": [
+    "The eight-run serial ABBA/BAAB cohort excludes screens, fixtures, linking, builds and profiling. Process timing uses process.wait completion; historical polling measurements remain separate.",
+    "Only call-argument schema borrowing changes. The exact ResolvedType constructor, overload selection, context checks, schema validation, proof visits and error anchoring remain.",
+    "The separate preceding diagnostic observed 15497 shared materializations copying 5911032 declaration entries at this call site. No diagnostic instrumentation is retained or timed here.",
+    "Frontend, compiler, process and instruction means improve in both balanced blocks. The frontend mean saving is small; unrelated native-stage movement is observational and is not attributed to the source change. Parsing, catalog and cleanup means increase slightly and remain in the raw and numerical results.",
+    "All source, bytecode, Object and complete metadata bytes match, as do fourteen paired scalar/numeric fixtures and the complete final executable. No scalar retirement or fresh runtime campaign is claimed.",
+    "Final links use frozen native adapter inputs and canonical paths with ZERO_AR_DATE=1. They measure cached native linking only, not whole source-to-executable completion.",
+    "Compiler executables are SHA-pinned and excluded. All generated program files, full executables, frozen native linker inputs, source, patches, commands and raw measurements remain. Pure replay checks saved observations without rerunning compilers or timings.",
+    "Parallel function compilation remains a documented architecture, not an implemented or qualified speedup. The sub-ten-second compilation goal remains open."
+  ],
+  "source_commit": "f9786cb1ad4479727c1af8bf013f357a6e3ab01c"
+}
