@@ -71,6 +71,7 @@ struct Traversal {
     finish: Vec<Value>,
     passthrough: BTreeMap<Value, Value>,
     live_captures: Vec<usize>,
+    packed_inputs: bool,
     constants: Vec<Value>,
     slots: Vec<StackSlot>,
 }
@@ -134,6 +135,7 @@ fn plan(
     users: &[Vec<Block>],
     dominance: Option<&DominatorTree>,
     candidate: Candidate,
+    pack_large_refusals: bool,
 ) -> Result<Traversal, &'static str> {
     let exits = candidate.exits();
     let controller = candidate.resume.is_none();
@@ -249,10 +251,16 @@ fn plan(
         }
     }
     arguments.extend(f.dfg.block_params(candidate.start));
-    let (input_limit, output_limit) = if controller { (256, 256) } else { (40, 32) };
     let input_words = arguments.len() + slots.len();
     let finish = f.dfg.block_params(candidate.exit);
     let output_words = finish.len() + outputs.len();
+    let resume_words = candidate
+        .resume
+        .map_or(0, |resume| f.dfg.block_params(resume).len());
+    // A refusal that fits the original bounds keeps its existing native ABI.
+    let packed_inputs = controller
+        || pack_large_refusals && (input_words > 40 || output_words.max(resume_words) > 32);
+    let (input_limit, output_limit) = if packed_inputs { (256, 256) } else { (40, 32) };
     if controller {
         eprintln!(
             "compact checked controller {} boundary: {} blocks, {} inputs, {} outputs",
@@ -263,17 +271,14 @@ fn plan(
         );
     }
     if input_words > input_limit
-        || controller
+        || packed_inputs
             && arguments
                 .iter()
                 .any(|&value| f.dfg.value_type(value).bytes() > 8)
     {
         return Err("live inputs exceed the call boundary budget");
     }
-    if output_words > output_limit
-        || candidate
-            .resume
-            .is_some_and(|resume| f.dfg.block_params(resume).len() > output_limit)
+    if output_words.max(resume_words) > output_limit
         || exits
             .iter()
             .flatten()
@@ -303,6 +308,7 @@ fn plan(
         finish: finish.to_vec(),
         passthrough,
         live_captures: Vec::new(),
+        packed_inputs,
         constants: constants.into_iter().collect(),
         slots: slots.into_iter().collect(),
     })
@@ -319,7 +325,7 @@ impl Traversal {
 
     fn signature(&self, f: &Function) -> Signature {
         let mut result = Signature::new(f.signature.call_conv);
-        if self.candidate.resume.is_none() {
+        if self.packed_inputs {
             result.params = vec![AbiParam::new(types::I64); 2];
         } else {
             result.params = self
@@ -351,7 +357,7 @@ impl Traversal {
             .collect::<Vec<_>>();
         let packet = params.pop().unwrap();
         let mut capture_loads = Vec::new();
-        if self.candidate.resume.is_none() {
+        if self.packed_inputs {
             let capture = params[0];
             let capture_types = self
                 .inputs
@@ -559,7 +565,7 @@ impl Traversal {
             let zero = pos.ins().iconst(types::I64, 0);
             pos.ins().return_(&[tag, zero]);
         }
-        if self.candidate.resume.is_none() {
+        if self.packed_inputs {
             eliminate_dead_values(&mut body);
             // DCE removes captures used only to transport an unchanged value.
             // The caller initializes only the surviving, densely packed lanes.
@@ -670,7 +676,8 @@ impl Traversal {
         for &slot in &self.slots {
             args.push(pos.ins().stack_addr(types::I64, slot, 0));
         }
-        if let Some(capture) = packets.captures {
+        if self.packed_inputs {
+            let capture = packets.captures.expect("packed region input slot");
             for (index, &source) in self.live_captures.iter().enumerate() {
                 pos.ins()
                     .stack_store(args[source], capture, (index * 8) as i32);
@@ -785,7 +792,8 @@ pub(super) fn share<M: Module>(
     if !all_families {
         families.truncate(1);
     }
-    share_families(module, root, families, true)
+    let pack_large_refusals = std::env::var_os("MECH_COMPACT_PACK_LARGE_REFUSALS").is_some();
+    share_families(module, root, families, true, pack_large_refusals)
 }
 
 pub(super) fn share_controllers<M: Module>(
@@ -796,7 +804,7 @@ pub(super) fn share_controllers<M: Module>(
     if candidates.len() < 2 {
         return Ok(None);
     }
-    share_families(module, root, vec![candidates], false)
+    share_families(module, root, vec![candidates], false, false)
 }
 
 fn share_families<M: Module>(
@@ -804,6 +812,7 @@ fn share_families<M: Module>(
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
     refusal_regions: bool,
+    pack_large_refusals: bool,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
     if families.is_empty() {
         return Ok(None);
@@ -827,7 +836,14 @@ fn share_families<M: Module>(
         if excluded.contains(&candidate.header) {
             continue;
         }
-        let mut traversal = match plan(root, &cfg, &users, dominance.as_ref(), candidate) {
+        let mut traversal = match plan(
+            root,
+            &cfg,
+            &users,
+            dominance.as_ref(),
+            candidate,
+            pack_large_refusals,
+        ) {
             Ok(traversal) => traversal,
             Err(reason) => {
                 eprintln!(
@@ -840,11 +856,16 @@ fn share_families<M: Module>(
         if !proven.is_disjoint(&traversal.blocks) {
             continue;
         }
+        let kind = if refusal_regions {
+            "traversal"
+        } else {
+            "controller"
+        };
         let signature = traversal.signature(root);
         let mut context = Context::for_function(traversal.body(root, &signature));
-        if !refusal_regions {
+        if traversal.packed_inputs {
             eprintln!(
-                "compact checked controller {} packet: {} captures, {} results",
+                "compact checked {kind} {} packet: {} captures, {} results",
                 candidate.header,
                 traversal.live_captures.len(),
                 traversal.output_words()
@@ -856,11 +877,6 @@ fn share_families<M: Module>(
             .map_err(ModuleError::from)
             .map_err(backend)?;
         let compiled = context.compiled_code().unwrap();
-        let kind = if refusal_regions {
-            "traversal"
-        } else {
-            "controller"
-        };
         let function = module
             .declare_function(
                 &format!("mech_compact_checked_{kind}_{}", candidate.header),
@@ -957,20 +973,19 @@ fn share_families<M: Module>(
         (words * 8) as u32,
         3,
     ));
-    let captures = (!refusal_regions).then(|| {
-        let words = groups
-            .iter()
-            .flat_map(|group| &group.traversals)
-            .map(|t| t.live_captures.len())
-            .max()
-            .unwrap_or(0)
-            .max(1);
-        root.create_sized_stack_slot(StackSlotData::new(
-            StackSlotKind::ExplicitSlot,
-            (words * 8) as u32,
-            3,
-        ))
-    });
+    let captures = groups
+        .iter()
+        .flat_map(|group| &group.traversals)
+        .filter(|t| t.packed_inputs)
+        .map(|t| t.live_captures.len())
+        .max()
+        .map(|words| {
+            root.create_sized_stack_slot(StackSlotData::new(
+                StackSlotKind::ExplicitSlot,
+                (words.max(1) * 8) as u32,
+                3,
+            ))
+        });
     let packets = CallSlots { result, captures };
     let observer = (refusal_regions
         && std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS").is_some())
@@ -1007,7 +1022,7 @@ fn share_families<M: Module>(
             "code_bytes":selected.bytes.len(),"stack_bytes":selected.stack,
             "input_words":selected.signature.params.len(),
         });
-        if !refusal_regions {
+        if selected.traversals.iter().any(|t| t.packed_inputs) {
             entry["packet_words"] = serde_json::json!(
                 selected
                     .traversals
