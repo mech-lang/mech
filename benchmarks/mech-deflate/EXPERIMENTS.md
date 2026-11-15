@@ -933,3 +933,18 @@ PGO. The twenty-seventh [complete packet](evidence/compiler-profile-20261114/REA
 preserves both source snapshots/patches, harness failures, tests, raw timings,
 output/executable bytes, native inputs and pure replay. The ten-second goal
 remains open.
+
+The [empty repair traversal trial](../../docs/design/native-route-work-compile-trial.md)
+is rejected: eight source-to-Object compiles increase compiler phases 0.59% and
+main cleanup 0.45%, with both blocks slower and RSS +0.98%. Instructions fall
+only 0.04%. The original source and qualified profiling compiler are restored.
+One exact-helper differential test passes 128 complete IR/alias/machine-byte
+comparisons; fourteen fixture pairs and cached complete-executable gates match.
+No balanced complete-executable cohort is run for this rejected trial. Two
+separate current-worker stack diagnostics preserve every program output and
+identify per-edge source range-map copying for investigation; sampled durations
+are excluded from primary means. The twenty-eighth
+[complete packet](evidence/compiler-profile-20261114/README.md) preserves all
+source/patches, tests, the initial harness failure, observations, output/native
+bytes, samples and pure replay. No additional parallel saving or sub-ten-second
+result is established.
