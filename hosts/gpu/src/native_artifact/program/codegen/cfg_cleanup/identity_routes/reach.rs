@@ -22,12 +22,17 @@ impl Reachability {
             return found.clone();
         }
         let mut seen = vec![false; self.successors.len()];
-        let mut pending = vec![start];
+        let mut pending = Vec::new();
+        if start != stop {
+            seen[start] = true;
+            pending.push(start);
+        }
         while let Some(site) = pending.pop() {
-            if site == stop || core::mem::replace(&mut seen[site], true) {
-                continue;
+            for &next in &self.successors[site] {
+                if next != stop && !core::mem::replace(&mut seen[next], true) {
+                    pending.push(next);
+                }
             }
-            pending.extend(&self.successors[site]);
         }
         let seen = Arc::new(seen);
         let mut cache = self.cache.borrow_mut();
@@ -90,6 +95,30 @@ mod tests {
                     assert_eq!(*memo.reachable(start, stop), reference(&graph, start, stop));
                 }
             }
+        }
+    }
+
+    #[test]
+    fn parallel_successors_and_stopped_cycles_match_independent_traversal() {
+        for size in [1, 2, 17, 65] {
+            let graph = (0..size)
+                .map(|site| {
+                    vec![
+                        (site + 1) % size,
+                        site,
+                        (site + 7) % size,
+                        (site + 1) % size,
+                        (site + size - 1) % size,
+                    ]
+                })
+                .collect::<Vec<_>>();
+            let memo = Reachability::new(graph.clone());
+            for start in 0..size {
+                for stop in 0..size {
+                    assert_eq!(*memo.reachable(start, stop), reference(&graph, start, stop));
+                }
+            }
+            assert!(memo.cache.borrow().len() <= CACHE_ROWS);
         }
     }
 }
