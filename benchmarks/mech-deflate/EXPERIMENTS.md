@@ -871,3 +871,18 @@ retains all observations, exact source/patch, native linker inputs and replay.
 Candidate internal compilation averages 17.428 seconds; complete process
 averages 17.482 seconds using precise completion. Native link observations are
 separate. Parallel function compilation and sub-ten-second completion remain open.
+
+The [schema cache owner result](../../docs/design/native-schema-cache-view-compile-profile.md)
+preserves the existing cache through assembly and nested visitors. Eight serial
+61-flag compiles reduce frontend 1.98% and instructions 0.23%, repeated in both
+balanced blocks; whole-compiler time is effectively flat with mixed blocks.
+Source CFG construction, cleanup and RSS increase. Five focused tests,
+fourteen fixture pairs and every full program/executable byte match. Separate
+source-to-executable observations take 17.526 and 17.514 seconds with the fixed
+adapter cached. A standalone backend probe passes 24 exact serial/1/2/4-worker
+Object, optimized-IR and compiled-metric comparisons over two synthetic functions
+with local/imported calls and data relocations. Its initial linker failure remains.
+This establishes the backend API boundary, not integrated Mech scheduling or a
+Deflate parallel speedup. The twenty-fourth
+[complete packet](evidence/compiler-profile-20261114/README.md) preserves all
+raw observations, source/patches, output bytes, probe source and pure replay.

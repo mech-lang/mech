@@ -231,8 +231,18 @@
       "sha256": "d24fdab4c22394833154c9aa0015ef46d0c75691ceed28c51b8d47c4d24b5c38",
       "source_revision": "f9786cb1ad4479727c1af8bf013f357a6e3ab01c",
       "summary": "benchmarks/mech-deflate/native-profile/call-schema-borrow-compile-apple-m3-20261114.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-schema-cache-view-20261114.tar.gz",
+      "bytes": 20253996,
+      "decision": "Retained targeted schema-cache reuse: frontend and instructions lower; compiler time effectively flat with mixed blocks; exact complete program/executable bytes. Includes synthetic parallel backend boundary proof.",
+      "files": 644,
+      "receipt": "benchmarks/mech-deflate/native-profile/schema-cache-view-compile-apple-m3-20261114.archive.json",
+      "sha256": "1e61f63fd42db8aa653127bc571c5e3bd1d757157a1c53e5123d975c311a1845",
+      "source_revision": "2822e6d8905f73873936a108b0d7c6b20231217d",
+      "summary": "benchmarks/mech-deflate/native-profile/schema-cache-view-compile-apple-m3-20261114.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 398528336
+  "total_archive_bytes": 418782332
 }
