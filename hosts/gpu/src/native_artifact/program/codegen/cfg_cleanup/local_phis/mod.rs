@@ -47,7 +47,7 @@ fn intern(value: Value, nodes: &mut Vec<Node>, indices: &mut BTreeMap<Value, usi
     })
 }
 
-fn incoming<'a>(
+pub(in crate::native_artifact::program) fn incoming<'a>(
     function: &'a Function,
     cfg: &'a ControlFlowGraph,
     block: Block,
