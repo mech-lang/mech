@@ -1,8 +1,8 @@
-//! Prove a vector guard from the current SSA geometry, including loop phis.
+//! Prove unit-dimension tests from current SSA values, including loop phis.
 use crate::native_artifact::program::codegen::cfg_cleanup::incoming_block_arguments;
 use cranelift_codegen::{
     Context,
-    ir::{Function, Inst, InstructionData, Opcode, Value, ValueDef, condcodes::IntCC},
+    ir::{BlockCall, Function, Inst, InstructionData, Opcode, Value, ValueDef, condcodes::IntCC},
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -154,16 +154,43 @@ pub(super) fn fold(context: &mut Context, guards: &[Guard], apply: bool) -> usiz
             }
         }
     }
-    if apply && !changes.is_empty() {
-        for (inst, edge) in &changes {
-            context.func.dfg.insts[*inst] = InstructionData::Jump {
-                opcode: Opcode::Jump,
-                destination: *edge,
-            };
-        }
-        context.flowgraph();
+    if apply {
+        apply_proofs(context, &changes);
     }
     changes.len()
+}
+
+pub(super) fn fold_unit_branches(context: &mut Context, apply: bool) -> usize {
+    context.flowgraph();
+    let changes = context
+        .func
+        .layout
+        .blocks()
+        .filter(|&block| context.domtree.is_reachable(block))
+        .filter_map(|block| context.func.layout.last_inst(block))
+        .filter_map(|inst| {
+            let InstructionData::Brif { arg, blocks, .. } = context.func.dfg.insts[inst] else {
+                return None;
+            };
+            prove(context, arg).is_ok().then_some((inst, blocks[0]))
+        })
+        .collect::<Vec<_>>();
+    if apply {
+        apply_proofs(context, &changes);
+    }
+    changes.len()
+}
+
+fn apply_proofs(context: &mut Context, changes: &[(Inst, BlockCall)]) {
+    for &(inst, edge) in changes {
+        context.func.dfg.insts[inst] = InstructionData::Jump {
+            opcode: Opcode::Jump,
+            destination: edge,
+        };
+    }
+    if !changes.is_empty() {
+        context.flowgraph();
+    }
 }
 
 #[cfg(test)]
@@ -226,6 +253,7 @@ mod tests {
             b.seal_all_blocks();
             b.finalize();
             let expected = usize::from(known_entry && !changed);
+            assert_eq!(fold_unit_branches(&mut context, false), expected);
             assert_eq!(
                 fold(
                     &mut context,
