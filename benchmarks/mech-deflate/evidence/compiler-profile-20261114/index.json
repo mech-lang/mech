@@ -481,8 +481,18 @@
       "sha256": "3d867da6b702721a2a81bfc6ad76821dd0d3c7b8ab8414b805db1c40a3a22f05",
       "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
       "summary": "benchmarks/mech-deflate/native-profile/dimension-declaration-scan-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-dimension-native-pgo-20261115.tar.gz",
+      "bytes": 55309989,
+      "decision": "Retained fresh nativeCPU+PGO build configuration on current dimension-scan source ef5: complete build 14.981386->13.414825s (10.46% reduction); separate same-PGO-binary serial/two-worker comparison 13.632845->13.396915s (1.73% reduction). Exact source/bytecode/Object/complete metadata and all 20 executables; default 0 and real 344-job/48-cleanup gates; fixed 8-program training and 7 heldouts. All adverse fields retained. No production source, grammar, runtime or output changes; two compiler builds outside primary timing, adapter cached. No additive or sub-ten claim.",
+      "files": 1750,
+      "receipt": "benchmarks/mech-deflate/native-profile/dimension-native-pgo-apple-m3-20261115.archive.json",
+      "sha256": "2abcd8228d4894ea0ebc03bf50effaf4bd7a77bc0ba519b1e3f4c67d701e28b5",
+      "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+      "summary": "benchmarks/mech-deflate/native-profile/dimension-native-pgo-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1536980034
+  "total_archive_bytes": 1592290023
 }
