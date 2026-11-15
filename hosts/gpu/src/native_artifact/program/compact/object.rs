@@ -19,6 +19,25 @@ enum Body {
     Data(DataDescription),
 }
 
+enum DirectRuntimeCalls {
+    Disabled,
+    Allocation,
+    Free,
+    All,
+}
+
+impl DirectRuntimeCalls {
+    fn includes(&self, name: Option<&str>) -> bool {
+        match name {
+            Some("mech_compact_allocate" | "mech_compact_writable") => {
+                matches!(self, Self::Allocation | Self::All)
+            }
+            Some("mech_compact_free") => matches!(self, Self::Free | Self::All),
+            _ => false,
+        }
+    }
+}
+
 /// Phases may compile alternative bodies while selecting a call target. Keep
 /// their bytes and relocations so unused alternatives never need Object symbols.
 pub(in crate::native_artifact::program) struct PreparedObject {
@@ -27,7 +46,7 @@ pub(in crate::native_artifact::program) struct PreparedObject {
     declaration_order: Vec<FuncOrDataId>,
     definition_order: Vec<FuncOrDataId>,
     bodies: BTreeMap<FuncOrDataId, Body>,
-    direct_runtime_calls: bool,
+    direct_runtime_calls: DirectRuntimeCalls,
 }
 
 impl PreparedObject {
@@ -38,13 +57,20 @@ impl PreparedObject {
             declaration_order: Vec::new(),
             definition_order: Vec::new(),
             bodies: BTreeMap::new(),
-            direct_runtime_calls: false,
+            direct_runtime_calls: DirectRuntimeCalls::Disabled,
         }
     }
 
-    pub(in crate::native_artifact::program) fn use_direct_runtime_calls(&mut self) {
-        self.direct_runtime_calls = cfg!(all(target_arch = "aarch64", target_os = "macos"))
-            && self.isa().name() == "aarch64";
+    pub(in crate::native_artifact::program) fn use_direct_runtime_calls(&mut self, mode: &str) {
+        if cfg!(all(target_arch = "aarch64", target_os = "macos")) && self.isa().name() == "aarch64"
+        {
+            self.direct_runtime_calls = match mode {
+                "1" => DirectRuntimeCalls::All,
+                "allocation" => DirectRuntimeCalls::Allocation,
+                "free" => DirectRuntimeCalls::Free,
+                _ => DirectRuntimeCalls::Disabled,
+            };
+        }
     }
 
     fn linkage(&self, id: FuncOrDataId) -> Linkage {
@@ -214,12 +240,8 @@ impl Module for PreparedObject {
         });
         // These providers are linked into the compact AArch64 Object's host.
         // Let the linker resolve a branch relocation to each provider.
-        let direct = self.direct_runtime_calls
-            && decl.linkage == Linkage::Import
-            && matches!(
-                decl.name.as_deref(),
-                Some("mech_compact_allocate" | "mech_compact_writable" | "mech_compact_free")
-            );
+        let direct = decl.linkage == Linkage::Import
+            && self.direct_runtime_calls.includes(decl.name.as_deref());
         f.import_function(ir::ExtFuncData {
             name: ir::ExternalName::user(name),
             signature,
@@ -413,11 +435,12 @@ mod tests {
     fn compact_runtime_imports_can_use_direct_branches() {
         use cranelift_codegen::binemit::Reloc;
         let mut module = module();
-        module.use_direct_runtime_calls();
+        module.use_direct_runtime_calls("free");
         let entry = function(&mut module, "entry", Linkage::Export);
         let free = function(&mut module, "mech_compact_free", Linkage::Import);
+        let allocate = function(&mut module, "mech_compact_allocate", Linkage::Import);
         let external = function(&mut module, "unrelated_import", Linkage::Import);
-        define(&mut module, entry, &[free, external]);
+        define(&mut module, entry, &[free, allocate, external]);
         let Body::Text(body) = module.bodies.get(&FuncOrDataId::Func(entry)).unwrap() else {
             unreachable!();
         };

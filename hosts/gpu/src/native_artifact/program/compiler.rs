@@ -860,8 +860,8 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     eprintln!("compact-stage: native module");
     let object = codegen_backend::object("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
     let mut module = super::compact::PreparedObject::new(object);
-    if !observe && std::env::var_os("MECH_COMPACT_DIRECT_RUNTIME_CALLS").is_some() {
-        module.use_direct_runtime_calls();
+    if !observe && let Ok(mode) = std::env::var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
+        module.use_direct_runtime_calls(&mode);
     }
     let share_phase_bodies = std::env::var_os("MECH_COMPACT_SHARE_PHASE_BODIES").is_some();
     let metadata = super::compact::define(&mut module, &prepared, observe, share_phase_bodies)?;
