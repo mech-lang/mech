@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-batch-phi-params-20261115.tar.gz",
+  "bytes": 38990591,
+  "evidence_files": 750,
+  "files": 750,
+  "format": 1,
+  "manifest_sha256": "12634fe9993bd4a938f9dc2dfd9bd707d658a7ae5b624d042d8968cd3894abe5",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "5e70aa24abf01e70aafaa58d716c4f16a3c45dbca857c8d99ba20327091cd29c",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-batch-phi-params-20261115.tar.gz",
+  "sha256": "a38096206e9dd0beb12ea6d985a1914b9711828fe52a45764749f02224ecffe8",
+  "source_revision": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+  "uncompressed_bytes": 231485907,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "a38096206e9dd0beb12ea6d985a1914b9711828fe52a45764749f02224ecffe8",
+    "source_revision": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+    "verified_bytes": 231485907,
+    "verified_files": 750
+  }
+}
