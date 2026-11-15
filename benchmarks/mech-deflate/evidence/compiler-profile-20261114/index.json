@@ -421,8 +421,18 @@
       "sha256": "a38096206e9dd0beb12ea6d985a1914b9711828fe52a45764749f02224ecffe8",
       "source_revision": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
       "summary": "benchmarks/mech-deflate/native-profile/batch-phi-params-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-imported-analysis-owner-20261115.tar.gz",
+      "bytes": 34126013,
+      "decision": "Rejected: completebuild15.287110->15.281101s(-0.04%) withmixedblocks; source-to-Object component+0.05%, link-10.58%. Objectcompiler-0.35%, cleanup-1.01%, instructions-0.38%; sourceCFG+1.20%, compaction+4.33%,RSS+0.0127%. Exactartifacts/fullmetadata/wholeexe and14fixturepairs. ThreefocusedactualCranelift fresh-analysis tests cover64unchanged/16successororder+layout/16graph-onlyalias sequences. Auditedfivepass suffix/oneborrowedContext owner; originalguards/passorder/verification preserved. SourceandstdDD7 restored; PGO5a1 untouched; no usefulnewgain orsub10claim.",
+      "files": 702,
+      "receipt": "benchmarks/mech-deflate/native-profile/imported-analysis-owner-apple-m3-20261115.archive.json",
+      "sha256": "c0b52fb341aa66e4f2e0269a7b83f552d95ff21053d507c04941479931304a3e",
+      "source_revision": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+      "summary": "benchmarks/mech-deflate/native-profile/imported-analysis-owner-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1251344667
+  "total_archive_bytes": 1285470680
 }
