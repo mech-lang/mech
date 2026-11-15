@@ -1008,21 +1008,29 @@ fn share_families<M: Module>(
             ))
         });
     let packets = CallSlots { result, captures };
-    let observer = (refusal_regions
-        && std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS").is_some())
-    .then_some(())
-    .map(|_| {
-        let mut signature = module.make_signature();
-        signature.params.push(AbiParam::new(types::I64));
-        module
-            .declare_function(
-                "mech_compact_checked_traversal_observe",
-                Linkage::Import,
-                &signature,
-            )
-            .map_err(backend)
-    })
-    .transpose()?;
+    let observe_refusals =
+        refusal_regions && std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS").is_some();
+    let observe_layout = std::env::var_os("MECH_COMPACT_OBSERVE_LAYOUT_REGIONS").is_some()
+        && groups.iter().any(|group| {
+            group
+                .traversals
+                .iter()
+                .any(|t| t.candidate.origin_base.is_some())
+        });
+    let observer = (observe_refusals || observe_layout)
+        .then_some(())
+        .map(|_| {
+            let mut signature = module.make_signature();
+            signature.params.push(AbiParam::new(types::I64));
+            module
+                .declare_function(
+                    "mech_compact_checked_traversal_observe",
+                    Linkage::Import,
+                    &signature,
+                )
+                .map_err(backend)
+        })
+        .transpose()?;
     let cold = refusal_regions
         && std::env::var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT").is_some();
     let mut report = Vec::new();
