@@ -116,6 +116,10 @@ pub(in crate::native_artifact) fn emit(
     let bailout = b.create_block();
     let failed = b.create_block();
     b.append_block_param(failed, types::I64);
+    let shared_failure = std::env::var_os("MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS").is_some();
+    if shared_failure {
+        b.append_block_param(failed, types::I64);
+    }
     b.set_cold_block(failed);
     let mut boundaries = BTreeSet::from([exit, bailout, failed]);
     let blocks = proof
@@ -774,10 +778,15 @@ pub(in crate::native_artifact) fn emit(
         }
         b.switch_to_block(fail);
         let status = b.block_params(fail)[0];
-
-        native.origin(b, site)?;
-
-        b.ins().jump(failed, &[status.into()]);
+        if shared_failure {
+            // Only the cold failure edge carries the site. The existing
+            // terminal block publishes the same origin after this branch.
+            let origin = native.failure_origin(b, site);
+            b.ins().jump(failed, &[status.into(), origin.into()]);
+        } else {
+            native.origin(b, site)?;
+            b.ins().jump(failed, &[status.into()]);
+        }
         report.source_instructions(b.func.dfg.num_insts() - before)?;
     }
     let boundary = b.func.dfg.num_insts();
@@ -793,6 +802,10 @@ pub(in crate::native_artifact) fn emit(
     b.ins().jump(done, &[]);
     b.switch_to_block(failed);
     let status = b.block_params(failed)[0];
+    if shared_failure {
+        let origin = b.block_params(failed)[1];
+        native.store_failure_origin(b, origin);
+    }
     // The common error arm settles/finalizes and terminates; it cannot resume
     // ordinary source code. Preserve exactly its existing abort consumers.
     let count = 0;
