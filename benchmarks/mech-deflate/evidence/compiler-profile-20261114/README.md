@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-three complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 870,219,051 bytes (870.2 MB).
+Thirty-four complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 894,219,462 bytes (894.2 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-three repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-four repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -39,6 +39,21 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Scoped source range facts | Retained: complete build -2.68%, cleanup -13.21%, instructions -3.26%, both blocks faster; exact outputs; slight RSS increase. | [mech-scoped-source-20261115.tar.gz](mech-scoped-source-20261115.tar.gz) | [Receipt](../../native-profile/scoped-source-apple-m3-20261115.archive.json) / [result](../../native-profile/scoped-source-apple-m3-20261115.json) | 832 |
 | SSA lookup, inline-first and shared-root trials | Rejected: compiler +0.79%/+0.38%, source CFG +4.50%/+1.02%, instructions +1.00%/+0.26%; both blocks adverse, sources/tool restored; exact outputs/executable. | [mech-ssa-lookup-trials-20261115.tar.gz](mech-ssa-lookup-trials-20261115.tar.gz) | [Receipt](../../native-profile/ssa-lookup-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/ssa-lookup-trials-apple-m3-20261115.json) | 1,024 |
 | Frontend normalized-type and annotation-owner caches | Rejected: targeted frontend/instruction savings, but no useful complete-build gain; type-cache compiler +0.40%, annotation full build +0.13% with mixed blocks; exact bytes; sources/tool restored. | [mech-frontend-cache-trials-20261115.tar.gz](mech-frontend-cache-trials-20261115.tar.gz) | [Receipt](../../native-profile/frontend-cache-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/frontend-cache-trials-apple-m3-20261115.json) | 1,129 |
+| Late known-origin SSA, two prototypes | Rejected larger trial: compiler +1.92%, source CFG +18.67%, both blocks slower despite 5.28M fewer temporary values; exact bytes and restored source/tool. Pending-only superseded before primary timing. | [mech-known-origin-ssa-trials-20261115.tar.gz](mech-known-origin-ssa-trials-20261115.tar.gz) | [Receipt](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.json) | 657 |
+
+The [late known-origin SSA trials](../../../../docs/design/native-known-origin-ssa-trials.md)
+keep original sealing and fallback paths. The larger shortcut removes 5.28 million
+temporary values but increases compiler time 1.92% and source CFG 18.67% in eight
+balanced Object observations; both blocks are slower. Instructions fall 0.56%
+and compaction 25.67%, with a small RSS increase. Source/tool are restored;
+all four outputs and complete metadata, fourteen fixtures and both complete executable gates match.
+No primary full-native cohort is run. The pending-only predecessor is built
+and tested, then superseded without primary program timing. Each has 304 paired
+compacted IR/machine cases and 30 or 32 unit tests. Comparing the old early-sealing
+implementation after current compaction still finds 87 IR and 30 machine differences.
+The thirty-fourth packet retains both sources/patches, every test/setup failure,
+all observations/outputs, native inputs and pure replay. Sub-ten-second
+compilation remains open.
 
 The [frontend cache trials](../../../../docs/design/native-frontend-cache-trials.md)
 reject normalized-type caching and preservation of the existing annotation
