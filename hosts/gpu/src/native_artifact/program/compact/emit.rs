@@ -1218,15 +1218,6 @@ pub(super) fn define_entry<M: Module>(
     );
     context.func.dfg.compact_values();
     eprintln!("compact-values: retained={}", context.func.dfg.num_values());
-    let early_outline = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("early"));
-    let mut checked_traversals = None;
-    if outline_traversals && early_outline {
-        checked_traversals = super::checked_traversals::share(
-            module,
-            &mut context.func,
-            std::mem::take(&mut traversals),
-        )?;
-    }
     eprintln!("compact-stage: CFG cleanup");
     let controls = CompilationControls::new(OptimizationOptions::default());
     // Match pure numeric idioms only after SSA is sealed. A later pass also
@@ -1243,14 +1234,17 @@ pub(super) fn define_entry<M: Module>(
         .then(|| cfg_cleanup::forward_identity_routes(&controls, &mut context, module.isa()))
         .transpose()?;
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
-    if outline_traversals && !early_outline {
-        checked_traversals =
-            super::checked_traversals::share(module, &mut context.func, traversals)?;
-        if checked_traversals.is_some() {
+    let checked_traversals = if outline_traversals {
+        let all = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("all"));
+        let shared = super::checked_traversals::share(module, &mut context.func, traversals, all)?;
+        if shared.is_some() {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
         }
-    }
+        shared
+    } else {
+        None
+    };
     let calls = context
         .func
         .layout
