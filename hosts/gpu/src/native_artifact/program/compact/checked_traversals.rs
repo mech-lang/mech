@@ -71,6 +71,12 @@ struct Traversal {
     slots: Vec<StackSlot>,
 }
 
+#[derive(Clone, Copy)]
+struct CallSlots {
+    result: StackSlot,
+    captures: Option<StackSlot>,
+}
+
 fn targets(f: &Function, inst: Inst) -> &[cranelift_codegen::ir::BlockCall] {
     f.dfg.insts[inst].branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
 }
@@ -239,12 +245,28 @@ fn plan(
         }
     }
     arguments.extend(f.dfg.block_params(candidate.start));
-    let (input_limit, output_limit) = if controller { (96, 64) } else { (40, 32) };
-    if arguments.len() + slots.len() > input_limit {
+    let (input_limit, output_limit) = if controller { (256, 256) } else { (40, 32) };
+    let input_words = arguments.len() + slots.len();
+    let finish = f.dfg.block_params(candidate.exit);
+    let output_words = finish.len() + outputs.len();
+    if controller {
+        eprintln!(
+            "compact checked controller {} boundary: {} blocks, {} inputs, {} outputs",
+            candidate.header,
+            blocks.len(),
+            input_words,
+            output_words,
+        );
+    }
+    if input_words > input_limit
+        || controller
+            && arguments
+                .iter()
+                .any(|&value| f.dfg.value_type(value).bytes() > 8)
+    {
         return Err("live inputs exceed the call boundary budget");
     }
-    let finish = f.dfg.block_params(candidate.exit);
-    if finish.len() + outputs.len() > output_limit
+    if output_words > output_limit
         || candidate
             .resume
             .is_some_and(|resume| f.dfg.block_params(resume).len() > output_limit)
@@ -268,16 +290,24 @@ fn plan(
 }
 
 impl Traversal {
+    fn capture_words(&self) -> usize {
+        self.inputs.len() + self.slots.len()
+    }
+
     fn signature(&self, f: &Function) -> Signature {
         let mut result = Signature::new(f.signature.call_conv);
-        result.params = self
-            .inputs
-            .iter()
-            .map(|&v| AbiParam::new(f.dfg.value_type(v)))
-            .collect();
-        result
-            .params
-            .extend((0..=self.slots.len()).map(|_| AbiParam::new(types::I64)));
+        if self.candidate.resume.is_none() {
+            result.params = vec![AbiParam::new(types::I64); 2];
+        } else {
+            result.params = self
+                .inputs
+                .iter()
+                .map(|&v| AbiParam::new(f.dfg.value_type(v)))
+                .collect();
+            result
+                .params
+                .extend((0..=self.slots.len()).map(|_| AbiParam::new(types::I64)));
+        }
         result
             .returns
             .extend((0..2).map(|_| AbiParam::new(types::I64)));
@@ -294,7 +324,31 @@ impl Traversal {
         let mut params = signature
             .params
             .iter()
-            .map(|p| body.dfg.append_block_param(entry, p.value_type));
+            .map(|p| body.dfg.append_block_param(entry, p.value_type))
+            .collect::<Vec<_>>();
+        let packet = params.pop().unwrap();
+        if self.candidate.resume.is_none() {
+            let capture = params[0];
+            let capture_types = self
+                .inputs
+                .iter()
+                .map(|&v| f.dfg.value_type(v))
+                .chain(std::iter::repeat_n(types::I64, self.slots.len()));
+            let mut pos = FuncCursor::new(&mut body);
+            pos.goto_bottom(entry);
+            params = capture_types
+                .enumerate()
+                .map(|(index, ty)| {
+                    pos.ins().load(
+                        ty,
+                        MemFlags::new().with_notrap(),
+                        capture,
+                        (index * 8) as i32,
+                    )
+                })
+                .collect();
+        }
+        let mut params = params.into_iter();
         let mut map = self
             .inputs
             .iter()
@@ -307,7 +361,6 @@ impl Traversal {
             .copied()
             .zip(params.by_ref())
             .collect::<BTreeMap<_, _>>();
-        let packet = params.next().unwrap();
         for &constant in &self.constants {
             let ValueDef::Result(inst, _) = f.dfg.value_def(constant) else {
                 unreachable!()
@@ -470,7 +523,7 @@ impl Traversal {
         module: &mut M,
         root: &mut Function,
         function: FuncId,
-        slot: StackSlot,
+        packets: CallSlots,
         observer: Option<FuncId>,
         cold: bool,
     ) {
@@ -542,7 +595,13 @@ impl Traversal {
         for &slot in &self.slots {
             args.push(pos.ins().stack_addr(types::I64, slot, 0));
         }
-        args.push(pos.ins().stack_addr(types::I64, slot, 0));
+        if let Some(capture) = packets.captures {
+            for (index, arg) in args.drain(..).enumerate() {
+                pos.ins().stack_store(arg, capture, (index * 8) as i32);
+            }
+            args.push(pos.ins().stack_addr(types::I64, capture, 0));
+        }
+        args.push(pos.ins().stack_addr(types::I64, packets.result, 0));
         let call = pos.ins().call(reference, &args);
         let [tag, status] = *pos.func.dfg.inst_results(call) else {
             unreachable!()
@@ -550,7 +609,7 @@ impl Traversal {
         let failed = pos.ins().icmp_imm(IntCC::Equal, tag, 2);
         pos.ins().brif(failed, failure, &[], cont, &[]);
         pos.goto_bottom(failure);
-        let origin = pos.ins().stack_load(types::I64, slot, 0);
+        let origin = pos.ins().stack_load(types::I64, packets.result, 0);
         let origin = pos.ins().iadd_imm(origin, candidate.header as i64);
         pos.ins().return_(&[status, origin]);
         if let Some((resume, finish, _)) = arms {
@@ -570,13 +629,17 @@ impl Traversal {
             let args = types
                 .into_iter()
                 .enumerate()
-                .map(|(i, ty)| pos.ins().stack_load(ty, slot, (i * 8) as i32).into())
+                .map(|(i, ty)| {
+                    pos.ins()
+                        .stack_load(ty, packets.result, (i * 8) as i32)
+                        .into()
+                })
                 .collect::<Vec<_>>();
             if exit == candidate.exit {
                 for (index, &value) in self.outputs.iter().enumerate() {
                     let ty = pos.func.dfg.value_type(value);
                     let offset = ((args.len() + index) * 8) as i32;
-                    let loaded = pos.ins().stack_load(ty, slot, offset);
+                    let loaded = pos.ins().stack_load(ty, packets.result, offset);
                     pos.func.dfg.change_to_alias(value, loaded);
                 }
             }
@@ -812,6 +875,21 @@ fn share_families<M: Module>(
         (words * 8) as u32,
         3,
     ));
+    let captures = (!refusal_regions).then(|| {
+        let words = groups
+            .iter()
+            .flat_map(|group| &group.traversals)
+            .map(Traversal::capture_words)
+            .max()
+            .unwrap_or(0)
+            .max(1);
+        root.create_sized_stack_slot(StackSlotData::new(
+            StackSlotKind::ExplicitSlot,
+            (words * 8) as u32,
+            3,
+        ))
+    });
+    let packets = CallSlots { result, captures };
     let observer = (refusal_regions
         && std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS").is_some())
     .then_some(())
@@ -840,7 +918,7 @@ fn share_families<M: Module>(
             )
             .map_err(backend)?;
         for traversal in &selected.traversals {
-            traversal.replace(module, root, selected.function, result, observer, cold);
+            traversal.replace(module, root, selected.function, packets, observer, cold);
         }
         report.push(serde_json::json!({
             "headers":selected.traversals.iter().map(|t| t.candidate.header).collect::<Vec<_>>(),
