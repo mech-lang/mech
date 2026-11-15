@@ -994,3 +994,15 @@ source/proof, predecessor builds and harness failures, raw measurements, output/
 native bytes, samples and replay. Both subjects use the same 61 flags and two
 workers on the updated Deflate/runtime; PGO/earlier cohorts stay separate. The
 ten-second goal remains open.
+
+The [SSA lookup trials](../../docs/design/native-ssa-lookup-trials.md) reject both
+inline-first storage and shared sealed-predecessor roots. Eight serial Object
+compiles per trial show compiler time +0.79%/+0.38%, source CFG +4.50%/+1.02%
+and instructions +1.00%/+0.26%; both blocks are adverse in all three measures.
+All program/executable bytes match. There are 29/30 full-module tests, 160 paired
+complete IR cases for shared roots and fourteen fixture pairs per trial. Both
+production patches and the qualified tool are restored. The thirty-second
+[complete packet](evidence/compiler-profile-20261114/README.md) includes every
+source/patch, test, raw measurement, output, fixed native input and offline
+replay. Its first sandbox-denied counter attempt is preserved outside primary
+means. No complete-build saving or sub-ten-second result is established.

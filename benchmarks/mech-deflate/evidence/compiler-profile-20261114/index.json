@@ -311,8 +311,18 @@
       "sha256": "ac02c8c6ad673852b37c019753baaa881ae8676d6c4bbe76e157e6dd69b4d438",
       "source_revision": "972039beaaf9f04a609393905b518f4c16cbab67",
       "summary": "benchmarks/mech-deflate/native-profile/scoped-source-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-lookup-trials-20261115.tar.gz",
+      "bytes": 36681583,
+      "decision": "Rejected both SSA lookup trials: inline-first compiler+0.79%/sourceCFG+4.50%/instructions+1.00%; shared-roots+0.38%/+1.02%/+0.26%; both blocks adverse. Sources/tool restored; all outputs/executable bytes exact.",
+      "files": 1024,
+      "receipt": "benchmarks/mech-deflate/native-profile/ssa-lookup-trials-apple-m3-20261115.archive.json",
+      "sha256": "15ccb12a3d7e281213802f4df53882a4259255b6d0518c4c14e717ea339275dd",
+      "source_revision": "f19531c3b016b551fb7d4bb8f2a3d4adca4f42d7",
+      "summary": "benchmarks/mech-deflate/native-profile/ssa-lookup-trials-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 782858324
+  "total_archive_bytes": 819539907
 }

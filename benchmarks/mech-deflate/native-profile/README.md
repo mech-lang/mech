@@ -337,3 +337,15 @@ native gates pass. Two later stack samples are diagnostic. The thirty-first
 source/patches, proofs/failures, measurements/outputs, native inputs and replay.
 This removes per-edge source-map clones, keeps all proofs fresh, and changes no
 grammar/language. Complete compilation below ten seconds remains open.
+
+The [SSA lookup trials](../../../docs/design/native-ssa-lookup-trials.md) reject
+inline-first definition storage and shared predecessor roots on the current
+Deflate/runtime. Compiler phases increase 0.79%/0.38%, source CFG 4.50%/1.02%
+and instructions 1.00%/0.26%; both balanced blocks regress in all three. Every
+program and cached complete-executable byte matches. The 29/30 copied-module
+tests, 160 paired complete IR cases and fourteen fixture pairs per trial pass.
+Both sources and the qualified canonical tool are restored. All observations,
+the first sandbox-denied counter attempt and pure replay are in the thirty-second
+[repository packet](../evidence/compiler-profile-20261114/README.md). No balanced
+full-native timing cohort is run for these rejected trials. The retained complete
+Deflate build remains 18.646 seconds; the ten-second goal remains open.

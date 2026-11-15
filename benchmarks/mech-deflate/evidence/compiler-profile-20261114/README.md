@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-one complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 782,858,324 bytes (782.9 MB).
+Thirty-two complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 819,539,907 bytes (819.5 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All twenty-seven repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-two repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -37,6 +37,23 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Current source, native CPU and PGO | Qualified combined strategy with two workers in both subjects: complete build -8.22%, instructions -9.24%; exact outputs; frontend +3.01%, RSS +1.87%. | [mech-current-native-pgo-20261115.tar.gz](mech-current-native-pgo-20261115.tar.gz) | [Receipt](../../native-profile/current-native-pgo-apple-m3-20261115.archive.json) / [result](../../native-profile/current-native-pgo-apple-m3-20261115.json) | 1,342 |
 | Updated compressor, serial versus two workers | No useful new-workload parallel gain: 19.166 versus 19.196 seconds (+0.16%), mixed blocks; exact outputs/executable; fresh current runtime adapter. | [mech-refreshed-parallel-20261115.tar.gz](mech-refreshed-parallel-20261115.tar.gz) | [Receipt](../../native-profile/refreshed-parallel-apple-m3-20261115.archive.json) / [result](../../native-profile/refreshed-parallel-apple-m3-20261115.json) | 313 |
 | Scoped source range facts | Retained: complete build -2.68%, cleanup -13.21%, instructions -3.26%, both blocks faster; exact outputs; slight RSS increase. | [mech-scoped-source-20261115.tar.gz](mech-scoped-source-20261115.tar.gz) | [Receipt](../../native-profile/scoped-source-apple-m3-20261115.archive.json) / [result](../../native-profile/scoped-source-apple-m3-20261115.json) | 832 |
+| SSA lookup, inline-first and shared-root trials | Rejected: compiler +0.79%/+0.38%, source CFG +4.50%/+1.02%, instructions +1.00%/+0.26%; both blocks adverse, sources/tool restored; exact outputs/executable. | [mech-ssa-lookup-trials-20261115.tar.gz](mech-ssa-lookup-trials-20261115.tar.gz) | [Receipt](../../native-profile/ssa-lookup-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/ssa-lookup-trials-apple-m3-20261115.json) | 1,024 |
+
+The [SSA lookup trials](../../../../docs/design/native-ssa-lookup-trials.md)
+reject both inline-first definition storage and a conservative shared
+sealed-predecessor root shortcut. Each uses eight serial primary Object
+compiles with the same current Deflate/runtime, 61 flags and two workers.
+Compiler phases increase 0.79%/0.38%, source CFG 4.50%/1.02% and instructions
+1.00%/0.26%; both blocks are adverse in all three. All output and cached
+complete-executable bytes match. The 29/30 copied-module tests, 160 paired
+complete IR cases for shared roots and fourteen fixture pairs per trial pass.
+Sources and the qualified canonical tool are restored. No balanced full-native
+timing cohort is run for these rejected changes. The thirty-second packet
+preserves both sources/patches, all measurements/outputs/tests/native inputs
+and the first sandbox-denied counter attempt outside primary means. Repository
+extraction and pure replay verify every file and reconstruct the result
+byte-identically. The retained complete-build result remains 18.646 seconds;
+sub-ten-second compilation is open.
 
 The [scoped source-facts qualification](../../../../docs/design/native-scoped-source-facts-compile-profile.md) retains source `972039beaa`, whose full two-file diff matches the measured patch. Eight complete builds improve 19.161 to 18.646 seconds (2.68%); both blocks improve and every executable byte is identical. A separate eight-run Object cohort reduces compiler phases 2.45%, cleanup 13.21% and instructions 3.26%. RSS/footprint rise about 0.06%; frontend, preparation and other adverse stages remain. Five focused tests compare 112 complete IR/machine pairs and 1,760 route queries, checking every plan field and whole-map restoration. Fourteen fixture pairs, default-serial output and full-executable gates pass. The thirty-first packet includes the identical-source predecessor builds/tests, all initial harness/evidence helper failures, source/patches, observations/outputs, native inputs, two subsequent stack diagnostics and pure replay. Both subjects use the same 61 flags and two workers on the updated compressor/runtime. Earlier PGO/parallel percentages remain separate; sub-ten-second compilation remains open.
 
