@@ -220,6 +220,14 @@ pub(super) fn prepare(
         packed_inputs: traversal.packed_inputs,
         constants: traversal.constants.iter().copied().map(value).collect(),
         slots: traversal.slots.clone(),
+        literals: traversal
+            .literals
+            .iter()
+            .map(|capture| super::region_literals::Capture {
+                value: value(capture.value),
+                ..*capture
+            })
+            .collect(),
     };
     Some((seed, local))
 }

@@ -1272,7 +1272,7 @@ pub(super) fn define_entry<M: Module>(
         None
     };
     let checked_controllers =
-        checked_traversals::share_controllers(module, &mut context.func, controllers)?;
+        checked_traversals::share_controllers(module, &mut context.func, vec![controllers], false)?;
     if checked_controllers.is_some() {
         context.flowgraph();
         context.verify(module.isa()).map_err(backend)?;
@@ -1280,12 +1280,15 @@ pub(super) fn define_entry<M: Module>(
     let discovered_controllers = if outline_allowed
         && let Ok(windows) = std::env::var("MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS")
     {
-        let candidates = super::checked_region_discovery::candidates(
-            &context.func,
-            &windows,
-            plan.blocks().len(),
-        )?;
-        let shared = checked_traversals::share_controllers(module, &mut context.func, candidates)?;
+        let families = windows
+            .split(';')
+            .map(|list| {
+                super::checked_region_discovery::candidates(&context.func, list, plan.blocks().len())
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let bind_literals = std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some();
+        let shared =
+            checked_traversals::share_controllers(module, &mut context.func, families, bind_literals)?;
         if shared.is_some() {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
