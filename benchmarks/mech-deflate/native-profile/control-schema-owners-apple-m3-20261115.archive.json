@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-control-schema-owners-20261115.tar.gz",
+  "bytes": 41478001,
+  "evidence_files": 789,
+  "files": 789,
+  "format": 1,
+  "manifest_sha256": "6552c4d64b40bdb26703ab9271292c7b498ea0c33ad96a2e65cf58cb54f5a38a",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "9b4a6f09d0e72d19fc3be2256fe809b1948d94023b24f820481a8c30c7fc2e76",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-control-schema-owners-20261115.tar.gz",
+  "sha256": "ed61677c57fade226949d9112b0a7124518fb69b704a2bbf3de1db12825a1a43",
+  "source_revision": "12c50010866066952345c63223bce770cf7578b1",
+  "uncompressed_bytes": 245918342,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "ed61677c57fade226949d9112b0a7124518fb69b704a2bbf3de1db12825a1a43",
+    "source_revision": "12c50010866066952345c63223bce770cf7578b1",
+    "verified_bytes": 245918342,
+    "verified_files": 789
+  }
+}
