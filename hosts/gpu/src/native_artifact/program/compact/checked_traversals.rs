@@ -138,6 +138,39 @@ fn use_blocks(f: &Function) -> Vec<Vec<Block>> {
     users
 }
 
+fn region_instructions(f: &Function, start: Block, blocks: &BTreeSet<Block>) -> Vec<Inst> {
+    let mut pending = vec![start];
+    let mut visited = BTreeSet::new();
+    let mut result = Vec::new();
+    while let Some(block) = pending.pop() {
+        if !blocks.contains(&block) || !visited.insert(block) {
+            continue;
+        }
+        result.extend(f.layout.block_insts(block));
+        let inst = f
+            .layout
+            .last_inst(block)
+            .expect("proved region block has a terminator");
+        pending.extend(
+            targets(f, inst)
+                .iter()
+                .rev()
+                .map(|edge| edge.block(&f.dfg.value_lists)),
+        );
+    }
+    result
+}
+
+fn in_use_order<T: Copy + Ord>(
+    mut required: BTreeSet<T>,
+    uses: impl IntoIterator<Item = T>,
+) -> Vec<T> {
+    let mut order = Vec::with_capacity(required.len());
+    order.extend(uses.into_iter().filter(|value| required.remove(value)));
+    order.extend(required);
+    order
+}
+
 fn plan(
     f: &Function,
     cfg: &ControlFlowGraph,
@@ -145,6 +178,7 @@ fn plan(
     dominance: Option<&DominatorTree>,
     candidate: Candidate,
     pack_large_refusals: bool,
+    order_captures: bool,
 ) -> Result<Traversal, &'static str> {
     let exits = candidate.exits();
     let controller = candidate.resume.is_none();
@@ -314,17 +348,44 @@ fn plan(
             )
         })
         .unwrap_or_default();
+    let (captures, constants, slots) = if order_captures {
+        let instructions = region_instructions(f, candidate.start, &blocks);
+        let operands = || {
+            f.dfg
+                .block_params(candidate.start)
+                .iter()
+                .copied()
+                .chain(instructions.iter().flat_map(|&inst| inputs(f, inst)))
+                .map(|value| f.dfg.resolve_aliases(value))
+        };
+        (
+            in_use_order(arguments, operands()),
+            in_use_order(constants, operands()),
+            in_use_order(
+                slots,
+                instructions
+                    .iter()
+                    .filter_map(|&inst| referenced_slot(&f.dfg.insts[inst])),
+            ),
+        )
+    } else {
+        (
+            arguments.into_iter().collect(),
+            constants.into_iter().collect(),
+            slots.into_iter().collect(),
+        )
+    };
     Ok(Traversal {
         candidate,
         blocks,
-        inputs: arguments.into_iter().collect(),
+        inputs: captures,
         outputs,
         finish: finish.to_vec(),
         passthrough,
         live_captures: Vec::new(),
         packed_inputs,
-        constants: constants.into_iter().collect(),
-        slots: slots.into_iter().collect(),
+        constants,
+        slots,
     })
 }
 
@@ -856,6 +917,7 @@ fn share_families<M: Module>(
         .unwrap_or_default();
     let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
     let layout_regions_last = std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some();
+    let order_layout_captures = std::env::var_os("MECH_COMPACT_ORDER_REGION_CAPTURES").is_some();
     let mut groups: Vec<Prepared> = Vec::new();
     let mut proven = BTreeSet::new();
     let cfg = ControlFlowGraph::with_function(root);
@@ -873,6 +935,7 @@ fn share_families<M: Module>(
             dominance.as_ref(),
             candidate,
             pack_large_refusals,
+            order_layout_captures && candidate.origin_base.is_some(),
         ) {
             Ok(traversal) => traversal,
             Err(reason) => {
