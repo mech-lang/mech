@@ -10,7 +10,13 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
 use std::collections::BTreeMap;
 
-fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId {
+fn define(
+    module: &mut JITModule,
+    enabled: bool,
+    extra_inputs: usize,
+    return_error_origin: bool,
+    origin_offset: i64,
+) -> FuncId {
     let mut ctx = module.make_context();
     ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];
     ctx.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -84,7 +90,7 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
         b.switch_to_block(error);
         b.set_cold_block(error);
         let code = b.ins().iconst(types::I64, 17);
-        let origin = b.ins().iconst(types::I64, (header + 4) as i64);
+        let origin = b.ins().iconst(types::I64, header as i64 + origin_offset);
         b.ins().return_(&[code, origin]);
         b.switch_to_block(choice);
         let transition = std::iter::once(advanced)
@@ -133,7 +139,10 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
                 module,
                 &mut ctx.func,
                 vec![parts],
-                CaptureBindings::default(),
+                CaptureBindings {
+                    return_error_origin,
+                    ..CaptureBindings::default()
+                },
             )
         }
         .unwrap()
@@ -145,6 +154,13 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
                 serde_json::json!([[47, 1], [47, 1]])
             );
             assert_eq!(report[0]["resume_packet_words"], serde_json::json!([1, 1]));
+            assert_eq!(
+                report[0]["returns_error_origin"].as_bool(),
+                (return_error_origin
+                    && u32::try_from(90 + origin_offset).is_ok()
+                    && origin_offset >= 0)
+                    .then_some(true)
+            );
         }
     }
     ctx.verify(module.isa()).unwrap();
@@ -160,8 +176,8 @@ struct ResultPair(u64, u64);
 fn shared_traversal_preserves_exit_resume_and_failure_origin() {
     let builder = JITBuilder::new(default_libcall_names()).unwrap();
     let mut module = JITModule::new(builder);
-    let original = define(&mut module, false, 0);
-    let outlined = define(&mut module, true, 0);
+    let original = define(&mut module, false, 0, false, 4);
+    let outlined = define(&mut module, true, 0, false, 4);
     module.finalize_definitions().unwrap();
     // Both functions were defined above with the host C calling convention
     // and a pair of 64-bit integer return values.
@@ -186,28 +202,36 @@ fn shared_traversal_preserves_exit_resume_and_failure_origin() {
 
 #[test]
 fn packed_refusal_preserves_partial_resume_and_failure_origin() {
-    let builder = JITBuilder::new(default_libcall_names()).unwrap();
-    let mut module = JITModule::new(builder);
-    let original = define(&mut module, false, 44);
-    let outlined = define(&mut module, true, 44);
-    module.finalize_definitions().unwrap();
-    let bind = |id| unsafe {
-        std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
-            module.get_finalized_function(id),
-        )
-    };
-    let old = bind(original);
-    let new = bind(outlined);
     let additional = 5 * 44 + 44 * 45 / 2;
     let advance = 11 + 5 + 2 * additional;
-    for (choice, origin) in [(0, 34), (1, 94)] {
-        for (path, expected) in [
-            (0, ResultPair(0, advance)),
-            (1, ResultPair(0, 2 * advance)),
-            (2, ResultPair(17, origin)),
-        ] {
-            assert_eq!(old(choice, path, 5), expected);
-            assert_eq!(new(choice, path, 5), expected);
+    for (return_error_origin, offset) in [
+        (false, 4),
+        (true, 0),
+        (true, 4),
+        (true, i64::from(u32::MAX) - 90),
+        (true, -1),
+        (true, i64::from(u32::MAX) + 1),
+    ] {
+        let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+        let original = define(&mut module, false, 44, false, offset);
+        let outlined = define(&mut module, true, 44, return_error_origin, offset);
+        module.finalize_definitions().unwrap();
+        let bind = |id| unsafe {
+            std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
+                module.get_finalized_function(id),
+            )
+        };
+        let old = bind(original);
+        let new = bind(outlined);
+        for (choice, header) in [(0, 30), (1, 90)] {
+            for (path, expected) in [
+                (0, ResultPair(0, advance)),
+                (1, ResultPair(0, 2 * advance)),
+                (2, ResultPair(17, (header + offset) as u64)),
+            ] {
+                assert_eq!(old(choice, path, 5), expected);
+                assert_eq!(new(choice, path, 5), expected);
+            }
         }
     }
 }
