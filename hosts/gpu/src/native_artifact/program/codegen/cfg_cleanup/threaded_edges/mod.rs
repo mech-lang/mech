@@ -101,7 +101,7 @@ pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &Dominator
     }) {
         return report;
     }
-    let known = super::boolean_words::derive(f, cfg);
+    let mut known = super::boolean_words::derive(f, cfg);
     let mut edges = Vec::new();
     for block in f.layout.blocks() {
         let Some(inst) = f.layout.last_inst(block) else {
@@ -138,7 +138,7 @@ pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &Dominator
     let mut visits = visits::Visits::new(f.dfg.num_blocks());
     let plans = edges
         .into_iter()
-        .filter_map(|edge| route::find(f, dom, edge, known.clone(), &mut visits))
+        .filter_map(|edge| route::find(f, dom, edge, &mut known, &mut visits))
         .collect::<Vec<_>>();
     let targets = plans.iter().map(|p| p.target).collect::<BTreeSet<_>>();
     // Preserve the original dominance of every new transport phi. No other

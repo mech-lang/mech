@@ -42,17 +42,37 @@ fn pure(f: &Function, block: Block, last: Inst) -> bool {
         })
 }
 
+// A route narrows at most one source-edge fact. Restore that entry when
+// discovery finishes, including every early refusal, before the next edge.
+struct SourceRanges<'a> {
+    known: &'a mut BTreeMap<Value, Range>,
+    prior: Option<(Value, Option<Range>)>,
+}
+
+impl Drop for SourceRanges<'_> {
+    fn drop(&mut self) {
+        if let Some((value, prior)) = self.prior {
+            if let Some(range) = prior {
+                self.known.insert(value, range);
+            } else {
+                self.known.remove(&value);
+            }
+        }
+    }
+}
+
 pub(super) fn find(
     f: &Function,
     dom: &DominatorTree,
     edge: Edge,
-    mut known: BTreeMap<Value, Range>,
+    known: &mut BTreeMap<Value, Range>,
     visits: &mut super::visits::Visits,
 ) -> Option<Plan> {
     let source = f.layout.inst_block(edge.inst)?;
     if !dom.is_reachable(source) {
         return None;
     }
+    let mut source_ranges = SourceRanges { known, prior: None };
     if let Data::Brif { arg, .. } = f.dfg.insts[edge.inst] {
         let ty = f.dfg.value_type(arg);
         if ty.is_int() && !ty.is_vector() && ty.bits() <= 64 {
@@ -62,30 +82,31 @@ pub(super) fn find(
                 Range(0, 0)
             };
             let arg = f.dfg.resolve_aliases(arg);
-            let bound = known
+            let bound = source_ranges
+                .known
                 .get(&arg)
                 .map_or(bound, |old| Range(old.0.max(bound.0), old.1.min(bound.1)));
             if bound.0 > bound.1 {
                 return None;
             }
-            known.insert(arg, bound);
+            source_ranges.prior = Some((arg, source_ranges.known.insert(arg, bound)));
         }
     }
+    let source_known = &*source_ranges.known;
     // A constant current tag is the witness; unrestricted payload words alone
     // never justify threading. This is not a source enum/type assumption.
     if !edge.args.iter().any(|&v| {
-        values::range(values::source(f, v, &known)).is_some_and(|r| r.0 == r.1 && r.1 <= 1)
+        values::range(values::source(f, v, source_known)).is_some_and(|r| r.0 == r.1 && r.1 <= 1)
     }) {
         return None;
     }
     let mut target = edge.target;
-    let source_known = known;
     let mut known = BTreeMap::new();
     let mut args = edge
         .args
         .iter()
         .copied()
-        .map(|v| values::source(f, v, &source_known))
+        .map(|v| values::source(f, v, source_known))
         .collect::<Vec<_>>();
     let mut words = BTreeMap::new();
     let mut skipped = BTreeSet::new();
@@ -115,7 +136,7 @@ pub(super) fn find(
             for &arg in f.dfg.inst_args(inst) {
                 let arg = f.dfg.resolve_aliases(arg);
                 if !next_known.contains_key(&arg) {
-                    if let Some(r) = values::range(values::source(f, arg, &source_known)) {
+                    if let Some(r) = values::range(values::source(f, arg, source_known)) {
                         next_known.insert(arg, r);
                     }
                 }
@@ -132,7 +153,7 @@ pub(super) fn find(
             Data::Brif { arg, blocks, .. } => {
                 let arg = f.dfg.resolve_aliases(*arg);
                 if !next_known.contains_key(&arg) {
-                    if let Some(r) = values::range(values::source(f, arg, &source_known)) {
+                    if let Some(r) = values::range(values::source(f, arg, source_known)) {
                         next_known.insert(arg, r);
                     }
                 }
@@ -152,7 +173,7 @@ pub(super) fn find(
         backedge |= dom.block_dominates(target, source);
         args = call
             .args(&f.dfg.value_lists)
-            .map(|arg| values::forward(f, arg.as_value()?, &words, &known, &skipped, &source_known))
+            .map(|arg| values::forward(f, arg.as_value()?, &words, &known, &skipped, source_known))
             .collect::<Option<Vec<_>>>()?;
         target = call.block(&f.dfg.value_lists);
     }
@@ -204,7 +225,7 @@ pub(super) fn find(
         if used {
             repairs.insert(
                 value,
-                values::forward(f, value, &words, &known, &skipped, &source_known)?,
+                values::forward(f, value, &words, &known, &skipped, source_known)?,
             );
         }
     }
