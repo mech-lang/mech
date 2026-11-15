@@ -230,3 +230,66 @@ fn duplicate_records_and_nonlocal_definitions_keep_order_and_set_semantics() {
         vec![vec![value]]
     );
 }
+
+#[test]
+fn direct_output_inventory_is_sorted_unique_and_shared_within_one_owner() {
+    for source in [
+        "left<u64> + right<u64>\n",
+        include_str!("../../../hosts/gpu/tests/fixtures/native/numeric-nested-phase.mec"),
+        include_str!("../../../hosts/gpu/tests/fixtures/native/numeric-private-fixed-nested.mec"),
+    ] {
+        let [original, decoded] = plans(source).0;
+        let original_facts = original.facts();
+        let decoded_facts = decoded.facts();
+        let outputs = original_facts.direct_action_outputs();
+        assert!(!outputs.is_empty());
+        assert_eq!(outputs, decoded_facts.direct_action_outputs());
+        assert!(std::ptr::eq(
+            outputs,
+            original_facts.direct_action_outputs()
+        ));
+        assert!(outputs.windows(2).all(|pair| pair[0].0 < pair[1].0));
+        assert!(outputs.iter().all(|(id, value)| *id == value.get()));
+    }
+}
+
+#[test]
+fn direct_output_inventory_keeps_duplicate_and_sparse_descriptive_outputs() {
+    let ([plan, _], schemas) = plans("left<u64> + right<u64>\n");
+    let mut image = serde_json::to_value(&plan).unwrap();
+    let mut block = image["blocks"][0].clone();
+    let blocks = image["blocks"].as_array_mut().unwrap();
+    blocks.clear();
+    for output in [u32::MAX, 0, 17, 17, u32::MAX, 3] {
+        block["action"] = serde_json::json!({"Scalar":{"Copy":{"source":0,"output":output}}});
+        blocks.push(block.clone());
+    }
+    let malformed = restore(&image, &schemas);
+    let facts = malformed.facts();
+    assert_eq!(
+        facts
+            .direct_action_outputs()
+            .iter()
+            .map(|(id, _)| *id)
+            .collect::<Vec<_>>(),
+        vec![0, 3, 17, u32::MAX]
+    );
+    // Enumeration must not hide the original whole-inventory validation error.
+    assert!(facts.definition_sites(0).is_err());
+    assert!(malformed.facts().definition_sites(0).is_err());
+    assert_eq!(facts.direct_action_outputs().len(), 4);
+}
+
+#[test]
+fn direct_output_inventory_does_not_cross_plan_owners() {
+    let ([plan, _], schemas) = plans("left<u64> + right<u64>\n");
+    let facts = plan.facts();
+    let original = facts.direct_action_outputs().to_vec();
+    let mut image = serde_json::to_value(&plan).unwrap();
+    for block in image["blocks"].as_array_mut().unwrap() {
+        block["action"] = serde_json::json!({"Scalar":"None"});
+    }
+    let other = restore(&image, &schemas);
+    assert!(other.facts().direct_action_outputs().is_empty());
+    assert_eq!(facts.direct_action_outputs(), original);
+}
