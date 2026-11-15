@@ -372,6 +372,8 @@ impl Traversal {
         root: &mut Function,
         function: FuncId,
         slot: StackSlot,
+        observer: Option<FuncId>,
+        cold: bool,
     ) {
         let candidate = self.candidate;
         for &block in &self.blocks {
@@ -393,10 +395,20 @@ impl Traversal {
             previous = block;
         }
         root.layout.set_cold(failure);
+        if cold {
+            for block in [candidate.start, cont, resume, finish] {
+                root.layout.set_cold(block);
+            }
+        }
         let reference = module.declare_func_in_func(function, root);
+        let observer = observer.map(|id| module.declare_func_in_func(id, root));
         let mut args = self.inputs.clone();
         let mut pos = FuncCursor::new(root);
         pos.goto_bottom(candidate.start);
+        if let Some(observer) = observer {
+            let header = pos.ins().iconst(types::I64, candidate.header as i64);
+            pos.ins().call(observer, &[header]);
+        }
         for &slot in &self.slots {
             args.push(pos.ins().stack_addr(types::I64, slot, 0));
         }
@@ -493,9 +505,21 @@ pub(super) fn share<M: Module>(
     if !all_families {
         families.truncate(1);
     }
+    let excluded = std::env::var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS")
+        .ok()
+        .map(|list| {
+            list.split(',')
+                .map(|part| part.parse::<usize>().map_err(backend))
+                .collect::<Result<BTreeSet<_>, _>>()
+        })
+        .transpose()?
+        .unwrap_or_default();
     let mut groups: Vec<Prepared> = Vec::new();
     let mut proven = BTreeSet::new();
     for candidate in families.into_iter().flatten() {
+        if excluded.contains(&candidate.header) {
+            continue;
+        }
         let Some(traversal) = plan(root, candidate) else {
             eprintln!(
                 "compact checked traversal {} declined by boundary proof",
@@ -584,6 +608,20 @@ pub(super) fn share<M: Module>(
         (words * 8) as u32,
         3,
     ));
+    let observer = std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS")
+        .map(|_| {
+            let mut signature = module.make_signature();
+            signature.params.push(AbiParam::new(types::I64));
+            module
+                .declare_function(
+                    "mech_compact_checked_traversal_observe",
+                    Linkage::Import,
+                    &signature,
+                )
+                .map_err(backend)
+        })
+        .transpose()?;
+    let cold = std::env::var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT").is_some();
     let mut report = Vec::new();
     for selected in groups {
         module
@@ -595,7 +633,7 @@ pub(super) fn share<M: Module>(
             )
             .map_err(backend)?;
         for traversal in &selected.traversals {
-            traversal.replace(module, root, selected.function, result);
+            traversal.replace(module, root, selected.function, result, observer, cold);
         }
         report.push(serde_json::json!({
             "headers":selected.traversals.iter().map(|t| t.candidate.header).collect::<Vec<_>>(),
