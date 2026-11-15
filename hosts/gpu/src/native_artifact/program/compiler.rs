@@ -865,6 +865,9 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     }
     let share_phase_bodies = std::env::var_os("MECH_COMPACT_SHARE_PHASE_BODIES").is_some();
     let metadata = super::compact::define(&mut module, &prepared, observe, share_phase_bodies)?;
+    if !observe && std::env::var_os("MECH_COMPACT_EXPORTS_FIRST").is_some() {
+        module.place_exports_first();
+    }
     let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
     Ok((bytes, metadata))
 }
