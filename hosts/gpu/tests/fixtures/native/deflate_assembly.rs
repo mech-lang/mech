@@ -64,13 +64,13 @@ mod tests {
     fn assembled_compressor_source_preserves_its_pinned_bytes() {
         use sha2::{Digest, Sha256};
         let source = super::complete_source();
-        assert_eq!(source.len(), 160992);
+        assert_eq!(source.len(), 164378);
         assert_eq!(
             Sha256::digest(source.as_bytes())
                 .iter()
                 .map(|byte| format!("{byte:02x}"))
                 .collect::<String>(),
-            "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f"
+            "742567bc0abc6f37209ac5f82c1e2a05647f35db8ea6368bef81d04b9a03b552"
         );
     }
 }

@@ -58,6 +58,54 @@ optimal-compress-blocks(input<[u8]>, bytes<[u8]>, bitbuf<u64>, bitcount<u64>, ta
     | true => {bytes: next-bytes, bitbuf: next-bitbuf, bitcount: next-bitcount}
     | false => optimal-compress-blocks(input, next-bytes, next-bitbuf, next-bitcount, next-tables, next-cache, next-nodes, next-hash3, next-hash4, next-position, next-begin, next-base, next-slide-at, next-maximum, next-nice, next-pointer, next-literal, next-length, next-offset, next-saved-literal, next-saved-length, next-saved-offset, next-frequencies, next-fresh-frequencies, next-previous, next-previous-number, next-observations, next-fresh-observations, next-number, next-fresh-number, next-seqs, next-only-literals, next-static-litlen-lens, next-static-litlen-words, next-static-offset-lens, next-static-offset-words)).
 
+
+// A nonempty all-literal dynamic block produced by this encoder has two
+// one-bit distance lengths. Symbol 1 requires at least 18 precode lengths.
+// The header is at least 17 + 3*18 bits; at least three precode items are
+// needed for >=258 lengths, and payload needs >= n+1 bits. Thus dynamic
+// costs >=75+n bits. Fixed costs <=10+9*n, and stored costs >=35+8*n.
+// For n <=8 fixed is strictly smaller than either alternative.
+// Unique three-byte windows are a sufficient condition for no LZ match.
+// The real collector still runs and checks that its cached parse is forced.
+optimal-short-triple(input<[u8]>, at<u64>) => (out<u64>) :=
+  first := byte(input, at)
+  second := bits/shift-left-wrap(byte(input, at + 1u64), 8u64)
+  third := bits/shift-left-wrap(byte(input, at + 2u64), 16u64)
+  out := bits/or(first, bits/or(second, third)).
+optimal-short-distinct-from(input<[u8]>, word<u64>, at<u64>, end<u64>) => (out<bool>) :=
+  out := ((at < end)?
+    | true => ((optimal-short-triple(input, at) == word)?
+      | true => false
+      | false => optimal-short-distinct-from(input, word, at + 1u64, end))
+    | false => true).
+optimal-short-distinct-triples(input<[u8]>, at<u64>, end<u64>) => (out<bool>) :=
+  out := ((at < end)?
+    | true => ((optimal-short-distinct-from(input, optimal-short-triple(input, at), at + 1u64, end))?
+      | true => optimal-short-distinct-triples(input, at + 1u64, end)
+      | false => false)
+    | false => true).
+optimal-short-forced-literals(input<[u8]>) => (out<bool>) :=
+  n := sequence/length(input)
+  limit := (75u64 - 10u64 - 1u64) / (9u64 - 1u64)
+  out := ((n <= limit)?
+    | true => ((n >= 3u64)? | true => optimal-short-distinct-triples(input, 0u64, n - 2u64) | false => true)
+    | false => false).
+optimal-short-write-literals(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, at<u64>, end<u64>, words<[u32]>, lens<[u8]>) => (out<path-written>) :=
+  next := ((at < end)?
+    | true => path-write-literal(bytes, bitbuf, bitcount, byte(input, at), words, lens)
+    | false => {bytes: bytes, bitbuf: bitbuf, bitcount: bitcount})
+  out := ((at < end)?
+    | true => optimal-short-write-literals(next.bytes, next.bitbuf, next.bitcount, input, at + 1u64, end, words, lens)
+    | false => next).
+optimal-short-final-block(input<[u8]>, bytes<[u8]>, tables<[u16]>, cache<[u32]>, frequencies<[u32]>, fresh-frequencies<[u32]>, observations<[u32]>, fresh-observations<[u32]>, static-lens<[u8]>, static-words<[u32]>) => (out<path-written>) :=
+  n := sequence/length(input)
+  short-input! := n <= 8u64
+  collected := optimal-collect-block(tables, cache, 0u64, 0u64, input, 0u64, 0u64, bt-minimum(n, 32768u64), 258u64, 258u64, 0u64, frequencies, fresh-frequencies, observations, fresh-observations, 0u64, 0u64, 0u64, 0u64)
+  forced-final! := (collected.cache-end == n) && (collected.is-final == 1u64)
+  header := block-write-static-header(bytes, 0u64, 0u64, 1u64)
+  payload := optimal-short-write-literals(header.bytes, header.bitbuf, header.bitcount, input, 0u64, n, static-words, static-lens)
+  out := path-write-literal(payload.bytes, payload.bitbuf, payload.bitcount, 256u64, static-words, static-lens).
+
 optimal-compress(input<[u8]>, output<[u8]>) => (out<[u8]>) :=
   n := sequence/length(input)
   static := block-build-static-codes(deflate-table-reversed)
@@ -77,7 +125,9 @@ optimal-compress(input<[u8]>, output<[u8]>) => (out<[u8]>) :=
   fresh-observations := [0u32 | i <- 0u64..=10u64, i < 10u64]
   observations := [0u32 | i <- 0u64..=10u64, i < 10u64]
   seqs := [{litrunlen-and-length: 0u32, offset: 0u16, offset-slot: 0u16}]
-  stream := optimal-compress-blocks(input, bytes, 0u64, 0u64, tables, cache, nodes, 0u64, 0u64, 0u64, 0u64, 0u64, bt-minimum(n, 32768u64), 258u64, 258u64, 0u64, literal, length-costs, offset-costs, saved-literal, saved-length, saved-offset, frequencies, fresh-frequencies, previous-observations, 0u64, observations, fresh-observations, 0u64, 0u64, seqs, 0u64, static.litlen-lens, static.litlen-codewords, static.offset-lens, static.offset-codewords)
+  stream := (optimal-short-forced-literals(input)?
+    | true => optimal-short-final-block(input, bytes, tables, cache, frequencies, fresh-frequencies, observations, fresh-observations, static.litlen-lens, static.litlen-codewords)
+    | false => optimal-compress-blocks(input, bytes, 0u64, 0u64, tables, cache, nodes, 0u64, 0u64, 0u64, 0u64, 0u64, bt-minimum(n, 32768u64), 258u64, 258u64, 0u64, literal, length-costs, offset-costs, saved-literal, saved-length, saved-offset, frequencies, fresh-frequencies, previous-observations, 0u64, observations, fresh-observations, 0u64, 0u64, seqs, 0u64, static.litlen-lens, static.litlen-codewords, static.offset-lens, static.offset-codewords))
   out := ((stream.bitcount > 0u64)? | true => sequence/append(stream.bytes, huff-byte(stream.bitbuf)) | false => stream.bytes).
 
 deflate-store-uncompressed(input<[u8]>, output<[u8]>) => (out<[u8]>) :=
