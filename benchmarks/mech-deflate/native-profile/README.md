@@ -255,7 +255,8 @@ and seven held-out programs receive 56 additional balanced compiles. All raw
 profiles, build/training/timing logs, outputs, configuration and pure replay
 are in the twenty-sixth [complete packet](../evidence/compiler-profile-20261114/README.md).
 This pair uses frozen `fad53` source before schema reuse and phase workers;
-combined PGO performance remains unqualified and gains must not be added.
+the later current-source native-CPU + PGO cohort is separate and gains must not
+be added.
 The ten-second complete-compilation goal remains open.
 
 The [constant-phi propagation trials](../../../docs/design/native-constant-phi-compile-trials.md)
@@ -282,3 +283,16 @@ diagnostic, excluded from primary means. The twenty-eighth
 [complete packet](../evidence/compiler-profile-20261114/README.md) includes
 source/patches, tests/failure, every observation, native inputs, samples and replay.
 No additional parallel gain or sub-ten-second result is established.
+
+The [current-source native-CPU + PGO qualification](../../../docs/design/native-current-pgo-compile-profile.md)
+uses frozen `aaef` source with the retained frontend changes and two workers in
+both subjects. Eight complete builds improve 17.347 to 15.921 seconds (8.22%),
+with both blocks faster and every executable byte identical; the fixed adapter
+is cached. Eight source-to-Object compiles improve process/instructions
+9.06%/9.24%; frontend (+3.01%), RSS (+1.87%), encoding (+2.52%) and footprint
+(+1.92%) are adverse. Fourteen fixture pairs and 56 balanced held-out compiles
+preserve all bytes. Four tool builds, training8, raw/merged profiles, every
+diagnostic/observation/output and pure replay are in the twenty-ninth
+[complete packet](../evidence/compiler-profile-20261114/README.md). This qualifies
+the combined host-build strategy; earlier percentages stay separate. Complete
+compilation below ten seconds remains open.
