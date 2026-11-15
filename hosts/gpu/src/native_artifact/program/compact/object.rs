@@ -1,6 +1,6 @@
 //! Select the compact Object's native definitions before writing them.
 
-use cranelift_codegen::{Context, control::ControlPlane, ir::Signature, isa::TargetIsa};
+use cranelift_codegen::{Context, control::ControlPlane, ir, ir::Signature, isa::TargetIsa};
 use cranelift_module::{
     DataDescription, DataId, FuncId, FuncOrDataId, Linkage, Module, ModuleDeclarations,
     ModuleError, ModuleReloc, ModuleRelocTarget, ModuleResult,
@@ -27,6 +27,7 @@ pub(in crate::native_artifact::program) struct PreparedObject {
     declaration_order: Vec<FuncOrDataId>,
     definition_order: Vec<FuncOrDataId>,
     bodies: BTreeMap<FuncOrDataId, Body>,
+    direct_runtime_calls: bool,
 }
 
 impl PreparedObject {
@@ -37,7 +38,13 @@ impl PreparedObject {
             declaration_order: Vec::new(),
             definition_order: Vec::new(),
             bodies: BTreeMap::new(),
+            direct_runtime_calls: false,
         }
+    }
+
+    pub(in crate::native_artifact::program) fn use_direct_runtime_calls(&mut self) {
+        self.direct_runtime_calls = cfg!(all(target_arch = "aarch64", target_os = "macos"))
+            && self.isa().name() == "aarch64";
     }
 
     fn linkage(&self, id: FuncOrDataId) -> Linkage {
@@ -196,6 +203,29 @@ impl Module for PreparedObject {
 
     fn declarations(&self) -> &ModuleDeclarations {
         &self.declarations
+    }
+
+    fn declare_func_in_func(&mut self, id: FuncId, f: &mut ir::Function) -> ir::FuncRef {
+        let decl = self.declarations.get_function_decl(id);
+        let signature = f.import_signature(decl.signature.clone());
+        let name = f.declare_imported_user_function(ir::UserExternalName {
+            namespace: 0,
+            index: id.as_u32(),
+        });
+        // These providers are linked into the compact AArch64 Object's host.
+        // Let the linker resolve a branch relocation to each provider.
+        let direct = self.direct_runtime_calls
+            && decl.linkage == Linkage::Import
+            && matches!(
+                decl.name.as_deref(),
+                Some("mech_compact_allocate" | "mech_compact_writable" | "mech_compact_free")
+            );
+        f.import_function(ir::ExtFuncData {
+            name: ir::ExternalName::user(name),
+            signature,
+            colocated: decl.linkage.is_final() || direct,
+            patchable: false,
+        })
     }
 
     fn declare_function(
@@ -376,5 +406,33 @@ mod tests {
         let entry = function(&mut module, "entry", Linkage::Export);
         define(&mut module, entry, &[missing]);
         assert!(matches!(module.finish(), Err(ModuleError::Undeclared(_))));
+    }
+
+    #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+    #[test]
+    fn compact_runtime_imports_can_use_direct_branches() {
+        use cranelift_codegen::binemit::Reloc;
+        let mut module = module();
+        module.use_direct_runtime_calls();
+        let entry = function(&mut module, "entry", Linkage::Export);
+        let free = function(&mut module, "mech_compact_free", Linkage::Import);
+        let external = function(&mut module, "unrelated_import", Linkage::Import);
+        define(&mut module, entry, &[free, external]);
+        let Body::Text(body) = module.bodies.get(&FuncOrDataId::Func(entry)).unwrap() else {
+            unreachable!();
+        };
+        let direct: Vec<_> = body
+            .relocs
+            .iter()
+            .filter(|r| r.kind == Reloc::Arm64Call)
+            .collect();
+        assert_eq!(direct.len(), 1);
+        assert_eq!(symbol(&direct[0].name), Some(FuncOrDataId::Func(free)));
+        assert!(
+            body.relocs
+                .iter()
+                .any(|r| symbol(&r.name) == Some(FuncOrDataId::Func(external)))
+        );
+        assert!(!module.finish().unwrap().emit().unwrap().is_empty());
     }
 }
