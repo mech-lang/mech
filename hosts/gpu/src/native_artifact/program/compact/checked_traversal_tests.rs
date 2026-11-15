@@ -1,4 +1,4 @@
-use super::{Candidate, controller_candidates, share, share_controllers};
+use super::{Candidate, controller_candidates, share, share_controllers, share_families};
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, StackSlotData, StackSlotKind, condcodes::IntCC, types,
 };
@@ -7,7 +7,7 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
 use std::collections::BTreeMap;
 
-fn define(module: &mut JITModule, enabled: bool) -> FuncId {
+fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId {
     let mut ctx = module.make_context();
     ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];
     ctx.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -19,6 +19,9 @@ fn define(module: &mut JITModule, enabled: bool) -> FuncId {
     let [choose, path, value] = *b.block_params(entry) else {
         unreachable!()
     };
+    let extras = (1..=extra_inputs)
+        .map(|index| b.ins().iadd_imm(value, index as i64))
+        .collect::<Vec<_>>();
     let zero = b.ins().iconst(types::I64, 0);
     let seed = b.ins().iconst(types::I64, 11);
     let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
@@ -26,10 +29,12 @@ fn define(module: &mut JITModule, enabled: bool) -> FuncId {
     let first = b.create_block();
     let second = b.create_block();
     for guard in [first, second] {
-        b.append_block_param(guard, types::I64);
+        for _ in 0..=extra_inputs {
+            b.append_block_param(guard, types::I64);
+        }
     }
-    b.ins()
-        .brif(choose, second, &[zero.into()], first, &[zero.into()]);
+    let initial = vec![zero.into(); 1 + extra_inputs];
+    b.ins().brif(choose, second, &initial, first, &initial);
     let mut parts = Vec::new();
     for (guard, header) in [(first, 30), (second, 90)] {
         let start = b.create_block();
@@ -44,17 +49,31 @@ fn define(module: &mut JITModule, enabled: bool) -> FuncId {
             header,
             span: 12,
         });
-        b.append_block_param(exit, types::I64);
+        for _ in 0..=extra_inputs {
+            b.append_block_param(exit, types::I64);
+        }
         b.switch_to_block(guard);
-        let carry = b.block_params(guard)[0];
+        let incoming = b.block_params(guard).to_vec();
+        let (carry, rest) = incoming.split_first().unwrap();
+        let carry = *carry;
         b.ins().brif(carry, ready, &[], start, &[]);
         b.switch_to_block(ready);
         let old = b.ins().stack_load(types::I64, slot, 0);
-        let sum = b.ins().iadd(old, carry);
-        b.ins().jump(exit, &[sum.into()]);
+        let sum = rest.iter().fold(b.ins().iadd(old, carry), |sum, &value| {
+            b.ins().iadd(sum, value)
+        });
+        let returned = std::iter::once(sum)
+            .chain(rest.iter().copied())
+            .map(Into::into)
+            .collect::<Vec<_>>();
+        b.ins().jump(exit, &returned);
         b.switch_to_block(start);
         let initial = b.ins().stack_load(types::I64, slot, 0);
-        let advanced = b.ins().iadd(initial, value);
+        let advanced = extras
+            .iter()
+            .fold(b.ins().iadd(initial, value), |sum, &next| {
+                b.ins().iadd(sum, next)
+            });
         b.ins().stack_store(advanced, slot, 0);
         let reject = b.ins().icmp_imm(IntCC::Equal, path, 2);
         b.ins().brif(reject, error, &[], choice, &[]);
@@ -64,10 +83,16 @@ fn define(module: &mut JITModule, enabled: bool) -> FuncId {
         let origin = b.ins().iconst(types::I64, (header + 4) as i64);
         b.ins().return_(&[code, origin]);
         b.switch_to_block(choice);
-        b.ins()
-            .brif(path, guard, &[advanced.into()], exit, &[advanced.into()]);
+        let transition = std::iter::once(advanced)
+            .chain(extras.iter().copied())
+            .map(Into::into)
+            .collect::<Vec<_>>();
+        b.ins().brif(path, guard, &transition, exit, &transition);
         b.switch_to_block(exit);
-        let result = b.block_params(exit)[0];
+        let output = b.block_params(exit).to_vec();
+        let result = output[1..]
+            .iter()
+            .fold(output[0], |sum, &value| b.ins().iadd(sum, value));
         b.ins().return_(&[zero, result]);
     }
     b.seal_all_blocks();
@@ -85,10 +110,25 @@ fn define(module: &mut JITModule, enabled: bool) -> FuncId {
         )
         .unwrap();
     if enabled {
-        let report = share(module, &mut ctx.func, BTreeMap::from([(id, parts)]), false)
-            .unwrap()
-            .expect("both traversals selected");
+        let report = if extra_inputs == 0 {
+            share(module, &mut ctx.func, BTreeMap::from([(id, parts)]), false)
+        } else {
+            assert!(
+                share_families(module, &mut ctx.func, vec![parts.clone()], true, false)
+                    .unwrap()
+                    .is_none()
+            );
+            share_families(module, &mut ctx.func, vec![parts], true, true)
+        }
+        .unwrap()
+        .expect("both traversals selected");
         assert_eq!(report[0]["headers"], serde_json::json!([30, 90]));
+        if extra_inputs != 0 {
+            assert_eq!(
+                report[0]["packet_words"],
+                serde_json::json!([[47, 45], [47, 45]])
+            );
+        }
     }
     ctx.verify(module.isa()).unwrap();
     module.define_function(id, &mut ctx).unwrap();
@@ -103,8 +143,8 @@ struct ResultPair(u64, u64);
 fn shared_traversal_preserves_exit_resume_and_failure_origin() {
     let builder = JITBuilder::new(default_libcall_names()).unwrap();
     let mut module = JITModule::new(builder);
-    let original = define(&mut module, false);
-    let outlined = define(&mut module, true);
+    let original = define(&mut module, false, 0);
+    let outlined = define(&mut module, true, 0);
     module.finalize_definitions().unwrap();
     // Both functions were defined above with the host C calling convention
     // and a pair of 64-bit integer return values.
@@ -119,6 +159,34 @@ fn shared_traversal_preserves_exit_resume_and_failure_origin() {
         for (path, expected) in [
             (0, ResultPair(0, 16)),
             (1, ResultPair(0, 32)),
+            (2, ResultPair(17, origin)),
+        ] {
+            assert_eq!(old(choice, path, 5), expected);
+            assert_eq!(new(choice, path, 5), expected);
+        }
+    }
+}
+
+#[test]
+fn packed_refusal_preserves_partial_resume_and_failure_origin() {
+    let builder = JITBuilder::new(default_libcall_names()).unwrap();
+    let mut module = JITModule::new(builder);
+    let original = define(&mut module, false, 44);
+    let outlined = define(&mut module, true, 44);
+    module.finalize_definitions().unwrap();
+    let bind = |id| unsafe {
+        std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
+            module.get_finalized_function(id),
+        )
+    };
+    let old = bind(original);
+    let new = bind(outlined);
+    let additional = 5 * 44 + 44 * 45 / 2;
+    let advance = 11 + 5 + 2 * additional;
+    for (choice, origin) in [(0, 34), (1, 94)] {
+        for (path, expected) in [
+            (0, ResultPair(0, advance)),
+            (1, ResultPair(0, 2 * advance)),
             (2, ResultPair(17, origin)),
         ] {
             assert_eq!(old(choice, path, 5), expected);
