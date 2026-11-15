@@ -491,8 +491,18 @@
       "sha256": "2abcd8228d4894ea0ebc03bf50effaf4bd7a77bc0ba519b1e3f4c67d701e28b5",
       "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
       "summary": "benchmarks/mech-deflate/native-profile/dimension-native-pgo-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-packed-ssa-slots-20261115.tar.gz",
+      "bytes": 41733196,
+      "decision": "Rejected packed dense SSA slots: standard complete compilation 14.948667->14.891670s (-0.381%); all31units/328paired raw+compactedIR/machine cases and every full output/metadata/executable match. Same61flags/2workers, build configuration unchanged. All adverse fields retained. Current best optimized8043 remains13.414825s; this source is not yet separately PGO-qualified.",
+      "files": 794,
+      "receipt": "benchmarks/mech-deflate/native-profile/packed-ssa-slots-apple-m3-20261115.archive.json",
+      "sha256": "12d2c77bedfca5ba26fdece4a9d0e9869c46d67274cfb84f81f6a54af30ddf16",
+      "source_revision": "0ab8308a795a11c919d0aac36e42920b4001ed2b",
+      "summary": "benchmarks/mech-deflate/native-profile/packed-ssa-slots-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1592290023
+  "total_archive_bytes": 1634023219
 }
