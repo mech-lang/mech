@@ -216,6 +216,12 @@ pub(super) fn prepare(
         inputs: traversal.inputs.iter().copied().map(value).collect(),
         input_roles,
         outputs: traversal.outputs.iter().copied().map(value).collect(),
+        aligned_outputs: traversal
+            .aligned_outputs
+            .iter()
+            .copied()
+            .map(value)
+            .collect(),
         finish: traversal.finish.iter().copied().map(value).collect(),
         passthrough: traversal
             .passthrough

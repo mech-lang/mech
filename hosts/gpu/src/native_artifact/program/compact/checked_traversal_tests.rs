@@ -525,3 +525,107 @@ fn shared_body_takes_distinct_operand_roles_even_when_a_caller_repeats_a_value()
     assert_eq!(run(0, 9, 4), ResultPair(0, 0));
     assert_eq!(run(1, 9, 4), ResultPair(0, 5));
 }
+
+#[test]
+fn shared_loop_writes_the_union_of_current_outputs() {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
+    let id = module
+        .declare_function("output_roles", Linkage::Export, &context.func.signature)
+        .unwrap();
+    let mut fb = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut context.func, &mut fb);
+    let entry = b.create_block();
+    let starts = [b.create_block(), b.create_block()];
+    b.append_block_params_for_function_params(entry);
+    for start in starts {
+        for _ in 0..3 {
+            b.append_block_param(start, types::I64);
+        }
+    }
+    b.switch_to_block(entry);
+    let [choice, trips, seed] = *b.block_params(entry) else {
+        unreachable!()
+    };
+    let zero = b.ins().iconst(types::I64, 0);
+    let initial = [trips.into(), seed.into(), zero.into()];
+    b.ins()
+        .brif(choice, starts[1], &initial, starts[0], &initial);
+    let mut candidates = Vec::new();
+    for (index, start) in starts.into_iter().enumerate() {
+        let step = b.create_block();
+        let done = b.create_block();
+        b.append_block_param(done, types::I64);
+        b.switch_to_block(start);
+        let [trips, a, b_value] = *b.block_params(start) else {
+            unreachable!()
+        };
+        let sum = b.ins().iadd(a, b_value);
+        b.ins().brif(trips, step, &[], done, &[sum.into()]);
+        b.switch_to_block(step);
+        let remaining = b.ins().iadd_imm(trips, -1);
+        let first = b.ins().iadd_imm(a, 3);
+        let second = b.ins().iadd_imm(b_value, 7);
+        b.ins()
+            .jump(start, &[remaining.into(), first.into(), second.into()]);
+        b.switch_to_block(done);
+        let sum = b.block_params(done)[0];
+        let result = b.ins().isub(sum, a);
+        let result = if index == 0 {
+            result
+        } else {
+            b.ins().iadd(result, b_value)
+        };
+        b.ins().return_(&[zero, result]);
+        candidates.push(Candidate {
+            start,
+            exit: done,
+            resume: None,
+            header: 90 + index,
+            origin_base: None,
+            span: 0,
+        });
+    }
+    b.seal_all_blocks();
+    b.finalize();
+    assert!(
+        share_controllers(
+            &mut module,
+            &mut context.func.clone(),
+            vec![candidates.clone()],
+            CaptureBindings::default()
+        )
+        .unwrap()
+        .is_none()
+    );
+    let report = share_controllers(
+        &mut module,
+        &mut context.func,
+        vec![candidates],
+        CaptureBindings {
+            align_outputs: true,
+            ..CaptureBindings::default()
+        },
+    )
+    .unwrap()
+    .expect("the checked bodies publish the same union of three words");
+    assert_eq!(report[0]["aligned_outputs"], true);
+    assert_eq!(
+        report[0]["packet_words"],
+        serde_json::json!([[3, 3], [3, 3]])
+    );
+    context.verify(module.isa()).unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    let run = unsafe {
+        std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
+            module.get_finalized_function(id),
+        )
+    };
+    for trips in [0, 1, 5] {
+        assert_eq!(run(0, trips, 19), ResultPair(0, 7 * trips));
+        assert_eq!(run(1, trips, 19), ResultPair(0, 14 * trips));
+    }
+}
