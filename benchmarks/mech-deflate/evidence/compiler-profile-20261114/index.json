@@ -291,8 +291,18 @@
       "sha256": "0119e84c80c5042aae2604e0f7da26b94eb7883d1dbb43e73809d0fd17a7de4e",
       "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
       "summary": "benchmarks/mech-deflate/native-profile/current-native-pgo-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-refreshed-parallel-20261115.tar.gz",
+      "bytes": 22576025,
+      "decision": "Updated PR934/9e34 workload: no useful parallel gain. Serial19.166s versus2workers19.196s(+0.16%),mixed blocks;allprogram/executable bytes exact. Default serial stays;prior smaller-workload saving separate.",
+      "files": 313,
+      "receipt": "benchmarks/mech-deflate/native-profile/refreshed-parallel-apple-m3-20261115.archive.json",
+      "sha256": "4366841a4128fedf1d2a02fdabb4bba3c9653871a29f7154ea7440012aed688a",
+      "source_revision": "934bde961d47555db3fa45bc5c28d36ad1c0930a",
+      "summary": "benchmarks/mech-deflate/native-profile/refreshed-parallel-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 719566842
+  "total_archive_bytes": 742142867
 }

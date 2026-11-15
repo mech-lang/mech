@@ -964,3 +964,17 @@ includes four builds, training on eight programs, raw/merged profiles, 18,607
 missing-function warnings, all observations/outputs, the initial denied metadata
 query/resume, native inputs and replay. This measures the combined build
 strategy; earlier PGO/worker gains stay separate. The ten-second goal remains open.
+
+The [updated-compressor parallel qualification](../../docs/design/native-refreshed-parallel-compile-profile.md)
+uses `934` source with the newer `9e34` Deflate/runtime changes. One standard
+compiler binary and the same 61 flags compare scheduling 0 versus 2. Eight
+balanced complete builds average **19.166 versus 19.196 seconds (+0.16%)**, with
+one slower and one faster block. No useful updated-workload parallel saving is
+established; default remains serial. All seven worker files are unchanged from
+`1090`, and every program/metadata/executable byte matches. A fresh current
+runtime adapter takes 11.883 seconds to construct outside primary timing and
+then passes two complete cached relink gates. The thirtieth
+[complete packet](evidence/compiler-profile-20261114/README.md) preserves all
+raw observations, commands/logs, source/runtime/worker snapshots, output/native
+bytes and pure replay. Earlier smaller-program and PGO cohorts remain separate.
+No new runtime campaign or sub-ten-second result is claimed.
