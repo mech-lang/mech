@@ -85,6 +85,7 @@ pub struct NativeProgramFacts<'p> {
     graph: OnceCell<Result<Graph, &'static str>>,
     reads: OnceCell<Result<Vec<Vec<NativeProgramReadRole>>, &'static str>>,
     definitions: OnceCell<Result<Vec<Vec<NativeProgramDefinition>>, &'static str>>,
+    direct_outputs: OnceCell<Box<[(u32, Value)]>>,
     #[cfg(feature = "sequence_buffers")]
     owner_reads: std::cell::RefCell<old_value_reads::ReadCache>,
     #[cfg(any(feature = "pure_text", feature = "map_ops"))]
@@ -105,6 +106,7 @@ impl Plan {
             graph: OnceCell::new(),
             reads: OnceCell::new(),
             definitions: OnceCell::new(),
+            direct_outputs: OnceCell::new(),
             #[cfg(feature = "sequence_buffers")]
             owner_reads: std::cell::RefCell::new(old_value_reads::ReadCache::default()),
             #[cfg(any(feature = "pure_text", feature = "map_ops"))]
@@ -216,6 +218,26 @@ impl<'p> NativeProgramFacts<'p> {
 
     pub fn plan(&self) -> &'p Plan {
         self.inputs.plan
+    }
+    /// Sorted outputs of scalar Copy/Primitive, structural and library actions.
+    /// This immutable inventory validates no scope, definition, read or use;
+    /// each consumer retains its own current traversal and eligibility checks.
+    pub fn direct_action_outputs(&self) -> &[(u32, Value)] {
+        self.direct_outputs.get_or_init(|| {
+            let mut outputs = std::collections::BTreeMap::new();
+            for block in self.plan().blocks() {
+                let output = match block.action() {
+                    Action::Scalar(
+                        Scalar::Copy { output, .. } | Scalar::Primitive { output, .. },
+                    )
+                    | Action::Structural { output, .. }
+                    | Action::LibraryCall { output, .. } => *output,
+                    _ => continue,
+                };
+                outputs.insert(output.get(), output);
+            }
+            outputs.into_iter().collect()
+        })
     }
     pub fn semantic_use_counts(&self) -> Result<&[usize], &'static str> {
         self.inputs.counts()

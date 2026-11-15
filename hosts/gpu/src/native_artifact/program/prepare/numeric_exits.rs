@@ -207,7 +207,12 @@ fn live_query(
             *successor = ordinals[*successor];
         }
     }
-    Ok(liveness::live_before_indexed(&next, &reads, &definitions, ordinals[start]))
+    Ok(liveness::live_before_indexed(
+        &next,
+        &reads,
+        &definitions,
+        ordinals[start],
+    ))
 }
 
 #[path = "numeric_exit_definitions.rs"]
@@ -411,18 +416,8 @@ pub(super) fn fresh_values(
         .iter()
         .map(|loop_| loop_.iteration)
         .collect::<BTreeSet<_>>();
-    let mut outputs = BTreeMap::new();
-    for block in plan.blocks() {
-        let output = match block.action() {
-            Action::Scalar(Scalar::Copy { output, .. } | Scalar::Primitive { output, .. })
-            | Action::Structural { output, .. }
-            | Action::LibraryCall { output, .. } => *output,
-            _ => continue,
-        };
-        outputs.insert(output.get(), output);
-    }
     let mut fresh = Vec::new();
-    for (value, sealed) in outputs {
+    for &(value, sealed) in facts.direct_action_outputs() {
         if live.contains(&value)
             || !matches!(plan.value_scopes()[value as usize], Scope::Immutable { iteration: Some(owner) } if scopes.contains(&owner))
             || !(plan.values()[value as usize].scalar_kind().is_some()
