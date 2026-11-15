@@ -237,8 +237,9 @@ pub(super) fn prepare(
             .literals
             .iter()
             .map(|capture| super::region_literals::Capture {
-                value: value(capture.value),
-                ..*capture
+                values: capture.values.iter().copied().map(value).collect(),
+                ty: capture.ty,
+                bits: capture.bits,
             })
             .collect(),
     };

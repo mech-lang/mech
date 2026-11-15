@@ -385,6 +385,111 @@ fn shared_controller_keeps_each_callers_bound_and_error_origin() {
 }
 
 #[test]
+fn direct_refusal_shares_a_bound_used_by_multiple_constants() {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
+    let mut builder = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
+    let entry = b.create_block();
+    let starts = [b.create_block(), b.create_block()];
+    b.append_block_params_for_function_params(entry);
+    b.switch_to_block(entry);
+    let [choose, path, input] = *b.block_params(entry) else {
+        unreachable!()
+    };
+    let zero = b.ins().iconst(types::I64, 0);
+    b.ins().brif(choose, starts[1], &[], starts[0], &[]);
+    let mut candidates = Vec::new();
+    for (start, header, bound) in [(starts[0], 30, 5), (starts[1], 90, 9)] {
+        let failure = b.create_block();
+        let ready = b.create_block();
+        let resume = b.create_block();
+        let finish = b.create_block();
+        candidates.push(Candidate {
+            resume: Some(resume),
+            start,
+            exit: finish,
+            header,
+            origin_base: None,
+            span: 10,
+        });
+        for block in [resume, finish] {
+            b.append_block_param(block, types::I64);
+        }
+        b.switch_to_block(start);
+        let limit = b.ins().iconst(types::I64, bound);
+        let valid = b
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThanOrEqual, input, limit);
+        b.ins().brif(valid, ready, &[], failure, &[]);
+        b.switch_to_block(failure);
+        b.set_cold_block(failure);
+        let status = b.ins().iconst(types::I64, 73);
+        let origin = b.ins().iconst(types::I64, header as i64 + 4);
+        b.ins().return_(&[status, origin]);
+        b.switch_to_block(ready);
+        let step = b.ins().iconst(types::I64, bound);
+        let advanced = b.ins().iadd(input, step);
+        b.ins()
+            .brif(path, resume, &[advanced.into()], finish, &[advanced.into()]);
+        b.switch_to_block(resume);
+        let partial = b.block_params(resume)[0];
+        let continued = b.ins().iadd_imm(partial, 11);
+        b.ins().return_(&[zero, continued]);
+        b.switch_to_block(finish);
+        let result = b.block_params(finish)[0];
+        b.ins().return_(&[zero, result]);
+    }
+    b.seal_all_blocks();
+    b.finalize();
+    let report = share_families(
+        &mut module,
+        &mut context.func,
+        candidates
+            .into_iter()
+            .map(|candidate| vec![candidate])
+            .collect(),
+        RegionKind::Refusal,
+        false,
+        CaptureBindings {
+            shared_literal_columns: true,
+            ..CaptureBindings::default()
+        },
+    )
+    .unwrap()
+    .expect("one body across the original families");
+    assert_eq!(report[0]["headers"], serde_json::json!([30, 90]));
+    assert_eq!(report[0]["literal_inputs"], serde_json::json!([[5], [9]]));
+    assert_eq!(report[0]["input_words"], 4);
+    let id = module
+        .declare_function(
+            "direct_limited_refusal",
+            Linkage::Export,
+            &context.func.signature,
+        )
+        .unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    let call: extern "C" fn(u64, u64, u64) -> ResultPair =
+        unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+    for (choice, bound, origin) in [(0, 5, 34), (1, 9, 94)] {
+        for path in [0, 1] {
+            assert_eq!(call(choice, path, bound - 1), ResultPair(73, origin));
+            assert_eq!(
+                call(choice, path, bound),
+                ResultPair(0, 2 * bound + path * 11)
+            );
+            assert_eq!(
+                call(choice, path, 42),
+                ResultPair(0, 42 + bound + path * 11)
+            );
+        }
+    }
+}
+
+#[test]
 fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
     let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
     let mut context = module.make_context();
