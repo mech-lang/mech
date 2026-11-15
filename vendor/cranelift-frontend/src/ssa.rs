@@ -70,10 +70,12 @@ struct VariableDefs {
 }
 impl VariableDefs {
     fn get(&self, block: &Block) -> Option<&PackedOption<Value>> {
-        self.dense
-            .get(block.as_u32() as usize)
-            .and_then(Option::as_ref)
-            .or_else(|| self.sparse.get(block))
+        match self.dense.get(block.as_u32() as usize) {
+            // Promotion moves every key in this prefix out of the sparse map.
+            // An empty dense slot therefore already proves absence.
+            Some(value) => value.as_ref(),
+            None => self.sparse.get(block),
+        }
     }
     fn insert(&mut self, block: Block, value: PackedOption<Value>) -> Option<PackedOption<Value>> {
         let index = block.as_u32() as usize;
@@ -791,6 +793,28 @@ mod tests {
         rare.insert(ir::Block::new(1_000_000), Some(ir::Value::new(0)).into());
         assert!(rare.dense.is_empty());
         assert_eq!(rare.len, 1);
+    }
+
+    #[test]
+    fn dense_prefix_holes_and_sparse_tail_match_independent_map_queries() {
+        let mut actual = super::VariableDefs::default();
+        let mut expected = alloc::collections::BTreeMap::new();
+        for index in (0..128).step_by(2).chain(10_000..10_032) {
+            let block = ir::Block::new(index);
+            let value = if index % 4 == 0 {
+                None.into()
+            } else {
+                Some(ir::Value::new(index)).into()
+            };
+            assert_eq!(actual.insert(block, value), expected.insert(block, value));
+        }
+        assert_eq!(actual.dense.len(), 128);
+        assert!(actual.sparse.keys().all(|block| block.as_u32() >= 128));
+        for index in (0..256).chain(9_984..10_064) {
+            let block = ir::Block::new(index);
+            assert_eq!(actual.get(&block), expected.get(&block));
+        }
+        assert_eq!(actual.keys(), expected.keys().copied().collect::<Vec<_>>());
     }
 
     #[test]
