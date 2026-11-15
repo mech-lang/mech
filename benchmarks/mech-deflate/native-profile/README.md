@@ -312,3 +312,15 @@ diagnostic/observation/output and pure replay are in the twenty-ninth
 [complete packet](../evidence/compiler-profile-20261114/README.md). This qualifies
 the combined host-build strategy; earlier percentages stay separate. Complete
 compilation below ten seconds remains open.
+
+The [updated-compressor parallel result](../../../docs/design/native-refreshed-parallel-compile-profile.md)
+uses `934` source after `9e34` Deflate/runtime changes. Eight complete builds
+average 19.166 seconds serial versus 19.196 seconds with two workers (+0.16%),
+with mixed blocks and no useful saving established. All program and executable
+bytes match; the fresh current runtime adapter is cached, with first-use
+construction separately recorded. One standard compiler binary and the same
+61 flags compare scheduling 0/2. All seven worker source files remain unchanged
+from `1090`; default remains serial. Every observation, source/runtime/worker
+snapshot, output/native byte and replay is in the thirtieth
+[complete packet](../evidence/compiler-profile-20261114/README.md). Earlier
+smaller-workload and PGO timings stay separate; the ten-second goal remains open.

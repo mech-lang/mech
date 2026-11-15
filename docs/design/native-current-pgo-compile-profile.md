@@ -18,6 +18,8 @@ PR #973 advances to `9e34dc07e0` after these measurements, changing Deflate sour
 and the runtime allocator. The numbers here remain pinned to the preceding
 `aaef` source and its exact program/runtime outputs; they do not measure that
 newer compressor/runtime revision.
+The [updated-workload parallel cohort](native-refreshed-parallel-compile-profile.md)
+records the newer source separately, without PGO.
 
 ## Build and qualification
 

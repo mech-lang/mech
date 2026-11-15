@@ -10,6 +10,12 @@ Source commit: `1090de011646c92e30c2d4b648ed0792c50f300d`, based on
 `0195125f11747fb5dccdeb02c482d4a0c85ccb1f`. Its complete seven-file diff matches
 the patch captured before checking and building the compiler.
 
+The later [updated-compressor cohort](native-refreshed-parallel-compile-profile.md)
+incorporates PR #973's newer source/runtime while keeping these seven worker
+files unchanged. Its complete-build means are 19.166 seconds serial and 19.196
+seconds with two workers, with mixed blocks and no useful saving established.
+The measurements below remain specific to the preceding smaller workload.
+
 ## Actual implementation
 
 The coordinator constructs and cleans up the general phase's IR, declares its

@@ -19,6 +19,13 @@ source-to-Object cohort reduces helper time 5.72% and complete process 0.97%.
 The single reversed-direction executable pilot pair and all adverse observations
 remain. Main IR construction/cleanup and the frontend remain serial.
 
+The later [updated-compressor qualification](native-refreshed-parallel-compile-profile.md)
+uses the larger program and new runtime at `934bde961d`. Eight complete builds
+average 19.166 seconds serial versus 19.196 seconds with two workers (+0.16%),
+with mixed blocks and identical executables. It establishes no useful parallel
+gain on that workload. Default remains serial; the earlier result stays pinned
+to its original program/runtime image.
+
 ## Current work and limits
 
 The [published 61-flag baseline](native-point-liveness-compile-profile.md) spends
