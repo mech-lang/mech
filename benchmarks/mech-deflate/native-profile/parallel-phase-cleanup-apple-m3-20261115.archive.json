@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-parallel-phase-cleanup-20261115.tar.gz",
+  "bytes": 54048376,
+  "evidence_files": 865,
+  "files": 865,
+  "format": 1,
+  "manifest_sha256": "0491e479edfb9c597d4b30805d09509d8fa1add09643ca18fc20581c9aa9241a",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "af4932acc992b8cd6bc081f39c0bfdfc04149ae809f4dea8983ba2ca3e06972a",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parallel-phase-cleanup-20261115.tar.gz",
+  "sha256": "ee2dfada66df7f827e476ebac3a7083adf3c0b0458be05d6e52bb9e68e5ee992",
+  "source_revision": "0c949505cc708c233e27c094aa67e105068d6823",
+  "uncompressed_bytes": 310031665,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "ee2dfada66df7f827e476ebac3a7083adf3c0b0458be05d6e52bb9e68e5ee992",
+    "source_revision": "0c949505cc708c233e27c094aa67e105068d6823",
+    "verified_bytes": 310031665,
+    "verified_files": 865
+  }
+}

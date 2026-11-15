@@ -431,8 +431,18 @@
       "sha256": "c0b52fb341aa66e4f2e0269a7b83f552d95ff21053d507c04941479931304a3e",
       "source_revision": "a90a3d81d9f155242a29c593b1df49651cdc561c",
       "summary": "benchmarks/mech-deflate/native-profile/imported-analysis-owner-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parallel-phase-cleanup-20261115.tar.gz",
+      "bytes": 54048376,
+      "decision": "Retained expandedworkerarchitecture: eligiblegeneralcleanup+machinejobs overlapvectorpreparation. Standardold2/new2 fullbuild15.398425->15.130134s(-1.74%),bothblocks; Objectcompiler-1.61%, helpergeneration-12.68%, instructions+0.0352%. Separate samecandidatebinary0/2 fullbuild15.553768->15.218166s(-2.16%),bothblocks. Diagnostic344submitted/48cleanup provesactualuse. Exactall4outputs/fullmetadata/fullD6exe,14fixturepairs, default0gate. Fouractualworkertests/36Object comparisons/errorprecedence pass. Originalproofidentities/Moduleeffects/publication/errororder andmetadata staycoordinator-owned; no unsafeSend/grammar/runtimechange. Default0serial/2optin; bestPGO14.027481onolderd26remainsseparate untilnewqualification.",
+      "files": 865,
+      "receipt": "benchmarks/mech-deflate/native-profile/parallel-phase-cleanup-apple-m3-20261115.archive.json",
+      "sha256": "ee2dfada66df7f827e476ebac3a7083adf3c0b0458be05d6e52bb9e68e5ee992",
+      "source_revision": "0c949505cc708c233e27c094aa67e105068d6823",
+      "summary": "benchmarks/mech-deflate/native-profile/parallel-phase-cleanup-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1285470680
+  "total_archive_bytes": 1339519056
 }

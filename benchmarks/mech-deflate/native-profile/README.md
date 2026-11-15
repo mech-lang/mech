@@ -540,3 +540,24 @@ pass sources, metadata selection, every command/log/observation/output, native
 inputs and restoration receipt. Fresh extraction verifies and replays exactly.
 No source optimization is retained; the separate best qualified PGO result
 remains 14.027481 seconds and the sub-ten-second goal stays open.
+
+The [expanded numeric-phase worker qualification](../../../docs/design/native-parallel-phase-cleanup-compile-profile.md) retains source
+0c949505cc, whose entire three-file commit matches the measured patch. Eligible
+general phases now run owned cleanup and machine generation in the existing
+bounded pool while the coordinator prepares the vector variant. A diagnostic
+records 344 submitted jobs, 48 including cleanup. Proof identities, all Module
+effects, ordered publication/error precedence and metadata finish stay on the
+coordinator; no unsafe Send or grammar change is introduced. Eight standard
+old2/new2 complete builds improve **15.398425 to 15.130134 seconds (1.74%)**,
+with both blocks faster. Object compiler time falls 1.61% and helper generation
+12.68%; instructions increase 0.0352% and all adverse stages remain. A separate
+same-binary serial/2-worker cohort improves **15.553768 to 15.218166 seconds
+(2.16%)**, also in both blocks. All four outputs, complete metadata, 14 fixture
+pairs and all 20 full executables match, including default0 and excluded real-
+job gates. Four worker suites pass 36 Object comparisons and error-order tests.
+The forty-fourth packet keeps source/patch/whole-commit proof, all tests,
+supporting source/token audit, commands/logs, every observation/output/executable
+and native inputs. Fresh extraction verifies and replays byte-identically.
+Default0 remains serial; two workers are opt-in. The new source is not combined-
+PGO qualified; the separate 14.027481-second d26 PGO configuration remains best.
+The sub-ten-second goal stays open; no percentages or cohorts are pooled.
