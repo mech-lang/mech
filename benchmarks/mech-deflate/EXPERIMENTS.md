@@ -1006,3 +1006,16 @@ production patches and the qualified tool are restored. The thirty-second
 source/patch, test, raw measurement, output, fixed native input and offline
 replay. Its first sandbox-denied counter attempt is preserved outside primary
 means. No complete-build saving or sub-ten-second result is established.
+
+The [frontend cache trials](../../docs/design/native-frontend-cache-trials.md) reject both normalized-type caching and
+preservation of the existing annotation schema owner. Frontend improves
+0.63%/2.27% and instructions 0.12%/0.33%, in both blocks for each trial, but the
+type-cache compiler is 0.40% slower and annotation compiler time is flat/mixed.
+Eight separate annotation complete-executable builds average 18.563 to 18.588
+seconds (+0.13%), with mixed blocks. Every program and executable byte matches;
+15/28 focused tests and fourteen fixture pairs per trial pass. Both sources and
+the qualified tool are restored. The thirty-third [complete packet](evidence/compiler-profile-20261114/README.md)
+preserves all raw measurements, sources/patches, tests, outputs, native inputs,
+selection diagnostics and offline replay. Initial exploratory profile parsing
+and a test-count description correction remain. No complete-build improvement
+or sub-ten-second result is established.
