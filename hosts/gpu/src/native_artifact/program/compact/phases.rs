@@ -629,6 +629,7 @@ pub(super) fn define<M: Module>(
     layout: &Layout,
     literals: &LiteralViews,
     observe: bool,
+    pool: Option<&super::compile_jobs::Pool>,
 ) -> Result<Vec<Phase>, NativeCompileError> {
     let facts = prepared.plan().facts();
     let closed = &prepared.metadata().closed_tails;
@@ -809,14 +810,16 @@ pub(super) fn define<M: Module>(
             .map(|&lane| layout.slot(target) + lane)
             .collect();
         let writable = arrays.iter().filter(|a| a.1).count();
-        let general = function::define(
+        let input_words = inputs.len() + writable + fixed_arrays.len();
+        let output_words = (1 + result_words + writable * 6)
+            .max(private.as_ref().map_or(0, PrivatePhase::packet_words));
+        let ready = function::prepare(
             module,
             prepared,
             id,
             observe,
-            inputs.len() + writable + fixed_arrays.len(),
-            (1 + result_words + writable * 6)
-                .max(private.as_ref().map_or(0, PrivatePhase::packet_words)),
+            input_words,
+            output_words,
             fixed_arrays.len(),
             None,
             private.as_ref(),
@@ -825,28 +828,65 @@ pub(super) fn define<M: Module>(
             &mut dense_tables,
             "",
         )?;
-        let entry_bounds = general.entry_bounds.clone();
-        let mut summary = general.summary;
-        let mut vector = None;
-        if std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some()
-            && let Some(contract) = VectorContract::additional(proof, &entry_bounds)
+        let entry_bounds = ready.entry_bounds().to_vec();
+        let vector_contract = if std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some() {
+            VectorContract::additional(proof, &entry_bounds)
+        } else {
+            None
+        };
+        let (general, fast) = if let (Some(pool), Some(contract)) = (pool, vector_contract.as_ref())
         {
-            let fast = function::define(
-                module,
+            let general = ready.start(pool)?;
+            let mut recorded = pool.record(module)?;
+            let fast = function::prepare(
+                &mut recorded,
                 prepared,
                 id,
                 observe,
-                inputs.len() + writable + fixed_arrays.len(),
-                (1 + result_words + writable * 6)
-                    .max(private.as_ref().map_or(0, PrivatePhase::packet_words)),
+                input_words,
+                output_words,
                 fixed_arrays.len(),
-                Some(&contract),
+                Some(contract),
                 private.as_ref(),
                 None,
                 &BTreeMap::new(),
                 &mut dense_tables,
                 "_vector",
-            )?;
+            )
+            .and_then(|ready| ready.start(pool));
+            // Complete and publish the earlier function before replaying ANY
+            // later declaration/data/function event, including an error.
+            let general = general.finish(module)?;
+            recorded.replay(module)?;
+            let fast = fast?.finish(module)?;
+            (general, Some(fast))
+        } else {
+            let general = ready.define(module)?;
+            let fast = if let Some(contract) = vector_contract.as_ref() {
+                Some(function::define(
+                    module,
+                    prepared,
+                    id,
+                    observe,
+                    input_words,
+                    output_words,
+                    fixed_arrays.len(),
+                    Some(contract),
+                    private.as_ref(),
+                    None,
+                    &BTreeMap::new(),
+                    &mut dense_tables,
+                    "_vector",
+                )?)
+            } else {
+                None
+            };
+            (general, fast)
+        };
+        let mut summary = general.summary;
+        let mut vector = None;
+        if let Some(fast) = fast {
+            let contract = vector_contract.unwrap();
             let used = fast.code != general.code;
             let mut info = fast.summary;
             info["guard_arrays"] = serde_json::json!(contract.guards);

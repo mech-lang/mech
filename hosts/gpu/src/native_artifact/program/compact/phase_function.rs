@@ -20,6 +20,81 @@ pub(super) struct Compiled {
     pub code: Vec<u8>,
     pub composed: Option<Composed>,
 }
+type FinishReport = Box<
+    dyn FnOnce(
+        &cranelift_codegen::CompiledCode,
+        &[(usize, u64, bool)],
+    ) -> Result<serde_json::Value, NativeCompileError>,
+>;
+
+pub(super) struct Prepared {
+    context: Context,
+    details: Details,
+}
+struct Details {
+    function: FuncId,
+    entry_bounds: Vec<(usize, u64, bool)>,
+    finish_report: FinishReport,
+    composed: Option<Composed>,
+    vcode_path: Option<std::path::PathBuf>,
+}
+pub(super) struct Pending {
+    ticket: super::super::compile_jobs::Ticket,
+    details: Details,
+}
+impl Prepared {
+    pub(super) fn entry_bounds(&self) -> &[(usize, u64, bool)] {
+        &self.details.entry_bounds
+    }
+    pub(super) fn define<M: Module>(
+        mut self,
+        module: &mut M,
+    ) -> Result<Compiled, NativeCompileError> {
+        module
+            .define_function(self.details.function, &mut self.context)
+            .map_err(backend)?;
+        self.details.finish(self.context)
+    }
+    pub(super) fn start(
+        self,
+        pool: &super::super::compile_jobs::Pool,
+    ) -> Result<Pending, NativeCompileError> {
+        Ok(Pending {
+            ticket: pool.submit(self.context)?,
+            details: self.details,
+        })
+    }
+}
+impl Pending {
+    pub(super) fn finish<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
+        let context = self.ticket.wait()?;
+        super::super::compile_jobs::publish(module, self.details.function, &context)?;
+        self.details.finish(context)
+    }
+}
+impl Details {
+    fn finish(self, context: Context) -> Result<Compiled, NativeCompileError> {
+        let compiled = context
+            .compiled_code()
+            .ok_or_else(|| backend("compact numeric phase lacks code"))?;
+        if let Some(path) = self.vcode_path {
+            let text = compiled
+                .vcode
+                .as_ref()
+                .ok_or_else(|| backend("phase VCode diagnostic was not emitted"))?;
+            std::fs::write(path, text).map_err(backend)?;
+        }
+        let summary = (self.finish_report)(compiled, &self.entry_bounds)?;
+        Ok(Compiled {
+            function: self.function,
+            entry_bounds: self.entry_bounds,
+            summary,
+            code: compiled.buffer.data().to_vec(),
+            composed: self.composed,
+        })
+    }
+}
+
 pub(super) fn define<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
@@ -35,6 +110,39 @@ pub(super) fn define<M: Module>(
     dense_tables: &mut DenseTables,
     suffix: &str,
 ) -> Result<Compiled, NativeCompileError> {
+    prepare(
+        module,
+        prepared,
+        id,
+        observe,
+        input_words,
+        output_words,
+        fixed_count,
+        vectors,
+        private,
+        no_growth,
+        literal_views,
+        dense_tables,
+        suffix,
+    )?
+    .define(module)
+}
+
+pub(super) fn prepare<M: Module>(
+    module: &mut M,
+    prepared: &PreparedNativeProgram,
+    id: usize,
+    observe: bool,
+    input_words: usize,
+    output_words: usize,
+    fixed_count: usize,
+    vectors: Option<&VectorContract>,
+    private: Option<&PrivatePhase>,
+    no_growth: Option<&NoGrowth>,
+    literal_views: &BTreeMap<usize, Literal>,
+    dense_tables: &mut DenseTables,
+    suffix: &str,
+) -> Result<Prepared, NativeCompileError> {
     let code = CodePlan::Program(prepared);
     let closed = &prepared.metadata().closed_tails;
     let region = &closed.regions[id];
@@ -575,19 +683,6 @@ pub(super) fn define<M: Module>(
     if vcode_path.is_some() {
         context.set_disasm(true);
     }
-    module
-        .define_function(function, &mut context)
-        .map_err(backend)?;
-    let compiled = context
-        .compiled_code()
-        .ok_or_else(|| backend("compact numeric phase lacks code"))?;
-    if let Some(path) = vcode_path {
-        let text = compiled
-            .vcode
-            .as_ref()
-            .ok_or_else(|| backend("phase VCode diagnostic was not emitted"))?;
-        std::fs::write(path, text).map_err(backend)?;
-    }
     let entry_bounds = report
         .phase_entry_bounds
         .iter()
@@ -595,58 +690,66 @@ pub(super) fn define<M: Module>(
         .collect::<Vec<_>>();
     let changed_writes = report.proven_changed_writes.clone();
     let private_writes = report.private_write_sites.clone();
-    let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":region.tail.exit(),"symbol":symbol,
+    let exit = region.tail.exit();
+    let actual_unit_append_growth = no_growth.is_none();
+    let finish_report: FinishReport = Box::new(move |compiled, entry_bounds| {
+        let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":exit,"symbol":symbol,
         "code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,
         "input_words":input_words,"output_words":output_words,
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
-        "actual_unit_append_growth":no_growth.is_none(),"unique_writable_owner_gate":true,"cleanup":cleanup});
-    summary["bit_counts"] = serde_json::json!(bit_counts);
-    if let Some(hint) = future_write_hints.first() {
-        summary["future_write_hint"] = serde_json::json!(hint);
-    }
-    if let Some(hint) = future_write_hints.get(1) {
-        summary["second_future_write_hint"] = serde_json::json!(hint);
-    }
-    if let Some(report) = vector_predicates {
-        summary["private_vector_predicates"] = serde_json::json!(report);
-    }
-    if width_guards != 0 {
-        summary["proved_width_guards"] = serde_json::json!(width_guards);
-    }
-    if window_bounds != 0 {
-        summary["shared_window_bounds"] = serde_json::json!(window_bounds);
-    }
-    if !equality.reused.is_empty() {
-        summary["reused_shifted_equality_loops"] = serde_json::json!(equality.reused);
-    }
-    if !equality.prefixes.is_empty() {
-        summary["forwarded_equality_ends"] = serde_json::json!(equality.prefixes);
-    }
-    if let Some(threaded) = threaded {
-        summary["threaded_after_growth_isolation"] = serde_json::json!(threaded);
-    }
-    if !read_guards.is_empty() {
-        summary["proven_scalar_read_guards"] = serde_json::json!(read_guards);
-    }
-    if !write_guards.is_empty() {
-        summary["proven_scalar_write_guards"] = serde_json::json!(write_guards);
-    }
-    if !reused_reads.is_empty() {
-        summary["reused_scalar_reads"] = serde_json::json!(reused_reads);
-    }
-    if !reused_operands.is_empty() {
-        summary["reused_scalar_operands"] = serde_json::json!(reused_operands);
-    }
-    if let Some(histogram) = histogram {
-        summary["grouped_histogram"] = histogram;
-    }
+        "actual_unit_append_growth":actual_unit_append_growth,"unique_writable_owner_gate":true,"cleanup":cleanup});
+        summary["bit_counts"] = serde_json::json!(bit_counts);
+        if let Some(hint) = future_write_hints.first() {
+            summary["future_write_hint"] = serde_json::json!(hint);
+        }
+        if let Some(hint) = future_write_hints.get(1) {
+            summary["second_future_write_hint"] = serde_json::json!(hint);
+        }
+        if let Some(report) = vector_predicates {
+            summary["private_vector_predicates"] = serde_json::json!(report);
+        }
+        if width_guards != 0 {
+            summary["proved_width_guards"] = serde_json::json!(width_guards);
+        }
+        if window_bounds != 0 {
+            summary["shared_window_bounds"] = serde_json::json!(window_bounds);
+        }
+        if !equality.reused.is_empty() {
+            summary["reused_shifted_equality_loops"] = serde_json::json!(equality.reused);
+        }
+        if !equality.prefixes.is_empty() {
+            summary["forwarded_equality_ends"] = serde_json::json!(equality.prefixes);
+        }
+        if let Some(threaded) = threaded {
+            summary["threaded_after_growth_isolation"] = serde_json::json!(threaded);
+        }
+        if !read_guards.is_empty() {
+            summary["proven_scalar_read_guards"] = serde_json::json!(read_guards);
+        }
+        if !write_guards.is_empty() {
+            summary["proven_scalar_write_guards"] = serde_json::json!(write_guards);
+        }
+        if !reused_reads.is_empty() {
+            summary["reused_scalar_reads"] = serde_json::json!(reused_reads);
+        }
+        if !reused_operands.is_empty() {
+            summary["reused_scalar_operands"] = serde_json::json!(reused_operands);
+        }
+        if let Some(histogram) = histogram {
+            summary["grouped_histogram"] = histogram;
+        }
 
-    Ok(Compiled {
-        function,
-        entry_bounds,
-        summary,
-        code: compiled.buffer.data().to_vec(),
-        composed,
+        Ok(summary)
+    });
+    Ok(Prepared {
+        context,
+        details: Details {
+            function,
+            entry_bounds,
+            finish_report,
+            composed,
+            vcode_path,
+        },
     })
 }
 

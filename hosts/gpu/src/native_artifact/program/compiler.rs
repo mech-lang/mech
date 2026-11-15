@@ -858,10 +858,24 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     );
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     eprintln!("compact-stage: native module");
-    let mut module =
-        codegen_backend::object("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
-    let metadata =
-        crate::native_artifact::program::compact::define(&mut module, &prepared, observe)?;
+    let (mut module, isa) =
+        codegen_backend::object_with_isa("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
+    let threads = std::env::var("MECH_COMPACT_COMPILE_THREADS")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(0)
+        .min(4);
+    let metadata = if threads == 0 {
+        crate::native_artifact::program::compact::define(&mut module, &prepared, observe)?
+    } else {
+        crate::native_artifact::program::compact::define_with_isa(
+            &mut module,
+            &prepared,
+            observe,
+            isa,
+            threads,
+        )?
+    };
     Ok((module.finish().emit().map_err(backend)?, metadata))
 }
 
