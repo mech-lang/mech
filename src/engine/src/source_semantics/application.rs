@@ -29,17 +29,17 @@ impl PendingIteration {
     pub(super) fn visit_schemas(
         &self,
         constants: &[PendingConstant],
-        visit: &mut impl FnMut(&SchemaDraft),
+        visit: &mut impl FnMut(SourceSchemaRef<'_>),
     ) {
-        visit(&self.carrier);
+        visit((&self.carrier).into());
         for (_, schema, _) in &self.captures {
-            visit(schema);
+            visit(schema.into());
         }
         for (_, schema) in &self.body.parameters {
-            visit(schema);
+            visit(schema.into());
         }
         for operation in &self.body.operations {
-            visit(&operation.schema);
+            visit((&operation.schema).into());
             match &operation.body {
                 PendingControlOperationBody::Match(nested) => {
                     nested.visit_schemas(constants, visit)

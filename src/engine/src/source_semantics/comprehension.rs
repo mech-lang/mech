@@ -38,16 +38,16 @@ impl PendingComprehension {
     pub(super) fn visit_schemas(
         &self,
         constants: &[PendingConstant],
-        visit: &mut impl FnMut(&SchemaDraft),
+        visit: &mut impl FnMut(SourceSchemaRef<'_>),
     ) {
         for step in &self.steps {
             match step {
                 PendingComprehensionStep::Generator { pattern, .. } => {
-                    pattern.bindings(&mut |_, schema| visit(schema));
+                    pattern.bindings(&mut |_, schema| visit(schema.into()));
                 }
                 PendingComprehensionStep::Filter(_) => {}
                 PendingComprehensionStep::Operation(operation) => {
-                    visit(&operation.schema);
+                    visit((&operation.schema).into());
                     match &operation.body {
                         PendingControlOperationBody::Operation { .. }
                         | PendingControlOperationBody::Recur(_)

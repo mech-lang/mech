@@ -42,7 +42,7 @@ use std::sync::Arc;
 
 #[path = "pending_schema.rs"]
 mod pending_schema;
-use pending_schema::{FinalizeSourceSchema, PendingSchema};
+use pending_schema::{FinalizeSourceSchema, PendingSchema, SourceSchemaRef};
 
 #[path = "document_lowering.rs"]
 mod document_lowering;
@@ -1616,14 +1616,15 @@ impl SourceSchemas {
         declarations: &[PendingNominalDeclaration],
     ) -> Result<Self, SourceSemanticError> {
         let mut builder = SchemaTableBuilder::new();
-        let mut insert = |draft: &SchemaDraft| retain_schema_tree(anchor, &mut builder, draft);
+        let mut insert =
+            |schema: SourceSchemaRef<'_>| retain_schema_tree(anchor, &mut builder, &schema);
         let input_handles = inputs
             .iter()
-            .map(|value| insert(&value.schema))
+            .map(|value| insert((&value.schema).into()))
             .collect::<Result<Vec<_>, _>>()?;
         let node_handles = nodes
             .iter()
-            .map(|value| insert(&value.schema))
+            .map(|value| insert((&value.schema).into()))
             .collect::<Result<Vec<_>, _>>()?;
         for node in nodes {
             if let PendingNodeBody::Iteration(control) = &node.body {
@@ -1670,11 +1671,11 @@ impl SourceSchemas {
         }
         let constant_handles = constants
             .iter()
-            .map(|value| insert(&value.schema))
+            .map(|value| insert((&value.schema).into()))
             .collect::<Result<Vec<_>, _>>()?;
         let declaration_handles = declarations
             .iter()
-            .map(|declaration| insert(&declaration.schema))
+            .map(|declaration| insert((&declaration.schema).into()))
             .collect::<Result<Vec<_>, _>>()?;
         let payload_handles = constants
             .iter()
@@ -1685,7 +1686,7 @@ impl SourceSchemas {
                     .as_ref()
                     .map(|(schema, _)| (index, schema))
             })
-            .map(|(index, schema)| insert(schema).map(|handle| (index, handle)))
+            .map(|(index, schema)| insert(schema.into()).map(|handle| (index, handle)))
             .collect::<Result<Vec<_>, _>>()?;
         let build = builder.finish().map_err(|error| {
             internal(
@@ -2901,7 +2902,11 @@ fn pattern_has_enum_test<S, V>(pattern: &crate::CollectionPattern<S, V>) -> bool
 }
 
 impl PendingMatch {
-    fn visit_schemas(&self, constants: &[PendingConstant], visit: &mut impl FnMut(&SchemaDraft)) {
+    fn visit_schemas(
+        &self,
+        constants: &[PendingConstant],
+        visit: &mut impl FnMut(SourceSchemaRef<'_>),
+    ) {
         for arm in &self.arms {
             // Enum tag tests and managed String literal tests produce implicit
             // Boolean values. Scalar literal branches and plain bindings do
@@ -2914,20 +2919,23 @@ impl PendingMatch {
                 crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => false,
             };
             if predicate {
-                visit(&SchemaDraft {
-                    dimension_parameters: Box::new([]),
-                    body: SchemaBody::Bool,
-                });
+                visit(
+                    (&SchemaDraft {
+                        dimension_parameters: Box::new([]),
+                        body: SchemaBody::Bool,
+                    })
+                        .into(),
+                );
             }
             if let crate::MatchPattern::Structural(pattern) = &arm.pattern {
-                pattern.bindings(&mut |_, schema| visit(schema));
+                pattern.bindings(&mut |_, schema| visit(schema.into()));
             }
             for block in arm.guard.iter().chain(core::iter::once(&arm.body)) {
                 for (_, schema) in &block.parameters {
-                    visit(schema);
+                    visit(schema.into());
                 }
                 for operation in &block.operations {
-                    visit(&operation.schema);
+                    visit((&operation.schema).into());
                     match &operation.body {
                         PendingControlOperationBody::Match(nested) => {
                             nested.visit_schemas(constants, visit)
@@ -10020,7 +10028,8 @@ mod tests {
                 schema: SchemaDraft {
                     body,
                     dimension_parameters: Box::new([]),
-                }.into(),
+                }
+                .into(),
                 anchor,
             });
             let result = builder.control_block_with(
