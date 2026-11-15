@@ -411,8 +411,18 @@
       "sha256": "4b9a0b3cedf4591cba65489ed499bc18200a5c8e64b1c11f0051bcb88f94410d",
       "source_revision": "931b63c878622ea397aac3b0b5da9755bce8f3ff",
       "summary": "benchmarks/mech-deflate/native-profile/dense-hole-lookups-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-batch-phi-params-20261115.tar.gz",
+      "bytes": 38990591,
+      "decision": "Rejected: completebuild15.414733->15.444185s(+0.19%) withmixedblocks, despite Objectcompiler-0.66%, cleanup-2.58% andinstructions-0.82%. Allartifacts/fullmetadata/wholeexe exact. Threefocusedtests,2047removal masks,20widecases,128completeIR/alias/type/parameter/machine pairs pass. Stablebatch onlychanges selectedparameter bookkeeping; unchangedsolver/replacements/aliasorder. OriginalsourceandstdDD7 restored, PGO5a1 untouched; no newdefaultserial gate ornewPGOqualification.",
+      "files": 750,
+      "receipt": "benchmarks/mech-deflate/native-profile/batch-phi-params-apple-m3-20261115.archive.json",
+      "sha256": "a38096206e9dd0beb12ea6d985a1914b9711828fe52a45764749f02224ecffe8",
+      "source_revision": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+      "summary": "benchmarks/mech-deflate/native-profile/batch-phi-params-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1212354076
+  "total_archive_bytes": 1251344667
 }

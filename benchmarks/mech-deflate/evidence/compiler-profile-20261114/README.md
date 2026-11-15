@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Forty-one complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,212,354,076 bytes (1,212.4 MB).
+Forty-two complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,251,344,667 bytes (1,251.3 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-one repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-two repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -47,6 +47,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Once-queued reachability worklist | Retained: complete build -1.47%, cleanup -5.45%, compiler -1.39%, instructions -0.41%; both blocks faster; exact complete executable; RSS +0.0029%. Three graph tests and address/disassembly selection proof. | [mech-reachability-worklist-20261115.tar.gz](mech-reachability-worklist-20261115.tar.gz) | [Receipt](../../native-profile/reachability-worklist-apple-m3-20261115.archive.json) / [result](../../native-profile/reachability-worklist-apple-m3-20261115.json) | 729 |
 | Current-source CPU-native compiler and PGO | Retained build configuration: complete build -10.20%, compiler -9.93%, instructions -13.00%, parser -18.23%; both blocks faster; all seven held-out cases faster; exact complete executable. Includes raw/merged profiles, all adverse fields and serial-helper setup failure. | [mech-refreshed-native-pgo-20261115.tar.gz](mech-refreshed-native-pgo-20261115.tar.gz) | [Receipt](../../native-profile/refreshed-native-pgo-apple-m3-20261115.archive.json) / [result](../../native-profile/refreshed-native-pgo-apple-m3-20261115.json) | 1,603 |
 | Dense-prefix SSA absence lookup | Retained small work reduction: complete build -0.51%, both blocks faster; source CFG -4.31%, instructions -0.47%; exact bytes. Object compiler mixed, cleanup +1.11%, link +8.20%; standard configuration only. Includes 29 units, 304 IR/machine pairs and separate current-PGO profiles. | [mech-dense-hole-lookups-20261115.tar.gz](mech-dense-hole-lookups-20261115.tar.gz) | [Receipt](../../native-profile/dense-hole-lookups-apple-m3-20261115.archive.json) / [result](../../native-profile/dense-hole-lookups-apple-m3-20261115.json) | 781 |
+| Stable batch constant-phi parameter removal | Rejected: complete build +0.19% with mixed blocks despite Object compiler -0.66%, cleanup -2.58%, instructions -0.82%. Exact outputs/executables; source/tool restored. Includes 2,047 masks, 20 wide cases and 128 full IR/machine pairs. | [mech-batch-phi-params-20261115.tar.gz](mech-batch-phi-params-20261115.tar.gz) | [Receipt](../../native-profile/batch-phi-params-apple-m3-20261115.archive.json) / [result](../../native-profile/batch-phi-params-apple-m3-20261115.json) | 750 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -265,3 +266,21 @@ native inputs are in the forty-first packet. Fresh extraction verifies and
 replays byte-identically. The new source is not combined-PGO qualified; the
 separate 14.027481-second d26 result remains the best qualified configuration.
 No grammar or emitted-program change or sub-ten-second result is claimed.
+
+The [stable batch phi-removal trial](../../../../docs/design/native-batch-phi-params-compile-trial.md) is rejected and the original
+two production files and immutable standard compiler are restored. Eight
+complete source-to-executable builds take **15.414733 versus 15.444185 seconds
+(+0.19%)**, with mixed blocks. A separate Object cohort lowers compiler time
+0.66%, cleanup including compaction 2.58% and instructions 0.82%; both compiler
+blocks improve, but the complete-build result establishes no useful saving.
+Parsing +0.28%, frontend +0.16%, preparation +0.13% and compaction +2.97% remain.
+All artifacts, complete metadata, 14 fixture pairs and every whole executable
+match. Three focused tests cover 2,047 removal masks, 20 wide/pool boundary
+cases and 128 complete IR/alias/type/ordinal/machine pairs. The solver and
+replacement/alias order are unchanged; only batch parameter bookkeeping is
+tried. All checks pass. The forty-second packet preserves the rejected
+source/patch, tests, commands/logs, all observations/outputs, native inputs,
+selection diagnostics and restoration receipt. Fresh extraction verifies and
+replays byte-identically. No source optimization is retained and no new PGO,
+parallel or sub-ten-second saving is claimed; the separate best qualified PGO
+result remains 14.027481 seconds.

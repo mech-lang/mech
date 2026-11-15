@@ -1160,3 +1160,21 @@ native inputs are in the forty-first packet. Fresh extraction verifies and
 replays byte-identically. The new source is not combined-PGO qualified; the
 separate 14.027481-second d26 result remains the best qualified configuration.
 No grammar or emitted-program change or sub-ten-second result is claimed.
+
+The [stable batch phi-removal trial](../../docs/design/native-batch-phi-params-compile-trial.md) is rejected and the original
+two production files and immutable standard compiler are restored. Eight
+complete source-to-executable builds take **15.414733 versus 15.444185 seconds
+(+0.19%)**, with mixed blocks. A separate Object cohort lowers compiler time
+0.66%, cleanup including compaction 2.58% and instructions 0.82%; both compiler
+blocks improve, but the complete-build result establishes no useful saving.
+Parsing +0.28%, frontend +0.16%, preparation +0.13% and compaction +2.97% remain.
+All artifacts, complete metadata, 14 fixture pairs and every whole executable
+match. Three focused tests cover 2,047 removal masks, 20 wide/pool boundary
+cases and 128 complete IR/alias/type/ordinal/machine pairs. The solver and
+replacement/alias order are unchanged; only batch parameter bookkeeping is
+tried. All checks pass. The forty-second packet preserves the rejected
+source/patch, tests, commands/logs, all observations/outputs, native inputs,
+selection diagnostics and restoration receipt. Fresh extraction verifies and
+replays byte-identically. No source optimization is retained and no new PGO,
+parallel or sub-ten-second saving is claimed; the separate best qualified PGO
+result remains 14.027481 seconds.
