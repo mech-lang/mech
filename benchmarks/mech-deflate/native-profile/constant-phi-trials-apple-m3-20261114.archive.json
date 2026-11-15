@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-constant-phi-trials-20261114.tar.gz",
+  "bytes": 46625561,
+  "evidence_files": 1129,
+  "files": 1129,
+  "format": 1,
+  "manifest_sha256": "b1628f00979e4af232902435e5ea82e527fee5015c4f9dde27231831f375e5d4",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "7405425122110b927bde3e397d626ba1adc30ec1eaaa29d356b37bcdaac099cf",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-constant-phi-trials-20261114.tar.gz",
+  "sha256": "60d1d520e79cc76589e88185574ea60a360ab90ece6c04900b2b08127a573a52",
+  "source_revision": "ab59d593f4dcc3e457d8c462b459f60eaf80851e",
+  "uncompressed_bytes": 287675976,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "60d1d520e79cc76589e88185574ea60a360ab90ece6c04900b2b08127a573a52",
+    "source_revision": "ab59d593f4dcc3e457d8c462b459f60eaf80851e",
+    "verified_bytes": 287675976,
+    "verified_files": 1129
+  }
+}

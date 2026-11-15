@@ -257,3 +257,15 @@ are in the twenty-sixth [complete packet](../evidence/compiler-profile-20261114/
 This pair uses frozen `fad53` source before schema reuse and phase workers;
 combined PGO performance remains unqualified and gains must not be added.
 The ten-second complete-compilation goal remains open.
+
+The [constant-phi propagation trials](../../../docs/design/native-constant-phi-compile-trials.md)
+reject two worklist layouts and restore the original solver exactly. Each has
+eight balanced source-to-Object compiles, four passing focused tests (512 graph
+cases and 72 complete post-pass IR pairs), 1,782 matching complete-map calls,
+fourteen fixture pairs and exact executable link gates. The first increases
+cleanup/instructions; the compact revision lowers work slightly but its separate
+eight-build executable cohort is 0.46% slower with mixed blocks. All data,
+source/patches and replay are in the twenty-seventh
+[complete packet](../evidence/compiler-profile-20261114/README.md). Both subjects
+use the same 61 flags plus two workers, with PGO disabled. No useful complete-build
+gain or sub-ten-second result is claimed.
