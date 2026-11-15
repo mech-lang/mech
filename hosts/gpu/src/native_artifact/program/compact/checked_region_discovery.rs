@@ -99,6 +99,14 @@ pub(super) fn report(function: &Function, path: &Path) -> io::Result<()> {
             for &result in dfg.inst_results(inst) {
                 write!(out, ":{}", dfg.value_type(result))?;
             }
+            if let InstructionData::Call { func_ref, .. }
+            | InstructionData::FuncAddr { func_ref, .. } = dfg.insts[inst]
+            {
+                // Distinct callees can have identical local instruction shapes.
+                // Expose their relocation identity to the region search.
+                let name = &dfg.ext_funcs[func_ref].name;
+                write!(out, "@{}", name.display(Some(&function.params)))?;
+            }
             write!(out, ",")?;
         }
         writeln!(out)?;
