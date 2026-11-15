@@ -10,7 +10,8 @@ This is an independent experiment on frozen source
 `fad53d24d9d2cad61262cb94932405fd9ee40341`. It predates the two schema reuse
 changes and [integrated phase workers](native-parallel-phases-compile-profile.md).
 Neither subject enables workers. Do not add this result to their percentages;
-PGO on the combined current source still needs qualification.
+The [current-source native-CPU + PGO qualification](native-current-pgo-compile-profile.md)
+now measures that separate configuration with two workers in both subjects.
 
 ## Build and training
 
@@ -139,6 +140,8 @@ generated output or timing changes in either packaging correction.
 The repository copy is extracted, manifest/Git-blob verified and replayed
 byte-identically against the compact result. Pure replay independently checks
 profiles, commands, output bytes and numerical summaries without rerunning
-builds or timings. These results justify testing PGO on the combined current
-compiler. That combined performance remains unqualified, and complete
-compilation below ten seconds remains unachieved.
+builds or timings. The later
+[current-source native-CPU + PGO qualification](native-current-pgo-compile-profile.md)
+improves its matched complete build 8.22%; its configuration and cohort remain
+separate from this earlier pair. Complete compilation below ten seconds remains
+unachieved.

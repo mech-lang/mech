@@ -281,8 +281,18 @@
       "sha256": "3e1c4debe1c32ac370290aa5b13862bc2feceb2bf80536cc6cd48f98107379de",
       "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
       "summary": "benchmarks/mech-deflate/native-profile/route-work-trial-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-current-native-pgo-20261115.tar.gz",
+      "bytes": 101219119,
+      "decision": "Qualified current-source combined nativeCPU+PGO with2workers: complete executable17.347\u219215.921s (-8.22%),bothblocks faster,allbytesexact. Frontend+3.01%,RSS+1.87%;no sub-ten-second result.",
+      "files": 1342,
+      "receipt": "benchmarks/mech-deflate/native-profile/current-native-pgo-apple-m3-20261115.archive.json",
+      "sha256": "0119e84c80c5042aae2604e0f7da26b94eb7883d1dbb43e73809d0fd17a7de4e",
+      "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+      "summary": "benchmarks/mech-deflate/native-profile/current-native-pgo-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 618347723
+  "total_archive_bytes": 719566842
 }

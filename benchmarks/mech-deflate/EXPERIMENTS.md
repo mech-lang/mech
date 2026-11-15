@@ -917,8 +917,9 @@ without training data; all diagnostics remain. The twenty-sixth
 [complete packet](evidence/compiler-profile-20261114/README.md) includes raw and
 merged profiles, all builds/training/timings, output bytes, source configuration,
 native inputs, packaging failures and pure replay. This source predates the
-schema reuse and integrated workers; combined PGO performance is unqualified,
-and gains must not be added. Complete compilation below ten seconds remains open.
+schema reuse and integrated workers. The later current-source native-CPU + PGO
+cohort is separate; gains must not be added. Complete compilation below ten
+seconds remains open.
 
 The [constant-phi propagation trials](../../docs/design/native-constant-phi-compile-trials.md)
 reject two worklist layouts and restore the original solver. The first increases
@@ -948,3 +949,18 @@ are excluded from primary means. The twenty-eighth
 source/patches, tests, the initial harness failure, observations, output/native
 bytes, samples and pure replay. No additional parallel saving or sub-ten-second
 result is established.
+
+The [current-source native-CPU + PGO result](../../docs/design/native-current-pgo-compile-profile.md)
+uses frozen `aaef` source, including the retained frontend changes and actual
+phase workers. Both subjects use the same 61 flags and two workers. Eight
+balanced complete builds improve **17.347 to 15.921 seconds (8.22%)**, with both
+blocks faster and every executable identical; fixed adapter objects are cached.
+Eight separate source-to-Object compiles improve process time 9.06% and
+instructions 9.24%, but frontend time rises 3.01%, maximum RSS 1.87%, encoding
+2.52% and peak footprint 1.92%. Fourteen fixture pairs and 56 held-out compiles
+preserve every program byte. All seven held-out case means and process blocks
+improve. The twenty-ninth [complete packet](evidence/compiler-profile-20261114/README.md)
+includes four builds, training on eight programs, raw/merged profiles, 18,607
+missing-function warnings, all observations/outputs, the initial denied metadata
+query/resume, native inputs and replay. This measures the combined build
+strategy; earlier PGO/worker gains stay separate. The ten-second goal remains open.

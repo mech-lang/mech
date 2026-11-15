@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-current-native-pgo-20261115.tar.gz",
+  "bytes": 101219119,
+  "evidence_files": 1342,
+  "files": 1342,
+  "format": 1,
+  "manifest_sha256": "0ff335c4b1f514ae8d4c7d37c4211ce5fda4725afddaf4c479b65122f89d9e47",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "e79ba393803a6083145cafcdfbbd31011c340ec4c88d9e2e965bb2cf213e074a",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-current-native-pgo-20261115.tar.gz",
+  "sha256": "0119e84c80c5042aae2604e0f7da26b94eb7883d1dbb43e73809d0fd17a7de4e",
+  "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+  "uncompressed_bytes": 617859134,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "0119e84c80c5042aae2604e0f7da26b94eb7883d1dbb43e73809d0fd17a7de4e",
+    "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+    "verified_bytes": 617859134,
+    "verified_files": 1342
+  }
+}
