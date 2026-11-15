@@ -1017,6 +1017,7 @@ pub(super) struct CaptureBindings {
     pub(super) input_roles: bool,
     pub(super) return_error_origin: bool,
     pub(super) align_outputs: bool,
+    pub(super) pad_outputs: bool,
 }
 
 impl CaptureBindings {
@@ -1027,6 +1028,7 @@ impl CaptureBindings {
             return_error_origin: std::env::var_os("MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN")
                 .is_some(),
             align_outputs: std::env::var_os("MECH_COMPACT_ALIGN_REGION_OUTPUTS").is_some(),
+            pad_outputs: std::env::var_os("MECH_COMPACT_PAD_REGION_OUTPUTS").is_some(),
         }
     }
 }
@@ -1240,7 +1242,7 @@ fn share_families<M: Module>(
             traversal.return_error_origin = bindings.return_error_origin
                 && traversal.packed_inputs
                 && traversal.has_bounded_error_origins(root);
-            if bindings.align_outputs {
+            if bindings.align_outputs || bindings.pad_outputs {
                 family_ids.insert(candidate.header, family_index);
             }
             traversals.push(traversal);
@@ -1261,35 +1263,47 @@ fn share_families<M: Module>(
         dominance.as_ref(),
         refusal_regions,
     )?;
-    if bindings.align_outputs
+    if (bindings.align_outputs || bindings.pad_outputs)
         && let Some(dom) = dominance.as_ref()
     {
         // Preserve exact matches with their original packets. Only unmatched
         // members can justify wider output packets and another compilation.
         let mut unmatched = BTreeMap::<_, Vec<_>>::new();
-        groups.retain_mut(|group| {
-            if group.traversals.len() > 1 {
-                return true;
+        for strategy in [
+            bindings
+                .align_outputs
+                .then_some(region_outputs::Strategy::Union),
+            bindings
+                .pad_outputs
+                .then_some(region_outputs::Strategy::Pad),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            groups.retain_mut(|group| {
+                if group.traversals.len() > 1 {
+                    return true;
+                }
+                let mut traversal = group.traversals.pop().unwrap();
+                traversal.aligned_outputs.clear();
+                let family = family_ids[&traversal.candidate.header];
+                unmatched.entry(family).or_default().push(traversal);
+                false
+            });
+            for family in unmatched.values_mut() {
+                region_outputs::bind(root, &cfg, dom, family, strategy);
             }
-            let traversal = group.traversals.pop().unwrap();
-            let family = family_ids[&traversal.candidate.header];
-            unmatched.entry(family).or_default().push(traversal);
-            false
-        });
-        for family in unmatched.values_mut() {
-            region_outputs::bind(root, &cfg, dom, family);
+            let aligned = unmatched
+                .values_mut()
+                .flat_map(|family| family.extract_if(.., |t| !t.aligned_outputs.is_empty()));
+            groups.extend(prepare_bodies(
+                module,
+                root,
+                aligned,
+                Some(dom),
+                refusal_regions,
+            )?);
         }
-        let aligned = unmatched
-            .into_values()
-            .flatten()
-            .filter(|traversal| !traversal.aligned_outputs.is_empty());
-        groups.extend(prepare_bodies(
-            module,
-            root,
-            aligned,
-            Some(dom),
-            refusal_regions,
-        )?);
     }
     drop((cfg, dominance));
     let groups = groups

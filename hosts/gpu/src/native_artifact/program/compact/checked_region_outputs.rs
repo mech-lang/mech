@@ -18,6 +18,47 @@ struct Outputs {
     required: Vec<usize>,
 }
 
+#[derive(Clone, Copy)]
+pub(super) enum Strategy {
+    Union,
+    Pad,
+}
+
+fn pad(function: &Function, short: &mut Outputs, long: &Outputs) -> Option<usize> {
+    if short.required.len() + 1 != long.required.len() {
+        return None;
+    }
+    let ty =
+        |outputs: &Outputs, role: usize| function.dfg.value_type(outputs.available[role].unwrap());
+    let slot = long
+        .required
+        .iter()
+        .enumerate()
+        .filter(|&(_, &role)| short.available[role].is_some())
+        .filter_map(|(skip, _)| {
+            let remaining = long
+                .required
+                .iter()
+                .copied()
+                .enumerate()
+                .filter_map(|(index, role)| (index != skip).then_some(role));
+            let mut matches = 0;
+            for (&a, b) in short.required.iter().zip(remaining) {
+                if ty(short, a) != ty(long, b) {
+                    return None;
+                }
+                matches += usize::from(a == b);
+            }
+            Some((matches, skip))
+        })
+        .max();
+    let (_, slot) = slot?;
+    // The added role is only a candidate for native matching. Each caller
+    // retains its original outputs and may ignore the additional store.
+    short.required.insert(slot, long.required[slot]);
+    Some(slot)
+}
+
 fn outputs(
     function: &Function,
     dom: &DominatorTree,
@@ -73,6 +114,7 @@ pub(super) fn bind(
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
     family: &mut [Traversal],
+    strategy: Strategy,
 ) {
     if family.len() < 2 {
         return;
@@ -91,7 +133,7 @@ pub(super) fn bind(
             shapes.entry(shape).or_default().push((index, outputs));
         }
     }
-    for group in shapes.into_values().filter(|group| group.len() > 1) {
+    for mut group in shapes.into_values().filter(|group| group.len() > 1) {
         let required = &group[0].1.required;
         if group[1..]
             .iter()
@@ -99,23 +141,44 @@ pub(super) fn bind(
         {
             continue;
         }
-        let union = group
-            .iter()
-            .flat_map(|(_, outputs)| outputs.required.iter().copied())
-            .collect::<BTreeSet<_>>();
-        if union.len() > MAX_PACKET_WORDS
-            || group.iter().any(|(_, outputs)| {
-                union
+        match strategy {
+            Strategy::Union => {
+                let union = group
                     .iter()
-                    .any(|&index| outputs.available[index].is_none())
-            })
-        {
-            continue;
-        }
+                    .flat_map(|(_, outputs)| outputs.required.iter().copied())
+                    .collect::<BTreeSet<_>>();
+                if union.len() > MAX_PACKET_WORDS
+                    || group.iter().any(|(_, outputs)| {
+                        union
+                            .iter()
+                            .any(|&index| outputs.available[index].is_none())
+                    })
+                {
+                    continue;
+                }
+                for (_, outputs) in &mut group {
+                    outputs.required = union.iter().copied().collect();
+                }
+            }
+            Strategy::Pad => {
+                group.sort_by_key(|(_, outputs)| outputs.required.len());
+                let [(short_index, short), (long_index, long)] = group.as_mut_slice() else {
+                    continue;
+                };
+                let Some(slot) = pad(function, short, long) else {
+                    continue;
+                };
+                eprintln!(
+                    "compact checked output packet {} pads word {slot} to match {}",
+                    family[*short_index].candidate.header, family[*long_index].candidate.header
+                );
+            }
+        };
         // Callers restore only their original values. The whole native body
         // and its relocations must still match before any caller changes.
         for (index, outputs) in group {
-            family[index].aligned_outputs = union
+            family[index].aligned_outputs = outputs
+                .required
                 .iter()
                 .map(|&position| outputs.available[position].unwrap())
                 .collect();
