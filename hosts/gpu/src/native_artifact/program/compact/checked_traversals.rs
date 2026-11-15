@@ -20,6 +20,8 @@ use cranelift_codegen::{
 use cranelift_module::{FuncId, Linkage, Module, ModuleError, ModuleReloc};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "checked_refusal_bounds.rs"]
+mod refusal_bounds;
 #[path = "checked_region_body.rs"]
 mod region_body;
 #[path = "checked_region_inputs.rs"]
@@ -30,6 +32,7 @@ mod region_literals;
 mod region_outputs;
 
 const MAX_PACKET_WORDS: usize = 256;
+const MAX_DIRECT_INPUT_WORDS: usize = 40;
 const FIRST_ERROR_TAG: i64 = 2;
 
 #[derive(Clone, Copy)]
@@ -82,6 +85,7 @@ pub(super) fn controller_candidates(
     Ok(result)
 }
 
+#[derive(Clone)]
 struct Traversal {
     candidate: Candidate,
     blocks: BTreeSet<Block>,
@@ -349,11 +353,12 @@ fn plan(
     // A refusal that fits the original bounds keeps its existing native ABI.
     let packed_inputs = controller
         || kind == RegionKind::Phase
-        || pack_large_refusals && (input_words > 40 || output_words.max(resume_words) > 32);
+        || pack_large_refusals
+            && (input_words > MAX_DIRECT_INPUT_WORDS || output_words.max(resume_words) > 32);
     let (input_limit, output_limit) = if packed_inputs {
         (MAX_PACKET_WORDS, MAX_PACKET_WORDS)
     } else {
-        (40, 32)
+        (MAX_DIRECT_INPUT_WORDS, 32)
     };
     if controller {
         eprintln!(
@@ -494,7 +499,13 @@ impl Traversal {
                 .collect();
             result
                 .params
-                .extend((0..=self.slots.len()).map(|_| AbiParam::new(types::I64)));
+                .extend((0..self.slots.len()).map(|_| AbiParam::new(types::I64)));
+            result.params.extend(
+                self.literals
+                    .iter()
+                    .map(|capture| AbiParam::new(capture.ty)),
+            );
+            result.params.push(AbiParam::new(types::I64));
         }
         result
             .returns
@@ -568,8 +579,10 @@ impl Traversal {
         map.extend(
             self.literals
                 .iter()
-                .map(|literal| literal.value)
-                .zip(params),
+                .zip(params)
+                .flat_map(|(capture, parameter)| {
+                    capture.values.iter().map(move |&value| (value, parameter))
+                }),
         );
         for &constant in &self.constants {
             if map.contains_key(&constant) {
@@ -892,12 +905,12 @@ impl Traversal {
         for &slot in &self.slots {
             args.push(pos.ins().stack_addr(types::I64, slot, 0));
         }
+        args.extend(
+            self.literals
+                .iter()
+                .map(|literal| pos.ins().iconst(literal.ty, literal.bits)),
+        );
         if self.packed_inputs {
-            args.extend(
-                self.literals
-                    .iter()
-                    .map(|literal| pos.ins().iconst(literal.ty, literal.bits)),
-            );
             let capture = packets.captures.expect("packed region input slot");
             for (index, &source) in self.live_captures.iter().enumerate() {
                 pos.ins()
@@ -1001,19 +1014,26 @@ pub(super) fn share<M: Module>(
         families.truncate(1);
     }
     let pack_large_refusals = std::env::var_os("MECH_COMPACT_PACK_LARGE_REFUSALS").is_some();
+    let literal_mode = std::env::var_os("MECH_COMPACT_BIND_REFUSAL_LITERALS");
     share_families(
         module,
         root,
         families,
         RegionKind::Refusal,
         pack_large_refusals,
-        CaptureBindings::default(),
+        CaptureBindings {
+            shared_literal_columns: literal_mode.is_some(),
+            retry_refusal_bounds: literal_mode.is_some_and(|mode| mode == "retry"),
+            ..CaptureBindings::default()
+        },
     )
 }
 
 #[derive(Clone, Copy, Default)]
 pub(super) struct CaptureBindings {
     pub(super) literals: bool,
+    pub(super) shared_literal_columns: bool,
+    pub(super) retry_refusal_bounds: bool,
     pub(super) input_roles: bool,
     pub(super) return_error_origin: bool,
     pub(super) align_outputs: bool,
@@ -1024,6 +1044,8 @@ impl CaptureBindings {
     pub(super) fn from_environment() -> Self {
         Self {
             literals: std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some(),
+            shared_literal_columns: false,
+            retry_refusal_bounds: false,
             input_roles: std::env::var_os("MECH_COMPACT_BIND_REGION_INPUT_ROLES").is_some(),
             return_error_origin: std::env::var_os("MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN")
                 .is_some(),
@@ -1072,6 +1094,8 @@ fn prepare_bodies<M: Module>(
     refusal_regions: bool,
 ) -> Result<Vec<Prepared>, NativeCompileError> {
     let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
+    let compact_refusal_bodies =
+        refusal_regions && std::env::var_os("MECH_COMPACT_PREPARE_REFUSAL_IR").is_some();
     let layout_regions_last = std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some();
     let share_retirements = std::env::var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
         .is_some_and(|scope| scope == "helpers" || scope == "all");
@@ -1087,15 +1111,15 @@ fn prepare_bodies<M: Module>(
             "controller"
         };
         let signature = traversal.signature(root);
-        let body = if compact_layout_bodies
-            && candidate.origin_base.is_some()
+        let body = if (compact_refusal_bodies
+            || compact_layout_bodies && candidate.origin_base.is_some())
             && let Some(dominance) = dominance
             && let Some((seed, mut local)) = region_body::prepare(root, &traversal, dominance)
         {
             let body = local.body(&seed, &signature);
             traversal.live_captures = local.live_captures;
             eprintln!(
-                "compact checked controller {} prepared local IR",
+                "compact checked {kind} {} prepared local IR",
                 candidate.header
             );
             body
@@ -1106,7 +1130,10 @@ fn prepare_bodies<M: Module>(
         if share_retirements {
             let shared = super::owner_retirement::share(module, &mut context.func)?;
             if shared != 0 {
-                eprintln!("compact checked {kind} {} retirement sites shared: {shared}", candidate.header);
+                eprintln!(
+                    "compact checked {kind} {} retirement sites shared: {shared}",
+                    candidate.header
+                );
             }
         }
         if traversal.packed_inputs {
@@ -1146,9 +1173,12 @@ fn prepare_bodies<M: Module>(
             signature.params.len(),
             stack
         );
-        if !refusal_regions
-            && let Some(folder) = std::env::var_os("MECH_COMPACT_DUMP_CONTROLLER_MATCHES")
-        {
+        let dump = if refusal_regions {
+            "MECH_COMPACT_DUMP_REFUSAL_MATCHES"
+        } else {
+            "MECH_COMPACT_DUMP_CONTROLLER_MATCHES"
+        };
+        if let Some(folder) = std::env::var_os(dump) {
             let folder = std::path::PathBuf::from(folder);
             std::fs::create_dir_all(&folder).map_err(backend)?;
             let stem = candidate.header.to_string();
@@ -1257,11 +1287,14 @@ fn share_families<M: Module>(
         }
         let family = &mut traversals[first..];
         if bindings.literals {
-            region_literals::bind(root, family);
+            region_literals::bind(root, family, false);
         }
         if bindings.input_roles {
             region_inputs::bind(root, family);
         }
+    }
+    if bindings.shared_literal_columns {
+        region_literals::bind(root, &mut traversals, true);
     }
     drop((users, proven));
     let mut groups = prepare_bodies(
@@ -1312,6 +1345,9 @@ fn share_families<M: Module>(
                 refusal_regions,
             )?);
         }
+    }
+    if refusal_regions && bindings.retry_refusal_bounds {
+        refusal_bounds::retry(module, root, &mut groups, dominance.as_ref())?;
     }
     drop((cfg, dominance));
     let groups = groups
