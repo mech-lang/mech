@@ -1,7 +1,12 @@
-# Parallel compilation on the current compiler
+# Parallel compilation on the allocator/schema-owner compiler
+
+This report preserves the frozen 12c500 compiler comparison. The later
+[expanded cleanup-worker qualification](native-parallel-phase-cleanup-compile-profile.md)
+measures source 0c949505cc: 15.554 seconds serial versus 15.218 seconds with two
+workers (2.16%). Its cohorts and source remain separate from the result below.
 
 The implemented helper machine-code workers save **0.167 seconds (1.03%)**
-on the current level-12 Deflate build: **16.182550 seconds serial versus
+on its frozen level-12 Deflate build: **16.182550 seconds serial versus
 16.015580 seconds with two workers**. Both balanced blocks improve and every
 complete executable byte matches. This is a small gain; compilation below
 ten seconds remains open. Default `MECH_COMPACT_COMPILE_THREADS=0` stays serial;

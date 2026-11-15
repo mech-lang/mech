@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Forty-three complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,285,470,680 bytes (1,285.5 MB).
+Forty-four complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,339,519,056 bytes (1,339.5 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-three repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All forty-four repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -49,6 +49,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Dense-prefix SSA absence lookup | Retained small work reduction: complete build -0.51%, both blocks faster; source CFG -4.31%, instructions -0.47%; exact bytes. Object compiler mixed, cleanup +1.11%, link +8.20%; standard configuration only. Includes 29 units, 304 IR/machine pairs and separate current-PGO profiles. | [mech-dense-hole-lookups-20261115.tar.gz](mech-dense-hole-lookups-20261115.tar.gz) | [Receipt](../../native-profile/dense-hole-lookups-apple-m3-20261115.archive.json) / [result](../../native-profile/dense-hole-lookups-apple-m3-20261115.json) | 781 |
 | Stable batch constant-phi parameter removal | Rejected: complete build +0.19% with mixed blocks despite Object compiler -0.66%, cleanup -2.58%, instructions -0.82%. Exact outputs/executables; source/tool restored. Includes 2,047 masks, 20 wide cases and 128 full IR/machine pairs. | [mech-batch-phi-params-20261115.tar.gz](mech-batch-phi-params-20261115.tar.gz) | [Receipt](../../native-profile/batch-phi-params-apple-m3-20261115.archive.json) / [result](../../native-profile/batch-phi-params-apple-m3-20261115.json) | 750 |
 | Imported-cleanup analysis owner | Rejected: complete build -0.04% with mixed blocks, compiler component +0.05%; Object compiler -0.35%, cleanup -1.01%, instructions -0.38%. Exact outputs/executables; source/tool restored. Includes fresh-analysis ordering/layout/alias tests and audited pass sources. | [mech-imported-analysis-owner-20261115.tar.gz](mech-imported-analysis-owner-20261115.tar.gz) | [Receipt](../../native-profile/imported-analysis-owner-apple-m3-20261115.archive.json) / [result](../../native-profile/imported-analysis-owner-apple-m3-20261115.json) | 702 |
+| Expanded general-phase cleanup workers | Retained: old2/new2 full build -1.74%, helper generation -12.68%; separate same-binary serial/2-worker full build -2.16%, both blocks faster. Diagnostic 344 jobs/48 cleanup; exact outputs/20 executables, 36 Object comparisons; instructions +0.0352%. Default serial, opt-in2; PGO separate. | [mech-parallel-phase-cleanup-20261115.tar.gz](mech-parallel-phase-cleanup-20261115.tar.gz) | [Receipt](../../native-profile/parallel-phase-cleanup-apple-m3-20261115.archive.json) / [result](../../native-profile/parallel-phase-cleanup-apple-m3-20261115.json) | 865 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -304,3 +305,24 @@ pass sources, metadata selection, every command/log/observation/output, native
 inputs and restoration receipt. Fresh extraction verifies and replays exactly.
 No source optimization is retained; the separate best qualified PGO result
 remains 14.027481 seconds and the sub-ten-second goal stays open.
+
+The [expanded numeric-phase worker qualification](../../../../docs/design/native-parallel-phase-cleanup-compile-profile.md) retains source
+0c949505cc, whose entire three-file commit matches the measured patch. Eligible
+general phases now run owned cleanup and machine generation in the existing
+bounded pool while the coordinator prepares the vector variant. A diagnostic
+records 344 submitted jobs, 48 including cleanup. Proof identities, all Module
+effects, ordered publication/error precedence and metadata finish stay on the
+coordinator; no unsafe Send or grammar change is introduced. Eight standard
+old2/new2 complete builds improve **15.398425 to 15.130134 seconds (1.74%)**,
+with both blocks faster. Object compiler time falls 1.61% and helper generation
+12.68%; instructions increase 0.0352% and all adverse stages remain. A separate
+same-binary serial/2-worker cohort improves **15.553768 to 15.218166 seconds
+(2.16%)**, also in both blocks. All four outputs, complete metadata, 14 fixture
+pairs and all 20 full executables match, including default0 and excluded real-
+job gates. Four worker suites pass 36 Object comparisons and error-order tests.
+The forty-fourth packet keeps source/patch/whole-commit proof, all tests,
+supporting source/token audit, commands/logs, every observation/output/executable
+and native inputs. Fresh extraction verifies and replays byte-identically.
+Default0 remains serial; two workers are opt-in. The new source is not combined-
+PGO qualified; the separate 14.027481-second d26 PGO configuration remains best.
+The sub-ten-second goal stays open; no percentages or cohorts are pooled.

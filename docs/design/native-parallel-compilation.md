@@ -9,6 +9,16 @@ This design applies to compiling the level-12 Deflate program into an
 executable. Cargo job counts control rebuilding the Rust compiler itself and
 do not implement this architecture.
 
+The [expanded implementation on source 0c949505cc](native-parallel-phase-cleanup-compile-profile.md)
+now overlaps eligible general numeric-phase cleanup and machine generation with
+vector preparation. A real diagnostic records 344 submitted jobs, 48 including
+cleanup. The same-binary 0/2 comparison improves complete builds 15.554 to 15.218
+seconds (2.16%); a separate old2/new2 comparison improves 1.74%. Every output and
+complete executable matches. Default remains serial. IR/proof preparation,
+Module effects, variant decisions and ordered publication stay on the coordinator.
+Main construction/cleanup and frontend remain serial; the full staged design
+below still contains work beyond this implemented boundary.
+
 The first [integrated implementation](native-parallel-phases-compile-profile.md)
 is now qualified with `MECH_COMPACT_COMPILE_THREADS=2` (default `0` stays serial).
 It queues 340 real phase Contexts, overlaps machine compilation with later
@@ -26,7 +36,7 @@ with mixed blocks and identical executables. It establishes no useful parallel
 gain on that workload. Default remains serial; the earlier result stays pinned
 to its original program/runtime image.
 
-The [current compiler comparison](native-current-parallel-compile-profile.md)
+The [allocator/schema-owner compiler comparison](native-current-parallel-compile-profile.md)
 uses the retained allocator and schema-owner changes at `12c500108660`.
 Eight complete builds average **16.183 seconds serial versus 16.016 seconds
 with two workers**, saving **0.167 seconds (1.03%)**, with both blocks faster.
