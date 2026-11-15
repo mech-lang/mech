@@ -4888,10 +4888,9 @@ impl SemanticBuilder {
             .iter()
             .enumerate()
             .map(|(index, input)| {
-                let schema = if index == 0 && destination.is_some() {
-                    destination.clone().unwrap()
-                } else {
-                    self.schema_draft_of(*input)?.into_owned()
+                let schema = match (index, destination.as_ref()) {
+                    (0, Some(schema)) => schema,
+                    _ => self.schema_draft(*input)?,
                 };
                 if matches!(schema.body, SchemaBody::Dynamic) {
                     return Err(SourceSemanticError {
