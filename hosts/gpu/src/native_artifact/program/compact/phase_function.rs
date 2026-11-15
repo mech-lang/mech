@@ -1,5 +1,8 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
-use super::super::phase_bodies::{PhaseBodies, define_body};
+use super::super::{
+    checked_region_discovery, checked_traversals,
+    phase_bodies::{PhaseBodies, define_body},
+};
 use super::*;
 use crate::native_artifact::{
     codegen::control::CfgCleanup,
@@ -600,6 +603,35 @@ pub(super) fn define<M: Module>(
     if vcode_path.is_some() {
         context.set_disasm(true);
     }
+    let checked_regions = if !observe
+        && let Ok(manifest) = std::env::var("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS")
+        && let Some(windows) = manifest
+            .strip_prefix(&symbol)
+            .and_then(|prefix| prefix.strip_prefix('@'))
+    {
+        let (base, windows) = windows
+            .split_once('@')
+            .ok_or_else(|| backend("expected phase region identifier base"))?;
+        let families = checked_region_discovery::phase_candidates(
+            &context.func,
+            windows,
+            base.parse().map_err(backend)?,
+        )?;
+        let bind_literals = std::env::var_os("MECH_COMPACT_BIND_REGION_LITERALS").is_some();
+        let checked = checked_traversals::share_phase_regions(
+            module,
+            &mut context.func,
+            families,
+            bind_literals,
+        )?;
+        if checked.is_some() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        checked
+    } else {
+        None
+    };
     let (function, target) = define_body(module, function, &symbol, &mut context, bodies)?;
     let compiled = context
         .compiled_code()
@@ -623,6 +655,9 @@ pub(super) fn define<M: Module>(
         "input_words":input_words,"output_words":output_words,
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":no_growth.is_none(),"unique_writable_owner_gate":true,"cleanup":cleanup});
+    if let Some(checked_regions) = checked_regions {
+        summary["checked_regions"] = checked_regions;
+    }
     summary["bit_counts"] = serde_json::json!(bit_counts);
     if let Some(hint) = future_write_hints.first() {
         summary["future_write_hint"] = serde_json::json!(hint);
