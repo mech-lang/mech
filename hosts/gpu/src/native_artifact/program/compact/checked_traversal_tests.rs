@@ -47,6 +47,7 @@ fn define(module: &mut JITModule, enabled: bool, extra_inputs: usize) -> FuncId 
             start,
             exit,
             header,
+            origin_base: None,
             span: 12,
         });
         for _ in 0..=extra_inputs {
@@ -271,11 +272,15 @@ fn define_controller(module: &mut JITModule, enabled: bool) -> FuncId {
         )
         .unwrap();
     if enabled {
-        let candidates = controller_candidates("30:31,90:91", &source).unwrap();
+        let mut candidates = controller_candidates("30:31,90:91", &source).unwrap();
+        for candidate in &mut candidates {
+            candidate.origin_base = Some(candidate.header as u32 - 7);
+            candidate.header += 100;
+        }
         let report = share_controllers(module, &mut ctx.func, candidates)
             .unwrap()
             .expect("both controllers selected");
-        assert_eq!(report[0]["headers"], serde_json::json!([30, 90]));
+        assert_eq!(report[0]["headers"], serde_json::json!([130, 190]));
         assert_eq!(
             report[0]["packet_words"],
             serde_json::json!([[3, 3], [3, 3]])

@@ -941,6 +941,7 @@ pub(super) fn define_entry<M: Module>(
                             start: b.current_block().expect("checked fallback entry"),
                             exit: blocks[phase.exit].expect("checked continuation"),
                             header: site,
+                            origin_base: None,
                             span: phase.exit.saturating_sub(site),
                         });
                 }
@@ -1276,6 +1277,26 @@ pub(super) fn define_entry<M: Module>(
         context.flowgraph();
         context.verify(module.isa()).map_err(backend)?;
     }
+    let discovered_controllers = if outline_allowed
+        && let Ok(windows) = std::env::var("MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS")
+    {
+        let candidates = super::checked_region_discovery::candidates(
+            &context.func,
+            &windows,
+            plan.blocks().len(),
+        )?;
+        let shared = checked_traversals::share_controllers(module, &mut context.func, candidates)?;
+        if shared.is_some() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        shared
+    } else {
+        None
+    };
+    if outline_allowed && let Some(path) = std::env::var_os("MECH_COMPACT_LAYOUT_REGION_REPORT") {
+        super::checked_region_discovery::report(&context.func, path.as_ref()).map_err(backend)?;
+    }
     let calls = context
         .func
         .layout
@@ -1349,6 +1370,9 @@ pub(super) fn define_entry<M: Module>(
         }
         if let Some(checked_controllers) = checked_controllers {
             report["checked_controllers"] = checked_controllers;
+        }
+        if let Some(discovered_controllers) = discovered_controllers {
+            report["layout_checked_controllers"] = discovered_controllers;
         }
         if !overwrite_reuse.is_empty() {
             report["overwrite_result_reuse"] = serde_json::json!(
