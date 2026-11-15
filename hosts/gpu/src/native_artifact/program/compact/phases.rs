@@ -3,7 +3,7 @@
 //! is shared. Real unit append growth uses the existing concrete array helper.
 use super::{
     arrays::Arrays, immutable_arrays::LiteralViews, layout::Layout, owner_flow::OwnerFlow,
-    phase_storage, vector_guard_facts,
+    phase_bodies::PhaseBodies, phase_storage, vector_guard_facts,
 };
 use crate::native_artifact::codegen::{
     common::ssa_words::Words,
@@ -652,7 +652,9 @@ pub(super) fn define<M: Module>(
     let closed = &prepared.metadata().closed_tails;
     let mut result = vec![];
     let mut dense_tables = cfg_cleanup::composed_reads::DenseTables::default();
-    let mut shared_bodies = function::PhaseBodies::default();
+    let mut shared_bodies = PhaseBodies::new(
+        std::env::var_os("MECH_COMPACT_SHARE_PHASE_RELOCATIONS").is_some(),
+    );
     let mut candidates = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {
         let Some(proof) = region.numeric.as_ref() else {

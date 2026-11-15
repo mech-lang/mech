@@ -1,72 +1,12 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
+use super::super::phase_bodies::{PhaseBodies, define_body};
 use super::*;
 use crate::native_artifact::{
     codegen::control::CfgCleanup,
     program::codegen::{numeric_compact, wide_equal},
 };
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
-use cranelift_codegen::{Context, control::ControlPlane, ir::Signature, isa::TargetIsa};
-use cranelift_module::{ModuleError, ModuleReloc};
-
-struct PhaseBody {
-    signature: Signature,
-    code: Box<[u8]>,
-    function: FuncId,
-    symbol: String,
-}
-
-#[derive(Default)]
-pub(super) struct PhaseBodies(BTreeMap<(u32, usize), Vec<PhaseBody>>);
-
-fn define_body<M: Module>(
-    module: &mut M,
-    function: FuncId,
-    symbol: &str,
-    context: &mut Context,
-    bodies: Option<&mut PhaseBodies>,
-) -> Result<(FuncId, String), NativeCompileError> {
-    let Some(bodies) = bodies else {
-        module.define_function(function, context).map_err(backend)?;
-        return Ok((function, symbol.into()));
-    };
-
-    context
-        .compile(module.isa(), &mut ControlPlane::default())
-        .map_err(ModuleError::from)
-        .map_err(backend)?;
-    let buffer = &context.compiled_code().unwrap().buffer;
-    let bytes = buffer.data();
-    let alignment = buffer.alignment;
-    // These local phase addresses are used only as direct call targets.
-    // A body with relocation entries keeps its own definition.
-    if buffer.relocs().is_empty() {
-        let candidates = bodies.0.entry((alignment, bytes.len())).or_default();
-        if let Some(retained) = candidates.iter().find(|candidate| {
-            candidate.signature == context.func.signature && candidate.code.as_ref() == bytes
-        }) {
-            return Ok((retained.function, retained.symbol.clone()));
-        }
-        module
-            .define_function_bytes(function, alignment.into(), bytes, &[])
-            .map_err(backend)?;
-        candidates.push(PhaseBody {
-            signature: context.func.signature.clone(),
-            code: bytes.into(),
-            function,
-            symbol: symbol.into(),
-        });
-    } else {
-        let relocs = buffer
-            .relocs()
-            .iter()
-            .map(|reloc| ModuleReloc::from_mach_reloc(reloc, &context.func, function))
-            .collect::<Vec<_>>();
-        module
-            .define_function_bytes(function, alignment.into(), bytes, &relocs)
-            .map_err(backend)?;
-    }
-    Ok((function, symbol.into()))
-}
+use cranelift_codegen::{Context, ir::Signature, isa::TargetIsa};
 
 pub(super) struct Composed {
     pub function: FuncId,
