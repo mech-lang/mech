@@ -528,6 +528,21 @@ fn shared_body_takes_distinct_operand_roles_even_when_a_caller_repeats_a_value()
 
 #[test]
 fn shared_loop_writes_the_union_of_current_outputs() {
+    verify_loop_output_packets(CaptureBindings {
+        align_outputs: true,
+        ..CaptureBindings::default()
+    });
+}
+
+#[test]
+fn shared_loop_can_pad_a_single_output() {
+    verify_loop_output_packets(CaptureBindings {
+        pad_outputs: true,
+        ..CaptureBindings::default()
+    });
+}
+
+fn verify_loop_output_packets(bindings: CaptureBindings) {
     let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
     let mut context = module.make_context();
     context.func.signature.params = vec![AbiParam::new(types::I64); 3];
@@ -572,11 +587,11 @@ fn shared_loop_writes_the_union_of_current_outputs() {
             .jump(start, &[remaining.into(), first.into(), second.into()]);
         b.switch_to_block(done);
         let sum = b.block_params(done)[0];
-        let result = b.ins().isub(sum, a);
+        let result = b.ins().isub(sum, b_value);
         let result = if index == 0 {
             result
         } else {
-            b.ins().iadd(result, b_value)
+            b.ins().iadd(result, a)
         };
         b.ins().return_(&[zero, result]);
         candidates.push(Candidate {
@@ -600,17 +615,9 @@ fn shared_loop_writes_the_union_of_current_outputs() {
         .unwrap()
         .is_none()
     );
-    let report = share_controllers(
-        &mut module,
-        &mut context.func,
-        vec![candidates],
-        CaptureBindings {
-            align_outputs: true,
-            ..CaptureBindings::default()
-        },
-    )
-    .unwrap()
-    .expect("the checked bodies publish the same union of three words");
+    let report = share_controllers(&mut module, &mut context.func, vec![candidates], bindings)
+        .unwrap()
+        .expect("the checked bodies publish the same union of three words");
     assert_eq!(report[0]["aligned_outputs"], true);
     assert_eq!(
         report[0]["packet_words"],
@@ -625,7 +632,8 @@ fn shared_loop_writes_the_union_of_current_outputs() {
         )
     };
     for trips in [0, 1, 5] {
-        assert_eq!(run(0, trips, 19), ResultPair(0, 7 * trips));
-        assert_eq!(run(1, trips, 19), ResultPair(0, 14 * trips));
+        let first = 19 + 3 * trips;
+        assert_eq!(run(0, trips, 19), ResultPair(0, first));
+        assert_eq!(run(1, trips, 19), ResultPair(0, 2 * first));
     }
 }
