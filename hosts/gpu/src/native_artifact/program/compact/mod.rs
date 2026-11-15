@@ -21,6 +21,7 @@ mod packed;
 mod parallel;
 mod phase_storage;
 mod phases;
+mod vector_guard_facts;
 pub(in crate::native_artifact) use phases::{
     NoGrowth, PRIVATE_HANDOFF, PrivatePhase, VectorContract,
 };

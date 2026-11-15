@@ -3,7 +3,7 @@
 //! is shared. Real unit append growth uses the existing concrete array helper.
 use super::{
     arrays::Arrays, immutable_arrays::LiteralViews, layout::Layout, owner_flow::OwnerFlow,
-    phase_storage,
+    phase_storage, vector_guard_facts,
 };
 use crate::native_artifact::codegen::{
     common::ssa_words::Words,
@@ -210,6 +210,7 @@ impl Phase {
         source_blocks: &[Option<Block>],
         error: Block,
         root_entry: bool,
+        mut vector_guards: Option<&mut Vec<vector_guard_facts::Guard>>,
     ) -> Result<(), NativeCompileError> {
         let observe = observer(module, b, self.observe)?;
         let fallback = b.create_block();
@@ -372,7 +373,14 @@ impl Phase {
                     b.ins().bor(row, column)
                 };
                 let next = b.create_block();
-                b.ins().brif(flat, next, &[], general, &[]);
+                let branch = b.ins().brif(flat, next, &[], general, &[]);
+                if let Some(guards) = &mut vector_guards {
+                    guards.push(vector_guard_facts::Guard {
+                        header: self.header,
+                        array,
+                        branch,
+                    });
+                }
                 b.switch_to_block(next);
             }
             if let Some(observe) = observe {

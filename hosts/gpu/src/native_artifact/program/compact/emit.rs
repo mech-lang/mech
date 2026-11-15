@@ -11,7 +11,7 @@ use super::{
     packed, phase_storage, phases,
     recipes::{self, Recipe},
     terminal_appends::TerminalAppends,
-    widening_reduction, word_collections, word_packs,
+    vector_guard_facts, widening_reduction, word_collections, word_packs,
 };
 use crate::native_artifact::codegen::{
     common::{
@@ -397,6 +397,10 @@ pub(super) fn define_entry<M: Module>(
     let traversal_stage = std::env::var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
     let outline_allowed =
         worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
+    let vector_facts = outline_allowed
+        .then(|| std::env::var_os("MECH_COMPACT_VECTOR_FACTS"))
+        .flatten();
+    let mut vector_guards = vector_facts.as_ref().map(|_| Vec::new());
     let outline_traversals = outline_allowed && traversal_stage.is_some();
     let controller_windows = (outline_allowed && memory)
         .then(|| std::env::var("MECH_COMPACT_SHARE_CONTROLLER_WINDOWS").ok())
@@ -926,6 +930,7 @@ pub(super) fn define_entry<M: Module>(
                     &blocks,
                     error,
                     worker.is_none(),
+                    vector_guards.as_mut(),
                 )?;
                 if outline_traversals && let Some(key) = phase.checked_traversal_key() {
                     traversals
@@ -1242,6 +1247,18 @@ pub(super) fn define_entry<M: Module>(
         .then(|| cfg_cleanup::forward_identity_routes(&controls, &mut context, module.isa()))
         .transpose()?;
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+    if let (Some(mode), Some(guards)) = (vector_facts, vector_guards)
+        && !guards.is_empty()
+    {
+        let apply = mode != std::ffi::OsStr::new("trace");
+        let proved = vector_guard_facts::fold(&mut context, &guards, apply);
+        if apply && proved != 0 {
+            context
+                .eliminate_unreachable_code(module.isa())
+                .map_err(backend)?;
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
     let checked_traversals = if outline_traversals {
         let all = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("all"));
         let shared = checked_traversals::share(module, &mut context.func, traversals, all)?;
