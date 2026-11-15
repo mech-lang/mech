@@ -1,0 +1,894 @@
+{
+  "algorithm_audit": {
+    "function_signature_identical": true,
+    "original_fallback_loop_identical": true,
+    "original_fallback_loop_tokens_sha256": "1942bd64a5bcd5e855aa25d70f31c617ca2a3302bde07b4166c49654fc88b90b",
+    "parameter_creation_and_sealed_lookup_tail_identical": true,
+    "parameter_creation_tail_tokens_sha256": "b9267ff20b8cb39f705f1555f59580f1a76cfe3acf031db8b7ddde2acdb5e1e7",
+    "production_before_find_var_identical": true,
+    "remaining_production_identical": true,
+    "scope": "Only read-only decreasing-chain lookup is added before the identical old fallback and parameter-creation path. Two focused unit tests are added after production code. No SSA storage, sealing, variable/type/value identity or permission logic changes."
+  },
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.19860527093988,
+      "control": 15.194900500122458,
+      "mean_reduction_fraction": -0.00024381672110274089
+    },
+    {
+      "candidate": 15.192126041511074,
+      "control": 15.059085458051413,
+      "mean_reduction_fraction": -0.008834572579474287
+    }
+  ],
+  "base_commit": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
+      "binary": "/private/tmp/mech-ssa-descending-chain-20261115/candidate",
+      "binary_sha256": "2fc734830c2c45b7a567c1817d419fd5f9e2c1838be3eba728564f6f22d9a6b2",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "b08f0fccdfd3a222d3ce6036980372dc868da34d279878b40f759ea1b90e1882",
+      "seconds": 254.46987329190597
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "b08f0fccdfd3a222d3ce6036980372dc868da34d279878b40f759ea1b90e1882",
+      "seconds": 7.169336250051856
+    },
+    "candidate-cli-check": {
+      "base_commit": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "b08f0fccdfd3a222d3ce6036980372dc868da34d279878b40f759ea1b90e1882",
+      "seconds": 9.041200791951269
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66983520,
+      "path": "/private/tmp/mech-ssa-descending-chain-20261115/candidate",
+      "sha256": "2fc734830c2c45b7a567c1817d419fd5f9e2c1838be3eba728564f6f22d9a6b2"
+    },
+    "control": {
+      "bytes": 66983520,
+      "path": "/private/tmp/mech-ssa-descending-chain-20261115/control",
+      "sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae"
+    },
+    "focused/tests": {
+      "bytes": 1463224,
+      "path": "/private/tmp/mech-ssa-descending-chain-20261115/focused/tests",
+      "sha256": "2b9059e6fd4df9b0bc9980afc5ec063d1b5336accc5e51ce5baa19d985a8b260"
+    },
+    "ir-comparison/probe": {
+      "bytes": 2803512,
+      "path": "/private/tmp/mech-ssa-descending-chain-20261115/ir-comparison/probe",
+      "sha256": "6f0b1328b9a3538419eb4982993b289d4cc142f08d83a97201fb32f628a998d0"
+    }
+  },
+  "decision": {
+    "best_qualified_pgo_seconds": 13.596783062268514,
+    "candidate_complete_seconds": 15.195365656225476,
+    "control_complete_seconds": 15.126992979086936,
+    "decision": "reject",
+    "description": "Rejected SSA descending-chain fast walk: complete standard build 15.126993->15.195366s (+0.45%), both balanced blocks slower. Object compiler +0.78%, source CFG +2.55%, instructions +0.0164%. Exact all outputs/full metadata/executables,32 focused tests and328 raw/compacted IR/machine pairs pass. Previous source and standard6CE restored; selected6fc PGO unchanged. Fresh current-profile selection diagnostics, all adverse fields and complete trial retained; no language/runtime change or sub-ten claim.",
+    "goal_sub10_achieved": false,
+    "native_blocks": [
+      {
+        "candidate": 15.19860527093988,
+        "control": 15.194900500122458,
+        "mean_reduction_fraction": -0.00024381672110274089
+      },
+      {
+        "candidate": 15.192126041511074,
+        "control": 15.059085458051413,
+        "mean_reduction_fraction": -0.008834572579474287
+      }
+    ],
+    "native_reduction": -0.004519912003202897,
+    "object_adverse_fields": {
+      "catalog_seconds": {
+        "candidate": [
+          0.037075542,
+          0.037130625,
+          0.037205958,
+          0.039950208
+        ],
+        "control": [
+          0.037318042,
+          0.036859583,
+          0.036938333,
+          0.037582958
+        ],
+        "mean_reduction_fraction": -0.017911475561799062
+      },
+      "cleanup_including_compaction_seconds": {
+        "candidate": [
+          3.0390457501634955,
+          3.018883583135903,
+          2.9713607078883797,
+          2.9017224579583853
+        ],
+        "control": [
+          2.974413583986461,
+          2.9721082078758627,
+          2.979253417113796,
+          2.9711469169706106
+        ],
+        "mean_reduction_fraction": -0.002865478384958431
+      },
+      "cleanup_seconds": {
+        "candidate": [
+          2.894342875108123,
+          2.876231041038409,
+          2.8285184169653803,
+          2.757577042095363
+        ],
+        "control": [
+          2.826327499933541,
+          2.8236435828730464,
+          2.831052500056103,
+          2.8236471249256283
+        ],
+        "mean_reduction_fraction": -0.004599750736935082
+      },
+      "compiler_seconds": {
+        "candidate": [
+          15.132392041,
+          15.068029125,
+          14.888526375,
+          14.942994708
+        ],
+        "control": [
+          14.881371042,
+          14.909612208,
+          14.853967042,
+          14.92045675
+        ],
+        "mean_reduction_fraction": -0.007832317953792023
+      },
+      "frontend_seconds": {
+        "candidate": [
+          1.574084,
+          1.567791083,
+          1.5709036250000001,
+          1.577653083
+        ],
+        "control": [
+          1.570770833,
+          1.571579625,
+          1.567481417,
+          1.578257583
+        ],
+        "mean_reduction_fraction": -0.0003725031292325376
+      },
+      "instructions": {
+        "candidate": [
+          220679117497,
+          220686294706,
+          220664534109,
+          220674569997
+        ],
+        "control": [
+          220640868724,
+          220636424003,
+          220648697582,
+          220633721528
+        ],
+        "mean_reduction_fraction": -0.00016407328598599946
+      },
+      "max_rss_bytes": {
+        "candidate": [
+          4489986048,
+          4489887744,
+          4489887744,
+          4489986048
+        ],
+        "control": [
+          4488069120,
+          4487790592,
+          4487790592,
+          4487790592
+        ],
+        "mean_reduction_fraction": -0.00046273098901217224
+      },
+      "native_seconds": {
+        "candidate": [
+          11.618946292,
+          11.563623708,
+          11.375410292,
+          11.417148959
+        ],
+        "control": [
+          11.367474209,
+          11.393586333,
+          11.344461584,
+          11.38839025
+        ],
+        "mean_reduction_fraction": -0.010577610275036786
+      },
+      "numeric_generation_seconds": {
+        "candidate": [
+          1.819446749985218,
+          1.7934748749248683,
+          1.7931054588407278,
+          1.796374541008845
+        ],
+        "control": [
+          1.7802526669111103,
+          1.792617707978934,
+          1.7888392079621553,
+          1.7946659170556813
+        ],
+        "mean_reduction_fraction": -0.006431485442927265
+      },
+      "peak_footprint_bytes": {
+        "candidate": [
+          4467216056,
+          4467117752,
+          4467117752,
+          4467216056
+        ],
+        "control": [
+          4465299128,
+          4465020600,
+          4465020600,
+          4465020600
+        ],
+        "mean_reduction_fraction": -0.00046509071308720173
+      },
+      "source_cfg_seconds": {
+        "candidate": [
+          2.3175316671840847,
+          2.229604542022571,
+          2.233736458932981,
+          2.3155731670558453
+        ],
+        "control": [
+          2.214990000007674,
+          2.218281334033236,
+          2.2167202499695122,
+          2.220102332998067
+        ],
+        "mean_reduction_fraction": -0.02551854809033771
+      },
+      "whole_process_seconds": {
+        "candidate": [
+          15.198688041884452,
+          15.133508333005011,
+          14.954659374896437,
+          15.010874375002459
+        ],
+        "control": [
+          14.947584042092785,
+          14.97608254197985,
+          14.919683208921924,
+          14.987447957973927
+        ],
+        "mean_reduction_fraction": -0.007804214407492349
+      }
+    },
+    "restoration": {
+      "canonical_binary": "/private/tmp/mech-level12-compile-target/compiler/compile_profile",
+      "canonical_sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae",
+      "cargo_cache_note": "Canonical executable restored to immutable standard6CE matching source0c949. Cargo build-profile rlibs still from rejected2fc source until the next cargo build; restored source has a fresh mtime so Cargo will rebuild affected crates. Do not treat cached libraries as reference source builds.",
+      "selected_pgo_binary": "/private/tmp/mech-parallel-native-pgo-20261115/use",
+      "selected_pgo_sha256": "6fc6db8164c3f0a66fc5d968fd42f72fe5daf11ca8e89dea00b430530989a797",
+      "source_path": "vendor/cranelift-frontend/src/ssa.rs",
+      "source_restored": true,
+      "source_sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d",
+      "workspace_clean": true
+    },
+    "retained_source_commit": "0c949505cc708c233e27c094aa67e105068d6823"
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "focused_tests": 32,
+  "jobs_diagnostic": {
+    "all_outputs_and_complete_executable_identical": true,
+    "excluded_from_primary": true,
+    "rows": [
+      {
+        "cleanup": 48,
+        "submitted": 344,
+        "workers": 2
+      }
+    ]
+  },
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.1346607080195099,
+        0.12813816708512604,
+        0.13134100008755922,
+        0.13059208309277892
+      ],
+      "control": [
+        0.13612345815636218,
+        0.1335425830911845,
+        0.1088675840292126,
+        0.1366146660875529
+      ],
+      "mean_reduction_fraction": -0.018603705149211835
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0009732919279485941,
+        0.000906042056158185,
+        0.0009123750496655703,
+        0.0009865828324109316
+      ],
+      "control": [
+        0.0014785418752580881,
+        0.0009979999158531427,
+        0.0009605411905795336,
+        0.0009709999430924654
+      ],
+      "mean_reduction_fraction": 0.14287187181963446
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.125232582911849,
+        15.27197795896791,
+        15.195605417015031,
+        15.188646666007116
+      ],
+      "control": [
+        15.114653042051941,
+        15.275147958192974,
+        15.080879125045612,
+        15.037291791057214
+      ],
+      "mean_reduction_fraction": -0.004519912003202897
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        14.98959858296439,
+        15.142933749826625,
+        15.063352041877806,
+        15.057068000081927
+      ],
+      "control": [
+        14.977051042020321,
+        15.140607375185937,
+        14.97105099982582,
+        14.899706125026569
+      ],
+      "mean_reduction_fraction": -0.004409798630314432
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.023185833,
+        0.023195625,
+        0.022935666,
+        0.023108
+      ],
+      "control": [
+        0.023170375,
+        0.023004042,
+        0.023122541,
+        0.023388875
+      ],
+      "mean_reduction_fraction": 0.0028128246956575786
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09362579206936061,
+        0.09405787498690188,
+        0.0934834168292582,
+        0.09373750002123415
+      ],
+      "control": [
+        0.09389829216524959,
+        0.09400204219855368,
+        0.09334650007076561,
+        0.0944906659424305
+      ],
+      "mean_reduction_fraction": 0.002216750974839643
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.037075542,
+        0.037130625,
+        0.037205958,
+        0.039950208
+      ],
+      "control": [
+        0.037318042,
+        0.036859583,
+        0.036938333,
+        0.037582958
+      ],
+      "mean_reduction_fraction": -0.017911475561799062
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.0390457501634955,
+        3.018883583135903,
+        2.9713607078883797,
+        2.9017224579583853
+      ],
+      "control": [
+        2.974413583986461,
+        2.9721082078758627,
+        2.979253417113796,
+        2.9711469169706106
+      ],
+      "mean_reduction_fraction": -0.002865478384958431
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.894342875108123,
+        2.876231041038409,
+        2.8285184169653803,
+        2.757577042095363
+      ],
+      "control": [
+        2.826327499933541,
+        2.8236435828730464,
+        2.831052500056103,
+        2.8236471249256283
+      ],
+      "mean_reduction_fraction": -0.004599750736935082
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14470287505537271,
+        0.142652542097494,
+        0.14284229092299938,
+        0.1441454158630222
+      ],
+      "control": [
+        0.14808608405292034,
+        0.14846462500281632,
+        0.148200917057693,
+        0.14749979204498231
+      ],
+      "mean_reduction_fraction": 0.030237655276890596
+    },
+    "compiler_seconds": {
+      "candidate": [
+        15.132392041,
+        15.068029125,
+        14.888526375,
+        14.942994708
+      ],
+      "control": [
+        14.881371042,
+        14.909612208,
+        14.853967042,
+        14.92045675
+      ],
+      "mean_reduction_fraction": -0.007832317953792023
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009142291,
+        0.00907675,
+        0.009166584,
+        0.00914
+      ],
+      "control": [
+        0.009168125,
+        0.00912325,
+        0.009243833,
+        0.009206709
+      ],
+      "mean_reduction_fraction": 0.005886791372371802
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.574084,
+        1.567791083,
+        1.5709036250000001,
+        1.577653083
+      ],
+      "control": [
+        1.570770833,
+        1.571579625,
+        1.567481417,
+        1.578257583
+      ],
+      "mean_reduction_fraction": -0.0003725031292325376
+    },
+    "instructions": {
+      "candidate": [
+        220679117497,
+        220686294706,
+        220664534109,
+        220674569997
+      ],
+      "control": [
+        220640868724,
+        220636424003,
+        220648697582,
+        220633721528
+      ],
+      "mean_reduction_fraction": -0.00016407328598599946
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4489986048,
+        4489887744,
+        4489887744,
+        4489986048
+      ],
+      "control": [
+        4488069120,
+        4487790592,
+        4487790592,
+        4487790592
+      ],
+      "mean_reduction_fraction": -0.00046273098901217224
+    },
+    "native_seconds": {
+      "candidate": [
+        11.618946292,
+        11.563623708,
+        11.375410292,
+        11.417148959
+      ],
+      "control": [
+        11.367474209,
+        11.393586333,
+        11.344461584,
+        11.38839025
+      ],
+      "mean_reduction_fraction": -0.010577610275036786
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        1.819446749985218,
+        1.7934748749248683,
+        1.7931054588407278,
+        1.796374541008845
+      ],
+      "control": [
+        1.7802526669111103,
+        1.792617707978934,
+        1.7888392079621553,
+        1.7946659170556813
+      ],
+      "mean_reduction_fraction": -0.006431485442927265
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.868369167,
+        1.866458041,
+        1.872077375,
+        1.875287083
+      ],
+      "control": [
+        1.872732875,
+        1.874701709,
+        1.871976084,
+        1.881994584
+      ],
+      "mean_reduction_fraction": 0.00256133155782734
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4467216056,
+        4467117752,
+        4467117752,
+        4467216056
+      ],
+      "control": [
+        4465299128,
+        4465020600,
+        4465020600,
+        4465020600
+      ],
+      "mean_reduction_fraction": -0.00046509071308720173
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.604412249987945,
+        1.600834291195497,
+        1.6017474161926657,
+        1.6083274590782821
+      ],
+      "control": [
+        1.606076915981248,
+        1.608045999892056,
+        1.5989720420911908,
+        1.6337682500015944
+      ],
+      "mean_reduction_fraction": 0.00489257961495515
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.3175316671840847,
+        2.229604542022571,
+        2.233736458932981,
+        2.3155731670558453
+      ],
+      "control": [
+        2.214990000007674,
+        2.218281334033236,
+        2.2167202499695122,
+        2.220102332998067
+      ],
+      "mean_reduction_fraction": -0.02551854809033771
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        15.198688041884452,
+        15.133508333005011,
+        14.954659374896437,
+        15.010874375002459
+      ],
+      "control": [
+        14.947584042092785,
+        14.97608254197985,
+        14.919683208921924,
+        14.987447957973927
+      ],
+      "mean_reduction_fraction": -0.007804214407492349
+    }
+  },
+  "object_balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 15.100210582999999,
+        "control": 14.895491625,
+        "mean_reduction_fraction": -0.013743685885224899
+      },
+      "instructions": {
+        "candidate": 220682706101.5,
+        "control": 220638646363.5,
+        "mean_reduction_fraction": -0.0001996918433202488
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.273568104603328,
+        "control": 2.216635667020455,
+        "mean_reduction_fraction": -0.025684165616354893
+      },
+      "whole_process_seconds": {
+        "candidate": 15.166098187444732,
+        "control": 14.961833292036317,
+        "mean_reduction_fraction": -0.013652397498449487
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 14.9157605415,
+        "control": 14.887211896,
+        "mean_reduction_fraction": -0.0019176623332453069
+      },
+      "instructions": {
+        "candidate": 220669552053,
+        "control": 220641209555,
+        "mean_reduction_fraction": -0.00012845514243320366
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.274654812994413,
+        "control": 2.2184112914837897,
+        "mean_reduction_fraction": -0.025353063125190367
+      },
+      "whole_process_seconds": {
+        "candidate": 14.982766874949448,
+        "control": 14.953565583447926,
+        "mean_reduction_fraction": -0.0019527979021836117
+      }
+    }
+  ],
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "paired_ir": {
+    "cases_sha256": "ef9376744f122e460ff8f2b71b1d3ddae9b0850e0e4f42ad1d41e0d62725a926",
+    "identical_complete_ir_aliases_types_definitions_queries_effects_and_enumerations": true,
+    "paired_cases": 328,
+    "verified_functions": 656
+  },
+  "patch_sha256": "b08f0fccdfd3a222d3ce6036980372dc868da34d279878b40f759ea1b90e1882",
+  "qualification_pipeline": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-ssa-descending-chain-20261115/qualification-scripts/mech-screen-ssa-descending-chain-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 32.2020224169828,
+      "stage": "screens",
+      "started_utc": "2026-11-15T19:14:29.290610+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-ssa-descending-chain-20261115/qualification-scripts/mech-cached-native-link-ssa-descending-chain-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.3040339171420783,
+      "stage": "executable-gates",
+      "started_utc": "2026-11-15T19:15:01.493201+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-ssa-descending-chain-20261115/qualification-scripts/mech-qualify-ssa-descending-chain-serial-stage-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.720907540991902,
+      "stage": "default-serial-byte-gate",
+      "started_utc": "2026-11-15T19:15:01.797573+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-ssa-descending-chain-20261115/qualification-scripts/mech-qualify-ssa-descending-chain-jobs-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.548425375018269,
+      "stage": "jobs-diagnostic",
+      "started_utc": "2026-11-15T19:15:17.518799+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-ssa-descending-chain-20261115/qualification-scripts/mech-qualify-ssa-descending-chain-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 124.17518041701987,
+      "stage": "fixtures-object-cohort",
+      "started_utc": "2026-11-15T19:15:33.067558+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-ssa-descending-chain-20261115/qualification-scripts/mech-native-cohort-ssa-descending-chain-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 122.04845920903608,
+      "stage": "native-cohort",
+      "started_utc": "2026-11-15T19:17:37.243045+00:00",
+      "state": "complete"
+    }
+  ],
+  "restoration": {
+    "canonical_binary": "/private/tmp/mech-level12-compile-target/compiler/compile_profile",
+    "canonical_sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae",
+    "cargo_cache_note": "Canonical executable restored to immutable standard6CE matching source0c949. Cargo build-profile rlibs still from rejected2fc source until the next cargo build; restored source has a fresh mtime so Cargo will rebuild affected crates. Do not treat cached libraries as reference source builds.",
+    "selected_pgo_binary": "/private/tmp/mech-parallel-native-pgo-20261115/use",
+    "selected_pgo_sha256": "6fc6db8164c3f0a66fc5d968fd42f72fe5daf11ca8e89dea00b430530989a797",
+    "source_path": "vendor/cranelift-frontend/src/ssa.rs",
+    "source_restored": true,
+    "source_sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d",
+    "workspace_clean": true
+  },
+  "scope": "Strictly decreasing single-predecessor chains need no cycle-mark writes. Read-only exploratory prefix; any nondecreasing edge restarts exact original traversal at original block. All SSA types/value IDs/alias definitions/effects/storage/sealing and cycle sentinel selection unchanged. Standard6CE control versus standardcandidate, same61flags/twoworkers/pinnedmimalloc; no PGO/nativeCPU build overrides. Current6fc profile diagnostics are separate and excluded. Entire source/bytecode/Object/complete metadata/full-exe identity, default0 and realjobs gates required. No grammar/proof/runtime change or subten claim.",
+  "selection_profile": [
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-1",
+      "process": {
+        "binary": "/private/tmp/mech-parallel-native-pgo-20261115/use",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 14.244418458081782,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    },
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-2",
+      "process": {
+        "binary": "/private/tmp/mech-parallel-native-pgo-20261115/use",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 13.281538458075374,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    }
+  ],
+  "source_commit": null,
+  "source_state": {
+    "base_commit": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
+    "control": {
+      "bytes": 66983520,
+      "sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae"
+    },
+    "files": [
+      {
+        "candidate": {
+          "bytes": 66291,
+          "sha256": "4d39a4bafe647bfb0f2e81930393bc47c8a2016dc3c14bd250ee06d854c2546d"
+        },
+        "path": "vendor/cranelift-frontend/src/ssa.rs",
+        "reference": {
+          "bytes": 62822,
+          "sha256": "bd70114737f66eeba3d3fe160e5af9a16d987a62c69a585cbb8f77a15210838d"
+        }
+      }
+    ],
+    "patch_sha256": "b08f0fccdfd3a222d3ce6036980372dc868da34d279878b40f759ea1b90e1882",
+    "scope": "Avoid cycle-generation/mark writes for read-only strictly decreasing single-predecessor walks. Any nondecreasing edge restarts exact original traversal at original block, with no intervening mutation; cycle sentinel selection unchanged. No storage/layout/sealing/value-ID/graph/publication/permission/grammar changes. Test on standard compiler, same61flags+2workers. PGO6fc remains separate; all4outputs/fullmetadata/fullD6exe gates."
+  }
+}
