@@ -858,10 +858,10 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     );
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     eprintln!("compact-stage: native module");
-    let object =
-        codegen_backend::object("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
+    let object = codegen_backend::object("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
     let mut module = super::compact::PreparedObject::new(object);
-    let metadata = super::compact::define(&mut module, &prepared, observe)?;
+    let share_phase_bodies = std::env::var_os("MECH_COMPACT_SHARE_PHASE_BODIES").is_some();
+    let metadata = super::compact::define(&mut module, &prepared, observe, share_phase_bodies)?;
     let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
     Ok((bytes, metadata))
 }

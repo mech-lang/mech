@@ -5,7 +5,68 @@ use crate::native_artifact::{
     program::codegen::{numeric_compact, wide_equal},
 };
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
-use cranelift_codegen::{Context, ir::Signature, isa::TargetIsa};
+use cranelift_codegen::{Context, control::ControlPlane, ir::Signature, isa::TargetIsa};
+use cranelift_module::{ModuleError, ModuleReloc};
+
+struct PhaseBody {
+    signature: Signature,
+    code: Box<[u8]>,
+    function: FuncId,
+    symbol: String,
+}
+
+#[derive(Default)]
+pub(super) struct PhaseBodies(BTreeMap<(u32, usize), Vec<PhaseBody>>);
+
+fn define_body<M: Module>(
+    module: &mut M,
+    function: FuncId,
+    symbol: &str,
+    context: &mut Context,
+    bodies: Option<&mut PhaseBodies>,
+) -> Result<(FuncId, String), NativeCompileError> {
+    let Some(bodies) = bodies else {
+        module.define_function(function, context).map_err(backend)?;
+        return Ok((function, symbol.into()));
+    };
+
+    context
+        .compile(module.isa(), &mut ControlPlane::default())
+        .map_err(ModuleError::from)
+        .map_err(backend)?;
+    let buffer = &context.compiled_code().unwrap().buffer;
+    let bytes = buffer.data();
+    let alignment = buffer.alignment;
+    // These local phase addresses are used only as direct call targets.
+    // A body with relocation entries keeps its own definition.
+    if buffer.relocs().is_empty() {
+        let candidates = bodies.0.entry((alignment, bytes.len())).or_default();
+        if let Some(retained) = candidates.iter().find(|candidate| {
+            candidate.signature == context.func.signature && candidate.code.as_ref() == bytes
+        }) {
+            return Ok((retained.function, retained.symbol.clone()));
+        }
+        module
+            .define_function_bytes(function, alignment.into(), bytes, &[])
+            .map_err(backend)?;
+        candidates.push(PhaseBody {
+            signature: context.func.signature.clone(),
+            code: bytes.into(),
+            function,
+            symbol: symbol.into(),
+        });
+    } else {
+        let relocs = buffer
+            .relocs()
+            .iter()
+            .map(|reloc| ModuleReloc::from_mach_reloc(reloc, &context.func, function))
+            .collect::<Vec<_>>();
+        module
+            .define_function_bytes(function, alignment.into(), bytes, &relocs)
+            .map_err(backend)?;
+    }
+    Ok((function, symbol.into()))
+}
 
 pub(super) struct Composed {
     pub function: FuncId,
@@ -33,6 +94,7 @@ pub(super) fn define<M: Module>(
     no_growth: Option<&NoGrowth>,
     literal_views: &BTreeMap<usize, Literal>,
     dense_tables: &mut DenseTables,
+    mut bodies: Option<&mut PhaseBodies>,
     suffix: &str,
 ) -> Result<Compiled, NativeCompileError> {
     let code = CodePlan::Program(prepared);
@@ -48,8 +110,19 @@ pub(super) fn define<M: Module>(
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); 3];
     signature.returns = vec![AbiParam::new(types::I64); 2];
+    let error_origin_base = bodies.is_some().then_some(header);
     let (mut context, report) = phase_ir(
-        module, code, region, &signature, &controls, observe, vectors, private, no_growth, false,
+        module,
+        code,
+        region,
+        &signature,
+        &controls,
+        observe,
+        vectors,
+        private,
+        no_growth,
+        false,
+        error_origin_base,
     )?;
     let function = module
         .declare_function(&symbol, Linkage::Local, &signature)
@@ -338,9 +411,13 @@ pub(super) fn define<M: Module>(
                     std::fs::write(path, grouped.func.display().to_string()).map_err(backend)?;
                     grouped.set_disasm(true);
                 }
-                module
-                    .define_function(grouped_id, &mut grouped)
-                    .map_err(backend)?;
+                let (grouped_id, target) = define_body(
+                    module,
+                    grouped_id,
+                    &name,
+                    &mut grouped,
+                    bodies.as_deref_mut(),
+                )?;
                 let machine = grouped
                     .compiled_code()
                     .ok_or_else(|| backend("grouped phase lacks code"))?;
@@ -352,7 +429,7 @@ pub(super) fn define<M: Module>(
                     std::fs::write(path.with_extension("vcode"), vcode).map_err(backend)?;
                 }
                 histogram = Some(serde_json::json!({
-                    "symbol": name,
+                    "symbol": target,
                     "admission": admission,
                     "code_bytes": machine.code_info().total_size,
                     "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
@@ -415,8 +492,17 @@ pub(super) fn define<M: Module>(
                     && std::env::var_os("MECH_REDUCTION_COUNTDOWN").is_some()
                 {
                     let (mut fast, fast_report) = phase_ir(
-                        module, code, region, &signature, &controls, observe, vectors, private,
-                        no_growth, true,
+                        module,
+                        code,
+                        region,
+                        &signature,
+                        &controls,
+                        observe,
+                        vectors,
+                        private,
+                        no_growth,
+                        true,
+                        error_origin_base,
                     )?;
                     optimize_phase(
                         &mut fast,
@@ -537,9 +623,8 @@ pub(super) fn define<M: Module>(
                     std::fs::write(path, candidate.func.display().to_string()).map_err(backend)?;
                     candidate.set_disasm(true);
                 }
-                module
-                    .define_function(id, &mut candidate)
-                    .map_err(backend)?;
+                let (id, target) =
+                    define_body(module, id, &name, &mut candidate, bodies.as_deref_mut())?;
                 let machine = candidate
                     .compiled_code()
                     .ok_or_else(|| backend("composed phase lacks code"))?;
@@ -553,7 +638,7 @@ pub(super) fn define<M: Module>(
                 composed = Some(Composed {
                     function: id,
                     admission,
-                    summary: serde_json::json!({"symbol":name,"admission":admission,
+                    summary: serde_json::json!({"symbol":target,"admission":admission,
                         "code_bytes":machine.code_info().total_size,
                         "stack_bytes":compiled_stack_bytes(&machine.buffer)?,
                         "scratch_bytes":if admission.immutable_code_bytes.is_some() { 0 } else { admission.cells_per_bank * 8 }}),
@@ -575,9 +660,7 @@ pub(super) fn define<M: Module>(
     if vcode_path.is_some() {
         context.set_disasm(true);
     }
-    module
-        .define_function(function, &mut context)
-        .map_err(backend)?;
+    let (function, target) = define_body(module, function, &symbol, &mut context, bodies)?;
     let compiled = context
         .compiled_code()
         .ok_or_else(|| backend("compact numeric phase lacks code"))?;
@@ -595,7 +678,7 @@ pub(super) fn define<M: Module>(
         .collect::<Vec<_>>();
     let changed_writes = report.proven_changed_writes.clone();
     let private_writes = report.private_write_sites.clone();
-    let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":region.tail.exit(),"symbol":symbol,
+    let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":region.tail.exit(),"symbol":target,
         "code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,
         "input_words":input_words,"output_words":output_words,
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
@@ -661,6 +744,7 @@ fn phase_ir<M: Module>(
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
     countdown: bool,
+    error_origin_base: Option<usize>,
 ) -> Result<(Context, numeric_compact::Report), NativeCompileError> {
     let report;
     let mut context = module.make_context();
@@ -687,6 +771,11 @@ fn phase_ir<M: Module>(
             private,
             no_growth,
         )?;
+        let native = if let Some(base) = error_origin_base {
+            native.with_error_origin_base(base)
+        } else {
+            native
+        };
         report = numeric_compact::emit(
             controls, &mut b, code, region, &native, vectors, private, no_growth, done, error,
             countdown,

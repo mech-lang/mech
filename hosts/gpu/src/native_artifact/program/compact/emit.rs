@@ -73,6 +73,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
     observe: bool,
+    share_phase_bodies: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
@@ -85,7 +86,14 @@ pub(in crate::native_artifact) fn define<M: Module>(
     } else {
         super::immutable_arrays::LiteralViews::default()
     };
-    let phases = phases::define(module, prepared, &layout, &literals, observe)?;
+    let phases = phases::define(
+        module,
+        prepared,
+        &layout,
+        &literals,
+        observe,
+        share_phase_bodies,
+    )?;
     let kernels = word_collections::define(module, prepared, &layout, observe)?;
     let initial = constants::prepare(module, plan, &layout)?;
     let histogram = super::histogram::define(module, &actions)?;
