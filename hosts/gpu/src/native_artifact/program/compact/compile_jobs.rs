@@ -1,25 +1,28 @@
 //! Function-local machine compilation, with coordinator-owned Object publication.
 use crate::native_artifact::{NativeCompileError, compiler::backend};
-use cranelift_codegen::{Context, control::ControlPlane, ir::Signature, isa::OwnedTargetIsa};
+use cranelift_codegen::{
+    Context,
+    control::ControlPlane,
+    ir::Signature,
+    isa::{OwnedTargetIsa, TargetIsa},
+};
 use cranelift_module::{
     DataDescription, DataId, FuncId, Linkage, Module, ModuleDeclarations, ModuleReloc, ModuleResult,
 };
 use std::sync::{Arc, Mutex, mpsc};
 use std::thread::JoinHandle;
 
-struct Job {
-    context: Context,
-    reply: mpsc::SyncSender<ModuleResult<Context>>,
-}
+type Job = Box<dyn FnOnce(&dyn TargetIsa) + Send>;
 
 pub(super) struct Pool {
     isa: OwnedTargetIsa,
     queue: Option<mpsc::SyncSender<Job>>,
     workers: Vec<JoinHandle<()>>,
     submitted: std::cell::Cell<usize>,
+    cleanup_submitted: std::cell::Cell<usize>,
 }
 
-pub(super) struct Ticket(mpsc::Receiver<ModuleResult<Context>>);
+pub(super) struct Ticket<T = Context>(mpsc::Receiver<Result<T, NativeCompileError>>);
 
 impl Pool {
     pub(super) fn new(isa: OwnedTargetIsa, count: usize) -> Result<Self, NativeCompileError> {
@@ -31,6 +34,7 @@ impl Pool {
             queue: Some(queue),
             workers: Vec::new(),
             submitted: std::cell::Cell::new(0),
+            cleanup_submitted: std::cell::Cell::new(0),
         };
         for index in 0..count {
             let jobs = jobs.clone();
@@ -40,13 +44,8 @@ impl Pool {
                 .spawn(move || {
                     loop {
                         let next = { jobs.lock().unwrap().recv() };
-                        let Ok(mut job) = next else { break };
-                        let result = job
-                            .context
-                            .compile(isa.as_ref(), &mut ControlPlane::default())
-                            .map(|_| ())
-                            .map_err(Into::into);
-                        let _ = job.reply.send(result.map(|()| job.context));
+                        let Ok(job) = next else { break };
+                        job(isa.as_ref());
                     }
                 })
                 .map_err(backend)?;
@@ -56,11 +55,29 @@ impl Pool {
     }
 
     pub(super) fn submit(&self, context: Context) -> Result<Ticket, NativeCompileError> {
+        self.enqueue(move |isa| compile(context, isa))
+    }
+
+    pub(super) fn submit_work<T: Send + 'static>(
+        &self,
+        work: impl FnOnce(&dyn TargetIsa) -> Result<T, NativeCompileError> + Send + 'static,
+    ) -> Result<Ticket<T>, NativeCompileError> {
+        let ticket = self.enqueue(work)?;
+        self.cleanup_submitted.set(self.cleanup_submitted.get() + 1);
+        Ok(ticket)
+    }
+
+    fn enqueue<T: Send + 'static>(
+        &self,
+        work: impl FnOnce(&dyn TargetIsa) -> Result<T, NativeCompileError> + Send + 'static,
+    ) -> Result<Ticket<T>, NativeCompileError> {
         let (reply, result) = mpsc::sync_channel(1);
         self.queue
             .as_ref()
             .unwrap()
-            .send(Job { context, reply })
+            .send(Box::new(move |isa| {
+                let _ = reply.send(work(isa));
+            }))
             .map_err(backend)?;
         self.submitted.set(self.submitted.get() + 1);
         Ok(Ticket(result))
@@ -245,15 +262,98 @@ mod tests {
             backend(expected)
         );
     }
+
+    fn cleaned_image(count: usize) -> Vec<u8> {
+        let (mut module, isa) = module();
+        let signature = signature(&module);
+        let function = module
+            .declare_function("cleaned", Linkage::Export, &signature)
+            .unwrap();
+        let mut context = module.make_context();
+        context.func.signature = signature;
+        let mut scratch = FunctionBuilderContext::new();
+        {
+            let mut b = FunctionBuilder::new(&mut context.func, &mut scratch);
+            let entry = b.create_block();
+            let selected = b.create_block();
+            let other = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.append_block_param(selected, types::I64);
+            b.switch_to_block(entry);
+            let input = b.block_params(entry)[0];
+            let one = b.ins().iconst(types::I8, 1);
+            b.ins().brif(one, selected, &[input.into()], other, &[]);
+            b.switch_to_block(selected);
+            let value = b.block_params(selected)[0];
+            let result = b.ins().iadd_imm(value, 1);
+            b.ins().return_(&[result]);
+            b.switch_to_block(other);
+            let result = b.ins().iconst(types::I64, 99);
+            b.ins().return_(&[result]);
+            b.seal_all_blocks();
+            b.finalize();
+        }
+        fn clean(context: &mut Context, isa: &dyn TargetIsa) -> Result<String, NativeCompileError> {
+            context.compute_cfg();
+            context.compute_domtree();
+            context.remove_constant_phis(isa).map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+            Ok(context.func.display().to_string())
+        }
+        let mut reference = Context::for_function(context.func.clone());
+        let expected = clean(&mut reference, isa.as_ref()).unwrap();
+        if count == 0 {
+            clean(&mut context, isa.as_ref()).unwrap();
+            module.define_function(function, &mut context).unwrap();
+        } else {
+            let pool = Pool::new(isa, count).unwrap();
+            let ticket = pool
+                .submit_work(move |isa| {
+                    let ir = clean(&mut context, isa)?;
+                    let context = compile(context, isa)?;
+                    Ok((context, ir))
+                })
+                .unwrap();
+            let (context, actual) = ticket.wait().unwrap();
+            assert_eq!(actual, expected);
+            publish(&mut module, function, &context).unwrap();
+        }
+        module.finish().emit().unwrap()
+    }
+
+    #[test]
+    fn owned_cleanup_and_machine_jobs_match_coordinator_ir_and_object() {
+        let expected = cleaned_image(0);
+        for count in [1, 2, 4] {
+            for _ in 0..4 {
+                assert_eq!(cleaned_image(count), expected);
+            }
+        }
+    }
+
+    #[test]
+    fn typed_cleanup_errors_remain_ordered_by_their_tickets() {
+        let (_, isa) = module();
+        let pool = Pool::new(isa, 2).unwrap();
+        let first = pool
+            .submit_work::<()>(|_| Err(backend("earlier cleanup")))
+            .unwrap();
+        let second = pool
+            .submit_work::<()>(|_| Err(backend("later cleanup")))
+            .unwrap();
+        assert_eq!(first.wait().unwrap_err(), backend("earlier cleanup"));
+        assert_eq!(second.wait().unwrap_err(), backend("later cleanup"));
+    }
 }
 
 impl Drop for Pool {
     fn drop(&mut self) {
         if std::env::var_os("MECH_PROFILE_COMPILE_JOBS").is_some() {
             eprintln!(
-                "compact-compile-jobs: workers={} submitted={}",
+                "compact-compile-jobs: workers={} submitted={} cleanup={}",
                 self.workers.len(),
-                self.submitted.get()
+                self.submitted.get(),
+                self.cleanup_submitted.get()
             );
         }
         self.queue.take();
@@ -263,10 +363,23 @@ impl Drop for Pool {
     }
 }
 
-impl Ticket {
-    pub(super) fn wait(self) -> Result<Context, NativeCompileError> {
-        self.0.recv().map_err(backend)?.map_err(backend)
+impl<T> Ticket<T> {
+    pub(super) fn wait(self) -> Result<T, NativeCompileError> {
+        self.0.recv().map_err(backend)?
     }
+}
+
+pub(super) fn compile(
+    mut context: Context,
+    isa: &dyn TargetIsa,
+) -> Result<Context, NativeCompileError> {
+    // Retain the original ModuleError conversion and backend error spelling.
+    let result: ModuleResult<()> = context
+        .compile(isa, &mut ControlPlane::default())
+        .map(|_| ())
+        .map_err(Into::into);
+    result.map_err(backend)?;
+    Ok(context)
 }
 
 pub(super) fn publish<M: Module>(
