@@ -1100,3 +1100,21 @@ all commands/logs, sources/patch, tests/failure, observations/outputs/executable
 native inputs and pure replay. Its repository copy verifies and replays exactly.
 No language or emitted-program change, additional parallel gain or sub-ten-second
 result is claimed; the fixed runtime/adapter remains cached during primary runs.
+
+The [once-queued reachability qualification](../../docs/design/native-reachability-worklist-compile-profile.md) retains an immutable-CFG
+traversal that marks each non-stop block before queuing it. The complete bitmap,
+32-row FIFO memo and current proof/selection paths stay the same. Eight balanced
+complete builds improve **15.694847 to 15.463704 seconds (1.47%)**, with both
+blocks faster. A separate Object cohort reduces cleanup including compaction
+5.45%, compiler time 1.39% and instructions 0.41%. RSS increases 0.0029% and
+footprint 0.0027%; parsing, catalog, preparation, source CFG and link increases
+remain in the report. Every source, bytecode, Object, complete metadata and
+whole executable matches, together with 14 fixture pairs and a default-serial
+byte gate. Three focused graph suites and the native CLI check pass. Both
+saved sample caller addresses normalize to one successor-worklist append;
+bounded disassembly disproves the earlier FIFO-shift hypothesis. Source commit
+d26cf2c65e contains exactly the measured one-file patch. The thirty-ninth packet
+keeps all commands/logs, sources/patch, tests, observations/outputs/executables,
+native inputs and raw/demangled/address/disassembly selection evidence. Its
+repository copy verifies and replays exactly. No language or emitted-program
+change, additional parallel gain or sub-ten-second result is claimed.

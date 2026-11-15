@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-eight complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,039,722,108 bytes (1,039.7 MB).
+Thirty-nine complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,076,558,214 bytes (1,076.6 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-eight repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-nine repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -44,6 +44,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Private control schema owners and borrowed selection | Retained: complete build -4.85%, frontend -34.41%, instructions -4.39%, compiler RSS -32.99%; both blocks faster; exact program/executable. Fresh profiles, adverse stages and foundation-test scope retained. | [mech-control-schema-owners-20261115.tar.gz](mech-control-schema-owners-20261115.tar.gz) | [Receipt](../../native-profile/control-schema-owners-apple-m3-20261115.archive.json) / [result](../../native-profile/control-schema-owners-apple-m3-20261115.json) | 789 |
 | Current compiler parallel comparison | Diagnostic: serial 16.183 s vs two workers 16.016 s (-1.03%, 0.167 s), both blocks faster; exact complete executable; default serial. Includes separate profiles and setup failure. | [mech-current-parallel-20261115.tar.gz](mech-current-parallel-20261115.tar.gz) | [Receipt](../../native-profile/current-parallel-apple-m3-20261115.archive.json) / [result](../../native-profile/current-parallel-apple-m3-20261115.json) | 361 |
 | Shared action-output inventory | Retained: complete build -2.13%, preparation -20.48%, instructions -2.03%; both blocks faster; exact complete executable; RSS +0.0042%. Includes seven focused tests and failed test-link setup. | [mech-action-output-inventory-20261115.tar.gz](mech-action-output-inventory-20261115.tar.gz) | [Receipt](../../native-profile/action-output-inventory-apple-m3-20261115.archive.json) / [result](../../native-profile/action-output-inventory-apple-m3-20261115.json) | 719 |
+| Once-queued reachability worklist | Retained: complete build -1.47%, cleanup -5.45%, compiler -1.39%, instructions -0.41%; both blocks faster; exact complete executable; RSS +0.0029%. Three graph tests and address/disassembly selection proof. | [mech-reachability-worklist-20261115.tar.gz](mech-reachability-worklist-20261115.tar.gz) | [Receipt](../../native-profile/reachability-worklist-apple-m3-20261115.archive.json) / [result](../../native-profile/reachability-worklist-apple-m3-20261115.json) | 729 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -202,3 +203,21 @@ all commands/logs, sources/patch, tests/failure, observations/outputs/executable
 native inputs and pure replay. Its repository copy verifies and replays exactly.
 No language or emitted-program change, additional parallel gain or sub-ten-second
 result is claimed; the fixed runtime/adapter remains cached during primary runs.
+
+The [once-queued reachability qualification](../../../../docs/design/native-reachability-worklist-compile-profile.md) retains an immutable-CFG
+traversal that marks each non-stop block before queuing it. The complete bitmap,
+32-row FIFO memo and current proof/selection paths stay the same. Eight balanced
+complete builds improve **15.694847 to 15.463704 seconds (1.47%)**, with both
+blocks faster. A separate Object cohort reduces cleanup including compaction
+5.45%, compiler time 1.39% and instructions 0.41%. RSS increases 0.0029% and
+footprint 0.0027%; parsing, catalog, preparation, source CFG and link increases
+remain in the report. Every source, bytecode, Object, complete metadata and
+whole executable matches, together with 14 fixture pairs and a default-serial
+byte gate. Three focused graph suites and the native CLI check pass. Both
+saved sample caller addresses normalize to one successor-worklist append;
+bounded disassembly disproves the earlier FIFO-shift hypothesis. Source commit
+d26cf2c65e contains exactly the measured one-file patch. The thirty-ninth packet
+keeps all commands/logs, sources/patch, tests, observations/outputs/executables,
+native inputs and raw/demangled/address/disassembly selection evidence. Its
+repository copy verifies and replays exactly. No language or emitted-program
+change, additional parallel gain or sub-ten-second result is claimed.
