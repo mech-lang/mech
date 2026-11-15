@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-five complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 932,187,804 bytes (932.2 MB).
+Thirty-six complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 973,665,805 bytes (973.7 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-five repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-six repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -41,6 +41,24 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Frontend normalized-type and annotation-owner caches | Rejected: targeted frontend/instruction savings, but no useful complete-build gain; type-cache compiler +0.40%, annotation full build +0.13% with mixed blocks; exact bytes; sources/tool restored. | [mech-frontend-cache-trials-20261115.tar.gz](mech-frontend-cache-trials-20261115.tar.gz) | [Receipt](../../native-profile/frontend-cache-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/frontend-cache-trials-apple-m3-20261115.json) | 1,129 |
 | Late known-origin SSA, two prototypes | Rejected larger trial: compiler +1.92%, source CFG +18.67%, both blocks slower despite 5.28M fewer temporary values; exact bytes and restored source/tool. Pending-only superseded before primary timing. | [mech-known-origin-ssa-trials-20261115.tar.gz](mech-known-origin-ssa-trials-20261115.tar.gz) | [Receipt](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.archive.json) / [result](../../native-profile/known-origin-ssa-trials-apple-m3-20261115.json) | 657 |
 | Compiler executable mimalloc | Retained: complete build -8.49%, instructions -13.57%, parser -12.08%, both blocks faster; exact program/executable. Compiler RSS +10.04%; default CLI failure reproduced on baseline, native CLI check passes. | [mech-compiler-mimalloc-20261115.tar.gz](mech-compiler-mimalloc-20261115.tar.gz) | [Receipt](../../native-profile/compiler-mimalloc-apple-m3-20261115.archive.json) / [result](../../native-profile/compiler-mimalloc-apple-m3-20261115.json) | 746 |
+| Private control schema owners and borrowed selection | Retained: complete build -4.85%, frontend -34.41%, instructions -4.39%, compiler RSS -32.99%; both blocks faster; exact program/executable. Fresh profiles, adverse stages and foundation-test scope retained. | [mech-control-schema-owners-20261115.tar.gz](mech-control-schema-owners-20261115.tar.gz) | [Receipt](../../native-profile/control-schema-owners-apple-m3-20261115.archive.json) / [result](../../native-profile/control-schema-owners-apple-m3-20261115.json) | 789 |
+
+The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
+retains source `12c5001086`, whose entire four-file diff matches the measured
+patch. Eight complete builds improve 16.904 to 16.084 seconds (4.85%), with both
+blocks faster and identical executable bytes. A separate eight-run Object cohort
+reduces frontend time 34.41%, compiler time 5.45%, instructions 4.39% and maximum
+RSS 32.99% (6.70 to 4.49 GB). Parsing, preparation, cleanup and catalog means
+increase slightly; every observation remains. Private captures/parameters keep
+existing immutable schema owners and their pure canonical data; selection
+borrows input during fresh remapping. No new cache, grammar, inventory/identity
+pruning or weaker fresh proof is introduced. Thirteen existing foundation tests,
+fourteen fixture pairs, native CLI and default-serial byte/executable gates
+pass. Two earlier current-control stack diagnostics are separate from primary
+means; corrected call-graph analysis and demangling replay exactly. The
+thirty-sixth packet retains all source/patches, tests, observations/outputs,
+profiles, native inputs, entire-commit proof and pure offline replay. Complete
+compilation below ten seconds remains open.
 
 The [compiler allocator qualification](../../../../docs/design/native-compiler-allocator-compile-profile.md)
 retains source `d834508336`, whose entire seven-file diff matches the measured

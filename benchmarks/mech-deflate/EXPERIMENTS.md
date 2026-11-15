@@ -1048,3 +1048,20 @@ existing default-feature errors are reproduced on the original baseline and
 candidate. The thirty-fifth packet preserves all source/patches, builds/checks,
 crate archives, failures, observations/outputs, native inputs, whole-commit
 proof and pure offline replay. The sub-ten-second goal remains open.
+
+The [control schema owner qualification](../../docs/design/native-control-schema-owners-compile-profile.md)
+retains source `12c5001086`, whose entire four-file diff matches the measured
+patch. Eight complete builds improve 16.904 to 16.084 seconds (4.85%), with both
+blocks faster and identical executable bytes. A separate eight-run Object cohort
+reduces frontend time 34.41%, compiler time 5.45%, instructions 4.39% and maximum
+RSS 32.99% (6.70 to 4.49 GB). Parsing, preparation, cleanup and catalog means
+increase slightly; every observation remains. Private captures/parameters keep
+existing immutable schema owners and their pure canonical data; selection
+borrows input during fresh remapping. No new cache, grammar, inventory/identity
+pruning or weaker fresh proof is introduced. Thirteen existing foundation tests,
+fourteen fixture pairs, native CLI and default-serial byte/executable gates
+pass. Two earlier current-control stack diagnostics are separate from primary
+means; corrected call-graph analysis and demangling replay exactly. The
+thirty-sixth packet retains all source/patches, tests, observations/outputs,
+profiles, native inputs, entire-commit proof and pure offline replay. Complete
+compilation below ten seconds remains open.

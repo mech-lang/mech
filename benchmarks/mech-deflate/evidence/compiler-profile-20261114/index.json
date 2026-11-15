@@ -351,8 +351,18 @@
       "sha256": "c9d0fd024106fbc0f1e82478745a4e54ba68e0b26eb505d0733fb166aabfc51d",
       "source_revision": "d834508336e4533320cea8587b3e0e7a53124a94",
       "summary": "benchmarks/mech-deflate/native-profile/compiler-mimalloc-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-control-schema-owners-20261115.tar.gz",
+      "bytes": 41478001,
+      "decision": "Retained control schema owners and borrowed selection: complete build 16.904->16.084 s (-4.85%), both blocks faster; frontend -34.41%, instructions -4.39%, compiler RSS -32.99% to 4.49 GB. Exact outputs/complete executable; includes two separate current-control profiles, 13 foundation tests and all adverse stages.",
+      "files": 789,
+      "receipt": "benchmarks/mech-deflate/native-profile/control-schema-owners-apple-m3-20261115.archive.json",
+      "sha256": "ed61677c57fade226949d9112b0a7124518fb69b704a2bbf3de1db12825a1a43",
+      "source_revision": "12c50010866066952345c63223bce770cf7578b1",
+      "summary": "benchmarks/mech-deflate/native-profile/control-schema-owners-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 932187804
+  "total_archive_bytes": 973665805
 }
