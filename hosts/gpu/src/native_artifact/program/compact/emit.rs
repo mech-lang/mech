@@ -1,6 +1,7 @@
 //! Native typed CFG using the shared scalar, aggregate and branch emitters.
 use super::{
     arrays::{self, Arrays},
+    checked_traversals,
     collections::Collections,
     constants::{self, Initial},
     flow::Flow,
@@ -394,11 +395,13 @@ pub(super) fn define_entry<M: Module>(
         && std::env::var_os("MECH_COMPACT_SHARE_COLD_EPILOGUES").is_some();
     let mut fb = FunctionBuilderContext::new();
     let traversal_stage = std::env::var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
-    let outline_traversals = worker.is_none()
-        && !observe
-        && route_sites.is_empty()
-        && !route_locations
-        && traversal_stage.is_some();
+    let outline_allowed =
+        worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
+    let outline_traversals = outline_allowed && traversal_stage.is_some();
+    let controller_windows = (outline_allowed && memory)
+        .then(|| std::env::var("MECH_COMPACT_SHARE_CONTROLLER_WINDOWS").ok())
+        .flatten();
+    let controllers;
     let mut traversals = BTreeMap::<_, Vec<_>>::new();
     let mut output_words = 0;
     let mut omitted_copy_owners = Vec::new();
@@ -490,6 +493,11 @@ pub(super) fn define_entry<M: Module>(
             .iter()
             .map(|&yes| yes.then(|| b.create_block()))
             .collect::<Vec<_>>();
+        controllers = controller_windows
+            .as_deref()
+            .map(|spec| checked_traversals::controller_candidates(spec, &blocks))
+            .transpose()?
+            .unwrap_or_default();
         let source_blocks = blocks.iter().flatten().copied().collect::<BTreeSet<_>>();
         let mut remaining = vec![0usize; blocks.len()];
         for (site, successors) in flow.successors.iter().enumerate() {
@@ -923,8 +931,8 @@ pub(super) fn define_entry<M: Module>(
                     traversals
                         .entry(key)
                         .or_default()
-                        .push(super::checked_traversals::Candidate {
-                            guard: native,
+                        .push(checked_traversals::Candidate {
+                            resume: Some(native),
                             start: b.current_block().expect("checked fallback entry"),
                             exit: blocks[phase.exit].expect("checked continuation"),
                             header: site,
@@ -1236,7 +1244,7 @@ pub(super) fn define_entry<M: Module>(
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
     let checked_traversals = if outline_traversals {
         let all = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("all"));
-        let shared = super::checked_traversals::share(module, &mut context.func, traversals, all)?;
+        let shared = checked_traversals::share(module, &mut context.func, traversals, all)?;
         if shared.is_some() {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
@@ -1245,6 +1253,12 @@ pub(super) fn define_entry<M: Module>(
     } else {
         None
     };
+    let checked_controllers =
+        checked_traversals::share_controllers(module, &mut context.func, controllers)?;
+    if checked_controllers.is_some() {
+        context.flowgraph();
+        context.verify(module.isa()).map_err(backend)?;
+    }
     let calls = context
         .func
         .layout
@@ -1315,6 +1329,9 @@ pub(super) fn define_entry<M: Module>(
         let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":flow.outputs.iter().map(|&v|layout.ty(v).summary()).collect::<Vec<_>>(),"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"source_blocks":plan.blocks().len(),"reachable_blocks":flow.reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
         if let Some(checked_traversals) = checked_traversals {
             report["checked_traversals"] = checked_traversals;
+        }
+        if let Some(checked_controllers) = checked_controllers {
+            report["checked_controllers"] = checked_controllers;
         }
         if !overwrite_reuse.is_empty() {
             report["overwrite_result_reuse"] = serde_json::json!(

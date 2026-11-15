@@ -1,4 +1,4 @@
-//! Share a checked traversal at repeated phase refusal branches.
+//! Share repeated checked regions with explicit continuation boundaries.
 use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, compiled_stack_bytes},
@@ -7,6 +7,7 @@ use cranelift_codegen::{
     Context,
     control::ControlPlane,
     cursor::{Cursor, FuncCursor},
+    dominator_tree::DominatorTree,
     flowgraph::ControlFlowGraph,
     ir::{
         AbiParam, Block, BlockArg, Function, Inst, InstBuilder, InstructionData, Layout, MemFlags,
@@ -19,17 +20,53 @@ use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy)]
 pub(super) struct Candidate {
-    pub guard: Block,
+    pub resume: Option<Block>,
     pub start: Block,
     pub exit: Block,
     pub header: usize,
     pub span: usize,
 }
 
+impl Candidate {
+    fn exits(self) -> [Option<Block>; 2] {
+        [self.resume, Some(self.exit)]
+    }
+}
+
+pub(super) fn controller_candidates(
+    ranges: &str,
+    source: &[Option<Block>],
+) -> Result<Vec<Candidate>, NativeCompileError> {
+    let mut result = Vec::new();
+    for pair in ranges.split(',') {
+        let (first, last) = pair
+            .split_once(':')
+            .ok_or_else(|| backend("expected controller entry:continuation"))?;
+        let header = first.parse::<usize>().map_err(backend)?;
+        let end = last.parse::<usize>().map_err(backend)?;
+        if end <= header || end >= source.len() {
+            return Err(backend("controller window is outside the requested Plan"));
+        }
+        let (Some(start), Some(exit)) = (source[header], source[end]) else {
+            eprintln!("compact checked controller {header} has an unreachable boundary");
+            continue;
+        };
+        result.push(Candidate {
+            resume: None,
+            start,
+            exit,
+            header,
+            span: end - header,
+        });
+    }
+    Ok(result)
+}
+
 struct Traversal {
     candidate: Candidate,
     blocks: BTreeSet<Block>,
     inputs: Vec<Value>,
+    outputs: Vec<Value>,
     constants: Vec<Value>,
     slots: Vec<StackSlot>,
 }
@@ -85,32 +122,40 @@ fn plan(
     f: &Function,
     cfg: &ControlFlowGraph,
     users: &[Vec<Block>],
+    dominance: Option<&DominatorTree>,
     candidate: Candidate,
-) -> Option<Traversal> {
-    let exits = [candidate.guard, candidate.exit];
-    if candidate.start == candidate.guard
-        || candidate.guard == candidate.exit
-        || [candidate.start, candidate.guard, candidate.exit]
-            .iter()
-            .any(|&b| !f.layout.is_block_inserted(b))
+) -> Result<Traversal, &'static str> {
+    let exits = candidate.exits();
+    let controller = candidate.resume.is_none();
+    if exits.contains(&Some(candidate.start))
+        || candidate.resume == Some(candidate.exit)
+        || [
+            Some(candidate.start),
+            candidate.resume,
+            Some(candidate.exit),
+        ]
+        .iter()
+        .flatten()
+        .any(|&b| !f.layout.is_block_inserted(b))
     {
-        return None;
+        return Err("entry or continuation did not survive cleanup");
     }
     let mut blocks = BTreeSet::new();
     let mut todo = vec![candidate.start];
     while let Some(block) = todo.pop() {
-        if exits.contains(&block) || !blocks.insert(block) {
+        if exits.contains(&Some(block)) || !blocks.insert(block) {
             continue;
         }
-        if blocks.len() > 3072 || f.layout.entry_block() == Some(block) {
-            return None;
+        let block_limit = if controller { 12_288 } else { 3_072 };
+        if blocks.len() > block_limit || f.layout.entry_block() == Some(block) {
+            return Err("region exceeded the block budget or reached the function entry");
         }
-        let end = f.layout.last_inst(block)?;
+        let end = f.layout.last_inst(block).ok_or("empty region block")?;
         if !matches!(
             f.dfg.insts[end].opcode(),
             Opcode::Jump | Opcode::Brif | Opcode::Return
         ) {
-            return None;
+            return Err("unsupported region terminator");
         }
         todo.extend(
             targets(f, end)
@@ -121,29 +166,45 @@ fn plan(
     let mut arguments = BTreeSet::new();
     let mut constants = BTreeSet::new();
     let mut slots = BTreeSet::new();
-    if cfg.pred_iter(candidate.start).next().is_none() {
-        return None;
+    if !cfg
+        .pred_iter(candidate.start)
+        .any(|pred| !blocks.contains(&pred.block))
+    {
+        return Err("region has no external entry");
     }
+    let mut outputs = Vec::new();
+    let single_exit_dominance = dominance.filter(|_| {
+        cfg.pred_iter(candidate.exit)
+            .all(|pred| blocks.contains(&pred.block))
+    });
     for &block in &blocks {
         let entry = block == candidate.start;
-        if cfg
-            .pred_iter(block)
-            .any(|pred| blocks.contains(&pred.block) == entry)
+        if !(entry && controller)
+            && cfg
+                .pred_iter(block)
+                .any(|pred| blocks.contains(&pred.block) == entry)
         {
-            return None;
+            return Err("edge crosses the region entry boundary");
         }
         let definitions = f.dfg.block_params(block).iter().copied().chain(
             f.layout
                 .block_insts(block)
                 .flat_map(|inst| f.dfg.inst_results(inst).iter().copied()),
         );
-        // A region result may leave only through a continuation argument.
-        if definitions.into_iter().any(|value| {
+        for value in definitions.filter(|value| {
             users[value.as_u32() as usize]
                 .iter()
                 .any(|user| !blocks.contains(user))
         }) {
-            return None;
+            // Direct SSA uses can be repaired only on the single continuation
+            // dominated by the old definition and entered solely by this region.
+            if !controller
+                || !single_exit_dominance
+                    .is_some_and(|dom| dom.dominates(block, candidate.exit, &f.layout))
+            {
+                return Err("value escapes without a dominated continuation");
+            }
+            outputs.push(value);
         }
         for inst in f.layout.block_insts(block) {
             for value in inputs(f, inst)
@@ -172,26 +233,35 @@ fn plan(
                     | Opcode::TryCallIndirect
                     | Opcode::BrTable
             ) {
-                return None;
+                return Err("unsupported region instruction");
             }
             slots.extend(referenced_slot(&f.dfg.insts[inst]));
         }
     }
     arguments.extend(f.dfg.block_params(candidate.start));
-    let output_bounded = exits.iter().all(|&exit| {
-        f.dfg.block_params(exit).len() <= 32
-            && f.dfg
-                .block_params(exit)
-                .iter()
-                .all(|&v| f.dfg.value_type(v).bytes() <= 8)
-    });
-    if arguments.len() + slots.len() > 40 || !output_bounded {
-        return None;
+    let (input_limit, output_limit) = if controller { (96, 64) } else { (40, 32) };
+    if arguments.len() + slots.len() > input_limit {
+        return Err("live inputs exceed the call boundary budget");
     }
-    Some(Traversal {
+    let finish = f.dfg.block_params(candidate.exit);
+    if finish.len() + outputs.len() > output_limit
+        || candidate
+            .resume
+            .is_some_and(|resume| f.dfg.block_params(resume).len() > output_limit)
+        || exits
+            .iter()
+            .flatten()
+            .flat_map(|&exit| f.dfg.block_params(exit))
+            .chain(&outputs)
+            .any(|&value| f.dfg.value_type(value).bytes() > 8)
+    {
+        return Err("live outputs exceed the call boundary budget");
+    }
+    Ok(Traversal {
         candidate,
         blocks,
         inputs: arguments.into_iter().collect(),
+        outputs,
         constants: constants.into_iter().collect(),
         slots: slots.into_iter().collect(),
     })
@@ -259,13 +329,15 @@ impl Traversal {
         for value in f.dfg.block_params(self.candidate.start) {
             map.remove(value);
         }
-        let exit_blocks = [self.candidate.guard, self.candidate.exit];
-        let stubs = exit_blocks.map(|block| {
-            let stub = body.dfg.make_block();
-            for &v in f.dfg.block_params(block) {
-                body.dfg.append_block_param(stub, f.dfg.value_type(v));
-            }
-            stub
+        let exit_blocks = self.candidate.exits();
+        let stubs = exit_blocks.map(|exit| {
+            exit.map(|block| {
+                let stub = body.dfg.make_block();
+                for &v in f.dfg.block_params(block) {
+                    body.dfg.append_block_param(stub, f.dfg.value_type(v));
+                }
+                stub
+            })
         });
         for block in f.layout.blocks().filter(|b| self.blocks.contains(b)) {
             body.layout.append_block(block);
@@ -374,8 +446,12 @@ impl Traversal {
             }
         }
         for (tag, stub) in stubs.into_iter().enumerate() {
+            let Some(stub) = stub else { continue };
             body.layout.append_block(stub);
-            let words = body.dfg.block_params(stub).to_vec();
+            let mut words = body.dfg.block_params(stub).to_vec();
+            if tag == 1 {
+                words.extend(&self.outputs);
+            }
             let mut pos = FuncCursor::new(&mut body);
             pos.goto_bottom(stub);
             for (index, value) in words.into_iter().enumerate() {
@@ -399,33 +475,64 @@ impl Traversal {
         cold: bool,
     ) {
         let candidate = self.candidate;
+        let mut args = self.inputs.clone();
+        for arg in &mut args {
+            if self.outputs.contains(arg) {
+                // The incoming value may be different from the one leaving the
+                // controller after a backedge. Keep an independent entry parameter.
+                let ty = root.dfg.value_type(*arg);
+                *arg = root.dfg.replace_block_param(*arg, ty);
+            }
+        }
         for &block in &self.blocks {
             while let Some(inst) = root.layout.first_inst(block) {
+                if !self.outputs.is_empty() {
+                    root.dfg.detach_inst_results(inst);
+                }
                 root.layout.remove_inst(inst);
             }
             if block != candidate.start {
+                if !self.outputs.is_empty() {
+                    root.dfg.detach_block_params(block);
+                }
                 root.layout.remove_block(block);
             }
         }
-        let exits = [candidate.guard, candidate.exit];
         let failure = root.dfg.make_block();
         let cont = root.dfg.make_block();
-        let resume = root.dfg.make_block();
-        let finish = root.dfg.make_block();
+        let arms = candidate
+            .resume
+            .map(|exit| (root.dfg.make_block(), root.dfg.make_block(), exit));
+        let finish = arms.map_or(cont, |(_, finish, _)| finish);
+        let continuations = [
+            arms.map(|(resume, _, exit)| (resume, exit)),
+            Some((finish, candidate.exit)),
+        ];
         let mut previous = candidate.start;
-        for block in [cont, resume, finish, failure] {
+        for block in [
+            Some(cont),
+            arms.map(|(resume, _, _)| resume),
+            arms.map(|(_, finish, _)| finish),
+            Some(failure),
+        ]
+        .into_iter()
+        .flatten()
+        {
             root.layout.insert_block_after(block, previous);
             previous = block;
         }
         root.layout.set_cold(failure);
         if cold {
-            for block in [candidate.start, cont, resume, finish] {
+            for block in [candidate.start, cont] {
                 root.layout.set_cold(block);
+            }
+            if let Some((resume, finish, _)) = arms {
+                root.layout.set_cold(resume);
+                root.layout.set_cold(finish);
             }
         }
         let reference = module.declare_func_in_func(function, root);
         let observer = observer.map(|id| module.declare_func_in_func(id, root));
-        let mut args = self.inputs.clone();
         let mut pos = FuncCursor::new(root);
         pos.goto_bottom(candidate.start);
         if let Some(observer) = observer {
@@ -446,10 +553,12 @@ impl Traversal {
         let origin = pos.ins().stack_load(types::I64, slot, 0);
         let origin = pos.ins().iadd_imm(origin, candidate.header as i64);
         pos.ins().return_(&[status, origin]);
-        pos.goto_bottom(cont);
-        let repeat = pos.ins().icmp_imm(IntCC::Equal, tag, 0);
-        pos.ins().brif(repeat, resume, &[], finish, &[]);
-        for (block, exit) in [resume, finish].into_iter().zip(exits) {
+        if let Some((resume, finish, _)) = arms {
+            pos.goto_bottom(cont);
+            let repeat = pos.ins().icmp_imm(IntCC::Equal, tag, 0);
+            pos.ins().brif(repeat, resume, &[], finish, &[]);
+        }
+        for (block, exit) in continuations.into_iter().flatten() {
             let types = pos
                 .func
                 .dfg
@@ -463,6 +572,14 @@ impl Traversal {
                 .enumerate()
                 .map(|(i, ty)| pos.ins().stack_load(ty, slot, (i * 8) as i32).into())
                 .collect::<Vec<_>>();
+            if exit == candidate.exit {
+                for (index, &value) in self.outputs.iter().enumerate() {
+                    let ty = pos.func.dfg.value_type(value);
+                    let offset = ((args.len() + index) * 8) as i32;
+                    let loaded = pos.ins().stack_load(ty, slot, offset);
+                    pos.func.dfg.change_to_alias(value, loaded);
+                }
+            }
             pos.ins().jump(exit, &args);
         }
     }
@@ -471,11 +588,14 @@ impl Traversal {
 fn retarget(
     edge: &mut cranelift_codegen::ir::BlockCall,
     pool: &mut cranelift_codegen::ir::ValueListPool,
-    exits: [Block; 2],
-    stubs: [Block; 2],
+    exits: [Option<Block>; 2],
+    stubs: [Option<Block>; 2],
 ) {
-    if let Some(index) = exits.iter().position(|&block| block == edge.block(pool)) {
-        edge.set_block(stubs[index], pool);
+    if let Some(index) = exits
+        .iter()
+        .position(|&block| block == Some(edge.block(pool)))
+    {
+        edge.set_block(stubs[index].unwrap(), pool);
     }
 }
 
@@ -528,11 +648,32 @@ pub(super) fn share<M: Module>(
     if !all_families {
         families.truncate(1);
     }
+    share_families(module, root, families, true)
+}
+
+pub(super) fn share_controllers<M: Module>(
+    module: &mut M,
+    root: &mut Function,
+    candidates: Vec<Candidate>,
+) -> Result<Option<serde_json::Value>, NativeCompileError> {
+    if candidates.len() < 2 {
+        return Ok(None);
+    }
+    share_families(module, root, vec![candidates], false)
+}
+
+fn share_families<M: Module>(
+    module: &mut M,
+    root: &mut Function,
+    families: Vec<Vec<Candidate>>,
+    refusal_regions: bool,
+) -> Result<Option<serde_json::Value>, NativeCompileError> {
     if families.is_empty() {
         return Ok(None);
     }
-    let excluded = std::env::var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS")
-        .ok()
+    let excluded = refusal_regions
+        .then(|| std::env::var("MECH_COMPACT_TRAVERSAL_SKIP_HEADERS").ok())
+        .flatten()
         .map(|list| {
             list.split(',')
                 .map(|part| part.parse::<usize>().map_err(backend))
@@ -544,16 +685,20 @@ pub(super) fn share<M: Module>(
     let mut proven = BTreeSet::new();
     let cfg = ControlFlowGraph::with_function(root);
     let users = use_blocks(root);
+    let dominance = (!refusal_regions).then(|| DominatorTree::with_function(root, &cfg));
     for candidate in families.into_iter().flatten() {
         if excluded.contains(&candidate.header) {
             continue;
         }
-        let Some(traversal) = plan(root, &cfg, &users, candidate) else {
-            eprintln!(
-                "compact checked traversal {} declined by boundary proof",
-                candidate.header
-            );
-            continue;
+        let traversal = match plan(root, &cfg, &users, dominance.as_ref(), candidate) {
+            Ok(traversal) => traversal,
+            Err(reason) => {
+                eprintln!(
+                    "compact checked region {} declined: {reason}",
+                    candidate.header
+                );
+                continue;
+            }
         };
         if !proven.is_disjoint(&traversal.blocks) {
             continue;
@@ -566,9 +711,14 @@ pub(super) fn share<M: Module>(
             .map_err(ModuleError::from)
             .map_err(backend)?;
         let compiled = context.compiled_code().unwrap();
+        let kind = if refusal_regions {
+            "traversal"
+        } else {
+            "controller"
+        };
         let function = module
             .declare_function(
-                &format!("mech_compact_checked_traversal_{}", candidate.header),
+                &format!("mech_compact_checked_{kind}_{}", candidate.header),
                 Linkage::Local,
                 &signature,
             )
@@ -583,12 +733,31 @@ pub(super) fn share<M: Module>(
         let alignment = compiled.buffer.alignment;
         let stack = compiled_stack_bytes(&compiled.buffer)?;
         eprintln!(
-            "compact checked traversal {} {} bytes, {} arguments, {} frame bytes",
+            "compact checked {kind} {} {} bytes, {} arguments, {} frame bytes",
             candidate.header,
             bytes.len(),
             signature.params.len(),
             stack
         );
+        if !refusal_regions
+            && let Some(folder) = std::env::var_os("MECH_COMPACT_DUMP_CONTROLLER_MATCHES")
+        {
+            let folder = std::path::PathBuf::from(folder);
+            std::fs::create_dir_all(&folder).map_err(backend)?;
+            let stem = candidate.header.to_string();
+            std::fs::write(
+                folder.join(format!("{stem}.clif")),
+                context.func.to_string(),
+            )
+            .map_err(backend)?;
+            std::fs::write(folder.join(format!("{stem}.bin")), bytes).map_err(backend)?;
+            let relocations = relocs
+                .iter()
+                .map(|r| format!("{} {:?} {:?} {}", r.offset, r.kind, r.name, r.addend,))
+                .collect::<Vec<_>>()
+                .join("\n");
+            std::fs::write(folder.join(format!("{stem}.relocs")), relocations).map_err(backend)?;
+        }
         proven.extend(&traversal.blocks);
         if let Some(winner) = groups.iter_mut().find(|other| {
             other.signature == signature
@@ -614,7 +783,7 @@ pub(super) fn share<M: Module>(
             });
         }
     }
-    drop((cfg, users));
+    drop((cfg, users, dominance));
     let groups = groups
         .into_iter()
         .filter(|group| group.traversals.len() > 1)
@@ -625,8 +794,14 @@ pub(super) fn share<M: Module>(
     let words = groups
         .iter()
         .flat_map(|group| &group.traversals)
-        .flat_map(|t| [t.candidate.guard, t.candidate.exit])
-        .map(|block| root.dfg.block_params(block).len())
+        .flat_map(|t| {
+            let finish = root.dfg.block_params(t.candidate.exit).len() + t.outputs.len();
+            let resume = t
+                .candidate
+                .resume
+                .map_or(0, |block| root.dfg.block_params(block).len());
+            [finish, resume]
+        })
         .max()
         .unwrap_or(0)
         .max(1);
@@ -637,20 +812,23 @@ pub(super) fn share<M: Module>(
         (words * 8) as u32,
         3,
     ));
-    let observer = std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS")
-        .map(|_| {
-            let mut signature = module.make_signature();
-            signature.params.push(AbiParam::new(types::I64));
-            module
-                .declare_function(
-                    "mech_compact_checked_traversal_observe",
-                    Linkage::Import,
-                    &signature,
-                )
-                .map_err(backend)
-        })
-        .transpose()?;
-    let cold = std::env::var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT").is_some();
+    let observer = (refusal_regions
+        && std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS").is_some())
+    .then_some(())
+    .map(|_| {
+        let mut signature = module.make_signature();
+        signature.params.push(AbiParam::new(types::I64));
+        module
+            .declare_function(
+                "mech_compact_checked_traversal_observe",
+                Linkage::Import,
+                &signature,
+            )
+            .map_err(backend)
+    })
+    .transpose()?;
+    let cold = refusal_regions
+        && std::env::var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT").is_some();
     let mut report = Vec::new();
     for selected in groups {
         module
