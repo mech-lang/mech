@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Fifty complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,634,023,219 bytes (1,634.0 MB).
+Fifty-one complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,728,255,374 bytes (1,728.3 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All fifty repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All fifty-one repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -56,6 +56,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Fused dimension declaration scans | Retained: complete build -0.99%, frontend -11.72%, instructions -0.2344%; both blocks faster, all images exact. Source CFG +2.12%, RSS +0.1367%; original validation/error order preserved. | [mech-dimension-declaration-scan-20261115.tar.gz](mech-dimension-declaration-scan-20261115.tar.gz) | [Receipt](../../native-profile/dimension-declaration-scan-apple-m3-20261115.archive.json) / [result](../../native-profile/dimension-declaration-scan-apple-m3-20261115.json) | 794 |
 | Fresh PGO after dimension scanning (Deflate-trained) | Retained: complete build 13.415s; matched standard change -10.46%. Seven small heldouts; no broad generalization claim. All outputs/20 executables exact. | [mech-dimension-native-pgo-20261115.tar.gz](mech-dimension-native-pgo-20261115.tar.gz) | [Receipt](../../native-profile/dimension-native-pgo-apple-m3-20261115.archive.json) / [result](../../native-profile/dimension-native-pgo-apple-m3-20261115.json) | 1,750 |
 | Packed dense SSA slots | Rejected/restored: slots 8 to 5 B, RSS -0.41%; full build -0.381%, Object compiler +0.400%, both Object blocks slower. All 31 units/328 IR-machine pairs/14 fixtures/12 executables match. | [mech-packed-ssa-slots-20261115.tar.gz](mech-packed-ssa-slots-20261115.tar.gz) | [Receipt](../../native-profile/packed-ssa-slots-apple-m3-20261115.archive.json) / [result](../../native-profile/packed-ssa-slots-apple-m3-20261115.json) | 794 |
+| Parser continuation payload storage | Rejected/restored: frames80->32B; standard parser -5.13%, fullbuild +0.94%. Direct fastest-config complete build 13.275817->13.478050s (+1.523%); exact parser/full-output/executable bytes. | [mech-parser-frame-payloads-20261115.tar.gz](mech-parser-frame-payloads-20261115.tar.gz) | [Receipt](../../native-profile/parser-frame-payloads-apple-m3-20261115.archive.json) / [result](../../native-profile/parser-frame-payloads-apple-m3-20261115.json) | 3,246 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
