@@ -123,6 +123,14 @@ impl PreparedObject {
         Ok(reachable)
     }
 
+    pub(in crate::native_artifact::program) fn place_exports_first(&mut self) {
+        let declarations = &self.declarations;
+        self.definition_order.sort_by_key(|id| match *id {
+            FuncOrDataId::Func(id) => declarations.get_function_decl(id).linkage != Linkage::Export,
+            FuncOrDataId::Data(_) => true,
+        });
+    }
+
     pub(in crate::native_artifact::program) fn finish(mut self) -> ModuleResult<ObjectProduct> {
         let reachable = self.reachable()?;
         let mut symbols = BTreeMap::new();
@@ -418,6 +426,24 @@ mod tests {
         for discarded in ["unselected", "unselected_child"] {
             assert!(product.object.symbol_id(discarded.as_bytes()).is_none());
         }
+        assert!(!product.emit().unwrap().is_empty());
+    }
+
+    #[test]
+    fn places_exported_entry_before_its_local_dependency() {
+        let mut module = module();
+        let local = function(&mut module, "checked_fallback", Linkage::Local);
+        let entry = function(&mut module, "entry", Linkage::Export);
+        define(&mut module, local, &[]);
+        define(&mut module, entry, &[local]);
+        module.place_exports_first();
+
+        let product = module.finish().unwrap();
+        let position = |name| {
+            let symbol = product.object.symbol_id(name).unwrap();
+            product.object.symbol(symbol).value
+        };
+        assert!(position(b"entry") < position(b"checked_fallback"));
         assert!(!product.emit().unwrap().is_empty());
     }
 
