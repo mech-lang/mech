@@ -1033,3 +1033,18 @@ implementation after current compaction still finds 87 IR and 30 machine differe
 The thirty-fourth packet retains both sources/patches, every test/setup failure,
 all observations/outputs, native inputs and pure replay. Sub-ten-second
 compilation remains open.
+
+The [compiler allocator qualification](../../docs/design/native-compiler-allocator-compile-profile.md)
+retains source `d834508336`, whose entire seven-file diff matches the measured
+patch. Eight complete builds improve 18.538 to 16.965 seconds (8.49%), with both
+blocks faster and identical executable bytes. A separate eight-run Object
+cohort reduces compiler time 9.45%, instructions 13.57%, parsing 12.08% and
+preparation 16.71%. Compiler maximum RSS rises 10.04% (about 0.61 GB); footprint
+rises 10.24%. All observations remain. The shared pinned allocator module is
+registered in compiler executables; libraries and emitted programs keep their
+allocators. Fourteen fixture pairs and default-serial full-output/executable
+gates pass. The real native CLI check passes with `cranelift_build`; the same
+existing default-feature errors are reproduced on the original baseline and
+candidate. The thirty-fifth packet preserves all source/patches, builds/checks,
+crate archives, failures, observations/outputs, native inputs, whole-commit
+proof and pure offline replay. The sub-ten-second goal remains open.
