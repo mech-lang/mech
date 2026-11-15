@@ -1,8 +1,8 @@
 # Compiler-profile evidence, 2026-11-14
 
-Thirty-seven complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,003,640,791 bytes (1,003.6 MB).
+Thirty-eight complete evidence packets are tracked here at the user's request. They include raw commands, observations, source snapshots and patches, test logs, benchmark Objects and metadata, rejected attempts, adverse counters and pure offline replay scripts. Compiler executables are excluded and hash-pinned inside each packet. The archives total 1,039,722,108 bytes (1,039.7 MB).
 
-The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-seven repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
+The [machine-readable index](index.json) pins every archive SHA-256 and source revision. Each receipt also pins the internal manifest and replay output. All thirty-eight repository copies have been extracted, verified and replayed byte-identically against their compact summaries.
 
 | Packet | Decision | Archive | Receipt / result | Files |
 | --- | --- | --- | --- | ---: |
@@ -43,6 +43,7 @@ The [machine-readable index](index.json) pins every archive SHA-256 and source r
 | Compiler executable mimalloc | Retained: complete build -8.49%, instructions -13.57%, parser -12.08%, both blocks faster; exact program/executable. Compiler RSS +10.04%; default CLI failure reproduced on baseline, native CLI check passes. | [mech-compiler-mimalloc-20261115.tar.gz](mech-compiler-mimalloc-20261115.tar.gz) | [Receipt](../../native-profile/compiler-mimalloc-apple-m3-20261115.archive.json) / [result](../../native-profile/compiler-mimalloc-apple-m3-20261115.json) | 746 |
 | Private control schema owners and borrowed selection | Retained: complete build -4.85%, frontend -34.41%, instructions -4.39%, compiler RSS -32.99%; both blocks faster; exact program/executable. Fresh profiles, adverse stages and foundation-test scope retained. | [mech-control-schema-owners-20261115.tar.gz](mech-control-schema-owners-20261115.tar.gz) | [Receipt](../../native-profile/control-schema-owners-apple-m3-20261115.archive.json) / [result](../../native-profile/control-schema-owners-apple-m3-20261115.json) | 789 |
 | Current compiler parallel comparison | Diagnostic: serial 16.183 s vs two workers 16.016 s (-1.03%, 0.167 s), both blocks faster; exact complete executable; default serial. Includes separate profiles and setup failure. | [mech-current-parallel-20261115.tar.gz](mech-current-parallel-20261115.tar.gz) | [Receipt](../../native-profile/current-parallel-apple-m3-20261115.archive.json) / [result](../../native-profile/current-parallel-apple-m3-20261115.json) | 361 |
+| Shared action-output inventory | Retained: complete build -2.13%, preparation -20.48%, instructions -2.03%; both blocks faster; exact complete executable; RSS +0.0042%. Includes seven focused tests and failed test-link setup. | [mech-action-output-inventory-20261115.tar.gz](mech-action-output-inventory-20261115.tar.gz) | [Receipt](../../native-profile/action-output-inventory-apple-m3-20261115.archive.json) / [result](../../native-profile/action-output-inventory-apple-m3-20261115.json) | 719 |
 
 The [control schema owner qualification](../../../../docs/design/native-control-schema-owners-compile-profile.md)
 retains source `12c5001086`, whose entire four-file diff matches the measured
@@ -182,3 +183,22 @@ native inputs, unchanged worker sources, two separate current-compiler stack
 diagnostics and the setup filename failure before compiler execution. Fresh
 extraction/verification and pure replay reproduce the compact result exactly.
 No new compiler source change, runtime timing or sub-ten-second result is claimed.
+
+The [shared action-output inventory qualification](../../../../docs/design/native-action-output-inventory-compile-profile.md) retains a lazy,
+complete sorted inventory for one immutable plan owner while each phase keeps
+its original liveness, scope, type, definition and read checks in order. Eight
+balanced complete builds improve **16.032216 to 15.689968 seconds (2.13%)**,
+with both blocks faster. A separate Object cohort reduces preparation 20.48%,
+compiler instructions 2.03% and compiler time 1.93%. RSS increases 0.0042% and
+footprint 0.0061%; parsing, cleanup, source CFG and link regressions remain in
+the report, including the first slightly slower complete pair. Every source,
+bytecode, Object, complete metadata and full executable matches, together with
+14 fixture pairs and a separate default-serial byte gate. Seven focused tests
+and the real native CLI check pass. The first focused harness link fails on
+an LLVM bitcode-version mismatch before tests execute; matching Rust ThinLTO
+fixes setup without changing the frozen compiler patch. Source commit f077bec331
+contains exactly the measured three-file diff. The thirty-eighth packet keeps
+all commands/logs, sources/patch, tests/failure, observations/outputs/executables,
+native inputs and pure replay. Its repository copy verifies and replays exactly.
+No language or emitted-program change, additional parallel gain or sub-ten-second
+result is claimed; the fixed runtime/adapter remains cached during primary runs.

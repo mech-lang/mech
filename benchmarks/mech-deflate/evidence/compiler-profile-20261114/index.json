@@ -371,8 +371,18 @@
       "sha256": "a56ac6d14567d5205c6fa64b6d953a18af06b0754e08bc7dd81b3053e6f54d90",
       "source_revision": "12c50010866066952345c63223bce770cf7578b1",
       "summary": "benchmarks/mech-deflate/native-profile/current-parallel-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-action-output-inventory-20261115.tar.gz",
+      "bytes": 36081317,
+      "decision": "Retained same-plan complete action output inventory: source-to-executable16.032216->15.689968s(-2.13%),both blocks faster; preparation-20.48%,instructions-2.03%,RSS+0.0042%. All4outputs/fullmetadata/wholeexe and14fixturepairs exact;7focused tests/nativeCLIcheck pass. Includes firstpair/link/otherstage adverse movement and focusedlink setupfailure.",
+      "files": 719,
+      "receipt": "benchmarks/mech-deflate/native-profile/action-output-inventory-apple-m3-20261115.archive.json",
+      "sha256": "ae3c31a963ff5b0559101b083d5ca91c1f04232f53eed63f37a88b5129a90c84",
+      "source_revision": "f077bec331089ff1dfc2eb28d876ccaa17dec92b",
+      "summary": "benchmarks/mech-deflate/native-profile/action-output-inventory-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1003640791
+  "total_archive_bytes": 1039722108
 }
