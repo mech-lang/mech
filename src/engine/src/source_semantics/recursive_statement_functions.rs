@@ -222,7 +222,7 @@ impl SemanticBuilder {
                 if !captures.iter().any(|(existing, _, _)| *existing == input) {
                     captures.push((
                         input,
-                        self.schema_draft_of(*argument)?.into_owned(),
+                        self.schema_draft_of(*argument)?,
                         !matches!(argument, PendingValue::Input(_)),
                     ));
                 }

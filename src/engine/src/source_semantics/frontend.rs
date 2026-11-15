@@ -2878,7 +2878,7 @@ enum PendingNodeBody {
 
 struct PendingMatch {
     partial: bool,
-    captures: Vec<(u16, SchemaDraft, bool)>,
+    captures: Vec<(u16, PendingSchema, bool)>,
     arms: Vec<PendingMatchArm>,
 }
 
@@ -3361,7 +3361,7 @@ enum PendingControlOperationBody {
 
 struct PendingControlBlock {
     id: crate::ControlBlockId,
-    parameters: Vec<(crate::ControlParameterSource, SchemaDraft)>,
+    parameters: Vec<(crate::ControlParameterSource, PendingSchema)>,
     operations: Vec<PendingControlOperation>,
     yield_value: PendingControlValue,
 }
@@ -7093,7 +7093,7 @@ impl SemanticBuilder {
         syntax: &SyntaxNode,
     ) -> Result<PendingSelection, SourceSemanticError> {
         let (operation, selected, schema) =
-            self.prepare_selection_schema(self.schema_draft_of(source)?.into(), selectors, syntax)?;
+            self.prepare_selection_schema(self.schema_draft_of(source)?, selectors, syntax)?;
         let mut inputs = vec![source];
         inputs.extend(selected);
         Ok(PendingSelection {
@@ -7105,7 +7105,7 @@ impl SemanticBuilder {
 
     fn prepare_selection_schema(
         &mut self,
-        source: SchemaDraft,
+        source: PendingSchema,
         selectors: Vec<Option<PendingValue>>,
         syntax: &SyntaxNode,
     ) -> Result<(Option<&'static str>, Vec<PendingValue>, SchemaDraft), SourceSemanticError> {
@@ -7117,7 +7117,7 @@ impl SemanticBuilder {
             });
         }
         if selectors.len() == 2 && selectors.iter().all(Option::is_none) {
-            return Ok((None, Vec::new(), source));
+            return Ok((None, Vec::new(), source.into_owned()));
         }
         let mut parameters = Vec::new();
         let body = embed_schema_draft(
@@ -7126,7 +7126,7 @@ impl SemanticBuilder {
             SourceSemanticAnchor::for_node(syntax),
         )?;
         if matches!(body, SchemaBody::String) && matches!(selectors.as_slice(), [None]) {
-            return Ok((None, Vec::new(), source));
+            return Ok((None, Vec::new(), source.into_owned()));
         }
         let mut inputs = Vec::new();
         let mut counts = Vec::new();
@@ -10347,7 +10347,7 @@ impl SemanticBuilder {
         binding_start: usize,
         activation: bool,
         inputs: &mut Vec<PendingValue>,
-        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+        captures: &mut Vec<(u16, PendingSchema, bool)>,
     ) -> Result<
         crate::CollectionPattern<SchemaDraft, crate::MatchPatternValue<usize>>,
         SourceSemanticError,
@@ -11060,7 +11060,7 @@ impl SemanticBuilder {
         pattern_bindings: &BTreeMap<u32, u32>,
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
-        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+        captures: &mut Vec<(u16, PendingSchema, bool)>,
         expected: Option<&SchemaDraft>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         self.control_block_with(
@@ -11092,7 +11092,7 @@ impl SemanticBuilder {
         pattern_bindings: &BTreeMap<u32, u32>,
         scrutinee: PendingValue,
         inputs: &mut Vec<PendingValue>,
-        captures: &mut Vec<(u16, SchemaDraft, bool)>,
+        captures: &mut Vec<(u16, PendingSchema, bool)>,
         build: impl FnOnce(&mut Self) -> Result<PendingValue, SourceSemanticError>,
     ) -> Result<(PendingControlBlock, SchemaDraft), SourceSemanticError> {
         let rejected = |code, message: String| SourceSemanticError {
@@ -11120,12 +11120,12 @@ impl SemanticBuilder {
         self.control_depth -= 1;
         let nodes = self.nodes.split_off(start);
         let (value, schema) = result?;
-        let result_value = |schema: &SchemaDraft| {
+        let result_value = |schema: &PendingSchema| {
             schema
                 .finalize_ref()
                 .is_ok_and(|schema| crate::is_control_result_schema(&schema))
         };
-        let intermediate_value = |schema: &SchemaDraft| {
+        let intermediate_value = |schema: &PendingSchema| {
             schema
                 .finalize_ref()
                 .is_ok_and(|schema| !matches!(schema.body(), SchemaBody::Dynamic))
@@ -11139,7 +11139,7 @@ impl SemanticBuilder {
                 ),
             ));
         }
-        let mut parameters = Vec::<(crate::ControlParameterSource, SchemaDraft)>::new();
+        let mut parameters = Vec::<(crate::ControlParameterSource, PendingSchema)>::new();
         let mut parameter_values = Vec::new();
         let mut resolve =
             |value: PendingValue| -> Result<PendingControlValue, SourceSemanticError> {
@@ -11320,22 +11320,27 @@ impl SemanticBuilder {
     }
 }
 
+// Retain only pure canonical schema data on its exact immutable pending owner.
+// Every table lookup and the surrounding control/factory/visit checks stay fresh.
+fn retained_control_schema<S: FinalizeSourceSchema + ?Sized>(
+    schemas: &SchemaTable,
+    draft: &S,
+) -> mech_core::SchemaId {
+    schemas
+        .find_by_key(
+            draft
+                .finalize_source_schema()
+                .expect("validated control schema")
+                .key(),
+        )
+        .expect("retained control schema")
+}
+
 fn resolve_pending_control_block(
     block: &PendingControlBlock,
     schemas: &SchemaTable,
     constants: &[mech_core::ConstantId],
 ) -> crate::ControlBlock<OperationContractDeclaration> {
-    let schema = |draft: &SchemaDraft| {
-        schemas
-            .find_by_key(
-                draft
-                    .finalize_ref()
-                    .expect("validated control schema")
-                    .key(),
-            )
-            .expect("retained control schema")
-    };
-
     let value = |value| match value {
         PendingControlValue::Constant(index) => crate::ControlValue::Constant(constants[index]),
         PendingControlValue::Parameter(ordinal) => crate::ControlValue::Parameter {
@@ -11354,7 +11359,7 @@ fn resolve_pending_control_block(
             .iter()
             .map(|(source, draft)| crate::ControlParameter {
                 source: *source,
-                schema: schema(draft),
+                schema: retained_control_schema(schemas, draft),
             })
             .collect(),
         operations: block
@@ -11394,7 +11399,7 @@ fn resolve_pending_control_block(
                     PendingControlOperationBody::Publish => crate::ControlOperationBody::Publish,
                 },
                 inputs: operation.inputs.iter().copied().map(value).collect(),
-                schema: schema(&operation.schema),
+                schema: retained_control_schema(schemas, &operation.schema),
             })
             .collect(),
         yield_value: value(block.yield_value),
@@ -11406,16 +11411,6 @@ fn resolve_pending_match(
     schemas: &SchemaTable,
     constants: &[mech_core::ConstantId],
 ) -> crate::MatchDeclaration<OperationContractDeclaration> {
-    let schema = |draft: &SchemaDraft| {
-        schemas
-            .find_by_key(
-                draft
-                    .finalize_ref()
-                    .expect("validated control schema")
-                    .key(),
-            )
-            .expect("retained control schema")
-    };
     let block =
         |block: &PendingControlBlock| resolve_pending_control_block(block, schemas, constants);
     crate::MatchDeclaration {
@@ -11426,7 +11421,7 @@ fn resolve_pending_match(
             .iter()
             .map(|(input, draft, freeze_on_suspend)| crate::ControlCapture {
                 input: *input,
-                schema: schema(draft),
+                schema: retained_control_schema(schemas, draft),
                 freeze_on_suspend: *freeze_on_suspend,
             })
             .collect(),
@@ -11441,7 +11436,7 @@ fn resolve_pending_match(
                     crate::MatchPattern::Wildcard => crate::MatchPattern::Wildcard,
                     crate::MatchPattern::Bind => crate::MatchPattern::Bind,
                     crate::MatchPattern::Structural(pattern) => crate::MatchPattern::Structural(
-                        pattern.map(&|draft| schema(draft), &|value| match value {
+                        pattern.map(&|draft| retained_control_schema(schemas, draft), &|value| match value {
                             crate::MatchPatternValue::Literal(index) => {
                                 crate::MatchPatternValue::Literal(constants[*index])
                             }
