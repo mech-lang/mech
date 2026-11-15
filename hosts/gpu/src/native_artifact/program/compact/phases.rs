@@ -153,6 +153,7 @@ pub(super) struct Phase {
     summary: serde_json::Value,
     observe: bool,
     private: Option<PrivatePhase>,
+    relative_error_origins: bool,
 }
 impl Phase {
     pub fn summary(&self, owners: &OwnerFlow) -> serde_json::Value {
@@ -480,8 +481,13 @@ impl Phase {
             .icmp_imm(IntCC::Equal, status, numeric_minimal::BOUNDS as i64);
         let raw_bounds = b.ins().iconst(types::I64, super::arrays::BOUNDS as i64);
         let status = b.ins().select(bounds, raw_bounds, status);
-        // The callee reports its exact reached source location. No hot origin
-        // home or header substitution participates in successful execution.
+        // Shared bodies use a phase-relative failure location. Restore the
+        // caller's exact site here, after the status branch.
+        let at = if self.relative_error_origins {
+            b.ins().iadd_imm(at, self.header as i64)
+        } else {
+            at
+        };
         b.ins().return_(&[status, at]);
         b.switch_to_block(success);
         // The synchronous callee transfers each current owner back to this
@@ -629,11 +635,13 @@ pub(super) fn define<M: Module>(
     layout: &Layout,
     literals: &LiteralViews,
     observe: bool,
+    share_phase_bodies: bool,
 ) -> Result<Vec<Phase>, NativeCompileError> {
     let facts = prepared.plan().facts();
     let closed = &prepared.metadata().closed_tails;
     let mut result = vec![];
     let mut dense_tables = cfg_cleanup::composed_reads::DenseTables::default();
+    let mut shared_bodies = function::PhaseBodies::default();
     let mut candidates = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {
         let Some(proof) = region.numeric.as_ref() else {
@@ -809,6 +817,12 @@ pub(super) fn define<M: Module>(
             .map(|&lane| layout.slot(target) + lane)
             .collect();
         let writable = arrays.iter().filter(|a| a.1).count();
+        let relative_error_origins = share_phase_bodies
+            && !observe
+            && private
+                .as_ref()
+                .is_none_or(|phase| phase.handoffs.is_empty());
+        let mut bodies = relative_error_origins.then_some(&mut shared_bodies);
         let general = function::define(
             module,
             prepared,
@@ -823,6 +837,7 @@ pub(super) fn define<M: Module>(
             None,
             &BTreeMap::new(),
             &mut dense_tables,
+            bodies.as_deref_mut(),
             "",
         )?;
         let entry_bounds = general.entry_bounds.clone();
@@ -845,6 +860,7 @@ pub(super) fn define<M: Module>(
                 None,
                 &BTreeMap::new(),
                 &mut dense_tables,
+                bodies.as_deref_mut(),
                 "_vector",
             )?;
             let used = fast.code != general.code;
@@ -898,6 +914,7 @@ pub(super) fn define<M: Module>(
                 Some(&contract),
                 &literal_views,
                 &mut dense_tables,
+                bodies,
                 "_no_growth",
             )?;
             if fast.entry_bounds != entry_bounds {
@@ -935,6 +952,7 @@ pub(super) fn define<M: Module>(
             summary,
             observe,
             private,
+            relative_error_origins,
         });
         covered.extend(proof.sites.iter().copied());
     }
