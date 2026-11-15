@@ -96,6 +96,15 @@ API, while `frontend` stops after canonical encoding. These modes have different
 compilation boundaries; do not pool their timings. Rust tool builds and linking
 a generated host application are separate from every measured source compile.
 
+Process completion is now timestamped by a thread blocked in `process.wait()`;
+the receipt records `driver_start_to_process_wait_completion`. The main driver's
+0.2-second wait for sampling readiness no longer rounds up process completion.
+Historical receipts without this boundary field retain their original polling
+tail and are not rewritten. This is a measurement correction, with no compiler
+speedup credited to it. The external timer includes source assembly and all
+output writes; the existing internal compiler timer retains its narrower phase
+boundary. Report both and compare subjects using the same driver.
+
 The guard state, owner-read filter, numeric liveness solver and vendored SSA builder
 have focused test targets. They
 compare against the original analyses and independent read-before-definition
