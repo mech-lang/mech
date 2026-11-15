@@ -1295,12 +1295,11 @@ pub(super) fn define_entry<M: Module>(
     let discovered_controllers = if outline_allowed
         && let Ok(windows) = std::env::var("MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS")
     {
-        let families = windows
-            .split(';')
-            .map(|list| {
-                super::checked_region_discovery::candidates(&context.func, list, plan.blocks().len())
-            })
-            .collect::<Result<Vec<_>, _>>()?;
+        let families = super::checked_region_discovery::families(
+            &context.func,
+            &windows,
+            plan.blocks().len(),
+        )?;
         let shared = checked_traversals::share_controllers(
             module,
             &mut context.func,
@@ -1326,6 +1325,25 @@ pub(super) fn define_entry<M: Module>(
         }
         eprintln!("compact owner retirements shared: {shared}");
     }
+    // Close repeated callers after their leaf callees have selected shared
+    // targets. Each region re-proves its boundaries on the resulting graph.
+    let checked_continuations = if outline_allowed
+        && let Ok(windows) = std::env::var("MECH_COMPACT_CONTINUATION_WINDOWS")
+    {
+        let families = super::checked_region_discovery::families(
+            &context.func,
+            &windows,
+            plan.blocks().len(),
+        )?;
+        let shared = checked_traversals::share_continuations(module, &mut context.func, families)?;
+        if shared.is_some() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        shared
+    } else {
+        None
+    };
     if outline_allowed && let Some(path) = std::env::var_os("MECH_COMPACT_LAYOUT_REGION_REPORT") {
         super::checked_region_discovery::report(&context.func, path.as_ref()).map_err(backend)?;
     }
@@ -1405,6 +1423,9 @@ pub(super) fn define_entry<M: Module>(
         }
         if let Some(discovered_controllers) = discovered_controllers {
             report["layout_checked_controllers"] = discovered_controllers;
+        }
+        if let Some(checked_continuations) = checked_continuations {
+            report["checked_continuations"] = checked_continuations;
         }
         if !overwrite_reuse.is_empty() {
             report["overwrite_result_reuse"] = serde_json::json!(

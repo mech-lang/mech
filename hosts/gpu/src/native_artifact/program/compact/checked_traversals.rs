@@ -158,6 +158,40 @@ fn bounded_relative_origin(f: &Function, origin: Value, base: i64) -> Option<i64
         .map(i64::from)
 }
 
+fn relative_error_origin(
+    pos: &mut FuncCursor<'_>,
+    origin: Value,
+    base: i64,
+    compose_origins: bool,
+) -> Value {
+    let mut source = origin;
+    let mut offset = -base;
+    if let ValueDef::Result(producer, _) = pos.func.dfg.value_def(origin) {
+        match pos.func.dfg.insts[producer] {
+            InstructionData::UnaryImm {
+                opcode: Opcode::Iconst,
+                imm,
+            } => {
+                return pos
+                    .ins()
+                    .iconst(types::I64, imm.bits().wrapping_add(offset));
+            }
+            InstructionData::BinaryImm64 {
+                opcode: Opcode::IaddImm,
+                arg,
+                imm,
+            } if compose_origins => {
+                // A nested checked call already restored its origin relative
+                // to the caller. Combine the two wrapping translations.
+                source = arg;
+                offset = offset.wrapping_add(imm.bits());
+            }
+            _ => {}
+        }
+    }
+    pos.ins().iadd_imm(source, offset)
+}
+
 fn use_blocks(f: &Function) -> Vec<Vec<Block>> {
     let mut users = vec![Vec::new(); f.dfg.num_values()];
     for block in f.layout.blocks() {
@@ -211,6 +245,13 @@ enum RegionKind {
     Refusal,
     Controller,
     Phase,
+    Continuation { direct_inputs: usize },
+}
+
+impl RegionKind {
+    fn is_continuation(self) -> bool {
+        matches!(self, Self::Continuation { .. })
+    }
 }
 
 fn plan(
@@ -350,8 +391,10 @@ fn plan(
     let resume_words = candidate
         .resume
         .map_or(0, |resume| f.dfg.block_params(resume).len());
+    let direct_continuation = matches!(kind, RegionKind::Continuation { direct_inputs }
+        if direct_inputs != 0 && input_words <= direct_inputs && output_words <= 32);
     // A refusal that fits the original bounds keeps its existing native ABI.
-    let packed_inputs = controller
+    let packed_inputs = (controller && !direct_continuation)
         || kind == RegionKind::Phase
         || pack_large_refusals
             && (input_words > MAX_DIRECT_INPUT_WORDS || output_words.max(resume_words) > 32);
@@ -388,7 +431,7 @@ fn plan(
         return Err("live outputs exceed the call boundary budget");
     }
     let passthrough = dominance
-        .filter(|_| packed_inputs)
+        .filter(|_| packed_inputs || direct_continuation)
         .map(|dom| {
             let resume = candidate
                 .resume
@@ -513,7 +556,7 @@ impl Traversal {
         result
     }
 
-    fn body(&mut self, f: &Function, signature: &Signature) -> Function {
+    fn body(&mut self, f: &Function, signature: &Signature, compose_origins: bool) -> Function {
         let mut body = f.clone();
         body.layout = Layout::new();
         body.sized_stack_slots = Default::default();
@@ -690,19 +733,8 @@ impl Traversal {
                                 .expect("proved origin must survive region lowering");
                             pos.ins().iconst(types::I64, relative + FIRST_ERROR_TAG)
                         } else {
-                            let relative = match pos.func.dfg.value_def(origin) {
-                                ValueDef::Result(producer, _) => match pos.func.dfg.insts[producer]
-                                {
-                                    InstructionData::UnaryImm {
-                                        opcode: Opcode::Iconst,
-                                        imm,
-                                    } => pos
-                                        .ins()
-                                        .iconst(types::I64, i64::from(imm).wrapping_sub(base)),
-                                    _ => pos.ins().iadd_imm(origin, -base),
-                                },
-                                _ => pos.ins().iadd_imm(origin, -base),
-                            };
+                            let relative =
+                                relative_error_origin(&mut pos, origin, base, compose_origins);
                             pos.ins().store(MemFlags::new(), relative, packet, 0);
                             pos.ins().iconst(types::I64, FIRST_ERROR_TAG)
                         };
@@ -1086,13 +1118,38 @@ pub(super) fn share_phase_regions<M: Module>(
     share_families(module, root, families, RegionKind::Phase, true, bindings)
 }
 
+pub(super) fn share_continuations<M: Module>(
+    module: &mut M,
+    root: &mut Function,
+    families: Vec<Vec<Candidate>>,
+) -> Result<Option<serde_json::Value>, NativeCompileError> {
+    let direct_inputs = std::env::var("MECH_COMPACT_DIRECT_CONTINUATION_WORDS")
+        .ok()
+        .map(|n| n.parse::<usize>().map_err(backend))
+        .transpose()?
+        .unwrap_or(0);
+    if direct_inputs > MAX_DIRECT_INPUT_WORDS {
+        return Err(backend("direct continuation inputs exceed the ABI limit"));
+    }
+    share_families(
+        module,
+        root,
+        families,
+        RegionKind::Continuation { direct_inputs },
+        false,
+        CaptureBindings::from_environment(),
+    )
+}
+
 fn prepare_bodies<M: Module>(
     module: &mut M,
     root: &Function,
     traversals: impl IntoIterator<Item = Traversal>,
     dominance: Option<&DominatorTree>,
-    refusal_regions: bool,
+    region_kind: RegionKind,
 ) -> Result<Vec<Prepared>, NativeCompileError> {
+    let refusal_regions = region_kind == RegionKind::Refusal;
+    let compose_origins = region_kind.is_continuation();
     let compact_layout_bodies = std::env::var_os("MECH_COMPACT_PREPARE_LAYOUT_REGION_IR").is_some();
     let compact_refusal_bodies =
         refusal_regions && std::env::var_os("MECH_COMPACT_PREPARE_REFUSAL_IR").is_some();
@@ -1103,7 +1160,9 @@ fn prepare_bodies<M: Module>(
     for mut traversal in traversals {
         traversal.live_captures.clear();
         let candidate = traversal.candidate;
-        let kind = if refusal_regions {
+        let kind = if region_kind.is_continuation() {
+            "layout_continuation"
+        } else if refusal_regions {
             "traversal"
         } else if layout_regions_last && candidate.origin_base.is_some() {
             "layout"
@@ -1116,7 +1175,7 @@ fn prepare_bodies<M: Module>(
             && let Some(dominance) = dominance
             && let Some((seed, mut local)) = region_body::prepare(root, &traversal, dominance)
         {
-            let body = local.body(&seed, &signature);
+            let body = local.body(&seed, &signature, compose_origins);
             traversal.live_captures = local.live_captures;
             eprintln!(
                 "compact checked {kind} {} prepared local IR",
@@ -1124,7 +1183,7 @@ fn prepare_bodies<M: Module>(
             );
             body
         } else {
-            traversal.body(root, &signature)
+            traversal.body(root, &signature, compose_origins)
         };
         let mut context = Context::for_function(body);
         if share_retirements {
@@ -1287,7 +1346,8 @@ fn share_families<M: Module>(
         }
         let family = &mut traversals[first..];
         if bindings.literals {
-            region_literals::bind(root, family, false);
+            let compact_columns = matches!(region_kind, RegionKind::Continuation { direct_inputs } if direct_inputs != 0);
+            region_literals::bind(root, family, compact_columns);
         }
         if bindings.input_roles {
             region_inputs::bind(root, family);
@@ -1297,13 +1357,7 @@ fn share_families<M: Module>(
         region_literals::bind(root, &mut traversals, true);
     }
     drop((users, proven));
-    let mut groups = prepare_bodies(
-        module,
-        root,
-        traversals,
-        dominance.as_ref(),
-        refusal_regions,
-    )?;
+    let mut groups = prepare_bodies(module, root, traversals, dominance.as_ref(), region_kind)?;
     if (bindings.align_outputs || bindings.pad_outputs)
         && let Some(dom) = dominance.as_ref()
     {
@@ -1342,7 +1396,7 @@ fn share_families<M: Module>(
                 root,
                 aligned,
                 Some(dom),
-                refusal_regions,
+                region_kind,
             )?);
         }
     }
@@ -1390,7 +1444,12 @@ fn share_families<M: Module>(
     let packets = CallSlots { result, captures };
     let observe_refusals =
         refusal_regions && std::env::var_os("MECH_COMPACT_OBSERVE_CHECKED_TRAVERSALS").is_some();
-    let observe_layout = std::env::var_os("MECH_COMPACT_OBSERVE_LAYOUT_REGIONS").is_some()
+    let observer_flag = if region_kind.is_continuation() {
+        "MECH_COMPACT_OBSERVE_CONTINUATIONS"
+    } else {
+        "MECH_COMPACT_OBSERVE_LAYOUT_REGIONS"
+    };
+    let observe_layout = std::env::var_os(observer_flag).is_some()
         && groups.iter().any(|group| {
             group
                 .traversals

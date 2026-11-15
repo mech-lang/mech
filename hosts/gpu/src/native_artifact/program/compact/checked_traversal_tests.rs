@@ -3,7 +3,7 @@ use super::{
     share_families, share_phase_regions,
 };
 use cranelift_codegen::ir::{
-    AbiParam, InstBuilder, StackSlotData, StackSlotKind, condcodes::IntCC, types,
+    AbiParam, InstBuilder, MemFlags, StackSlotData, StackSlotKind, condcodes::IntCC, types,
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
@@ -382,6 +382,126 @@ fn shared_controller_preserves_loop_value_and_direct_uses_after_exit() {
 #[test]
 fn shared_controller_keeps_each_callers_bound_and_error_origin() {
     check_controller(true, [5, 9]);
+}
+
+#[test]
+fn shared_continuation_preserves_nested_results_and_error_origins() {
+    for direct_inputs in [0, 16] {
+        check_nested_continuation(direct_inputs);
+    }
+}
+
+fn check_nested_continuation(direct_inputs: usize) {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut ctx = module.make_context();
+    ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    ctx.func.signature.returns = vec![AbiParam::new(types::I64); 2];
+    let mut fb = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut ctx.func, &mut fb);
+    let entry = b.create_block();
+    let starts = [b.create_block(), b.create_block()];
+    b.append_block_params_for_function_params(entry);
+    b.switch_to_block(entry);
+    let [choose, reject, address] = *b.block_params(entry) else {
+        unreachable!()
+    };
+    let zero = b.ins().iconst(types::I64, 0);
+    b.ins().brif(choose, starts[1], &[], starts[0], &[]);
+    let mut inner = Vec::new();
+    let mut outer = Vec::new();
+    for (start, base) in starts.into_iter().zip([30, 90]) {
+        let body = b.create_block();
+        let error = b.create_block();
+        let success = b.create_block();
+        let after = b.create_block();
+        let finish = b.create_block();
+        b.append_block_param(after, types::I64);
+        b.append_block_param(finish, types::I64);
+        inner.push(Candidate {
+            resume: None,
+            start: body,
+            exit: after,
+            header: base as usize,
+            origin_base: Some(base),
+            span: 0,
+        });
+        outer.push(Candidate {
+            start,
+            exit: finish,
+            // The same header is allowed in a different stage.
+            ..*inner.last().unwrap()
+        });
+        b.switch_to_block(start);
+        let original = b.ins().load(types::I64, MemFlags::new(), address, 0);
+        let marked = b.ins().iadd_imm(original, 1);
+        b.ins().store(MemFlags::new(), marked, address, 0);
+        b.ins().jump(body, &[]);
+        b.switch_to_block(body);
+        b.ins().brif(reject, error, &[], success, &[]);
+        b.switch_to_block(error);
+        b.set_cold_block(error);
+        let status = b.ins().iconst(types::I64, 17);
+        let origin = b.ins().iconst(types::I64, i64::from(base) + 4);
+        b.ins().return_(&[status, origin]);
+        b.switch_to_block(success);
+        let value = b.ins().iadd_imm(marked, 11);
+        b.ins().jump(after, &[value.into()]);
+        b.switch_to_block(after);
+        let value = b.block_params(after)[0];
+        let result = b.ins().iadd_imm(value, 2);
+        b.ins().jump(finish, &[result.into()]);
+        b.switch_to_block(finish);
+        let result = b.block_params(finish)[0];
+        b.ins().return_(&[zero, result]);
+    }
+    b.seal_all_blocks();
+    b.finalize();
+    let leaves = share_controllers(
+        &mut module,
+        &mut ctx.func,
+        vec![inner],
+        CaptureBindings {
+            return_error_origin: true,
+            ..CaptureBindings::default()
+        },
+    )
+    .unwrap()
+    .unwrap();
+    assert_eq!(leaves[0]["headers"], serde_json::json!([30, 90]));
+    let callers = share_families(
+        &mut module,
+        &mut ctx.func,
+        vec![outer],
+        RegionKind::Continuation { direct_inputs },
+        false,
+        CaptureBindings::default(),
+    )
+    .unwrap()
+    .expect("shared caller with a nested checked call");
+    assert_eq!(callers[0]["headers"], serde_json::json!([30, 90]));
+    assert_eq!(
+        callers[0]["input_words"],
+        if direct_inputs == 0 { 2 } else { 5 }
+    );
+    let id = module
+        .declare_function(
+            "nested_checked_continuations",
+            Linkage::Export,
+            &ctx.func.signature,
+        )
+        .unwrap();
+    ctx.verify(module.isa()).unwrap();
+    module.define_function(id, &mut ctx).unwrap();
+    module.finalize_definitions().unwrap();
+    let call: extern "C" fn(u64, u64, &mut u64) -> ResultPair =
+        unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+    for (choice, origin) in [(0, 34), (1, 94)] {
+        let mut value = 100;
+        assert_eq!(call(choice, 1, &mut value), ResultPair(17, origin));
+        assert_eq!(value, 101);
+        assert_eq!(call(choice, 0, &mut value), ResultPair(0, 115));
+        assert_eq!(value, 102);
+    }
 }
 
 #[test]

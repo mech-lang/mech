@@ -8,7 +8,18 @@ use std::{
     path::Path,
 };
 
-pub(super) fn candidates(
+pub(super) fn families(
+    function: &Function,
+    windows: &str,
+    source_sites: usize,
+) -> Result<Vec<Vec<Candidate>>, NativeCompileError> {
+    windows
+        .split(';')
+        .map(|list| candidates(function, list, source_sites))
+        .collect()
+}
+
+fn candidates(
     function: &Function,
     windows: &str,
     source_sites: usize,
