@@ -73,15 +73,32 @@ An optional `--mimalloc-object PATH` links the recorded worker and runs 162 exac
 calls using the included fixtures. Use the same allocator object as the peer
 workers for a runtime comparison.
 
-The integrated tree preserves #973's newer engine, core, SSA and worker changes.
-**A clean build of that complete integrated tree is still pending.** The recorded
-81/61 result was measured before the final integration of seven upstream cleanup
-files and their engine API. The rebuild command checks canonical bytecode and
-native-object hashes and fails if integration changes them. The first integrated
-build exposed an omitted `compile_jobs.rs` update for direct runtime calls; that
-worker handoff is now restored from the measured compiler source and the build
-is being rerun. Do not attach the historical scores to a different output
-without measuring it.
+The complete integrated compiler build **succeeded at
+`2b930a8dfa0f085d46d68bc6593bd182b58f26a2`**. An audit compared 2,891 source and
+configuration files with that commit, with no differences. Both variants
+reproduce their canonical bytecode, native object, and complete metadata exactly:
+72,520 bytes for the retained baseline and 72,200 bytes with cold-tail sharing.
+Each newly linked worker passes 162 exact-output, alias, and independent-inflation
+checks. The advertised Cargo native test target also passes both tests, exercising
+10,240 native calls. See `evidence/integration/integrated-rebuild.json` and its
+raw build/test receipts.
+
+The new worker executables have different hashes from the workers used for the
+historical timings. Their correctness and encoder-object identity are verified;
+the historical 81/61 scores are not a fresh timing result for these linked workers.
+The single reproduction runs are not matched build-time benchmarks, and their
+compiler-build duration includes reuse of previously compiled dependencies.
+
+On that commit, the engine and GPU owner jobs passed, as did all 12 portable
+backend tests on Linux. CI then exposed two test-only integration errors: the
+non-macOS mapping helper recursed, and a UTF-8 test omitted the new phase-sharing
+argument. Both are corrected in this follow-up; all 18 maintained runtime tests
+pass locally. Full Linux native-policy execution still needs the next CI run.
+The warning checker now accepts the documented focused-test exceptions and stops
+at an inherited example (`native_tagged_map_allocations.rs`). Distribution's
+404-versus-402 dependency pin and the public CLI's exact test selection also
+remain unresolved. See `evidence/integration/ci-status.json`; whole-stack green
+CI is not claimed.
 
 The compact entry remains diagnostic: exact ordinary admission/accounting and
 publication recovery are not claimed. This does not change the normal language

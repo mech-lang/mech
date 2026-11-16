@@ -1,0 +1,50 @@
+{
+  "compiled_commit": "2b930a8dfa0f085d46d68bc6593bd182b58f26a2",
+  "host": "Apple M1, macOS ARM64",
+  "source_audit": "integrated-source-audit.json",
+  "variants": {
+    "baseline": {
+      "text_bytes": 72520,
+      "exact_calls": 162,
+      "object_and_metadata_identical_to_retained_variant": true,
+      "sha256": {
+        "frontend/program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "native/program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "native/metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "e977802975749d144c703d67bb70fd786da757ce1cf4ebeb05cea886c125c2d4"
+      }
+    },
+    "cold-tails": {
+      "text_bytes": 72200,
+      "exact_calls": 162,
+      "object_and_metadata_identical_to_retained_variant": true,
+      "sha256": {
+        "frontend/program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "native/program.o": "f2ece3b24fce42f0f7b4dd97b37d55c68214b55979d3836f023d61cd894041d8",
+        "native/metadata.json": "a6c057d339ef1d7f88d84b7bd9fe6f08a536e91025dbca6ea353c08ff8f16e02",
+        "mech-worker": "8e3d52bf7ec7588200b435e22867839cb1d1ed6c74d6d48cf8d014c9a5b1441a"
+      }
+    }
+  },
+  "runtime_qualification": "New workers pass correctness only. Historical peer wins remain attached to the original pinned worker; no new peer timing or cold-tail promotion is claimed.",
+  "timing_scope": "These are individual reproduction runs after compiler construction, not matched compile-time benchmarks. The 625-second compiler command reused already compiled dependencies and is not a cold compiler construction measurement.",
+  "compiler_binaries_sha256": {
+    "native_compact_frontend": "dfe13f93b0b8cd48aad2b8344e63a2d5cb2e6308925b8156d10a1dea8c2c86cd",
+    "emit_compact_size": "b63eeb1fb8e4522a84b7016ec63ca8e0da2c92511be640f66f0ba9b98bc100b8"
+  },
+  "native_test_target": {
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "native_calls": 10240,
+    "log": "native-cold-tail-cargo-tests.log"
+  },
+  "runtime_tests_after_test_only_fixes": {
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0,
+    "scope": "Exact maintained compact_runtime module, standalone rustc test harness on Apple ARM64",
+    "log": "compact-runtime-tests.log"
+  },
+  "followup_code_changes": "Test-only: correct the non-macOS mapping helper, pass the new phase-sharing argument in the UTF-8 test constructor, and document existing focused-test dead-code exceptions. Production compiler source remains identical to the audited commit."
+}
