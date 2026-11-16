@@ -586,6 +586,7 @@ pub(in crate::native_artifact) fn derive_complete_for_diagnostic(
     )
 }
 
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) fn derive(
     plan: &Plan,
     tail: &NativeTailLoop,
@@ -797,6 +798,7 @@ fn derive_leaf(
     derive_inner(facts, tail, frames, aggregates, calls, None)
 }
 
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) fn derive_tree(
     plan: &Plan,
     tail: &NativeTailLoop,
