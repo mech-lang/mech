@@ -54,6 +54,14 @@ python3 benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.p
 cargo +nightly-2026-03-03 test --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml --release --test native_compact_cold_tails -- --nocapture
 ```
 
+The portable backend checks have a maintained owner in the Linux
+`canonical-policy` CI job. It runs `isa::aarch64::cold_` with the ARM64 backend
+and requires exactly **12 passed, zero failed, zero ignored**: eight epilogue
+checks plus four cold-tail checks. They cover signed branch limits, independently
+reachable interior labels, distinct origins, relocation/call/trap remapping,
+recorded deferred traps, unsupported relocations, and hint reset. The same
+command passed locally; the source hashes and log are in `evidence/integration`.
+
 The last command must execute **two tests** on Apple ARM64. The cold-tail test is
 also registered in the `mech-gpu` library's native test module. Other hosts do not
 qualify execution of Apple ARM64 machine code.
@@ -69,8 +77,11 @@ The integrated tree preserves #973's newer engine, core, SSA and worker changes.
 **A clean build of that complete integrated tree is still pending.** The recorded
 81/61 result was measured before the final integration of seven upstream cleanup
 files and their engine API. The rebuild command checks canonical bytecode and
-native-object hashes and fails if integration changes them. Do not attach the
-historical scores to a different output without measuring it.
+native-object hashes and fails if integration changes them. The first integrated
+build exposed an omitted `compile_jobs.rs` update for direct runtime calls; that
+worker handoff is now restored from the measured compiler source and the build
+is being rerun. Do not attach the historical scores to a different output
+without measuring it.
 
 The compact entry remains diagnostic: exact ordinary admission/accounting and
 publication recovery are not claimed. This does not change the normal language
