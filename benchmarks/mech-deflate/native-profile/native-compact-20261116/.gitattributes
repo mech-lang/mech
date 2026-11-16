@@ -1,0 +1,6 @@
+fixture-data/** -diff -text
+program.mecb -diff -text
+evidence/** linguist-generated=true
+evidence/**/*.log -whitespace
+evidence/**/*.gz -diff -text
+source-and-evidence-manifest.json linguist-generated=true

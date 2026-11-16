@@ -1190,6 +1190,18 @@
       (with_flags_reg (cmp (operand_size ty) x y)
                       (csel cc x y))))
 
+;; A scalar tree that visits every lane of one I32X4 value is an unsigned
+;; horizontal minimum. The repeated `x` requires the same source vector for
+;; all four lanes; mixed-vector minima must retain their ordinary lowering.
+(rule 4 (lower (has_type $I32
+                (umin _
+                  (umin _ (extractlane _ x @ (value_type $I32X4) (u8_from_uimm8 0))
+                          (extractlane _ x (u8_from_uimm8 1)))
+                  (umin _ (extractlane _ x (u8_from_uimm8 2))
+                          (extractlane _ x (u8_from_uimm8 3))))))
+      (mov_from_vec (vec_lanes (VecLanesOp.Uminv) x (VectorSize.Size32x4))
+                    0 (ScalarSize.Size32)))
+
 (rule umin 2 (lower (has_type (and (fits_in_64 ty) (ty_int _)) (umin _ x y)))
       (cmp_and_choose ty (Cond.Lo) false x y))
 (rule smin 2 (lower (has_type (and (fits_in_64 ty) (ty_int _)) (smin _ x y)))
@@ -2319,6 +2331,19 @@
       (constant_f64 x))
 
 ;;;; Rules for `splat` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Keep a broadcast horizontal minimum in SIMD registers. This also avoids
+;; a general-register round trip when the scalar minimum has another use.
+(rule 1 (lower (has_type $I32X4
+                (splat _
+                  (umin _
+                    (umin _ (extractlane _ x @ (value_type $I32X4) (u8_from_uimm8 0))
+                            (extractlane _ x (u8_from_uimm8 1)))
+                    (umin _ (extractlane _ x (u8_from_uimm8 2))
+                            (extractlane _ x (u8_from_uimm8 3)))))))
+      (vec_dup_from_fpu
+        (vec_lanes (VecLanesOp.Uminv) x (VectorSize.Size32x4))
+        (VectorSize.Size32x4) 0))
 
 (rule -1 (lower (has_type ty (splat _ x @ (value_type in_ty))))
       (if (ty_int_ref_scalar_64 in_ty))

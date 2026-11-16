@@ -1,0 +1,81 @@
+"""Build this checkout's compiler and regenerate the native encoder without LLVM tools."""
+from pathlib import Path
+from hashlib import sha256
+import argparse, json, os, struct, subprocess, time
+
+here=Path(__file__).resolve().parent
+parser=argparse.ArgumentParser(description=__doc__)
+parser.add_argument('output',type=Path)
+parser.add_argument('--variant',choices=['baseline','cold-tails'],default='baseline')
+parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
+parser.add_argument('--target-dir',type=Path)
+args=parser.parse_args()
+out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
+target=(args.target_dir or out/'compiler').resolve()
+recipe=json.loads((here/'recipe.json').read_text())
+def sha(p):return sha256(Path(p).read_bytes()).hexdigest()
+def run(command,log,env):
+    command=list(map(str,command));start=time.perf_counter()
+    with log.open('w') as stream:subprocess.run(command,check=True,env=env,stdout=stream,stderr=subprocess.STDOUT)
+    return {'command':command,'seconds':time.perf_counter()-start}
+env={k:v for k,v in os.environ.items() if not k.startswith('MECH_')}
+env.update(CARGO_BUILD_JOBS='1',CARGO_PROFILE_RELEASE_OPT_LEVEL='1',CARGO_PROFILE_RELEASE_DEBUG='false',CARGO_PROFILE_RELEASE_LTO='false',CARGO_PROFILE_RELEASE_CODEGEN_UNITS='16')
+cargo=['cargo','+nightly-2026-03-03','build','--locked','--release','--manifest-path',here.parent/'Cargo.toml','--target-dir',target,'--bin','native_compact_frontend','--bin','emit_compact_size','--message-format=json']
+build=run(cargo,out/'compiler-build.jsonl',env)
+libraries={}
+for line in (out/'compiler-build.jsonl').read_text().splitlines():
+    try:row=json.loads(line)
+    except ValueError:continue
+    if row.get('reason')=='compiler-artifact':
+        for path in row['filenames']:
+            if path.endswith('.rlib'):libraries[row['target']['name']]=path
+frontend=target/'release/native_compact_frontend';emitter=target/'release/emit_compact_size'
+assert sha(here/'program.mec')==recipe['source_sha256']
+phases={};start=time.perf_counter()
+phases['frontend']=run([frontend,here/'program.mec',out/'frontend','frontend'],out/'frontend.log',env)
+bytecode=out/'frontend/program.mecb'
+assert sha(bytecode)==recipe['bytecode_sha256'],'changed canonical bytecode; inspect before comparing native output'
+flags=dict(recipe['flags'])
+flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in recipe['profiles'])
+if args.variant=='cold-tails':flags['MECH_COMPACT_SHARE_COLD_TAILS']='1'
+assert not any('LLVM' in key for key in flags)
+phases['native']=run([emitter,bytecode,out/'native'],out/'native.log',env|flags|{'PATH':'/usr/bin:/bin'})
+object_file=out/'native/program.o';data=object_file.read_bytes();assert struct.unpack_from('<I',data)[0]==0xfeedfacf
+text_bytes=None;offset=32
+for _ in range(struct.unpack_from('<I',data,16)[0]):
+    command,size=struct.unpack_from('<II',data,offset)
+    if command==0x19:
+        for section in range(struct.unpack_from('<I',data,offset+64)[0]):
+            at=offset+72+section*80
+            if data[at:at+16].rstrip(b'\0')==b'__text':text_bytes=struct.unpack_from('<Q',data,at+40)[0]
+    offset+=size
+expected=recipe['baseline_object_sha256' if args.variant=='baseline' else 'cold_tails_object_sha256']
+record={'variant':args.variant,'compiler_build':build,'phases':phases,'source_to_object_seconds':time.perf_counter()-start,'object_sha256':sha(object_file),'expected_object_sha256':expected,'object_text_bytes':text_bytes,'object_text_x_roc':text_bytes/57696,'object_text_x_libdeflate':text_bytes/37080,'full_integrated_source_identity':sha(object_file)==expected,'runtime_wins':'not measured by this command'}
+(out/'rebuild.json').write_text(json.dumps(record,indent=2)+'\n')
+assert record['full_integrated_source_identity'],'integrated compiler changed the object; report this result, do not reuse the historical win count'
+if args.mimalloc_object:
+    allocator=args.mimalloc_object.resolve(strict=True)
+    runtime_source=out/'runtime.rs'
+    runtime_source.write_text('pub mod native_artifact { #[path = '+json.dumps(str(here/'recorded-runtime/mod.rs'))+'] pub mod compact_runtime; }\n')
+    runtime=out/'libmech_gpu_runtime.rlib'
+    run(['rustc','+nightly-2026-03-03','--edition=2024','--crate-name','mech_gpu','--crate-type=rlib','-C','opt-level=3',runtime_source,'-o',runtime],out/'runtime-build.log',env)
+    command=['rustc','+nightly-2026-03-03','--edition=2024','-C','opt-level=3','-D','warnings','-L','dependency='+str(target/'release/deps'),here/'worker.rs','-o',out/'mech-worker','--extern','mech_gpu='+str(runtime),'-C','link-arg='+str(object_file),'-C','link-arg='+str(allocator)]
+    for name in ['mech_engine','serde','serde_json','miniz_oxide']:command+=['--extern',name+'='+libraries[name]]
+    record['worker_link']=run(command,out/'worker-link.log',env)
+    fixtures=json.loads((here/'fixtures.json').read_text())
+    for case in fixtures:
+        for key in ['input','prefix','expected']:case[key]=str(here/case[key])
+    fixture_file=out/'fixtures.json';fixture_file.write_text(json.dumps(fixtures))
+    worker=subprocess.Popen([out/'mech-worker',out/'native/metadata.json',fixture_file],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    assert worker.stdout.readline().strip()=='SESSION_READY';calls=[]
+    for i,case in enumerate(fixtures):
+        worker.stdin.write(f'C\t{i}\t0\n');worker.stdin.flush();assert worker.stdout.readline().strip()=='CASE_READY\t'+case['name']
+        worker.stdin.write('NN');worker.stdin.flush()
+        calls.extend(json.loads(worker.stdout.readline()) for _ in range(2))
+        assert worker.stdout.readline().strip()=='CASE_DONE\t'+case['name']
+    worker.stdin.write('Q\n');worker.stdin.flush();assert worker.wait()==0
+    assert len(calls)==162 and all(c['exact_reference'] and c['independent_inflation'] and c['input_alias_unchanged'] and c['borrowed_output_alias_unchanged'] for c in calls)
+    (out/'correctness.json').write_text(json.dumps(calls,indent=2)+'\n')
+    record['verified_exact_calls']=len(calls);record['worker_sha256']=sha(out/'mech-worker')
+    (out/'rebuild.json').write_text(json.dumps(record,indent=2)+'\n')
+print(json.dumps(record,indent=2))

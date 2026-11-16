@@ -19,6 +19,11 @@ struct Text {
     relocs: Vec<ModuleReloc>,
 }
 
+// The experiment retains only small legalized private CLIF bodies.
+const MAX_INLINE_BYTES: usize = 2048;
+const MAX_INLINE_VALUES: usize = 12_000;
+const MAX_INLINE_BODIES: usize = 24;
+
 enum Body {
     Text(Text),
     Native(CompactBody),
@@ -30,7 +35,9 @@ struct LlvmDump {
     symbols: BTreeSet<String>,
 }
 
-enum DirectRuntimeCalls {
+#[derive(Clone, Copy, Default)]
+pub(in crate::native_artifact::program) enum DirectRuntimeCalls {
+    #[default]
     Disabled,
     Allocation,
     AllocationAndByteAppends,
@@ -39,10 +46,33 @@ enum DirectRuntimeCalls {
 }
 
 impl DirectRuntimeCalls {
+    pub(super) fn declare_in(&self, declarations: &ModuleDeclarations,
+        id: FuncId, f: &mut ir::Function) -> ir::FuncRef {
+        let decl = declarations.get_function_decl(id);
+        let signature = f.import_signature(decl.signature.clone());
+        let name = f.declare_imported_user_function(ir::UserExternalName {
+            namespace: 0,
+            index: id.as_u32(),
+        });
+        // These providers are linked into the compact AArch64 Object's host.
+        // Let the linker resolve a branch relocation to each provider.
+        let direct = decl.linkage == Linkage::Import
+            && self.includes(decl.name.as_deref());
+        f.import_function(ir::ExtFuncData {
+            name: ir::ExternalName::user(name),
+            signature,
+            colocated: decl.linkage.is_final() || direct,
+            patchable: false,
+        })
+    }
     fn includes(&self, name: Option<&str>) -> bool {
         match name {
             Some(
-                "mech_compact_allocate" | "mech_compact_writable" | "mech_compact_writable_scalar",
+                "mech_compact_allocate"
+                | "mech_compact_allocate_backing"
+                | "mech_compact_writable"
+                | "mech_compact_writable_scalar"
+                | "mech_compact_writable_scalar_backing",
             ) => {
                 matches!(
                     self,
@@ -53,7 +83,13 @@ impl DirectRuntimeCalls {
                 matches!(self, Self::AllocationAndByteAppends)
             }
             Some("mech_compact_free") => matches!(self, Self::Free | Self::All),
-            Some("mech_compact_release_owner") => !matches!(self, Self::Disabled),
+            Some(
+                "mech_compact_release_owner"
+                | "mech_compact_release_nullable"
+                | "mech_compact_release_two"
+                | "mech_compact_release_three"
+                | "mech_compact_release_four",
+            ) => !matches!(self, Self::Disabled),
             _ => false,
         }
     }
@@ -69,6 +105,7 @@ pub(in crate::native_artifact::program) struct PreparedObject {
     bodies: BTreeMap<FuncOrDataId, Body>,
     direct_runtime_calls: DirectRuntimeCalls,
     llvm_dump: Option<LlvmDump>,
+    inline_bodies: Option<BTreeMap<FuncId, ir::Function>>,
 }
 
 impl PreparedObject {
@@ -87,7 +124,115 @@ impl PreparedObject {
             bodies: BTreeMap::new(),
             direct_runtime_calls: DirectRuntimeCalls::Disabled,
             llvm_dump,
+            inline_bodies: std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS")
+                .map(|_| BTreeMap::new()),
         }
+    }
+
+    fn inline_private_helpers(
+        &self,
+        id: FuncId,
+        context: &mut Context,
+        control: &mut ControlPlane,
+    ) -> ModuleResult<()> {
+        use cranelift_codegen::binemit::Reloc;
+
+        let Some(bodies) = &self.inline_bodies else {
+            return Ok(());
+        };
+        let outside_loops = (std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").as_deref()
+            == Some(std::ffi::OsStr::new("outside-loops")))
+        .then(|| {
+            context.compute_cfg();
+            context.compute_domtree();
+            context.compute_loop_analysis();
+            let function = &context.func;
+            function
+                .layout
+                .blocks()
+                .filter(|&block| context.loop_analysis.innermost_loop(block).is_none())
+                .flat_map(|block| function.layout.block_insts(block))
+                .filter_map(|inst| match function.dfg.insts[inst] {
+                    ir::InstructionData::Call { func_ref, .. } => {
+                        super::inlining::module_callee(function, func_ref)
+                    }
+                    _ => None,
+                })
+                .collect::<BTreeSet<_>>()
+        });
+        let Some(compiled) = context.compiled_code() else {
+            return Ok(());
+        };
+        let mut outside = BTreeSet::new();
+        for body in self.bodies.values() {
+            match body {
+                Body::Text(text) => outside.extend(text.relocs.iter().filter_map(|r| symbol(&r.name))),
+                Body::Native(root) => outside.extend(root.relocations.iter().filter_map(|r| symbol(&r.name))),
+                Body::Data(data) => outside.extend(data.function_decls.values().filter_map(symbol)),
+            }
+        }
+        let mut referenced = BTreeMap::<FuncId, (usize, bool)>::new();
+        for reloc in compiled.buffer.relocs() {
+            let reloc = ModuleReloc::from_mach_reloc(reloc, &context.func, id);
+            if let Some(FuncOrDataId::Func(target)) = symbol(&reloc.name) {
+                let entry = referenced.entry(target).or_default();
+                entry.0 += 1;
+                entry.1 |= reloc.kind == Reloc::Arm64Call;
+            }
+        }
+        let names = std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok();
+        let selected = bodies
+            .iter()
+            .filter(|(target, _)| {
+                referenced.get(*target) == Some(&(1, true))
+                    && !outside.contains(&FuncOrDataId::Func(**target))
+                    && outside_loops.as_ref().is_none_or(|callees| callees.contains(*target))
+                    && names.as_deref().is_none_or(|selection| {
+                        self.declarations.get_function_decl(**target).name.as_deref()
+                            .is_some_and(|name| selection.split(',').any(|symbol| symbol == name))
+                    })
+            })
+            .map(|(&id, function)| (id, function))
+            .take(8)
+            .collect::<BTreeMap<_, _>>();
+        if selected.is_empty() {
+            return Ok(());
+        }
+        let mut candidate = Context::for_function(context.func.clone());
+        if !candidate
+            .inline(super::inlining::OnceCalled(&selected))
+            .map_err(|error| ModuleError::Backend(error.into()))?
+        {
+            return Ok(());
+        }
+        candidate
+            .verify(self.isa())
+            .map_err(|error| ModuleError::Backend(error.into()))?;
+        let bytes = candidate.compile(self.isa(), control)?.buffer.data().len();
+        let retained = candidate
+            .compiled_code()
+            .expect("compiled candidate has code")
+            .buffer
+            .relocs()
+            .iter()
+            .map(|r| ModuleReloc::from_mach_reloc(r, &candidate.func, id))
+            .filter_map(|r| symbol(&r.name))
+            .collect::<BTreeSet<_>>();
+        let retired_bytes = selected
+            .keys()
+            .map(|&target| FuncOrDataId::Func(target))
+            .filter(|target| !retained.contains(target))
+            .filter_map(|target| match self.bodies.get(&target) {
+                Some(Body::Text(text)) => Some(text.bytes.len()),
+                _ => None,
+            })
+            .sum::<usize>();
+        let baseline = compiled.buffer.data().len() + retired_bytes;
+        eprintln!("compact native inline projection: {baseline} -> {bytes} bytes");
+        if bytes < baseline {
+            *context = candidate;
+        }
+        Ok(())
     }
 
     pub(in crate::native_artifact::program) fn define_llvm_root(
@@ -136,6 +281,10 @@ impl PreparedObject {
             fold_readonly_data,
         )
         .map_err(llvm_diagnostic_failure)
+    }
+
+    pub(in crate::native_artifact::program) fn direct_runtime_calls(&self) -> DirectRuntimeCalls {
+        self.direct_runtime_calls
     }
 
     pub(in crate::native_artifact::program) fn use_direct_runtime_calls(&mut self, mode: &str) {
@@ -388,22 +537,7 @@ impl Module for PreparedObject {
     }
 
     fn declare_func_in_func(&mut self, id: FuncId, f: &mut ir::Function) -> ir::FuncRef {
-        let decl = self.declarations.get_function_decl(id);
-        let signature = f.import_signature(decl.signature.clone());
-        let name = f.declare_imported_user_function(ir::UserExternalName {
-            namespace: 0,
-            index: id.as_u32(),
-        });
-        // These providers are linked into the compact AArch64 Object's host.
-        // Let the linker resolve a branch relocation to each provider.
-        let direct = decl.linkage == Linkage::Import
-            && self.direct_runtime_calls.includes(decl.name.as_deref());
-        f.import_function(ir::ExtFuncData {
-            name: ir::ExternalName::user(name),
-            signature,
-            colocated: decl.linkage.is_final() || direct,
-            patchable: false,
-        })
+        self.direct_runtime_calls.declare_in(&self.declarations, id, f)
     }
 
     fn declare_function(
@@ -474,6 +608,21 @@ impl Module for PreparedObject {
                 .map_err(llvm_diagnostic_failure)?;
         }
         context.compile(self.isa(), control)?;
+        if declaration.name.as_deref() == Some("mech_compact_closed_checked") {
+            self.inline_private_helpers(id, context, control)?;
+        } else if declaration.linkage == Linkage::Local
+            && context.compiled_code().unwrap().buffer.data().len() <= MAX_INLINE_BYTES
+            && context.func.dfg.num_values() <= MAX_INLINE_VALUES
+            && let Some(bodies) = &mut self.inline_bodies
+            && std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok().is_none_or(|symbols| {
+                declaration.name.as_deref().is_some_and(|name| {
+                    symbols.split(',').any(|symbol| symbol == name)
+                })
+            })
+            && bodies.len() < MAX_INLINE_BODIES
+        {
+            bodies.insert(id, context.func.clone());
+        }
         let buffer = &context.compiled_code().unwrap().buffer;
         let relocs = buffer
             .relocs()

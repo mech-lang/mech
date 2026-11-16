@@ -438,6 +438,12 @@ impl Reduction {
 /// Broadcast the unsigned minimum using the existing portable vector vocabulary.
 /// Two pairwise shuffles keep both costs and stable indices in vector registers.
 fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
+    if cfg!(target_arch = "aarch64")
+        && std::env::var_os("MECH_ORDERED_HORIZONTAL_MINIMUM").is_some()
+    {
+        let minimum = minimum_word(b, values);
+        return b.ins().splat(types::I32X4, minimum);
+    }
     for mask in [
         // Both inputs are the same vector. Name the wrapped half through the
         // second input so the backend recognizes one contiguous extraction,
@@ -459,6 +465,18 @@ fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
         values = b.ins().umin(values, shuffled);
     }
     values
+}
+
+/// The unsigned minimum of all four words, expressed in portable scalar IR.
+/// AArch64 recognizes the complete same-vector tree as a horizontal minimum.
+pub(super) fn minimum_word(b: &mut FunctionBuilder<'_>, values: Value) -> Value {
+    let a = b.ins().extractlane(values, 0);
+    let b1 = b.ins().extractlane(values, 1);
+    let c = b.ins().extractlane(values, 2);
+    let d = b.ins().extractlane(values, 3);
+    let low = b.ins().umin(a, b1);
+    let high = b.ins().umin(c, d);
+    b.ins().umin(low, high)
 }
 
 fn emit_item(

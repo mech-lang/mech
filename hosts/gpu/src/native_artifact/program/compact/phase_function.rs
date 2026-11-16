@@ -5,7 +5,7 @@ use super::super::{
 };
 use super::*;
 use crate::native_artifact::{
-    codegen::control::CfgCleanup,
+    codegen::{common::unsigned_guard_facts, control::CfgCleanup, options::OptimizationPass},
     program::codegen::{numeric_compact, wide_equal},
 };
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
@@ -23,6 +23,7 @@ pub(super) struct Compiled {
     pub summary: serde_json::Value,
     pub code: Vec<u8>,
     pub composed: Option<Composed>,
+    pub packed_input: Option<Vec<usize>>,
 }
 type FinishReport = Box<
     dyn FnOnce(
@@ -40,6 +41,7 @@ struct Details {
     entry_bounds: Vec<(usize, u64, bool)>,
     finish_report: FinishReport,
     composed: Option<Composed>,
+    packed_input: Option<Vec<usize>>,
     vcode_path: Option<std::path::PathBuf>,
 }
 pub(super) struct Pending {
@@ -66,6 +68,12 @@ pub(super) enum GeneralPending {
     },
 }
 impl General {
+    pub(super) fn function(&self) -> FuncId {
+        match self {
+            Self::Ready(ready) => ready.details.function,
+            Self::Deferred(ready) => ready.input.function,
+        }
+    }
     pub(super) fn entry_bounds(&self) -> &[(usize, u64, bool)] {
         match self {
             Self::Ready(ready) => ready.entry_bounds(),
@@ -238,13 +246,18 @@ impl Details {
                 .ok_or_else(|| backend("phase VCode diagnostic was not emitted"))?;
             std::fs::write(path, text).map_err(backend)?;
         }
-        let summary = (self.finish_report)(compiled, &self.entry_bounds)?;
+        let mut summary = (self.finish_report)(compiled, &self.entry_bounds)?;
+        if let Some(words) = &self.packed_input {
+            summary["input_words"] = serde_json::json!(words.len());
+            summary["packed_input_words"] = serde_json::json!(words);
+        }
         Ok(Compiled {
             function: self.function,
             entry_bounds: self.entry_bounds,
             summary,
             code: compiled.buffer.data().to_vec(),
             composed: self.composed,
+            packed_input: self.packed_input,
         })
     }
 }
@@ -257,6 +270,8 @@ pub(super) fn define<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -273,6 +288,8 @@ pub(super) fn define<M: Module>(
         input_words,
         output_words,
         fixed_count,
+        selected_output,
+        pack_input,
         vectors,
         private,
         no_growth,
@@ -292,6 +309,8 @@ pub(super) fn prepare<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -308,6 +327,8 @@ pub(super) fn prepare<M: Module>(
         input_words,
         output_words,
         fixed_count,
+        selected_output,
+        pack_input,
         vectors,
         private,
         no_growth,
@@ -330,6 +351,8 @@ pub(super) fn prepare_general<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -347,6 +370,8 @@ pub(super) fn prepare_general<M: Module>(
         input_words,
         output_words,
         fixed_count,
+        selected_output,
+        pack_input,
         vectors,
         private,
         no_growth,
@@ -366,6 +391,8 @@ fn prepare_impl<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -399,6 +426,7 @@ fn prepare_impl<M: Module>(
         vectors,
         private,
         no_growth,
+        selected_output,
         false,
         error_origin_base,
     )?;
@@ -428,6 +456,7 @@ fn prepare_impl<M: Module>(
         && proof.arrays.iter().all(|array| !array.appends)
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little;
     if defer_general
+        && !pack_input
         && bodies.is_none()
         && std::env::var_os("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS").is_none()
         && vectors.is_none()
@@ -457,6 +486,10 @@ fn prepare_impl<M: Module>(
             fixed_count,
             actual_unit_append_growth: true,
             checked_regions: None,
+            selected_output_words: selected_output.map(BTreeSet::len),
+            packed_input: None,
+            unsigned_guards: 0,
+            packed_halfword_stores: 0,
         };
         return Ok(General::Deferred(DeferredGeneral {
             context,
@@ -484,6 +517,8 @@ fn prepare_impl<M: Module>(
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
         && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
     let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
+    let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
+    let mut paired_halfword_stores = None;
     if (pack_halfwords || reuse_lengths)
         && !observe
         && cleanup.enabled
@@ -514,12 +549,13 @@ fn prepare_impl<M: Module>(
             }
             if !floors.is_empty() {
                 context.flowgraph();
-                let packed = cfg_cleanup::packed_halfword_reads::fold(
+                let (packed, stores) = cfg_cleanup::packed_halfword_reads::fold(
                     &mut context.func,
                     &context.cfg,
                     &context.domtree,
                     &floors,
                 );
+                paired_halfword_stores = Some(stores);
                 if packed != 0 {
                     context.verify(module.isa()).map_err(backend)?;
                     if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
@@ -813,6 +849,7 @@ fn prepare_impl<M: Module>(
                         vectors,
                         private,
                         no_growth,
+                        selected_output,
                         true,
                         error_origin_base,
                     )?;
@@ -928,6 +965,16 @@ fn prepare_impl<M: Module>(
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
+                if !observe
+                    && module.isa().name() == "aarch64"
+                    && let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT")
+                    && let Some(path) = profiles
+                        .split(';')
+                        .filter_map(|profile| profile.split_once('@'))
+                        .find_map(|(phase, path)| (phase == name).then_some(path))
+                {
+                    set_block_layout_profile(&mut candidate, path)?;
+                }
                 let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
                     .map(std::path::PathBuf::from)
                     .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
@@ -958,6 +1005,62 @@ fn prepare_impl<M: Module>(
             }
         }
     }
+    let packed_halfword_stores = if pack_halfword_stores.is_some()
+        && let Some(stores) = paired_halfword_stores
+    {
+        context.compute_cfg();
+        let packed = stores.fold(&mut context.func, &context.cfg);
+        if packed != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        packed
+    } else {
+        0
+    };
+    let extrema = std::env::var_os("MECH_PRIVATE_VECTOR_PROVE_UNSIGNED_EXTREMA").is_some();
+    let unsigned_guards = if !observe
+        && cleanup.enabled
+        && private.is_some()
+        && vectors.is_some()
+        && controls.enabled(OptimizationPass::UnsignedGuardFacts)
+        && (extrema || std::env::var_os("MECH_PRIVATE_VECTOR_UNSIGNED_GUARDS").is_some())
+    {
+        let removed = unsigned_guard_facts::optimize_with_ranges(
+            &mut context,
+            &[],
+            controls.enabled(OptimizationPass::ModularUnsignedRanges),
+            extrema,
+        );
+        if removed != 0 {
+            let isa = module.isa();
+            context.eliminate_unreachable_code(isa).map_err(backend)?;
+            context.remove_constant_phis(isa).map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        removed
+    } else {
+        0
+    };
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
+            .is_some_and(|scope| scope == "vector" || scope == "all")
+    {
+        let count = cfg_cleanup::empty_jumps::forward(&mut context.func);
+        if count != 0 {
+            let isa = module.isa();
+            context.flowgraph();
+            context.eliminate_unreachable_code(isa).map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        eprintln!("{symbol} forwarded empty jumps: {count}");
+    }
+    let packed_input = if pack_input {
+        phase_storage::pack_used_input_words(&mut context.func, input_words)
+    } else {
+        None
+    };
     if let Some(path) = std::env::var_os("MECH_INSPECT_PHASE_CLIF") {
         let path = std::path::PathBuf::from(path);
         if path.file_stem().is_some_and(|name| name == symbol.as_str()) {
@@ -1000,6 +1103,22 @@ fn prepare_impl<M: Module>(
     } else {
         None
     };
+    context.func.forward_spill_reloads = !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_FORWARD_PHASE_SPILLS")
+            .is_some_and(|phase| phase == symbol.as_str());
+    if !observe
+        && vectors.is_some()
+        && module.isa().name() == "aarch64"
+        && let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT")
+        && let Some(path) = profiles
+            .split(';')
+            .filter_map(|profile| profile.split_once('@'))
+            .find_map(|(phase, path)| (phase == symbol).then_some(path))
+    {
+        set_block_layout_profile(&mut context, path)?;
+    }
     prepare_body(module.isa(), &mut context)?;
     let entry_bounds = report
         .phase_entry_bounds
@@ -1021,6 +1140,10 @@ fn prepare_impl<M: Module>(
             fixed_count,
             actual_unit_append_growth: no_growth.is_none(),
             checked_regions,
+            selected_output_words: selected_output.map(BTreeSet::len),
+            packed_input,
+            unsigned_guards,
+            packed_halfword_stores,
         },
         future_write_hints,
         histogram,
@@ -1040,6 +1163,10 @@ pub(super) struct SummaryInput {
     fixed_count: usize,
     actual_unit_append_growth: bool,
     checked_regions: Option<serde_json::Value>,
+    selected_output_words: Option<usize>,
+    packed_input: Option<Vec<usize>>,
+    unsigned_guards: usize,
+    packed_halfword_stores: usize,
 }
 
 fn finish_preparation(
@@ -1063,6 +1190,10 @@ fn finish_preparation(
         fixed_count,
         actual_unit_append_growth,
         checked_regions,
+        selected_output_words,
+        packed_input,
+        unsigned_guards,
+        packed_halfword_stores,
     } = input;
     let PhaseCleanup {
         bit_counts,
@@ -1088,6 +1219,15 @@ fn finish_preparation(
         "actual_unit_append_growth":actual_unit_append_growth,"unique_writable_owner_gate":true,"cleanup":cleanup});
         if let Some(checked_regions) = checked_regions {
             summary["checked_regions"] = checked_regions;
+        }
+        if let Some(words) = selected_output_words {
+            summary["selected_success_words"] = serde_json::json!(words);
+        }
+        if unsigned_guards != 0 {
+            summary["unsigned_guards"] = serde_json::json!(unsigned_guards);
+        }
+        if packed_halfword_stores != 0 {
+            summary["packed_halfword_stores"] = serde_json::json!(packed_halfword_stores);
         }
         summary["bit_counts"] = serde_json::json!(bit_counts);
         if let Some(hint) = future_write_hints.first() {
@@ -1139,10 +1279,29 @@ fn finish_preparation(
             entry_bounds,
             finish_report,
             composed,
+            packed_input,
             vcode_path,
         },
     }
 }
+
+fn set_block_layout_profile(context: &mut Context, path: &str) -> Result<(), NativeCompileError> {
+    #[derive(serde::Deserialize)]
+    struct Profile {
+        order: Vec<u32>,
+        #[serde(default)]
+        literal_offset: Option<u32>,
+    }
+    let profile: Profile =
+        serde_json::from_slice(&std::fs::read(path).map_err(backend)?).map_err(backend)?;
+    context.func.aarch64_block_layout = profile.order;
+    context.func.aarch64_block_layout_literal_start = profile.literal_offset;
+    Ok(())
+}
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[path = "phase_layout_tests.rs"]
+mod phase_layout_tests;
 
 fn phase_ir<M: Module>(
     module: &mut M,
@@ -1154,6 +1313,7 @@ fn phase_ir<M: Module>(
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
+    selected_output: Option<&BTreeSet<usize>>,
     countdown: bool,
     error_origin_base: Option<usize>,
 ) -> Result<(Context, numeric_compact::Report), NativeCompileError> {
@@ -1181,7 +1341,8 @@ fn phase_ir<M: Module>(
             Some(&storage),
             private,
             no_growth,
-        )?;
+        )?
+        .with_selected_output(selected_output);
         let native = if let Some(base) = error_origin_base {
             native.with_error_origin_base(base)
         } else {
@@ -1267,11 +1428,21 @@ fn optimize_phase(
             eprintln!("{symbol} checked append run: {outcome:?}");
         }
     }
-    if no_growth.is_some() && std::env::var_os("MECH_NARROW_MASKED_ARITHMETIC").is_some() {
+    let narrow_fixed = (private && vectors.is_some())
+        .then(|| std::env::var_os("MECH_NARROW_PRIVATE_ARITHMETIC"))
+        .flatten();
+    if narrow_fixed.is_some()
+        || (no_growth.is_some() && std::env::var_os("MECH_NARROW_MASKED_ARITHMETIC").is_some())
+    {
         let narrowed =
             crate::native_artifact::program::codegen::low_word::narrow(&mut context.func);
+        let shifts = if narrow_fixed.is_some_and(|mode| mode == "shifts") {
+            crate::native_artifact::program::codegen::low_word::narrow_masked_shifts(&mut context.func)
+        } else {
+            0
+        };
         if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} low-word operations: {narrowed}");
+            eprintln!("{symbol} low-word operations: {narrowed} arithmetic, {shifts} shifts");
         }
     }
     // A completed ordered reduction names its own selected continuation.
@@ -1345,11 +1516,15 @@ fn optimize_phase(
             eprintln!("{symbol} repeated bounds checks: {changed}");
         }
     }
-    if private && vectors.is_some() && std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS").is_some() {
+    if private
+        && vectors.is_some()
+        && let Some(mode) = std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS")
+    {
         let changed = super::phase_storage::sink_exit_packet_words(
             &mut context.func,
             input_words,
             output_words,
+            mode == "multiple",
         );
         if changed != 0 {
             context.verify(isa).map_err(backend)?;
@@ -1373,8 +1548,11 @@ fn optimize_phase(
             eprintln!("{symbol} proved scalar spans: {changed}");
         }
     }
-    if private && vectors.is_some() && std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS").is_some() {
-        let proved = cfg_cleanup::prove_packed_bases(controls, context, isa)?;
+    if private
+        && vectors.is_some()
+        && let Some(mode) = std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS")
+    {
+        let proved = cfg_cleanup::prove_packed_bases(controls, context, isa, mode == "offsets")?;
         if proved != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} proved packed base spans: {proved}");
         }

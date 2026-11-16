@@ -10,6 +10,14 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{FuncId, Linkage, Module, default_libcall_names};
 use std::collections::BTreeMap;
 
+fn jit_builder() -> JITBuilder {
+    JITBuilder::with_flags(
+        &[("preserve_frame_pointers", "true"), ("unwind_info", "true")],
+        default_libcall_names(),
+    )
+    .unwrap()
+}
+
 fn define(
     module: &mut JITModule,
     enabled: bool,
@@ -174,7 +182,7 @@ struct ResultPair(u64, u64);
 
 #[test]
 fn shared_traversal_preserves_exit_resume_and_failure_origin() {
-    let builder = JITBuilder::new(default_libcall_names()).unwrap();
+    let builder = jit_builder();
     let mut module = JITModule::new(builder);
     let original = define(&mut module, false, 0, false, 4);
     let outlined = define(&mut module, true, 0, false, 4);
@@ -212,7 +220,7 @@ fn packed_refusal_preserves_partial_resume_and_failure_origin() {
         (true, -1),
         (true, i64::from(u32::MAX) + 1),
     ] {
-        let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+        let mut module = JITModule::new(jit_builder());
         let original = define(&mut module, false, 44, false, offset);
         let outlined = define(&mut module, true, 44, return_error_origin, offset);
         module.finalize_definitions().unwrap();
@@ -236,7 +244,13 @@ fn packed_refusal_preserves_partial_resume_and_failure_origin() {
     }
 }
 
-fn define_controller(module: &mut JITModule, enabled: bool, varying_bounds: bool) -> FuncId {
+fn define_controller(
+    module: &mut JITModule,
+    enabled: bool,
+    varying_bounds: bool,
+    register_inputs: bool,
+    register_outputs: bool,
+) -> FuncId {
     let mut ctx = module.make_context();
     ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];
     ctx.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -327,11 +341,14 @@ fn define_controller(module: &mut JITModule, enabled: bool, varying_bounds: bool
             vec![candidates],
             CaptureBindings {
                 literals: varying_bounds,
+                return_error_origin: register_inputs || register_outputs,
+                register_inputs,
+                register_outputs,
                 ..CaptureBindings::default()
             },
         )
         .unwrap()
-        .expect("both controllers selected");
+        .expect("requested controllers selected");
         assert_eq!(report[0]["headers"], serde_json::json!([130, 190]));
         let input_words = if varying_bounds { 4 } else { 3 };
         assert_eq!(
@@ -341,17 +358,37 @@ fn define_controller(module: &mut JITModule, enabled: bool, varying_bounds: bool
         if varying_bounds {
             assert_eq!(report[0]["literal_inputs"], serde_json::json!([[5], [9]]));
         }
+        if register_inputs {
+            assert_eq!(report[0]["register_input_words"], input_words);
+        }
+        if register_outputs {
+            assert_eq!(report[0]["register_output_words"], 3);
+        }
+        if register_inputs || register_outputs {
+            assert_eq!(report[0]["returns_error_origin"], true);
+        }
     }
     ctx.verify(module.isa()).unwrap();
     module.define_function(id, &mut ctx).unwrap();
     id
 }
 
-fn check_controller(varying_bounds: bool, bounds: [u64; 2]) {
-    let builder = JITBuilder::new(default_libcall_names()).unwrap();
+fn check_controller(
+    varying_bounds: bool,
+    bounds: [u64; 2],
+    register_inputs: bool,
+    register_outputs: bool,
+) {
+    let builder = jit_builder();
     let mut module = JITModule::new(builder);
-    let original = define_controller(&mut module, false, varying_bounds);
-    let outlined = define_controller(&mut module, true, varying_bounds);
+    let original = define_controller(&mut module, false, varying_bounds, false, false);
+    let outlined = define_controller(
+        &mut module,
+        true,
+        varying_bounds,
+        register_inputs,
+        register_outputs,
+    );
     module.finalize_definitions().unwrap();
     let bind = |id| unsafe {
         std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
@@ -376,23 +413,47 @@ fn check_controller(varying_bounds: bool, bounds: [u64; 2]) {
 
 #[test]
 fn shared_controller_preserves_loop_value_and_direct_uses_after_exit() {
-    check_controller(false, [1, 1]);
+    check_controller(false, [1, 1], false, false);
 }
 
 #[test]
 fn shared_controller_keeps_each_callers_bound_and_error_origin() {
-    check_controller(true, [5, 9]);
+    check_controller(true, [5, 9], false, false);
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[test]
+fn shared_controller_passes_normalized_inputs_in_registers() {
+    check_controller(true, [5, 9], true, false);
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[test]
+fn shared_controller_returns_normalized_outputs_in_registers() {
+    for register_inputs in [false, true] {
+        check_controller(true, [5, 9], register_inputs, true);
+    }
 }
 
 #[test]
 fn shared_continuation_preserves_nested_results_and_error_origins() {
     for direct_inputs in [0, 16] {
-        check_nested_continuation(direct_inputs);
+        check_nested_continuation(direct_inputs, false, 4);
     }
 }
 
-fn check_nested_continuation(direct_inputs: usize) {
-    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[test]
+fn nested_continuation_returns_full_error_origin_in_result_register() {
+    for direct_inputs in [0, 16] {
+        for offset in [4, -1, i64::from(u32::MAX) + 2, i64::MAX - 29] {
+            check_nested_continuation(direct_inputs, true, offset);
+        }
+    }
+}
+
+fn check_nested_continuation(direct_inputs: usize, register_outputs: bool, offset: i64) {
+    let mut module = JITModule::new(jit_builder());
     let mut ctx = module.make_context();
     ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];
     ctx.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -441,7 +502,9 @@ fn check_nested_continuation(direct_inputs: usize) {
         b.switch_to_block(error);
         b.set_cold_block(error);
         let status = b.ins().iconst(types::I64, 17);
-        let origin = b.ins().iconst(types::I64, i64::from(base) + 4);
+        let origin = b
+            .ins()
+            .iconst(types::I64, i64::from(base).wrapping_add(offset));
         b.ins().return_(&[status, origin]);
         b.switch_to_block(success);
         let value = b.ins().iadd_imm(marked, 11);
@@ -474,15 +537,22 @@ fn check_nested_continuation(direct_inputs: usize) {
         vec![outer],
         RegionKind::Continuation { direct_inputs },
         false,
-        CaptureBindings::default(),
+        CaptureBindings {
+            register_outputs,
+            ..CaptureBindings::default()
+        },
     )
     .unwrap()
     .expect("shared caller with a nested checked call");
     assert_eq!(callers[0]["headers"], serde_json::json!([30, 90]));
     assert_eq!(
         callers[0]["input_words"],
-        if direct_inputs == 0 { 2 } else { 5 }
+        (if direct_inputs == 0 { 2 } else { 5 }) - usize::from(register_outputs)
     );
+    if register_outputs {
+        assert_eq!(callers[0]["register_output_words"], 1);
+        assert!(callers[0]["returns_error_origin"].is_null());
+    }
     let id = module
         .declare_function(
             "nested_checked_continuations",
@@ -495,7 +565,8 @@ fn check_nested_continuation(direct_inputs: usize) {
     module.finalize_definitions().unwrap();
     let call: extern "C" fn(u64, u64, &mut u64) -> ResultPair =
         unsafe { std::mem::transmute(module.get_finalized_function(id)) };
-    for (choice, origin) in [(0, 34), (1, 94)] {
+    for (choice, base) in [(0, 30i64), (1, 90i64)] {
+        let origin = base.wrapping_add(offset) as u64;
         let mut value = 100;
         assert_eq!(call(choice, 1, &mut value), ResultPair(17, origin));
         assert_eq!(value, 101);
@@ -506,7 +577,7 @@ fn check_nested_continuation(direct_inputs: usize) {
 
 #[test]
 fn direct_refusal_shares_a_bound_used_by_multiple_constants() {
-    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut module = JITModule::new(jit_builder());
     let mut context = module.make_context();
     context.func.signature.params = vec![AbiParam::new(types::I64); 3];
     context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -611,7 +682,7 @@ fn direct_refusal_shares_a_bound_used_by_multiple_constants() {
 
 #[test]
 fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
-    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut module = JITModule::new(jit_builder());
     let mut context = module.make_context();
     context.func.signature.params = vec![AbiParam::new(types::I64); 3];
     context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -689,7 +760,7 @@ fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
 
 #[test]
 fn shared_body_takes_distinct_operand_roles_even_when_a_caller_repeats_a_value() {
-    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut module = JITModule::new(jit_builder());
     let mut context = module.make_context();
     context.func.signature.params = vec![AbiParam::new(types::I64); 3];
     context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
@@ -768,7 +839,7 @@ fn shared_loop_can_pad_a_single_output() {
 }
 
 fn verify_loop_output_packets(bindings: CaptureBindings) {
-    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut module = JITModule::new(jit_builder());
     let mut context = module.make_context();
     context.func.signature.params = vec![AbiParam::new(types::I64); 3];
     context.func.signature.returns = vec![AbiParam::new(types::I64); 2];

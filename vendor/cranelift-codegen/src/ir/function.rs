@@ -16,6 +16,7 @@ use crate::isa::CallConv;
 use crate::write::{write_function, write_function_spec};
 #[cfg(feature = "enable-serde")]
 use alloc::string::String;
+use alloc::vec::Vec;
 use core::fmt;
 
 #[cfg(feature = "enable-serde")]
@@ -187,6 +188,20 @@ pub struct FunctionStencil {
     /// register allocation. Return operands are still prepared at each site.
     pub share_cold_epilogues: bool,
 
+    /// Share identical, position-independent tails of cold AArch64 blocks.
+    /// Normal-path instructions and the function's register allocation stay fixed.
+    pub aarch64_share_cold_tails: bool,
+
+    /// Allow AArch64 to forward known values held in private spill slots.
+    pub forward_spill_reloads: bool,
+
+    /// Measured order of AArch64 machine blocks, expressed in the original byte offsets.
+    pub aarch64_block_layout: Vec<u32>,
+
+    /// Original start of an aligned trailing literal pool in a measured
+    /// AArch64 leaf. All references and their readable extents are validated.
+    pub aarch64_block_layout_literal_start: Option<u32>,
+
     /// Source locations.
     ///
     /// Track the original source location for each instruction. The source locations are not
@@ -227,6 +242,10 @@ impl FunctionStencil {
         self.layout.clear();
         self.preferred_fallthrough = None;
         self.share_cold_epilogues = false;
+        self.aarch64_share_cold_tails = false;
+        self.forward_spill_reloads = false;
+        self.aarch64_block_layout.clear();
+        self.aarch64_block_layout_literal_start = None;
         self.srclocs.clear();
         self.debug_tags.clear();
         self.stack_limit = None;
@@ -421,6 +440,10 @@ impl Function {
                 layout: Layout::new(),
                 preferred_fallthrough: None,
                 share_cold_epilogues: false,
+                aarch64_share_cold_tails: false,
+                forward_spill_reloads: false,
+                aarch64_block_layout: Vec::new(),
+                aarch64_block_layout_literal_start: None,
                 srclocs: SecondaryMap::new(),
                 stack_limit: None,
                 debug_tags: DebugTags::default(),
