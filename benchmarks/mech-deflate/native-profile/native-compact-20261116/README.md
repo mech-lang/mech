@@ -30,7 +30,7 @@ The parser change passed 530 tests and preserved bytecode, object, complete
 metadata, and executable byte for byte. These are M1 measurements, separate from
 #973's M3/LLVM result.
 
-## Current complete build timing
+## Compiler allocator comparison
 
 The standalone frontend now imports the same existing compiler allocator as
 `src/bin/mech.rs` and the compact native emitter. In a matched Apple M1 comparison,
@@ -58,6 +58,56 @@ run receipt, source/worker hashes, and the as-run measurement scripts. Those
 scripts preserve original machine paths as provenance; `rebuild.py` remains the
 checkout-relative reproduction entry. The 5.67-second cached frontend rebuild
 in the build log is excluded and is not a cold full-compiler build measurement.
+
+## Owner-proof runtime follow-up
+
+Two smaller configurations have now been linked and measured. **Neither replaces
+the retained 72,520-byte recipe.** All raw results, including adverse observations,
+are in [the qualification report](evidence/owner-proof-runtime/report.json).
+
+The 72,168-byte configuration with broader owner proofs and only helper 4879
+inlined passed 162 correctness calls and reduced measured peak stack use from
+5,296 to 5,232 bytes. It nevertheless lost libdeflate wins in both focused orders
+and consistently slowed several cases, including `320-overlap` by 3.73% and
+5.08%. It is rejected.
+
+The narrower `ranges` proof produces **72,392 bytes**, or **1.25471× Roc and
+1.95232× libdeflate**, with unchanged 5,296-byte peak stack use. Both complete
+orders retained 81 Roc wins. Libdeflate counts were **61 then 60 for both control
+and candidate**, with no candidate-only lost wins. A longer `320-overlap` follow-up
+won against C in both orders, but does not replace the original full-run counts.
+The initial per-case uncertainty analysis bounded 74 cases at the declared 0.5%
+resolution; seven required follow-up. Additional same-worker measurements still
+leave tiny-input repeatability unresolved. The first one-byte follow-up's adverse
+estimate is retained alongside its better repeat. This is not a newly qualified
+81/61 result.
+
+| Latest matched complete build | Median seconds | Encoder text |
+| --- | ---: | ---: |
+| Retained Mech control | 6.24346 | 72,520 B |
+| Mech `owner-ranges`, not promoted | 6.26348 | 72,392 B |
+| Roc | 2.99064 | 57,696 B |
+| libdeflate | 0.49022 | 37,080 B |
+
+This repeats the same complete source-to-executable boundary, with one excluded
+warmup and four balanced orders. The candidate takes 1.00321× its control,
+2.09436× Roc, and 12.77679× libdeflate. The retained control takes 12.73596×
+libdeflate. The smaller object did not demonstrate a build-time improvement.
+The linked text shrinks by 128 bytes, while the complete executable file remains
+956,056 bytes. All five builds of each Mech variant reproduce their own bytecode,
+object, metadata, and executable exactly; both linked variants pass 324 combined
+correctness calls. Freshly linked workers do not inherit the pinned workers'
+runtime scores.
+
+For review, `rebuild.py --variant owner-ranges` reproduces that experimental
+object and complete metadata exactly and can link/check it with the same
+`--mimalloc-object` option. This path has been exercised with 162 correctness
+calls. All three rebuild variants now check complete metadata identity as well
+as object identity. The default remains the retained baseline. Raw runtime
+measurements, repeatability studies, build commands and phase logs, integrated
+rebuild receipts, and as-run analysis scripts are in `evidence/owner-proof-runtime`.
+The as-run scripts retain original machine paths; the advertised rebuild command
+uses paths relative to this checkout.
 
 ## What to review
 
