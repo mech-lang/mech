@@ -1,0 +1,23 @@
+{
+  "object_text_bytes": 55956,
+  "object_text_x_roc": 0.9698419301164726,
+  "object_text_x_libdeflate": 1.3610624635143025,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 41112,
+  "root_code_bytes": 47232,
+  "root_frame_bytes": 2384,
+  "source_blocks": 8223,
+  "root_direct_calls": 99,
+  "object_sha256": "a917aa339eb7291e0cbcb5fadedd2a4bf263df0db0ffe408f96310fa084b1f14",
+  "metadata_sha256": "e4c1ddb70a35cbc1f1711b6a5993e02e1d15501479421de99d7f09ea7d76abbe",
+  "linked_text_bytes": 458240,
+  "worker_sha256": "e11c82bd4f1f293946354e024685b6e435314cc7b53d0ef5edc4bb03e1cedbd2",
+  "verified_calls": 162,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "canonical_program_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "machine": "Apple M1",
+  "mode": "diagnostic native Object",
+  "exact_matrix_calls": 616,
+  "forced_allocation_failures": 6,
+  "peak_stack_bytes_touched": 3936
+}
