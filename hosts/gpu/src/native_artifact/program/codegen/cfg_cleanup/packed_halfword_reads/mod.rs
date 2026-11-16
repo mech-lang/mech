@@ -156,15 +156,73 @@ fn following(f: &Function, cfg: &ControlFlowGraph, mut from: Inst) -> Option<Ins
     None
 }
 
+/// Keep the original typed stores available to prefetch and load scheduling.
+pub(in crate::native_artifact) struct PairedStores(Vec<(Inst, Inst)>);
+
+impl PairedStores {
+    pub fn fold(self, f: &mut Function, cfg: &ControlFlowGraph) -> usize {
+        let mut packed = 0;
+        for (first, second) in self.0 {
+            if f.layout.inst_block(first).is_none() || following(f, cfg, first) != Some(second) {
+                continue;
+            }
+            let Data::Store {
+                opcode: Opcode::Store,
+                args: [lo, address],
+                offset,
+                flags: lo_flags,
+                ..
+            } = f.dfg.insts[first]
+            else {
+                continue;
+            };
+            let Data::Store {
+                opcode: Opcode::Store,
+                args: [hi, _],
+                flags: hi_flags,
+                ..
+            } = f.dfg.insts[second]
+            else {
+                continue;
+            };
+            if lo_flags != MemFlags::new()
+                || hi_flags != MemFlags::new()
+                || f.dfg.value_type(lo) != types::I16
+                || f.dfg.value_type(hi) != types::I16
+            {
+                continue;
+            }
+            // The same admitted view proved both cells accessible. The
+            // rechecked path between stores performs no observable work.
+            let mut cursor = FuncCursor::new(f).at_inst(second);
+            cursor.use_srcloc(second);
+            let low = cursor.ins().uextend(types::I32, lo);
+            let high = cursor.ins().uextend(types::I32, hi);
+            let high = cursor.ins().ishl_imm(high, 16);
+            let word = cursor.ins().bor(low, high);
+            let flags = MemFlags::new().with_endianness(Endianness::Little);
+            cursor
+                .func
+                .dfg
+                .replace(second)
+                .store(flags, word, address, offset);
+            cursor.func.layout.remove_inst(first);
+            packed += 1;
+        }
+        packed
+    }
+}
+
 pub(in crate::native_artifact) fn fold(
     f: &mut Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
     floors: &BTreeMap<Value, u64>,
-) -> usize {
+) -> (usize, PairedStores) {
     let mut facts = Facts::new(f);
     let mut used = BTreeSet::new();
     let mut edits = Vec::new();
+    let mut stores = Vec::new();
     for b in f.layout.blocks().filter(|&block| dom.is_reachable(block)) {
         for first in f.layout.block_insts(b) {
             if used.contains(&first) {
@@ -212,6 +270,7 @@ pub(in crate::native_artifact) fn fold(
             }
             used.insert(second);
             edits.push((first, second, address, offset));
+            stores.push((write_lo, write_hi));
         }
     }
     let mut cursor = FuncCursor::new(f);
@@ -224,7 +283,7 @@ pub(in crate::native_artifact) fn fold(
         cursor.func.dfg.replace(first).band_imm(pair, 0xffff);
         cursor.func.dfg.replace(second).ushr_imm(pair, 16);
     }
-    edits.len()
+    (edits.len(), PairedStores(stores))
 }
 
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]

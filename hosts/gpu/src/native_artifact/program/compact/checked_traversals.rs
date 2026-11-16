@@ -33,6 +33,7 @@ mod region_outputs;
 
 const MAX_PACKET_WORDS: usize = 256;
 const MAX_DIRECT_INPUT_WORDS: usize = 40;
+const APPLE_INTEGER_REGISTERS: usize = 8;
 const FIRST_ERROR_TAG: i64 = 2;
 
 #[derive(Clone, Copy)]
@@ -97,6 +98,8 @@ struct Traversal {
     passthrough: BTreeMap<Value, Value>,
     live_captures: Vec<usize>,
     packed_inputs: bool,
+    register_inputs: bool,
+    register_outputs: bool,
     return_error_origin: bool,
     constants: Vec<Value>,
     slots: Vec<StackSlot>,
@@ -105,7 +108,7 @@ struct Traversal {
 
 #[derive(Clone, Copy)]
 struct CallSlots {
-    result: StackSlot,
+    result: Option<StackSlot>,
     captures: Option<StackSlot>,
 }
 
@@ -243,7 +246,7 @@ fn in_use_order<T: Copy + Ord>(
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum RegionKind {
     Refusal,
-    Controller,
+    Controller { direct_inputs: usize },
     Phase,
     Continuation { direct_inputs: usize },
 }
@@ -251,6 +254,14 @@ enum RegionKind {
 impl RegionKind {
     fn is_continuation(self) -> bool {
         matches!(self, Self::Continuation { .. })
+    }
+
+    fn direct_input_limit(self) -> usize {
+        match self {
+            Self::Controller { direct_inputs }
+            | Self::Continuation { direct_inputs } => direct_inputs,
+            Self::Refusal | Self::Phase => 0,
+        }
     }
 }
 
@@ -391,10 +402,10 @@ fn plan(
     let resume_words = candidate
         .resume
         .map_or(0, |resume| f.dfg.block_params(resume).len());
-    let direct_continuation = matches!(kind, RegionKind::Continuation { direct_inputs }
-        if direct_inputs != 0 && input_words <= direct_inputs && output_words <= 32);
+    let direct_limit = kind.direct_input_limit();
+    let direct_captures = direct_limit != 0 && input_words <= direct_limit && output_words <= 32;
     // A refusal that fits the original bounds keeps its existing native ABI.
-    let packed_inputs = (controller && !direct_continuation)
+    let packed_inputs = (controller && !direct_captures)
         || kind == RegionKind::Phase
         || pack_large_refusals
             && (input_words > MAX_DIRECT_INPUT_WORDS || output_words.max(resume_words) > 32);
@@ -431,7 +442,7 @@ fn plan(
         return Err("live outputs exceed the call boundary budget");
     }
     let passthrough = dominance
-        .filter(|_| packed_inputs || direct_continuation)
+        .filter(|_| packed_inputs || direct_captures)
         .map(|dom| {
             let resume = candidate
                 .resume
@@ -485,6 +496,8 @@ fn plan(
         passthrough,
         live_captures: Vec::new(),
         packed_inputs,
+        register_inputs: false,
+        register_outputs: false,
         return_error_origin: false,
         constants,
         slots,
@@ -530,10 +543,29 @@ impl Traversal {
         })
     }
 
+    fn can_return_register_outputs(&self, f: &Function) -> bool {
+        if f.signature.call_conv != cranelift_codegen::isa::CallConv::AppleAarch64
+            || self.candidate.resume.is_some()
+            || !(1..=APPLE_INTEGER_REGISTERS - 2).contains(&self.output_words())
+        {
+            return false;
+        }
+        let is_word = |&value| f.dfg.value_type(value) == types::I64;
+        if self.aligned_outputs.is_empty() {
+            self.finish
+                .iter()
+                .chain(&self.outputs)
+                .filter(|value| !self.passthrough.contains_key(value))
+                .all(is_word)
+        } else {
+            self.aligned_outputs.iter().all(is_word)
+        }
+    }
+
     fn signature(&self, f: &Function) -> Signature {
         let mut result = Signature::new(f.signature.call_conv);
         if self.packed_inputs {
-            result.params = vec![AbiParam::new(types::I64); 2];
+            result.params.push(AbiParam::new(types::I64));
         } else {
             result.params = self
                 .inputs
@@ -548,15 +580,24 @@ impl Traversal {
                     .iter()
                     .map(|capture| AbiParam::new(capture.ty)),
             );
+        }
+        if !self.register_outputs {
             result.params.push(AbiParam::new(types::I64));
         }
+        let output_words = if self.register_outputs { self.output_words() } else { 0 };
         result
             .returns
-            .extend((0..2).map(|_| AbiParam::new(types::I64)));
+            .extend((0..2 + output_words).map(|_| AbiParam::new(types::I64)));
         result
     }
 
-    fn body(&mut self, f: &Function, signature: &Signature, compose_origins: bool) -> Function {
+    fn body(
+        &mut self,
+        f: &Function,
+        signature: &Signature,
+        compose_origins: bool,
+        register_inputs: bool,
+    ) -> Function {
         let mut body = f.clone();
         body.layout = Layout::new();
         body.sized_stack_slots = Default::default();
@@ -568,7 +609,7 @@ impl Traversal {
             .iter()
             .map(|p| body.dfg.append_block_param(entry, p.value_type))
             .collect::<Vec<_>>();
-        let packet = params.pop().unwrap();
+        let packet = (!self.register_outputs).then(|| params.pop().unwrap());
         let mut capture_loads = Vec::new();
         if self.packed_inputs {
             let capture = params[0];
@@ -726,6 +767,7 @@ impl Traversal {
                         };
                         let mut pos = FuncCursor::new(&mut body).at_inst(inst);
                         let base = self.candidate.origin_base();
+                        let mut returned_origin = None;
                         let tag = if self.return_error_origin {
                             // Zero and one are the two continuations. A proved
                             // relative u32 origin fits above them without wrap.
@@ -735,10 +777,27 @@ impl Traversal {
                         } else {
                             let relative =
                                 relative_error_origin(&mut pos, origin, base, compose_origins);
-                            pos.ins().store(MemFlags::new(), relative, packet, 0);
+                            if self.register_outputs {
+                                // No success value is published on failure. Its
+                                // first result register can carry the complete
+                                // relative origin, including dynamic origins
+                                // returned by a nested checked continuation.
+                                returned_origin = Some(relative);
+                            } else {
+                                let packet = packet.expect("relative origin result slot");
+                                pos.ins().store(MemFlags::new(), relative, packet, 0);
+                            }
                             pos.ins().iconst(types::I64, FIRST_ERROR_TAG)
                         };
-                        pos.func.dfg.replace(inst).return_(&[tag, status]);
+                        let mut returns = vec![tag, status];
+                        if self.register_outputs {
+                            let empty = pos.ins().iconst(types::I64, 0);
+                            returns.resize(signature.returns.len(), empty);
+                            if let Some(origin) = returned_origin {
+                                returns[2] = origin;
+                            }
+                        }
+                        pos.func.dfg.replace(inst).return_(&returns);
                     }
                     InstructionData::Jump {
                         opcode,
@@ -808,27 +867,62 @@ impl Traversal {
             };
             let mut pos = FuncCursor::new(&mut body);
             pos.goto_bottom(stub);
-            for (index, value) in words.into_iter().enumerate() {
-                pos.ins()
-                    .store(MemFlags::new(), value, packet, (index * 8) as i32);
+            if let Some(packet) = packet {
+                for (index, &value) in words.iter().enumerate() {
+                    pos.ins().store(MemFlags::new(), value, packet, (index * 8) as i32);
+                }
             }
             let tag = pos.ins().iconst(types::I64, tag as i64);
             let zero = pos.ins().iconst(types::I64, 0);
-            pos.ins().return_(&[tag, zero]);
+            let mut returns = vec![tag, zero];
+            if self.register_outputs {
+                returns.extend(words);
+            }
+            pos.ins().return_(&returns);
         }
         if self.packed_inputs {
             eliminate_dead_values(&mut body);
             // DCE removes captures used only to transport an unchanged value.
             // The caller initializes only the surviving, densely packed lanes.
+            let mut loads = Vec::new();
             for (index, inst) in capture_loads.into_iter().enumerate() {
-                if body.layout.inst_block(inst).is_none() {
-                    continue;
+                if body.layout.inst_block(inst).is_some() {
+                    self.live_captures.push(index);
+                    loads.push(inst);
                 }
-                let InstructionData::Load { ref mut offset, .. } = body.dfg.insts[inst] else {
-                    unreachable!()
-                };
-                *offset = ((self.live_captures.len() * 8) as i32).into();
-                self.live_captures.push(index);
+            }
+            // Normalize and trim the captures before selecting the private
+            // calling convention. Count the output pointer if it is needed.
+            self.register_inputs = register_inputs
+                && signature.call_conv == cranelift_codegen::isa::CallConv::AppleAarch64
+                && loads.len() + usize::from(packet.is_some()) <= APPLE_INTEGER_REGISTERS
+                && loads.iter().all(|&inst| {
+                    body.dfg.value_type(body.dfg.first_result(inst)) == types::I64
+                });
+            if self.register_inputs {
+                // The input loads above are the only uses of the input packet
+                // address. The result pointer keeps its role as the last arg.
+                body.dfg.detach_block_params(entry);
+                body.signature.params.clear();
+                for inst in loads {
+                    let original = body.dfg.first_result(inst);
+                    let value = body.dfg.append_block_param(entry, types::I64);
+                    body.dfg.detach_inst_results(inst);
+                    body.layout.remove_inst(inst);
+                    body.dfg.change_to_alias(original, value);
+                    body.signature.params.push(AbiParam::new(types::I64));
+                }
+                if let Some(packet) = packet {
+                    body.dfg.attach_block_param(entry, packet);
+                    body.signature.params.push(AbiParam::new(types::I64));
+                }
+            } else {
+                for (index, inst) in loads.into_iter().enumerate() {
+                    let InstructionData::Load { ref mut offset, .. } = body.dfg.insts[inst] else {
+                        unreachable!()
+                    };
+                    *offset = ((index * 8) as i32).into();
+                }
             }
         }
         body
@@ -837,27 +931,31 @@ impl Traversal {
     fn restore_word(
         &self,
         pos: &mut FuncCursor<'_>,
-        slot: StackSlot,
+        slot: Option<StackSlot>,
+        register_words: &[Value],
         original: Value,
-        next: &mut i32,
+        next: &mut usize,
     ) -> Value {
         if let Some(&source) = self.passthrough.get(&original) {
             return source;
         }
-        let ty = pos.func.dfg.value_type(original);
-        let offset = if self.aligned_outputs.is_empty() {
-            let offset = *next;
-            *next += 8;
-            offset
+        let index = if self.aligned_outputs.is_empty() {
+            let index = *next;
+            *next += 1;
+            index
         } else {
-            let position = self
+            self
                 .aligned_outputs
                 .iter()
                 .position(|&value| value == original)
-                .expect("original result is in the shared output packet");
-            (position * 8) as i32
+                .expect("original result has a shared output word")
         };
-        pos.ins().stack_load(ty, slot, offset)
+        if self.register_outputs {
+            register_words[index]
+        } else {
+            let ty = pos.func.dfg.value_type(original);
+            pos.ins().stack_load(ty, slot.expect("region result slot"), (index * 8) as i32)
+        }
     }
 
     fn replace<M: Module>(
@@ -942,7 +1040,9 @@ impl Traversal {
                 .iter()
                 .map(|literal| pos.ins().iconst(literal.ty, literal.bits)),
         );
-        if self.packed_inputs {
+        if self.register_inputs {
+            args = self.live_captures.iter().map(|&source| args[source]).collect();
+        } else if self.packed_inputs {
             let capture = packets.captures.expect("packed region input slot");
             for (index, &source) in self.live_captures.iter().enumerate() {
                 pos.ins()
@@ -951,11 +1051,16 @@ impl Traversal {
             args.clear();
             args.push(pos.ins().stack_addr(types::I64, capture, 0));
         }
-        args.push(pos.ins().stack_addr(types::I64, packets.result, 0));
+        if !self.register_outputs {
+            let result = packets.result.expect("region result slot");
+            args.push(pos.ins().stack_addr(types::I64, result, 0));
+        }
         let call = pos.ins().call(reference, &args);
-        let [tag, status] = *pos.func.dfg.inst_results(call) else {
+        let results = pos.func.dfg.inst_results(call).to_vec();
+        let [tag, status, register_words @ ..] = results.as_slice() else {
             unreachable!()
         };
+        let (tag, status) = (*tag, *status);
         let condition = if self.return_error_origin {
             IntCC::UnsignedGreaterThanOrEqual
         } else {
@@ -967,8 +1072,11 @@ impl Traversal {
         let origin = if self.return_error_origin {
             pos.ins()
                 .iadd_imm(tag, candidate.origin_base() - FIRST_ERROR_TAG)
+        } else if self.register_outputs {
+            pos.ins().iadd_imm(register_words[0], candidate.origin_base())
         } else {
-            let relative = pos.ins().stack_load(types::I64, packets.result, 0);
+            let result = packets.result.expect("relative origin result slot");
+            let relative = pos.ins().stack_load(types::I64, result, 0);
             pos.ins().iadd_imm(relative, candidate.origin_base())
         };
         pos.ins().return_(&[status, origin]);
@@ -988,13 +1096,15 @@ impl Traversal {
             let args = params
                 .into_iter()
                 .map(|value| {
-                    self.restore_word(&mut pos, packets.result, value, &mut next)
+                    self.restore_word(&mut pos, packets.result, register_words, value, &mut next)
                         .into()
                 })
                 .collect::<Vec<_>>();
             if exit == candidate.exit {
                 for &value in &self.outputs {
-                    let restored = self.restore_word(&mut pos, packets.result, value, &mut next);
+                    let restored = self.restore_word(
+                        &mut pos, packets.result, register_words, value, &mut next,
+                    );
                     if restored != value {
                         pos.func.dfg.change_to_alias(value, restored);
                     }
@@ -1070,6 +1180,8 @@ pub(super) struct CaptureBindings {
     pub(super) return_error_origin: bool,
     pub(super) align_outputs: bool,
     pub(super) pad_outputs: bool,
+    pub(super) register_inputs: bool,
+    pub(super) register_outputs: bool,
 }
 
 impl CaptureBindings {
@@ -1083,6 +1195,8 @@ impl CaptureBindings {
                 .is_some(),
             align_outputs: std::env::var_os("MECH_COMPACT_ALIGN_REGION_OUTPUTS").is_some(),
             pad_outputs: std::env::var_os("MECH_COMPACT_PAD_REGION_OUTPUTS").is_some(),
+            register_inputs: std::env::var_os("MECH_COMPACT_REGION_REGISTER_INPUTS").is_some(),
+            register_outputs: std::env::var_os("MECH_COMPACT_REGION_REGISTER_OUTPUTS").is_some(),
         }
     }
 }
@@ -1096,11 +1210,12 @@ pub(super) fn share_controllers<M: Module>(
     if families.iter().map(Vec::len).sum::<usize>() < 2 {
         return Ok(None);
     }
+    let direct_inputs = direct_input_limit("MECH_COMPACT_DIRECT_CONTROLLER_WORDS")?;
     share_families(
         module,
         root,
         families,
-        RegionKind::Controller,
+        RegionKind::Controller { direct_inputs },
         false,
         bindings,
     )
@@ -1123,14 +1238,7 @@ pub(super) fn share_continuations<M: Module>(
     root: &mut Function,
     families: Vec<Vec<Candidate>>,
 ) -> Result<Option<serde_json::Value>, NativeCompileError> {
-    let direct_inputs = std::env::var("MECH_COMPACT_DIRECT_CONTINUATION_WORDS")
-        .ok()
-        .map(|n| n.parse::<usize>().map_err(backend))
-        .transpose()?
-        .unwrap_or(0);
-    if direct_inputs > MAX_DIRECT_INPUT_WORDS {
-        return Err(backend("direct continuation inputs exceed the ABI limit"));
-    }
+    let direct_inputs = direct_input_limit("MECH_COMPACT_DIRECT_CONTINUATION_WORDS")?;
     share_families(
         module,
         root,
@@ -1141,12 +1249,26 @@ pub(super) fn share_continuations<M: Module>(
     )
 }
 
+fn direct_input_limit(variable: &str) -> Result<usize, NativeCompileError> {
+    let limit = std::env::var(variable)
+        .ok()
+        .map(|n| n.parse::<usize>().map_err(backend))
+        .transpose()?
+        .unwrap_or(0);
+    if limit > MAX_DIRECT_INPUT_WORDS {
+        return Err(backend(format!("{variable} exceeds the ABI input limit")));
+    }
+    Ok(limit)
+}
+
 fn prepare_bodies<M: Module>(
     module: &mut M,
     root: &Function,
     traversals: impl IntoIterator<Item = Traversal>,
     dominance: Option<&DominatorTree>,
     region_kind: RegionKind,
+    register_inputs: bool,
+    register_outputs: bool,
 ) -> Result<Vec<Prepared>, NativeCompileError> {
     let refusal_regions = region_kind == RegionKind::Refusal;
     let compose_origins = region_kind.is_continuation();
@@ -1162,6 +1284,7 @@ fn prepare_bodies<M: Module>(
     let mut groups: Vec<Prepared> = Vec::new();
     for mut traversal in traversals {
         traversal.live_captures.clear();
+        traversal.register_outputs = register_outputs && traversal.can_return_register_outputs(root);
         let candidate = traversal.candidate;
         let kind = if region_kind.is_continuation() {
             "layout_continuation"
@@ -1178,16 +1301,18 @@ fn prepare_bodies<M: Module>(
             && let Some(dominance) = dominance
             && let Some((seed, mut local)) = region_body::prepare(root, &traversal, dominance)
         {
-            let body = local.body(&seed, &signature, compose_origins);
+            let body = local.body(&seed, &signature, compose_origins, register_inputs);
             traversal.live_captures = local.live_captures;
+            traversal.register_inputs = local.register_inputs;
             eprintln!(
                 "compact checked {kind} {} prepared local IR",
                 candidate.header
             );
             body
         } else {
-            traversal.body(root, &signature, compose_origins)
+            traversal.body(root, &signature, compose_origins, register_inputs)
         };
+        let signature = body.signature.clone();
         let mut context = Context::for_function(body);
         if share_retirements {
             let shared = super::owner_retirement::share(module, &mut context.func)?;
@@ -1199,19 +1324,12 @@ fn prepare_bodies<M: Module>(
             }
         }
         if pair_words {
-            // Every caller reserves the full result packet in its own frame.
-            let entry = context.func.layout.entry_block().expect("region entry");
-            let packet = *context
-                .func
-                .dfg
-                .block_params(entry)
-                .last()
-                .expect("region result pointer");
-            super::word_pairs::fold(
-                &mut context.func,
-                Some((packet, traversal.output_words())),
-                false,
-            );
+            let result = (!traversal.register_outputs).then(|| {
+                let entry = context.func.layout.entry_block().expect("region entry");
+                let packet = *context.func.dfg.block_params(entry).last().expect("result pointer");
+                (packet, traversal.output_words())
+            });
+            super::word_pairs::fold(&mut context.func, result, false);
         }
         if traversal.packed_inputs {
             eprintln!(
@@ -1375,7 +1493,15 @@ fn share_families<M: Module>(
         region_literals::bind(root, &mut traversals, true);
     }
     drop((users, proven));
-    let mut groups = prepare_bodies(module, root, traversals, dominance.as_ref(), region_kind)?;
+    let mut groups = prepare_bodies(
+        module,
+        root,
+        traversals,
+        dominance.as_ref(),
+        region_kind,
+        bindings.register_inputs,
+        bindings.register_outputs,
+    )?;
     if (bindings.align_outputs || bindings.pad_outputs)
         && let Some(dom) = dominance.as_ref()
     {
@@ -1415,6 +1541,8 @@ fn share_families<M: Module>(
                 aligned,
                 Some(dom),
                 region_kind,
+                bindings.register_inputs,
+                bindings.register_outputs,
             )?);
         }
     }
@@ -1429,27 +1557,24 @@ fn share_families<M: Module>(
     if groups.is_empty() {
         return Ok(None);
     }
-    let words = groups
+    // These calls are synchronous and publish their result before a later
+    // traversal can reuse the same caller-owned slot.
+    let result = groups
         .iter()
         .flat_map(|group| &group.traversals)
+        .filter(|t| !t.register_outputs)
         .flat_map(|t| {
             let finish = t.output_words();
             [finish, t.resume_output_words(root)]
         })
         .max()
-        .unwrap_or(0)
-        .max(1);
-    // These calls are synchronous and publish their packet before any
-    // continuation begins a later traversal.
-    let result = root.create_sized_stack_slot(StackSlotData::new(
-        StackSlotKind::ExplicitSlot,
-        (words * 8) as u32,
-        3,
-    ));
+        .map(|words| root.create_sized_stack_slot(StackSlotData::new(
+            StackSlotKind::ExplicitSlot, (words.max(1) * 8) as u32, 3,
+        )));
     let captures = groups
         .iter()
         .flat_map(|group| &group.traversals)
-        .filter(|t| t.packed_inputs)
+        .filter(|t| t.packed_inputs && !t.register_inputs)
         .map(|t| t.live_captures.len())
         .max()
         .map(|words| {
@@ -1562,6 +1687,14 @@ fn share_families<M: Module>(
                         .collect::<Vec<_>>()
                 );
             }
+        }
+        if selected.traversals.iter().any(|t| t.register_inputs) {
+            entry["register_input_words"] =
+                serde_json::json!(selected.traversals[0].live_captures.len());
+        }
+        if selected.traversals.iter().any(|t| t.register_outputs) {
+            entry["register_output_words"] =
+                serde_json::json!(selected.traversals[0].output_words());
         }
         report.push(entry);
     }

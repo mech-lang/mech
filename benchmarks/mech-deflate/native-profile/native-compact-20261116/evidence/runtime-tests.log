@@ -1,0 +1,23 @@
+
+running 18 tests
+test native_artifact::compact_runtime::parallel_tests::invalid_parallel_packet_geometry_rejects_before_any_worker_runs ... ok
+test native_artifact::compact_runtime::mapped_tests::byte_output_retains_the_original_allocator_and_transfer ... ok
+test native_artifact::compact_runtime::parallel_tests::refused_mapping_preserves_existing_storage_and_recovers ... ok
+test native_artifact::compact_runtime::mapped_tests::failed_mapping_keeps_prior_backing_and_recovers_on_retry ... ok
+test native_artifact::compact_runtime::terminal_appends::copy_ends_tests::invalid_allocation_preserves_the_result_packet ... ok
+test native_artifact::compact_runtime::parallel_tests::failed_workers_report_first_source_ordinal_without_adopting_partial_outputs ... ok
+test native_artifact::compact_runtime::tests::allocation_and_writable_results_keep_their_abi_geometry ... ok
+test native_artifact::compact_runtime::terminal_appends::copy_ends_tests::all_packed_and_span_extents_preserve_bytes_prefix_and_counters ... ok
+test native_artifact::compact_runtime::tests::borrowed_owner_storage_survives_heap_moves_and_failure_retries ... ok
+test native_artifact::compact_runtime::tests::clear_keeps_private_capacity_and_copies_no_elements ... ok
+test native_artifact::compact_runtime::tests::inline_owner_transfers_with_live_tail_and_reuses_its_slot ... ok
+test native_artifact::compact_runtime::mapped_tests::smaller_numeric_zeros_keep_allocator_backing_and_recover_after_release ... ok
+test native_artifact::compact_runtime::tests::real_cache_and_tree_are_initialized_but_path_reserve_is_not ... ok
+test native_artifact::compact_runtime::tests::rejected_physical_size_keeps_source_and_result_lane_and_recovers ... ok
+test native_artifact::compact_runtime::tests::shared_retirement_keeps_the_live_alias_until_its_final_release ... ok
+test native_artifact::compact_runtime::mapped_tests::mapped_numeric_zeros_remain_readable_and_live_aliases_keep_their_words ... ok
+test native_artifact::compact_runtime::tests::live_alias_copies_initialized_prefix_and_keeps_capacity ... ok
+test native_artifact::compact_runtime::parallel_tests::joined_workers_transfer_owned_mappings_and_preserve_borrowed_inputs ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

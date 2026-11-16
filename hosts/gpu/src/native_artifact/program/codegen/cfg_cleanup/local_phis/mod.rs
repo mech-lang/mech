@@ -8,6 +8,8 @@ use cranelift_codegen::ir::{Block, BlockCall, Function, Value, ValueDef};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 pub(super) mod equal_arguments;
+pub(super) mod literal_arguments;
+mod parallel_arguments;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Fact {
@@ -210,6 +212,12 @@ pub(in crate::native_artifact::program) fn controller_passthrough(
     let mut found = solve(nodes);
     found.retain(|value, _| outputs.contains(value));
     found
+}
+
+pub(super) fn coalesce_parallel(function: &mut Function, cfg: &ControlFlowGraph) -> usize {
+    let replacements = parallel_arguments::equivalents(function, cfg);
+    apply(function, cfg, &replacements);
+    replacements.len()
 }
 
 fn apply(function: &mut Function, cfg: &ControlFlowGraph, replacements: &BTreeMap<Value, Value>) {

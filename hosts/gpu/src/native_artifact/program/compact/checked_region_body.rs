@@ -230,6 +230,8 @@ pub(super) fn prepare(
             .collect(),
         live_captures: Vec::new(),
         packed_inputs: traversal.packed_inputs,
+        register_inputs: false,
+        register_outputs: traversal.register_outputs,
         return_error_origin: traversal.return_error_origin,
         constants: traversal.constants.iter().copied().map(value).collect(),
         slots: traversal.slots.clone(),

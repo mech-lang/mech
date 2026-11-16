@@ -26,6 +26,7 @@ pub(super) enum Export {
 
 pub(in crate::native_artifact) struct PrivatePhase {
     proof: *const Proof,
+    compact_packet: bool,
     pub(super) handoffs: Vec<Handoff>,
 }
 
@@ -160,11 +161,21 @@ impl PrivatePhase {
                 exports,
             });
         }
-        Ok(Some(Self { proof, handoffs }))
+        let compact_packet = std::env::var_os("MECH_COMPACT_FIXED_PHASE_PACKET").is_some()
+            && std::env::var_os("MECH_PHASE_INVARIANT_VIEWS").is_some();
+        Ok(Some(Self {
+            proof,
+            compact_packet,
+            handoffs,
+        }))
     }
 
     pub(in crate::native_artifact) fn permits(&self, proof: &Proof) -> bool {
         std::ptr::eq(self.proof, proof)
+    }
+
+    pub(in crate::native_artifact) fn compact_packet(&self) -> bool {
+        self.compact_packet
     }
 
     pub(in crate::native_artifact) fn exports(

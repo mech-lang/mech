@@ -80,7 +80,7 @@ pub(super) fn retry<M: Module>(
         }
         let size = trials.len();
         let mut replacement =
-            prepare_bodies(module, function, trials, dominance, RegionKind::Refusal)?;
+            prepare_bodies(module, function, trials, dominance, RegionKind::Refusal, false, false)?;
         // Reserve room for materializing the bound and storing the packet word
         // at each caller. The complete Object is measured after replacement.
         if replacement.len() != 1 || replacement[0].bytes.len() + 20 * size >= before {
