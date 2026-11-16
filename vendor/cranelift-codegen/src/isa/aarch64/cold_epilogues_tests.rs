@@ -282,6 +282,8 @@ fn large_frame_keeps_saved_register_restores_and_authenticated_return() {
 fn clearing_a_function_resets_the_sharing_hint() {
     let mut function = function(false);
     function.share_cold_epilogues = true;
+    function.aarch64_share_cold_tails = true;
     function.clear();
     assert!(!function.share_cold_epilogues);
+    assert!(!function.aarch64_share_cold_tails);
 }

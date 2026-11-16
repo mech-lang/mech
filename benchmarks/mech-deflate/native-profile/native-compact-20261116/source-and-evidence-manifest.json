@@ -4,6 +4,11 @@
   "integration_status": "source merged onto #973; a complete build of the integrated tree is pending",
   "files": [
     {
+      "path": ".github/workflows/ci-native-plan.yml",
+      "sha256": "f0d7858a06eb3433eaba22e8ef2f1dd2f41a80cfdb32f9b6c98358441899ce8e",
+      "bytes": 29692
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/Cargo.lock",
       "sha256": "f96af17364c45ea9fc219a4b44d87b815e7ba67ef54fa82f2d292f548a65e2e3",
       "bytes": 50064
@@ -20,8 +25,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "16f2693915fd6dd8ca98c817cd1da3b032eb6f2ffd5332acf5bf17bc71d02436",
-      "bytes": 4818
+      "sha256": "77ed33a4f58cbdc448557aea8a5e13e283fc783680bc0438e63915ce4d3a4c4e",
+      "bytes": 5554
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/baseline/checked-failures.json",
@@ -1184,6 +1189,21 @@
       "bytes": 286
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration/checks.json",
+      "sha256": "f6f32f2ed07e8918ec1bfda67cf4f61fd1090ea1e9e822caff7b235a7b78830d",
+      "bytes": 1019
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration/portable-backend-tests.log",
+      "sha256": "cc960ff0751df04b702150d1041bdeae1751bda06c84cfb12cec1cbb12c12ec6",
+      "bytes": 1714
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration/workflow-tests.log",
+      "sha256": "372ee57a30b8a8b17bb056a0814266786a922da7dcf4139f4f9a2457745d6424",
+      "bytes": 101
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser/build-timings.json",
       "sha256": "a18901e919cbbe7b89942a8536088aaffafbe4d880231d86f20f9ecc51bfcd8f",
       "bytes": 15401
@@ -2189,6 +2209,11 @@
       "bytes": 23348
     },
     {
+      "path": "hosts/gpu/src/native_artifact/program/compact/compile_jobs.rs",
+      "sha256": "8cb00fb1bae864bb705e7db4dac10c2c1c1c34b1862a5e91fbdcbba519dab13d",
+      "bytes": 22479
+    },
+    {
       "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
       "sha256": "489082b1fea5ee8c564b0b4b8da8c44fa6e2f49f090d981df346cbbf212b9500",
       "bytes": 79843
@@ -2354,9 +2379,19 @@
       "bytes": 11756
     },
     {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/cold_epilogues_tests.rs",
+      "sha256": "dee8ca9dba767525624f37b5f030fac00cffb1ae169912f533c2fc4670a87e7d",
+      "bytes": 11157
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/cold_tails/tests.rs",
+      "sha256": "6f5a7d896fc9593ac5aea0e83ceab68203b785c34cb0a5eb650af59d1090b7e6",
+      "bytes": 5104
+    },
+    {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/cold_tails.rs",
-      "sha256": "909d271de9ef92a52c20719decf86133c20f625c45190d7a79c053f4d5ece129",
-      "bytes": 9914
+      "sha256": "2a03505969616526b9e8ef37d20d1e4cbe8f5b7078b7e22e1315267ff083a1a4",
+      "bytes": 9939
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/lower.isle",
