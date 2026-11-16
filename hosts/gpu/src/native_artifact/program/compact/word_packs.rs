@@ -52,7 +52,11 @@ pub(super) fn define_matrix_word(module: &mut impl Module) -> Result<FuncId, Nat
     signature.returns = vec![AbiParam::new(types::I64)];
     context.func.signature = signature;
     let function = module
-        .declare_function("mech_compact_matrix_word", Linkage::Local, &context.func.signature)
+        .declare_function(
+            "mech_compact_matrix_word",
+            Linkage::Local,
+            &context.func.signature,
+        )
         .map_err(backend)?;
     let mut builder = FunctionBuilderContext::new();
     {
@@ -85,7 +89,10 @@ pub(super) fn define_matrix_word(module: &mut impl Module) -> Result<FuncId, Nat
         let pair_wrap = b.ins().iadd(pair_step, wrap_adjustment);
         let limit = b.ins().ishl_imm(width, 3);
         let zero = b.ins().iconst(types::I64, 0);
-        b.ins().jump(read, &[address.into(), remaining.into(), zero.into(), zero.into()]);
+        b.ins().jump(
+            read,
+            &[address.into(), remaining.into(), zero.into(), zero.into()],
+        );
         b.switch_to_block(read);
         let [address, remaining, shift, word]: [Value; 4] =
             b.block_params(read).try_into().unwrap();
@@ -93,12 +100,16 @@ pub(super) fn define_matrix_word(module: &mut impl Module) -> Result<FuncId, Nat
         let second_step = b.ins().select(first_wrap, single_wrap, columns);
         let second_address = b.ins().iadd(address, second_step);
         let first = b.ins().uload8(types::I64, MemFlags::new(), address, 0);
-        let second = b.ins().uload8(types::I64, MemFlags::new(), second_address, 0);
+        let second = b
+            .ins()
+            .uload8(types::I64, MemFlags::new(), second_address, 0);
         let hi = b.ins().ishl_imm(second, 8);
         let pair = b.ins().bor(first, hi);
         let part = b.ins().ishl(pair, shift);
         let word = b.ins().bor(word, part);
-        let wraps = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, remaining, 2);
+        let wraps = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThanOrEqual, remaining, 2);
         let step = b.ins().select(wraps, pair_wrap, pair_step);
         let next_address = b.ins().iadd(address, step);
         let row_adjustment = b.ins().select(wraps, rows, zero);
@@ -111,7 +122,12 @@ pub(super) fn define_matrix_word(module: &mut impl Module) -> Result<FuncId, Nat
             done,
             &[word.into()],
             read,
-            &[next_address.into(), next_remaining.into(), next_shift.into(), word.into()],
+            &[
+                next_address.into(),
+                next_remaining.into(),
+                next_shift.into(),
+                word.into(),
+            ],
         );
         b.switch_to_block(done);
         let word = b.block_params(done)[0];
@@ -119,7 +135,9 @@ pub(super) fn define_matrix_word(module: &mut impl Module) -> Result<FuncId, Nat
         b.seal_all_blocks();
         b.finalize();
     }
-    module.define_function(function, &mut context).map_err(backend)?;
+    module
+        .define_function(function, &mut context)
+        .map_err(backend)?;
     Ok(function)
 }
 
@@ -147,7 +165,9 @@ fn admitted_matrix_word(
     b.switch_to_block(matrix);
     let function = module.declare_func_in_func(helper, b.func);
     let width = b.ins().iconst(types::I64, i64::from(width));
-    let call = b.ins().call(function, &[pointer, ordinal, rows, columns, width]);
+    let call = b
+        .ins()
+        .call(function, &[pointer, ordinal, rows, columns, width]);
     let value = b.inst_results(call)[0];
     b.ins().jump(next, &[value.into()]);
     b.switch_to_block(next);

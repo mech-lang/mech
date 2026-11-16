@@ -232,7 +232,12 @@ pub(super) fn trim_empty_owners<M: Module>(
     let mut edits = Vec::new();
     for block in function.layout.blocks() {
         for inst in function.layout.block_insts(block) {
-            let Data::Call { opcode: Opcode::Call, func_ref, .. } = function.dfg.insts[inst] else {
+            let Data::Call {
+                opcode: Opcode::Call,
+                func_ref,
+                ..
+            } = function.dfg.insts[inst]
+            else {
                 continue;
             };
             let Some(id) = super::inlining::module_callee(function, func_ref) else {
@@ -240,13 +245,21 @@ pub(super) fn trim_empty_owners<M: Module>(
             };
             let callee = module.declarations().get_function_decl(id);
             if callee.linkage != Linkage::Import
-                || !callee.name.as_deref().is_some_and(|name| grouped.contains(&name))
+                || !callee
+                    .name
+                    .as_deref()
+                    .is_some_and(|name| grouped.contains(&name))
             {
                 continue;
             }
             let args = function.dfg.inst_args(inst);
             let keep = std::iter::once(args[0])
-                .chain(args[1..].iter().copied().filter(|&owner| !is_null_owner(function, owner)))
+                .chain(
+                    args[1..]
+                        .iter()
+                        .copied()
+                        .filter(|&owner| !is_null_owner(function, owner)),
+                )
                 .collect::<Vec<_>>();
             if keep.len() < args.len() {
                 edits.push((inst, keep));
@@ -254,7 +267,11 @@ pub(super) fn trim_empty_owners<M: Module>(
         }
     }
     let mut providers = [None; 3];
-    let names = ["mech_compact_release_nullable", grouped[0], "mech_compact_release_three"];
+    let names = [
+        "mech_compact_release_nullable",
+        grouped[0],
+        "mech_compact_release_three",
+    ];
     for (inst, args) in &edits {
         if args.len() == 1 {
             function.dfg.replace(*inst).iconst(types::I64, 0);
@@ -265,7 +282,9 @@ pub(super) fn trim_empty_owners<M: Module>(
             Some(provider) => provider,
             None => {
                 let mut signature = module.make_signature();
-                signature.params.resize(args.len(), AbiParam::new(types::I64));
+                signature
+                    .params
+                    .resize(args.len(), AbiParam::new(types::I64));
                 signature.returns.push(AbiParam::new(types::I64));
                 let id = module
                     .declare_function(names[index], Linkage::Import, &signature)

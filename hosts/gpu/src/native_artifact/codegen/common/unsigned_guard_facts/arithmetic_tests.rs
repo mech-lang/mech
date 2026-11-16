@@ -51,11 +51,18 @@ fn extrema_only_refine_unsigned_selected_operands() {
         b.ins().return_(&[sentinel]);
         b.seal_all_blocks();
         b.finalize();
-        assert_eq!(optimize_with_ranges(&mut context, &[], true, true), usize::from(mode < 4));
+        assert_eq!(
+            optimize_with_ranges(&mut context, &[], true, true),
+            usize::from(mode < 4)
+        );
         context.verify(module.isa()).unwrap();
-        let id = module.declare_function(
-            &format!("extreme_{mode}"), Linkage::Local, &context.func.signature
-        ).unwrap();
+        let id = module
+            .declare_function(
+                &format!("extreme_{mode}"),
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
         module.define_function(id, &mut context).unwrap();
         entries.push((mode, id));
     }
@@ -69,11 +76,27 @@ fn extrema_only_refine_unsigned_selected_operands() {
                 let chosen = match mode {
                     0 | 2 | 3 => x.min(31),
                     1 => x.max(31),
-                    4 => if x < 31 { y } else { 31 },
-                    5 => if (x as i64) < 31 { x } else { 31 },
+                    4 => {
+                        if x < 31 {
+                            y
+                        } else {
+                            31
+                        }
+                    }
+                    5 => {
+                        if (x as i64) < 31 {
+                            x
+                        } else {
+                            31
+                        }
+                    }
                     _ => unreachable!(),
                 };
-                let expected = if mode == 1 || chosen <= 31 { chosen } else { u64::MAX - 1 };
+                let expected = if mode == 1 || chosen <= 31 {
+                    chosen
+                } else {
+                    u64::MAX - 1
+                };
                 assert_eq!(unsafe { run(x, y) }, expected);
             }
         }

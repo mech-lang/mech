@@ -535,7 +535,12 @@ pub(in crate::native_artifact) fn prove_packed_bases(
     isa: &dyn TargetIsa,
     offsets: bool,
 ) -> Result<usize, NativeCompileError> {
-    fold_scalar_span_guards(controls, context, isa, ScalarSpanProof::PackedBase { offsets })
+    fold_scalar_span_guards(
+        controls,
+        context,
+        isa,
+        ScalarSpanProof::PackedBase { offsets },
+    )
 }
 
 pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
@@ -602,7 +607,11 @@ pub(in crate::native_artifact::program) fn coalesce_literal_join_arguments(
     context.eliminate_unreachable_code(isa).map_err(backend)?;
     context.flowgraph();
     let parameters = |function: &Function| {
-        function.layout.blocks().map(|block| function.dfg.block_params(block).len()).sum::<usize>()
+        function
+            .layout
+            .blocks()
+            .map(|block| function.dfg.block_params(block).len())
+            .sum::<usize>()
     };
     let before = parameters(&context.func);
     context.remove_constant_phis(isa).map_err(backend)?;

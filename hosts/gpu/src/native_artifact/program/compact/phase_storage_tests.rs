@@ -89,7 +89,11 @@ fn compact_input_offsets_keep_live_words_and_refuse_escapes() {
     assert_eq!(pack_used_input_words(&mut context.func, 2), Some(vec![1]));
     context.verify(module.isa()).unwrap();
     let id = module
-        .declare_function("read_compact_input", Linkage::Local, &context.func.signature)
+        .declare_function(
+            "read_compact_input",
+            Linkage::Local,
+            &context.func.signature,
+        )
         .unwrap();
     module.define_function(id, &mut context).unwrap();
     module.finalize_definitions().unwrap();

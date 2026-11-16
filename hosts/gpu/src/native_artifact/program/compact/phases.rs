@@ -310,7 +310,11 @@ impl Phase {
             let value = words.read(b, slot);
             b.ins().stack_store(value, input, offset(at)?);
         }
-        if !self.private.as_ref().is_some_and(PrivatePhase::compact_packet) {
+        if !self
+            .private
+            .as_ref()
+            .is_some_and(PrivatePhase::compact_packet)
+        {
             let writable = self.arrays.iter().filter(|a| a.1).count();
             for (at, &(base, _)) in self.arrays.iter().filter(|a| a.1).enumerate() {
                 let owner = words.read(b, base + 5);
@@ -331,22 +335,25 @@ impl Phase {
             .collect::<Vec<_>>();
         let input = b.ins().stack_addr(types::I64, input, 0);
         let out = b.ins().stack_addr(types::I64, output, 0);
-        let phase_timer = if root_entry
-            && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_some()
-        {
-            let mut signature = module.make_signature();
-            signature.params.extend([AbiParam::new(types::I64); 2]);
-            let callback = module.declare_function(
-                "mech_compact_profile_phase_call", Linkage::Import, &signature,
-            ).map_err(backend)?;
-            let callback = module.declare_func_in_func(callback, b.func);
-            let header = b.ins().iconst(types::I64, self.header as i64);
-            let enter = b.ins().iconst(types::I64, 0);
-            b.ins().call(callback, &[header, enter]);
-            Some((callback, header))
-        } else {
-            None
-        };
+        let phase_timer =
+            if root_entry && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_some() {
+                let mut signature = module.make_signature();
+                signature.params.extend([AbiParam::new(types::I64); 2]);
+                let callback = module
+                    .declare_function(
+                        "mech_compact_profile_phase_call",
+                        Linkage::Import,
+                        &signature,
+                    )
+                    .map_err(backend)?;
+                let callback = module.declare_func_in_func(callback, b.func);
+                let header = b.ins().iconst(types::I64, self.header as i64);
+                let enter = b.ins().iconst(types::I64, 0);
+                b.ins().call(callback, &[header, enter]);
+                Some((callback, header))
+            } else {
+                None
+            };
         let (status, at) = if let Some(no_growth) = &self.no_growth {
             let base = self.arrays[no_growth.array].0;
             let length = words.read(b, base + 1);
@@ -784,14 +791,15 @@ pub(super) fn define<M: Module>(
             if exported_phases.contains(&header) {
                 return false;
             }
-            !inlining || !inline_symbols.as_deref().is_some_and(|symbols| {
-                let family = format!("mech_compact_numeric_{header}");
-                symbols.split(',').any(|symbol| {
-                    symbol.strip_prefix(&family).is_some_and(|suffix| {
-                        suffix.is_empty() || suffix.starts_with('_')
+            !inlining
+                || !inline_symbols.as_deref().is_some_and(|symbols| {
+                    let family = format!("mech_compact_numeric_{header}");
+                    symbols.split(',').any(|symbol| {
+                        symbol
+                            .strip_prefix(&family)
+                            .is_some_and(|suffix| suffix.is_empty() || suffix.starts_with('_'))
                     })
                 })
-            })
         });
         let proof = region.numeric.as_ref().unwrap();
         if proof.sites.iter().any(|site| covered.contains(site))
@@ -1033,7 +1041,6 @@ pub(super) fn define<M: Module>(
             };
             (None, Some(fast))
         } else if let (Some(pool), Some(contract)) = (pool, vector_contract.as_ref()) {
-
             let general = ready.start(pool)?;
             let mut recorded = pool.record(module)?;
             let fast = function::prepare(
@@ -1087,19 +1094,23 @@ pub(super) fn define<M: Module>(
             };
             (Some(general), fast)
         };
-        let function = general.as_ref().map_or(general_declaration, |body| body.function);
+        let function = general
+            .as_ref()
+            .map_or(general_declaration, |body| body.function);
         let mut summary = general.as_ref().map_or_else(
-            || serde_json::json!({
-                "header": header, "exit": region.tail.exit(),
-                "symbol": format!("mech_compact_numeric_{header}"),
-                "phase_entry_bounds": entry_bounds,
-                "code_bytes": 0, "stack_bytes": 0,
-                "compilation": "omitted: geometry uses checked continuation",
-                "input_words": input_words, "output_words": output_words,
-                "fixed_writable_capacities": fixed_count,
-                "fixed_length_entry_gate": fixed_count != 0,
-                "unique_writable_owner_gate": true,
-            }),
+            || {
+                serde_json::json!({
+                    "header": header, "exit": region.tail.exit(),
+                    "symbol": format!("mech_compact_numeric_{header}"),
+                    "phase_entry_bounds": entry_bounds,
+                    "code_bytes": 0, "stack_bytes": 0,
+                    "compilation": "omitted: geometry uses checked continuation",
+                    "input_words": input_words, "output_words": output_words,
+                    "fixed_writable_capacities": fixed_count,
+                    "fixed_length_entry_gate": fixed_count != 0,
+                    "unique_writable_owner_gate": true,
+                })
+            },
             |body| body.summary.clone(),
         );
         let mut vector = None;

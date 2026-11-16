@@ -1,7 +1,9 @@
 //! An admitted positive-capacity backing result has an owner. Transfer that
 //! fact through exact SSA arguments while retaining all reference-count tests.
 use super::inlining::module_callee;
-use crate::native_artifact::program::codegen::cfg_cleanup::{incoming_block_arguments, positive_word};
+use crate::native_artifact::program::codegen::cfg_cleanup::{
+    incoming_block_arguments, positive_word,
+};
 use cranelift_codegen::{
     Context,
     ir::{
@@ -27,9 +29,8 @@ fn admitted_backings<M: Module>(
 ) -> BTreeMap<Value, Block> {
     let f = &context.func;
     let mut results = BTreeMap::new();
-    let positive = |value| {
-        positive_literal(f, value) || (ranges && positive_word(f, &context.cfg, value))
-    };
+    let positive =
+        |value| positive_literal(f, value) || (ranges && positive_word(f, &context.cfg, value));
     for block in f
         .layout
         .blocks()
