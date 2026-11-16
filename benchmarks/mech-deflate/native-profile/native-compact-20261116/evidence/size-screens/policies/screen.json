@@ -1,0 +1,98 @@
+[
+  {
+    "variant": "owner-all",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=all"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72344,
+    "root_code_bytes": 50956,
+    "root_frame_bytes": 3568,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.2691221246495843
+  },
+  {
+    "variant": "owner-ranges",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=ranges"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72392,
+    "root_code_bytes": 51880,
+    "root_frame_bytes": 3744,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.2291461671702564
+  },
+  {
+    "variant": "inline-outside-loops",
+    "flags": [
+      "MECH_COMPACT_INLINE_SINGLE_CALLS=outside-loops"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72600,
+    "root_code_bytes": 51212,
+    "root_frame_bytes": 3536,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.124848499894142
+  },
+  {
+    "variant": "inline-none",
+    "flags": [
+      "MECH_COMPACT_INLINE_SINGLE_CALLS="
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72600,
+    "root_code_bytes": 51212,
+    "root_frame_bytes": 3536,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.119666292332113
+  },
+  {
+    "variant": "thread-routes",
+    "flags": [
+      "MECH_COMPACT_ROOT_FLOW_PASSES=equal,identity,thread"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72648,
+    "root_code_bytes": 52144,
+    "root_frame_bytes": 3760,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.3204584582708776
+  },
+  {
+    "variant": "predicate-routes",
+    "flags": [
+      "MECH_COMPACT_ROOT_FLOW_PASSES=equal,identity,predicates"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72520,
+    "root_code_bytes": 52008,
+    "root_frame_bytes": 3744,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.243456541094929
+  },
+  {
+    "variant": "final-cleanup",
+    "flags": [
+      "MECH_COMPACT_FINISH_CFG_CLEANUP=1"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72264,
+    "root_code_bytes": 51752,
+    "root_frame_bytes": 3760,
+    "root_direct_calls": 371,
+    "emit_seconds": 2.438725291285664
+  },
+  {
+    "variant": "continuation-registers-6",
+    "flags": [
+      "MECH_COMPACT_DIRECT_CONTINUATION_WORDS=6"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72088,
+    "root_code_bytes": 51684,
+    "root_frame_bytes": 3856,
+    "root_direct_calls": 369,
+    "emit_seconds": 2.2525109997950494
+  }
+]
