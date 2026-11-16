@@ -521,8 +521,18 @@
       "sha256": "3fce5c334fd120fdff1d6742f39aea4bc7a3905b1aed96ac586c2078317d5327",
       "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
       "summary": "benchmarks/mech-deflate/native-profile/compiler-fat-lto-pgo-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parser-execution-trials-20261115.tar.gz",
+      "bytes": 6662104,
+      "decision": "Diagnostic parser execution census and current-PGO-library CPU profile; three standalone candidates improve parsing 2.51%, 4.63% and 2.16%, each below the predeclared10% promotion threshold. Exact complete parses and526/526/527 units pass. None promoted or complete-build qualified. Recognition repeats at identifier/number starts identify the next architecture target. Selected8043 and original13.414825s primary remain unchanged.",
+      "files": 2121,
+      "receipt": "benchmarks/mech-deflate/native-profile/parser-execution-trials-apple-m3-20261115.archive.json",
+      "sha256": "1a877b36383a12e6b402c0848d0ac253b039b1308e1fcde1ca93b3673b6e5d21",
+      "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+      "summary": "benchmarks/mech-deflate/native-profile/parser-execution-trials-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1783781527
+  "total_archive_bytes": 1790443631
 }
