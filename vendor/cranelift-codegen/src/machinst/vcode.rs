@@ -837,15 +837,23 @@ impl<I: VCodeInst> VCode<I> {
     /// and/or a disassembly, as an `EmitResult`. The `VCode` itself
     /// is consumed by the emission process.
     pub fn emit(
+        self,
+        regalloc: &regalloc2::Output,
+        want_disasm: bool,
+        flags: &settings::Flags,
+        ctrl_plane: &mut ControlPlane,
+    ) -> EmitResult {
+        self.emit_with_cold_epilogue_sharing(regalloc, want_disasm, flags, ctrl_plane, None)
+    }
+
+    pub(crate) fn emit_with_cold_epilogue_sharing(
         mut self,
         regalloc: &regalloc2::Output,
         want_disasm: bool,
         flags: &settings::Flags,
         ctrl_plane: &mut ControlPlane,
-    ) -> EmitResult
-    where
-        I: VCodeInst,
-    {
+        cold_epilogue_branch_range: Option<CodeOffset>,
+    ) -> EmitResult {
         let _tt = timing::vcode_emit();
         let mut buffer = MachBuffer::new();
         buffer.set_log2_min_function_alignment(self.log2_min_function_alignment);
@@ -894,6 +902,20 @@ impl<I: VCodeInst> VCode<I> {
             clobbers,
             function_calls,
         );
+
+        let shared_epilogue = cold_epilogue_branch_range
+            .filter(|_| {
+                cold_blocks.len() > 1
+                    && self.debug_value_labels.is_empty()
+                    && self.debug_tags.is_empty()
+                    && !flags.machine_code_cfg_info()
+            })
+            .and_then(|branch_range| {
+                let epilogue = self.abi.gen_epilogue();
+                // A direct AArch64 branch is one instruction.
+                (epilogue.len() > 1).then_some((branch_range, epilogue))
+            });
+        let mut epilogue_target = None;
 
         // Emit blocks.
         let mut cur_srcloc = None;
@@ -1099,8 +1121,35 @@ impl<I: VCodeInst> VCode<I> {
                         // epilogue will contain it).
                         if self.insts[iix.index()].is_term() == MachTerminator::Ret {
                             log::trace!("emitting epilogue");
-                            for inst in self.abi.gen_epilogue() {
-                                do_emit(&inst, &mut disasm, &mut buffer, &mut state);
+                            if let Some((branch_range, epilogue)) = &shared_epilogue
+                                && self.block_order.is_cold(block)
+                            {
+                                if let Some((label, offset)) = epilogue_target
+                                    && buffer.cur_offset() - offset <= *branch_range
+                                {
+                                    do_emit(
+                                        &I::gen_jump(label),
+                                        &mut disasm,
+                                        &mut buffer,
+                                        &mut state,
+                                    );
+                                } else {
+                                    // Bind after the allocated return-value moves.
+                                    // Start a new tail if the previous one is out of range.
+                                    let label = buffer.get_label();
+                                    buffer.bind_label(label, state.ctrl_plane_mut());
+                                    epilogue_target = Some((label, buffer.cur_offset()));
+                                    if want_disasm {
+                                        writeln!(disasm, "{label:?}:").unwrap();
+                                    }
+                                    for inst in epilogue {
+                                        do_emit(inst, &mut disasm, &mut buffer, &mut state);
+                                    }
+                                }
+                            } else {
+                                for inst in self.abi.gen_epilogue() {
+                                    do_emit(&inst, &mut disasm, &mut buffer, &mut state);
+                                }
                             }
                         } else {
                             // Update the operands for this inst using the

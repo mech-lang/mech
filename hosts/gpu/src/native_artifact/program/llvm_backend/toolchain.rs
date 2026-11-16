@@ -1,6 +1,7 @@
 //! LLVM is a compile-time dependency only. No process or toolchain state is
 //! retained by the emitted program or consulted during native execution.
-use super::machine::MachineFacts;
+use super::{compact_body, machine::MachineFacts};
+use cranelift_module::ModuleDeclarations;
 use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeSet,
@@ -36,6 +37,86 @@ impl NativeLlvmToolchain {
         self.diagnostics = Some(root.as_ref().to_owned());
         self
     }
+
+    pub(in crate::native_artifact::program) fn compile_compact_root(
+        &self,
+        ir: &str,
+        entry: &str,
+        declarations: &ModuleDeclarations,
+    ) -> Result<compact_body::CompactBody> {
+        if !cfg!(all(target_arch = "aarch64", target_os = "macos")) {
+            return Err("compact LLVM root requires Apple AArch64".into());
+        }
+        let work = Work::new(self.diagnostics.as_deref())?;
+        fs::write(work.path.join("root.ll"), ir).map_err(|e| e.to_string())?;
+        run(
+            Command::new(&self.opt).current_dir(&work.path).args([
+                "-passes=default<Oz>",
+                "-mcpu=apple-m1",
+                "-S",
+                "root.ll",
+                "-o",
+                "optimized.ll",
+            ]),
+            "compact LLVM optimization",
+            &work.path,
+        )?;
+        run(
+            Command::new(&self.llc).current_dir(&work.path).args([
+                "-O=2",
+                "-global-isel=0",
+                "-enable-machine-outliner=never",
+                "-mcpu=apple-m1",
+                "-relocation-model=pic",
+                "-filetype=obj",
+                "-pass-remarks-analysis=prologepilog",
+                "optimized.ll",
+                "-o",
+                "root.o",
+            ]),
+            "compact LLVM emission",
+            &work.path,
+        )?;
+        let notes = fs::read_to_string(work.path.join("compact-LLVM-emission.stderr"))
+            .map_err(|e| e.to_string())?;
+        let label = format!(" stack bytes in function '{entry}'");
+        let mut frames = notes
+            .lines()
+            .filter_map(|line| line.strip_suffix(&label))
+            .filter_map(|line| line.split_ascii_whitespace().last());
+        let frame = frames
+            .next()
+            .ok_or("missing compact LLVM frame report")?
+            .parse::<u64>()
+            .map_err(|_| "invalid compact LLVM frame report")?;
+        if frames.next().is_some() {
+            return Err("repeated compact LLVM frame report".into());
+        }
+        let machine = fs::read(work.path.join("root.o")).map_err(|e| e.to_string())?;
+        compact_body::read_body(machine, frame, entry, declarations)
+    }
+
+    pub(in crate::native_artifact::program) fn link_compact_root(
+        &self,
+        support: &[u8],
+        root: &[u8],
+        private_entry: Option<&str>,
+    ) -> Result<Vec<u8>> {
+        let work = Work::new(self.diagnostics.as_deref())?;
+        fs::write(work.path.join("support.o"), support).map_err(|error| error.to_string())?;
+        fs::write(work.path.join("root.o"), root).map_err(|error| error.to_string())?;
+        let mut link = Command::new(&self.linker);
+        link.current_dir(&work.path).args(["-r", "-arch", "arm64"]);
+        if let Some(entry) = private_entry {
+            link.args(["-unexported_symbol", entry]);
+        }
+        link.args(["-o", "program.o", "support.o", "root.o"]);
+        run(&mut link, "compact partial link", &work.path)?;
+        let linked = fs::read(work.path.join("program.o")).map_err(|error| error.to_string())?;
+        compact_body::verify_linked_unwind(root, &linked)?;
+        Ok(linked)
+    }
+
     fn fingerprint(&self, linker: &Path) -> Result<[u8; 32]> {
         let mut files = BTreeSet::new();
         for p in [self.opt.as_path(), self.llc.as_path(), linker] {

@@ -238,7 +238,11 @@ def failures(root: Path) -> list[str]:
     specialization = sources.get("src/core/src/function/specialization.rs", "")
     if specialization.count("operation: ResolvedOperationDescriptor") < 2:
         found.append("ResolvedCall and BoundCall do not share one operation descriptor")
-    if "OperationId::from_name(&canonical_name) != id" not in specialization:
+    validate_identity = rust_function_body(specialization, "validate_identity")
+    if (
+        "OperationId::from_name(canonical_name) != id" not in validate_identity
+        or "Self::validate_identity(id, &canonical_name)?" not in specialization
+    ):
         found.append("operation descriptors do not validate canonical-name identity")
     if "instance.implementation().semantic_operation_contract()" in specialization:
         found.append("instance certification trusts an implementation semantic contract")

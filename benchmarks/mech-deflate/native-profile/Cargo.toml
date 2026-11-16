@@ -131,3 +131,6 @@ path = "exit_definitions_tests.rs"
 [[test]]
 name = "short_literal_proof"
 path = "short_literal_proof_tests.rs"
+[[bin]]
+name = "emit_compact_size"
+path = "compact-size/emit.rs"

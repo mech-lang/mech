@@ -60,7 +60,7 @@ fn empty_graph_and_scalar_only_graph_need_no_owner_words() {
             &[vec![], vec![]],
             0
         ),
-        vec![vec![], vec![]]
+        vec![Vec::<u64>::new(), Vec::new()]
     );
 }
 

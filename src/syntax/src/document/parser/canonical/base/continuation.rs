@@ -56,7 +56,7 @@ enum Frame {
 pub(crate) struct FrameStorage {
     frames: Vec<Frame>,
     scanner: Option<Box<Scanner>>,
-    prediction: Option<Box<[Option<super::super::prediction::Plan>; super::NON_FIXED_RULES.len()]>>,
+    pub(super) prediction: Option<Box<super::recognition::Storage>>,
 }
 enum Scanner {
     Literal(LiteralScan<'static>),
@@ -209,6 +209,39 @@ impl Continuation {
                 rest,
                 single_first,
             } => {
+                if final_input && !parser.is_halted() {
+                    let state = self
+                        .storage
+                        .prediction
+                        .get_or_insert_with(|| Box::new(super::recognition::Storage::default()));
+                    let cache = &mut state.memo;
+                    if cache.capture.is_none() && cache.kind(rule, kind, first, rest).is_some() {
+                        if let Some((work, raw)) =
+                            cache.replay(parser, rule, checkpoint.rule_depth, *allowance + 1)
+                        {
+                            let exit = self
+                                .storage
+                                .frames
+                                .pop()
+                                .expect("pending repeated-node exit");
+                            debug_assert!(matches!(exit, Frame::Exit(_)));
+                            parser.state.rules.truncate(checkpoint.rule_depth);
+                            *allowance -= work - 1;
+                            self.work += work - 1;
+                            self.raw_range = Some(raw);
+                            self.result = true;
+                            return;
+                        }
+                        cache.capture = Some(super::recognition::Capture::new(
+                            parser,
+                            rule,
+                            kind,
+                            self.storage.frames.len() - 1,
+                            checkpoint,
+                            self.work - 1,
+                        ));
+                    }
+                }
                 self.node(parser, kind);
                 self.push(Frame::FirstRepeat(rest));
                 if single_first {
@@ -286,6 +319,22 @@ impl Continuation {
                     parser.state.rules.truncate(checkpoint.rule_depth);
                     if !self.result {
                         parser.rewind(checkpoint);
+                    }
+                    if self
+                        .storage
+                        .prediction
+                        .as_ref()
+                        .and_then(|state| state.memo.capture.as_ref())
+                        .is_some_and(|capture| capture.depth == self.storage.frames.len())
+                    {
+                        let cache = &mut self
+                            .storage
+                            .prediction
+                            .as_mut()
+                            .expect("lexical cache owner")
+                            .memo;
+                        let capture = cache.capture.take().expect("completed lexical capture");
+                        capture.complete(cache, parser, self.result, self.work, self.raw_range);
                     }
                 }
                 Frame::Sequence(rules, index) => {
@@ -404,6 +453,14 @@ impl Continuation {
                     }
                 }
                 Frame::Raw(kind) => {
+                    if let Some(capture) = self
+                        .storage
+                        .prediction
+                        .as_mut()
+                        .and_then(|state| state.memo.capture.as_mut())
+                    {
+                        capture.raw(parser);
+                    }
                     if parser.charge() {
                         let end = final_input.then_some(parser.cursor().context_end());
                         let scan = parser

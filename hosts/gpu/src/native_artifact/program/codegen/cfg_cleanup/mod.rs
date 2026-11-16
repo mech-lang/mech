@@ -37,6 +37,9 @@ use cranelift_codegen::ir::{
     Block, Function, InstBuilder, InstructionData, Opcode, Value, ValueDef, condcodes::IntCC,
 };
 use cranelift_codegen::isa::TargetIsa;
+pub(in crate::native_artifact::program) use dead_values::eliminate as eliminate_dead_values;
+pub(in crate::native_artifact::program) use local_phis::controller_passthrough;
+pub(in crate::native_artifact::program) use local_phis::incoming as incoming_block_arguments;
 
 const MAX_ROUNDS: usize = 8;
 const MAX_CONSTANT_DEPTH: usize = 16;
