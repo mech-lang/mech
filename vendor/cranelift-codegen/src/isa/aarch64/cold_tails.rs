@@ -296,3 +296,6 @@ pub(super) fn apply(
     buffer.data = code.into_iter().flat_map(u32::to_le_bytes).collect();
     Some(saved)
 }
+
+#[cfg(test)]
+mod tests;
