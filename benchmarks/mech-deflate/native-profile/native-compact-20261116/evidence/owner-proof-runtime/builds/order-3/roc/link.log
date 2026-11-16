@@ -1,0 +1,1 @@
+ld: warning: no platform load command found in '/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-owner-ranges-current/order-3/roc/encoder.a[2](roc_app_llvm_arm64mac_speed_17c7dfcc.o)', assuming: macOS

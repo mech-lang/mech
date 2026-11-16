@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-owner-ranges-current/warmup/mech-owner-ranges/compressor",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-owner-ranges-current/warmup/mech-owner-ranges/native/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "49f5636fd42c951c7ad01d9fa5476d93f0be8ba908c19fb94503f402f2eaefc1",
+  "metadata_sha256": "a7475b28e0db9f41184e6db3358efbee2358489566c47d1b79411010899a1424"
+}

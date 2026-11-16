@@ -1,0 +1,511 @@
+{
+  "source_review_commit": "b71afb01e1dbdaeac1f4789d77d0de147b323f91",
+  "production_compiler_source_changed": false,
+  "retained_recipe_changed": false,
+  "baseline": {
+    "object_text_bytes": 72520,
+    "object_text_x_roc": 1.256932889628397,
+    "object_text_x_libdeflate": 1.9557713052858683,
+    "historical_full_order_wins": {
+      "roc": [
+        81,
+        81
+      ],
+      "libdeflate": [
+        61,
+        61
+      ]
+    },
+    "current_control_full_order_wins": {
+      "roc": [
+        81,
+        81
+      ],
+      "libdeflate": [
+        61,
+        60
+      ]
+    },
+    "pinned_worker_reproduced_byte_identically": true
+  },
+  "owner_all_inline_4879": {
+    "decision": "rejected: lost peer wins and sustained per-case regressions",
+    "object_text_bytes": 72168,
+    "code_reduction_bytes": 352,
+    "root_frame_bytes": 3680,
+    "peak_stack_bytes": 5232,
+    "focus_orders": [
+      {
+        "roc_wins": [
+          18,
+          18
+        ],
+        "libdeflate_wins": [
+          12,
+          11
+        ],
+        "candidate_over_control_geometric_mean": 1.0082517310135184,
+        "verified_full_calls": 692352,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": [
+          "prefix-periodic-1024"
+        ]
+      },
+      {
+        "roc_wins": [
+          18,
+          18
+        ],
+        "libdeflate_wins": [
+          13,
+          11
+        ],
+        "candidate_over_control_geometric_mean": 1.0074106430830843,
+        "verified_full_calls": 692352,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": [
+          "320-overlap",
+          "prefix-periodic-1024"
+        ]
+      }
+    ],
+    "persistent_adverse_ratios": {
+      "prefix-periodic-4096": [
+        1.005736939201369,
+        1.0085602618895573
+      ],
+      "prefix-periodic-1024": [
+        1.0266408278082444,
+        1.0361099302663581
+      ],
+      "prefix-random-1024": [
+        1.0208880054994103,
+        1.0103598541645116
+      ],
+      "random-1024": [
+        1.0158921470424573,
+        1.0114700753496482
+      ],
+      "320-overlap": [
+        1.0373487691973533,
+        1.050777844168406
+      ],
+      "one-stored": [
+        1.0349675556186027,
+        1.0131880155298205
+      ]
+    },
+    "ordinary_correctness_calls": 162
+  },
+  "owner_ranges": {
+    "decision": "not promoted: a full order misses the fixed 61/81 C floor and tiny-input repeatability remains unresolved",
+    "object_text_bytes": 72392,
+    "object_text_x_roc": 1.25471436494731,
+    "object_text_x_libdeflate": 1.952319309600863,
+    "code_reduction_bytes": 128,
+    "root_frame_bytes": 3744,
+    "peak_stack_bytes": 5296,
+    "full_orders": [
+      {
+        "roc_wins": [
+          81,
+          81
+        ],
+        "libdeflate_wins": [
+          61,
+          61
+        ],
+        "candidate_over_control_geometric_mean": 0.9986305935676957,
+        "verified_full_calls": 982656,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": []
+      },
+      {
+        "roc_wins": [
+          81,
+          81
+        ],
+        "libdeflate_wins": [
+          60,
+          60
+        ],
+        "candidate_over_control_geometric_mean": 0.999864243272763,
+        "verified_full_calls": 982656,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": []
+      }
+    ],
+    "focused_orders": [
+      {
+        "roc_wins": [
+          12,
+          12
+        ],
+        "libdeflate_wins": [
+          8,
+          8
+        ],
+        "candidate_over_control_geometric_mean": 0.9951106832631449,
+        "verified_full_calls": 714240,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": []
+      },
+      {
+        "roc_wins": [
+          12,
+          12
+        ],
+        "libdeflate_wins": [
+          8,
+          8
+        ],
+        "candidate_over_control_geometric_mean": 0.9948747355325909,
+        "verified_full_calls": 714240,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": []
+      }
+    ],
+    "initial_uncertainty_bounded_cases": 74,
+    "initial_uncertainty_unresolved_cases": [
+      "empty",
+      "seven-stored-prefix",
+      "320-overlap",
+      "prefix-random-1024",
+      "prefix-random-4096",
+      "prefix-periodic-1024",
+      "prefix-repeated-4096"
+    ],
+    "same_worker_followups": {
+      "run-1": {
+        "empty": {
+          "batch": 8192,
+          "seconds": 11.571420500054955,
+          "aa": {
+            "estimate": 0.00978223267610856,
+            "lower": 0.006434599505120042,
+            "upper": 0.013068716298265004
+          },
+          "ab": {
+            "estimate": 0.002493446963496515,
+            "lower": 0.00010476662709568707,
+            "upper": 0.004866659666763695
+          },
+          "median_batch_ms": 0.23217449999999998
+        },
+        "320-overlap": {
+          "batch": 18,
+          "seconds": 0.7055326248519123,
+          "aa": {
+            "estimate": -0.0030588766397375844,
+            "lower": -0.005311567317324295,
+            "upper": -0.0009598698759714086
+          },
+          "ab": {
+            "estimate": -0.001331014138258313,
+            "lower": -0.0032794110674234656,
+            "upper": 0.0006692450981546916
+          },
+          "median_batch_ms": 0.49462699999999993
+        },
+        "seven-stored-prefix": {
+          "batch": 8192,
+          "seconds": 11.758483916986734,
+          "aa": {
+            "estimate": 0.0005154492693311141,
+            "lower": -0.002296972029353528,
+            "upper": 0.003217590462905928
+          },
+          "ab": {
+            "estimate": 0.001997308659880126,
+            "lower": -0.0014489776614330374,
+            "upper": 0.006024644360973719
+          },
+          "median_batch_ms": 0.250269
+        },
+        "one-stored": {
+          "batch": 8192,
+          "seconds": 11.913712666835636,
+          "aa": {
+            "estimate": -0.0037992432345734795,
+            "lower": -0.007306392489822788,
+            "upper": -0.0003731097638750569
+          },
+          "ab": {
+            "estimate": 0.02750102887954542,
+            "lower": 0.024122598245386317,
+            "upper": 0.03128343477676965
+          },
+          "median_batch_ms": 0.2329545
+        },
+        "prefix-random-4096": {
+          "batch": 8,
+          "seconds": 0.7580000422894955,
+          "aa": {
+            "estimate": -0.001107482769698298,
+            "lower": -0.006850723823502047,
+            "upper": 0.005420414358907388
+          },
+          "ab": {
+            "estimate": -0.005733413210578853,
+            "lower": -0.01037186745546026,
+            "upper": -0.0009946920038504947
+          },
+          "median_batch_ms": 0.9459385
+        },
+        "prefix-periodic-1024": {
+          "batch": 12,
+          "seconds": 0.6961381249129772,
+          "aa": {
+            "estimate": 0.0008425465292332124,
+            "lower": -0.0023120992685957686,
+            "upper": 0.00431445026271704
+          },
+          "ab": {
+            "estimate": -0.0016819842941205865,
+            "lower": -0.005240335780671734,
+            "upper": 0.002237347981913551
+          },
+          "median_batch_ms": 0.524542
+        },
+        "prefix-random-1024": {
+          "batch": 16,
+          "seconds": 0.6935905832797289,
+          "aa": {
+            "estimate": 0.003528674083818739,
+            "lower": -0.00010702336760171072,
+            "upper": 0.007338692935330293
+          },
+          "ab": {
+            "estimate": -0.0026217796381337033,
+            "lower": -0.006388171688665678,
+            "upper": 0.0011952792259013467
+          },
+          "median_batch_ms": 0.5177504999999999
+        },
+        "prefix-repeated-4096": {
+          "batch": 8,
+          "seconds": 0.7223536670207977,
+          "aa": {
+            "estimate": -0.000324247212966311,
+            "lower": -0.0029706513027708548,
+            "upper": 0.0023406966202814683
+          },
+          "ab": {
+            "estimate": -0.002510645559197111,
+            "lower": -0.0041025803678550465,
+            "upper": -0.0010080897193704974
+          },
+          "median_batch_ms": 0.7364364999999999
+        }
+      },
+      "run-2": {
+        "prefix-random-4096": {
+          "batch": 64,
+          "seconds": 2.8453655405901372,
+          "aa": {
+            "estimate": 0.0002658455015036587,
+            "lower": -0.0007939050499996547,
+            "upper": 0.0014153029192864874
+          },
+          "ab": {
+            "estimate": -0.004591862942048497,
+            "lower": -0.005381877165108739,
+            "upper": -0.003764930145763512
+          },
+          "median_batch_ms": 7.325311500000001
+        },
+        "one-stored": {
+          "batch": 8192,
+          "seconds": 22.511223499663174,
+          "aa": {
+            "estimate": 0.0009825503704103955,
+            "lower": -0.001711980173283889,
+            "upper": 0.003526535220037763
+          },
+          "ab": {
+            "estimate": 0.002742547089654046,
+            "lower": 0.0008349835002667838,
+            "upper": 0.004586426608304439
+          },
+          "median_batch_ms": 0.2340005
+        },
+        "prefix-random-1024": {
+          "batch": 64,
+          "seconds": 1.336049749981612,
+          "aa": {
+            "estimate": -0.001100319060046373,
+            "lower": -0.002237250667322277,
+            "upper": 6.175717690304339e-05
+          },
+          "ab": {
+            "estimate": -0.007281548602131815,
+            "lower": -0.008503077579106955,
+            "upper": -0.006022291214607622
+          },
+          "median_batch_ms": 2.032976
+        },
+        "empty": {
+          "batch": 8192,
+          "seconds": 23.06883304193616,
+          "aa": {
+            "estimate": 0.00405620589355804,
+            "lower": 0.0007583937890256465,
+            "upper": 0.00727070054198764
+          },
+          "ab": {
+            "estimate": -0.0013391446382227112,
+            "lower": -0.0035504430481552163,
+            "upper": 0.0008588870594341547
+          },
+          "median_batch_ms": 0.231624
+        },
+        "320-overlap": {
+          "batch": 64,
+          "seconds": 1.2856580838561058,
+          "aa": {
+            "estimate": 0.0012461580084079937,
+            "lower": -0.0003459622584051081,
+            "upper": 0.0028254233464244383
+          },
+          "ab": {
+            "estimate": -0.00047557249706253746,
+            "lower": -0.003582449564015988,
+            "upper": 0.003634851471527867
+          },
+          "median_batch_ms": 1.7320205000000002
+        },
+        "seven-stored-prefix": {
+          "batch": 8192,
+          "seconds": 22.942151458002627,
+          "aa": {
+            "estimate": -0.002861417043059089,
+            "lower": -0.0052434336012238125,
+            "upper": -0.00044451861969030393
+          },
+          "ab": {
+            "estimate": -0.00042264172865491556,
+            "lower": -0.0024942259010243273,
+            "upper": 0.0016280801346404417
+          },
+          "median_batch_ms": 0.24976049999999997
+        }
+      }
+    },
+    "remaining_measurement_concerns": [
+      "empty and seven-stored-prefix do not meet both the A/A noise and A/B 0.5% criteria in a single follow-up",
+      "one-stored was +2.75% in the first follow-up with A/A noise beyond resolution, and +0.274% in the second; the earlier observation is retained"
+    ],
+    "longer_close_case_peer_orders": [
+      {
+        "roc_wins": [
+          1,
+          1
+        ],
+        "libdeflate_wins": [
+          1,
+          1
+        ],
+        "candidate_over_control_geometric_mean": 1.0026999060340955,
+        "verified_full_calls": 393216,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": []
+      },
+      {
+        "roc_wins": [
+          1,
+          1
+        ],
+        "libdeflate_wins": [
+          1,
+          1
+        ],
+        "candidate_over_control_geometric_mean": 0.9976428633933132,
+        "verified_full_calls": 393216,
+        "lost_cases_mech_over_roc": [],
+        "lost_cases_mech_over_libdeflate": []
+      }
+    ],
+    "longer_close_case_x_libdeflate": [
+      [
+        0.996427127292259,
+        0.9991173869057718
+      ],
+      [
+        0.9913471604574675,
+        0.9890104197756181
+      ]
+    ],
+    "original_full_run_counts_preserved": true,
+    "ordinary_correctness_calls": 162,
+    "rebuild_variant": "owner-ranges",
+    "integrated_rebuild_exact_object_and_metadata": true,
+    "integrated_rebuild_correctness_calls": 162
+  },
+  "matched_builds": {
+    "scope": "Fresh encoder source through final executable link; compilers, runtimes, and adapters prebuilt",
+    "medians": {
+      "mech-control": {
+        "frontend": 3.9737652083858848,
+        "native": 2.227506833616644,
+        "link": 0.04057920794002712,
+        "total": 6.243457874748856,
+        "parse": 3.5229570005
+      },
+      "mech-owner-ranges": {
+        "frontend": 3.9848482916131616,
+        "native": 2.229816145962104,
+        "link": 0.04760441603139043,
+        "total": 6.263476166408509,
+        "parse": 3.527862917
+      },
+      "roc": {
+        "compile": 2.9559181255754083,
+        "link": 0.034273458644747734,
+        "total": 2.990636020898819
+      },
+      "libdeflate": {
+        "compile": 0.4562634367030114,
+        "link": 0.03345256205648184,
+        "total": 0.490222854539752
+      }
+    },
+    "sizes": {
+      "mech-control": {
+        "emitted_text_bytes": 72520,
+        "encoder_file_bytes": 160136,
+        "linked_text_bytes": 475444,
+        "executable_file_bytes": 956056,
+        "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+      },
+      "mech-owner-ranges": {
+        "emitted_text_bytes": 72392,
+        "encoder_file_bytes": 160008,
+        "linked_text_bytes": 475316,
+        "executable_file_bytes": 956056,
+        "encoder_sha256": "172a40de486b0c53ecfb94ce383ac9036f17b12b84f632005421ded5d04f6ce0"
+      },
+      "roc": {
+        "emitted_text_bytes": 57696,
+        "encoder_file_bytes": 79160,
+        "linked_text_bytes": 150416,
+        "executable_file_bytes": 230600,
+        "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+      },
+      "libdeflate": {
+        "emitted_text_bytes": 37080,
+        "encoder_file_bytes": 52128,
+        "linked_text_bytes": 129900,
+        "executable_file_bytes": 210168,
+        "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+      }
+    },
+    "candidate_over_control_time": 1.003206282810142,
+    "control_x_roc_time": 2.087668920964986,
+    "control_x_libdeflate_time": 12.735958384907523,
+    "candidate_x_roc_time": 2.0943625779395436,
+    "candidate_x_libdeflate_time": 12.776793469347737,
+    "verified_exact_calls": 324,
+    "interpretation": "The smaller object did not demonstrate a complete-build speedup. Each variant reproduced byte-identical outputs across its five builds. Final executable file size is unchanged."
+  },
+  "qualification_boundary": "Original fixed benchmark workers and peers are pinned in each run. Freshly linked build/rebuild workers passed correctness, but do not inherit the pinned workers runtime scores. Ordinary exact resource admission/accounting remains outside the diagnostic entry."
+}
