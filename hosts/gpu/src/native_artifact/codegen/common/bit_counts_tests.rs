@@ -286,9 +286,13 @@ fn compact_bit_count_source_original_decoded_object_errors_and_retry() {
                 )
                 .unwrap();
                 let mut module = JITModule::new(builder);
-                let metadata =
-                    crate::native_artifact::program::compact::define(&mut module, &prepared, false)
-                        .unwrap();
+                let metadata = crate::native_artifact::program::compact::define(
+                    &mut module,
+                    &prepared,
+                    false,
+                    false,
+                )
+                .unwrap();
                 assert_eq!(
                     metadata["bit_counts"].as_u64(),
                     Some(u64::from(!neighboring))

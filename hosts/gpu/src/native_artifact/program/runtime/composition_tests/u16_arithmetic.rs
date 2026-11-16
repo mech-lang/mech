@@ -131,9 +131,13 @@ fn u16_compact_native_operations_keep_values_first_failure_origins_and_retry() {
             )
             .unwrap();
             let mut module = JITModule::new(builder);
-            let metadata =
-                crate::native_artifact::program::compact::define(&mut module, &prepared, false)
-                    .unwrap();
+            let metadata = crate::native_artifact::program::compact::define(
+                &mut module,
+                &prepared,
+                false,
+                false,
+            )
+            .unwrap();
             let (_, object_metadata) =
                 crate::native_artifact::emit_compact_closed_object_for_diagnostic(
                     &artifact, &catalog,

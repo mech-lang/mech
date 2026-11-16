@@ -1,6 +1,7 @@
 //! Native typed CFG using the shared scalar, aggregate and branch emitters.
 use super::{
     arrays::{self, Arrays},
+    checked_traversals,
     collections::Collections,
     constants::{self, Initial},
     flow::Flow,
@@ -10,7 +11,7 @@ use super::{
     packed, phase_storage, phases,
     recipes::{self, Recipe},
     terminal_appends::TerminalAppends,
-    widening_reduction, word_collections, word_packs,
+    vector_guard_facts, widening_reduction, word_collections, word_packs,
 };
 use crate::native_artifact::codegen::{
     common::{
@@ -27,10 +28,10 @@ use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, compiled_stack_bytes, guard, offset, primitive},
 };
-use cranelift_codegen::ir::condcodes::IntCC;
+use cranelift_codegen::{Context, ir::condcodes::IntCC};
 use cranelift_codegen::ir::{AbiParam, Block, InstBuilder, MemFlags, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_module::{Linkage, Module};
+use cranelift_module::{FuncId, Linkage, Module, ModuleResult};
 use mech_engine::native_artifact::{
     NativeControlLoop as Loop, NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativeScalarAggregateAction as Aggregate,
@@ -66,13 +67,27 @@ pub(super) struct Shared {
     pub initial: BTreeMap<usize, Initial>,
     pub histogram: Option<cranelift_module::FuncId>,
     pub classified_histogram: Option<cranelift_module::FuncId>,
+    pub matrix_word: Option<FuncId>,
     pub classes: Vec<super::utf8_classes::Proof>,
 }
+
+type CompileRoot<'a, M> = &'a dyn Fn(&mut M, FuncId, &Context) -> ModuleResult<(u32, u64)>;
 
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
     observe: bool,
+    share_phase_bodies: bool,
+) -> Result<serde_json::Value, NativeCompileError> {
+    define_with_root(module, prepared, observe, share_phase_bodies, None)
+}
+
+pub(in crate::native_artifact::program) fn define_with_root<M: Module>(
+    module: &mut M,
+    prepared: &PreparedNativeProgram,
+    observe: bool,
+    share_phase_bodies: bool,
+    compile_root: Option<CompileRoot<'_, M>>,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
@@ -85,7 +100,14 @@ pub(in crate::native_artifact) fn define<M: Module>(
     } else {
         super::immutable_arrays::LiteralViews::default()
     };
-    let phases = phases::define(module, prepared, &layout, &literals, observe)?;
+    let phases = phases::define(
+        module,
+        prepared,
+        &layout,
+        &literals,
+        observe,
+        share_phase_bodies,
+    )?;
     let kernels = word_collections::define(module, prepared, &layout, observe)?;
     let initial = constants::prepare(module, plan, &layout)?;
     let histogram = super::histogram::define(module, &actions)?;
@@ -105,6 +127,9 @@ pub(in crate::native_artifact) fn define<M: Module>(
             .0,
         )
     };
+    let matrix_word = (!observe && std::env::var_os("MECH_COMPACT_SHARE_MATRIX_WORDS").is_some())
+        .then(|| word_packs::define_matrix_word(module))
+        .transpose()?;
     let shared = Shared {
         layout,
         actions,
@@ -113,29 +138,33 @@ pub(in crate::native_artifact) fn define<M: Module>(
         initial,
         histogram,
         classified_histogram,
+        matrix_word,
         classes,
     };
     let mut workers = Vec::new();
     for region in &prepared.metadata().parallel.regions {
         let entry = super::parallel::Entry::derive(plan, region)?;
-        let report = define_entry(module, prepared, observe, &shared, Some(&entry), &[])?;
+        let report = define_entry(module, prepared, observe, &shared, Some(&entry), &[], None)?;
         workers.push(super::parallel::Worker::new(
             module, plan, region, entry, report,
         )?);
     }
-    let mut report = define_entry(module, prepared, observe, &shared, None, &workers)?;
+    let mut report = define_entry(
+        module, prepared, observe, &shared, None, &workers, compile_root,
+    )?;
     report["native_worker_entries"] =
         serde_json::json!(workers.iter().map(|w| &w.report).collect::<Vec<_>>());
     Ok(report)
 }
 
-pub(super) fn define_entry<M: Module>(
+fn define_entry<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
     observe: bool,
     shared: &Shared,
     worker: Option<&super::parallel::Entry>,
     workers: &[super::parallel::Worker],
+    compile_root: Option<CompileRoot<'_, M>>,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let endian = module.isa().endianness();
@@ -379,12 +408,38 @@ pub(super) fn define_entry<M: Module>(
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); if memory { 3 } else { 2 }];
     signature.returns = vec![AbiParam::new(types::I64); 2];
+    // Give the independent small-input entry a stable position while other
+    // functions change size. Its checked fallback keeps the same signature.
+    let early_entry = if let Some(appends) = terminal_appends.as_ref()
+        && std::env::var_os("MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST").is_some()
+    {
+        let checked = module
+            .declare_function(checked_symbol, Linkage::Local, &signature)
+            .map_err(backend)?;
+        let report = appends.define(module, symbol, &signature, checked)?;
+        Some((checked, report))
+    } else {
+        None
+    };
     let mut context = module.make_context();
     context.func.signature = signature.clone();
     context.func.share_cold_epilogues = worker.is_none()
         && !route_locations
         && std::env::var_os("MECH_COMPACT_SHARE_COLD_EPILOGUES").is_some();
     let mut fb = FunctionBuilderContext::new();
+    let traversal_stage = std::env::var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
+    let outline_allowed =
+        worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
+    let vector_facts = outline_allowed
+        .then(|| std::env::var_os("MECH_COMPACT_VECTOR_FACTS"))
+        .flatten();
+    let mut vector_guards = vector_facts.as_ref().map(|_| Vec::new());
+    let outline_traversals = outline_allowed && traversal_stage.is_some();
+    let controller_windows = (outline_allowed && memory)
+        .then(|| std::env::var("MECH_COMPACT_SHARE_CONTROLLER_WINDOWS").ok())
+        .flatten();
+    let controllers;
+    let mut traversals = BTreeMap::<_, Vec<_>>::new();
     let mut output_words = 0;
     let mut omitted_copy_owners = Vec::new();
     {
@@ -475,6 +530,11 @@ pub(super) fn define_entry<M: Module>(
             .iter()
             .map(|&yes| yes.then(|| b.create_block()))
             .collect::<Vec<_>>();
+        controllers = controller_windows
+            .as_deref()
+            .map(|spec| checked_traversals::controller_candidates(spec, &blocks))
+            .transpose()?
+            .unwrap_or_default();
         let source_blocks = blocks.iter().flatten().copied().collect::<BTreeSet<_>>();
         let mut remaining = vec![0usize; blocks.len()];
         for (site, successors) in flow.successors.iter().enumerate() {
@@ -903,7 +963,21 @@ pub(super) fn define_entry<M: Module>(
                     &blocks,
                     error,
                     worker.is_none(),
+                    vector_guards.as_mut(),
                 )?;
+                if outline_traversals && let Some(key) = phase.checked_traversal_key() {
+                    traversals
+                        .entry(key)
+                        .or_default()
+                        .push(checked_traversals::Candidate {
+                            resume: Some(native),
+                            start: b.current_block().expect("checked fallback entry"),
+                            exit: blocks[phase.exit].expect("checked continuation"),
+                            header: site,
+                            origin_base: None,
+                            span: phase.exit.saturating_sub(site),
+                        });
+                }
                 for destination in phase.destinations() {
                     remaining[destination] -= 1;
                     if remaining[destination] == 0 {
@@ -937,6 +1011,7 @@ pub(super) fn define_entry<M: Module>(
                     &owner_flow,
                     arrays.as_ref(),
                     observe,
+                    shared.matrix_word.filter(|_| worker.is_none() && memory),
                     pack,
                     blocks[pack.next as usize].unwrap(),
                     error,
@@ -1207,6 +1282,151 @@ pub(super) fn define_entry<M: Module>(
         .then(|| cfg_cleanup::forward_identity_routes(&controls, &mut context, module.isa()))
         .transpose()?;
     bit_counts += crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
+    if let (Some(mode), Some(guards)) = (vector_facts, vector_guards)
+        && !guards.is_empty()
+    {
+        let apply = mode != std::ffi::OsStr::new("trace");
+        let proved = vector_guard_facts::fold(&mut context, &guards, apply);
+        if apply && proved != 0 {
+            context
+                .eliminate_unreachable_code(module.isa())
+                .map_err(backend)?;
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
+    if outline_allowed && let Some(mode) = std::env::var_os("MECH_COMPACT_FOLD_UNIT_BRANCHES") {
+        let apply = mode != std::ffi::OsStr::new("trace");
+        let proved = vector_guard_facts::fold_unit_branches(&mut context, apply);
+        eprintln!("compact unit branches proved: {proved}");
+        if apply && proved != 0 {
+            context
+                .eliminate_unreachable_code(module.isa())
+                .map_err(backend)?;
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
+    let checked_traversals = if outline_traversals {
+        let all = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("all"));
+        let shared = checked_traversals::share(module, &mut context.func, traversals, all)?;
+        if shared.is_some() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        shared
+    } else {
+        None
+    };
+    let checked_controllers = checked_traversals::share_controllers(
+        module,
+        &mut context.func,
+        vec![controllers],
+        checked_traversals::CaptureBindings::default(),
+    )?;
+    if checked_controllers.is_some() {
+        context.flowgraph();
+        context.verify(module.isa()).map_err(backend)?;
+    }
+    let discovered_controllers = if outline_allowed
+        && let Ok(windows) = std::env::var("MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS")
+    {
+        let families = super::checked_region_discovery::families(
+            &context.func,
+            &windows,
+            plan.blocks().len(),
+        )?;
+        let shared = checked_traversals::share_controllers(
+            module,
+            &mut context.func,
+            families,
+            checked_traversals::CaptureBindings::from_environment(),
+        )?;
+        if shared.is_some() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        shared
+    } else {
+        None
+    };
+    if outline_allowed
+        && std::env::var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
+            .is_some_and(|scope| scope != "helpers")
+    {
+        let shared = super::owner_retirement::share(module, &mut context.func)?;
+        if shared != 0 {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("compact owner retirements shared: {shared}");
+    }
+    // Close repeated callers after their leaf callees have selected shared
+    // targets. Each region re-proves its boundaries on the resulting graph.
+    let checked_continuations = if outline_allowed
+        && let Ok(windows) = std::env::var("MECH_COMPACT_CONTINUATION_WINDOWS")
+    {
+        let families = super::checked_region_discovery::families(
+            &context.func,
+            &windows,
+            plan.blocks().len(),
+        )?;
+        let shared = checked_traversals::share_continuations(module, &mut context.func, families)?;
+        if shared.is_some() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        shared
+    } else {
+        None
+    };
+    if outline_allowed && let Ok(proofs) = std::env::var("MECH_COMPACT_ROOT_PROOFS") {
+        let isa = module.isa();
+        if proofs == "ranges" || proofs == "all" {
+            let unsigned = crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_options(
+                &mut context, &[], true,
+            );
+            if unsigned != 0 {
+                context.eliminate_unreachable_code(isa).map_err(backend)?;
+                context.remove_constant_phis(isa).map_err(backend)?;
+                context.verify(isa).map_err(backend)?;
+            }
+            let repeated = cfg_cleanup::share_repeated_bounds(&controls, &mut context, isa)?;
+            let windows = cfg_cleanup::reuse_dominating_window_facts(&controls, &mut context, isa)?;
+            let read = cfg_cleanup::reuse_selected_read_bounds(&controls, &mut context, isa)?;
+            let spans = cfg_cleanup::prove_scalar_spans(&controls, &mut context, isa)?;
+            let packed = cfg_cleanup::prove_packed_bases(&controls, &mut context, isa)?;
+            eprintln!(
+                "compact root range proofs: {unsigned} unsigned, {repeated} repeated, {windows} windows, {read} reads, {spans} spans, {packed} packed"
+            );
+        }
+        if proofs == "joins" || proofs == "all" {
+            let equal = cfg_cleanup::coalesce_equal_join_arguments(&controls, &mut context, isa)?;
+            let loop_edges =
+                cfg_cleanup::thread_loop_edges(&controls, &mut context, isa)?.threaded_edges;
+            let identity =
+                cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?.threaded_edges;
+            let predicates = cfg_cleanup::refine_current_predicates(&controls, &mut context, isa)?
+                .removed_branches;
+            eprintln!(
+                "compact root flow proofs: {equal} equal arguments, {loop_edges} loop edges, {identity} identity routes, {predicates} current predicates"
+            );
+        }
+    }
+    let stack_pairs = std::env::var_os("MECH_COMPACT_PAIR_STACK_WORDS").is_some();
+    if outline_allowed
+        && super::word_pairs::available(module.isa())
+        && (stack_pairs
+            || std::env::var_os("MECH_COMPACT_PAIR_WORDS")
+                .is_some_and(|scope| scope == "root" || scope == "all"))
+    {
+        let paired = super::word_pairs::fold(&mut context.func, None, stack_pairs);
+        if paired != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("compact root paired words: {paired}");
+    }
+    if outline_allowed && let Some(path) = std::env::var_os("MECH_COMPACT_LAYOUT_REGION_REPORT") {
+        super::checked_region_discovery::report(&context.func, path.as_ref()).map_err(backend)?;
+    }
     let calls = context
         .func
         .layout
@@ -1227,54 +1447,81 @@ pub(super) fn define_entry<M: Module>(
         .map_err(backend)?;
     }
     eprintln!("compact-stage: machine code");
-    let function = module
-        .declare_function(
-            checked_symbol,
-            if worker.is_some() || terminal_appends.is_some() {
-                Linkage::Local
-            } else {
-                Linkage::Export
-            },
-            &signature,
-        )
+    let function = if let Some((checked, _)) = &early_entry {
+        *checked
+    } else {
+        module
+            .declare_function(
+                checked_symbol,
+                if worker.is_some() || terminal_appends.is_some() {
+                    Linkage::Local
+                } else {
+                    Linkage::Export
+                },
+                &signature,
+            )
+            .map_err(backend)?
+    };
+    let root_machine = compile_root
+        .map(|compile| compile(module, function, &context))
+        .transpose()
         .map_err(backend)?;
-    module
-        .define_function(function, &mut context)
-        .map_err(backend)?;
-    let compiled = context
-        .compiled_code()
-        .ok_or_else(|| backend("compact function lacks native code"))?;
-    if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
-        if let Some(vcode) = &compiled.vcode {
+    let (code_bytes, stack_bytes) = if let Some(machine) = root_machine {
+        machine
+    } else {
+        module
+            .define_function(function, &mut context)
+            .map_err(backend)?;
+        let compiled = context
+            .compiled_code()
+            .ok_or_else(|| backend("compact function lacks native code"))?;
+        if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
+            let folder = std::path::PathBuf::from(folder);
+            if let Some(vcode) = &compiled.vcode {
+                std::fs::write(folder.join("native-vcode.asm"), vcode).map_err(backend)?;
+            }
+            let locations = compiled
+                .buffer
+                .get_srclocs_sorted()
+                .iter()
+                .map(|v| serde_json::json!({"start":v.start,"end":v.end,"site":v.loc.bits()}))
+                .collect::<Vec<_>>();
             std::fs::write(
-                std::path::PathBuf::from(folder).join("native-vcode.asm"),
-                vcode,
+                folder.join("machine-source-ranges.json"),
+                serde_json::to_vec_pretty(&locations).map_err(backend)?,
             )
             .map_err(backend)?;
         }
-    }
-    if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
-        let locations = compiled
-            .buffer
-            .get_srclocs_sorted()
-            .iter()
-            .map(|v| serde_json::json!({"start":v.start,"end":v.end,"site":v.loc.bits()}))
-            .collect::<Vec<_>>();
-        std::fs::write(
-            std::path::PathBuf::from(folder).join("machine-source-ranges.json"),
-            serde_json::to_vec_pretty(&locations).map_err(backend)?,
-        )
-        .map_err(backend)?;
-    }
+        (compiled.code_info().total_size, compiled_stack_bytes(&compiled.buffer)?)
+    };
     eprintln!("compact-stage: machine code complete");
     if let Some(function) = reduction_function {
         widening_reduction::define(module, function)?;
     }
-    let terminal_report = terminal_appends
-        .map(|appends| appends.define(module, symbol, &signature, function))
-        .transpose()?;
+    let terminal_report = if let Some((_, report)) = early_entry {
+        Some(report)
+    } else {
+        terminal_appends
+            .map(|appends| appends.define(module, symbol, &signature, function))
+            .transpose()?
+    };
     Ok({
-        let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":flow.outputs.iter().map(|&v|layout.ty(v).summary()).collect::<Vec<_>>(),"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"source_blocks":plan.blocks().len(),"reachable_blocks":flow.reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
+        let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":flow.outputs.iter().map(|&v|layout.ty(v).summary()).collect::<Vec<_>>(),"code_bytes":code_bytes,"stack_bytes":stack_bytes,"source_blocks":plan.blocks().len(),"reachable_blocks":flow.reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
+        if root_machine.is_some() {
+            report["checked_root_backend"] = serde_json::json!("llvm-size");
+        }
+        if let Some(checked_traversals) = checked_traversals {
+            report["checked_traversals"] = checked_traversals;
+        }
+        if let Some(checked_controllers) = checked_controllers {
+            report["checked_controllers"] = checked_controllers;
+        }
+        if let Some(discovered_controllers) = discovered_controllers {
+            report["layout_checked_controllers"] = discovered_controllers;
+        }
+        if let Some(checked_continuations) = checked_continuations {
+            report["checked_continuations"] = checked_continuations;
+        }
         if !overwrite_reuse.is_empty() {
             report["overwrite_result_reuse"] = serde_json::json!(
                 overwrite_reuse

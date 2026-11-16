@@ -351,7 +351,7 @@ pub(super) fn defaulted_read(
     else {
         return None;
     };
-    let expected = (f.dfg.resolve_aliases(index), 0);
+    let expected = constant_offset(f, index);
     let matches = |pointer: Value, bytes: Value| {
         if packet_word(f, cfg, packet_loads, pointer) != Some(view.pointer_word) {
             return false;
@@ -698,6 +698,7 @@ pub(super) fn seed_word(
 struct Rewrite {
     slot: Read,
     cost: Read,
+    cost_byte_offset: i64,
     selector: Value,
     bias_shift: u32,
     bank_bit: u32,
@@ -728,6 +729,7 @@ fn plan(
         );
     }
     let cost = by_branch.get(&branch)?;
+    let (cost_index, cost_base) = constant_offset(f, cost.index);
     if cost.view.width != 4 || cost.view.array == slot.view.array {
         return None;
     }
@@ -737,7 +739,7 @@ fn plan(
             opcode: Op::Iadd,
             args: [left, right],
         },
-    ) = definition(f, cost.index)?
+    ) = definition(f, cost_index)?
     else {
         return None;
     };
@@ -764,10 +766,12 @@ fn plan(
         return None;
     }
     let floor = data.maximum.checked_add(bank_delta)?.checked_add(1)?;
-    // The two read addresses scale by four and fit in the guarded view.
-    if floor > (i64::MAX as u64) / 4 {
+    let minimum_costs = cost_base.checked_add(floor)?;
+    // The base and both banks must fit in the guarded view after scaling.
+    if minimum_costs > (i64::MAX as u64) / 4 {
         return None;
     }
+    let cost_byte_offset = i64::try_from(cost_base.checked_mul(4)?).ok()?;
     let cache_reads = dependencies(f, cfg, capture, by_result, classification_input, None)?;
     let cache = by_result.get(cache_reads.iter().next()?)?;
     if cache_reads.len() != 1 || cache.view.width != 4 || cache.view.array == cost.view.array {
@@ -853,6 +857,7 @@ fn plan(
     Some(Rewrite {
         slot: slot.clone(),
         cost: cost.clone(),
+        cost_byte_offset,
         selector: selection,
         bias_shift,
         bank_bit: high.trailing_zeros(),
@@ -861,7 +866,7 @@ fn plan(
             cache: cache.view.array,
             cursor_word: cursor,
             costs: cost.view.array,
-            minimum_costs: floor,
+            minimum_costs,
             cells_per_bank: data.length,
             second_bias: bank_delta,
             minimum_records: size,
@@ -904,6 +909,11 @@ impl Rewrite {
         let table = c.ins().stack_addr(types::I64, table, 0);
         let map = c.ins().load(types::I64, flags, input, slots_at);
         let costs = c.ins().load(types::I64, flags, input, costs_at);
+        let costs = if self.cost_byte_offset == 0 {
+            costs
+        } else {
+            c.ins().iadd_imm(costs, self.cost_byte_offset)
+        };
         let zero = c.ins().iconst(types::I64, 0);
         c.func.dfg.replace(start).jump(prepare, &[zero.into()]);
 
@@ -994,6 +1004,11 @@ impl Rewrite {
         let mut c = FuncCursor::new(f).at_inst(start);
         let codes = c.ins().global_value(types::I64, global);
         let costs = c.ins().load(types::I64, flags, input, costs_at);
+        let costs = if self.cost_byte_offset == 0 {
+            costs
+        } else {
+            c.ins().iadd_imm(costs, self.cost_byte_offset)
+        };
         c.goto_inst(self.slot.branch);
         let word = if c.func.dfg.value_type(dense.word) == types::I64 {
             dense.word

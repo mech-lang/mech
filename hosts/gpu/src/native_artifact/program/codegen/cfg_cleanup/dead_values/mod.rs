@@ -5,7 +5,7 @@ use cranelift_codegen::ir::{BlockCall, Function, Inst, InstructionData, Opcode, 
 use std::collections::BTreeMap;
 
 #[derive(Default)]
-pub(super) struct Removed {
+pub(in crate::native_artifact::program) struct Removed {
     pub parameters: usize,
     pub instructions: usize,
     pub loads: usize,
@@ -34,7 +34,7 @@ fn removable(function: &Function, inst: Inst) -> bool {
     }
 }
 
-pub(super) fn eliminate(function: &mut Function) -> Removed {
+pub(in crate::native_artifact::program) fn eliminate(function: &mut Function) -> Removed {
     // Exceptional edge-only results and context operands retain the original
     // lowering until this pass has an explicit contract for those edges.
     if function.layout.blocks().any(|block| {

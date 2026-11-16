@@ -101,6 +101,7 @@ pub(in crate::native_artifact) struct Boundary<'a> {
     fixed_capacities: Vec<Option<Value>>,
     arrays: usize,
     no_growth: Option<&'a crate::native_artifact::program::compact::NoGrowth>,
+    error_origin_base: usize,
     pub input: Value,
     pub output: Value,
     pub entry: Vec<usize>,
@@ -189,6 +190,7 @@ impl<'a> Boundary<'a> {
             fixed_capacities,
             arrays: proof.arrays.len(),
             no_growth,
+            error_origin_base: 0,
             input,
             output,
             entry: input_words(proof, region.tail.carrier().get())?,
@@ -202,6 +204,12 @@ impl<'a> Boundary<'a> {
                 .unwrap_or_default(),
         })
     }
+    pub fn with_error_origin_base(mut self, base: usize) -> Self {
+        assert!(self.handoffs.is_empty());
+        self.error_origin_base = base;
+        self
+    }
+
     pub fn words(
         &self,
         b: &mut FunctionBuilder<'_>,
@@ -367,9 +375,16 @@ impl<'a> Boundary<'a> {
         b: &mut FunctionBuilder<'_>,
         site: usize,
     ) -> Result<(), NativeCompileError> {
-        let site = b.ins().iconst(types::I64, site as i64);
-        b.ins().store(MemFlags::new(), site, self.output, 0);
+        let site = self.failure_origin(b, site);
+        self.store_failure_origin(b, site);
         Ok(())
+    }
+    pub fn failure_origin(&self, b: &mut FunctionBuilder<'_>, site: usize) -> Value {
+        let relative = (site as i64).wrapping_sub(self.error_origin_base as i64);
+        b.ins().iconst(types::I64, relative)
+    }
+    pub fn store_failure_origin(&self, b: &mut FunctionBuilder<'_>, origin: Value) {
+        b.ins().store(MemFlags::new(), origin, self.output, 0);
     }
     pub fn finish(
         &self,
