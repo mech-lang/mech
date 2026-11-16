@@ -125,3 +125,7 @@ path = "helper_liveness_tests.rs"
 [[test]]
 name = "exit_definitions"
 path = "exit_definitions_tests.rs"
+
+[[bin]]
+name = "emit_compact_size"
+path = "compact-size/emit.rs"

@@ -1,10 +1,13 @@
 //! Compile-time lowering of owned, verified native SSA. This module constructs
 //! LLVM IR, never a runtime evaluator or an independently trusted descriptor.
+mod compact_body;
 mod lower;
 mod machine;
 mod recording;
 mod toolchain;
 
+pub(super) use compact_body::CompactBody;
+pub(super) use lower::compact_definition;
 pub(super) use recording::RecordingModule;
 pub use toolchain::NativeLlvmToolchain;
 

@@ -40,8 +40,10 @@ mod utf8_classes;
 mod widening_reduction;
 mod word_collections;
 mod word_packs;
+mod word_pairs;
 
 pub(in crate::native_artifact) use emit::define;
+pub(super) use emit::define_with_root;
 pub(super) use object::PreparedObject;
 
 use crate::native_artifact::NativeCompileError;

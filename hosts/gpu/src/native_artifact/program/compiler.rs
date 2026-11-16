@@ -842,6 +842,25 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     catalog: &FunctionCatalog,
     observe: bool,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    emit_compact_closed_object(artifact, catalog, observe, None)
+}
+
+/// Emit the compact diagnostic Object on Apple AArch64 with the checked root
+/// optimized for size by the selected LLVM toolchain.
+pub fn emit_compact_closed_object_with_llvm_root_for_diagnostic(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    toolchain: &super::llvm_backend::NativeLlvmToolchain,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    emit_compact_closed_object(artifact, catalog, false, Some(toolchain))
+}
+
+fn emit_compact_closed_object(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    observe: bool,
+    llvm_root: Option<&super::llvm_backend::NativeLlvmToolchain>,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     host_supported()?;
     eprintln!("compact-stage: canonical lowering");
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
@@ -864,14 +883,27 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
         module.use_direct_runtime_calls(&mode);
     }
     let share_phase_bodies = std::env::var_os("MECH_COMPACT_SHARE_PHASE_BODIES").is_some();
-    let metadata = super::compact::define(&mut module, &prepared, observe, share_phase_bodies)?;
+    let metadata = if let Some(toolchain) = llvm_root {
+        let compile = |module: &mut super::compact::PreparedObject, id, context: &cranelift_codegen::Context| {
+            module.define_llvm_root(id, context, toolchain)
+        };
+        super::compact::define_with_root(
+            &mut module, &prepared, observe, share_phase_bodies, Some(&compile),
+        )?
+    } else {
+        super::compact::define(&mut module, &prepared, observe, share_phase_bodies)?
+    };
     if !observe && std::env::var_os("MECH_COMPACT_EXPORTS_FIRST").is_some() {
         module.place_exports_first();
     }
     if !observe && std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some() {
         module.place_layout_regions_last();
     }
-    let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
+    let bytes = if let Some(toolchain) = llvm_root {
+        module.finish_linked(toolchain).map_err(backend)?
+    } else {
+        module.finish().map_err(backend)?.emit().map_err(backend)?
+    };
     Ok((bytes, metadata))
 }
 

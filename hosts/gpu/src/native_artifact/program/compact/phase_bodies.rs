@@ -34,6 +34,15 @@ pub(super) fn define_body<M: Module>(
     context: &mut Context,
     bodies: Option<&mut PhaseBodies>,
 ) -> Result<(FuncId, String), NativeCompileError> {
+    if super::word_pairs::available(module.isa())
+        && std::env::var_os("MECH_COMPACT_PAIR_WORDS")
+            .is_some_and(|scope| scope == "helpers" || scope == "all")
+    {
+        let paired = super::word_pairs::fold(&mut context.func, None, false);
+        if paired != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
     let Some(bodies) = bodies else {
         module.define_function(function, context).map_err(backend)?;
         return Ok((function, symbol.into()));

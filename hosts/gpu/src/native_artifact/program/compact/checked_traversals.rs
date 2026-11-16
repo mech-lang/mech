@@ -1156,6 +1156,9 @@ fn prepare_bodies<M: Module>(
     let layout_regions_last = std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some();
     let share_retirements = std::env::var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
         .is_some_and(|scope| scope == "helpers" || scope == "all");
+    let pair_words = super::word_pairs::available(module.isa())
+        && std::env::var_os("MECH_COMPACT_PAIR_WORDS")
+            .is_some_and(|scope| scope == "helpers" || scope == "all");
     let mut groups: Vec<Prepared> = Vec::new();
     for mut traversal in traversals {
         traversal.live_captures.clear();
@@ -1194,6 +1197,21 @@ fn prepare_bodies<M: Module>(
                     candidate.header
                 );
             }
+        }
+        if pair_words {
+            // Every caller reserves the full result packet in its own frame.
+            let entry = context.func.layout.entry_block().expect("region entry");
+            let packet = *context
+                .func
+                .dfg
+                .block_params(entry)
+                .last()
+                .expect("region result pointer");
+            super::word_pairs::fold(
+                &mut context.func,
+                Some((packet, traversal.output_words())),
+                false,
+            );
         }
         if traversal.packed_inputs {
             eprintln!(

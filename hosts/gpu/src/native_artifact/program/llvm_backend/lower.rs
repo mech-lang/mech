@@ -1,7 +1,10 @@
 use super::recording::Definition;
 use cranelift_codegen::ir::{self, InstructionData as D, Opcode as O};
-use cranelift_module::{FuncId, Linkage, ModuleDeclarations};
-use std::collections::{BTreeMap, BTreeSet};
+use cranelift_module::{DataDescription, DataId, FuncId, Init, Linkage, ModuleDeclarations};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Write as _,
+};
 
 type Result<T> = std::result::Result<T, String>;
 
@@ -118,6 +121,9 @@ pub(super) fn module<'a>(
         })
         .collect::<Result<Vec<_>>>()?;
     for def in definitions {
+        if !def.function.global_values.is_empty() {
+            return Err("unsupported LLVM dynamic stack/global values".into());
+        }
         bodies.push(Function::new(&def.function, declarations, &mut intrinsics).emit(def.id)?);
     }
     Ok(format!(
@@ -133,6 +139,100 @@ pub(super) fn module<'a>(
         ),
         bodies.join("\n\n")
     ))
+}
+
+/// Lower one closed SSA definition with the other machine functions and data
+/// supplied by the same module. The exact data extents come from its prepared
+/// Object, before the module writes relocations.
+pub(in crate::native_artifact::program) fn compact_definition(
+    declarations: &ModuleDeclarations,
+    id: FuncId,
+    function: &ir::Function,
+    data_objects: &BTreeMap<DataId, &DataDescription>,
+    fold_readonly_data: bool,
+) -> Result<String> {
+    let mut imports = BTreeSet::new();
+    for external in function.dfg.ext_funcs.values() {
+        let ir::ExternalName::User(name) = external.name else {
+            return Err("LLVM compact function uses a non-module callee".into());
+        };
+        let name = &function.params.user_named_funcs()[name];
+        if name.namespace != 0 {
+            return Err("LLVM compact function uses a data symbol as a callee".into());
+        }
+        let callee = FuncId::from_u32(name.index);
+        if callee == id {
+            continue;
+        }
+        let decl = declarations.get_function_decl(callee);
+        let (params, ret) = signature(&decl.signature)?;
+        let name = symbol(decl.name.as_deref().ok_or("anonymous LLVM callee")?)?;
+        let cc = calling_convention(&decl.signature)?;
+        imports.insert(format!("declare {cc}{ret} {name}({})", params.join(", ")));
+    }
+    let globals = function
+        .global_values
+        .values()
+        .map(|global| compact_data_symbol(function, global).map(|(data, _)| data))
+        .collect::<Result<BTreeSet<_>>>()?;
+    for data in globals {
+        let decl = declarations.get_data_decl(data);
+        let object = data_objects
+            .get(&data)
+            .ok_or("LLVM compact data is not defined")?;
+        let name = symbol(decl.name.as_deref().ok_or("anonymous LLVM data")?)?;
+        let size = object.init.size();
+        // The prepared Object owns these bytes. LLVM can fold reads, while
+        // the original definition still supplies the address at link time.
+        if fold_readonly_data
+            && decl.linkage == Linkage::Local
+            && !decl.writable
+            && object.function_relocs.is_empty()
+            && object.data_relocs.is_empty()
+            && let Init::Bytes { contents } = &object.init
+        {
+            let mut definition =
+                format!("{name} = available_externally dso_local constant [{size} x i8] c\"");
+            for byte in contents.iter() {
+                write!(definition, "\\{byte:02X}").unwrap();
+            }
+            definition.push('"');
+            imports.insert(definition);
+            continue;
+        }
+        let storage = if decl.writable { "global" } else { "constant" };
+        imports.insert(format!(
+            "{name} = external dso_local {storage} [{size} x i8]"
+        ));
+    }
+    let mut intrinsics = BTreeSet::new();
+    let body = Function::new(function, declarations, &mut intrinsics).emit(id)?;
+    Ok(format!(
+        "target triple = \"arm64-apple-macosx26.0.0\"\n\n{}\n{}\n{body}\n\
+         attributes #0 = {{ noinline uwtable \"frame-pointer\"=\"all\" }}\n",
+        imports.into_iter().collect::<Vec<_>>().join("\n"),
+        intrinsics.into_iter().collect::<Vec<_>>().join("\n"),
+    ))
+}
+
+fn compact_data_symbol(
+    function: &ir::Function,
+    global: &ir::GlobalValueData,
+) -> Result<(DataId, i64)> {
+    let ir::GlobalValueData::Symbol {
+        name: ir::ExternalName::User(name),
+        offset,
+        tls: false,
+        ..
+    } = global
+    else {
+        return Err("LLVM compact data requires a non-TLS module symbol".into());
+    };
+    let name = &function.params.user_named_funcs()[*name];
+    if name.namespace != 1 {
+        return Err("LLVM compact data symbol has the wrong namespace".into());
+    }
+    Ok((DataId::from_u32(name.index), offset.bits()))
 }
 
 struct Edge {
@@ -286,9 +386,10 @@ impl<'a> Function<'a> {
             .layout
             .entry_block()
             .ok_or("LLVM function has no entry")?;
-        if !self.f.dynamic_stack_slots.is_empty() || !self.f.global_values.is_empty() {
-            return Err("unsupported LLVM dynamic stack/global values".into());
+        if !self.f.dynamic_stack_slots.is_empty() {
+            return Err("unsupported LLVM dynamic stack slots".into());
         }
+        let mut incoming = BTreeMap::<_, Vec<_>>::new();
         for block in self.f.layout.blocks() {
             for inst in self.f.layout.block_insts(block) {
                 let mut indices = Vec::new();
@@ -311,6 +412,7 @@ impl<'a> Function<'a> {
                     }
                     let index = self.edges.len();
                     indices.push(index);
+                    incoming.entry(destination).or_default().push(index);
                     self.edges.push(Edge {
                         name: format!("edge{index}"),
                         destination,
@@ -359,7 +461,8 @@ impl<'a> Function<'a> {
             } else {
                 for (i, param) in self.f.dfg.block_params(block).iter().enumerate() {
                     let mut arms = Vec::new();
-                    for e in self.edges.iter().filter(|e| e.destination == block) {
+                    for &index in incoming.get(&block).into_iter().flatten() {
+                        let e = &self.edges[index];
                         if self.value_type(*param) != self.value_type(e.values[i]) {
                             return Err("LLVM phi type differs".into());
                         }
@@ -409,6 +512,70 @@ impl<'a> Function<'a> {
                 self.line(format!(
                     "{dest} = add {t} 0, {}",
                     Self::constant(rt.unwrap(), imm.bits())?
+                ));
+            }
+            D::UnaryConst {
+                opcode: O::Vconst,
+                constant_handle,
+            } => {
+                let vector = rt.ok_or("LLVM vector constant has no result")?;
+                let bytes = self.f.dfg.constants.get(*constant_handle).as_slice();
+                if !vector.is_vector() || bytes.len() != vector.bytes() as usize {
+                    return Err("LLVM vector constant has the wrong width".into());
+                }
+                // Cranelift stores the constant as little-endian bytes. Keep
+                // these bits intact when assigning wider integer or float lanes.
+                let lanes = bytes
+                    .iter()
+                    .map(|byte| format!("i8 {byte}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                if vector.lane_type() == ir::types::I8 {
+                    self.line(format!("{dest} = or {t} zeroinitializer, <{lanes}>"));
+                } else {
+                    self.line(format!(
+                        "{dest} = bitcast <{} x i8> <{lanes}> to {t}",
+                        bytes.len()
+                    ));
+                }
+            }
+            D::Shuffle {
+                imm,
+                args: [left, right],
+                ..
+            } => {
+                let mask = self
+                    .f
+                    .dfg
+                    .immediates
+                    .get(*imm)
+                    .ok_or("missing LLVM shuffle mask")?;
+                if mask.len() != 16 || mask.iter().any(|&lane| lane >= 32) {
+                    return Err("LLVM byte shuffle mask is outside its input lanes".into());
+                }
+                let lanes = mask
+                    .iter()
+                    .map(|lane| format!("i32 {lane}"))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                self.line(format!(
+                    "{dest} = shufflevector {}, {}, <16 x i32> <{lanes}>",
+                    self.typed(*left)?,
+                    self.typed(*right)?,
+                ));
+            }
+            D::BinaryImm8 {
+                opcode: O::Extractlane,
+                arg,
+                imm,
+            } => {
+                let vector = self.value_type(*arg);
+                if !vector.is_vector() || u32::from(*imm) >= vector.lane_count() {
+                    return Err("LLVM lane extraction is outside its input vector".into());
+                }
+                self.line(format!(
+                    "{dest} = extractelement {}, i32 {imm}",
+                    self.typed(*arg)?,
                 ));
             }
             D::UnaryIeee64 {
@@ -469,6 +636,19 @@ impl<'a> Function<'a> {
                 };
                 self.line(format!("store {value}, ptr {p}, align 1"));
             }
+            D::Unary {
+                opcode: O::PrefetchWrite,
+                arg,
+            } => {
+                let address = self.pointer(*arg, 0)?;
+                self.intrinsics.insert(
+                    "declare void @llvm.prefetch.p0(ptr, i32 immarg, i32 immarg, i32 immarg)"
+                        .into(),
+                );
+                self.line(format!(
+                    "call void @llvm.prefetch.p0(ptr {address}, i32 1, i32 3, i32 1)"
+                ));
+            }
             D::StackLoad {
                 opcode,
                 stack_slot,
@@ -491,6 +671,17 @@ impl<'a> Function<'a> {
             } => {
                 let p = self.offset(format!("%{stack_slot}"), i64::from(*offset));
                 self.line(format!("store {}, ptr {p}, align 1", self.typed(*arg)?));
+            }
+            D::UnaryGlobalValue {
+                opcode: O::GlobalValue,
+                global_value,
+            } => {
+                let (data, offset) =
+                    compact_data_symbol(self.f, &self.f.global_values[*global_value])?;
+                let decl = self.declarations.get_data_decl(data);
+                let name = symbol(decl.name.as_deref().ok_or("anonymous LLVM data")?)?;
+                let pointer = self.offset(name, offset);
+                self.line(format!("{dest} = ptrtoint ptr {pointer} to {t}"));
             }
             D::IntCompare {
                 cond, args: [a, b], ..
@@ -799,6 +990,20 @@ impl<'a> Function<'a> {
                     self.value(results[1]),
                     ty(src)?
                 ));
+            }
+            O::Iconcat => {
+                let lane = self.value_type(args[0]);
+                if !lane.is_int()
+                    || lane.is_vector()
+                    || self.value_type(args[1]) != lane
+                    || rt.bits() != lane.bits() * 2
+                {
+                    return Err("unsupported LLVM integer concatenation shape".into());
+                }
+                let low = self.temporary(format!("zext {} to {t}", self.typed(args[0])?));
+                let high = self.temporary(format!("zext {} to {t}", self.typed(args[1])?));
+                let high = self.temporary(format!("shl {t} {high}, {}", lane.bits()));
+                self.line(format!("{dest} = or {t} {low}, {high}"));
             }
             O::Bitselect => {
                 let inverse = self.temporary(format!(

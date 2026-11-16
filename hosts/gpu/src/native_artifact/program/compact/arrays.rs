@@ -23,6 +23,7 @@ const INVALID: u64 = 0x19403;
 pub(in crate::native_artifact) struct Arrays {
     allocate: FuncRef,
     writable: FuncRef,
+    writable_scalar: Option<FuncRef>,
     free: FuncRef,
     memmove: FuncRef,
     source: StackSlot,
@@ -107,9 +108,16 @@ impl Arrays {
         heap: Value,
         observe: bool,
     ) -> Result<Self, NativeCompileError> {
+        let forward_view_geometry =
+            std::env::var_os("MECH_COMPACT_FORWARD_VIEW_GEOMETRY").is_some();
+        let pack_writable_storage = forward_view_geometry
+            && std::env::var_os("MECH_COMPACT_PACK_WRITABLE_STORAGE").is_some();
         Ok(Self {
             allocate: import(module, b, "mech_compact_allocate", 6)?,
             writable: import(module, b, "mech_compact_writable", 7)?,
+            writable_scalar: pack_writable_storage
+                .then(|| import(module, b, "mech_compact_writable_scalar", 8))
+                .transpose()?,
             free: import(module, b, "mech_compact_free", 2)?,
             memmove: import(module, b, "memmove", 3)?,
             source: b.create_sized_stack_slot(StackSlotData::new(
@@ -123,7 +131,7 @@ impl Arrays {
                 3,
             )),
             heap,
-            forward_view_geometry: std::env::var_os("MECH_COMPACT_FORWARD_VIEW_GEOMETRY").is_some(),
+            forward_view_geometry,
             retirement_observer: if observe {
                 Some(import(module, b, "mech_compact_phase_observe", 3)?)
             } else {
@@ -267,18 +275,35 @@ impl Arrays {
         let stride = element
             .packed_bytes
             .ok_or_else(|| backend("compact writable backing requires a fixed element stride"))?;
-        let stride = b.ins().iconst(types::I64, stride as i64);
-        let align = b.ins().iconst(types::I64, element.packed_align as i64);
-        let consume = b.ins().iconst(types::I64, i64::from(consume));
-        for (i, &value) in view.iter().enumerate() {
-            b.ins().stack_store(value, self.source, (i * 8) as i32);
-        }
-        let source = b.ins().stack_addr(types::I64, self.source, 0);
         let out = b.ins().stack_addr(types::I64, self.result, 0);
-        let call = b.ins().call(
-            self.writable,
-            &[self.heap, source, consume, minimum, stride, align, out],
-        );
+        let scalar = self.writable_scalar.filter(|_| {
+            matches!(element.kind, Kind::Scalar { .. })
+                && element.packed_align == stride
+                && matches!(stride, 1 | 2 | 4 | 8)
+        });
+        let call = if let Some(scalar) = scalar {
+            let layout = b
+                .ins()
+                .iconst(types::I64, 2 * stride as i64 + i64::from(consume));
+            b.ins().call(
+                scalar,
+                &[
+                    self.heap, view[0], view[1], view[2], view[5], minimum, layout, out,
+                ],
+            )
+        } else {
+            let stride = b.ins().iconst(types::I64, stride as i64);
+            let align = b.ins().iconst(types::I64, element.packed_align as i64);
+            let consume = b.ins().iconst(types::I64, i64::from(consume));
+            for (i, &value) in view.iter().enumerate() {
+                b.ins().stack_store(value, self.source, (i * 8) as i32);
+            }
+            let source = b.ins().stack_addr(types::I64, self.source, 0);
+            b.ins().call(
+                self.writable,
+                &[self.heap, source, consume, minimum, stride, align, out],
+            )
+        };
         let status = b.inst_results(call)[0];
         success(b, status, error);
         // Both the reused and copied writable views retain this geometry.

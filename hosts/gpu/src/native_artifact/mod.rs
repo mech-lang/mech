@@ -132,6 +132,7 @@ pub use crate::native_artifact::program::application::{
 pub use crate::native_artifact::program::compiler::{
     JitProgramArtifact, NativeProgramObject, compact_native_layout_for_diagnostic,
     emit_compact_closed_object_for_diagnostic,
+    emit_compact_closed_object_with_llvm_root_for_diagnostic,
     emit_compact_closed_object_with_phase_observer_for_diagnostic,
     emit_minimal_numeric_object_for_diagnostic, emit_program_llvm_ir,
     emit_program_llvm_ir_with_limits, emit_program_llvm_object_with_limits, emit_program_object,
