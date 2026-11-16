@@ -1,0 +1,12 @@
+{
+  "actor": "libdeflate",
+  "seconds": {
+    "compile": 0.44752791710197926,
+    "link": 0.03331745881587267,
+    "total": 0.4811095828190446
+  },
+  "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+  "encoder_bytes": 52128,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-owner-ranges-current/order-4/libdeflate/compressor",
+  "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+}

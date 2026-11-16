@@ -26,12 +26,12 @@ orders record 81/81 and 61/81. Rebuilt objects and metadata match those artifact
 exactly; freshly linked worker executables passed correctness checks but have
 not received a new full peer timing qualification.
 
-The frontend allocator change is published in `21757538`. The matched complete
-source-to-executable comparison is **6.24081 seconds**, or **2.09436× Roc and
-13.00485× libdeflate**. This includes final linking, with compilers, fixed runtimes,
-and adapters prebuilt. The change improves the same-input control by 8.83%, with
-all ten Mech outputs byte-identical. See the main README for the raw evidence and
-the distinction between this benchmark and compiler construction.
+The frontend allocator change is published in `21757538`. Its matched comparison
+improved complete build time by 8.83%, with all ten Mech outputs byte-identical.
+The latest owner-proof study remeasures the retained control at **6.24346 seconds**,
+or **12.73596× libdeflate**. All builds include final linking, with compilers, fixed
+runtimes, and adapters prebuilt. See the main README for the phase timings and the
+distinction between these benchmarks and compiler construction.
 
 ## Latest experiments, not promoted
 
@@ -43,15 +43,25 @@ retained recipe was changed for this follow-up.
 | Configuration | Encoder text | × libdeflate | Root frame | Runtime qualification |
 | --- | ---: | ---: | ---: | --- |
 | Retained baseline | 72,520 B | 1.95577 | 3,744 B | Historical full 81/61 |
-| Owner proofs, inline only helper 4879 | 72,168 B | 1.94628 | 3,680 B | Pending |
+| Range-derived owner proofs | 72,392 B | 1.95232 | 3,744 B | Full 81 Roc; C 61/60; not promoted |
+| Owner proofs, inline only helper 4879 | 72,168 B | 1.94628 | 3,680 B | Rejected after two focused orders |
 | Owner proofs, final cleanup, cold tails | 71,768 B | 1.93549 | 3,792 B | Pending |
 
-The first candidate removes 352 bytes and reduces the root frame by 64 bytes.
-The smallest candidate removes 752 bytes but increases the root frame by 48
-bytes. Neither has been linked, correctness-tested, or timed against the peers.
-Do not attach the baseline's win counts to either candidate. The root frame is
-not complete stack high-water, and the compiler's metadata call count is not a
-count of the final relocated calls.
+The narrower proof removes 128 bytes, passes correctness and checked-failure
+controls, and keeps the same peer wins as its simultaneous control. Both control
+and candidate have 61 then 60 C wins in the full orders; the close case wins in
+both longer follow-ups. Tiny-input repeatability remains unresolved, so the
+candidate is not promoted. Its matched complete build is 6.26348 seconds versus
+6.24346 for the control, with no demonstrated build-time improvement.
+
+The configuration that removes 352 bytes and reduces the root frame by 64 bytes
+loses C wins and consistently slows several short cases. It is rejected despite
+passing correctness. The smallest static candidate removes 752 bytes but
+increases the root frame by 48 bytes; it has not been linked or runtime-qualified.
+Do not attach the baseline's win counts to these candidates. The root frame is
+not complete stack high-water, and metadata calls are not final relocated calls.
+See [the complete follow-up](evidence/owner-proof-runtime/report.json) for raw
+paired data, repeated same-worker controls, and every adverse observation.
 
 All ten additional shared-region screens were at least as large as the baseline.
 The stack-pair census found only 156 bytes potentially removable by pairing

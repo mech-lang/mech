@@ -6,7 +6,7 @@ import argparse, json, os, struct, subprocess, time
 here=Path(__file__).resolve().parent
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('output',type=Path)
-parser.add_argument('--variant',choices=['baseline','cold-tails'],default='baseline')
+parser.add_argument('--variant',choices=['baseline','cold-tails','owner-ranges'],default='baseline')
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)
 args=parser.parse_args()
@@ -38,6 +38,7 @@ assert sha(bytecode)==recipe['bytecode_sha256'],'changed canonical bytecode; ins
 flags=dict(recipe['flags'])
 flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in recipe['profiles'])
 if args.variant=='cold-tails':flags['MECH_COMPACT_SHARE_COLD_TAILS']='1'
+if args.variant=='owner-ranges':flags['MECH_COMPACT_PROVE_BACKING_OWNERS']='ranges'
 assert not any('LLVM' in key for key in flags)
 phases['native']=run([emitter,bytecode,out/'native'],out/'native.log',env|flags|{'PATH':'/usr/bin:/bin'})
 object_file=out/'native/program.o';data=object_file.read_bytes();assert struct.unpack_from('<I',data)[0]==0xfeedfacf
@@ -49,8 +50,11 @@ for _ in range(struct.unpack_from('<I',data,16)[0]):
             at=offset+72+section*80
             if data[at:at+16].rstrip(b'\0')==b'__text':text_bytes=struct.unpack_from('<Q',data,at+40)[0]
     offset+=size
-expected=recipe['baseline_object_sha256' if args.variant=='baseline' else 'cold_tails_object_sha256']
-record={'variant':args.variant,'compiler_build':build,'phases':phases,'source_to_object_seconds':time.perf_counter()-start,'object_sha256':sha(object_file),'expected_object_sha256':expected,'object_text_bytes':text_bytes,'object_text_x_roc':text_bytes/57696,'object_text_x_libdeflate':text_bytes/37080,'full_integrated_source_identity':sha(object_file)==expected,'runtime_wins':'not measured by this command'}
+variant_key=args.variant.replace('-','_')
+expected=recipe[variant_key+'_object_sha256']
+expected_metadata=recipe[variant_key+'_metadata_sha256']
+actual_metadata=sha(out/'native/metadata.json')
+record={'variant':args.variant,'compiler_build':build,'phases':phases,'source_to_object_seconds':time.perf_counter()-start,'object_sha256':sha(object_file),'expected_object_sha256':expected,'metadata_sha256':actual_metadata,'expected_metadata_sha256':expected_metadata,'object_text_bytes':text_bytes,'object_text_x_roc':text_bytes/57696,'object_text_x_libdeflate':text_bytes/37080,'full_integrated_source_identity':sha(object_file)==expected and actual_metadata==expected_metadata,'runtime_wins':'not measured by this command'}
 (out/'rebuild.json').write_text(json.dumps(record,indent=2)+'\n')
 assert record['full_integrated_source_identity'],'integrated compiler changed the object; report this result, do not reuse the historical win count'
 if args.mimalloc_object:

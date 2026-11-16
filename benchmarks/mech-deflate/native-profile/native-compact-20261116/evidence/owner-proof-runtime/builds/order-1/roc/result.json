@@ -1,0 +1,12 @@
+{
+  "actor": "roc",
+  "seconds": {
+    "compile": 2.9587390422821045,
+    "link": 0.03458845801651478,
+    "total": 2.993650041986257
+  },
+  "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+  "encoder_bytes": 88808,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-owner-ranges-current/order-1/roc/compressor",
+  "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+}
