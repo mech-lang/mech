@@ -433,6 +433,49 @@ pub unsafe extern "C" fn mech_compact_writable(
         Err(status) => status,
     }
 }
+
+/// Return the writable backing of a scalar view. The caller carries its
+/// unchanged logical geometry and only reads backing words 0, 2, and 5.
+///
+/// # Safety
+/// The source and the output belong to the current live heap. The output is
+/// a disjoint six-word lane. The low bit of `layout` requires last-use proof
+/// when set, and the remaining bits carry the scalar stride and alignment.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_writable_scalar(
+    context: *mut Heap,
+    data: u64,
+    length: u64,
+    capacity: u64,
+    owner: u64,
+    minimum: u64,
+    layout: u64,
+    output: *mut u64,
+) -> u64 {
+    let width = layout >> 1;
+    if context.is_null() || output.is_null() || !matches!(width, 1 | 2 | 4 | 8) {
+        return INVALID;
+    }
+    let result = unsafe { &mut *context }.writable(
+        [data, length, capacity, 0, 0, owner],
+        layout & 1 != 0,
+        minimum as usize,
+        width as usize,
+        width as usize,
+    );
+    match result {
+        Ok(view) => {
+            unsafe {
+                output.write(view[0]);
+                output.add(2).write(view[2]);
+                output.add(5).write(view[5]);
+            }
+            0
+        }
+        Err(status) => status,
+    }
+}
+
 // Keep this as a tail-call target for the shared decrement. An inlined
 // final release would require a frame even when another reference stays live.
 /// Release a registered owner after its last reference is retired.

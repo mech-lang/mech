@@ -141,6 +141,7 @@ pub(super) struct Phase {
     pub exit: usize,
     function: FuncId,
     vector: Option<VectorAlternative>,
+    refuse_general_vector: bool,
     no_growth: Option<NoGrowthAlternative>,
     inputs: Vec<usize>,
     arrays: Vec<(usize, bool)>,
@@ -157,7 +158,7 @@ pub(super) struct Phase {
 }
 impl Phase {
     pub fn checked_traversal_key(&self) -> Option<FuncId> {
-        self.relative_error_origins.then_some(self.function)
+        (self.relative_error_origins && !self.refuse_general_vector).then_some(self.function)
     }
     pub fn summary(&self, owners: &OwnerFlow) -> serde_json::Value {
         let mut summary = self.summary.clone();
@@ -197,6 +198,39 @@ impl Phase {
                 .max(self.private.as_ref().map_or(0, PrivatePhase::packet_words)),
         )
     }
+
+    fn guard_vector_geometry(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        words: &Words,
+        vector: &VectorContract,
+        declined: Block,
+        vector_guards: &mut Option<&mut Vec<vector_guard_facts::Guard>>,
+    ) {
+        for &(array, grows) in &vector.guards {
+            let base = self.arrays[array].0;
+            let rows = words.read(b, base + 3);
+            let columns = words.read(b, base + 4);
+            let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+            let flat = if grows {
+                row
+            } else {
+                let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
+                b.ins().bor(row, column)
+            };
+            let next = b.create_block();
+            let branch = b.ins().brif(flat, next, &[], declined, &[]);
+            if let Some(guards) = vector_guards {
+                guards.push(vector_guard_facts::Guard {
+                    header: self.header,
+                    array,
+                    branch,
+                });
+            }
+            b.switch_to_block(next);
+        }
+    }
+
     pub fn emit<M: Module>(
         &self,
         module: &mut M,
@@ -214,6 +248,12 @@ impl Phase {
     ) -> Result<(), NativeCompileError> {
         let observe = observer(module, b, self.observe)?;
         let fallback = b.create_block();
+        if self.refuse_general_vector && let Some(vector) = &self.vector {
+            // A geometry refusal enters the same checked continuation as an
+            // owner refusal. The view words are available before inspecting
+            // owners or preparing the phase packets.
+            self.guard_vector_geometry(b, words, &vector.contract, fallback, &mut vector_guards);
+        }
         for &(base, writable) in &self.arrays {
             if !writable {
                 continue;
@@ -359,29 +399,9 @@ impl Phase {
             let returned = b.create_block();
             b.append_block_param(returned, types::I64);
             b.append_block_param(returned, types::I64);
-            // Failed geometry selects the unchanged general native body. All
-            // original owner/capacity/window gates above remain in force.
-            for &(array, grows) in &vector.contract.guards {
-                let base = self.arrays[array].0;
-                let rows = words.read(b, base + 3);
-                let columns = words.read(b, base + 4);
-                let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
-                let flat = if grows {
-                    row
-                } else {
-                    let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
-                    b.ins().bor(row, column)
-                };
-                let next = b.create_block();
-                let branch = b.ins().brif(flat, next, &[], general, &[]);
-                if let Some(guards) = &mut vector_guards {
-                    guards.push(vector_guard_facts::Guard {
-                        header: self.header,
-                        array,
-                        branch,
-                    });
-                }
-                b.switch_to_block(next);
+            // The local general body uses the populated call packet.
+            if !self.refuse_general_vector {
+                self.guard_vector_geometry(b, words, &vector.contract, general, &mut vector_guards);
             }
             if let Some(observe) = observe {
                 let header = b.ins().iconst(types::I64, self.header as i64);
@@ -655,6 +675,19 @@ pub(super) fn define<M: Module>(
     let mut shared_bodies = PhaseBodies::new(
         std::env::var_os("MECH_COMPACT_SHARE_PHASE_RELOCATIONS").is_some(),
     );
+    let mut refuse_general = std::env::var("MECH_COMPACT_REFUSE_GENERAL_VECTORS")
+        .ok()
+        .map(|headers| {
+            headers
+                .split(',')
+                .map(|header| header.parse::<usize>().map_err(backend))
+                .collect::<Result<BTreeSet<_>, _>>()
+        })
+        .transpose()?
+        .unwrap_or_default();
+    if observe && !refuse_general.is_empty() {
+        return Err(backend("geometry refusal requires the unobserved compact entry"));
+    }
     let mut candidates = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {
         let Some(proof) = region.numeric.as_ref() else {
@@ -896,6 +929,10 @@ pub(super) fn define<M: Module>(
                 "cold_exports":private.handoffs.iter().map(|e|serde_json::json!({"site":e.site,"scalar_words":e.exports.len(),"owner_outputs":e.owners.len()})).collect::<Vec<_>>()
             });
         }
+        let refuse_general_vector = vector.is_some() && refuse_general.remove(&header);
+        if refuse_general_vector {
+            summary["general_geometry_uses_checked_continuation"] = serde_json::json!(true);
+        }
         let no_growth = if std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
             && vector.is_none()
             && private.is_none()
@@ -953,6 +990,7 @@ pub(super) fn define<M: Module>(
             exit: region.tail.exit() as usize,
             function: general.function,
             vector,
+            refuse_general_vector,
             no_growth,
             inputs,
             arrays,
@@ -968,6 +1006,11 @@ pub(super) fn define<M: Module>(
             relative_error_origins,
         });
         covered.extend(proof.sites.iter().copied());
+    }
+    if !refuse_general.is_empty() {
+        return Err(backend(format!(
+            "geometry refusal needs a selected vector phase for {refuse_general:?}"
+        )));
     }
     Ok(result)
 }

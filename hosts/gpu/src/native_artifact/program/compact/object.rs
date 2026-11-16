@@ -6,7 +6,12 @@ use cranelift_module::{
     ModuleError, ModuleReloc, ModuleRelocTarget, ModuleResult,
 };
 use cranelift_object::{ObjectModule, ObjectProduct};
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::PathBuf,
+};
+
+use super::super::llvm_backend::{CompactBody, NativeLlvmToolchain, compact_definition};
 
 struct Text {
     alignment: u64,
@@ -16,7 +21,13 @@ struct Text {
 
 enum Body {
     Text(Text),
+    Native(CompactBody),
     Data(DataDescription),
+}
+
+struct LlvmDump {
+    directory: PathBuf,
+    symbols: BTreeSet<String>,
 }
 
 enum DirectRuntimeCalls {
@@ -30,7 +41,9 @@ enum DirectRuntimeCalls {
 impl DirectRuntimeCalls {
     fn includes(&self, name: Option<&str>) -> bool {
         match name {
-            Some("mech_compact_allocate" | "mech_compact_writable") => {
+            Some(
+                "mech_compact_allocate" | "mech_compact_writable" | "mech_compact_writable_scalar",
+            ) => {
                 matches!(
                     self,
                     Self::Allocation | Self::AllocationAndByteAppends | Self::All
@@ -55,10 +68,17 @@ pub(in crate::native_artifact::program) struct PreparedObject {
     definition_order: Vec<FuncOrDataId>,
     bodies: BTreeMap<FuncOrDataId, Body>,
     direct_runtime_calls: DirectRuntimeCalls,
+    llvm_dump: Option<LlvmDump>,
 }
 
 impl PreparedObject {
     pub(in crate::native_artifact::program) fn new(object: ObjectModule) -> Self {
+        let llvm_dump = std::env::var_os("MECH_COMPACT_DUMP_LLVM_DIRECTORY")
+            .zip(std::env::var("MECH_COMPACT_DUMP_LLVM_SYMBOLS").ok())
+            .map(|(directory, symbols)| LlvmDump {
+                directory: directory.into(),
+                symbols: symbols.split(',').map(str::to_owned).collect(),
+            });
         Self {
             object,
             declarations: ModuleDeclarations::default(),
@@ -66,7 +86,56 @@ impl PreparedObject {
             definition_order: Vec::new(),
             bodies: BTreeMap::new(),
             direct_runtime_calls: DirectRuntimeCalls::Disabled,
+            llvm_dump,
         }
+    }
+
+    pub(in crate::native_artifact::program) fn define_llvm_root(
+        &mut self,
+        id: FuncId,
+        context: &Context,
+        toolchain: &NativeLlvmToolchain,
+    ) -> ModuleResult<(u32, u64)> {
+        let entry = self
+            .declarations
+            .get_function_decl(id)
+            .name
+            .as_deref()
+            .ok_or_else(|| llvm_diagnostic_failure("compact LLVM root needs a name"))?;
+        let ir = self.verified_llvm_definition(id, context, true)?;
+        let root = toolchain
+            .compile_compact_root(&ir, entry, &self.declarations)
+            .map_err(llvm_diagnostic_failure)?;
+        let facts = (root.code_bytes, root.frame_bytes);
+        self.record(FuncOrDataId::Func(id), Body::Native(root))?;
+        Ok(facts)
+    }
+
+    fn verified_llvm_definition(
+        &self,
+        id: FuncId,
+        context: &Context,
+        fold_readonly_data: bool,
+    ) -> ModuleResult<String> {
+        context
+            .verify(self.isa())
+            .map_err(llvm_diagnostic_failure)?;
+        let data_objects = self
+            .bodies
+            .iter()
+            .filter_map(|(id, body)| match (id, body) {
+                (FuncOrDataId::Data(id), Body::Data(data)) => Some((*id, data)),
+                _ => None,
+            })
+            .collect();
+        compact_definition(
+            &self.declarations,
+            id,
+            &context.func,
+            &data_objects,
+            fold_readonly_data,
+        )
+        .map_err(llvm_diagnostic_failure)
     }
 
     pub(in crate::native_artifact::program) fn use_direct_runtime_calls(&mut self, mode: &str) {
@@ -119,6 +188,9 @@ impl PreparedObject {
                 Some(Body::Text(text)) => {
                     pending.extend(text.relocs.iter().filter_map(|reloc| symbol(&reloc.name)));
                 }
+                Some(Body::Native(root)) => {
+                    pending.extend(root.relocations.iter().filter_map(|reloc| symbol(&reloc.name)));
+                }
                 Some(Body::Data(data)) => {
                     pending.extend(data.function_decls.values().filter_map(symbol));
                     pending.extend(data.data_decls.values().filter_map(symbol));
@@ -152,21 +224,65 @@ impl PreparedObject {
         });
     }
 
-    pub(in crate::native_artifact::program) fn finish(mut self) -> ModuleResult<ObjectProduct> {
+    pub(in crate::native_artifact::program) fn finish(self) -> ModuleResult<ObjectProduct> {
+        let (product, root) = self.finish_product()?;
+        if root.is_some() {
+            return Err(llvm_diagnostic_failure("native root requires the compact linker"));
+        }
+        Ok(product)
+    }
+
+    pub(in crate::native_artifact::program) fn finish_linked(
+        self,
+        toolchain: &NativeLlvmToolchain,
+    ) -> ModuleResult<Vec<u8>> {
+        let (product, root) = self.finish_product()?;
+        let (root, private_entry) =
+            root.ok_or_else(|| llvm_diagnostic_failure("missing native root for partial link"))?;
+        let support = product.emit().map_err(llvm_diagnostic_failure)?;
+        toolchain
+            .link_compact_root(&support, &root, private_entry.as_deref())
+            .map_err(llvm_diagnostic_failure)
+    }
+
+    fn finish_product(mut self) -> ModuleResult<(ObjectProduct, Option<(Vec<u8>, Option<String>)>)> {
         let reachable = self.reachable()?;
+        let mut roots = self.bodies.iter().filter_map(|(&id, body)| match body {
+            Body::Native(root) => Some((id, root)),
+            _ => None,
+        });
+        let native = roots.next();
+        if roots.next().is_some() {
+            return Err(llvm_diagnostic_failure("multiple native roots in the compact Object"));
+        }
+        let root_id = native.map(|(id, _)| id);
+        let native_refs: BTreeSet<_> = native
+            .into_iter()
+            .flat_map(|(_, root)| root.relocations.iter().filter_map(|reloc| symbol(&reloc.name)))
+            .collect();
         let mut symbols = BTreeMap::new();
         // Preserve declaration and definition order among the retained symbols.
-        for id in self.declaration_order {
+        for &id in &self.declaration_order {
             if !reachable.contains(&id) {
                 continue;
             }
+            let original_linkage = self.linkage(id);
+            let linkage = if root_id == Some(id) {
+                Linkage::Import
+            } else if native_refs.contains(&id) && original_linkage == Linkage::Local {
+                // These definitions must resolve across both input Objects
+                // while remaining private to the linked program.
+                Linkage::Hidden
+            } else {
+                original_linkage
+            };
             let emitted = match id {
                 FuncOrDataId::Func(id) => {
                     let decl = self.declarations.get_function_decl(id);
                     let emitted = match &decl.name {
                         Some(name) => {
                             self.object
-                                .declare_function(name, decl.linkage, &decl.signature)?
+                                .declare_function(name, linkage, &decl.signature)?
                         }
                         None => self.object.declare_anonymous_function(&decl.signature)?,
                     };
@@ -177,7 +293,7 @@ impl PreparedObject {
                     let emitted = match &decl.name {
                         Some(name) => {
                             self.object
-                                .declare_data(name, decl.linkage, decl.writable, decl.tls)?
+                                .declare_data(name, linkage, decl.writable, decl.tls)?
                         }
                         None => self
                             .object
@@ -188,6 +304,7 @@ impl PreparedObject {
             };
             symbols.insert(id, emitted);
         }
+        let mut native_root = None;
         for id in self.definition_order {
             let body = self.bodies.remove(&id).unwrap();
             let Some(&emitted) = symbols.get(&id) else {
@@ -205,6 +322,16 @@ impl PreparedObject {
                         &text.relocs,
                     )?;
                 }
+                (FuncOrDataId::Func(_), Body::Native(root)) => {
+                    let FuncOrDataId::Func(root_id) = id else {
+                        unreachable!("native root changed kind");
+                    };
+                    let decl = self.declarations.get_function_decl(root_id);
+                    let private_entry = matches!(decl.linkage, Linkage::Local | Linkage::Hidden)
+                        .then(|| decl.name.as_ref().map(|name| format!("_{name}")))
+                        .flatten();
+                    native_root = Some((root.object, private_entry));
+                }
                 (FuncOrDataId::Data(id), Body::Data(mut data)) => {
                     for name in data
                         .function_decls
@@ -218,7 +345,7 @@ impl PreparedObject {
                 _ => unreachable!("Object symbol changed kind"),
             }
         }
-        Ok(self.object.finish())
+        Ok((self.object.finish(), native_root))
     }
 }
 
@@ -330,6 +457,22 @@ impl Module for PreparedObject {
         context: &mut Context,
         control: &mut ControlPlane,
     ) -> ModuleResult<()> {
+        let declaration = self.declarations.get_function_decl(id);
+        if declaration.name.as_deref() == Some("mech_compact_closed_checked")
+            && let Some(path) = std::env::var_os("MECH_COMPACT_DUMP_LLVM_ROOT")
+        {
+            let ir = self.verified_llvm_definition(id, context, false)?;
+            std::fs::write(path, ir).map_err(llvm_diagnostic_failure)?;
+        }
+        if let Some(dump) = &self.llvm_dump
+            && let Some(name) = declaration.name.as_deref()
+            && dump.symbols.contains(name)
+        {
+            let ir = self.verified_llvm_definition(id, context, false)?;
+            std::fs::create_dir_all(&dump.directory).map_err(llvm_diagnostic_failure)?;
+            std::fs::write(dump.directory.join(format!("{name}.ll")), ir)
+                .map_err(llvm_diagnostic_failure)?;
+        }
         context.compile(self.isa(), control)?;
         let buffer = &context.compiled_code().unwrap().buffer;
         let relocs = buffer
@@ -367,6 +510,10 @@ impl Module for PreparedObject {
     fn define_data(&mut self, id: DataId, data: &DataDescription) -> ModuleResult<()> {
         self.record(FuncOrDataId::Data(id), Body::Data(data.clone()))
     }
+}
+
+fn llvm_diagnostic_failure(error: impl ToString) -> ModuleError {
+    ModuleError::Backend(std::io::Error::other(error.to_string()).into())
 }
 
 #[cfg(test)]
