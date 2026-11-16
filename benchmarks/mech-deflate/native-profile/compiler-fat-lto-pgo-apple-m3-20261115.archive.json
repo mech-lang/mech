@@ -1,0 +1,31 @@
+{
+  "archive_name": "mech-compiler-fat-lto-pgo-20261115.tar.gz",
+  "bytes": 55526153,
+  "compression": {
+    "codec": "gzip",
+    "intermediate_bytes": 69568433,
+    "intermediate_sha256": "09458e470dbf540c2ce45491e8aaf43281095c94bd79addbf63e43d6b1901894",
+    "level": 9,
+    "method": "Recompress exact tar stream from maintained pack tool; manifest/Git blobs/file bytes unchanged.",
+    "mtime": 0
+  },
+  "evidence_files": 1735,
+  "files": 1735,
+  "format": 1,
+  "manifest_sha256": "8619ff5a125a0d90d9079863491b9bd7cf69b7ee84bcbdd580df894ab4326689",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "f5f6045bbd15776fd82c069e1dec08bfd3c1017c1557e3f80e8b45c7218fe096",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compiler-fat-lto-pgo-20261115.tar.gz",
+  "sha256": "3fce5c334fd120fdff1d6742f39aea4bc7a3905b1aed96ac586c2078317d5327",
+  "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+  "uncompressed_bytes": 373571046,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "3fce5c334fd120fdff1d6742f39aea4bc7a3905b1aed96ac586c2078317d5327",
+    "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+    "verified_bytes": 373571046,
+    "verified_files": 1735
+  }
+}

@@ -511,8 +511,18 @@
       "sha256": "4e33a7419ed7deab2ca31b5046500b6ed3b4e72609c8df856a1a07c245d47822",
       "source_revision": "25615f1d575fd5cb7c91d4dcd3d8d01edf9e3ef3",
       "summary": "benchmarks/mech-deflate/native-profile/parser-frame-payloads-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compiler-fat-lto-pgo-20261115.tar.gz",
+      "bytes": 55526153,
+      "decision": "Rejected FatLTO with own fresh PGO versus current fastest ThinLTO8043 on the same ef5 source: complete build 13.536528->13.329149s (1.53% reduction); separate same-PGO-binary serial/two-worker comparison 13.519329->13.362928s (1.16% reduction). Exact source/bytecode/Object/complete metadata and all 20 executables; default 0 and real 344-job/48-cleanup gates; fixed 8-program training and 7 heldouts. All adverse fields retained. No production source, grammar, runtime or output changes; two compiler builds outside primary timing, adapter cached. No additive or sub-ten claim.",
+      "files": 1735,
+      "receipt": "benchmarks/mech-deflate/native-profile/compiler-fat-lto-pgo-apple-m3-20261115.archive.json",
+      "sha256": "3fce5c334fd120fdff1d6742f39aea4bc7a3905b1aed96ac586c2078317d5327",
+      "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+      "summary": "benchmarks/mech-deflate/native-profile/compiler-fat-lto-pgo-apple-m3-20261115.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1728255374
+  "total_archive_bytes": 1783781527
 }
