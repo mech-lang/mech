@@ -134,9 +134,10 @@ def main():
     root_assembly = directory / "root.s"
     subprocess.run([llvm / "llc", *FLAGS, "-enable-machine-outliner=always",
                     "-outliner-benefit-threshold=4", "-machine-outliner-reruns=2",
+                    *recipe["root_codegen_flags"],
                     "-filetype=asm", root_ir, "-o", root_assembly], check=True)
     shared, sites = share_status_exits(root_assembly.read_text())
-    assert sites == 265, sites
+    assert sites == recipe["shared_status_sites"], sites
     shared_assembly = directory / "shared.s"
     shared_assembly.write_text(shared)
     compiled = directory / "shared.o"

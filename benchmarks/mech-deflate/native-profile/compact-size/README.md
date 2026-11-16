@@ -1,6 +1,8 @@
-# Compact compiler and the 0.970× Roc build
+# Compact compiler and the 0.965× Roc build
 
-This directory accompanies the compiler-source checkpoint for PR #992. The published Apple M1 build emits 55,956 bytes of machine code, or **0.970× Roc** and **1.361× libdeflate**. The exact object has SHA-256 `a917aa339eb7291e0cbcb5fadedd2a4bf263df0db0ffe408f96310fa084b1f14`. The full timing and correctness evidence is in the benchmark handoff. [Published evidence](https://github.com/mech-lang/mech/tree/39e2a9303e933f7de6e4c4f41ce49b1fcc7a84fe)
+The Apple M1 build emits 55,700 text bytes, or **0.965× Roc** and **1.355× libdeflate**. Its SHA-256 is `c1e45f69790722db38ec923e00b0497525a8e290eb0acd46225c9294f895118b`. The 55,956-byte build and its benchmark evidence remain available at the previous checkpoint. [Previous benchmark evidence](https://github.com/mech-lang/mech/tree/39e2a9303e933f7de6e4c4f41ce49b1fcc7a84fe)
+
+Both full timing orders measured **81/81 wins against Roc** and **62/81 against libdeflate** across 982,656 checked timed calls per order. The separate linked smoke and matrix runs matched 162 and 616 calls respectively. Six forced allocation failures preserved their checked source origins. The peak native stack touched was 3,920 bytes.
 
 ## Use this compiler as a base
 
