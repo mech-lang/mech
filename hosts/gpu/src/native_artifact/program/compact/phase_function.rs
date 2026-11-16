@@ -1,4 +1,8 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
+use super::super::{
+    checked_region_discovery, checked_traversals,
+    phase_bodies::{PhaseBodies, define_body, define_prepared_body, prepare_body},
+};
 use super::*;
 use crate::native_artifact::{
     codegen::control::CfgCleanup,
@@ -68,10 +72,14 @@ impl General {
             Self::Deferred(ready) => &ready.input.entry_bounds,
         }
     }
-    pub(super) fn define<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
+    pub(super) fn define<M: Module>(
+        self,
+        module: &mut M,
+        bodies: Option<&mut PhaseBodies>,
+    ) -> Result<Compiled, NativeCompileError> {
         match self {
-            Self::Ready(ready) => ready.define(module),
-            Self::Deferred(ready) => ready.optimize(module.isa())?.define(module),
+            Self::Ready(ready) => ready.define(module, bodies),
+            Self::Deferred(ready) => ready.optimize(module.isa())?.define(module, bodies),
         }
     }
     pub(super) fn start(
@@ -106,6 +114,7 @@ impl General {
                         None,
                         true,
                     )?;
+                    prepare_body(isa, &mut context)?;
                     let context = super::super::compile_jobs::compile(context, isa)?;
                     Ok((context, cleanup))
                 })?;
@@ -133,6 +142,7 @@ impl DeferredGeneral {
             None,
             true,
         )?;
+        prepare_body(isa, &mut self.context)?;
         Ok(finish_preparation(
             self.context,
             &self.report,
@@ -179,11 +189,25 @@ impl Prepared {
     pub(super) fn define<M: Module>(
         mut self,
         module: &mut M,
+        bodies: Option<&mut PhaseBodies>,
     ) -> Result<Compiled, NativeCompileError> {
-        module
-            .define_function(self.details.function, &mut self.context)
-            .map_err(backend)?;
-        self.details.finish(self.context)
+        let symbol = module
+            .declarations()
+            .get_function_decl(self.details.function)
+            .name
+            .clone()
+            .ok_or_else(|| backend("compact numeric phase lacks a symbol"))?;
+        let (function, target) = define_prepared_body(
+            module,
+            self.details.function,
+            &symbol,
+            &mut self.context,
+            bodies,
+        )?;
+        self.details.function = function;
+        let mut compiled = self.details.finish(self.context)?;
+        compiled.summary["symbol"] = serde_json::json!(target);
+        Ok(compiled)
     }
     pub(super) fn start(
         self,
@@ -238,6 +262,7 @@ pub(super) fn define<M: Module>(
     no_growth: Option<&NoGrowth>,
     literal_views: &BTreeMap<usize, Literal>,
     dense_tables: &mut DenseTables,
+    mut bodies: Option<&mut PhaseBodies>,
     suffix: &str,
 ) -> Result<Compiled, NativeCompileError> {
     prepare(
@@ -253,9 +278,10 @@ pub(super) fn define<M: Module>(
         no_growth,
         literal_views,
         dense_tables,
+        bodies.as_deref_mut(),
         suffix,
     )?
-    .define(module)
+    .define(module, bodies)
 }
 
 pub(super) fn prepare<M: Module>(
@@ -271,6 +297,7 @@ pub(super) fn prepare<M: Module>(
     no_growth: Option<&NoGrowth>,
     literal_views: &BTreeMap<usize, Literal>,
     dense_tables: &mut DenseTables,
+    bodies: Option<&mut PhaseBodies>,
     suffix: &str,
 ) -> Result<Prepared, NativeCompileError> {
     match prepare_impl(
@@ -286,6 +313,7 @@ pub(super) fn prepare<M: Module>(
         no_growth,
         literal_views,
         dense_tables,
+        bodies,
         suffix,
         false,
     )? {
@@ -307,6 +335,7 @@ pub(super) fn prepare_general<M: Module>(
     no_growth: Option<&NoGrowth>,
     literal_views: &BTreeMap<usize, Literal>,
     dense_tables: &mut DenseTables,
+    bodies: Option<&mut PhaseBodies>,
     suffix: &str,
     defer: bool,
 ) -> Result<General, NativeCompileError> {
@@ -323,6 +352,7 @@ pub(super) fn prepare_general<M: Module>(
         no_growth,
         literal_views,
         dense_tables,
+        bodies,
         suffix,
         defer,
     )
@@ -341,6 +371,7 @@ fn prepare_impl<M: Module>(
     no_growth: Option<&NoGrowth>,
     literal_views: &BTreeMap<usize, Literal>,
     dense_tables: &mut DenseTables,
+    mut bodies: Option<&mut PhaseBodies>,
     suffix: &str,
     defer_general: bool,
 ) -> Result<General, NativeCompileError> {
@@ -357,8 +388,19 @@ fn prepare_impl<M: Module>(
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); 3];
     signature.returns = vec![AbiParam::new(types::I64); 2];
+    let error_origin_base = bodies.is_some().then_some(header);
     let (mut context, report) = phase_ir(
-        module, code, region, &signature, &controls, observe, vectors, private, no_growth, false,
+        module,
+        code,
+        region,
+        &signature,
+        &controls,
+        observe,
+        vectors,
+        private,
+        no_growth,
+        false,
+        error_origin_base,
     )?;
     let function = module
         .declare_function(&symbol, Linkage::Local, &signature)
@@ -386,6 +428,8 @@ fn prepare_impl<M: Module>(
         && proof.arrays.iter().all(|array| !array.appends)
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little;
     if defer_general
+        && bodies.is_none()
+        && std::env::var_os("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS").is_none()
         && vectors.is_none()
         && no_growth.is_none()
         && literal_views.is_empty()
@@ -412,6 +456,7 @@ fn prepare_impl<M: Module>(
             output_words,
             fixed_count,
             actual_unit_append_growth: true,
+            checked_regions: None,
         };
         return Ok(General::Deferred(DeferredGeneral {
             context,
@@ -678,9 +723,13 @@ fn prepare_impl<M: Module>(
                     std::fs::write(path, grouped.func.display().to_string()).map_err(backend)?;
                     grouped.set_disasm(true);
                 }
-                module
-                    .define_function(grouped_id, &mut grouped)
-                    .map_err(backend)?;
+                let (grouped_id, target) = define_body(
+                    module,
+                    grouped_id,
+                    &name,
+                    &mut grouped,
+                    bodies.as_deref_mut(),
+                )?;
                 let machine = grouped
                     .compiled_code()
                     .ok_or_else(|| backend("grouped phase lacks code"))?;
@@ -692,7 +741,7 @@ fn prepare_impl<M: Module>(
                     std::fs::write(path.with_extension("vcode"), vcode).map_err(backend)?;
                 }
                 histogram = Some(serde_json::json!({
-                    "symbol": name,
+                    "symbol": target,
                     "admission": admission,
                     "code_bytes": machine.code_info().total_size,
                     "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
@@ -755,8 +804,17 @@ fn prepare_impl<M: Module>(
                     && std::env::var_os("MECH_REDUCTION_COUNTDOWN").is_some()
                 {
                     let (mut fast, fast_report) = phase_ir(
-                        module, code, region, &signature, &controls, observe, vectors, private,
-                        no_growth, true,
+                        module,
+                        code,
+                        region,
+                        &signature,
+                        &controls,
+                        observe,
+                        vectors,
+                        private,
+                        no_growth,
+                        true,
+                        error_origin_base,
                     )?;
                     optimize_phase(
                         &mut fast,
@@ -877,9 +935,8 @@ fn prepare_impl<M: Module>(
                     std::fs::write(path, candidate.func.display().to_string()).map_err(backend)?;
                     candidate.set_disasm(true);
                 }
-                module
-                    .define_function(id, &mut candidate)
-                    .map_err(backend)?;
+                let (id, target) =
+                    define_body(module, id, &name, &mut candidate, bodies.as_deref_mut())?;
                 let machine = candidate
                     .compiled_code()
                     .ok_or_else(|| backend("composed phase lacks code"))?;
@@ -893,7 +950,7 @@ fn prepare_impl<M: Module>(
                 composed = Some(Composed {
                     function: id,
                     admission,
-                    summary: serde_json::json!({"symbol":name,"admission":admission,
+                    summary: serde_json::json!({"symbol":target,"admission":admission,
                         "code_bytes":machine.code_info().total_size,
                         "stack_bytes":compiled_stack_bytes(&machine.buffer)?,
                         "scratch_bytes":if admission.immutable_code_bytes.is_some() { 0 } else { admission.cells_per_bank * 8 }}),
@@ -915,6 +972,35 @@ fn prepare_impl<M: Module>(
     if vcode_path.is_some() {
         context.set_disasm(true);
     }
+    let checked_regions = if !observe
+        && let Ok(manifest) = std::env::var("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS")
+        && let Some(windows) = manifest
+            .strip_prefix(&symbol)
+            .and_then(|prefix| prefix.strip_prefix('@'))
+    {
+        let (base, windows) = windows
+            .split_once('@')
+            .ok_or_else(|| backend("expected phase region identifier base"))?;
+        let families = checked_region_discovery::phase_candidates(
+            &context.func,
+            windows,
+            base.parse().map_err(backend)?,
+        )?;
+        let checked = checked_traversals::share_phase_regions(
+            module,
+            &mut context.func,
+            families,
+            checked_traversals::CaptureBindings::from_environment(),
+        )?;
+        if checked.is_some() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        checked
+    } else {
+        None
+    };
+    prepare_body(module.isa(), &mut context)?;
     let entry_bounds = report
         .phase_entry_bounds
         .iter()
@@ -934,6 +1020,7 @@ fn prepare_impl<M: Module>(
             output_words,
             fixed_count,
             actual_unit_append_growth: no_growth.is_none(),
+            checked_regions,
         },
         future_write_hints,
         histogram,
@@ -952,6 +1039,7 @@ pub(super) struct SummaryInput {
     output_words: usize,
     fixed_count: usize,
     actual_unit_append_growth: bool,
+    checked_regions: Option<serde_json::Value>,
 }
 
 fn finish_preparation(
@@ -974,6 +1062,7 @@ fn finish_preparation(
         output_words,
         fixed_count,
         actual_unit_append_growth,
+        checked_regions,
     } = input;
     let PhaseCleanup {
         bit_counts,
@@ -997,6 +1086,9 @@ fn finish_preparation(
         "input_words":input_words,"output_words":output_words,
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":actual_unit_append_growth,"unique_writable_owner_gate":true,"cleanup":cleanup});
+        if let Some(checked_regions) = checked_regions {
+            summary["checked_regions"] = checked_regions;
+        }
         summary["bit_counts"] = serde_json::json!(bit_counts);
         if let Some(hint) = future_write_hints.first() {
             summary["future_write_hint"] = serde_json::json!(hint);
@@ -1063,6 +1155,7 @@ fn phase_ir<M: Module>(
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
     countdown: bool,
+    error_origin_base: Option<usize>,
 ) -> Result<(Context, numeric_compact::Report), NativeCompileError> {
     let report;
     let mut context = module.make_context();
@@ -1089,6 +1182,11 @@ fn phase_ir<M: Module>(
             private,
             no_growth,
         )?;
+        let native = if let Some(base) = error_origin_base {
+            native.with_error_origin_base(base)
+        } else {
+            native
+        };
         report = numeric_compact::emit(
             controls, &mut b, code, region, &native, vectors, private, no_growth, done, error,
             countdown,

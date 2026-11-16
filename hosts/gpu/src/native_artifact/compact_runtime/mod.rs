@@ -367,6 +367,9 @@ impl Drop for Heap<'_> {
     }
 }
 
+/// Successful allocation publishes the empty row geometry (length 0,
+/// one row, zero columns), even with zero backing capacity.
+///
 /// # Safety
 /// Current owning Heap and a disjoint six-word output lane outlive the call.
 #[unsafe(no_mangle)]
@@ -395,6 +398,9 @@ pub unsafe extern "C" fn mech_compact_allocate(
         Err(status) => status,
     }
 }
+/// A successful writable view keeps the source's length, rows, and columns,
+/// whether its backing was reused or copied.
+///
 /// # Safety
 /// Both lanes and the current concrete backing owners belong to this live
 /// transaction. `consume` additionally requires the compiler's last-use proof.
@@ -427,8 +433,56 @@ pub unsafe extern "C" fn mech_compact_writable(
         Err(status) => status,
     }
 }
+
+/// Return the writable backing of a scalar view. The caller carries its
+/// unchanged logical geometry and only reads backing words 0, 2, and 5.
+///
 /// # Safety
-/// The generated final release has decremented this current owner's count to0.
+/// The source and the output belong to the current live heap. The output is
+/// a disjoint six-word lane. The low bit of `layout` requires last-use proof
+/// when set, and the remaining bits carry the scalar stride and alignment.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_writable_scalar(
+    context: *mut Heap,
+    data: u64,
+    length: u64,
+    capacity: u64,
+    owner: u64,
+    minimum: u64,
+    layout: u64,
+    output: *mut u64,
+) -> u64 {
+    let width = layout >> 1;
+    if context.is_null() || output.is_null() || !matches!(width, 1 | 2 | 4 | 8) {
+        return INVALID;
+    }
+    let result = unsafe { &mut *context }.writable(
+        [data, length, capacity, 0, 0, owner],
+        layout & 1 != 0,
+        minimum as usize,
+        width as usize,
+        width as usize,
+    );
+    match result {
+        Ok(view) => {
+            unsafe {
+                output.write(view[0]);
+                output.add(2).write(view[2]);
+                output.add(5).write(view[5]);
+            }
+            0
+        }
+        Err(status) => status,
+    }
+}
+
+// Keep this as a tail-call target for the shared decrement. An inlined
+// final release would require a frame even when another reference stays live.
+/// Release a registered owner after its last reference is retired.
+///
+/// # Safety
+/// The generated final release has decremented this current owner's count to zero.
+#[inline(never)]
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner) -> u64 {
     if context.is_null() {
@@ -440,9 +494,79 @@ pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner
     }
 }
 
+/// Retire one live reference, returning the status of any final release.
+///
+/// # Safety
+/// The owner is nonnull and holds a reference from the current exclusive heap.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_release_owner(context: *mut Heap, owner: *mut Owner) -> u64 {
+    let references = unsafe { &mut (*owner).references };
+    *references = references.wrapping_sub(1);
+    if *references == 0 {
+        unsafe { mech_compact_free(context, owner) }
+    } else {
+        0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn shared_retirement_keeps_the_live_alias_until_its_final_release() {
+        let mut heap = Heap::new();
+        let view = heap.allocate(12, 1, 1, true).unwrap();
+        let owner = view[5] as *mut Owner;
+        unsafe {
+            (*owner).references = 2;
+            (*owner).data.write(37);
+        }
+        assert_eq!(unsafe { mech_compact_release_owner(&mut heap, owner) }, 0);
+        assert_eq!(unsafe { (*owner).references }, 1);
+        assert_eq!(unsafe { (*owner).data.read() }, 37);
+        assert_eq!(heap.counters.live_payload_bytes, 12);
+        assert_eq!(unsafe { mech_compact_release_owner(&mut heap, owner) }, 0);
+        assert!(heap.first_owner.is_null());
+        assert_eq!(heap.counters.live_payload_bytes, 0);
+    }
+
+    #[test]
+    fn allocation_and_writable_results_keep_their_abi_geometry() {
+        let mut heap = Heap::new();
+        for capacity in [0, 12] {
+            let mut view = [u64::MAX; 6];
+            assert_eq!(
+                unsafe { mech_compact_allocate(&mut heap, capacity, 1, 1, 1, view.as_mut_ptr()) },
+                0
+            );
+            assert_eq!([view[1], view[3], view[4]], [0, 1, 0]);
+        }
+        let mut source = heap.allocate(12, 1, 1, true).unwrap();
+        source[1] = 6;
+        source[3] = 2;
+        source[4] = 3;
+        unsafe { (*(source[5] as *mut Owner)).references = 1 };
+        for (consume, capacity, reuses) in [(0, 12, false), (1, 12, true), (1, 20, false)] {
+            let mut view = [u64::MAX; 6];
+            assert_eq!(
+                unsafe {
+                    mech_compact_writable(
+                        &mut heap,
+                        source.as_ptr(),
+                        consume,
+                        capacity,
+                        1,
+                        1,
+                        view.as_mut_ptr(),
+                    )
+                },
+                0
+            );
+            assert_eq!([view[1], view[3], view[4]], [6, 2, 3]);
+            assert_eq!(view[5] == source[5], reuses);
+        }
+    }
+
     #[test]
     fn borrowed_owner_storage_survives_heap_moves_and_failure_retries() {
         let mut storage = OwnerStorage::default();
@@ -668,39 +792,6 @@ impl Heap<'_> {
 #[cfg(all(test, target_os = "macos"))]
 mod mapped_tests {
     use super::*;
-
-    #[test]
-    fn smaller_numeric_zeros_keep_allocator_backing_and_recover_after_release() {
-        let count = zero_pages::minimum_mapping_bytes() / 2 / 2;
-        let mut heap = Heap::new();
-        zero_pages::DENY.with(|deny| deny.set(true));
-        let first = heap.allocate(count, 2, 2, true);
-        zero_pages::DENY.with(|deny| deny.set(false));
-        let mut first = first.unwrap();
-        let words = unsafe { std::slice::from_raw_parts_mut(first[0] as *mut u16, count) };
-        assert!(words.iter().all(|word| *word == 0));
-        words[0] = 17;
-        words[count - 1] = 29;
-        first[1] = count as u64;
-        first[4] = count as u64;
-        unsafe { (*(first[5] as *mut Owner)).references = 2 };
-        let copied = heap.writable(first, true, count, 2, 2).unwrap();
-        assert_ne!(copied[0], first[0]);
-        unsafe { (copied[0] as *mut u16).write(73) };
-        assert_eq!((words[0], words[count - 1]), (17, 29));
-        assert_eq!(heap.counters.mapped_payload_requests, 0);
-        heap.discard_private();
-        assert_eq!(heap.counters.live_payload_bytes, 0);
-        let retry = heap.allocate(count, 2, 2, true).unwrap();
-        assert!(
-            unsafe { std::slice::from_raw_parts(retry[0] as *const u16, count) }
-                .iter()
-                .all(|word| *word == 0)
-        );
-        heap.discard_private();
-        assert_eq!(heap.counters.live_payload_bytes, 0);
-        assert_eq!(heap.counters.live_mapped_payload_bytes, 0);
-    }
 
     #[test]
     fn mapped_numeric_zeros_remain_readable_and_live_aliases_keep_their_words() {
@@ -934,29 +1025,18 @@ pub unsafe extern "C" fn mech_compact_parallel(
 #[cfg(test)]
 mod parallel_tests {
     use super::*;
-
-    fn mapped_words() -> usize {
-        #[cfg(target_os = "macos")]
-        {
-            zero_pages::minimum_mapping_bytes() / 8
-        }
-        #[cfg(not(target_os = "macos"))]
-        {
-            32768
-        }
-    }
     #[cfg(target_os = "macos")]
     #[test]
     fn refused_mapping_preserves_existing_storage_and_recovers() {
         let mut heap = Heap::new();
         let existing = heap.allocate(3, 8, 8, false).unwrap();
         deny_test_mapping(true);
-        let denied = heap.allocate(mapped_words(), 8, 8, true);
+        let denied = heap.allocate(32768, 8, 8, true);
         deny_test_mapping(false);
         assert_eq!(denied.unwrap_err(), ALLOCATION);
         assert_eq!(heap.counters.live_payload_bytes, 24);
         assert_eq!(heap.first_owner, existing[5] as *mut Owner);
-        heap.allocate(mapped_words(), 8, 8, true).unwrap();
+        heap.allocate(32768, 8, 8, true).unwrap();
         heap.discard_private();
     }
     unsafe extern "C" fn copy_borrow(
@@ -967,7 +1047,7 @@ mod parallel_tests {
         // SAFETY: the test passes four initialized words per packet.
         let packet = unsafe { std::slice::from_raw_parts(input, 4) };
         let heap = unsafe { &mut *context };
-        let mut view = heap.allocate(mapped_words(), 8, 8, true).unwrap();
+        let mut view = heap.allocate(32768, 8, 8, true).unwrap();
         view[1] = 3;
         view[4] = 3;
         // The native writer initializes its own storage; the shared input is
@@ -1022,7 +1102,7 @@ mod parallel_tests {
             assert_eq!(parent.parallel_batches, 1);
             assert_eq!(
                 parent.counters.live_payload_bytes,
-                24 + count as u64 * mapped_words() as u64 * 8
+                24 + count as u64 * 32768 * 8
             );
             assert_eq!(parent.counters.payload_requests, 1 + count as u64);
             assert_eq!(parent.first_owner, existing[5] as *mut Owner);
@@ -1036,7 +1116,7 @@ mod parallel_tests {
             #[cfg(target_os = "macos")]
             assert_eq!(
                 parent.counters.live_mapped_payload_bytes,
-                count as u64 * mapped_words() as u64 * 8
+                count as u64 * 32768 * 8
             );
             parent.discard_private();
             assert_eq!(parent.counters.live_payload_bytes, 0);

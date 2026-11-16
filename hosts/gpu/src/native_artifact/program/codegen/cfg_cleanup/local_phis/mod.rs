@@ -47,6 +47,28 @@ fn intern(value: Value, nodes: &mut Vec<Node>, indices: &mut BTreeMap<Value, usi
     })
 }
 
+pub(in crate::native_artifact::program) fn incoming<'a>(
+    function: &'a Function,
+    cfg: &'a ControlFlowGraph,
+    block: Block,
+    ordinal: usize,
+) -> impl Iterator<Item = (Block, Option<Value>)> + 'a {
+    cfg.pred_iter(block).flat_map(move |pred| {
+        function.dfg.insts[pred.inst]
+            .branch_destination(&function.dfg.jump_tables, &function.dfg.exception_tables)
+            .iter()
+            .filter(move |call| call.block(&function.dfg.value_lists) == block)
+            .map(move |call| {
+                let value = call
+                    .args(&function.dfg.value_lists)
+                    .nth(ordinal)
+                    .and_then(|arg| arg.as_value())
+                    .map(|v| function.dfg.resolve_aliases(v));
+                (pred.block, value)
+            })
+    })
+}
+
 fn graph(
     function: &Function,
     cfg: &ControlFlowGraph,
@@ -65,45 +87,31 @@ fn graph(
             unreachable!("local phi graph contains only current formals");
         };
         let mut inputs = Vec::new();
-        for pred in cfg.pred_iter(block) {
-            for call in function.dfg.insts[pred.inst]
-                .branch_destination(&function.dfg.jump_tables, &function.dfg.exception_tables)
-            {
-                if call.block(&function.dfg.value_lists) != block {
-                    continue;
+        for (_, value) in incoming(function, cfg, block, ordinal) {
+            let input = value.map_or(Input::Fixed(Fact::Many), |value| {
+                if function.dfg.value_type(value) != function.dfg.value_type(formal) {
+                    return Input::Fixed(Fact::Many);
                 }
-                let value = call
-                    .args(&function.dfg.value_lists)
-                    .nth(ordinal)
-                    .and_then(|arg| arg.as_value())
-                    .map(|v| function.dfg.resolve_aliases(v));
-                let input = value.map_or(Input::Fixed(Fact::Many), |value| {
-                    if function.dfg.value_type(value) != function.dfg.value_type(formal) {
-                        return Input::Fixed(Fact::Many);
+                match function.dfg.value_def(value) {
+                    ValueDef::Param(owner, _)
+                        if dom.is_reachable(owner) && dom.block_dominates(header, owner) =>
+                    {
+                        let source = intern(value, &mut nodes, &mut indices);
+                        nodes[source].users.push(index);
+                        Input::Local(source)
                     }
-                    match function.dfg.value_def(value) {
-                        ValueDef::Param(owner, _)
-                            if dom.is_reachable(owner) && dom.block_dominates(header, owner) =>
-                        {
-                            let source = intern(value, &mut nodes, &mut indices);
-                            nodes[source].users.push(index);
-                            Input::Local(source)
-                        }
-                        ValueDef::Param(owner, _)
-                            if dom.is_reachable(owner) && dom.block_dominates(owner, header) =>
-                        {
-                            Input::Fixed(Fact::One(value))
-                        }
-                        ValueDef::Result(inst, _)
-                            if dom.dominates(inst, header, &function.layout) =>
-                        {
-                            Input::Fixed(Fact::One(value))
-                        }
-                        _ => Input::Fixed(Fact::Many),
+                    ValueDef::Param(owner, _)
+                        if dom.is_reachable(owner) && dom.block_dominates(owner, header) =>
+                    {
+                        Input::Fixed(Fact::One(value))
                     }
-                });
-                inputs.push(input);
-            }
+                    ValueDef::Result(inst, _) if dom.dominates(inst, header, &function.layout) => {
+                        Input::Fixed(Fact::One(value))
+                    }
+                    _ => Input::Fixed(Fact::Many),
+                }
+            });
+            inputs.push(input);
         }
         nodes[index].inputs = inputs;
         index += 1;
@@ -143,6 +151,65 @@ fn solve(mut nodes: Vec<Node>) -> BTreeMap<Value, Value> {
             _ => None,
         })
         .collect()
+}
+
+/// Identify outputs equal to a value already available to the caller.
+/// An external entry contributes the initial value of each entry parameter.
+/// Only the controller's edges contribute to its outgoing continuation.
+pub(in crate::native_artifact::program) fn controller_passthrough(
+    function: &Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+    entry: Block,
+    region: &BTreeSet<Block>,
+    outputs: impl IntoIterator<Item = Value>,
+) -> BTreeMap<Value, Value> {
+    let mut nodes = Vec::new();
+    let mut indices = BTreeMap::new();
+    let outputs = outputs
+        .into_iter()
+        .filter(|&value| matches!(function.dfg.value_def(value), ValueDef::Param(..)))
+        .collect::<BTreeSet<_>>();
+    for &value in &outputs {
+        intern(value, &mut nodes, &mut indices);
+    }
+    let mut index = 0;
+    while index < nodes.len() {
+        let formal = nodes[index].value;
+        let ValueDef::Param(block, ordinal) = function.dfg.value_def(formal) else {
+            unreachable!("controller arguments must have block definitions");
+        };
+        let mut inputs = Vec::new();
+        if block == entry {
+            inputs.push(Input::Fixed(Fact::One(formal)));
+        }
+        for (_, value) in
+            incoming(function, cfg, block, ordinal).filter(|(pred, _)| region.contains(pred))
+        {
+            let fact = match value.map(|v| (v, function.dfg.value_def(v))) {
+                Some((value, ValueDef::Param(owner, _))) if region.contains(&owner) => {
+                    let source = intern(value, &mut nodes, &mut indices);
+                    nodes[source].users.push(index);
+                    Input::Local(source)
+                }
+                Some((value, ValueDef::Param(owner, _))) if dom.block_dominates(owner, entry) => {
+                    Input::Fixed(Fact::One(value))
+                }
+                Some((value, ValueDef::Result(inst, _)))
+                    if dom.dominates(inst, entry, &function.layout) =>
+                {
+                    Input::Fixed(Fact::One(value))
+                }
+                _ => Input::Fixed(Fact::Many),
+            };
+            inputs.push(fact);
+        }
+        nodes[index].inputs = inputs;
+        index += 1;
+    }
+    let mut found = solve(nodes);
+    found.retain(|value, _| outputs.contains(value));
+    found
 }
 
 fn apply(function: &mut Function, cfg: &ControlFlowGraph, replacements: &BTreeMap<Value, Value>) {

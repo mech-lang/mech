@@ -183,6 +183,10 @@ pub struct FunctionStencil {
     /// Lowering and register allocation continue to use their original order.
     pub preferred_fallthrough: Option<(Block, Block)>,
 
+    /// Allow the Apple AArch64 backend to share cold return epilogues after
+    /// register allocation. Return operands are still prepared at each site.
+    pub share_cold_epilogues: bool,
+
     /// Source locations.
     ///
     /// Track the original source location for each instruction. The source locations are not
@@ -222,6 +226,7 @@ impl FunctionStencil {
         self.dfg.clear();
         self.layout.clear();
         self.preferred_fallthrough = None;
+        self.share_cold_epilogues = false;
         self.srclocs.clear();
         self.debug_tags.clear();
         self.stack_limit = None;
@@ -415,6 +420,7 @@ impl Function {
                 dfg: DataFlowGraph::new(),
                 layout: Layout::new(),
                 preferred_fallthrough: None,
+                share_cold_epilogues: false,
                 srclocs: SecondaryMap::new(),
                 stack_limit: None,
                 debug_tags: DebugTags::default(),

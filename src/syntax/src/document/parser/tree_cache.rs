@@ -271,22 +271,30 @@ impl TreeCache {
                 range: TextRange::at(request.offset, sink.root.as_ref().expect("root").text_len),
                 end_event: request.end,
             };
+            let (request, sink) = self.active.take().expect("completed cache request");
+            let start = request.start;
+            let expected_identity = request.identity;
+            let work = sink.work;
+            // The completed sink no longer reads its immutable journals. Release
+            // both snapshots before updating the current journal, so those
+            // finished owners do not force otherwise unnecessary path copying.
+            drop(request);
+            drop(sink);
             if let Some(Event::Start {
                 identity: Some(identity),
                 cached: slot,
                 ..
-            }) = current.get_mut(request.start)
+            }) = current.get_mut(start)
             {
-                if *identity == request.identity {
+                if *identity == expected_identity {
                     *slot = Some(cached);
                 }
             }
-            let (_, sink) = self.active.take().expect("completed cache request");
-            self.work.events += sink.work.events;
-            self.work.token_bytes += sink.work.token_bytes;
-            self.work.child_storage_nodes += sink.work.child_storage_nodes;
-            self.work.nodes += sink.work.nodes;
-            self.work.reused += sink.work.reused;
+            self.work.events += work.events;
+            self.work.token_bytes += work.token_bytes;
+            self.work.child_storage_nodes += work.child_storage_nodes;
+            self.work.nodes += work.nodes;
+            self.work.reused += work.reused;
         }
     }
 }

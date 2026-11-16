@@ -101,6 +101,37 @@ impl<T: Clone> Journal<T> {
         self.len += 1;
         self.mutations += 1;
     }
+    /// Append complete pages together. Retained snapshots still own their old
+    /// chunks; the current last page needs at most one mutable lookup per fill.
+    pub(crate) fn extend(&mut self, values: impl IntoIterator<Item = T>) {
+        let mut values = values.into_iter();
+        loop {
+            let remaining = PAGE - self.len % PAGE;
+            let mut batch = SmallVec::<[T; PAGE]>::new();
+            for _ in 0..remaining {
+                let Some(value) = values.next() else {
+                    break;
+                };
+                batch.push(value);
+            }
+            if batch.is_empty() {
+                return;
+            }
+            let count = batch.len();
+            self.changed_from = self.changed_from.min(self.len);
+            if self.len % PAGE == 0 {
+                self.allocations += 1;
+                self.allocations += self.items.push(Chunk(Arc::new(batch)));
+            } else {
+                self.chunk_mut(self.len / PAGE)
+                    .expect("last journal page")
+                    .extend(batch);
+            }
+            self.len += count;
+            self.mutations += count as u64;
+        }
+    }
+
     pub(crate) fn truncate(&mut self, len: usize) {
         if len >= self.len {
             return;
@@ -169,6 +200,37 @@ mod tests {
                     .collect::<Vec<_>>(),
                 &values[index..]
             );
+        }
+    }
+
+    #[test]
+    fn batched_appends_preserve_retained_snapshots_and_partial_pages() {
+        for prefix in 0..=20 {
+            for count in 0..=20 {
+                let mut journal = Journal::default();
+                let mut expected = Vec::new();
+                for value in 0..prefix {
+                    journal.push(value);
+                    expected.push(value);
+                }
+                let retained = journal.clone();
+                let before = journal.mutations;
+                journal.extend(100..100 + count);
+                expected.extend(100..100 + count);
+                same(&journal, &expected);
+                same(&retained, &(0..prefix).collect::<Vec<_>>());
+                assert_eq!(journal.mutations - before, count as u64);
+                for len in (0..=expected.len()).rev() {
+                    let saved = journal.clone();
+                    let saved_expected = expected.clone();
+                    journal.truncate(len);
+                    expected.truncate(len);
+                    journal.extend([200, 201, 202, 203, 204]);
+                    expected.extend([200, 201, 202, 203, 204]);
+                    same(&journal, &expected);
+                    same(&saved, &saved_expected);
+                }
+            }
         }
     }
 

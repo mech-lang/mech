@@ -127,3 +127,68 @@ fn composed_read_bound_accepts_only_a_canonical_comparison_mask() {
     assert_eq!(read_comparison(&function, lost_bound), None);
     assert_eq!(read_comparison(&function, raw_mask), None);
 }
+
+#[test]
+fn defaulted_read_requires_the_same_constant_offset_for_the_bound_and_load() {
+    for load_offset in [515, 514] {
+        let mut function = Function::new();
+        function.signature.params = vec![AbiParam::new(types::I64); 2];
+        function.signature.returns.push(AbiParam::new(types::I64));
+        let mut context = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        let readable = b.create_block();
+        let default = b.create_block();
+        let join = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.append_block_param(join, types::I64);
+
+        b.switch_to_block(entry);
+        let [packet, index] = b.block_params(entry).try_into().unwrap();
+        let flags = MemFlags::new();
+        let pointer = b.ins().load(types::I64, flags, packet, 0);
+        let length = b.ins().load(types::I64, flags, packet, 8);
+        let bound_index = b.ins().iadd_imm(index, 515);
+        let fits = b.ins().icmp(IntCC::UnsignedLessThan, bound_index, length);
+        let branch = b.ins().brif(fits, readable, &[], default, &[]);
+
+        b.switch_to_block(readable);
+        let at = b.ins().iadd_imm(index, load_offset);
+        let byte = b.ins().ishl_imm(at, 2);
+        let address = b.ins().iadd(pointer, byte);
+        let loaded = b.ins().uload32(flags, address, 0);
+        b.ins().jump(join, &[loaded.into()]);
+
+        b.switch_to_block(default);
+        let zero = b.ins().iconst(types::I64, 0);
+        b.ins().jump(join, &[zero.into()]);
+
+        b.switch_to_block(join);
+        let result = b.block_params(join)[0];
+        b.ins().return_(&[result]);
+        b.seal_all_blocks();
+        b.finalize();
+
+        let cfg = ControlFlowGraph::with_function(&function);
+        let packet_loads = [(pointer, 0), (length, 1)]
+            .into_iter()
+            .map(|(value, word)| (value, (definition(&function, value).unwrap().0, word)))
+            .collect();
+        let view = View {
+            array: 0,
+            pointer_word: 0,
+            length_word: 1,
+            width: 4,
+            literal: None,
+        };
+        let admitted = defaulted_read(
+            &function,
+            &cfg,
+            &packet_loads,
+            &[view],
+            branch,
+            Endianness::Little,
+        );
+        assert_eq!(admitted.is_some(), load_offset == 515);
+    }
+}
