@@ -1,4 +1,7 @@
 //! Measure complete level-12 source compilation separately from building the compiler.
+#[path = "../../../../src/compiler_allocator.rs"]
+mod compiler_allocator;
+
 use mech_engine::CanonicalSourceFrontend;
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,

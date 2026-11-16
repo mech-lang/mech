@@ -1,0 +1,10 @@
+compile-profile: pid=34688 phase=parse
+{"phase":"parse","seconds":3.5204081670000003,"total_seconds":3.520432709}
+{"phase":"catalog","seconds":0.111520583,"total_seconds":3.632046709}
+compile-profile: phase=frontend
+{"phase":"frontend","seconds":0.294869542,"total_seconds":3.9269999589999998}
+{"phase":"artifact","seconds":0.008543083,"total_seconds":3.935637292}
+{"phase":"encode","seconds":0.003797125,"total_seconds":3.93949475}
+compile-profile: phase=native mode=frontend
+{"phase":"native","seconds":3.75e-7,"total_seconds":3.939896}
+{"bytecode_bytes":1034027,"bytecode_sha256":"c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3","mode":"frontend","object_bytes":0,"object_sha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","phases":[{"phase":"parse","seconds":3.5204081670000003,"total_seconds":3.520432709},{"phase":"catalog","seconds":0.111520583,"total_seconds":3.632046709},{"phase":"frontend","seconds":0.294869542,"total_seconds":3.9269999589999998},{"phase":"artifact","seconds":0.008543083,"total_seconds":3.935637292},{"phase":"encode","seconds":0.003797125,"total_seconds":3.93949475},{"phase":"native","seconds":3.75e-7,"total_seconds":3.939896}],"source_bytes":243209,"source_sha256":"653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299","total_seconds":3.939942334}
