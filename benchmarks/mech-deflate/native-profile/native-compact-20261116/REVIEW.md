@@ -45,6 +45,7 @@ retained recipe was changed for this follow-up.
 | Retained baseline | 72,520 B | 1.95577 | 3,744 B | Historical full 81/61 |
 | Range-derived owner proofs | 72,392 B | 1.95232 | 3,744 B | Full 81 Roc; C 61/60; not promoted |
 | Owner proofs, inline only helper 4879 | 72,168 B | 1.94628 | 3,680 B | Rejected after two focused orders |
+| Owner proofs and final cleanup | 72,136 B | 1.94542 | 3,792 B | Two 12-case screens; full qualification pending |
 | Owner proofs, final cleanup, cold tails | 71,768 B | 1.93549 | 3,792 B | Pending |
 
 The narrower proof removes 128 bytes, passes correctness and checked-failure
@@ -62,6 +63,17 @@ Do not attach the baseline's win counts to these candidates. The root frame is
 not complete stack high-water, and metadata calls are not final relocated calls.
 See [the complete follow-up](evidence/owner-proof-runtime/report.json) for raw
 paired data, repeated same-worker controls, and every adverse observation.
+
+The latest owner-proof/final-cleanup combination passes 162 correctness checks
+and keeps 12 Roc and eight C wins for both actors in both 12-case orders.
+Its candidate/control geometric means are 0.99775× and 0.99628×, but the first
+one-byte observation is 0.675% slower and its reverse is 1.981% faster. It
+remains an experiment: full peer orders, checked-failure and stack controls,
+and per-case uncertainty are still required. No 81/61 claim or complete-build
+time improvement is attached to it. See
+[the focused report](evidence/owner-cleanup-focus/report.json), which includes
+all raw observations and exact candidate identities. Its static reproduction
+case is `combinations--owners-cleanup`; `replay.py` recomputes the focused wins.
 
 All ten additional shared-region screens were at least as large as the baseline.
 The stack-pair census found only 156 bytes potentially removable by pairing

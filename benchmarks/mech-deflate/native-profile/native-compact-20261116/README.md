@@ -6,8 +6,8 @@ on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
 
 For another agent, start with [the review and continuation handoff](REVIEW.md).
 It identifies the retained baseline, review priorities, unresolved CI, and all
-24 latest static size screens, with checkout-relative reproduction commands.
-Those screens are published for review and remain runtime-unqualified.
+24 static size screens and their subsequent runtime follow-ups, with
+checkout-relative reproduction commands. No smaller candidate has been promoted.
 
 The accepted runtime floors are **81/81 against Roc and 61/81 against libdeflate**.
 62 is an improvement target. The older raw reports retain the former 62 floor;
@@ -108,6 +108,30 @@ measurements, repeatability studies, build commands and phase logs, integrated
 rebuild receipts, and as-run analysis scripts are in `evidence/owner-proof-runtime`.
 The as-run scripts retain original machine paths; the advertised rebuild command
 uses paths relative to this checkout.
+
+## Owner-proof and cleanup screen
+
+The latest linked experiment combines owner proofs with final control-flow
+cleanup, using the compiler source already on this branch. It produces
+**72,136 bytes of encoder text**, 384 bytes below the retained baseline, or
+**1.25028× Roc and 1.94542× libdeflate**. The root frame grows from 3,744 to
+3,792 bytes; this is not a measurement of complete stack high-water.
+
+It passes 162 exact-output/alias/inflation checks. Both 12-case timing orders
+record 12 Roc wins and eight libdeflate wins for both control and candidate,
+covering 1,428,480 checked timed calls. The candidate/control geometric means
+are 0.99775× and 0.99628×. The first order's one-byte case is 0.675% slower,
+while the reverse order is 1.981% faster. Both observations are retained; this
+screen does not establish per-case nonregression at the declared 0.5% resolution.
+
+**This is not a new 81/61 result.** Complete peer orders, checked-failure and
+stack controls, and uncertainty follow-ups remain pending. The retained recipe
+is unchanged. [The report and raw observations](evidence/owner-cleanup-focus/report.json)
+are committed, and `replay.py` now recomputes these focused win counts too.
+Use `size_screens.py --case combinations--owners-cleanup` with the output and
+emitter arguments documented in `REVIEW.md` to reproduce the exact object and
+metadata. The single emission duration in its receipt is not a complete build
+benchmark; no compile-time improvement is claimed for this experiment.
 
 ## What to review
 

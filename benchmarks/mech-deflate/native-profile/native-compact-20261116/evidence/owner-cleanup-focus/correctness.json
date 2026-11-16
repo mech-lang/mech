@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-all-cleanup-native/final-candidate/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-all-cleanup-native/final-candidate/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "cf9d2f805d516921444cb1f4690b50a3217af0965660824014425a5d6a976afc",
+  "metadata_sha256": "013998f49b3f4a4e2d8cecafb66a99029ad0eb256e9fc39532050550f6a7f6cb"
+}
