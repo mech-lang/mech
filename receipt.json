@@ -1,0 +1,29 @@
+{
+  "platform": "Apple M1 (arm64 macOS)",
+  "compression_level": 12,
+  "emitted_text_x_roc": 1.0208679977814754,
+  "emitted_text_x_libdeflate": 1.4326717260167348,
+  "exact_linked_output_checks": 162,
+  "object_sha256": "99167f3d6f4e9e327271c27090c49408caf40c7a9f9af6676636ecf9a7a14f77",
+  "metadata_sha256": "586219b05b81e30584320b0ca4b67747e9b8db07e0f0dec6f6fda0ede36befaf",
+  "measured_worker_sha256": "5b061359f5043e50bab4c4bd50108c503b834a536626d554835f58be5e98d432",
+  "source_sha256": "10b47cf746b4a68819b5725a64426a94f8ceb7f25f6c65339ac5ff9a7266494e",
+  "canonical_program_sha256": "05cc014c8263ebab0ecf9929854fab05938fc933c9ebc8737db84abe84aeb70c",
+  "screening_cases_per_order": 6,
+  "control_roc_wins": [
+    6,
+    6
+  ],
+  "candidate_roc_wins": [
+    5,
+    4
+  ],
+  "control_libdeflate_wins": [
+    3,
+    3
+  ],
+  "candidate_libdeflate_wins": [
+    3,
+    3
+  ]
+}

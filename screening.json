@@ -1,0 +1,591 @@
+[
+  {
+    "roc_wins_control_candidate": [
+      6,
+      5
+    ],
+    "libdeflate_wins_control_candidate": [
+      3,
+      3
+    ],
+    "candidate_over_control_geometric_mean": 1.0720929725538435,
+    "verified_calls": 50688,
+    "lost_cases_mech_over_roc": [
+      "prefix-natural-65536"
+    ],
+    "lost_cases_mech_over_libdeflate": [],
+    "input_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+    "actor_hashes": {
+      "roc": {
+        "binary_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "metadata_sha256": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+      },
+      "libdeflate": {
+        "binary_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+      },
+      "mech-control": {
+        "binary_sha256": "07f812f78b96a48ec57eabb800bcfa0bf395dbb7b4f0fe56961f23217e7e15cd",
+        "metadata_sha256": "c9db9a3f7b9ec1c1c1b392abc5cdbe48decbabe8e0e4b31687fee438d0fe6aeb"
+      },
+      "mech-experiment": {
+        "binary_sha256": "5b061359f5043e50bab4c4bd50108c503b834a536626d554835f58be5e98d432",
+        "metadata_sha256": "586219b05b81e30584320b0ca4b67747e9b8db07e0f0dec6f6fda0ede36befaf"
+      }
+    },
+    "per_case": {
+      "prefix-periodic-1024": {
+        "candidate_over_control": 1.0462350486601577,
+        "candidate_over_control_per_24_orders": [
+          1.04012041617126,
+          1.0477329831603686,
+          1.0493377266551436,
+          1.0477738000825019
+        ],
+        "mech_over_roc": [
+          0.13820876526297862,
+          0.14459885425017274
+        ],
+        "mech_over_libdeflate": [
+          1.0108257687274396,
+          1.0575613473314942
+        ],
+        "pooled_105": true,
+        "block_105": true,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 78,
+              "requested_payload_bytes": 1628979,
+              "initialized_bytes_copied": 2188,
+              "zeroed_bytes": 1614653,
+              "peak_private_payload_bytes": 1607354,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 145,
+              "requested_payload_bytes": 1693802,
+              "initialized_bytes_copied": 77844,
+              "zeroed_bytes": 1601217,
+              "peak_private_payload_bytes": 1601360,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ]
+        }
+      },
+      "prefix-natural-131072": {
+        "candidate_over_control": 1.1017378313352815,
+        "candidate_over_control_per_24_orders": [
+          1.1028752100958812,
+          1.1026622493032456,
+          1.100778645548699,
+          1.100637162625998
+        ],
+        "mech_over_roc": [
+          0.8490602762590368,
+          0.9354418274385662
+        ],
+        "mech_over_libdeflate": [
+          0.7020929439956209,
+          0.7735223575135386
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 259,
+              "requested_payload_bytes": 9408852,
+              "initialized_bytes_copied": 15060,
+              "zeroed_bytes": 6635809,
+              "peak_private_payload_bytes": 8238915,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 1537,
+              "requested_payload_bytes": 10517348,
+              "initialized_bytes_copied": 1160144,
+              "zeroed_bytes": 6589821,
+              "peak_private_payload_bytes": 8239043,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "prefix-natural-65536": {
+        "candidate_over_control": 1.0959843751596772,
+        "candidate_over_control_per_24_orders": [
+          1.0958943999388056,
+          1.096379641653009,
+          1.0961675331138074,
+          1.095496124976159
+        ],
+        "mech_over_roc": [
+          0.9265942431548224,
+          1.015532812610592
+        ],
+        "mech_over_libdeflate": [
+          0.7802854763177758,
+          0.8551806902083086
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 261,
+              "requested_payload_bytes": 7774671,
+              "initialized_bytes_copied": 16212,
+              "zeroed_bytes": 6638941,
+              "peak_private_payload_bytes": 7649026,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 1512,
+              "requested_payload_bytes": 8857855,
+              "initialized_bytes_copied": 1137836,
+              "zeroed_bytes": 6591101,
+              "peak_private_payload_bytes": 7649154,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "prefix-natural-4096": {
+        "candidate_over_control": 1.1013995019220943,
+        "candidate_over_control_per_24_orders": [
+          1.1025048665174821,
+          1.0969057785728846,
+          1.1013909394437225,
+          1.104811443631469
+        ],
+        "mech_over_roc": [
+          0.6161853428442495,
+          0.6786662297003513
+        ],
+        "mech_over_libdeflate": [
+          1.0569576502474063,
+          1.1641326295352403
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 126,
+              "requested_payload_bytes": 4835779,
+              "initialized_bytes_copied": 6564,
+              "zeroed_bytes": 4788815,
+              "peak_private_payload_bytes": 4789946,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 653,
+              "requested_payload_bytes": 5304504,
+              "initialized_bytes_copied": 491708,
+              "zeroed_bytes": 4768103,
+              "peak_private_payload_bytes": 4783952,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "heldout-slides-65537": {
+        "candidate_over_control": 1.1055610419124848,
+        "candidate_over_control_per_24_orders": [
+          1.1040437306488229,
+          1.1064971717338472,
+          1.1042937593741575,
+          1.1074132208214518
+        ],
+        "mech_over_roc": [
+          0.9026743365610941,
+          0.9979615800361441
+        ],
+        "mech_over_libdeflate": [
+          0.7903250043989902,
+          0.8737525353128367
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 346,
+              "requested_payload_bytes": 8339066,
+              "initialized_bytes_copied": 21496,
+              "zeroed_bytes": 6672569,
+              "peak_private_payload_bytes": 7649035,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 2027,
+              "requested_payload_bytes": 9804772,
+              "initialized_bytes_copied": 1536516,
+              "zeroed_bytes": 6610433,
+              "peak_private_payload_bytes": 7649163,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "320-overlap": {
+        "candidate_over_control": 0.987086480135419,
+        "candidate_over_control_per_24_orders": [
+          0.9884657437816603,
+          0.9859084841978675,
+          0.9852231451722114,
+          0.9887533804024197
+        ],
+        "mech_over_roc": [
+          0.0992468125143237,
+          0.09796518682942364
+        ],
+        "mech_over_libdeflate": [
+          1.0813737302927262,
+          1.067409389145555
+        ],
+        "pooled_105": true,
+        "block_105": true,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 77,
+              "requested_payload_bytes": 898657,
+              "initialized_bytes_copied": 2188,
+              "zeroed_bytes": 890685,
+              "peak_private_payload_bytes": 878010,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 81,
+              "requested_payload_bytes": 903834,
+              "initialized_bytes_copied": 18180,
+              "zeroed_bytes": 877249,
+              "peak_private_payload_bytes": 872016,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ]
+        }
+      }
+    }
+  },
+  {
+    "roc_wins_control_candidate": [
+      6,
+      4
+    ],
+    "libdeflate_wins_control_candidate": [
+      3,
+      3
+    ],
+    "candidate_over_control_geometric_mean": 1.0711378488357841,
+    "verified_calls": 50688,
+    "lost_cases_mech_over_roc": [
+      "heldout-slides-65537",
+      "prefix-natural-65536"
+    ],
+    "lost_cases_mech_over_libdeflate": [],
+    "input_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+    "actor_hashes": {
+      "roc": {
+        "binary_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "metadata_sha256": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+      },
+      "libdeflate": {
+        "binary_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+      },
+      "mech-control": {
+        "binary_sha256": "07f812f78b96a48ec57eabb800bcfa0bf395dbb7b4f0fe56961f23217e7e15cd",
+        "metadata_sha256": "c9db9a3f7b9ec1c1c1b392abc5cdbe48decbabe8e0e4b31687fee438d0fe6aeb"
+      },
+      "mech-experiment": {
+        "binary_sha256": "5b061359f5043e50bab4c4bd50108c503b834a536626d554835f58be5e98d432",
+        "metadata_sha256": "586219b05b81e30584320b0ca4b67747e9b8db07e0f0dec6f6fda0ede36befaf"
+      }
+    },
+    "per_case": {
+      "320-overlap": {
+        "candidate_over_control": 0.9811631425293572,
+        "candidate_over_control_per_24_orders": [
+          0.98139757603685,
+          0.9784861531025714,
+          0.981416933883674,
+          0.9833580779599284
+        ],
+        "mech_over_roc": [
+          0.09947427832583094,
+          0.0976004955230122
+        ],
+        "mech_over_libdeflate": [
+          1.0864146594901154,
+          1.065950021395283
+        ],
+        "pooled_105": true,
+        "block_105": true,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 77,
+              "requested_payload_bytes": 898657,
+              "initialized_bytes_copied": 2188,
+              "zeroed_bytes": 890685,
+              "peak_private_payload_bytes": 878010,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 81,
+              "requested_payload_bytes": 903834,
+              "initialized_bytes_copied": 18180,
+              "zeroed_bytes": 877249,
+              "peak_private_payload_bytes": 872016,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ]
+        }
+      },
+      "heldout-slides-65537": {
+        "candidate_over_control": 1.1052631453058908,
+        "candidate_over_control_per_24_orders": [
+          1.1051184993872103,
+          1.104555781237432,
+          1.1052039645113563,
+          1.1061749494863655
+        ],
+        "mech_over_roc": [
+          0.9055317318877361,
+          1.0008508501605298
+        ],
+        "mech_over_libdeflate": [
+          0.792162386587571,
+          0.8755478909927997
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 346,
+              "requested_payload_bytes": 8339066,
+              "initialized_bytes_copied": 21496,
+              "zeroed_bytes": 6672569,
+              "peak_private_payload_bytes": 7649035,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 2027,
+              "requested_payload_bytes": 9804772,
+              "initialized_bytes_copied": 1536516,
+              "zeroed_bytes": 6610433,
+              "peak_private_payload_bytes": 7649163,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "prefix-natural-4096": {
+        "candidate_over_control": 1.1038359494635186,
+        "candidate_over_control_per_24_orders": [
+          1.1024758285503962,
+          1.1089650956395656,
+          1.1032194406760267,
+          1.1007007845302468
+        ],
+        "mech_over_roc": [
+          0.6144588589828652,
+          0.6782617780116214
+        ],
+        "mech_over_libdeflate": [
+          1.0484127446277045,
+          1.1572756773957755
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 126,
+              "requested_payload_bytes": 4835779,
+              "initialized_bytes_copied": 6564,
+              "zeroed_bytes": 4788815,
+              "peak_private_payload_bytes": 4789946,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 653,
+              "requested_payload_bytes": 5304504,
+              "initialized_bytes_copied": 491708,
+              "zeroed_bytes": 4768103,
+              "peak_private_payload_bytes": 4783952,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "prefix-natural-65536": {
+        "candidate_over_control": 1.093771275748349,
+        "candidate_over_control_per_24_orders": [
+          1.0984273724539437,
+          1.0782768348147431,
+          1.1011783374079764,
+          1.0973540588060358
+        ],
+        "mech_over_roc": [
+          0.9314187674606421,
+          1.0187590935413815
+        ],
+        "mech_over_libdeflate": [
+          0.783359866789066,
+          0.8568165208679335
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 261,
+              "requested_payload_bytes": 7774671,
+              "initialized_bytes_copied": 16212,
+              "zeroed_bytes": 6638941,
+              "peak_private_payload_bytes": 7649026,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 1512,
+              "requested_payload_bytes": 8857855,
+              "initialized_bytes_copied": 1137836,
+              "zeroed_bytes": 6591101,
+              "peak_private_payload_bytes": 7649154,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "prefix-natural-131072": {
+        "candidate_over_control": 1.105786035947961,
+        "candidate_over_control_per_24_orders": [
+          1.1058963706017964,
+          1.1064204620611873,
+          1.1063680709725536,
+          1.1044603759735299
+        ],
+        "mech_over_roc": [
+          0.8480058837376435,
+          0.9377130646387962
+        ],
+        "mech_over_libdeflate": [
+          0.6972123117991957,
+          0.7709676384785463
+        ],
+        "pooled_105": false,
+        "block_105": false,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 259,
+              "requested_payload_bytes": 9408852,
+              "initialized_bytes_copied": 15060,
+              "zeroed_bytes": 6635809,
+              "peak_private_payload_bytes": 8238915,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 1537,
+              "requested_payload_bytes": 10517348,
+              "initialized_bytes_copied": 1160144,
+              "zeroed_bytes": 6589821,
+              "peak_private_payload_bytes": 8239043,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 96
+            }
+          ]
+        }
+      },
+      "prefix-periodic-1024": {
+        "candidate_over_control": 1.043189312823712,
+        "candidate_over_control_per_24_orders": [
+          1.043311437748281,
+          1.0370635562548483,
+          1.0479714213345037,
+          1.0444405768110017
+        ],
+        "mech_over_roc": [
+          0.13831606664305957,
+          0.14428984251385205
+        ],
+        "mech_over_libdeflate": [
+          1.0080543974693514,
+          1.0515915741849737
+        ],
+        "pooled_105": true,
+        "block_105": true,
+        "allocation_profiles": {
+          "mech-control": [
+            {
+              "payload_allocation_requests": 78,
+              "requested_payload_bytes": 1628979,
+              "initialized_bytes_copied": 2188,
+              "zeroed_bytes": 1614653,
+              "peak_private_payload_bytes": 1607354,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ],
+          "mech-experiment": [
+            {
+              "payload_allocation_requests": 145,
+              "requested_payload_bytes": 1693802,
+              "initialized_bytes_copied": 77844,
+              "zeroed_bytes": 1601217,
+              "peak_private_payload_bytes": 1601360,
+              "nonreturned_private_bytes_at_return": 0,
+              "calls": 6144
+            }
+          ]
+        }
+      }
+    }
+  }
+]
