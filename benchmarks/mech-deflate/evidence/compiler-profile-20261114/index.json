@@ -531,8 +531,18 @@
       "sha256": "1a877b36383a12e6b402c0848d0ac253b039b1308e1fcde1ca93b3673b6e5d21",
       "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
       "summary": "benchmarks/mech-deflate/native-profile/parser-execution-trials-apple-m3-20261115.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parser-lexical-trials-20261116.tar.gz",
+      "bytes": 9138357,
+      "decision": "Three initial lexical memo screens change -0.418%, +0.188% and -6.929%; none meets10% threshold. Combining compact/batched memo with completed cache-owner release changes -11.862%; formatted frozen version changes -11.795%, both blocks faster and529 units/fullparse exact. Fresh own-PGO complete-build qualification is separate and pending. Production source/selected8043 remain unchanged; no complete-build speedup or sub-ten claim.",
+      "files": 3324,
+      "receipt": "benchmarks/mech-deflate/native-profile/parser-lexical-trials-apple-m3-20261116.archive.json",
+      "sha256": "d534e2f4b13027c7a0a82c18fdb5a469a5c73378f9a2bb384b89cd096473cbc8",
+      "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+      "summary": "benchmarks/mech-deflate/native-profile/parser-lexical-trials-apple-m3-20261116.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1790443631
+  "total_archive_bytes": 1799581988
 }
