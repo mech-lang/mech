@@ -36,3 +36,11 @@ python3 -B benchmarks/mech-deflate/native-profile/compact-size/rebuild.py /tmp/m
 The source build reads `fixtures/program.mecb` by default. Pass `--program` with the new parser's output to compare against the same benchmark. The exact recipe verifies the prepared Object, its metadata, and the checked LLVM IR before applying the recorded native layout. For a changed Plan, run `emit_compact_size PROGRAM.mecb OUTPUT_DIRECTORY` to produce fresh compact output and remeasure its layout choices.
 
 The benchmark uses the compact diagnostic entry. `rebuild.py` records the experimental LLVM options and uses the original relocatable-object composition for the exact published object. The whole-object partial-link path in the compiler source retains unwind sections for further integration work.
+
+## Complete source-to-executable timing
+
+The combined compiler/parser build is measured at **6.027732 seconds** on Apple M3, including fresh parsing/analysis/bytecode, the complete Object recipe above and final executable linking. The prior-parser control is6.379101 seconds on the identical2,719-line source. Compiler construction and the fixed runtime/generic entry adapter are setup outside that timer. [Full measurement, phase profile and raw evidence](../../../../docs/design/native-compact-source-compile-profile.md).
+
+To regenerate compiler inputs from source, run `compile_profile fixtures/source.mec OUTPUT/frontend frontend`, then pass `--program OUTPUT/frontend/program.mecb` together with `--emitter`. The default pinned MBC path is only an Object-rebuild shortcut and is not used for the complete source timing. Final executable commands, every fixed native link input and the full timed driver are retained in the evidence packet.
+
+`--compile-threads 2` requests the existing independent native compilation pool and preserves the exact output. This recipe exports all numeric phase families to LLVM, which currently leaves zero eligible pool jobs. The measured final cohort uses the default serial setting.

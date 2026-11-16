@@ -1,5 +1,7 @@
 # Native compression milestone
 
+The latest [complete compiler measurement](native-compact-source-compile-profile.md) for the supplied compact source is **6.027732 seconds**, source to runnable executable, reproducing 55,956 bytes of machine code. The supplied M1 runtime handoff and historical M3 runtime cohorts below remain separately identified.
+
 ## R259: explicit-window ablation loses; R256 remains retained
 
 The requested matched comparison now includes R256, an explicit-window control,

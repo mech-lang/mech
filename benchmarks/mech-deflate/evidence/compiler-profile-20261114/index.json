@@ -541,8 +541,18 @@
       "sha256": "d534e2f4b13027c7a0a82c18fdb5a469a5c73378f9a2bb384b89cd096473cbc8",
       "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
       "summary": "benchmarks/mech-deflate/native-profile/parser-lexical-trials-apple-m3-20261116.json"
+    },
+    {
+      "archive": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compact-source-compile-20261116.tar.xz",
+      "bytes": 16297792,
+      "decision": "Retain merged b272 compact compiler and bounded parser reuse. Complete fresh source\u2192executable6.379101\u21926.027732s (-5.51%), both blocks improve; exact55956-byte Object, complete metadata and all images. All552 tests and11 complete-stream cases pass. New243KB source; historical13.41s is not same input. Supplied runtime unchanged. Exact LLVM-export recipe submits0 worker jobs; no parallel speedup. Published M1 handoff81 Roc/62 libdeflate,63target; original adverse runtime cases retained.",
+      "files": 2399,
+      "receipt": "benchmarks/mech-deflate/native-profile/compact-source-compile-apple-m3-20261116.archive.json",
+      "sha256": "8db55f1749307c50be20f64e1b40c0f9f3f4c947b588bf4eede3ffe8d17e703a",
+      "source_revision": "4e8fd9351a9e6219c5cf2150a08f97f70362e815",
+      "summary": "benchmarks/mech-deflate/native-profile/compact-source-compile-apple-m3-20261116.json"
     }
   ],
   "scope": "Complete compiler-profile evidence packets published in benchmarks; compiler executables excluded and hash-pinned inside each packet.",
-  "total_archive_bytes": 1799581988
+  "total_archive_bytes": 1815879780
 }

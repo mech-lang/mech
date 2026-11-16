@@ -1,0 +1,25 @@
+{
+  "archive_name": "mech-compact-source-compile-20261116.tar.xz",
+  "bytes": 16297792,
+  "compression": "xz",
+  "evidence_files": 2399,
+  "files": 2399,
+  "format": 1,
+  "manifest_sha256": "220a75f1a3102f70daedb232222e58aa6c4562f6ecce239439757ca9dc262013",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "b4ab86e27b42c34f6cc133d3ce86c3ce0a0607f3ede0c591dd070074ed60972c",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compact-source-compile-20261116.tar.xz",
+  "sha256": "8db55f1749307c50be20f64e1b40c0f9f3f4c947b588bf4eede3ffe8d17e703a",
+  "source_revision": "4e8fd9351a9e6219c5cf2150a08f97f70362e815",
+  "uncompressed_bytes": 472610676,
+  "verification": {
+    "evidence_files": 2399,
+    "merged_profiles": 1,
+    "method": "Fresh staged Git blob exported, archive checksum checked, safely extracted, every manifest entry and all9 nested profile bytes verified; pure offline replay byte-identical to repository compact summary.",
+    "no_compiler_or_compressor_execution": true,
+    "raw_profiles": 8,
+    "result_sha256": "b4ab86e27b42c34f6cc133d3ce86c3ce0a0607f3ede0c591dd070074ed60972c"
+  }
+}
