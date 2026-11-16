@@ -84,6 +84,25 @@ impl DataFootprints {
             .ok_or(ResidentKernelError::InvalidShape)
     }
 
+    fn transaction_work(inputs: usize) -> Option<u64> {
+        (core::mem::size_of::<Slot>() as u64)
+            .checked_mul(u64::try_from(inputs).ok()?)?
+            .checked_mul(2)?
+            .checked_mul(8)?
+            .checked_add(256)
+    }
+
+    // One complete live-facts measurement per input, then at most one
+    // selected-access source lookup across all input slots. DATA walks remain
+    // separately payload-priced; these are only fixed cache carrier fees.
+    pub(super) fn selected_access_metadata_work_bound(inputs: usize) -> Option<u64> {
+        let probes = u64::try_from(inputs).ok()?.checked_mul(2)?;
+        Self::probe_work()
+            .ok()?
+            .checked_mul(probes)?
+            .checked_add(Self::transaction_work(inputs)?)
+    }
+
     pub(super) fn lookup(
         &self,
         value: &Value,
@@ -139,11 +158,7 @@ impl NativeTurnPlanCache {
         }
         // Both transaction sweeps and weak-token retirement are prepaid before
         // touching slot state. Weak shell capacity is already fully resident.
-        let work = (core::mem::size_of::<Slot>() as u64)
-            .checked_mul(self.data_footprints.slots.borrow().len() as u64)
-            .and_then(|n| n.checked_mul(2))
-            .and_then(|n| n.checked_mul(8))
-            .and_then(|n| n.checked_add(256))
+        let work = DataFootprints::transaction_work(self.data_footprints.slots.borrow().len())
             .ok_or(ResidentKernelError::InvalidShape)?;
         self.work.charge(work, 0)?;
         self.data_footprints.building.set(true);

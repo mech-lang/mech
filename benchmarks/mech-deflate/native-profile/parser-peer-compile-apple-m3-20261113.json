@@ -1,0 +1,206 @@
+{
+  "all_four_outputs_equal": true,
+  "base_commit": "88ce9e278ccb4c0259e8d2ea9422f8f2444c60f2",
+  "clang_clean": {
+    "command": [
+      "/usr/bin/time",
+      "-lp",
+      "xcrun",
+      "clang",
+      "-arch",
+      "arm64",
+      "-std=gnu11",
+      "-O2",
+      "-DNDEBUG",
+      "-Wall",
+      "-Werror",
+      "-I",
+      "/private/tmp/mech-peer-compile-20261113/libdeflate/libdeflate-92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+      "-c",
+      "/private/tmp/mech-peer-compile-20261113/libdeflate/libdeflate-92e6a0db9fa848d742f9eb286c92afc60f2c3dda/lib/deflate_compress.c",
+      "-o",
+      "/private/tmp/mech-peer-compile-20261113/libdeflate-encoder-clean.o"
+    ],
+    "exit_code": 0,
+    "object_sha256": "9d12352f391ad6ca003f795395a28579f4494bec71aa572edbbd552a14b54397",
+    "process_seconds": 0.5571530419401824
+  },
+  "clang_totals_seconds": {
+    "Backend": 0.431906,
+    "CodeGenPasses": 0.233545,
+    "ExecuteCompiler": 0.489553,
+    "Frontend": 0.054644,
+    "Optimizer": 0.197385
+  },
+  "compile_reduction_fraction": 0.12546107142934448,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "latest_52_flags": {
+    "bytecode_bytes": 4138627,
+    "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "mode": "compact",
+    "object_bytes": 1237696,
+    "object_sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67",
+    "phases": [
+      {
+        "phase": "parse",
+        "seconds": 3.476748833,
+        "total_seconds": 3.4767595
+      },
+      {
+        "phase": "catalog",
+        "seconds": 0.040782667,
+        "total_seconds": 3.5175595
+      },
+      {
+        "phase": "frontend",
+        "seconds": 8.367259083,
+        "total_seconds": 11.884830958
+      },
+      {
+        "phase": "artifact",
+        "seconds": 0.028522583,
+        "total_seconds": 11.9133685
+      },
+      {
+        "phase": "encode",
+        "seconds": 0.009727792,
+        "total_seconds": 11.92310975
+      },
+      {
+        "phase": "native",
+        "seconds": 39.189380416,
+        "total_seconds": 51.113098042
+      }
+    ],
+    "source_bytes": 160857,
+    "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+    "total_seconds": 51.11311125
+  },
+  "lines": {
+    "libdeflate": 5485,
+    "mech": 1930,
+    "roc": 6187
+  },
+  "maximum_resident_set_bytes": {
+    "libdeflate": 75038720,
+    "mech": 7760019456,
+    "roc": 445988864
+  },
+  "merged_native_base": "e310ea239d5706410d96d1a6f67ec8598f0c70c4",
+  "native_stages_sampled": [
+    {
+      "phase": "canonical lowering",
+      "seconds": 3.8580409169662744
+    },
+    {
+      "phase": "preparation",
+      "seconds": 13.796869208104908
+    },
+    {
+      "phase": "native module",
+      "seconds": 5.438148292014375
+    },
+    {
+      "phase": "typed layout",
+      "seconds": 8.37491825222969e-06
+    },
+    {
+      "phase": "flow proof",
+      "seconds": 0.04545395798049867
+    },
+    {
+      "phase": "operation recipes",
+      "seconds": 0.7173809169325978
+    },
+    {
+      "phase": "source CFG",
+      "seconds": 7.885573208099231
+    },
+    {
+      "phase": "finalize SSA",
+      "seconds": 0.3221828748937696
+    },
+    {
+      "phase": "CFG cleanup",
+      "seconds": 4.891008167061955
+    },
+    {
+      "phase": "machine code",
+      "seconds": 1.9314263749402016
+    }
+  ],
+  "native_text_bytes": {
+    "libdeflate": 41112,
+    "mech": 1100308,
+    "mech_latest_52_flags": 1101332,
+    "roc": 57696
+  },
+  "output_hashes": {
+    "metadata.json": "cd22f0a2e4c386abbd8e1977cdb0a3f003157166cc2664dce277697ecc801124",
+    "program.mecb": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+    "program.o": "c04be2f8f15d2cdcfd05f5bf88ffa93a89dc082a73bfa007928ec2da9c1b53d2",
+    "source.mec": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+  },
+  "paired_compile_seconds": {
+    "base": [
+      58.564525167,
+      57.893062709
+    ],
+    "parser": [
+      51.004259125,
+      50.842435
+    ]
+  },
+  "paired_parse_seconds": {
+    "base": [
+      10.132909042,
+      10.292568334
+    ],
+    "parser": [
+      3.475122708,
+      3.471974834
+    ]
+  },
+  "parse_speedup": 2.940145471186188,
+  "roc_clean": {
+    "archive_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+    "command": [
+      "/usr/bin/time",
+      "-lp",
+      "/private/tmp/mech-peer-compile-20261113/roc-compiler/zig-out/bin/roc",
+      "build",
+      "--no-cache",
+      "--opt=speed",
+      "--jobs=1",
+      "--target=arm64mac",
+      "--output=/private/tmp/mech-peer-compile-20261113/roc-profile/clean.a",
+      "/private/tmp/mech-peer-compile-20261113/roc-profile/app.roc"
+    ],
+    "compiler_sha256": "fafc7e230a14f7165be49fdd46dec10a98373e39acd4e484d95424e16a5426bf",
+    "exit_code": 0,
+    "process_seconds": 2.2489065839909017,
+    "profile_archive_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+  },
+  "scope_notes": [
+    "Compiler builds, source/tool downloads and host linking are excluded.",
+    "Peer source scopes support different compression levels; counts are not normalized algorithm complexity.",
+    "ABBA uses the 51-flag matched output control; candidate also preserves the qualified 52-flag Object 4ddc16b0.",
+    "Baseline compiler is 88ce; candidate includes the e310 native changes with the new pairing flag disabled in ABBA.",
+    "The first candidate process launch includes 1.4 seconds of extra startup; compiler phase totals exclude that process startup.",
+    "CPU samples and instrumented runs are separate from clean primary timings.",
+    "The initial four-second Roc sample had no stacks; a one-second window captured usable use_order/range_prove stacks."
+  ],
+  "source_commit": "47a500d758d1273dbd8ab73f6b61d25ae7bdca7f",
+  "tests": {
+    "differential": {
+      "base_sha256": "d5ad4ed9d87c64d3295f31eed97d167f6ba5b41ac1a3852b3e00ff1af8e8b2e7",
+      "bytes": 4684363,
+      "cases": 1667,
+      "equal": true,
+      "final_sha256": "d5ad4ed9d87c64d3295f31eed97d167f6ba5b41ac1a3852b3e00ff1af8e8b2e7"
+    },
+    "passed": 759,
+    "suites": 45,
+    "unit": 518
+  }
+}

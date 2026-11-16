@@ -1,0 +1,71 @@
+{
+  "schema": "mech.related-post-gen.source-candidate.v16",
+  "compiler": "5925a2b3a4fd4dfcca7ada541e37a69d514171f8",
+  "selected": false,
+  "new_source_changes": false,
+  "reports": {
+    "initial": "comparison-native-fixed-frame-arenas-20261106-5000-m3.json",
+    "confirmation": "comparison-native-fixed-frame-arenas-confirmation-20261106-5000-m3.json",
+    "resources": "comparison-native-fixed-frame-arenas-resources-20261106-5000-m3.json",
+    "sizes": "size-native-fixed-frame-arenas-20261106.json"
+  },
+  "qualification": {
+    "gpu_passes": 689,
+    "unchanged_baseline_failures": [
+      "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+      "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+    ],
+    "core_passes": 391,
+    "engine_relevant_passes": 289,
+    "new_core_fixed_arena_checks": 5,
+    "typed_admission_focus_checks": 1,
+    "numeric_tree_focus_checks": 34,
+    "loader_edges": 434,
+    "decoded_bundle_files_exact": 52,
+    "finite_budget_denials_exact": true,
+    "forged_frontier_rejections": 16,
+    "runtime_only_and_unmodified_managed_app": true,
+    "scalar_and_deflate_nonallocation_nontiming_controls_exact": 133,
+    "scalar_and_deflate_allocation_requests_and_bytes_never_regress": true,
+    "genuine_old_objects_rejected": 21,
+    "exact_cohort_outputs": 1437,
+    "native_numeric_function_byte_comparisons_exact": 212,
+    "complete_native_text_sections_exact": 4,
+    "exact_patch_tree": true,
+    "fresh_post_json_profile_invocations_exact": 2000,
+    "complete_process_diagnostic_outputs_exact": 27
+  },
+  "original_four": {
+    "median_seconds": 0.002977084,
+    "samples": 15,
+    "all_exact_rust": true,
+    "category": "native_fixed_frame_arenas_IR223_after",
+    "median_processing_plus_admission_seconds": 0.003132667,
+    "median_whole_process_seconds": 0.036801792215555906,
+    "calculation_boundary": "post_json_including_setup",
+    "median_post_json_seconds": 0.003140833,
+    "over_fastest": 1.8022453272796066,
+    "over_rust": 0.3373466288951842,
+    "whole_process_over_fastest": 1.65408434763612,
+    "processing_plus_admission_over_fastest": 1.8964310253499812,
+    "processing_plus_admission_over_rust": 0.35497643059490086,
+    "post_json_over_fastest_matched_native": 1.9013744986757473
+  },
+  "compact_four": {
+    "median_seconds": 0.003000666,
+    "samples": 15,
+    "all_exact_rust": true,
+    "category": "native_fixed_frame_arenas_IR223_compact",
+    "median_processing_plus_admission_seconds": 0.003158457,
+    "median_whole_process_seconds": 0.03589470800943673,
+    "calculation_boundary": "post_json_including_setup",
+    "median_post_json_seconds": 0.003165291,
+    "over_fastest": 1.8165212258796821,
+    "over_rust": 0.34001881019830027,
+    "whole_process_over_fastest": 1.6133147628685753,
+    "processing_plus_admission_over_fastest": 1.9120435868331442,
+    "processing_plus_admission_over_rust": 0.3578988101983003,
+    "post_json_over_fastest_matched_native": 1.9161807037457437
+  },
+  "next_action": "Reduce the remaining general-call type/schema copies and invariant memory planning; test sharing immutable descriptors and combine prior compiler-proved worker constant/cache layouts with the fixed native arenas. The emitted numeric query remains the leading application hotspot, so inspect producer-derived array ranges and funded loop bounds for fewer checks/spills. Complete-process phase diagnostics also identify descriptor restoration and JSON output separately. Both fastest-Rust parity targets remain unmet."
+}

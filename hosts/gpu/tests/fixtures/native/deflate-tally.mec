@@ -1,0 +1,42 @@
+// Forward symbol tally and code construction from CompressOptimal.roc,
+// roc-deflate 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include deflate-optimal-path.mec and deflate-huffman-level12.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<optimal-tally> := <{freqs-litlen<[u32]> freqs-offset<[u32]> litlen-lens<[u8]> litlen-codewords<[u32]> offset-lens<[u8]> offset-codewords<[u32]>}>
+
+optimal-tally-increment(freqs<[u32]>, at<u64>) => (out<[u32]>) :=
+  count := huff-add-wrap32(huff-get32(freqs, at), 1u32)
+  out := huff-set32(freqs, at, count).
+optimal-tally-match(litlen<[u32]>, offsets<[u32]>, length<u64>, offset<u64>, lengths<[u8]>, slots<[u8]>) => (out<([u32],[u32])>) :=
+  length-slot<u64> := huff-get8(lengths, length)
+  sym := bits/wrapping-add(257u64, length-slot)
+  next-litlen := optimal-tally-increment(litlen, sym)
+  slot := optimal-offset-slot(offset, slots)
+  next-offsets := optimal-tally-increment(offsets, slot)
+  out := (next-litlen, next-offsets).
+optimal-tally-step(nodes<[u64]>, top<u64>, at<u64>, litlen<[u32]>, offsets<[u32]>, lengths<[u8]>, slots<[u8]>) => (out<([u32],[u32],u64)>) :=
+  item := huff-packed(bits/shift-right-wrap(optimal-get64(nodes, bits/wrapping-sub(top, at)), 32u64))
+  length := bits/and(huff-word(item), 511u64)
+  offset := bits/shift-right-wrap(huff-word(item), 9u64)
+  choice := ((length == 1u64)? | true => (optimal-tally-increment(litlen, bits/and(offset, 255u64)), offsets) | false => optimal-tally-match(litlen, offsets, length, offset, lengths, slots))
+  (next-litlen, next-offsets) := choice
+  out := (next-litlen, next-offsets, bits/wrapping-add(at, length)).
+optimal-tally-loop(nodes<[u64]>, top<u64>, at<u64>, end<u64>, litlen<[u32]>, offsets<[u32]>, lengths<[u8]>, slots<[u8]>) => (out<([u32],[u32])>) :=
+  more := at != end
+  step := (more? | true => optimal-tally-step(nodes, top, at, litlen, offsets, lengths, slots) | false => (litlen, offsets, at))
+  (next-litlen, next-offsets, next-at) := step
+  out := (more? | true => optimal-tally-loop(nodes, top, next-at, end, next-litlen, next-offsets, lengths, slots) | false => (litlen, offsets)).
+optimal-tally-and-build-codes(nodes<[u64]>, block-length<u64>, lengths<[u8]>, slots<[u8]>, reversed<[u8]>) => (out<optimal-tally>) :=
+  litlen0 := [0u32 | i <- 0u64..=513u64, i < 513u64]
+  offset0 := [0u32 | i <- 0u64..=270u64, i < 270u64]
+  top := optimal-node-top(block-length)
+  (litlen-counts, offset-counts) := optimal-tally-loop(nodes, top, 0u64, block-length, litlen0, offset0, lengths, slots)
+  eof-count := huff-get32(litlen-counts, 256u64) + 1u32
+  freqs-litlen := huff-set32(litlen-counts, 256u64, eof-count)
+  litlen-lens0 := [0u8 | i <- 0u64..=288u64, i < 288u64]
+  litlen-words0 := [0u32 | i <- 0u64..=288u64, i < 288u64]
+  litlen-code := huff-make-code(288u64, 14u64, freqs-litlen, litlen-lens0, litlen-words0, reversed)
+  offset-lens0 := [0u8 | i <- 0u64..=32u64, i < 32u64]
+  offset-words0 := [0u32 | i <- 0u64..=32u64, i < 32u64]
+  offset-code := huff-make-code(32u64, 15u64, offset-counts, offset-lens0, offset-words0, reversed)
+  out := {freqs-litlen: freqs-litlen, freqs-offset: offset-counts, litlen-lens: litlen-code.lens, litlen-codewords: litlen-code.codewords, offset-lens: offset-code.lens, offset-codewords: offset-code.codewords}.

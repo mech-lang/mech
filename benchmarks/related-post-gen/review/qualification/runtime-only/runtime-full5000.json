@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/runtime-runner/runner-aot",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/runtime-runner/build/source.mec",
+    "/private/tmp/mech-related-post-rust-local-20261102/posts.json",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/runtime-runner/full5000-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.0280005419626832,
+  "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00890375,\"input_admission_seconds\":0.000166125,\"json_read_and_parse_seconds\":0.001746125,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":8,\"parallel_numeric_work\":24693182666,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":4,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.003549709,\"posts\":5000,\"processing_plus_admission_seconds\":0.0035413330000000002,\"retained_bytes\":931048,\"sample\":0,\"seconds\":0.003375208,\"work\":53549889450}\n",
+  "stderr": "",
+  "compiler_source_sha256": "53760658d965069f5650976a1e433af5dfa001b095ddc406bdb59910e3bb4fc8"
+}

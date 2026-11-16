@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-old-object-20261106-v2/219/probe"
+  ],
+  "exit": 0,
+  "seconds": 0.6386298749130219,
+  "stdout": "{\"compiled_module_rejected\":\"canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact\",\"object_bound_rejected\":\"canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact\",\"old_entry_never_invoked\":true,\"old_typed_ir\":219}\n",
+  "stderr": ""
+}

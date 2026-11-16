@@ -1,6 +1,6 @@
 //! The individual maintained-leaf boundary, not a program dispatcher.
 use super::NativeCollectionCall;
-use crate::memory_planner::{ProgramMemoryPlan, TurnMemoryFacts, TurnMemoryPlan, plan_turn_memory};
+use crate::memory_planner::{TurnMemoryFacts, TurnMemoryPlan, plan_single_call_turn_memory};
 use crate::resident::budget::native_turn_plan_cache::{NativeTurnPlanCache, with_cached_turn_plan};
 use crate::resident::budget::{self, NativeLibraryWorkBudget, payload::ResidentPayloadOwner};
 use crate::resident::general::{ResidentRegion, live};
@@ -30,6 +30,16 @@ pub(super) enum NativePlanCacheState {
     Cold,
     Uncached,
     Cached(Rc<NativeTurnPlanCache>),
+}
+
+pub(super) fn plan_cache_guard_work() -> Option<u64> {
+    let bytes = (core::mem::size_of::<NativePlanCacheState>()
+        + core::mem::size_of::<ResourceDemand>()
+        + core::mem::size_of::<mech_core::MemoryBudgetLimits>()
+        + core::mem::size_of::<mech_core::ManagedMemoryReservation>()
+        + core::mem::size_of::<mech_core::ManagedNodeReservation>()
+        + 3 * core::mem::size_of::<u64>()) as u64;
+    bytes.checked_mul(8)?.checked_add(256)
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -65,7 +75,7 @@ impl std::error::Error for NativeCollectionInvocationError {}
 
 #[cfg(all(test, any(feature = "full_source", feature = "full_compiler")))]
 #[path = "native_data_footprint_tests.rs"]
-mod data_footprint_tests;
+pub(super) mod data_footprint_tests;
 
 /// Only constructor-private maintained families reach this envelope, including
 /// nested scalar/map state carriers. It conservatively covers planner coexistence, deep copies of
@@ -177,12 +187,13 @@ mod metadata_tests {
     }
 }
 
-struct Inputs<'a>(&'a [Option<Value>]);
+struct Inputs<'a>(&'a [Option<Value>], Option<usize>);
 impl ResidentKernelInputs for Inputs<'_> {
     fn len(&self) -> usize {
-        self.0.len()
+        self.0.len() - usize::from(self.1.is_some())
     }
     fn get(&self, index: usize) -> Option<ResidentValueRef<'_>> {
+        let index = index.checked_add(usize::from(self.1.is_some_and(|base| index >= base)))?;
         self.0
             .get(index)
             .map(|value| ResidentValueRef::Snapshot(core::slice::from_ref(value)))
@@ -262,21 +273,56 @@ impl NativeCollectionCall {
                         return Err(NativeCollectionInvocationError::InvalidInput);
                     }
                 }
+                let bounded = super::headroom::supports_template(&self.template);
+                if bounded && !matches!(cache, NativePlanCacheState::Uncached) {
+                    let (retained, nodes) = match cache {
+                        NativePlanCacheState::Cached(current) => {
+                            let demand = current.retained_metadata_demand(work)?;
+                            (Some(demand.turn_peak_bytes), Some(demand.retained_nodes))
+                        }
+                        _ => (
+                            NativeTurnPlanCache::retained_bytes(
+                                &self.memory,
+                                self.invocation_metadata_bytes,
+                            ),
+                            NativeTurnPlanCache::retained_data_nodes(&self.memory)
+                                .and_then(|n| n.checked_add(1)),
+                        ),
+                    };
+                    let scope = budget::payload::native_scope_metadata_bytes();
+                    let mandatory = self.invocation_metadata_bytes.checked_add(scope);
+                    let fixed = retained.and_then(|n| n.checked_add(mandatory?));
+                    let warm = matches!(cache, NativePlanCacheState::Cached(_));
+                    let additional = if warm { mandatory } else { fixed };
+                    let fits = match (fixed, additional, nodes) {
+                        (Some(fixed), Some(additional), Some(nodes)) => {
+                            super::cache_capacity::admits(
+                                &self.template,
+                                &self.schemas,
+                                inputs,
+                                output,
+                                self.memory.target.limits,
+                                work,
+                                fixed,
+                                nodes,
+                                additional,
+                                if warm { 0 } else { nodes },
+                            )?
+                        }
+                        _ => false,
+                    };
+                    if !fits {
+                        // Current payload growth or a malformed selector only
+                        // declines optional reuse. This happens before scope,
+                        // kernel, mutable candidate or publication is entered.
+                        *cache = NativePlanCacheState::Uncached;
+                    }
+                }
                 if matches!(cache, NativePlanCacheState::Cold) {
                     // Only fixed metadata is inspected by this one-time
                     // optional-capacity decision. It never observes payload.
-                    let guard_bytes = (core::mem::size_of::<NativePlanCacheState>()
-                        + core::mem::size_of::<ResourceDemand>()
-                        + core::mem::size_of::<mech_core::MemoryBudgetLimits>()
-                        + core::mem::size_of::<mech_core::ManagedMemoryReservation>()
-                        + core::mem::size_of::<mech_core::ManagedNodeReservation>()
-                        + 3 * core::mem::size_of::<u64>())
-                        as u64;
                     work.charge(
-                        guard_bytes
-                            .checked_mul(8)
-                            .and_then(|n| n.checked_add(256))
-                            .ok_or(ResidentKernelError::InvalidShape)?,
+                        plan_cache_guard_work().ok_or(ResidentKernelError::InvalidShape)?,
                         0,
                     )?;
                     let retained = NativeTurnPlanCache::retained_bytes(
@@ -321,9 +367,16 @@ impl NativeCollectionCall {
                     // current scope. Probe full C + the unchanged finite nested
                     // temporary allowance + the two concrete scope Rc owners.
                     // No code executes while these probe bytes are held.
-                    let probe_bytes = retained.checked_add(temporary).and_then(|n| {
-                        n.checked_add(budget::payload::native_scope_metadata_bytes())
-                    });
+                    let probe_bytes = if bounded {
+                        // The complete current coexistence bound above already
+                        // reserved/dropped headroom. Retain only actual cache
+                        // metadata; no policy ceiling becomes a resource demand.
+                        Some(retained)
+                    } else {
+                        retained.checked_add(temporary).and_then(|n| {
+                            n.checked_add(budget::payload::native_scope_metadata_bytes())
+                        })
+                    };
                     let mut probe = if finite {
                         match probe_bytes {
                             Some(bytes) => match work.memory_budget().reserve_capacity(bytes) {
@@ -452,8 +505,15 @@ impl NativeCollectionCall {
                     if matches!(&contract.outputs[0].construction,
                         mech_core::OutputConstruction::FullWrite {
                             shape: mech_core::ShapeRule::SameAsInput { .. }
-                        })
+                        } | mech_core::OutputConstruction::ReadModifyWrite { .. })
             );
+            #[cfg(feature = "sequence_buffers")]
+            let shape_follows_current_input = shape_follows_current_input
+                || matches!(
+                    self.template.primitive(),
+                    crate::native_artifact::NativeCollectionPrimitive::SequenceAppendLeBytes
+                        | crate::native_artifact::NativeCollectionPrimitive::SequenceAppendSublist
+                );
             if value.schema() != self.output.schema_id
                 || value.schema_key() != self.output.schema_key
                 || (!shape_follows_current_input
@@ -561,14 +621,29 @@ impl NativeCollectionCall {
                 },
             )?
         } else {
-            let facts = live::facts_with(
+            let mut facts = TurnMemoryFacts::default();
+            live::facts_with_indexed_into(
                 &self.memory,
                 self.template.origin().node(),
                 &arguments,
                 ResidentValueRef::Snapshot(core::slice::from_ref(output)),
                 &self.schemas,
-                |value, descriptor, schemas, observed| {
-                    live::footprint_with_check(value, descriptor, schemas, observed, &mut check)
+                &mut facts,
+                |ordinal, value, descriptor, schemas, observed| {
+                    let layout = match ordinal {
+                        Some(ordinal) => self
+                            .inputs
+                            .get(ordinal)
+                            .ok_or(MemoryPlanError::DescriptorArityMismatch)?,
+                        None => &self.output,
+                    };
+                    let entry = schemas
+                        .entry(layout.schema_id)
+                        .filter(|entry| entry.key() == layout.schema_key)
+                        .ok_or(MemoryPlanError::DescriptorMismatch)?;
+                    live::footprint_with_schema_check(
+                        value, descriptor, entry, observed, &mut check,
+                    )
                 },
             )?;
             Arc::new(self.plan_current(&facts)?)
@@ -582,10 +657,30 @@ impl NativeCollectionCall {
             .into_iter()
             .for_each(|transaction| transaction.commit());
         drop(arguments);
-        let mut candidate = output.clone();
+        let base = match self.template.contract() {
+            mech_core::ResolvedOperationContract::Declared(contract) => {
+                match contract.outputs[0].construction {
+                    mech_core::OutputConstruction::ReadModifyWrite { base_input, .. } => {
+                        Some(usize::from(base_input))
+                    }
+                    _ => None,
+                }
+            }
+            _ => return Err(NativeCollectionInvocationError::InvalidInput),
+        };
+        // RMW kernels receive their explicit base as fresh private candidate,
+        // never the previous visit's output. Other operands retain order.
+        let mut candidate = if let Some(base) = base {
+            inputs
+                .get(base)
+                .ok_or(NativeCollectionInvocationError::InvalidInput)?
+                .clone()
+        } else {
+            output.clone()
+        };
         let run = || {
             self.kernel.execute(
-                &Inputs(inputs),
+                &Inputs(inputs, base),
                 ResidentValueMut::Snapshot(core::slice::from_mut(&mut candidate)),
             )
         };
@@ -629,20 +724,10 @@ impl NativeCollectionCall {
     ) -> Result<TurnMemoryPlan, NativeCollectionInvocationError> {
         // Compose the actual NativeHost call and its actual allocation family,
         // rather than fabricating a detached test plan or changing a CPU label.
-        let node = self.template.origin().node();
-        let mut call = self.memory.clone();
-        for allocation in &mut call.allocations {
-            if let MemoryObjectOwner::NodeScratch { node: owner, .. } = &mut allocation.owner {
-                *owner = node;
-            }
-        }
-        let plan = ProgramMemoryPlan {
-            call_nodes: Box::new([node]),
-            allocations: call.allocations.clone(),
-            budget_limits: call.target.limits,
-            calls: Box::new([call]),
-            ..ProgramMemoryPlan::default()
-        };
-        Ok(plan_turn_memory(&plan, node, facts)?)
+        Ok(plan_single_call_turn_memory(
+            &self.memory,
+            self.template.origin().node(),
+            facts,
+        )?)
     }
 }

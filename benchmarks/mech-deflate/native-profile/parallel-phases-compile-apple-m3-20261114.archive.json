@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-parallel-phases-20261114.tar.gz",
+  "bytes": 36327248,
+  "evidence_files": 731,
+  "files": 731,
+  "format": 1,
+  "manifest_sha256": "2853677d9caa3713aba10587983448aa8c78f467ec16e545b89dd5d327ad1742",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "3cc0a35fd7f9451000c8c1f1b49691ee68dbebf439177c59e4537e03df3be70c",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parallel-phases-20261114.tar.gz",
+  "sha256": "e87d16ef4e691e7eb4271c60b1bff68ab3200dd8836a14de956653299fbcddc5",
+  "source_revision": "1090de011646c92e30c2d4b648ed0792c50f300d",
+  "uncompressed_bytes": 214165978,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "e87d16ef4e691e7eb4271c60b1bff68ab3200dd8836a14de956653299fbcddc5",
+    "source_revision": "1090de011646c92e30c2d4b648ed0792c50f300d",
+    "verified_bytes": 214165978,
+    "verified_files": 731
+  }
+}

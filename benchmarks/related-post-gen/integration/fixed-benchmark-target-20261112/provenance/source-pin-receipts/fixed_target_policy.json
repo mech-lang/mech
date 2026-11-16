@@ -1,0 +1,10 @@
+{
+  "created_utc": "2026-11-12T11:20:42.534765+00:00",
+  "user_scope": "Beat existing benchmark repository examples at a pinned revision. Do not continually optimize Rust alongside Mech or raise the completion target.",
+  "rust_policy": "No further Rust source/build optimization. Existing frozen custom controls retained as clearly labeled extra data.",
+  "completion_target": "Fastest eligible unchanged example from fixed benchmark repository revision; exact provenance audit underway.",
+  "metrics_policy": "Continuous postJSON preparation/freshworker/runjoin/cleanup/materialization preserved, exact results, independent confirmation. Wholeprocess visible nongate. All observations including negatives retained.",
+  "current_completed_cohort": "/private/tmp/mech-related-managed-parity-evidence-20261111/first-u16-host-mask-source-gains-v1/latency.json",
+  "current_resource_cohort": "/private/tmp/mech-related-managed-parity-evidence-20261111/new-managed-resources/resources-u16-host-mask-first/report.json",
+  "independent_confirmation": "Running all52frozencontrols; interpretation split explicitly by reference provenance."
+}

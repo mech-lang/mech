@@ -1,0 +1,290 @@
+{
+  "PGO": {
+    "control_binary_sha256": "8043d93d27b948371aee38027df898a9024e47a1ffa112b47a1913f8329e40ad",
+    "frontend_binary_sha256": "fff62585955d94a490d58daec4bd11a448f973cc4fe90fd46965f01aee296075",
+    "merged_profiles": 1,
+    "raw_profiles": 8,
+    "training": "Fixed eight programs includes earlier Deflate source; new243209-byte source was not in training. Profile-use resumed after interruption; full construction time unknown. Original-source broad qualification remains unrun; current source is qualified here."
+  },
+  "benchmark_source": {
+    "bytes": 243209,
+    "lines": 2719,
+    "sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299"
+  },
+  "complete_stream_golden_cases": 11,
+  "explicit_golden_calls": 22,
+  "final_executable": {
+    "bytes": 910936,
+    "sha256": "184270d7b476aaa0da3e03d0aedf6e6ec86cdb6e9cce7a65d2d5eaf19311a6d9"
+  },
+  "final_source_to_executable": {
+    "adverse_mean_fields": [
+      "native_recipe_seconds"
+    ],
+    "all_complete_outputs_and_images_exact": true,
+    "balanced_blocks": [
+      {
+        "candidate": 6.005680334055796,
+        "control": 6.321348979603499,
+        "reduction_fraction": 0.04993691165702785
+      },
+      {
+        "candidate": 6.049783749971539,
+        "control": 6.436852812767029,
+        "reduction_fraction": 0.060133278490967945
+      }
+    ],
+    "frontend_phase_means": {
+      "artifact": {
+        "candidate": 0.0046325,
+        "control": 0.004653177
+      },
+      "catalog": {
+        "candidate": 0.03312852075,
+        "control": 0.0331758745
+      },
+      "encode": {
+        "candidate": 0.001817969,
+        "control": 0.00204242725
+      },
+      "frontend": {
+        "candidate": 0.1470936145,
+        "control": 0.1471194585
+      },
+      "native": {
+        "candidate": 1.98e-07,
+        "control": 1.98e-07
+      },
+      "parse": {
+        "candidate": 2.32517203125,
+        "control": 2.67816785425
+      }
+    },
+    "full_build_reduction_fraction": 0.05508125045987544,
+    "means": {
+      "frontend_process_seconds": {
+        "candidate": 2.537634687847458,
+        "control": 2.89190651034005
+      },
+      "handoff_seconds": {
+        "candidate": 0.0004957083147019148,
+        "control": 0.0004983644466847181
+      },
+      "native_link_seconds": {
+        "candidate": 0.12877057306468487,
+        "control": 0.13620235456619412
+      },
+      "native_recipe_seconds": {
+        "candidate": 3.360831072786823,
+        "control": 3.3504936668323353
+      },
+      "source_to_executable_seconds": {
+        "candidate": 6.0277320420136675,
+        "control": 6.379100896185264
+      }
+    },
+    "native_command_means": {
+      "LLVM_assembler": {
+        "candidate": 0.05822706257458776,
+        "control": 0.058500020764768124
+      },
+      "LLVM_link_IR": {
+        "candidate": 0.10917322884779423,
+        "control": 0.10726268717553467
+      },
+      "LLVM_matcher_codegen": {
+        "candidate": 0.05669429188128561,
+        "control": 0.05739280267152935
+      },
+      "LLVM_opt_matcher": {
+        "candidate": 0.06778053136076778,
+        "control": 0.06691657251212746
+      },
+      "LLVM_opt_root": {
+        "candidate": 0.5066829483257607,
+        "control": 0.5042719274060801
+      },
+      "LLVM_root_codegen": {
+        "candidate": 0.6294678541598842,
+        "control": 0.6301317916950211
+      },
+      "LLVM_version": {
+        "candidate": 0.015385021222755313,
+        "control": 0.015381895937025547
+      },
+      "compact_emitter": {
+        "candidate": 1.426285635214299,
+        "control": 1.419605604140088
+      }
+    },
+    "observations": 8
+  },
+  "format": 1,
+  "historical_comparison": "The13.414825s result used the earlier164243-byte compressor source; it is not a same-input compiler-only comparison with this6s result.",
+  "new_source_previous_backend": {
+    "adverse_mean_fields": [
+      "object_handoff_seconds"
+    ],
+    "all_complete_outputs_and_images_exact": true,
+    "balanced_blocks": [
+      {
+        "candidate": 3.632651499239728,
+        "control": 3.9521338751073927,
+        "reduction_fraction": 0.08083794374475317
+      },
+      {
+        "candidate": 3.654323062626645,
+        "control": 4.060665229102597,
+        "reduction_fraction": 0.10006788138153233
+      }
+    ],
+    "full_build_reduction_fraction": 0.09058314490404018,
+    "means": {
+      "native_link_seconds": {
+        "candidate": 0.13275913521647453,
+        "control": 0.13550558337010443
+      },
+      "object_handoff_seconds": {
+        "candidate": 0.0006643333472311497,
+        "control": 0.0006546250078827143
+      },
+      "source_to_executable_seconds": {
+        "candidate": 3.6434872809331864,
+        "control": 4.006399552104995
+      },
+      "source_to_object_process_seconds": {
+        "candidate": 3.5100638123694807,
+        "control": 3.8702393437270075
+      }
+    },
+    "observations": 8
+  },
+  "object": {
+    "Roc_text_bytes": 57696,
+    "bytes": 140376,
+    "libdeflate_text_bytes": 41112,
+    "ratio_to_Roc": 0.9698419301164726,
+    "ratio_to_libdeflate": 1.3610624635143025,
+    "sha256": "a917aa339eb7291e0cbcb5fadedd2a4bf263df0db0ffe408f96310fa084b1f14",
+    "text_bytes": 55956
+  },
+  "parallel": {
+    "LLVM_definition_checks": {
+      "mech_compact_numeric_2821.ll": true,
+      "mech_compact_numeric_2821_vector.ll": true,
+      "mech_compact_numeric_3009.ll": true,
+      "mech_compact_numeric_3447.ll": true,
+      "mech_compact_numeric_3447_grouped.ll": true,
+      "mech_compact_numeric_362.ll": true,
+      "mech_compact_numeric_362_vector.ll": true,
+      "mech_compact_numeric_3872.ll": true,
+      "mech_compact_numeric_3956_vector.ll": true,
+      "mech_compact_numeric_4173.ll": true,
+      "mech_compact_numeric_4673_vector.ll": true,
+      "mech_compact_numeric_475_vector.ll": true,
+      "mech_compact_numeric_4799.ll": true,
+      "mech_compact_numeric_4879.ll": true,
+      "mech_compact_numeric_5895.ll": true,
+      "mech_compact_numeric_6633.ll": true,
+      "mech_compact_numeric_8026.ll": true
+    },
+    "checks": {
+      "prepared_Object": true,
+      "prepared_metadata": true,
+      "root_IR": true
+    },
+    "cleanup_and_machine_jobs": 0,
+    "decision": "All14 numeric phase families are selected for coordinator LLVM IR export. No eligible pool jobs remain. Two-worker request is compatible but supplies no parallel execution/speedup in this exact recipe; use default0 for final primary cohort.",
+    "predeclared_nonzero_job_gate_passed": false,
+    "submitted_jobs": 0,
+    "workers": 2
+  },
+  "pilot_seconds": 5.899092167150229,
+  "prior_runtime_serial_cohort": {
+    "adverse_mean_fields": [
+      "handoff_seconds"
+    ],
+    "all_complete_outputs_and_images_exact": true,
+    "balanced_blocks": [
+      {
+        "candidate": 5.9996622919570655,
+        "control": 6.321084270719439,
+        "reduction_fraction": 0.05084918425328799
+      },
+      {
+        "candidate": 6.082417958416045,
+        "control": 6.476031478960067,
+        "reduction_fraction": 0.060780050532927565
+      }
+    ],
+    "full_build_reduction_fraction": 0.055874738753090014,
+    "means": {
+      "frontend_process_seconds": {
+        "candidate": 2.5421008544508368,
+        "control": 2.884261885541491
+      },
+      "handoff_seconds": {
+        "candidate": 0.0004946560366079211,
+        "control": 0.0004883956862613559
+      },
+      "native_link_seconds": {
+        "candidate": 0.13585746893659234,
+        "control": 0.13694364577531815
+      },
+      "native_recipe_seconds": {
+        "candidate": 3.362587145762518,
+        "control": 3.376863947836682
+      },
+      "source_to_executable_seconds": {
+        "candidate": 6.041040125186555,
+        "control": 6.398557874839753
+      }
+    },
+    "observations": 8
+  },
+  "published_runtime_evidence": {
+    "Roc_wins": [
+      81,
+      81
+    ],
+    "all_105_gates": [
+      false,
+      false
+    ],
+    "existing_mech_control_regressions_over5percent_in_both_orders": [
+      "random-32769",
+      "reymont-prefix-32769",
+      "heldout-window-32767",
+      "heldout-window-32768",
+      "heldout-slides-65537",
+      "prefix-natural-32767",
+      "prefix-natural-32768",
+      "prefix-natural-32769",
+      "prefix-natural-33027",
+      "prefix-natural-65535",
+      "prefix-natural-65536",
+      "prefix-natural-65537",
+      "prefix-natural-131072",
+      "prefix-natural-262144",
+      "prefix-natural-1048576",
+      "prefix-random-4096",
+      "prefix-random-8192",
+      "prefix-random-16384"
+    ],
+    "fresh_comparator_campaign_claimed": false,
+    "libdeflate_wins": [
+      62,
+      62
+    ],
+    "machine": "Apple M1",
+    "next_libdeflate_target": 63
+  },
+  "retained": "Merge b2729eb666 compiler with compile-speed changes and exact six-file parser snapshot; preserve supplied runtime. Parser improvement is qualified on identical current source; no grammar change. No parallel speedup is claimed for zero eligible worker jobs.",
+  "scope": "Single interval from fresh .mec source-file compiler invocation through canonical bytecode, fresh prepared Object and LLVM IR, all LLVM optimization/codegen/assembly/composition and final executable linker wait. Fixed runtime/entry adapter cached; compiler construction excluded. Final recipe metadata comes from checked recorded machine facts after fresh prepared metadata and Object identity verification. Exact fixed diagnostic benchmark recipe, not ordinary production compiler timing.",
+  "source_commit": "4e8fd9351a9e6219c5cf2150a08f97f70362e815",
+  "tests": {
+    "compiler": 6,
+    "parser": 529,
+    "runtime": 17
+  }
+}

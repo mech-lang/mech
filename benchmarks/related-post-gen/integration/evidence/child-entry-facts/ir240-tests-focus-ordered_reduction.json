@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-child-entry-facts-integration-tests-20261107-v1/mech_gpu-tests",
+    "ordered_reduction",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 24.708710874896497
+}

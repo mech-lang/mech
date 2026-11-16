@@ -1,0 +1,216 @@
+{
+  "schema": "mech.related-post-gen.canonical-boolean-experiments.v1",
+  "status": "unselected_no_clear_processing_gain",
+  "identity_direct": "IR232/work115/ABI41/image9",
+  "identity_narrow": "IR233/work115/ABI41/image9",
+  "source_unchanged": true,
+  "workers": 4,
+  "continuous_post_json": true,
+  "full_fresh_process": true,
+  "matched_reference": {
+    "variant": "rust-mech-control-u8-ids-u32",
+    "median_seconds": 0.001634667,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32"
+    ]
+  },
+  "whole_reference": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.024751458084210753,
+    "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+  },
+  "latest_latency": {
+    "mech-parent-4": {
+      "median_seconds": 0.002794583,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "current_IR231_parent",
+      "median_processing_plus_admission_seconds": 0.0029545409999999998,
+      "median_whole_process_seconds": 0.03839170793071389,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002961916,
+      "over_fastest": 1.70957326476891,
+      "over_rust": 0.31694345610874625,
+      "whole_process_over_fastest": 1.5510887399075861,
+      "processing_plus_admission_over_fastest": 1.8074268337220973,
+      "processing_plus_admission_over_rust": 0.3350848537169915,
+      "post_json_over_fastest_matched_native": 1.811938455966873
+    },
+    "mech-after-4": {
+      "median_seconds": 0.002799083,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "canonical_Boolean_literal_branches_IR232",
+      "median_processing_plus_admission_seconds": 0.002955083,
+      "median_whole_process_seconds": 0.037269792053848505,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002962959,
+      "over_fastest": 1.7123261190199595,
+      "over_rust": 0.31745381688618224,
+      "whole_process_over_fastest": 1.5057614758309266,
+      "processing_plus_admission_over_fastest": 1.8077583997230016,
+      "processing_plus_admission_over_rust": 0.33514632383729603,
+      "post_json_over_fastest_matched_native": 1.812576506407727
+    },
+    "mech-width-4": {
+      "median_seconds": 0.002789583,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "canonical_Boolean_I8_condition_IR233",
+      "median_processing_plus_admission_seconds": 0.002946583,
+      "median_whole_process_seconds": 0.03747954103164375,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002954208,
+      "over_fastest": 1.7065145378232998,
+      "over_rust": 0.3163763885782619,
+      "whole_process_over_fastest": 1.5142356827678118,
+      "processing_plus_admission_over_fastest": 1.8025585639154642,
+      "processing_plus_admission_over_rust": 0.3341823090354725,
+      "post_json_over_fastest_matched_native": 1.8072231225075197
+    }
+  },
+  "paired": {
+    "mech-after-4": {
+      "mech-parent-4": {
+        "post_json_seconds": {
+          "wins": 14,
+          "losses": 17,
+          "median_delta_ms": 0.008041999999999772
+        },
+        "wall_seconds": {
+          "wins": 21,
+          "losses": 10,
+          "median_delta_ms": -1.5050822403281927
+        }
+      },
+      "mech-before-4": {
+        "post_json_seconds": {
+          "wins": 31,
+          "losses": 0,
+          "median_delta_ms": -0.2522080000000003
+        },
+        "wall_seconds": {
+          "wins": 24,
+          "losses": 7,
+          "median_delta_ms": -1.004124991595745
+        }
+      }
+    },
+    "mech-width-4": {
+      "mech-parent-4": {
+        "post_json_seconds": {
+          "wins": 17,
+          "losses": 14,
+          "median_delta_ms": -0.002750000000000148
+        },
+        "wall_seconds": {
+          "wins": 23,
+          "losses": 8,
+          "median_delta_ms": -1.1150010395795107
+        }
+      },
+      "mech-before-4": {
+        "post_json_seconds": {
+          "wins": 31,
+          "losses": 0,
+          "median_delta_ms": -0.26704200000000033
+        },
+        "wall_seconds": {
+          "wins": 24,
+          "losses": 7,
+          "median_delta_ms": -1.0089999996125698
+        }
+      }
+    }
+  },
+  "resource_rows": {
+    "mech-parent-4-instrumented": {
+      "instructions": 57115570,
+      "cycles": 15499310,
+      "allocations": 3858,
+      "requested_bytes": 8044006,
+      "peak_live": 13616161,
+      "whole_instructions": 353216120,
+      "restore_instructions": 136300998
+    },
+    "mech-after-4-instrumented": {
+      "instructions": 57672075,
+      "cycles": 15748505,
+      "allocations": 3858,
+      "requested_bytes": 8044006,
+      "peak_live": 13616155,
+      "whole_instructions": 354277245,
+      "restore_instructions": 136282673
+    },
+    "mech-width-4-instrumented": {
+      "instructions": 59008497,
+      "cycles": 15628754,
+      "allocations": 3858,
+      "requested_bytes": 8044006,
+      "peak_live": 13616151,
+      "whole_instructions": 354671434,
+      "restore_instructions": 135803735
+    },
+    "rust-mech-control-u8-ids-u32-instrumented": {
+      "instructions": 19226397,
+      "cycles": 6273554,
+      "allocations": 58,
+      "requested_bytes": 6825713,
+      "peak_live": 7663209,
+      "whole_instructions": 167415267,
+      "restore_instructions": null
+    },
+    "rust-mech-control-u32-casts-instrumented": {
+      "instructions": 19304315,
+      "cycles": 6316734,
+      "allocations": 57,
+      "requested_bytes": 6803175,
+      "peak_live": 7640671,
+      "whole_instructions": 167302342,
+      "restore_instructions": null
+    }
+  },
+  "selected": false,
+  "goal_complete": false,
+  "qualification": {
+    "IR232_gpu_passed": 843,
+    "IR232_inherited_gpu_failures": 2,
+    "IR232_scalar_control_rows_exact_IR231": 128,
+    "IR232_compression_rows_exact_IR231": 5,
+    "IR233_targeted_checks_pass": true,
+    "IR233_full_gpu_and_compression_controls_not_run": true
+  },
+  "profiles": {
+    "identity": "IR232",
+    "fresh_invocations_exact": 1000,
+    "raw_records": 4148,
+    "limitations": "Statistical sampled PC positions, not CPU-time shares. No IR232 mapping is applied to changed IR233 code."
+  },
+  "exact_outputs": {
+    "first_latency": 248,
+    "first_resources": 63,
+    "latest_latency": 279,
+    "latest_resources": 70
+  },
+  "native_code": {
+    "IR231": {
+      "program_bytes": 908464,
+      "query_bytes": 28448,
+      "query_stack_bytes": 528
+    },
+    "IR232": {
+      "program_bytes": 911812,
+      "query_bytes": 28316,
+      "query_stack_bytes": 544
+    },
+    "IR233": {
+      "program_bytes": 928848,
+      "query_bytes": 29712,
+      "query_stack_bytes": 528
+    }
+  }
+}

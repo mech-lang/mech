@@ -58,8 +58,8 @@ fn u64_(schema: &Schema) -> bool {
     *schema == Schema::UnsignedInteger(IntegerWidth::W64)
 }
 // The initial mixed-state family extends the existing fixed U64 state layout:
-// one map per active arm, with up to 31 scalar U64 fields. Record labels,
-// multiple independent maps and nested variable-size payloads need their own
+// one map per active arm, with up to 31 scalar U64 fields. Record fields use
+// their selected schema order. Multiple maps and nested variable-size payloads need their own
 // owner/layout proof and keep the canonical route until that exists.
 fn payload(schema: &Schema) -> bool {
     map(schema)
@@ -67,6 +67,10 @@ fn payload(schema: &Schema) -> bool {
         if !items.is_empty() && items.len() <= 32
         && items.iter().filter(|item| map(item)).count() == 1
         && items.iter().all(|item| map(item) || u64_(item)))
+        || matches!(schema, Schema::Record(fields)
+        if !fields.is_empty() && fields.len() <= 32
+        && fields.iter().filter(|field| map(&field.schema)).count() == 1
+        && fields.iter().all(|field| map(&field.schema) || u64_(&field.schema)))
 }
 fn shape(schema: &Schema) -> bool {
     payload(schema)
@@ -116,7 +120,18 @@ pub(in crate::native_artifact) fn derive(
     facts: &crate::native_artifact::NativeProgramFacts<'_>,
 ) -> Result<Box<[NativeMapOwnerRegion]>, &'static str> {
     plan.validate_current_visits()?;
-    let writes = plan.map_write_uses()?;
+    let writes = match plan.map_write_uses() {
+        Ok(writes) => writes,
+        // This optional owner cannot be selected without a complete alias
+        // proof. Exhausting its bounded analysis preserves canonical storage;
+        // malformed visits and semantic inventories remain strict errors.
+        Err(
+            "native map alias schema depth"
+            | "native map alias field limit"
+            | "native map alias graph limit",
+        ) => return Ok(Box::new([])),
+        Err(error) => return Err(error),
+    };
     let actions = facts.actions()?;
     let uses = facts.fusion_reads()?;
     let mut regions = Vec::new();
@@ -148,9 +163,11 @@ fn select(
             && shape(ty.definition().body())
     };
     if !eligible(tail.carrier())
-        || !map(plan.values()[tail.returned().get() as usize]
-            .definition()
-            .body())
+        || !payload(
+            plan.values()[tail.returned().get() as usize]
+                .definition()
+                .body(),
+        )
         || !shape(
             plan.values()[tail.seed().get() as usize]
                 .definition()
@@ -190,7 +207,11 @@ fn select(
                 } if template.primitive() == Primitive::MapInsert && operands.len() == 3 => {
                     known[operands[0].get() as usize]
                 }
-                _ => pack(action, &known),
+                _ => {
+                    super::record_projection::constant_field(plan, action)
+                        .is_some_and(|(source, _, _)| known[source.get() as usize])
+                        || pack(action, &known)
+                }
             };
             if derived {
                 known[out.get() as usize] = true;
@@ -282,6 +303,16 @@ fn select(
                 operands,
                 output,
             } => {
+                if let Some((source, _, out)) =
+                    super::record_projection::constant_field(plan, action)
+                {
+                    if known[source.get() as usize]
+                        && (known[out.get() as usize]
+                            || u64_(plan.values()[out.get() as usize].definition().body()))
+                    {
+                        continue;
+                    }
+                }
                 match template.primitive() {
                     Primitive::MapInsert
                         if operands.len() == 3

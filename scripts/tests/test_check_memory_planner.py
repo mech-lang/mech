@@ -289,6 +289,38 @@ class MemoryPlannerCheckerTests(unittest.TestCase):
         )
         self.assert_failure(root, "deferred budget closure")
 
+    def test_shared_turn_derivation_cannot_drop_the_current_budget(self):
+        root = self.fixture()
+        path = "src/engine/src/memory_planner/turn.rs"
+        source = (root / path).read_text()
+        start = source.index("fn derive_turn_memory(")
+        prefix, body = source[:start], source[start:]
+        self.assertIn("plan.budget_limits,", body)
+        self.write(root, path, prefix + body.replace("plan.budget_limits,", "Default::default(),", 1))
+        self.assert_failure(root, "derive_turn_memory plan.budget_limits")
+
+    def test_single_call_projection_cannot_replace_the_current_limits(self):
+        root = self.fixture()
+        self.replace(
+            root,
+            "src/engine/src/memory_planner/turn.rs",
+            "budget_limits: call.target.limits,",
+            "budget_limits: Default::default(),",
+        )
+        self.assert_failure(root, "plan_single_call_turn_memory call.target.limits")
+
+    def test_each_turn_projection_must_reach_the_shared_derivation(self):
+        for entry in ("plan_turn_memory", "plan_single_call_turn_memory"):
+            with self.subTest(entry=entry):
+                root = self.fixture()
+                path = "src/engine/src/memory_planner/turn.rs"
+                source = (root / path).read_text()
+                start = source.index(f"fn {entry}(")
+                prefix, body = source[:start], source[start:]
+                self.assertIn("derive_turn_memory(", body)
+                self.write(root, path, prefix + body.replace("derive_turn_memory(", "skip_turn_derivation(", 1))
+                self.assert_failure(root, f"deferred budget closure: {entry}")
+
     def test_call_and_aggregate_budget_scopes_cannot_be_collapsed(self):
         for helper in (
             "evaluate_call_memory_budget",

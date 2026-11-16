@@ -1,0 +1,8 @@
++> map
++> sequence
+intern(words<[string]>, at<u64>, end<u64>, index<{string:u64}>, divisor<u64>) => (out<{string:u64}>) :=
+  more := at < end
+  next := (more? | true => map/insert(index, words[at + 1u64], (at + 1u64) / divisor) | false => index)
+  out := (more? | true => intern(words, at + 1u64, end, next, divisor) | false => index).
+answer := intern(words<[string]>, 0u64, steps<u64>, initial<{string:u64}>, divisor<u64>)
+(answer, initial, words)

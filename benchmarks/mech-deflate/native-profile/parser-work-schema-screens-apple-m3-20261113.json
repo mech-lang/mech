@@ -1,0 +1,57 @@
+{
+  "base_plus_operator_frame_pops": 129365126,
+  "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+  "decisions": {
+    "context": "rejected",
+    "projection": "rejected"
+  },
+  "frame_pops_per_source_byte": 804.2244105012527,
+  "frontend_screens": {
+    "context-frontend": {
+      "frontend_seconds": 8.793865459,
+      "instructions": 195867227013,
+      "max_rss_bytes": 7386316800
+    },
+    "frontend-control": {
+      "frontend_seconds": 8.684951416,
+      "instructions": 195595410458,
+      "max_rss_bytes": 7474184192
+    },
+    "projection-frontend": {
+      "frontend_seconds": 8.804593542,
+      "instructions": 199047472661,
+      "max_rss_bytes": 7487520768
+    }
+  },
+  "output_control": {
+    "events_emitted": 434637,
+    "new_node_count": 92316,
+    "parser_steps": 1967640,
+    "recovery_bytes": 0,
+    "structural_hash": 18114857307178478401
+  },
+  "parser_counts": {
+    "base_frames": 92975818,
+    "checkpoints": 42639485,
+    "journal_page_mutations": 13289669,
+    "literal_cache_probes": 19941589,
+    "operator_frames": 36389308,
+    "rewinds": 35397697
+  },
+  "production_parser": "47a500d758d1273dbd8ab73f6b61d25ae7bdca7f",
+  "scope": [
+    "Parser counter elapsed is unqualified because instrumentation and concurrent compiler bootstrap were present.",
+    "Counters are nested; only base and operator frame pop counts are summed.",
+    "Frontend screens are single separate observations, not balanced cohorts.",
+    "All implementation edits were reverted after the screens; no runtime improvement is claimed.",
+    "No full native candidate qualification was run after rejection."
+  ],
+  "source_and_bytecode_identical": true,
+  "source_base": "ab679dafdeb64ed5904f1addc3a2390cd261b8ee",
+  "source_bytes": 160857,
+  "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+  "validation": {
+    "core_tests": 192,
+    "retainer_differential_tests": 2
+  }
+}

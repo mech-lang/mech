@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-ssa-batch-seal-20261114.tar.gz",
+  "bytes": 13234844,
+  "evidence_files": 421,
+  "files": 421,
+  "format": 1,
+  "manifest_sha256": "8bac0485d9751e0b543e68e52eb25598331a89f6b373138c95db5eb5bb76b1a7",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "92fa2f17d915a45c02cc3845c3a73aea21397ab965327db908bf6c5e85029add",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-batch-seal-20261114.tar.gz",
+  "sha256": "4c945c812a9c68e11d9418b87f4dea3c34bb9f6f16030cfb75fd2a9d6e970ba4",
+  "source_revision": "8dc06bea88ec709ca5f690013811d710ee3024d3",
+  "uncompressed_bytes": 91528984,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "4c945c812a9c68e11d9418b87f4dea3c34bb9f6f16030cfb75fd2a9d6e970ba4",
+    "source_revision": "8dc06bea88ec709ca5f690013811d710ee3024d3",
+    "verified_bytes": 91528984,
+    "verified_files": 421
+  }
+}

@@ -119,9 +119,17 @@ pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
         canonical,
         bind_symmetric_difference,
     )?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_set_membership(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     {
         builder.insert_resident_factory(["set"], "element-of", no_scratch, bind_element_of)?;
         builder.insert_resident_factory(

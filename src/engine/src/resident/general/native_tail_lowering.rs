@@ -1,4 +1,4 @@
-//! Metadata-only native lowering of exact synchronous tail transitions and
+//! Metadata-only native lowering of synchronous transitions, ordinary tail calls and
 //! schema-directed structural observations. No source or resident evaluator.
 use super::native_match_lowering::{Builder, Error, unsupported};
 use crate::{
@@ -14,28 +14,73 @@ use std::collections::BTreeMap;
 
 type ControlPattern = CollectionPattern<mech_core::SchemaId, crate::MatchPatternValue>;
 
-pub(super) fn has_direct_recur(declaration: &MatchDeclaration) -> bool {
-    declaration.arms.iter().any(|arm| {
-        arm.body
-            .operations
-            .iter()
-            .any(|op| matches!(op.body, ControlOperationBody::Recur(_)))
-    })
+pub(super) fn irrefutable_pattern(pattern: &ControlPattern) -> bool {
+    match pattern {
+        CollectionPattern::Wildcard | CollectionPattern::Bind { .. } => true,
+        CollectionPattern::Tuple(items) => items.iter().all(irrefutable_pattern),
+        _ => false,
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(super) struct TailTarget {
+    pub next: NativeMatchValue,
+    pub latch: u32,
+    pub ancestor: u8,
+}
+impl TailTarget {
+    pub fn nested(self) -> Result<Self, Error> {
+        Ok(Self {
+            ancestor: self
+                .ancestor
+                .checked_add(1)
+                .ok_or(Error::UnsupportedProgram {
+                    feature: "native tail target depth",
+                })?,
+            ..self
+        })
+    }
+}
+
+/// Find calls to THIS lexical Match, including calls below child matches.
+/// A child function's own recursion has a different ancestor and is not an
+/// invitation to turn its caller into a loop.
+pub(super) fn has_own_recur(declaration: &MatchDeclaration) -> bool {
+    fn selected(declaration: &MatchDeclaration, ancestor: u8) -> bool {
+        declaration.arms.iter().any(|arm| {
+            arm.guard
+                .iter()
+                .chain(core::iter::once(&arm.body))
+                .any(|block| {
+                    block.operations.iter().any(|op| match &op.body {
+                        ControlOperationBody::Recur(actual) => *actual == ancestor,
+                        ControlOperationBody::Match(child) => ancestor
+                            .checked_add(1)
+                            .is_some_and(|ancestor| selected(child, ancestor)),
+                        _ => false,
+                    })
+                })
+        })
+    }
+    selected(declaration, 0)
 }
 
 /// Only the exact last operation and exact selected local result may be
 /// replaced by a backedge. An unused/observable operation after recursion, a
-/// different yield, nonzero lexical ancestor or nested Recur stays unsupported.
+/// different yield or a different lexical target stays unsupported.
 /// This prefix is a compiler view of unchanged canonical operation identities;
 /// leaf selection still rederives each site from the original artifact.
-pub(super) fn tail_prefix(block: &ControlBlock) -> Result<Option<ControlBlock>, Error> {
+pub(super) fn tail_prefix(
+    block: &ControlBlock,
+    expected_ancestor: u8,
+) -> Result<Option<ControlBlock>, Error> {
     let Some(last) = block.operations.last() else {
         return Ok(None);
     };
     let ControlOperationBody::Recur(ancestor) = &last.body else {
         return Ok(None);
     };
-    if *ancestor != 0
+    if *ancestor != expected_ancestor
         || last.inputs.len() != 1
         || block.yield_value
             != (ControlValue::Local {
@@ -122,31 +167,31 @@ impl Builder<'_> {
         let seed = *arguments
             .get(declaration.scrutinee as usize)
             .ok_or(Error::InvalidBinding { node: Some(owner) })?;
-        // This first closed synchronous lowering carries nominal enum state.
-        // General non-tail recursion, suspension and publication remain closed.
-        let SchemaBody::Enum { variants, .. } = self.ty(seed).definition().body() else {
-            return Err(unsupported(owner, "non-enum native tail state"));
-        };
         // A sticky/partial Match is not silently turned into a stateless
-        // failure. The closed subset proves every exact enum state has an
-        // unguarded irrefutable payload arm, independently of source notes.
-        fn irrefutable(pattern: &ControlPattern) -> bool {
-            match pattern {
-                CollectionPattern::Wildcard | CollectionPattern::Bind { .. } => true,
-                CollectionPattern::Tuple(items) => items.iter().all(irrefutable),
+        // failure. Prove each enum state or an ordinary argument value has an
+        // unguarded irrefutable arm, independently of descriptive source notes.
+        let total = match self.ty(seed).definition().body() {
+            SchemaBody::Enum { variants, .. } => (0..variants.len()).all(|ordinal|
+                declaration.arms.iter().any(|arm| arm.guard.is_none() && matches!(&arm.pattern,
+                    crate::MatchPattern::Structural(CollectionPattern::Enum { ordinal: actual, payload })
+                        if *actual as usize == ordinal && payload.as_deref().is_none_or(irrefutable_pattern)))),
+            // Ordinary tail-recursive functions carry their actual argument
+            // tuple/scalar. An unguarded irrefutable arm proves the same total
+            // match contract without manufacturing a nominal enum in source.
+            _ => declaration.arms.iter().any(|arm| arm.guard.is_none() && match &arm.pattern {
+                crate::MatchPattern::Wildcard | crate::MatchPattern::Bind => true,
+                crate::MatchPattern::Structural(pattern) => irrefutable_pattern(pattern),
                 _ => false,
-            }
-        }
-        if (0..variants.len()).any(|ordinal| !declaration.arms.iter().any(|arm| {
-            arm.guard.is_none() && matches!(&arm.pattern,
-                crate::MatchPattern::Structural(CollectionPattern::Enum { ordinal: actual, payload })
-                    if *actual as usize == ordinal
-                        && payload.as_deref().is_none_or(irrefutable))
-        })) {
-            return Err(unsupported(owner, "native tail Match is not structurally total"));
+            }),
+        };
+        if !total {
+            return Err(unsupported(
+                owner,
+                "native tail Match is not structurally total",
+            ));
         }
         for arm in &declaration.arms {
-            let _ = tail_prefix(&arm.body)?;
+            let _ = tail_prefix(&arm.body, 0)?;
         }
         let id = u32::try_from(self.iterations.len())
             .map_err(|_| Error::InvalidBinding { node: Some(owner) })?;
@@ -168,8 +213,17 @@ impl Builder<'_> {
             self.blocks[latch as usize].action = NativeIterationAction::Latch { iteration: id };
             let mut args = arguments.to_vec();
             args[declaration.scrutinee as usize] = carrier;
-            let (body, finish) =
-                self.matched_body(at, declaration, &args, returned, Some((next, latch)))?;
+            let (body, finish) = self.matched_body(
+                at,
+                declaration,
+                &args,
+                returned,
+                Some(TailTarget {
+                    next,
+                    latch,
+                    ancestor: 0,
+                }),
+            )?;
             self.blocks[header as usize].terminator = NativeIterationTerminator::TailHeader {
                 iteration: id,
                 body,
@@ -252,9 +306,10 @@ impl Builder<'_> {
             CollectionPattern::Wildcard => {}
             CollectionPattern::Bind { local, schema } => {
                 let ty = self.type_for_schema(*schema)?;
-                if ty.definition().body() != body
-                    || !ty.definition().dimension_parameters().is_empty()
-                {
+                if !crate::native_artifact::structural_values::carrier_component_matches(
+                    ty.definition().body(),
+                    body,
+                ) {
                     return Err(unsupported(owner, "incompatible structural native binding"));
                 }
                 if *body != SchemaBody::UnsignedInteger(IntegerWidth::W64)
@@ -308,6 +363,40 @@ impl Builder<'_> {
                     )?;
                     path.pop();
                 }
+            }
+            CollectionPattern::Equal(value) => {
+                let peer = match value {
+                    crate::MatchPatternValue::Literal(id) => self.constants.get(id),
+                    crate::MatchPatternValue::Binding(local) => bindings.get(local),
+                    crate::MatchPatternValue::Input(_) => None,
+                }
+                .copied()
+                .ok_or_else(|| unsupported(owner, "native structural equality source"))?;
+                if self.ty(peer).scalar().is_none() || self.ty(peer).definition().body() != body {
+                    return Err(unsupported(owner, "native non-scalar structural equality"));
+                }
+                let projected = self.value(self.ty(peer).clone())?;
+                let select = self.block(at, NativeMatchAction::None)?;
+                self.blocks[select as usize].action = NativeIterationAction::Structural {
+                    source,
+                    path: path.clone().into(),
+                    observation: if *body == SchemaBody::UnsignedInteger(IntegerWidth::W64) {
+                        NativeStructuralObservation::U64
+                    } else {
+                        NativeStructuralObservation::CanonicalValue
+                    },
+                    output: projected,
+                };
+                self.link(tail, select);
+                let success = self.block(at, NativeMatchAction::None)?;
+                self.blocks[select as usize].terminator = NativeMatchTerminator::LiteralBranch {
+                    left: projected,
+                    right: peer,
+                    yes: success,
+                    no: failed,
+                }
+                .into();
+                tail = success;
             }
             CollectionPattern::Enum { ordinal, payload } => {
                 let SchemaBody::Enum { variants, .. } = body else {
@@ -389,7 +478,7 @@ mod tests {
     #[test]
     fn exact_final_recur_prefix_preserves_the_real_canonical_argument() {
         let block = terminal();
-        let prefix = tail_prefix(&block).unwrap().unwrap();
+        let prefix = tail_prefix(&block, 0).unwrap().unwrap();
         assert_eq!(prefix.id, block.id);
         assert!(prefix.operations.is_empty());
         assert_eq!(prefix.yield_value, block.operations[0].inputs[0]);
@@ -400,13 +489,16 @@ mod tests {
     fn recur_cannot_discard_a_different_selected_result_or_call_a_foreign_ancestor() {
         let mut wrong_yield = terminal();
         wrong_yield.yield_value = ControlValue::Constant(ConstantId::new(0));
-        assert!(tail_prefix(&wrong_yield).is_err());
+        assert!(tail_prefix(&wrong_yield, 0).is_err());
         let mut foreign = terminal();
         foreign.operations[0].body = ControlOperationBody::Recur(1);
-        assert!(tail_prefix(&foreign).is_err());
+        assert!(tail_prefix(&foreign, 0).is_err());
+        let nested = tail_prefix(&foreign, 1).unwrap().unwrap();
+        assert_eq!(nested.yield_value, foreign.operations[0].inputs[0]);
+        assert!(tail_prefix(&foreign, 2).is_err());
         let mut malformed = terminal();
         malformed.operations[0].inputs = Box::new([]);
-        assert!(tail_prefix(&malformed).is_err());
+        assert!(tail_prefix(&malformed, 0).is_err());
     }
 
     #[test]
@@ -419,6 +511,6 @@ mod tests {
             block: block.id,
             node: 1,
         };
-        assert!(tail_prefix(&block).is_err());
+        assert!(tail_prefix(&block, 0).is_err());
     }
 }

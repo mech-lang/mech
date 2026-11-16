@@ -1,0 +1,21 @@
+{
+  "checked_at_utc": "2026-11-07T03:13:05.974782+00:00",
+  "then_cohort": "comparison-sorted-combinadic-source-combination-confirmation-20261105-5000-m3.json",
+  "then_variant": "mech-selected-4",
+  "now_cohort": "comparison-native-canonical-schema-sinks-randomized-20261107-5000-m3.json",
+  "now_variant": "mech-ir238-original-4",
+  "then_resource_cohort": "comparison-sorted-combinadic-source-combination-resources-20261105-5000-m3.json",
+  "then_resource_variant": "mech-selected-4-instrumented",
+  "now_resource_cohort": "comparison-native-canonical-schema-sinks-resources-20261107-5000-m3.json",
+  "now_resource_variant": "mech-ir238-original-4-instrumented",
+  "comparison_is_separate_cohort_trend_not_paired_causal_measurement": true,
+  "then_processing_ms": 3.327833,
+  "now_processing_ms": 2.93425,
+  "then_processing_over_fastest_rust": 2.0534789023456375,
+  "now_processing_over_fastest_rust": 1.828288825083678,
+  "then_whole_process_ms": 46.02520796470344,
+  "now_whole_process_ms": 36.674708128,
+  "then_whole_over_fastest_rust": 1.687220901007956,
+  "now_whole_over_fastest_rust": 1.4902486,
+  "goal_complete": false
+}

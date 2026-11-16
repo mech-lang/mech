@@ -1,0 +1,40 @@
+// BlockOut.flush_block cost calculation, pinned at
+// 671077457ff7ef3a3d44caf715a3fc595addf379, lines 503–569.
+// Include deflate-huffman-level12.mec and deflate-header.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<block-costs> := <{dynamic<u64> fixed<u64> stored<u64> kind<u64>}>
+block-cost-literals(freqs<[u32]>, lens<[u8]>, sym<u64>, end<u64>, fixed-width<u64>, dynamic<u64>, fixed<u64>) => (out<(u64,u64)>) :=
+  more := sym < end
+  freq := (more? | true => huff-word(huff-get32(freqs, sym)) | false => 0u64)
+  width<u64> := (more? | true => huff-get8(lens, sym) | false => 0u8)
+  out := (more? | true => block-cost-literals(freqs, lens, sym + 1u64, end, fixed-width, dynamic + freq * width, fixed + freq * fixed-width) | false => (dynamic, fixed)).
+block-cost-lengths(freqs<[u32]>, lens<[u8]>, fixed-lens<[u8]>, extras<[u8]>, slot<u64>, dynamic<u64>, fixed<u64>) => (out<(u64,u64)>) :=
+  more := slot < 29u64
+  symbol := 257u64 + slot
+  freq := (more? | true => huff-word(huff-get32(freqs, symbol)) | false => 0u64)
+  extra<u64> := (more? | true => huff-get8(extras, slot) | false => 0u8)
+  width<u64> := (more? | true => huff-get8(lens, symbol) | false => 0u8)
+  fixed-width<u64> := (more? | true => huff-get8(fixed-lens, symbol) | false => 0u8)
+  out := (more? | true => block-cost-lengths(freqs, lens, fixed-lens, extras, slot + 1u64, dynamic + freq * (extra + width), fixed + freq * (extra + fixed-width)) | false => (dynamic, fixed)).
+block-cost-offsets(freqs<[u32]>, lens<[u8]>, extras<[u8]>, slot<u64>, dynamic<u64>, fixed<u64>) => (out<(u64,u64)>) :=
+  more := slot < 30u64
+  freq := (more? | true => huff-word(huff-get32(freqs, slot)) | false => 0u64)
+  extra<u64> := (more? | true => huff-get8(extras, slot) | false => 0u8)
+  width<u64> := (more? | true => huff-get8(lens, slot) | false => 0u8)
+  out := (more? | true => block-cost-offsets(freqs, lens, extras, slot + 1u64, dynamic + freq * (extra + width), fixed + freq * (extra + 5u64)) | false => (dynamic, fixed)).
+block-choose-kind(dynamic<u64>, fixed<u64>, stored<u64>) => (out<u64>) :=
+  best := huff-minimum(huff-minimum(dynamic, fixed), stored)
+  out := ((best == stored)? | true => 0u64 | false => ((best == fixed)? | true => 1u64 | false => 2u64)).
+block-compute-costs(precode<block-precode>, freqs-litlen<[u32]>, freqs-offset<[u32]>, litlen-lens<[u8]>, offset-lens<[u8]>, fixed-litlen-lens<[u8]>, extra-precode<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, block-length<u64>, bitcount<u64>) => (out<block-costs>) :=
+  dynamic0 := 3u64 + 5u64 + 5u64 + 4u64 + 3u64 * precode.num-explicit-lens
+  dynamic1 := optimal-true-cost-extra(precode.freqs, precode.lens, extra-precode, 0u64, 0u64, 19u64, dynamic0)
+  (dynamic2, fixed2) := block-cost-literals(freqs-litlen, litlen-lens, 0u64, 144u64, 8u64, dynamic1, 3u64)
+  (dynamic3, fixed3) := block-cost-literals(freqs-litlen, litlen-lens, 144u64, 256u64, 9u64, dynamic2, fixed2)
+  eob<u64> := huff-get8(litlen-lens, 256u64)
+  dynamic4 := dynamic3 + eob
+  fixed4 := fixed3 + 7u64
+  (dynamic5, fixed5) := block-cost-lengths(freqs-litlen, litlen-lens, fixed-litlen-lens, extra-lengths, 0u64, dynamic4, fixed4)
+  (dynamic, fixed) := block-cost-offsets(freqs-offset, offset-lens, extra-offsets, 0u64, dynamic5, fixed5)
+  blocks := (block-length + 65534u64) / 65535u64
+  stored := 3u64 + bits/and(bits/wrapping-sub(0u64, bitcount + 3u64), 7u64) + 32u64 + 40u64 * (blocks - 1u64) + 8u64 * block-length
+  out := {dynamic: dynamic, fixed: fixed, stored: stored, kind: block-choose-kind(dynamic, fixed, stored)}.

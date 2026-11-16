@@ -56,6 +56,7 @@ compiler = [
 
 runtime_default = [
   "runtime",
+  "integer_bits",
   "pure_text",
   "map_ops",
   "sequence_sort",
@@ -221,8 +222,12 @@ access = ["functions"]
 assign = ["functions"]
 convert = ["functions"]
 pure_text = ["functions", "string"]
+# Canonical word cells use the always-available value codec. The legacy typed
+# port fast path is gated separately by the engine's u64 feature.
+integer_bits = ["functions"]
 map_ops = ["functions", "map", "string", "bool"]
 sequence_sort = ["functions", "string"]
+sequence_buffers = ["functions"]
 
 # Values and shapes. Syntax forwarding is weak so runtime-only builds do not
 # activate the parser dependency.
@@ -499,7 +504,7 @@ tinyvec = { version = "=1.12.0", default-features = false }
 nalgebra = { version = "0.34.1", optional = true }
 indexmap = { version = "2.13.0", optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = { version = "1.0.149", optional = true, features = ["raw_value"] }
+serde_json = { version = "1.0.149", optional = true, features = ["raw_value", "unbounded_depth"] }
 sha2 = "0.10"
 
 [dependencies.num-traits]

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-child-funding-audit-tests-20261106-v1/mech_gpu-tests",
+    "exact_compressor_child_funding_audit",
+    "--ignored",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 251.6770017920062
+}

@@ -1,0 +1,92 @@
+{
+  "status": "FROZEN; root independent ordinary and isolated real-Git verification also PASS",
+  "native_executions": 0,
+  "files": {
+    "README.md": {
+      "sha256": "d126fa5fa52671ff899a091698444008fdba50c1ffc90f86dd8e9c34802602e8",
+      "bytes": 5587
+    },
+    "REPORT.md": {
+      "sha256": "d126fa5fa52671ff899a091698444008fdba50c1ffc90f86dd8e9c34802602e8",
+      "bytes": 5587
+    },
+    "assemble.py": {
+      "sha256": "d297ee736bcb34aa1098bdcf2267fcf6b339200674c95222f0b83be500d3b0e1",
+      "bytes": 23641
+    },
+    "fresh-git-verification.json": {
+      "sha256": "57612b2c639943bf096c60830dde19b8b89ca5ec3aed44cb2bbfaa36f7d92104",
+      "bytes": 957
+    },
+    "omitted-binaries.json": {
+      "sha256": "f215537edadb0f1b0c7dc471d6e07afe7c58091a352bef71480303896052ed63",
+      "bytes": 40234
+    },
+    "records-01.zip": {
+      "sha256": "80856953e3f4d2a0d52421827c7c67b07aa5c33a80aa385897391b3765d56778",
+      "bytes": 43791383
+    },
+    "records-02.zip": {
+      "sha256": "fe8bc8d838ae5931a80adc3cc1953e28460c0b5b8478f360ee52b8d7812410be",
+      "bytes": 38139699
+    },
+    "records.json": {
+      "sha256": "7e1a213cb8a751e829d2c7ac39d35c5ad3b9e0a40d7e673061048316b6310b59",
+      "bytes": 18244383
+    },
+    "report.json": {
+      "sha256": "e93fabdebb2670a45fd02a919928158476172f11cff619dd3df7b86397672955",
+      "bytes": 417471
+    },
+    "verification.json": {
+      "sha256": "c4b618956218d9152c3ed83b9aff998844eef0db83ef7df98624a94cf0852f63",
+      "bytes": 575
+    },
+    "verify-fresh-git.py": {
+      "sha256": "46f750f17e178c31bc4674acae9078ae8ae51a4c19a72f54d316fe2c733e6a92",
+      "bytes": 4574
+    },
+    "verify.py": {
+      "sha256": "ce5b58c09882fa595e02e6d9664f6297e03e05a2ffa1ab4bb68c2e65ba0485ef",
+      "bytes": 32859
+    }
+  },
+  "containers": [
+    {
+      "path": "records-01.zip",
+      "format": "ZIP_STORED gzip members",
+      "sha256": "80856953e3f4d2a0d52421827c7c67b07aa5c33a80aa385897391b3765d56778",
+      "bytes": 43791383,
+      "members": 8702
+    },
+    {
+      "path": "records-02.zip",
+      "format": "ZIP_STORED gzip members",
+      "sha256": "fe8bc8d838ae5931a80adc3cc1953e28460c0b5b8478f360ee52b8d7812410be",
+      "bytes": 38139699,
+      "members": 6853
+    }
+  ],
+  "logical_records": 34532,
+  "unique_blobs": 15555,
+  "compressed_gzip_payload_bytes": 78415608,
+  "timed_resource_exact_outputs": 5063,
+  "separate_qualification_exact_outputs": 3040,
+  "qualification_adapter_suites": 95,
+  "later_authoritative_qualification_outputs": 2912,
+  "genuine_additional_initial_IR350_qualification_outputs": 128,
+  "compiler_source_snapshots": 9,
+  "managed_source_work_labels": 22,
+  "managed_observations": 1377,
+  "independent_QA_record": "u16-host-source-independent-audit-v1/audit.json",
+  "fresh_git_real_objects": 4036,
+  "required_published_source_aliases": [
+    "7a6686c6790b0d8e0a282a5619bb884f8ffe08d0"
+  ],
+  "test_provenance": "Final35579focused and1108broad passes plus same16 inherited failures use exactV3; historical initial351backend and superseded353/355test-assumption snapshots retained and distinguished.",
+  "goal_policy": "Fastest verified unchanged example at full fc2982b0c929b1b701209d401a1dc30c773ef4ab. Four unchanged-source builds;20customRust source experiments additional only. Original8worker pool setup remains outsideRusttimer; Mech4worker lifetime insidepostJSON.",
+  "fixed_goal_met": true,
+  "promotion_limits": "Managed355U16 vs334 confirmed. Compact353U16 vsownU32 confirmed; independent prior349 interval crosseszero. No confirmed355compact gain or unconditionalcompact promotion. MaskV1/V2 and combinations unselected.",
+  "all_agent_processes_terminal": true,
+  "mutation_policy": "Do not mutate pinned files after independent review without notifying root. Root may append independent post-freeze attestations without changing frozen payload."
+}

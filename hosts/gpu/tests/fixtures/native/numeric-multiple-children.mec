@@ -1,0 +1,20 @@
+// A parent with collection and sequential/nested tail-call boundaries.
+// Each later call must observe the current buffer and current Boolean state.
++> sequence
+multiple-write-one(words<[u64]>, amount<u64>, divisor<u64>) => (out<[u64]>) :=
+  ~next := words
+  next[1u64] = (words[1u64] + amount) / divisor
+  out := next.
+multiple-write(words<[u64]>, left<u64>, amount<u64>, allowed<bool>, divisor<u64>) => (out<[u64]>) :=
+  allowed! := allowed
+  out := ((left > 0u64)? | true => multiple-write(multiple-write-one(words, amount, divisor), left - 1u64, amount + 1u64, allowed, divisor) | false => words).
+multiple-stage(words<[u64]>, left<u64>, amount<u64>, allowed<bool>, divisor<u64>) => (out<[u64]>) :=
+  out := ((left > 0u64)? | true => multiple-stage(multiple-write(words, 1u64, amount, allowed, divisor), left - 1u64, amount + 1u64, allowed, divisor) | false => words).
+multiple-parent(words<[u64]>, left<u64>, flag<bool>, first-allowed<bool>, second-allowed<bool>, divisor<u64>) => (out<([u64],bool)>) :=
+  more := left > 0u64
+  counts := [0u64 | index <- 0u64..=left, index < left]
+  amount := (flag? | true => 2u64 | false => 5u64) + sequence/length(counts)
+  first := (more? | true => multiple-stage(words, 1u64, amount, first-allowed, divisor) | false => words)
+  second := (more? | true => multiple-write(first, 1u64, 3u64, second-allowed, divisor) | false => first)
+  out := (more? | true => multiple-parent(second, left - 1u64, flag == false, first-allowed, second-allowed, divisor) | false => (words, flag)).
+multiple-parent(words<[u64]>, steps<u64>, flag<bool>, first-allowed<bool>, second-allowed<bool>, divisor<u64>)

@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-refreshed-parallel-20261115.tar.gz",
+  "bytes": 22576025,
+  "evidence_files": 313,
+  "files": 313,
+  "format": 1,
+  "manifest_sha256": "507385b416aec63008d8c698c95bbc8d512e1437baf8789b676e02534bec33e0",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "f4fe20711e9c7f295eff094e5aedce3bfee1ad9b38de10b0e2135c837ecf2096",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-refreshed-parallel-20261115.tar.gz",
+  "sha256": "4366841a4128fedf1d2a02fdabb4bba3c9653871a29f7154ea7440012aed688a",
+  "source_revision": "934bde961d47555db3fa45bc5c28d36ad1c0930a",
+  "uncompressed_bytes": 118757375,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "4366841a4128fedf1d2a02fdabb4bba3c9653871a29f7154ea7440012aed688a",
+    "source_revision": "934bde961d47555db3fa45bc5c28d36ad1c0930a",
+    "verified_bytes": 118757375,
+    "verified_files": 313
+  }
+}

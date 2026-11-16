@@ -1,0 +1,9 @@
+{
+  "compressor_source_sha256": "345324ce551aaa2485dcd0fe4262da96e660d6b31f5f772bff89b034e9b1997f",
+  "compressor_bytecode_sha256": "a2daaaf746d6bcc8668c5439f84a782ecea2aff376546566c01d4fc0f8c6f585",
+  "scalar_source_sha256": "41f242ff7f6eeda910d6785072e8223612d2ceae9cc0cf44ad1549ccdd22efed",
+  "original_control_source_sha256": "015f415dc6f0cd3d05f6dd1153bf7c59394d50ca746ec5dfa092327eb81a503c",
+  "original_rust_source_sha256": "a6322258aedc8562593332afa33bc59e0454d13b2f82849cf400cba12af4e5e4",
+  "all_match_historical_receipts": true,
+  "failed_setup_attempts_retained": true
+}

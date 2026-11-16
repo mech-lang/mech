@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-scoped-source-20261115.tar.gz",
+  "bytes": 40715457,
+  "evidence_files": 832,
+  "files": 832,
+  "format": 1,
+  "manifest_sha256": "fc125ea3490149f1ac2d7b4e3a78c62c74e855dee4565bfdcad2642eeea63c06",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "281d340b9097766c5179d0834c19123813c1d9474f0b123bbe9f6f04a6bccd8a",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-scoped-source-20261115.tar.gz",
+  "sha256": "ac02c8c6ad673852b37c019753baaa881ae8676d6c4bbe76e157e6dd69b4d438",
+  "source_revision": "972039beaaf9f04a609393905b518f4c16cbab67",
+  "uncompressed_bytes": 247994438,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "ac02c8c6ad673852b37c019753baaa881ae8676d6c4bbe76e157e6dd69b4d438",
+    "source_revision": "972039beaaf9f04a609393905b518f4c16cbab67",
+    "verified_bytes": 247994438,
+    "verified_files": 832
+  }
+}

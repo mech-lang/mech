@@ -1824,6 +1824,7 @@ fn derive_scratch_allocations(
         }
         ImplementationMemoryClass::CanonicalFinalize
         | ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
+        | ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize
         | ImplementationMemoryClass::CanonicalSortUnique => {
             for (ordinal, output) in outputs.iter().enumerate() {
                 if request.implementation_memory
@@ -1847,8 +1848,18 @@ fn derive_scratch_allocations(
                 // Draft and frozen finalization are separate coexistence
                 // obligations. The finalizer includes packed payload plus its
                 // immutable roots and schema/shape metadata.
-                let draft_size = value_required_bytes(&output.value)?
-                    .max(canonical_snapshot_draft_bytes(footprint)?);
+                let packed_unsigned_update = request.implementation_memory
+                    == ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize
+                    && request.output_storage[ordinal].slot
+                        == PlannedSlotKind::CanonicalValueHandle
+                    && matches!(output.descriptor.schema().body(), SchemaBody::Matrix { element, .. }
+                        if matches!(element.as_ref(), SchemaBody::UnsignedInteger(_)));
+                let draft_size = if packed_unsigned_update {
+                    0
+                } else {
+                    value_required_bytes(&output.value)?
+                        .max(canonical_snapshot_draft_bytes(footprint)?)
+                };
                 let finalization_size = canonical_snapshot_finalization_bytes(footprint)?;
                 let space = request.output_storage[ordinal].space;
                 scratch(
@@ -2114,6 +2125,7 @@ fn apply_implementation_demand(
         }
         ImplementationMemoryClass::CanonicalFinalize
         | ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize
+        | ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize
         | ImplementationMemoryClass::CanonicalSortUnique => {
             let contribution = canonical_footprint_demand(
                 request.implementation_memory,

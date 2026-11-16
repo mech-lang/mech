@@ -1,0 +1,1400 @@
+{
+  "schema": "mech.related-post-gen.deflate-reduction-integration-screen.v1",
+  "compiler": "29838b0e08b5ba66bbad5b7f7565fc354a4e9490",
+  "base": "dae0b9b6c33b39ce55104880660501929ee07b6b",
+  "incoming": "0bca6a54cdc2d69df71ca2763a6f36993448fe02",
+  "branch": "codex/related-deflate-reduction-integration-20261106",
+  "pr": "https://github.com/mech-lang/mech/pull/990",
+  "base_pr": 973,
+  "identity": "IR228/work115/ABI41/image9",
+  "selected": false,
+  "goal_complete": false,
+  "status": "qualified_measured_unselected_whole_process_regression",
+  "reports": {
+    "initial": "comparison-native-deflate-reduction-integration-20261106-5000-m3.json",
+    "confirmation": "comparison-native-deflate-reduction-integration-confirmation-20261106-5000-m3.json",
+    "resources": "comparison-native-deflate-reduction-integration-resources-20261106-5000-m3.json"
+  },
+  "profiles": {
+    "post-json-native-pcs": "profile-native-deflate-reduction-integration-post-json-native-pcs-20261106.json",
+    "worker-instructions": "profile-native-deflate-reduction-integration-worker-instructions-20261106.json",
+    "post-json-all-symbols": "profile-native-deflate-reduction-integration-post-json-all-symbols-20261106.json"
+  },
+  "sizes": "size-native-deflate-reduction-integration-20261106.json",
+  "confirmation_15_rounds": {
+    "rust": {
+      "median_seconds": 0.008810957999999999,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_standard",
+      "median_whole_process_seconds": 0.0359981250949204,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.008810957999999999,
+      "over_fastest": 5.384298745368692,
+      "over_rust": 1.0,
+      "whole_process_over_fastest": 1.3945802269478822,
+      "post_json_over_fastest_matched_native": 5.384298745368692
+    },
+    "rust-concurrent": {
+      "median_seconds": 0.0020565,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.02908649994060397,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0020565,
+      "over_fastest": 1.2567090173226019,
+      "over_rust": 0.23340254260660423,
+      "whole_process_over_fastest": 1.1268213992070064,
+      "post_json_over_fastest_matched_native": 1.2567090173226019
+    },
+    "rust-preinitialized": {
+      "median_seconds": 0.0018804170000000001,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "concurrent_8_physical_workers",
+      "median_whole_process_seconds": 0.025812875013798475,
+      "calculation_boundary": "preinitialized_workers",
+      "over_fastest": 1.149106248590671,
+      "over_rust": 0.213417996090777,
+      "whole_process_over_fastest": 1.0
+    },
+    "rust-mech-processing-only": {
+      "median_seconds": 0.001923583,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_same_numeric_algorithm_no_mech_accounting",
+      "median_whole_process_seconds": 0.02623916696757078,
+      "calculation_boundary": "processing_excluding_input_preparation",
+      "over_fastest": 1.1754846105851993,
+      "over_rust": 0.21831712283726698,
+      "whole_process_over_fastest": 1.0165147025871557
+    },
+    "rust-mech-control": {
+      "median_seconds": 0.001959583,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_same_numeric_algorithm_post_json_no_mech_accounting",
+      "median_whole_process_seconds": 0.027953207958489656,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001959583,
+      "over_fastest": 1.1974838931641507,
+      "over_rust": 0.22240294415204342,
+      "whole_process_over_fastest": 1.0829172629374701,
+      "post_json_over_fastest_matched_native": 1.1974838931641507
+    },
+    "cpp": {
+      "median_seconds": 0.01,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_standard_integer_ms",
+      "median_whole_process_seconds": 0.13224629196338356,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 6.110911827486515,
+      "over_rust": 1.1349503652156783,
+      "whole_process_over_fastest": 5.123268597267459
+    },
+    "cpp-precision": {
+      "median_seconds": 0.00986883,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_standard_timer_precision_only",
+      "median_whole_process_seconds": 0.12472695810720325,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 6.030754997045374,
+      "over_rust": 1.1200632212751442,
+      "whole_process_over_fastest": 4.831966917305007
+    },
+    "d-v2": {
+      "median_seconds": 0.008021,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_standard",
+      "median_whole_process_seconds": 0.09621208300814033,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 4.901562376826933,
+      "over_rust": 0.9103436879394955,
+      "whole_process_over_fastest": 3.7272904686792696
+    },
+    "rust-ho": {
+      "median_seconds": 0.00307425,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_specialized",
+      "median_whole_process_seconds": 0.028597208205610514,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.00307425,
+      "over_fastest": 1.8786470685650418,
+      "over_rust": 0.34891211602642985,
+      "whole_process_over_fastest": 1.1078660625879004,
+      "post_json_over_fastest_matched_native": 1.8786470685650418
+    },
+    "go-ho": {
+      "median_seconds": 0.002963625,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "specialized_single_core",
+      "median_whole_process_seconds": 0.032987166894599795,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.8110451064734723,
+      "over_rust": 0.3363567276112314,
+      "whole_process_over_fastest": 1.2779346305658028
+    },
+    "d-ho": {
+      "median_seconds": 0.006093,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "specialized_single_core",
+      "median_whole_process_seconds": 0.09567595808766782,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 3.7233785764875336,
+      "over_rust": 0.6915252575259128,
+      "whole_process_over_fastest": 3.706520797722977
+    },
+    "d-concurrent": {
+      "median_seconds": 0.00317,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "concurrent",
+      "median_whole_process_seconds": 0.09184691705740988,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.9371590493132251,
+      "over_rust": 0.35977926577337,
+      "whole_process_over_fastest": 3.558182380239024
+    },
+    "d-concurrent-v2": {
+      "median_seconds": 0.002955,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "concurrent",
+      "median_whole_process_seconds": 0.09388883295468986,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.8057744450222653,
+      "over_rust": 0.3353778329212329,
+      "whole_process_over_fastest": 3.6372869315990894
+    },
+    "cpp-concurrent-precision": {
+      "median_seconds": 0.00339121,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "concurrent_four_workers_timer_precision_only",
+      "median_whole_process_seconds": 0.11999408295378089,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 2.072338529849054,
+      "over_rust": 0.384885502802306,
+      "whole_process_over_fastest": 4.648613642983864
+    },
+    "c3": {
+      "median_seconds": 0.009000000000000001,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_standard",
+      "median_whole_process_seconds": 0.03796474984847009,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 5.499820644737864,
+      "over_rust": 1.0214553286941104,
+      "whole_process_over_fastest": 1.4707679725011544
+    },
+    "c3-precision": {
+      "median_seconds": 0.0093535,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_standard_timer_precision_only",
+      "median_whole_process_seconds": 0.03858841699548066,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 5.715841377839512,
+      "over_rust": 1.0615758241044846,
+      "whole_process_over_fastest": 1.4949290605890633
+    },
+    "rust-cold-workers-1": {
+      "median_seconds": 0.008677500000000001,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.0371593339368701,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.008677500000000001,
+      "over_fastest": 5.302743738301424,
+      "over_rust": 0.9848531794159049,
+      "whole_process_over_fastest": 1.4395658723410811,
+      "post_json_over_fastest_matched_native": 5.302743738301424
+    },
+    "rust-cold-workers-2": {
+      "median_seconds": 0.004624041,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.031456041848286986,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.004624041,
+      "over_fastest": 2.825710683768257,
+      "over_rust": 0.5248057021722269,
+      "whole_process_over_fastest": 1.2186182992584869,
+      "post_json_over_fastest_matched_native": 2.825710683768257
+    },
+    "rust-cold-workers-3": {
+      "median_seconds": 0.0033378329999999997,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.030622791033238173,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0033378329999999997,
+      "over_fastest": 2.0397203157874793,
+      "over_rust": 0.37882747823789426,
+      "whole_process_over_fastest": 1.1863378649944463,
+      "post_json_over_fastest_matched_native": 2.0397203157874793
+    },
+    "rust-cold-workers-4": {
+      "median_seconds": 0.002604584,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.02951362496241927,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002604584,
+      "over_fastest": 1.5916383171282136,
+      "over_rust": 0.2956073562034912,
+      "whole_process_over_fastest": 1.1433683751477715,
+      "post_json_over_fastest_matched_native": 1.5916383171282136
+    },
+    "rust-cold-workers-5": {
+      "median_seconds": 0.0023976670000000005,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.030433124862611294,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0023976670000000005,
+      "over_fastest": 1.465193162867411,
+      "over_rust": 0.272123303731558,
+      "whole_process_over_fastest": 1.1789901297838008,
+      "post_json_over_fastest_matched_native": 1.465193162867411
+    },
+    "rust-cold-workers-6": {
+      "median_seconds": 0.0022294170000000005,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.028981625102460384,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0022294170000000005,
+      "over_fastest": 1.3623770713699506,
+      "over_rust": 0.2530277638368042,
+      "whole_process_over_fastest": 1.1227585105095046,
+      "post_json_over_fastest_matched_native": 1.3623770713699506
+    },
+    "rust-cold-workers-7": {
+      "median_seconds": 0.002116208,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_cold_joined_pool",
+      "median_whole_process_seconds": 0.028707707999274135,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002116208,
+      "over_fastest": 1.2931960496621582,
+      "over_rust": 0.240179104247234,
+      "whole_process_over_fastest": 1.1121468640718326,
+      "post_json_over_fastest_matched_native": 1.2931960496621582
+    },
+    "rust-workers-1": {
+      "median_seconds": 0.008615667,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.03472645883448422,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 5.264958137198526,
+      "over_rust": 0.9778354408226667,
+      "whole_process_over_fastest": 1.345315421700253
+    },
+    "rust-workers-2": {
+      "median_seconds": 0.004573458,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.030696999980136752,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 2.794799858471282,
+      "over_rust": 0.5190647827398565,
+      "whole_process_over_fastest": 1.1892127461093516
+    },
+    "rust-workers-3": {
+      "median_seconds": 0.0032759589999999997,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.029492665780708194,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 2.0019096599460893,
+      "over_rust": 0.37180508634815873,
+      "whole_process_over_fastest": 1.1425564089603601
+    },
+    "rust-workers-4": {
+      "median_seconds": 0.002529333,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.02952841715887189,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.5456530945351947,
+      "over_rust": 0.2870667412102067,
+      "whole_process_over_fastest": 1.143941430123039
+    },
+    "rust-workers-5": {
+      "median_seconds": 0.002276709,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.029758709017187357,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.3912767955844996,
+      "over_rust": 0.25839517110398214,
+      "whole_process_over_fastest": 1.1528630189887645
+    },
+    "rust-workers-6": {
+      "median_seconds": 0.002098416,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.029292917111888528,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.2823235153386943,
+      "over_rust": 0.23815980055744226,
+      "whole_process_over_fastest": 1.1348180741676301
+    },
+    "rust-workers-7": {
+      "median_seconds": 0.0020022910000000002,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.02915916685014963,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.2235823753969801,
+      "over_rust": 0.22725009017180656,
+      "whole_process_over_fastest": 1.1296365412439477
+    },
+    "rust-workers-8": {
+      "median_seconds": 0.001879959,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "same_upstream_algorithm_configurable_pool",
+      "median_whole_process_seconds": 0.02856108290143311,
+      "calculation_boundary": "unspecified",
+      "over_fastest": 1.1488263688289722,
+      "over_rust": 0.21336601536405012,
+      "whole_process_over_fastest": 1.106466555397861
+    },
+    "rust-mech-control-rebuilt": {
+      "median_seconds": 0.001963875,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_same_numeric_algorithm_post_json_sorted_histogram_no_mech_accounting",
+      "median_whole_process_seconds": 0.028035208117216825,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001963875,
+      "over_fastest": 1.2001066965205078,
+      "over_rust": 0.22289006484879398,
+      "whole_process_over_fastest": 1.0860939783821206,
+      "post_json_over_fastest_matched_native": 1.2001066965205078
+    },
+    "rust-mech-control-streaming": {
+      "median_seconds": 0.001636417,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_same_numeric_algorithm_post_json_streaming_histogram_no_mech_accounting",
+      "median_whole_process_seconds": 0.026975708082318306,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001636417,
+      "over_fastest": 1.0,
+      "over_rust": 0.18572520717951443,
+      "whole_process_over_fastest": 1.0450485685108004,
+      "post_json_over_fastest_matched_native": 1.0
+    },
+    "mech-before-4": {
+      "median_seconds": 0.003064875,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_numeric_frozen_uniform_layouts_IR208",
+      "median_processing_plus_admission_seconds": 0.0032204589999999997,
+      "median_whole_process_seconds": 0.0398279158398509,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.003227292,
+      "over_fastest": 1.8729180887267731,
+      "over_rust": 0.34784810005904016,
+      "whole_process_over_fastest": 1.5429476886460953,
+      "processing_plus_admission_over_fastest": 1.9679940993035392,
+      "processing_plus_admission_over_rust": 0.36550611182121173,
+      "post_json_over_fastest_matched_native": 1.9721696853552608
+    },
+    "mech-before-8": {
+      "median_seconds": 0.003283875,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_numeric_frozen_uniform_layouts_IR208",
+      "median_processing_plus_admission_seconds": 0.0034420830000000003,
+      "median_whole_process_seconds": 0.04101158306002617,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.003448916,
+      "over_fastest": 2.006747057748728,
+      "over_rust": 0.3727035130572635,
+      "whole_process_over_fastest": 1.588803379635283,
+      "processing_plus_admission_over_fastest": 2.1034265715890266,
+      "processing_plus_admission_over_rust": 0.39065933579526774,
+      "post_json_over_fastest_matched_native": 2.107602157640748
+    },
+    "rust-mech-control-u32-casts": {
+      "median_seconds": 0.001647084,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_streaming_histogram_checked_u32_combinadic_casts",
+      "median_whole_process_seconds": 0.027436750009655952,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001647084,
+      "over_fastest": 1.0065185096463798,
+      "over_rust": 0.18693585873409002,
+      "whole_process_over_fastest": 1.0629094974887308,
+      "post_json_over_fastest_matched_native": 1.0065185096463798
+    },
+    "rust-mech-control-u8-ids-u32": {
+      "median_seconds": 0.0016486250000000001,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "single_core_streaming_histogram_checked_u8_ids_u32_combinadic",
+      "median_whole_process_seconds": 0.02637329208664596,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0016486250000000001,
+      "over_fastest": 1.0074602011589957,
+      "over_rust": 0.18711075458536974,
+      "whole_process_over_fastest": 1.0217107576179683,
+      "post_json_over_fastest_matched_native": 1.0074602011589957
+    },
+    "mech-parent-4": {
+      "median_seconds": 0.0027845,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_latest_deflate_integration_IR227_after",
+      "median_processing_plus_admission_seconds": 0.002940167,
+      "median_whole_process_seconds": 0.03991858311928809,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002947792,
+      "over_fastest": 1.70158339836362,
+      "over_rust": 0.3160269291943056,
+      "whole_process_over_fastest": 1.546460171443487,
+      "processing_plus_admission_over_fastest": 1.7967101295085544,
+      "processing_plus_admission_over_rust": 0.3336943610445085,
+      "post_json_over_fastest_matched_native": 1.8013696997770128
+    },
+    "mech-compact-before-4": {
+      "median_seconds": 0.002836459,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_latest_deflate_integration_IR227_compact",
+      "median_processing_plus_admission_seconds": 0.0029893750000000003,
+      "median_whole_process_seconds": 0.04253283399157226,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002997291,
+      "over_fastest": 1.7333350851280571,
+      "over_rust": 0.3219240177969297,
+      "whole_process_over_fastest": 1.647737184208888,
+      "processing_plus_admission_over_fastest": 1.8267807044292501,
+      "processing_plus_admission_over_rust": 0.33927922480166184,
+      "post_json_over_fastest_matched_native": 1.8316181022318883
+    },
+    "mech-parent-8": {
+      "median_seconds": 0.003029833,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_latest_deflate_integration_IR227_after",
+      "median_processing_plus_admission_seconds": 0.003189,
+      "median_whole_process_seconds": 0.0396811249665916,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.003196292,
+      "over_fastest": 1.851504231500895,
+      "over_rust": 0.3438710069892514,
+      "whole_process_over_fastest": 1.5372609577731942,
+      "processing_plus_admission_over_fastest": 1.9487697817854495,
+      "processing_plus_admission_over_rust": 0.3619356714672798,
+      "post_json_over_fastest_matched_native": 1.9532258586900526
+    },
+    "mech-compact-before-8": {
+      "median_seconds": 0.003026708,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_latest_deflate_integration_IR227_compact",
+      "median_processing_plus_admission_seconds": 0.003182416,
+      "median_whole_process_seconds": 0.040739124873653054,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.003190083,
+      "over_fastest": 1.8495945715548052,
+      "over_rust": 0.34351633500012146,
+      "whole_process_over_fastest": 1.5782482521561676,
+      "processing_plus_admission_over_fastest": 1.9447463574382324,
+      "processing_plus_admission_over_rust": 0.3611884201468218,
+      "post_json_over_fastest_matched_native": 1.9494315935363662
+    },
+    "mech-after-4": {
+      "median_seconds": 0.002782083,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_deflate_reduction_integration_IR228_after",
+      "median_processing_plus_admission_seconds": 0.002941833,
+      "median_whole_process_seconds": 0.042281416011974216,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002948625,
+      "over_fastest": 1.7001063909749163,
+      "over_rust": 0.3157526116910329,
+      "whole_process_over_fastest": 1.63799716185711,
+      "processing_plus_admission_over_fastest": 1.7977282074190135,
+      "processing_plus_admission_over_rust": 0.3338834437753534,
+      "post_json_over_fastest_matched_native": 1.8018787387322424
+    },
+    "mech-u8-ids-u32-4": {
+      "median_seconds": 0.002861209,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_deflate_reduction_integration_IR228_compact",
+      "median_processing_plus_admission_seconds": 0.003013125,
+      "median_whole_process_seconds": 0.04148183297365904,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.003020833,
+      "over_fastest": 1.7484595919010864,
+      "over_rust": 0.32473301995083853,
+      "whole_process_over_fastest": 1.607021029291956,
+      "processing_plus_admission_over_fastest": 1.8412941200195305,
+      "processing_plus_admission_over_rust": 0.34197473191904904,
+      "post_json_over_fastest_matched_native": 1.846004410856157
+    },
+    "mech-after-8": {
+      "median_seconds": 0.002980833,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_deflate_reduction_integration_IR228_after",
+      "median_processing_plus_admission_seconds": 0.003140874,
+      "median_whole_process_seconds": 0.03796275006607175,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.003147916,
+      "over_fastest": 1.821560763546211,
+      "over_rust": 0.33830975019969456,
+      "whole_process_over_fastest": 1.470690500216596,
+      "processing_plus_admission_over_fastest": 1.9193604075244879,
+      "processing_plus_admission_over_rust": 0.3564736093396428,
+      "post_json_over_fastest_matched_native": 1.923663711633404
+    },
+    "mech-u8-ids-u32-8": {
+      "median_seconds": 0.003075083,
+      "samples": 15,
+      "all_exact_rust": true,
+      "category": "native_deflate_reduction_integration_IR228_compact",
+      "median_processing_plus_admission_seconds": 0.003227542,
+      "median_whole_process_seconds": 0.040692459093406796,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.003235208,
+      "over_fastest": 1.8791561075202714,
+      "over_rust": 0.3490066573918523,
+      "whole_process_over_fastest": 1.5764404031575066,
+      "processing_plus_admission_over_fastest": 1.972322458150948,
+      "processing_plus_admission_over_rust": 0.36630999716489404,
+      "post_json_over_fastest_matched_native": 1.9770070831578992
+    }
+  },
+  "references": {
+    "matched": {
+      "variant": "rust-mech-control-streaming",
+      "median_seconds": 0.001636417,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-concurrent",
+        "rust-mech-control",
+        "rust-ho",
+        "rust-cold-workers-1",
+        "rust-cold-workers-2",
+        "rust-cold-workers-3",
+        "rust-cold-workers-4",
+        "rust-cold-workers-5",
+        "rust-cold-workers-6",
+        "rust-cold-workers-7",
+        "rust-mech-control-rebuilt",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32"
+      ]
+    },
+    "whole": {
+      "variant": "rust-preinitialized",
+      "median_seconds": 0.025812875013798475,
+      "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+    }
+  },
+  "resources": {
+    "mech-after-4-instrumented": {
+      "median_seconds": 0.002813958,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "native_deflate_reduction_integration_IR228_after_instrumented",
+      "median_processing_plus_admission_seconds": 0.002985166,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 92743179,
+        "instructions_retired": 366702112,
+        "involuntary_context_switches": 15,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1820,
+        "peak_physical_footprint_bytes": 16253288,
+        "peak_resident_bytes": 27115520,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 31,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3858,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7322164,
+        "hardware": {
+          "cycles": 15562792,
+          "instructions_per_cycle": 3.665767825361409,
+          "instructions_retired": 57049727,
+          "lifetime_peak_physical_footprint_bytes_after": 16253288,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16253288,
+          "physical_footprint_bytes_before": 12386664,
+          "resident_bytes_after": 27000832,
+          "resident_bytes_before": 21676032,
+          "system_cpu_seconds": 0.000391875,
+          "user_cpu_seconds": 0.0038097083333333333
+        },
+        "live_requested_heap_bytes_after": 8739958,
+        "live_requested_heap_bytes_before": 8018116,
+        "peak_additional_live_requested_heap_bytes": 5598047,
+        "peak_live_requested_heap_bytes": 13616163,
+        "requested_allocation_bytes": 8044006
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 36618,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6780543,
+          "hardware": {
+            "cycles": 32675625,
+            "instructions_per_cycle": 4.167153252615673,
+            "instructions_retired": 136231208,
+            "lifetime_peak_physical_footprint_bytes_after": 9830760,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9830760,
+            "physical_footprint_bytes_before": 1179984,
+            "resident_bytes_after": 19087360,
+            "resident_bytes_before": 2015232,
+            "system_cpu_seconds": 0.0006426250000000001,
+            "user_cpu_seconds": 0.008053083333333334
+          },
+          "live_requested_heap_bytes_after": 6593181,
+          "live_requested_heap_bytes_before": 6344,
+          "peak_additional_live_requested_heap_bytes": 7263763,
+          "peak_live_requested_heap_bytes": 7270107,
+          "requested_allocation_bytes": 13367380
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6297089,
+            "instructions_per_cycle": 4.880219821076801,
+            "instructions_retired": 30556504,
+            "lifetime_peak_physical_footprint_bytes_after": 12386664,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12386664,
+            "physical_footprint_bytes_before": 9830760,
+            "resident_bytes_after": 21676032,
+            "resident_bytes_before": 19087360,
+            "system_cpu_seconds": 0.00019983333333333336,
+            "user_cpu_seconds": 0.0014721250000000001
+          },
+          "live_requested_heap_bytes_after": 8018116,
+          "live_requested_heap_bytes_before": 6593181,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 9131405,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.051060124998912215,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002993208,
+      "over_fastest": 1.7132164383561643,
+      "over_rust": 0.31820405393944534,
+      "whole_process_over_fastest": 1.4854772839632582,
+      "processing_plus_admission_over_fastest": 1.8174526636225266,
+      "processing_plus_admission_over_rust": 0.3375643569954485,
+      "post_json_over_fastest_matched_native": 1.8223488584474883,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "cycles": 1.1081670546273459,
+          "involuntary_context_switches": 0.08064516129032258,
+          "peak_resident_bytes": 4.366754617414248,
+          "page_reclaims": 3.4535104364326377,
+          "instructions_retired": 1.0527369454128952,
+          "voluntary_context_switches": 1.0689655172413792,
+          "user_cpu_seconds": 1.0,
+          "wall_seconds": 1.5,
+          "peak_physical_footprint_bytes": 2.834075681888881
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.726370304007347,
+          "peak_live_requested_heap_bytes": 1.7820637742418173,
+          "requested_allocation_bytes": 1.1823899870281156,
+          "allocation_requests": 67.6842105263158,
+          "live_requested_heap_bytes_before": 3.901598230730116,
+          "hardware": {
+            "lifetime_peak_physical_footprint_bytes_after": 2.987833429905085,
+            "cycles": 2.4781002941021923,
+            "resident_bytes_before": 6.3,
+            "system_cpu_seconds": 3.7680288461538463,
+            "physical_footprint_bytes_after": 2.987833429905085,
+            "resident_bytes_after": 4.527472527472527,
+            "physical_footprint_bytes_before": 4.246895057326238,
+            "user_cpu_seconds": 2.442446907973821,
+            "instructions_per_cycle": 1.1731488942485278,
+            "instructions_retired": 2.902670770077407
+          },
+          "freed_allocation_bytes": 1.2953740507820544,
+          "peak_additional_live_requested_heap_bytes": 1.002230920802222
+        }
+      },
+      "post_json_instructions_per_post": 11409.9454,
+      "post_json_cycles_per_post": 3112.5584
+    },
+    "mech-parent-4-instrumented": {
+      "median_seconds": 0.002813375,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "native_latest_deflate_integration_IR227_after_instrumented",
+      "median_processing_plus_admission_seconds": 0.002978584,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 91940473,
+        "instructions_retired": 371849254,
+        "involuntary_context_switches": 15,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1806,
+        "peak_physical_footprint_bytes": 16040296,
+        "peak_resident_bytes": 26886144,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 35,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3858,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7322164,
+        "hardware": {
+          "cycles": 15681592,
+          "instructions_per_cycle": 3.641699069839338,
+          "instructions_retired": 57111667,
+          "lifetime_peak_physical_footprint_bytes_after": 16040296,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16040296,
+          "physical_footprint_bytes_before": 12206440,
+          "resident_bytes_after": 26804224,
+          "resident_bytes_before": 21512192,
+          "system_cpu_seconds": 0.00039562500000000003,
+          "user_cpu_seconds": 0.003849666666666667
+        },
+        "live_requested_heap_bytes_after": 8739956,
+        "live_requested_heap_bytes_before": 8018114,
+        "peak_additional_live_requested_heap_bytes": 5598047,
+        "peak_live_requested_heap_bytes": 13616161,
+        "requested_allocation_bytes": 8044006
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 36618,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6780543,
+          "hardware": {
+            "cycles": 32019605,
+            "instructions_per_cycle": 4.239727098444844,
+            "instructions_retired": 135782016,
+            "lifetime_peak_physical_footprint_bytes_after": 9486696,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9486696,
+            "physical_footprint_bytes_before": 1147216,
+            "resident_bytes_after": 18759680,
+            "resident_bytes_before": 1982464,
+            "system_cpu_seconds": 0.0006034166666666667,
+            "user_cpu_seconds": 0.007903833333333334
+          },
+          "live_requested_heap_bytes_after": 6593179,
+          "live_requested_heap_bytes_before": 6342,
+          "peak_additional_live_requested_heap_bytes": 7263763,
+          "peak_live_requested_heap_bytes": 7270105,
+          "requested_allocation_bytes": 13367380
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6561890,
+            "instructions_per_cycle": 4.8202632216769645,
+            "instructions_retired": 31616716,
+            "lifetime_peak_physical_footprint_bytes_after": 12206440,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12206440,
+            "physical_footprint_bytes_before": 9486696,
+            "resident_bytes_after": 21512192,
+            "resident_bytes_before": 18776064,
+            "system_cpu_seconds": 0.000202875,
+            "user_cpu_seconds": 0.0015346250000000002
+          },
+          "live_requested_heap_bytes_after": 8018114,
+          "live_requested_heap_bytes_before": 6593179,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 9131403,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.049504749942570925,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002986542,
+      "over_fastest": 1.7128614916286147,
+      "over_rust": 0.31813812795069685,
+      "whole_process_over_fastest": 1.440227212321497,
+      "processing_plus_admission_over_fastest": 1.8134453576864533,
+      "processing_plus_admission_over_rust": 0.33682006049812,
+      "post_json_over_fastest_matched_native": 1.818290410958904,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "cycles": 1.0985757040467095,
+          "involuntary_context_switches": 0.08064516129032258,
+          "peak_resident_bytes": 4.329815303430079,
+          "page_reclaims": 3.4269449715370017,
+          "instructions_retired": 1.0675134802878468,
+          "voluntary_context_switches": 1.206896551724138,
+          "user_cpu_seconds": 1.0,
+          "wall_seconds": 1.5,
+          "peak_physical_footprint_bytes": 2.796936399816424
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 2.726369680120984,
+          "peak_live_requested_heap_bytes": 1.782063512484702,
+          "requested_allocation_bytes": 1.1823899870281156,
+          "allocation_requests": 67.6842105263158,
+          "live_requested_heap_bytes_before": 3.90159725753436,
+          "hardware": {
+            "lifetime_peak_physical_footprint_bytes_after": 2.9486792219748286,
+            "cycles": 2.4970170999644914,
+            "resident_bytes_before": 6.252380952380952,
+            "system_cpu_seconds": 3.8040865384615383,
+            "physical_footprint_bytes_after": 2.9486792219748286,
+            "resident_bytes_after": 4.4945054945054945,
+            "physical_footprint_bytes_before": 4.185103406659718,
+            "user_cpu_seconds": 2.4680646453853345,
+            "instructions_per_cycle": 1.165446214954082,
+            "instructions_retired": 2.9058222562799365
+          },
+          "freed_allocation_bytes": 1.2953740507820544,
+          "peak_additional_live_requested_heap_bytes": 1.002230920802222
+        }
+      },
+      "post_json_instructions_per_post": 11422.3334,
+      "post_json_cycles_per_post": 3136.3184
+    },
+    "rust-mech-control-streaming-instrumented": {
+      "median_seconds": 0.0016712089999999999,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "single_core_same_numeric_algorithm_post_json_streaming_histogram_no_mech_accounting_instrumented",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 46149341,
+        "instructions_retired": 180542383,
+        "involuntary_context_switches": 6,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 515,
+        "peak_physical_footprint_bytes": 5439824,
+        "peak_resident_bytes": 6012928,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.0,
+        "voluntary_context_switches": 43,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 57,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 5652548,
+        "hardware": {
+          "cycles": 6280130,
+          "instructions_per_cycle": 3.1247251251168366,
+          "instructions_retired": 19654219,
+          "lifetime_peak_physical_footprint_bytes_after": 5439824,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 5439824,
+          "physical_footprint_bytes_before": 2916640,
+          "resident_bytes_after": 5963776,
+          "resident_bytes_before": 3440640,
+          "system_cpu_seconds": 0.00010400000000000001,
+          "user_cpu_seconds": 0.0015597916666666668
+        },
+        "live_requested_heap_bytes_after": 3205712,
+        "live_requested_heap_bytes_before": 2055085,
+        "peak_additional_live_requested_heap_bytes": 5585586,
+        "peak_live_requested_heap_bytes": 7640671,
+        "requested_allocation_bytes": 6803175
+      },
+      "stage_measurements_median": {
+        "preparation": {
+          "allocation_requests": 7551,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 620960,
+          "hardware": {
+            "cycles": 4647373,
+            "instructions_per_cycle": 4.627840072230053,
+            "instructions_retired": 21535179,
+            "lifetime_peak_physical_footprint_bytes_after": 2916640,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 2916640,
+            "physical_footprint_bytes_before": 917792,
+            "resident_bytes_after": 3440640,
+            "resident_bytes_before": 1359872,
+            "system_cpu_seconds": 0.00016904166666666668,
+            "user_cpu_seconds": 0.0010583333333333334
+          },
+          "live_requested_heap_bytes_after": 2055085,
+          "live_requested_heap_bytes_before": 612,
+          "peak_additional_live_requested_heap_bytes": 2054473,
+          "peak_live_requested_heap_bytes": 2055085,
+          "requested_allocation_bytes": 2675433
+        }
+      },
+      "median_whole_process_seconds": 0.03672691690735519,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0016712089999999999,
+      "over_fastest": 1.0174788432267883,
+      "over_rust": 0.18898131343114802,
+      "whole_process_over_fastest": 1.0684854527293957,
+      "post_json_over_fastest_matched_native": 1.0174788432267883,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "cycles": 0.5514279307695826,
+          "involuntary_context_switches": 0.03225806451612903,
+          "peak_resident_bytes": 0.9683377308707124,
+          "page_reclaims": 0.9772296015180265,
+          "instructions_retired": 0.5183052689835204,
+          "voluntary_context_switches": 1.4827586206896552,
+          "user_cpu_seconds": 0.0,
+          "wall_seconds": 1.0,
+          "peak_physical_footprint_bytes": 0.9485387148837514
+        },
+        "post_json": {
+          "live_requested_heap_bytes_after": 1.0,
+          "peak_live_requested_heap_bytes": 1.0,
+          "requested_allocation_bytes": 1.0,
+          "allocation_requests": 1.0,
+          "live_requested_heap_bytes_before": 1.0,
+          "hardware": {
+            "lifetime_peak_physical_footprint_bytes_after": 1.0,
+            "cycles": 1.0,
+            "resident_bytes_before": 1.0,
+            "system_cpu_seconds": 1.0,
+            "physical_footprint_bytes_after": 1.0,
+            "resident_bytes_after": 1.0,
+            "physical_footprint_bytes_before": 1.0,
+            "user_cpu_seconds": 1.0,
+            "instructions_per_cycle": 1.0,
+            "instructions_retired": 1.0
+          },
+          "freed_allocation_bytes": 1.0,
+          "peak_additional_live_requested_heap_bytes": 1.0
+        }
+      },
+      "post_json_instructions_per_post": 3930.8438,
+      "post_json_cycles_per_post": 1256.026
+    },
+    "rust-preinitialized": {
+      "median_seconds": 0.001914333,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "concurrent_8_physical_workers",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 83690612,
+        "instructions_retired": 348332139,
+        "involuntary_context_switches": 186,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 527,
+        "peak_physical_footprint_bytes": 5734952,
+        "peak_resident_bytes": 6209536,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 29,
+        "wall_seconds": 0.02
+      },
+      "median_whole_process_seconds": 0.0343728750012815,
+      "calculation_boundary": "preinitialized_workers",
+      "over_fastest": 1.1654995433789954,
+      "over_rust": 0.21647392078704095,
+      "whole_process_over_fastest": 1.0,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "cycles": 1.0,
+          "involuntary_context_switches": 1.0,
+          "peak_resident_bytes": 1.0,
+          "page_reclaims": 1.0,
+          "instructions_retired": 1.0,
+          "voluntary_context_switches": 1.0,
+          "user_cpu_seconds": 1.0,
+          "wall_seconds": 1.0,
+          "peak_physical_footprint_bytes": 1.0
+        }
+      }
+    }
+  },
+  "paired": {
+    "initial": {
+      "mech-before-4": {
+        "post_json_seconds": {
+          "samples": 9,
+          "wins": 9,
+          "median_paired_delta_seconds": -0.0002735420000000003
+        },
+        "wall_seconds": {
+          "samples": 9,
+          "wins": 5,
+          "median_paired_delta_seconds": -0.0004925830289721489
+        }
+      },
+      "mech-parent-4": {
+        "post_json_seconds": {
+          "samples": 9,
+          "wins": 5,
+          "median_paired_delta_seconds": -2.2208000000000123e-05
+        },
+        "wall_seconds": {
+          "samples": 9,
+          "wins": 4,
+          "median_paired_delta_seconds": 0.0006660840008407831
+        }
+      },
+      "mech-after-8": {
+        "post_json_seconds": {
+          "samples": 9,
+          "wins": 9,
+          "median_paired_delta_seconds": -0.00019870900000000004
+        },
+        "wall_seconds": {
+          "samples": 9,
+          "wins": 3,
+          "median_paired_delta_seconds": 0.0015647090040147305
+        }
+      },
+      "mech-u8-ids-u32-4": {
+        "post_json_seconds": {
+          "samples": 9,
+          "wins": 9,
+          "median_paired_delta_seconds": -6.387500000000013e-05
+        },
+        "wall_seconds": {
+          "samples": 9,
+          "wins": 5,
+          "median_paired_delta_seconds": -0.001069375080987811
+        }
+      }
+    },
+    "confirmation": {
+      "mech-before-4": {
+        "post_json_seconds": {
+          "samples": 15,
+          "wins": 15,
+          "median_paired_delta_seconds": -0.00027579199999999996
+        },
+        "wall_seconds": {
+          "samples": 15,
+          "wins": 3,
+          "median_paired_delta_seconds": 0.0014591659419238567
+        }
+      },
+      "mech-parent-4": {
+        "post_json_seconds": {
+          "samples": 15,
+          "wins": 9,
+          "median_paired_delta_seconds": -5.0840000000002515e-06
+        },
+        "wall_seconds": {
+          "samples": 15,
+          "wins": 3,
+          "median_paired_delta_seconds": 0.002098041120916605
+        }
+      },
+      "mech-after-8": {
+        "post_json_seconds": {
+          "samples": 15,
+          "wins": 15,
+          "median_paired_delta_seconds": -0.00018758399999999975
+        },
+        "wall_seconds": {
+          "samples": 15,
+          "wins": 4,
+          "median_paired_delta_seconds": 0.0029348318930715322
+        }
+      },
+      "mech-u8-ids-u32-4": {
+        "post_json_seconds": {
+          "samples": 15,
+          "wins": 14,
+          "median_paired_delta_seconds": -8.049999999999984e-05
+        },
+        "wall_seconds": {
+          "samples": 15,
+          "wins": 6,
+          "median_paired_delta_seconds": 0.00036874995566904545
+        }
+      }
+    }
+  },
+  "native_metadata": {
+    "after-4": {
+      "code_bytes": 908464,
+      "functions": 53,
+      "query": {
+        "caller_template_bound": 112,
+        "cleanup": {
+          "after_blocks": 672,
+          "after_instructions": 11012,
+          "before_blocks": 1154,
+          "before_instructions": 51241,
+          "boolean_conditions_simplified": 16,
+          "constant_branches_removed": 0,
+          "enabled": true,
+          "fixed_point": true,
+          "local_phi_parameters_removed": 161,
+          "local_phi_preheaders": 0,
+          "neutral_operations_removed": 923,
+          "pre_codegen_data_passes": 0,
+          "rounds": 1
+        },
+        "code_bytes": 28448,
+        "header": 1471,
+        "stack_bytes": 528,
+        "symbol": "mech_canonical_program_entry_v1_numeric_1471",
+        "unsigned_guards": 10
+      }
+    },
+    "after-8": {
+      "code_bytes": 908468,
+      "functions": 53,
+      "query": {
+        "caller_template_bound": 112,
+        "cleanup": {
+          "after_blocks": 672,
+          "after_instructions": 11012,
+          "before_blocks": 1154,
+          "before_instructions": 51241,
+          "boolean_conditions_simplified": 16,
+          "constant_branches_removed": 0,
+          "enabled": true,
+          "fixed_point": true,
+          "local_phi_parameters_removed": 161,
+          "local_phi_preheaders": 0,
+          "neutral_operations_removed": 923,
+          "pre_codegen_data_passes": 0,
+          "rounds": 1
+        },
+        "code_bytes": 28448,
+        "header": 1471,
+        "stack_bytes": 528,
+        "symbol": "mech_canonical_program_entry_v1_numeric_1471",
+        "unsigned_guards": 10
+      }
+    },
+    "compact-4": {
+      "code_bytes": 904848,
+      "functions": 53,
+      "query": {
+        "caller_template_bound": 112,
+        "cleanup": {
+          "after_blocks": 672,
+          "after_instructions": 11012,
+          "before_blocks": 1154,
+          "before_instructions": 51241,
+          "boolean_conditions_simplified": 16,
+          "constant_branches_removed": 0,
+          "enabled": true,
+          "fixed_point": true,
+          "local_phi_parameters_removed": 161,
+          "local_phi_preheaders": 0,
+          "neutral_operations_removed": 923,
+          "pre_codegen_data_passes": 0,
+          "rounds": 1
+        },
+        "code_bytes": 28448,
+        "header": 1455,
+        "stack_bytes": 528,
+        "symbol": "mech_canonical_program_entry_v1_numeric_1455",
+        "unsigned_guards": 10
+      }
+    },
+    "compact-8": {
+      "code_bytes": 904852,
+      "functions": 53,
+      "query": {
+        "caller_template_bound": 112,
+        "cleanup": {
+          "after_blocks": 672,
+          "after_instructions": 11012,
+          "before_blocks": 1154,
+          "before_instructions": 51241,
+          "boolean_conditions_simplified": 16,
+          "constant_branches_removed": 0,
+          "enabled": true,
+          "fixed_point": true,
+          "local_phi_parameters_removed": 161,
+          "local_phi_preheaders": 0,
+          "neutral_operations_removed": 923,
+          "pre_codegen_data_passes": 0,
+          "rounds": 1
+        },
+        "code_bytes": 28448,
+        "header": 1455,
+        "stack_bytes": 528,
+        "symbol": "mech_canonical_program_entry_v1_numeric_1455",
+        "unsigned_guards": 10
+      }
+    }
+  },
+  "qualification": {
+    "gpu_passed": 839,
+    "inherited_gpu_failures": [
+      "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+      "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+    ],
+    "engine_passed": 289,
+    "core_391_prior_checks_reused_with_identical_sources_and_library": true,
+    "loader_edges_exact": 434,
+    "decoded_bundle_files_exact": 52,
+    "finite_denials_exact_across_three_loaders_and_two_source_families": 48,
+    "finite_small_full_success_outputs_exact": 12,
+    "forged_frontier_rejections": 16,
+    "genuine_old_objects_rejected": 26,
+    "old_IR226_same_ABI_work_rejected": true,
+    "runtime_only_full5000_and_unmodified_Managed_application_passed": true,
+    "cohort_outputs_exact": 1437,
+    "fresh_profile_invocations_exact": 2000,
+    "old_IR227_same_ABI_work_rejected": true,
+    "current_ordered_reduction_test_passed": true,
+    "scalar_rows_exact_IR227": 128,
+    "compression_rows_exact_IR227": 5,
+    "inherited_IR227_funding_ablation": {
+      "disabled": 0,
+      "enabled": 4700
+    }
+  },
+  "fastest_matched_Rust_workers": 1,
+  "source_optimizations_retested": [
+    "original U64 source with four and eight native workers",
+    "compact U8 tag IDs and U32 combinatorial key arithmetic with four and eight native workers"
+  ],
+  "selection_policy": "Unselected: four-worker whole-process time is adverse versus IR227 and selected IR208. Keep all timings. Byte-identical related native code does not establish a new kernel optimization.",
+  "audit": "integration/evidence/funding-audit-audit-summary.json",
+  "limitations": [
+    "Shared M3 development machine; these are local measurements, not cross-machine results.",
+    "Hardware instruction counts cover the continuous post-JSON interval across process threads. They are not generated-query-only counts.",
+    "Native PC observations are positions, not CPU-time shares or dynamic instruction attribution; waiting positions are explicit.",
+    "The new child-funding pass is phase-only and does not match the related query tree; no isolated attribution of the integration speedup to that pass is claimed.",
+    "Rust parity remains unmet in both intervals. No green hosted-CI or merge claim.",
+    "Whole-process variation is material and its cause is not established by post-JSON PC samples. The adverse four-worker result is retained.",
+    "The earlier IR227 failed retention cohort, control-summary correction and4700-versus-zero funding ablation remain in the prior packet and archive; they are not relabeled as new IR228 observations."
+  ],
+  "next_actions": [
+    "Use the new native-query PCs to reduce repeated checks, moves and stack traffic, retaining exact per-visit fuel/error behavior; extend proved current bounds into tree loops rather than adding a runtime algorithm.",
+    "Inspect constructor proof rederivation and host data::element/snapshot work; freeze only genuinely Object-bound source proofs with full identity binding and independent-loader verification.",
+    "Investigate combinations of earlier native flag/ledger experiments with the current local-phi/range cleanup; retain adverse results and compare against the fastest eligible Rust."
+  ],
+  "native_text_equivalence": {
+    "after-4": {
+      "complete_native_text_byte_identical": true,
+      "numeric_functions": 53,
+      "before_typed_ir": 227,
+      "after_typed_ir": 228,
+      "code_bytes": 908464,
+      "text_sha256": "ae0b5beea02780359a826dce7ac2c2888a696a31acf84d06e9591f654c77739e"
+    },
+    "compact-4": {
+      "complete_native_text_byte_identical": true,
+      "numeric_functions": 53,
+      "before_typed_ir": 227,
+      "after_typed_ir": 228,
+      "code_bytes": 904848,
+      "text_sha256": "ceadbd4563aef062da64858455ed92f7cae7b94dca8e0df7288fa479906d0ff7"
+    },
+    "after-8": {
+      "complete_native_text_byte_identical": true,
+      "numeric_functions": 53,
+      "before_typed_ir": 227,
+      "after_typed_ir": 228,
+      "code_bytes": 908468,
+      "text_sha256": "16e1427a8170803c9cd3035654a2d9c7e3dfb7b17183504be445f8a48750b3fc"
+    },
+    "compact-8": {
+      "complete_native_text_byte_identical": true,
+      "numeric_functions": 53,
+      "before_typed_ir": 227,
+      "after_typed_ir": 228,
+      "code_bytes": 904852,
+      "text_sha256": "021f5ec331e11f082000bf1b2148652745db74cba3cea545d5d823d0db3a1e73"
+    }
+  },
+  "previous_screen": "compiler-native-latest-deflate-integration-screen-20261106.json",
+  "previous_archive": "native-latest-deflate-integration-screen-20261106/archive-index.json",
+  "interpretation": [
+    "All four complete native text sections and212 numeric functions are byte-identical to IR227. The DEFLATE nonempty scalar-reduction pass does not match this benchmark.",
+    "Post-JSON2.948625ms is effectively unchanged from same-cohort IR2272.947792ms; a smaller multiple of Rust reflects the changed same-cohort fastest reference.",
+    "Four-worker whole-process42.281416ms is worse than parent39.918583ms and selected IR20839.827916ms. Original-eight37.962750ms has a slower3.147916ms post-JSON interval. Do not combine intervals from different Mech variants.",
+    "The fastest whole-process variant rust-preinitialized is eligible because parent launch-through-exit includes its setup. Its narrower internal timer is ineligible as a matched post-JSON reference."
+  ]
+}

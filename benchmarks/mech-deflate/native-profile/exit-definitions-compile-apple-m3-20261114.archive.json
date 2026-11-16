@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-exit-definitions-20261114.tar.gz",
+  "bytes": 21460998,
+  "evidence_files": 536,
+  "files": 536,
+  "format": 1,
+  "manifest_sha256": "71d3c73810c8fd73f86da24ff54f1c19a68ba30b83032e4bcc6dabb99f2b8da1",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "0dccc1e79ef888fb51ad75fee761c012e967d9b5fd7e62c17f66344e94cd8859",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-exit-definitions-20261114.tar.gz",
+  "sha256": "d2f1e00174ad0437f5d7b2efe7018d3e5549bebfcf3201a91553d69a505f98d3",
+  "source_revision": "414693ce793b1ea1e99a6dcac34cb2533d9c856c",
+  "uncompressed_bytes": 151930493,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "d2f1e00174ad0437f5d7b2efe7018d3e5549bebfcf3201a91553d69a505f98d3",
+    "source_revision": "414693ce793b1ea1e99a6dcac34cb2533d9c856c",
+    "verified_bytes": 151930493,
+    "verified_files": 536
+  }
+}

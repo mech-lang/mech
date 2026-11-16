@@ -1,0 +1,51 @@
+{
+  "schema": "u16-host-mask-completion-v1",
+  "created_utc": "2026-11-12T11:28:43.046626+00:00",
+  "ordinary_exact_outputs": 1612,
+  "resource_exact_outputs": 371,
+  "independent_exact_outputs": 676,
+  "total": 2659,
+  "earlier350351352_observations_separate": 2404,
+  "source_publication_commit": "c18d910c9dfd56d988a7c4e75a94b90ef8fb2b1a",
+  "qualified_u16_source_sha256": "6a3022a0385efd1bf3dcdc9a76409607d20237260b21bf6745416d84da3d027a",
+  "fixed_benchmark_target_met": true,
+  "baseline_upstream_commit": "fc2982b0c929b1b701209d401a1dc30c773ef4ab",
+  "baseline": "Fastest locally verified unchanged existingexample rust_con, exactbinary retainedaliasrust-preinitialized. Originalpreinitializedpool timeradvantage preserved; notrelabeled continuouspostJSON.",
+  "managed_checkpoint": "IR355 guardedU16: confirmedgainvsselected334; primary\u22121.3908%CI[-2.8526,-0.1296],independent\u22121.8318%CI[-3.3268,-1.1355].",
+  "compact_selection_limit": "IR353U16narrowsourcegainconfirmedvsitsown353U32controlandwinsfixedexample. Aggregatevsprior349CIcrosseszeroindependent;355compactgainunconfirmed. No strongeraggregateclaim.",
+  "custom_Rust": "Twenty local source experiments in24controls are additionaldata, notcompletiongates. No further Rustoptimization.",
+  "all_observations_retained": true,
+  "no_adverse_time_reruns": true,
+  "whole_process_is_acceptance_gate": false,
+  "IR356": "Unbuilt/unselected frozenresearch only; notproduction.",
+  "reports": [
+    {
+      "path": "/private/tmp/mech-related-managed-parity-evidence-20261111/first-u16-host-mask-source-gains-v1/latency.json",
+      "sha256": "a1d8be804821c451ff0bff5e813a57565c8e8fd39e6da8d7929d376649623e31"
+    },
+    {
+      "path": "/private/tmp/mech-related-managed-parity-evidence-20261111/new-managed-resources/resources-u16-host-mask-first/report.json",
+      "sha256": "d3e12720191f70c3d7ad9fcf9fc083f3466538ee59830b416214e04753ce9bcd"
+    },
+    {
+      "path": "/private/tmp/mech-related-managed-parity-evidence-20261111/independent-u16-host-mask-confirmation-v1/report.json",
+      "sha256": "75c5662c6a31ada6ea7cc899cf408227957874d452139dcf37948df863018919"
+    },
+    {
+      "path": "/private/tmp/mech-related-managed-parity-evidence-20261111/first-u16-host-mask-source-gains-v1/paired-comparisons.json",
+      "sha256": "e91cb4d735fa64ea26fefb774c19226c37d7cfbd291a847dc51b468c97817f55"
+    },
+    {
+      "path": "/private/tmp/mech-related-managed-parity-evidence-20261111/independent-u16-host-mask-confirmation-v1/additional-paired-comparisons.json",
+      "sha256": "fa84a73521459bbba12510695a3857ee68021499bdb2c791ecdc231324658aa9"
+    },
+    {
+      "path": "/private/tmp/mech-related-managed-parity-evidence-20261111/first-u16-host-mask-source-gains-v1/fixed-benchmark-comparison.json",
+      "sha256": "bd60a722adc8837aedbdabd8c6caac3651e557bed8efa7fe94419fea0b467f3c"
+    },
+    {
+      "path": "/private/tmp/mech-related-managed-parity-evidence-20261111/fixed-benchmark-provenance-v1/manifest.json",
+      "sha256": "228d61cbb4bbadb132cf093bdd8a4d64ffef5a50741221f798bcd27097083933"
+    }
+  ]
+}

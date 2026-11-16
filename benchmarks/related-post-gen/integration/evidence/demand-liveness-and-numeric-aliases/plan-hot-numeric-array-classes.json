@@ -1,0 +1,631 @@
+[
+  {
+    "header": 107,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 8
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Capture": {
+            "value": 0
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 4,
+        "writes": 0
+      },
+      {
+        "index": 2,
+        "root": 4,
+        "storage": {
+          "Capture": {
+            "value": 89
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 256,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 26
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Carrier": {
+            "field": 3,
+            "physical": 27
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 2,
+        "root": 4,
+        "storage": {
+          "Capture": {
+            "value": 0
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 3,
+        "root": 5,
+        "storage": {
+          "Capture": {
+            "value": 89
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 3,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 459,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 1,
+        "storage": {
+          "Carrier": {
+            "field": 1,
+            "physical": 59
+          }
+        },
+        "writable": true,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 2,
+        "storage": {
+          "Capture": {
+            "value": 284
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 505,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 65
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Capture": {
+            "value": 292
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 572,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 74
+          }
+        },
+        "writable": true,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Carrier": {
+            "field": 3,
+            "physical": 75
+          }
+        },
+        "writable": true,
+        "appends": false,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 2,
+        "root": 4,
+        "storage": {
+          "Capture": {
+            "value": 344
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 3,
+        "root": 5,
+        "storage": {
+          "Capture": {
+            "value": 345
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 671,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 0,
+        "storage": {
+          "Capture": {
+            "value": 407
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 1,
+        "root": 1,
+        "storage": {
+          "Capture": {
+            "value": 408
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      },
+      {
+        "index": 2,
+        "root": 2,
+        "storage": {
+          "Capture": {
+            "value": 292
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 801,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 122
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Carrier": {
+            "field": 3,
+            "physical": 123
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 2,
+        "root": 4,
+        "storage": {
+          "Capture": {
+            "value": 0
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 3,
+        "root": 5,
+        "storage": {
+          "Capture": {
+            "value": 89
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 4,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 1053,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 1,
+        "storage": {
+          "Carrier": {
+            "field": 1,
+            "physical": 161
+          }
+        },
+        "writable": true,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 2,
+        "storage": {
+          "Capture": {
+            "value": 612
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 1099,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 167
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Capture": {
+            "value": 620
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 1166,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 176
+          }
+        },
+        "writable": true,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 1
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Carrier": {
+            "field": 3,
+            "physical": 177
+          }
+        },
+        "writable": true,
+        "appends": false,
+        "width": 8,
+        "reads": 0,
+        "writes": 1
+      },
+      {
+        "index": 2,
+        "root": 4,
+        "storage": {
+          "Capture": {
+            "value": 672
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 3,
+        "root": 5,
+        "storage": {
+          "Capture": {
+            "value": 673
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  },
+  {
+    "header": 1282,
+    "arrays": [
+      {
+        "index": 0,
+        "root": 2,
+        "storage": {
+          "Carrier": {
+            "field": 2,
+            "physical": 222
+          }
+        },
+        "writable": true,
+        "appends": true,
+        "width": 8,
+        "reads": 0,
+        "writes": 5
+      },
+      {
+        "index": 1,
+        "root": 3,
+        "storage": {
+          "Capture": {
+            "value": 737
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 2,
+        "root": 4,
+        "storage": {
+          "Capture": {
+            "value": 167
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 3,
+        "root": 5,
+        "storage": {
+          "Capture": {
+            "value": 738
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      },
+      {
+        "index": 4,
+        "root": 6,
+        "storage": {
+          "Capture": {
+            "value": 647
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 5,
+        "root": 7,
+        "storage": {
+          "Capture": {
+            "value": 680
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      },
+      {
+        "index": 6,
+        "root": 8,
+        "storage": {
+          "Capture": {
+            "value": 451
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 7,
+        "root": 9,
+        "storage": {
+          "Capture": {
+            "value": 452
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      },
+      {
+        "index": 8,
+        "root": 10,
+        "storage": {
+          "Capture": {
+            "value": 319
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 2,
+        "writes": 0
+      },
+      {
+        "index": 9,
+        "root": 11,
+        "storage": {
+          "Capture": {
+            "value": 352
+          }
+        },
+        "writable": false,
+        "appends": false,
+        "width": 8,
+        "reads": 1,
+        "writes": 0
+      }
+    ]
+  }
+]

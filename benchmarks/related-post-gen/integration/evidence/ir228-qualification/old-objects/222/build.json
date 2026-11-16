@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-deflate-reduction-integration-old-object-20261106-v1/222/probe.rs",
+    "--out",
+    "/private/tmp/mech-related-deflate-reduction-integration-old-object-20261106-v1/222/probe",
+    "--bundle",
+    "/private/tmp/mech-related-deflate-reduction-integration-old-object-20261106-v1/222/build",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 3.4109220830723643,
+  "stdout": "warning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-deflate-reduction-integration-old-object-20261106-v1/222/build/linked.rs:3:146\n  |\n3 | ...e67cb1620030761dc70e1d3_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: 1 warning emitted\n\n{\"seconds\": 1.9143071670550853, \"exit\": 0}\n",
+  "stderr": ""
+}

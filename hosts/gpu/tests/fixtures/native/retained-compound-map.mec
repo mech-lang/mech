@@ -1,0 +1,25 @@
++> map
++> sequence
+<dictionary> := <{index<{string:u64}> count<u64>}>
+checked(allowed<bool>, value<u64>) => (out<u64>) :=
+  allowed! := allowed
+  out := value.
+consume(words<dictionary>, marker<u64>, key<string>) => (out<u64>) :=
+  out := words.index{key} + words.count + marker.
+#Collect(keys<[string]>, initial<{string:u64}>, end<u64>, seed<u64>, allowed<bool>, divisor<u64>) => <dictionary>
+  | :Visit(at<u64>, index<{string:u64}>, count<u64>)
+  | :Done(index<{string:u64}>, count<u64>).
+#Collect(keys, initial, end, seed, allowed, divisor) -> :Visit(0u64, initial, seed)
+  :Visit(at, index, count)
+    | at < end -> {
+        admitted := checked(allowed, count)
+        key := keys[at + 1u64]
+        found := key ∈ index
+        next-index := (found? | true => index | false => map/insert(index, key, count))
+        increment := (found? | true => 0u64 | false => 1u64)
+        next-count := admitted / divisor + increment
+      } -> :Visit(at + 1u64, next-index, next-count)
+    | * -> :Done(index, count)
+  :Done(index, count) => {index: index, count: count}.
+result := #Collect(keys<[string]>, initial<{string:u64}>, steps<u64>, seed<u64>, allowed<bool>, divisor<u64>)
+consume(result, marker<u64>, query<string>)

@@ -1,0 +1,10 @@
+{
+  "schema": "mech.related-post-gen.frozen-type-descriptors-gap.v1",
+  "compiler": "5925a2b3a4fd4dfcca7ada541e37a69d514171f8",
+  "status": "qualified_fixed_native_arenas_reduce_processing_allocations_and_time_complete_process_unselected",
+  "report": "compiler-native-fixed-frame-arenas-candidate-20261106.json",
+  "source_level_workaround": false,
+  "full_existing_shared_admission_preserved": true,
+  "processing_allocations_reduced": true,
+  "next_action": "Reduce the remaining general-call type/schema copies and invariant memory planning; test sharing immutable descriptors and combine prior compiler-proved worker constant/cache layouts with the fixed native arenas. The emitted numeric query remains the leading application hotspot, so inspect producer-derived array ranges and funded loop bounds for fewer checks/spills. Complete-process phase diagnostics also identify descriptor restoration and JSON output separately. Both fastest-Rust parity targets remain unmet."
+}

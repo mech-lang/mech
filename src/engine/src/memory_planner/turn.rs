@@ -47,6 +47,87 @@ pub fn plan_turn_memory(
     node: NodeId,
     facts: &TurnMemoryFacts,
 ) -> Result<TurnMemoryPlan, MemoryPlanError> {
+    derive_turn_memory(
+        TurnPlanSource {
+            values: &plan.values,
+            call: plan.call_for_node(node),
+            allocations: &plan.allocations,
+            budget_limits: plan.budget_limits,
+            budget_violations: &plan.budget_violations,
+            scratch_node: None,
+        },
+        node,
+        facts,
+    )
+}
+
+/// Borrow one already-bound call as the same program projection used by the
+/// general planner. This stores no current facts, permission or reservation.
+/// Only its scratch owners acquire the caller's real source node, exactly as
+/// in the former owned one-call ProgramMemoryPlan.
+#[cfg(any(
+    all(test, feature = "string"),
+    all(
+        feature = "native-artifact",
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
+    )
+))]
+pub(crate) fn plan_single_call_turn_memory(
+    call: &mech_core::CallMemoryPlan,
+    node: NodeId,
+    facts: &TurnMemoryFacts,
+) -> Result<TurnMemoryPlan, MemoryPlanError> {
+    derive_turn_memory(
+        TurnPlanSource {
+            values: &[],
+            call: Some(call),
+            allocations: &call.allocations,
+            budget_limits: call.target.limits,
+            budget_violations: &[],
+            scratch_node: Some(node),
+        },
+        node,
+        facts,
+    )
+}
+
+// A borrowed projection of the existing semantic plan, not another planning
+// algorithm or execution authority. Every current footprint and finite check
+// below remains shared by ordinary programs and one selected native call.
+struct TurnPlanSource<'a> {
+    values: &'a [super::ValueMemoryPlan],
+    call: Option<&'a mech_core::CallMemoryPlan>,
+    allocations: &'a [AllocationPlan],
+    budget_limits: MemoryBudgetLimits,
+    budget_violations: &'a [MemoryBudgetViolation],
+    scratch_node: Option<NodeId>,
+}
+impl TurnPlanSource<'_> {
+    fn scoped_owner(&self, owner: &MemoryObjectOwner) -> MemoryObjectOwner {
+        let mut owner = owner.clone();
+        if let (Some(node), MemoryObjectOwner::NodeScratch { node: target, .. }) =
+            (self.scratch_node, &mut owner)
+        {
+            *target = node;
+        }
+        owner
+    }
+    fn scoped_allocation(&self, allocation: &AllocationPlan) -> AllocationPlan {
+        let mut allocation = allocation.clone();
+        allocation.owner = self.scoped_owner(&allocation.owner);
+        allocation
+    }
+}
+
+fn derive_turn_memory(
+    plan: TurnPlanSource<'_>,
+    node: NodeId,
+    facts: &TurnMemoryFacts,
+) -> Result<TurnMemoryPlan, MemoryPlanError> {
     let value_transactions = plan
         .values
         .iter()
@@ -61,7 +142,7 @@ pub fn plan_turn_memory(
         .map(|value| value.transaction)
         .collect::<Vec<_>>();
     let call_transactions = plan
-        .call_for_node(node)
+        .call
         .map(|call| call.transactions.to_vec())
         .unwrap_or_default();
     let transaction_objects = value_transactions
@@ -73,10 +154,10 @@ pub fn plan_turn_memory(
         .allocations
         .iter()
         .filter(|allocation| transaction_objects.contains(&allocation.id))
-        .map(|allocation| allocation.owner.clone())
+        .map(|allocation| plan.scoped_owner(&allocation.owner))
         .collect::<BTreeSet<_>>();
     let port_objects = plan
-        .call_for_node(node)
+        .call
         .into_iter()
         .flat_map(|call| call.inputs.iter().chain(call.outputs.iter()))
         .map(|port| port.object)
@@ -85,27 +166,27 @@ pub fn plan_turn_memory(
         .allocations
         .iter()
         .filter(|a| port_objects.contains(&a.id))
-        .map(|a| a.owner.clone())
+        .map(|a| plan.scoped_owner(&a.owner))
         .collect::<BTreeSet<_>>();
     let mut allocations = plan
         .allocations
         .iter()
         .filter(|allocation| {
-            owner_node(&allocation.owner) == Some(node)
+            owner_node(&plan.scoped_owner(&allocation.owner)) == Some(node)
                 || port_objects.contains(&allocation.id)
                 || (allocation.role == mech_core::AllocationRole::VariablePayload
-                    && port_owners.contains(&allocation.owner))
+                    && port_owners.contains(&plan.scoped_owner(&allocation.owner)))
                 || transaction_objects.contains(&allocation.id)
                 || (allocation.role == mech_core::AllocationRole::TransactionStage
-                    && transaction_owners.contains(&allocation.owner))
+                    && transaction_owners.contains(&plan.scoped_owner(&allocation.owner)))
         })
-        .cloned()
+        .map(|allocation| plan.scoped_allocation(allocation))
         .collect::<Vec<_>>();
     let mut transactions = Vec::new();
     let mut demand = facts.additional_demand;
     let mut output_bytes = 0_u64;
     let mut turn_call = None;
-    if let Some(call) = plan.call_for_node(node) {
+    if let Some(call) = plan.call {
         let resolved = facts
             .resolved_footprints
             .iter()
@@ -133,7 +214,7 @@ pub fn plan_turn_memory(
                     .unwrap_or_default()
             })
             .collect::<Vec<_>>();
-        let resolved_call = derive_turn_call(&template, &resolved, Some(&published))?;
+        let resolved_call = derive_turn_call(&mut template, &resolved, Some(&published))?;
         refresh_turn_allocations(&mut allocations, call, &resolved_call, node, facts)?;
         demand = checked_demand_add(demand, resolved_call.demand)?;
         transactions.extend(call_transactions.iter().copied());
@@ -461,7 +542,9 @@ pub(crate) fn apply_observed_turn_demand(
     observed: ResourceDemand,
     final_output: Option<CurrentMemoryFootprint>,
 ) -> Result<TurnMemoryPlan, MemoryPlanError> {
-    if let Some(call) = plan.call.clone() {
+    // This plan is owned for the entire refinement. Borrow its call instead
+    // of rebuilding an immutable template; an unselected refinement keeps it.
+    if let Some(call) = plan.call.as_mut() {
         if call.outputs.len() == 1
             && (observed.persistent_bytes != 0
                 || observed.output_elements != 0
@@ -520,16 +603,16 @@ pub(crate) fn apply_observed_turn_demand(
                         .unwrap_or_default()
                 })
                 .collect::<Vec<_>>();
-            let complete = derive_turn_call(&call, &resolved, Some(&published))?;
+            let complete = derive_turn_call(call, &resolved, Some(&published))?;
             refresh_turn_allocations(
                 &mut plan.allocations,
-                &call,
+                call,
                 &complete,
                 plan.node,
                 &plan.facts,
             )?;
             plan.demand = checked_demand_add(complete.demand, plan.facts.additional_demand)?;
-            plan.call = Some(scope_turn_call(complete, &call, &plan.allocations));
+            plan.call = Some(scope_turn_call(complete, call, &plan.allocations));
         }
     }
     let observed = checked_demand_add(observed, plan.facts.additional_demand)?;
@@ -606,18 +689,17 @@ pub(crate) fn plan_current_resident_turn(
 /// distinct published output footprints. Publication comparison is therefore
 /// derived once by the core planner rather than patched through subtraction.
 fn derive_turn_call(
-    template: &mech_core::CallMemoryPlan,
+    template: &mut mech_core::CallMemoryPlan,
     resolved: &BTreeMap<(PortDirection, u16), CurrentMemoryFootprint>,
     published: Option<&[CurrentMemoryFootprint]>,
 ) -> Result<mech_core::CallMemoryPlan, MemoryPlanError> {
-    let mut derivation = template.clone();
-    derivation.target.limits = MemoryBudgetLimits::default();
-    let mut call = mech_core::resolve_current_call_memory(
-        &derivation,
-        &derivation.bound_call,
-        resolved,
-        published,
-    )?;
+    // Both callers already own a local template. Restore its limits on errors
+    // as well as success, before the caller can reuse it for scoping.
+    let limits = std::mem::take(&mut template.target.limits);
+    let result =
+        mech_core::resolve_current_call_memory(template, &template.bound_call, resolved, published);
+    template.target.limits = limits;
+    let mut call = result?;
     call.target = template.target.clone();
     Ok(call)
 }
@@ -924,3 +1006,7 @@ fn transaction_key(transaction: &TransactionRequirement) -> (u8, u32, u32) {
         TransactionRequirement::DoubleBuffer { current, next } => (3, current.get(), next.get()),
     }
 }
+
+#[cfg(all(test, feature = "string"))]
+#[path = "turn_tests.rs"]
+mod tests;

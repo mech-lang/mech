@@ -12,9 +12,9 @@ rust-version = "1.92"
 
 [features]
 default = []
-canonical-native-runtime = ["mech-engine/native-artifact"]
+canonical-native-runtime = ["mech-engine/native-artifact", "mech-engine/integer_bits"]
 canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]
-canonical-native-program-runtime = ["dep:hashbrown", "canonical-native-runtime", "mech-engine/pure_text", "mech-engine/map_ops", "mech-engine/convert", "dep:grapheme", "dep:miniz_oxide"]
+canonical-native-program-runtime = ["dep:hashbrown", "canonical-native-runtime", "mech-engine/pure_text", "mech-engine/map_ops", "mech-engine/sequence_buffers", "mech-engine/convert", "dep:grapheme", "dep:miniz_oxide"]
 canonical-native-program = ["canonical-native-program-runtime", "canonical-native"]
 # Runtime-only capability bridge; no source-native sequence frontend or JIT.
 canonical-native-program-host-runtime = ["canonical-native-program-runtime", "runtime-host", "mech-runtime/canonical-native-images", "dep:mech-terminal"]
@@ -22,7 +22,7 @@ canonical-native-program-host = ["canonical-native-program", "canonical-native-p
 # Explicit experiment only: never enabled by the production hosted CLI features.
 canonical-native-benchmark-policy-runtime = ["canonical-native-program-host-runtime"]
 canonical-native-benchmark-policy = ["canonical-native-program-host", "canonical-native-benchmark-policy-runtime"]
-native-build = ["sequence-cli", "fused-cli"]
+native-build = ["sequence-cli", "fused-cli", "dep:toml_edit"]
 system-gmp = ["dep:gmp-mpfr-sys", "gmp-mpfr-sys/use-system-libs"]
 sequence-cli = ["aot", "dep:hashbrown", "dep:fxhash", "dep:rayon", "dep:memchr", "dep:regex", "dep:rug", "dep:mech-stdlib", "mech-stdlib/native-sequence"]
 runtime-host = ["dep:mech-runtime"]
@@ -81,7 +81,7 @@ sha2 = { version = "0.11.0", default-features = false }
 toml_edit = { version = "0.23", optional = true }
 wgpu = { version = "0.20.1", optional = true }
 wide = "0.7.33"
-cranelift-codegen = { version = "=0.131.3", optional = true }
+cranelift-codegen = { version = "=0.131.3", optional = true, features = ["experimental-cmp-reuse"] }
 cranelift-frontend = { version = "=0.131.3", optional = true }
 cranelift-jit = { version = "=0.131.3", optional = true }
 cranelift-module = { version = "=0.131.3", optional = true }
@@ -95,6 +95,10 @@ miniz_oxide = { version = "0.8.9", optional = true }
 name = "particle_benchmark"
 path = "examples/particle_benchmark.rs"
 required-features = ["native"]
+
+[[example]]
+name = "argument_frame_transport"
+required-features = ["canonical-native-program"]
 
 [[bin]]
 name = "mech-native-source"
@@ -110,6 +114,10 @@ required-features = ["fused-cli"]
 name = "compute_backend_benchmark"
 path = "examples/compute_backend_benchmark.rs"
 required-features = ["native"]
+
+[[example]]
+name = "native_frame_transport"
+required-features = ["canonical-native-program"]
 
 [[example]]
 name = "parallel_ekf_benchmark"
@@ -138,6 +146,10 @@ mech-engine = { version = "0.3.5", path = "../../src/engine", default-features =
 mech-stdlib = { version = "0.3.5", path = "../../src/stdlib", default-features = false, features = ["full_compiler", "native-plan"] }
 mech-syntax = { version = "0.3.5", path = "../../src/syntax", default-features = false, features = ["full"] }
 mech-runtime = { version = "0.3.5", path = "../../src/runtime", default-features = false, features = ["full_compiler", "resident-routing-source", "compute"] }
+
+[[test]]
+name = "canonical_artifact_bits"
+required-features = ["canonical-native"]
 
 [[bin]]
 name = "mech-native-map"
@@ -179,3 +191,7 @@ required-features = ["canonical-native-program"]
 [[test]]
 name = "canonical_hosted_artifact"
 required-features = ["canonical-native-program-host"]
+
+[[example]]
+name = "compression_application"
+required-features = ["canonical-native-program"]

@@ -18,8 +18,21 @@ use mech_engine::native_artifact::{
 use sha2::Digest;
 use std::collections::BTreeMap;
 
-#[derive(Clone, Copy, Debug)]
+#[cfg(test)]
+#[path = "narrow_scalar_tests.rs"]
+mod narrow_scalar_tests;
+
+#[cfg(test)]
+mod checked_unsigned_tests;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct NativeCompileLimits {
+    /// Conservative size allowance for one current-visit definition table.
+    /// This is not a bound on total compiler or proof-pass memory: graph
+    /// inventories, queues, cloned rows and simultaneous nested tables are
+    /// separate scratch allocations. Checked before constructing these tables.
+    pub max_definition_table_bytes: u64,
     pub max_nodes: u64,
     pub max_inputs: u64,
     pub max_outputs: u64,
@@ -29,6 +42,8 @@ pub struct NativeCompileLimits {
 impl Default for NativeCompileLimits {
     fn default() -> Self {
         Self {
+            max_definition_table_bytes:
+                mech_engine::native_artifact::DEFAULT_NATIVE_DEFINITION_TABLE_BYTES,
             max_nodes: 4096,
             max_inputs: 4096,
             max_outputs: 4096,
@@ -227,6 +242,10 @@ impl Sources {
             NativeValueRef::Local(id) => self.locals.get(&id).map(|v| v.1),
             NativeValueRef::Constant(id) => self.constants.get(&id).map(|v| match v {
                 NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
+                NativeScalarValue::U8(_) => NativeScalarKind::U8,
+                NativeScalarValue::U16(_) => NativeScalarKind::U16,
+                NativeScalarValue::U32(_) => NativeScalarKind::U32,
+
                 NativeScalarValue::U64(_) => NativeScalarKind::U64,
                 NativeScalarValue::I64(_) => NativeScalarKind::I64,
                 NativeScalarValue::F64(_) => NativeScalarKind::F64,
@@ -270,6 +289,10 @@ impl Sources {
                         reason: "unknown constant",
                     })? {
                     NativeScalarValue::Bool(value) => u64::from(*value),
+                    NativeScalarValue::U8(value) => u64::from(*value),
+                    NativeScalarValue::U16(value) => u64::from(*value),
+                    NativeScalarValue::U32(value) => u64::from(*value),
+
                     NativeScalarValue::U64(value) => *value,
                     NativeScalarValue::I64(value) => *value as u64,
                     NativeScalarValue::F64(value) => value.bits(),
@@ -340,6 +363,14 @@ pub(in crate::native_artifact) fn admit(
     let valid = b.ins().icmp_imm(IntCC::Equal, status, STATUS_OK as i64);
     guard(b, valid, error, STATUS_ADMISSION);
 }
+pub(in crate::native_artifact) fn word_upper_bound(kind: NativeScalarKind) -> Option<u64> {
+    if kind == NativeScalarKind::Bool {
+        Some(1)
+    } else {
+        kind.unsigned_maximum()
+            .filter(|maximum| *maximum != u64::MAX)
+    }
+}
 pub(in crate::native_artifact) fn primitive(
     b: &mut FunctionBuilder<'_>,
     op: NativeScalarOp,
@@ -351,6 +382,66 @@ pub(in crate::native_artifact) fn primitive(
     // Guards precede machine conversions and result stores, and the caller
     // admits this complete checked template before loading its operand.
     match op {
+        U8ToU16 => {
+            return args[0];
+        }
+        U8ToU32 => {
+            return args[0];
+        }
+        U8ToU64 => {
+            return args[0];
+        }
+        U16ToU8 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U16ToU32 => {
+            return args[0];
+        }
+        U16ToU64 => {
+            return args[0];
+        }
+        U32ToU8 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U32ToU16 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U32ToU64 => {
+            return args[0];
+        }
+        U64ToU8 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 255i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U64ToU16 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 65535i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
+        U64ToU32 => {
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, args[0], 4294967295i64);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            return args[0];
+        }
         U64ToI64 => {
             let valid = b
                 .ins()
@@ -460,6 +551,12 @@ pub(in crate::native_artifact) fn primitive(
         };
         return b.ins().bitcast(types::I64, MemFlags::new(), value);
     }
+    match op {
+        U64BitNot => return b.ins().bnot(a),
+        U64Clz => return b.ins().clz(a),
+        U64Ctz => return b.ins().ctz(a),
+        _ => {}
+    }
     if op == BoolNot {
         return b.ins().bxor_imm(a, 1);
     }
@@ -469,16 +566,98 @@ pub(in crate::native_artifact) fn primitive(
         return b.ins().ineg(a);
     }
     let c = args[1];
+    // U16 transport uses explicit zero extension. The ordinary typed admission
+    // still rejects out-of-range raw caller words before this instruction path.
+    let (a, c) = if matches!(op, U16Add | U16Sub | U16Mul | U16Div | U16Rem) {
+        let left = b.ins().ireduce(types::I16, a);
+        let right = b.ins().ireduce(types::I16, c);
+        (
+            b.ins().uextend(types::I64, left),
+            b.ins().uextend(types::I64, right),
+        )
+    } else {
+        (a, c)
+    };
     match op {
-        U64Add | U64Sub | U64Mul => {
-            let (value, overflow) = match op {
-                U64Add => b.ins().uadd_overflow(a, c),
-                U64Sub => b.ins().usub_overflow(a, c),
-                _ => b.ins().umul_overflow(a, c),
+        U64BitAnd => b.ins().band(a, c),
+        U64BitOr => b.ins().bor(a, c),
+        U64BitXor => b.ins().bxor(a, c),
+        U64WrappingAdd => b.ins().iadd(a, c),
+        U64WrappingSub => b.ins().isub(a, c),
+        U64WrappingMul => b.ins().imul(a, c),
+        U64ShlWrap | U64ShrWrap => {
+            let count = b.ins().band_imm(c, 63);
+            if op == U64ShlWrap {
+                b.ins().ishl(a, count)
+            } else {
+                b.ins().ushr(a, count)
+            }
+        }
+        U64BitNot | U64Clz | U64Ctz => unreachable!(),
+        U8Add | U16Add | U32Add => {
+            // Both inputs are validated exact-width words. Their sum fits the
+            // I64 transport lane; overflow is tested at the semantic result width.
+            let value = b.ins().iadd(a, c);
+            let maximum = if op == U8Add {
+                i64::from(u8::MAX)
+            } else if op == U16Add {
+                i64::from(u16::MAX)
+            } else {
+                i64::from(u32::MAX)
             };
-            let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, maximum);
             guard(b, valid, error, STATUS_ARITHMETIC);
             value
+        }
+        U16Sub | U32Sub | U64Sub => {
+            let valid = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, a, c);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            b.ins().isub(a, c)
+        }
+        U64Add => {
+            // Unsigned addition wraps below either operand exactly on carry.
+            // Keep the comparison directly in the branch condition, instead
+            // of materializing and re-testing an overflow Boolean.
+            let value = b.ins().iadd(a, c);
+            let valid = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, value, a);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            value
+        }
+        U16Mul | U32Mul => {
+            // Exact-width inputs make the complete product fit this U64 lane.
+            // Check the semantic result width before any publication.
+            let value = b.ins().imul(a, c);
+            let maximum = if op == U16Mul {
+                i64::from(u16::MAX)
+            } else {
+                i64::from(u32::MAX)
+            };
+            let valid = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, value, maximum);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            value
+        }
+        U16Div | U16Rem | U32Div | U32Rem => {
+            let nonzero = b.ins().icmp_imm(IntCC::NotEqual, c, 0);
+            guard(b, nonzero, error, STATUS_ARITHMETIC);
+            let left = b.ins().ireduce(types::I32, a);
+            let right = b.ins().ireduce(types::I32, c);
+            let value = if matches!(op, U16Div | U32Div) {
+                b.ins().udiv(left, right)
+            } else {
+                b.ins().urem(left, right)
+            };
+            b.ins().uextend(types::I64, value)
+        }
+        U64Mul => {
+            // A full-width product fits iff its unsigned high half is zero.
+            let high = b.ins().umulhi(a, c);
+            let valid = b.ins().icmp_imm(IntCC::Equal, high, 0);
+            guard(b, valid, error, STATUS_ARITHMETIC);
+            b.ins().imul(a, c)
         }
         U64Div | U64Rem => {
             let nonzero = b.ins().icmp_imm(IntCC::NotEqual, c, 0);
@@ -530,21 +709,24 @@ pub(in crate::native_artifact) fn primitive(
         BoolAnd => b.ins().band(a, c),
         BoolOr => b.ins().bor(a, c),
         BoolXor => b.ins().bxor(a, c),
-        U64Eq | U64Ne | U64Lt | U64Le | U64Gt | U64Ge | BoolEq | BoolNe => {
+        U8Eq | U8Ne | U8Lt | U8Le | U8Gt | U8Ge | U16Eq | U16Ne | U16Lt | U16Le | U16Gt | U16Ge
+        | U32Eq | U32Ne | U32Lt | U32Le | U32Gt | U32Ge | U64Eq | U64Ne | U64Lt | U64Le | U64Gt
+        | U64Ge | BoolEq | BoolNe => {
             let cc = match op {
-                U64Eq | BoolEq => IntCC::Equal,
-                U64Ne | BoolNe => IntCC::NotEqual,
-                U64Lt => IntCC::UnsignedLessThan,
-                U64Le => IntCC::UnsignedLessThanOrEqual,
-                U64Gt => IntCC::UnsignedGreaterThan,
+                U8Eq | U16Eq | U32Eq | U64Eq | BoolEq => IntCC::Equal,
+                U8Ne | U16Ne | U32Ne | U64Ne | BoolNe => IntCC::NotEqual,
+                U8Lt | U16Lt | U32Lt | U64Lt => IntCC::UnsignedLessThan,
+                U8Le | U16Le | U32Le | U64Le => IntCC::UnsignedLessThanOrEqual,
+                U8Gt | U16Gt | U32Gt | U64Gt => IntCC::UnsignedGreaterThan,
                 _ => IntCC::UnsignedGreaterThanOrEqual,
             };
             let value = b.ins().icmp(cc, a, c);
             b.ins().uextend(types::I64, value)
         }
-        U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64 | F64ToU64 | F64ToI64 | BoolNot | I64Neg
-        | F64Add | F64Sub | F64Mul | F64Div | F64Neg | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le
-        | F64Gt | F64Ge => unreachable!(),
+        U8ToU16 | U8ToU32 | U8ToU64 | U16ToU8 | U16ToU32 | U16ToU64 | U32ToU8 | U32ToU16
+        | U32ToU64 | U64ToU8 | U64ToU16 | U64ToU32 | U64ToI64 | I64ToU64 | U64ToF64 | I64ToF64
+        | F64ToU64 | F64ToI64 | BoolNot | I64Neg | F64Add | F64Sub | F64Mul | F64Div | F64Neg
+        | F64Sqrt | F64Eq | F64Ne | F64Lt | F64Le | F64Gt | F64Ge => unreachable!(),
     }
 }
 
@@ -662,11 +844,13 @@ fn define<M: Module>(
             }
         }
         for (index, input) in plan.inputs().iter().enumerate() {
-            if input.ty().kind() == NativeScalarKind::Bool {
+            if let Some(maximum) = word_upper_bound(input.ty().kind()) {
                 let word = b
                     .ins()
                     .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(&mut b, valid, error, STATUS_ABI);
             }
         }

@@ -1,0 +1,3242 @@
+{
+  "balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 13.832988875000002,
+        "control": 15.526897561999998,
+        "mean_reduction_fraction": 0.10909511576514885
+      },
+      "instructions": {
+        "candidate": 193228229380,
+        "control": 222097252769,
+        "mean_reduction_fraction": 0.1299837032159341
+      },
+      "whole_process_seconds": {
+        "candidate": 13.90088575007394,
+        "control": 15.594685291405767,
+        "mean_reduction_fraction": 0.10861389695791301
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 14.050381854000001,
+        "control": 15.4295303335,
+        "mean_reduction_fraction": 0.08938369799277979
+      },
+      "instructions": {
+        "candidate": 193313988938,
+        "control": 222196928194,
+        "mean_reduction_fraction": 0.12998802229517015
+      },
+      "whole_process_seconds": {
+        "candidate": 14.119151208549738,
+        "control": 15.499524875544012,
+        "mean_reduction_fraction": 0.08905909555797431
+      }
+    }
+  ],
+  "common_compile_threads": 2,
+  "compiler_binary_sha256": {
+    "candidate": "5a1687ef2d82a3f73d8e04328e99dc72372498a215266d1d5ba1ec56bb71700e",
+    "control": "b72ff590c3ea6760f9a77372ba2bb6761f3b2d2885cdbef029ee040509bb51ba"
+  },
+  "compiler_build_diagnostics": {
+    "generate": {
+      "hash_or_control_flow_mismatch": 0,
+      "missing_function": 0,
+      "total": 0,
+      "warnings": 0
+    },
+    "native-control": {
+      "hash_or_control_flow_mismatch": 0,
+      "missing_function": 0,
+      "total": 0,
+      "warnings": 0
+    },
+    "use": {
+      "hash_or_control_flow_mismatch": 0,
+      "missing_function": 18617,
+      "total": 18617,
+      "warnings": 18617
+    }
+  },
+  "compiler_builds": {
+    "generate": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-refreshed-native-pgo-20261115/target",
+      "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/generate",
+      "binary_sha256": "10a036aa1dc40afe162c83dfa40e2e898c6d7d377aec7832b5651d2fa2fcac96",
+      "cargo_jobs": 4,
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "--target",
+        "aarch64-apple-darwin",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "mode": "generate",
+      "rustflags": [
+        "-D",
+        "warnings",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "profile-generate=/private/tmp/mech-refreshed-native-pgo-20261115/raw"
+      ],
+      "seconds": 620.1845115001779,
+      "source_commit": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+      "target": "aarch64-apple-darwin"
+    },
+    "native-control": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-refreshed-native-pgo-20261115/target",
+      "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/native-control",
+      "binary_sha256": "b412fdb2450acc85e6ed8c97b4f37b6d1c48f43e8133760acf5c074d8915913c",
+      "cargo_jobs": 4,
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "--target",
+        "aarch64-apple-darwin",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "mode": "native-control",
+      "rustflags": [
+        "-D",
+        "warnings",
+        "-C",
+        "target-cpu=native"
+      ],
+      "seconds": 465.7879444169812,
+      "source_commit": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+      "target": "aarch64-apple-darwin"
+    },
+    "use": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-refreshed-native-pgo-20261115/target",
+      "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/use",
+      "binary_sha256": "5a1687ef2d82a3f73d8e04328e99dc72372498a215266d1d5ba1ec56bb71700e",
+      "cargo_jobs": 4,
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "--target",
+        "aarch64-apple-darwin",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "mode": "use",
+      "rustflags": [
+        "-D",
+        "warnings",
+        "-C",
+        "target-cpu=native",
+        "-C",
+        "profile-use=/private/tmp/mech-refreshed-native-pgo-20261115/merged.profdata",
+        "-C",
+        "llvm-args=-pgo-warn-missing-function"
+      ],
+      "seconds": 427.4604201670736,
+      "source_commit": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+      "target": "aarch64-apple-darwin"
+    }
+  },
+  "control_reuse": {
+    "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/control",
+    "bytes": 66939952,
+    "scope": "No duplicate standard compiler rebuild. Exact retained B72 standard compiler; nativeCPU+PGO candidate is a combined compiler-build configuration comparison. Explicit target used for every newly built compiler.",
+    "sha256": "b72ff590c3ea6760f9a77372ba2bb6761f3b2d2885cdbef029ee040509bb51ba",
+    "source_commit": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+    "source_evidence_packet": 39,
+    "standard_build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "6b29f4a0fdacd5cbad2356144e402dae42323aff",
+      "binary": "/private/tmp/mech-reachability-worklist-20261115/candidate",
+      "binary_sha256": "b72ff590c3ea6760f9a77372ba2bb6761f3b2d2885cdbef029ee040509bb51ba",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "8a313dd1bf6550f9546e161bc5ccb0fc32ded92ca5e8879053936e2ff339f073",
+      "seconds": 250.46175912488252
+    }
+  },
+  "decision": {
+    "adverse": "Objectencoding+14.2730%;fullnative link+5.78484%. Everyphase/RSS/footprint/percase/block andallcoldmissingprofilediagnostics saved. EveryothermainObjectphaseimprovesinmean; maxRSS-0.08888%,footprint-0.00925%. Linkmovementobservational, no linkerchange.",
+    "blocks": [
+      {
+        "candidate": 14.065532562555745,
+        "control": 15.66251579101663,
+        "mean_reduction_fraction": 0.10196211450122517
+      },
+      {
+        "candidate": 13.989429353969172,
+        "control": 15.578959292033687,
+        "mean_reduction_fraction": 0.10203055982547715
+      }
+    ],
+    "decision": "retain",
+    "default_serial_byte_gate_passed": true,
+    "goal_complete": false,
+    "profile_hash_cfg_mismatches": 0,
+    "profile_warnings": 18617,
+    "reason": "Completebuild10.199625%faster bothblocks10.1962%/10.2031%. Objectcompiler9.92704%lower,instructions12.99859%lower;all7heldoutmeanprocess/compiler/instructionsfasterandbothprocessblocksbetter. Every4outputs/complete metadata andwholeD6exe,14fixturepairs/56heldoutcompiles pass. NativeCPUinitialgates/training8alloutputsmatch. Separatecorrecteddefault0gatepassrequired beforepublish.",
+    "selected_compiler": "/private/tmp/mech-refreshed-native-pgo-20261115/use",
+    "selected_compiler_sha256": "5a1687ef2d82a3f73d8e04328e99dc72372498a215266d1d5ba1ec56bb71700e",
+    "setup_failures": [
+      {
+        "corrected": "Use root/qualification-scripts; samefrozencompilerbinary/configuration. Originaldriver+command/logs preserved.",
+        "error": "Wronghelperrelativepath qualification/qualification-scripts; Pythoncouldnotopenhelper, compilerneverexecuted.",
+        "stage": "extra default-serial gate wrapper"
+      }
+    ],
+    "source_commit": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+    "source_to_executable_candidate_seconds": 14.027480958262458,
+    "source_to_executable_control_seconds": 15.620737541525159,
+    "source_to_executable_reduction": 0.10199624563355536,
+    "standard_compiler_unchanged": "/private/tmp/mech-level12-compile-target/compiler/compile_profile",
+    "strategy": "Combined current-source compiler-nativeCPU plus instrumentation PGO; standard retained B72 control reused. No new production source transformation or independent/additive CPU/PGO attribution."
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "final_links": [
+    {
+      "executable_bytes": 2060440,
+      "executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.12432050006464124,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "control"
+    },
+    {
+      "executable_bytes": 2060440,
+      "executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.08881004201248288,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "candidate"
+    }
+  ],
+  "fixture_pairs": 14,
+  "held_out_compilation": [
+    {
+      "balanced_blocks": [
+        {
+          "candidate": 0.0900492916116491,
+          "control": 0.10431985452305526,
+          "mean_reduction_fraction": 0.13679623094424742
+        },
+        {
+          "candidate": 0.0921328334370628,
+          "control": 0.10072195797692984,
+          "mean_reduction_fraction": 0.08527559146372399
+        }
+      ],
+      "name": "numeric-nested-phase-states",
+      "numerical_summary": {
+        "compiler_seconds": {
+          "candidate": [
+            0.06810075,
+            0.068082,
+            0.068646125,
+            0.06816525
+          ],
+          "control": [
+            0.080637416,
+            0.080536,
+            0.0803215,
+            0.080249084
+          ],
+          "mean_reduction_fraction": 0.15151758851757935
+        },
+        "instructions": {
+          "candidate": [
+            943896824,
+            944270640,
+            944497482,
+            944580621
+          ],
+          "control": [
+            1091961198,
+            1091907991,
+            1092295475,
+            1092505010
+          ],
+          "mean_reduction_fraction": 0.13537853651875809
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            37355520,
+            37355520,
+            37355520,
+            37355520
+          ],
+          "control": [
+            40960000,
+            40960000,
+            40960000,
+            40960000
+          ],
+          "mean_reduction_fraction": 0.08799999999999997
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            0.08950641611590981,
+            0.09059216710738838,
+            0.09304820792749524,
+            0.09121745894663036
+          ],
+          "control": [
+            0.10498208389617503,
+            0.10365762514993548,
+            0.10078724985942245,
+            0.10065666609443724
+          ],
+          "mean_reduction_fraction": 0.11148793103491939
+        }
+      },
+      "observations": [
+        {
+          "compiler_seconds": 0.080637416,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 1091961198,
+          "max_rss_bytes": 40960000,
+          "output_matches": true,
+          "run": 1,
+          "variant": "control",
+          "whole_process_seconds": 0.10498208389617503
+        },
+        {
+          "compiler_seconds": 0.06810075,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 943896824,
+          "max_rss_bytes": 37355520,
+          "output_matches": true,
+          "run": 1,
+          "variant": "candidate",
+          "whole_process_seconds": 0.08950641611590981
+        },
+        {
+          "compiler_seconds": 0.068082,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 944270640,
+          "max_rss_bytes": 37355520,
+          "output_matches": true,
+          "run": 2,
+          "variant": "candidate",
+          "whole_process_seconds": 0.09059216710738838
+        },
+        {
+          "compiler_seconds": 0.080536,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 1091907991,
+          "max_rss_bytes": 40960000,
+          "output_matches": true,
+          "run": 2,
+          "variant": "control",
+          "whole_process_seconds": 0.10365762514993548
+        },
+        {
+          "compiler_seconds": 0.068646125,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 944497482,
+          "max_rss_bytes": 37355520,
+          "output_matches": true,
+          "run": 3,
+          "variant": "candidate",
+          "whole_process_seconds": 0.09304820792749524
+        },
+        {
+          "compiler_seconds": 0.0803215,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 1092295475,
+          "max_rss_bytes": 40960000,
+          "output_matches": true,
+          "run": 3,
+          "variant": "control",
+          "whole_process_seconds": 0.10078724985942245
+        },
+        {
+          "compiler_seconds": 0.080249084,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 1092505010,
+          "max_rss_bytes": 40960000,
+          "output_matches": true,
+          "run": 4,
+          "variant": "control",
+          "whole_process_seconds": 0.10065666609443724
+        },
+        {
+          "compiler_seconds": 0.06816525,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          },
+          "instructions": 944580621,
+          "max_rss_bytes": 37355520,
+          "output_matches": true,
+          "run": 4,
+          "variant": "candidate",
+          "whole_process_seconds": 0.09121745894663036
+        }
+      ],
+      "source": {
+        "bytes": 2905,
+        "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+      }
+    },
+    {
+      "balanced_blocks": [
+        {
+          "candidate": 0.0778276874916628,
+          "control": 0.08231247891671956,
+          "mean_reduction_fraction": 0.05448495154172539
+        },
+        {
+          "candidate": 0.07717154151760042,
+          "control": 0.08659237495157868,
+          "mean_reduction_fraction": 0.10879518478672356
+        }
+      ],
+      "name": "numeric-changing-capture-tree",
+      "numerical_summary": {
+        "compiler_seconds": {
+          "candidate": [
+            0.055196042,
+            0.055427292,
+            0.054762041,
+            0.055289458
+          ],
+          "control": [
+            0.062868792,
+            0.063408083,
+            0.06314075,
+            0.062884833
+          ],
+          "mean_reduction_fraction": 0.12535599237007822
+        },
+        "instructions": {
+          "candidate": [
+            723945997,
+            723543916,
+            723949858,
+            723589794
+          ],
+          "control": [
+            814681849,
+            814722156,
+            814777494,
+            814417673
+          ],
+          "mean_reduction_fraction": 0.1115723621745277
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            33767424,
+            33767424,
+            33767424,
+            33767424
+          ],
+          "control": [
+            36864000,
+            36864000,
+            36864000,
+            36864000
+          ],
+          "mean_reduction_fraction": 0.08399999999999996
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            0.07869762484915555,
+            0.07695775013417006,
+            0.07660537515766919,
+            0.07773770787753165
+          ],
+          "control": [
+            0.08084629103541374,
+            0.08377866679802537,
+            0.08877375000156462,
+            0.08441099990159273
+          ],
+          "mean_reduction_fraction": 0.0823281542274551
+        }
+      },
+      "observations": [
+        {
+          "compiler_seconds": 0.062868792,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 814681849,
+          "max_rss_bytes": 36864000,
+          "output_matches": true,
+          "run": 1,
+          "variant": "control",
+          "whole_process_seconds": 0.08084629103541374
+        },
+        {
+          "compiler_seconds": 0.055196042,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 723945997,
+          "max_rss_bytes": 33767424,
+          "output_matches": true,
+          "run": 1,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07869762484915555
+        },
+        {
+          "compiler_seconds": 0.055427292,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 723543916,
+          "max_rss_bytes": 33767424,
+          "output_matches": true,
+          "run": 2,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07695775013417006
+        },
+        {
+          "compiler_seconds": 0.063408083,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 814722156,
+          "max_rss_bytes": 36864000,
+          "output_matches": true,
+          "run": 2,
+          "variant": "control",
+          "whole_process_seconds": 0.08377866679802537
+        },
+        {
+          "compiler_seconds": 0.054762041,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 723949858,
+          "max_rss_bytes": 33767424,
+          "output_matches": true,
+          "run": 3,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07660537515766919
+        },
+        {
+          "compiler_seconds": 0.06314075,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 814777494,
+          "max_rss_bytes": 36864000,
+          "output_matches": true,
+          "run": 3,
+          "variant": "control",
+          "whole_process_seconds": 0.08877375000156462
+        },
+        {
+          "compiler_seconds": 0.062884833,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 814417673,
+          "max_rss_bytes": 36864000,
+          "output_matches": true,
+          "run": 4,
+          "variant": "control",
+          "whole_process_seconds": 0.08441099990159273
+        },
+        {
+          "compiler_seconds": 0.055289458,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          },
+          "instructions": 723589794,
+          "max_rss_bytes": 33767424,
+          "output_matches": true,
+          "run": 4,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07773770787753165
+        }
+      ],
+      "source": {
+        "bytes": 1258,
+        "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+      }
+    },
+    {
+      "balanced_blocks": [
+        {
+          "candidate": 0.07861722900997847,
+          "control": 0.08942512492649257,
+          "mean_reduction_fraction": 0.12085972399141953
+        },
+        {
+          "candidate": 0.07959662459325045,
+          "control": 0.08919114538002759,
+          "mean_reduction_fraction": 0.10757257063912107
+        }
+      ],
+      "name": "numeric-multiple-children",
+      "numerical_summary": {
+        "compiler_seconds": {
+          "candidate": [
+            0.056955167,
+            0.056789291,
+            0.056818958,
+            0.056705
+          ],
+          "control": [
+            0.066011208,
+            0.065827917,
+            0.065915792,
+            0.065869375
+          ],
+          "mean_reduction_fraction": 0.13790791328137542
+        },
+        "instructions": {
+          "candidate": [
+            760006386,
+            760275712,
+            760380687,
+            759760522
+          ],
+          "control": [
+            863899207,
+            864109030,
+            863914487,
+            863722000
+          ],
+          "mean_reduction_fraction": 0.12015743809432189
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            36306944,
+            36306944,
+            36306944,
+            36306944
+          ],
+          "control": [
+            39993344,
+            39993344,
+            39993344,
+            39993344
+          ],
+          "mean_reduction_fraction": 0.09217533797623922
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            0.07875620806589723,
+            0.07847824995405972,
+            0.07972320821136236,
+            0.07947004097513855
+          ],
+          "control": [
+            0.0895282079000026,
+            0.08932204195298254,
+            0.08795512490905821,
+            0.09042716585099697
+          ],
+          "mean_reduction_fraction": 0.11422485011180117
+        }
+      },
+      "observations": [
+        {
+          "compiler_seconds": 0.066011208,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 863899207,
+          "max_rss_bytes": 39993344,
+          "output_matches": true,
+          "run": 1,
+          "variant": "control",
+          "whole_process_seconds": 0.0895282079000026
+        },
+        {
+          "compiler_seconds": 0.056955167,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 760006386,
+          "max_rss_bytes": 36306944,
+          "output_matches": true,
+          "run": 1,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07875620806589723
+        },
+        {
+          "compiler_seconds": 0.056789291,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 760275712,
+          "max_rss_bytes": 36306944,
+          "output_matches": true,
+          "run": 2,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07847824995405972
+        },
+        {
+          "compiler_seconds": 0.065827917,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 864109030,
+          "max_rss_bytes": 39993344,
+          "output_matches": true,
+          "run": 2,
+          "variant": "control",
+          "whole_process_seconds": 0.08932204195298254
+        },
+        {
+          "compiler_seconds": 0.056818958,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 760380687,
+          "max_rss_bytes": 36306944,
+          "output_matches": true,
+          "run": 3,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07972320821136236
+        },
+        {
+          "compiler_seconds": 0.065915792,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 863914487,
+          "max_rss_bytes": 39993344,
+          "output_matches": true,
+          "run": 3,
+          "variant": "control",
+          "whole_process_seconds": 0.08795512490905821
+        },
+        {
+          "compiler_seconds": 0.065869375,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 863722000,
+          "max_rss_bytes": 39993344,
+          "output_matches": true,
+          "run": 4,
+          "variant": "control",
+          "whole_process_seconds": 0.09042716585099697
+        },
+        {
+          "compiler_seconds": 0.056705,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          },
+          "instructions": 759760522,
+          "max_rss_bytes": 36306944,
+          "output_matches": true,
+          "run": 4,
+          "variant": "candidate",
+          "whole_process_seconds": 0.07947004097513855
+        }
+      ],
+      "source": {
+        "bytes": 1633,
+        "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+      }
+    },
+    {
+      "balanced_blocks": [
+        {
+          "candidate": 0.05749747948721051,
+          "control": 0.05775358364917338,
+          "mean_reduction_fraction": 0.004434428926845202
+        },
+        {
+          "candidate": 0.0544287710217759,
+          "control": 0.060746520990505815,
+          "mean_reduction_fraction": 0.10400184019949599
+        }
+      ],
+      "name": "scalar-u64-divide",
+      "numerical_summary": {
+        "compiler_seconds": {
+          "candidate": [
+            0.034112541,
+            0.034066041,
+            0.034339625,
+            0.034667166
+          ],
+          "control": [
+            0.038091916,
+            0.0381315,
+            0.038121792,
+            0.038005792
+          ],
+          "mean_reduction_fraction": 0.0995439938037821
+        },
+        "instructions": {
+          "candidate": [
+            417205045,
+            417251055,
+            417148472,
+            416920523
+          ],
+          "control": [
+            442529371,
+            442535514,
+            442540563,
+            442470036
+          ],
+          "mean_reduction_fraction": 0.05737065448221301
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            28934144,
+            28934144,
+            28934144,
+            28934144
+          ],
+          "control": [
+            31293440,
+            31293440,
+            31293440,
+            31293440
+          ],
+          "mean_reduction_fraction": 0.07539267015706808
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            0.058475208934396505,
+            0.05651975004002452,
+            0.052789124893024564,
+            0.05606841715052724
+          ],
+          "control": [
+            0.05943675013259053,
+            0.056070417165756226,
+            0.05980283301323652,
+            0.061690208967775106
+          ],
+          "mean_reduction_fraction": 0.05547551329749256
+        }
+      },
+      "observations": [
+        {
+          "compiler_seconds": 0.038091916,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 442529371,
+          "max_rss_bytes": 31293440,
+          "output_matches": true,
+          "run": 1,
+          "variant": "control",
+          "whole_process_seconds": 0.05943675013259053
+        },
+        {
+          "compiler_seconds": 0.034112541,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 417205045,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 1,
+          "variant": "candidate",
+          "whole_process_seconds": 0.058475208934396505
+        },
+        {
+          "compiler_seconds": 0.034066041,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 417251055,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 2,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05651975004002452
+        },
+        {
+          "compiler_seconds": 0.0381315,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 442535514,
+          "max_rss_bytes": 31293440,
+          "output_matches": true,
+          "run": 2,
+          "variant": "control",
+          "whole_process_seconds": 0.056070417165756226
+        },
+        {
+          "compiler_seconds": 0.034339625,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 417148472,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 3,
+          "variant": "candidate",
+          "whole_process_seconds": 0.052789124893024564
+        },
+        {
+          "compiler_seconds": 0.038121792,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 442540563,
+          "max_rss_bytes": 31293440,
+          "output_matches": true,
+          "run": 3,
+          "variant": "control",
+          "whole_process_seconds": 0.05980283301323652
+        },
+        {
+          "compiler_seconds": 0.038005792,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 442470036,
+          "max_rss_bytes": 31293440,
+          "output_matches": true,
+          "run": 4,
+          "variant": "control",
+          "whole_process_seconds": 0.061690208967775106
+        },
+        {
+          "compiler_seconds": 0.034667166,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          },
+          "instructions": 416920523,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 4,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05606841715052724
+        }
+      ],
+      "source": {
+        "bytes": 23,
+        "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+      }
+    },
+    {
+      "balanced_blocks": [
+        {
+          "candidate": 0.056914187502115965,
+          "control": 0.06312902097124606,
+          "mean_reduction_fraction": 0.09844653652970203
+        },
+        {
+          "candidate": 0.05700300051830709,
+          "control": 0.062148124910891056,
+          "mean_reduction_fraction": 0.08278808733105181
+        }
+      ],
+      "name": "scalar-i64-add",
+      "numerical_summary": {
+        "compiler_seconds": {
+          "candidate": [
+            0.035006041,
+            0.03491925,
+            0.034474959,
+            0.034923083
+          ],
+          "control": [
+            0.038756459,
+            0.03896375,
+            0.038776917,
+            0.039034959
+          ],
+          "mean_reduction_fraction": 0.10421484415900417
+        },
+        "instructions": {
+          "candidate": [
+            416913204,
+            417108264,
+            417073656,
+            416763085
+          ],
+          "control": [
+            442535400,
+            442684774,
+            442442543,
+            441981605
+          ],
+          "mean_reduction_fraction": 0.0575178366266077
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            28934144,
+            28934144,
+            28934144,
+            28934144
+          ],
+          "control": [
+            31260672,
+            31260672,
+            31260672,
+            31260672
+          ],
+          "mean_reduction_fraction": 0.07442348008385746
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            0.05786495911888778,
+            0.05596341588534415,
+            0.05647516716271639,
+            0.05753083387389779
+          ],
+          "control": [
+            0.06295441696420312,
+            0.06330362497828901,
+            0.06083683297038078,
+            0.06345941685140133
+          ],
+          "mean_reduction_fraction": 0.09067861325961013
+        }
+      },
+      "observations": [
+        {
+          "compiler_seconds": 0.038756459,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 442535400,
+          "max_rss_bytes": 31260672,
+          "output_matches": true,
+          "run": 1,
+          "variant": "control",
+          "whole_process_seconds": 0.06295441696420312
+        },
+        {
+          "compiler_seconds": 0.035006041,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 416913204,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 1,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05786495911888778
+        },
+        {
+          "compiler_seconds": 0.03491925,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 417108264,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 2,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05596341588534415
+        },
+        {
+          "compiler_seconds": 0.03896375,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 442684774,
+          "max_rss_bytes": 31260672,
+          "output_matches": true,
+          "run": 2,
+          "variant": "control",
+          "whole_process_seconds": 0.06330362497828901
+        },
+        {
+          "compiler_seconds": 0.034474959,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 417073656,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 3,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05647516716271639
+        },
+        {
+          "compiler_seconds": 0.038776917,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 442442543,
+          "max_rss_bytes": 31260672,
+          "output_matches": true,
+          "run": 3,
+          "variant": "control",
+          "whole_process_seconds": 0.06083683297038078
+        },
+        {
+          "compiler_seconds": 0.039034959,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 441981605,
+          "max_rss_bytes": 31260672,
+          "output_matches": true,
+          "run": 4,
+          "variant": "control",
+          "whole_process_seconds": 0.06345941685140133
+        },
+        {
+          "compiler_seconds": 0.034923083,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          },
+          "instructions": 416763085,
+          "max_rss_bytes": 28934144,
+          "output_matches": true,
+          "run": 4,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05753083387389779
+        }
+      ],
+      "source": {
+        "bytes": 23,
+        "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+      }
+    },
+    {
+      "balanced_blocks": [
+        {
+          "candidate": 0.05738100002054125,
+          "control": 0.06143197906203568,
+          "mean_reduction_fraction": 0.06594251240715587
+        },
+        {
+          "candidate": 0.05830072902608663,
+          "control": 0.061444000457413495,
+          "mean_reduction_fraction": 0.051156685891659226
+        }
+      ],
+      "name": "scalar-i64-multiply",
+      "numerical_summary": {
+        "compiler_seconds": {
+          "candidate": [
+            0.034975333,
+            0.034705125,
+            0.0346675,
+            0.034556917
+          ],
+          "control": [
+            0.03905825,
+            0.038781334,
+            0.038870042,
+            0.038727959
+          ],
+          "mean_reduction_fraction": 0.10636237046529007
+        },
+        "instructions": {
+          "candidate": [
+            417263561,
+            416931881,
+            416679517,
+            416904254
+          ],
+          "control": [
+            442673125,
+            442248349,
+            441875257,
+            442199966
+          ],
+          "mean_reduction_fraction": 0.057217452226820065
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            28950528,
+            28950528,
+            28950528,
+            28950528
+          ],
+          "control": [
+            31277056,
+            31277056,
+            31277056,
+            31277056
+          ],
+          "mean_reduction_fraction": 0.07438449449973805
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            0.05828770808875561,
+            0.056474291952326894,
+            0.05975533300079405,
+            0.056846125051379204
+          ],
+          "control": [
+            0.05978170805610716,
+            0.0630822500679642,
+            0.061176166869699955,
+            0.061711834045127034
+          ],
+          "mean_reduction_fraction": 0.058548875874332884
+        }
+      },
+      "observations": [
+        {
+          "compiler_seconds": 0.03905825,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 442673125,
+          "max_rss_bytes": 31277056,
+          "output_matches": true,
+          "run": 1,
+          "variant": "control",
+          "whole_process_seconds": 0.05978170805610716
+        },
+        {
+          "compiler_seconds": 0.034975333,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 417263561,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 1,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05828770808875561
+        },
+        {
+          "compiler_seconds": 0.034705125,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 416931881,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 2,
+          "variant": "candidate",
+          "whole_process_seconds": 0.056474291952326894
+        },
+        {
+          "compiler_seconds": 0.038781334,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 442248349,
+          "max_rss_bytes": 31277056,
+          "output_matches": true,
+          "run": 2,
+          "variant": "control",
+          "whole_process_seconds": 0.0630822500679642
+        },
+        {
+          "compiler_seconds": 0.0346675,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 416679517,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 3,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05975533300079405
+        },
+        {
+          "compiler_seconds": 0.038870042,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 441875257,
+          "max_rss_bytes": 31277056,
+          "output_matches": true,
+          "run": 3,
+          "variant": "control",
+          "whole_process_seconds": 0.061176166869699955
+        },
+        {
+          "compiler_seconds": 0.038727959,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 442199966,
+          "max_rss_bytes": 31277056,
+          "output_matches": true,
+          "run": 4,
+          "variant": "control",
+          "whole_process_seconds": 0.061711834045127034
+        },
+        {
+          "compiler_seconds": 0.034556917,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          },
+          "instructions": 416904254,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 4,
+          "variant": "candidate",
+          "whole_process_seconds": 0.056846125051379204
+        }
+      ],
+      "source": {
+        "bytes": 23,
+        "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+      }
+    },
+    {
+      "balanced_blocks": [
+        {
+          "candidate": 0.055529562407173216,
+          "control": 0.0614155629882589,
+          "mean_reduction_fraction": 0.0958389094668225
+        },
+        {
+          "candidate": 0.05193824938032776,
+          "control": 0.05588120862375945,
+          "mean_reduction_fraction": 0.07055966290885174
+        }
+      ],
+      "name": "scalar-f64-divide",
+      "numerical_summary": {
+        "compiler_seconds": {
+          "candidate": [
+            0.034196084,
+            0.034210834,
+            0.034158,
+            0.034147083
+          ],
+          "control": [
+            0.038454708,
+            0.038308792,
+            0.037817541,
+            0.037986958
+          ],
+          "mean_reduction_fraction": 0.10392741665308203
+        },
+        "instructions": {
+          "candidate": [
+            416697508,
+            416600221,
+            416437995,
+            416527996
+          ],
+          "control": [
+            442080413,
+            441760322,
+            441924276,
+            442094616
+          ],
+          "mean_reduction_fraction": 0.057468311085538515
+        },
+        "max_rss_bytes": {
+          "candidate": [
+            28950528,
+            28950528,
+            28950528,
+            28950528
+          ],
+          "control": [
+            31162368,
+            31162368,
+            31162368,
+            31162368
+          ],
+          "mean_reduction_fraction": 0.07097791798107256
+        },
+        "whole_process_seconds": {
+          "candidate": [
+            0.055850999895483255,
+            0.05520812491886318,
+            0.05112608289346099,
+            0.05275041586719453
+          ],
+          "control": [
+            0.060573916882276535,
+            0.06225720909424126,
+            0.05487600015476346,
+            0.05688641709275544
+          ],
+          "mean_reduction_fraction": 0.08379565515262899
+        }
+      },
+      "observations": [
+        {
+          "compiler_seconds": 0.038454708,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 442080413,
+          "max_rss_bytes": 31162368,
+          "output_matches": true,
+          "run": 1,
+          "variant": "control",
+          "whole_process_seconds": 0.060573916882276535
+        },
+        {
+          "compiler_seconds": 0.034196084,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 416697508,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 1,
+          "variant": "candidate",
+          "whole_process_seconds": 0.055850999895483255
+        },
+        {
+          "compiler_seconds": 0.034210834,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 416600221,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 2,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05520812491886318
+        },
+        {
+          "compiler_seconds": 0.038308792,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 441760322,
+          "max_rss_bytes": 31162368,
+          "output_matches": true,
+          "run": 2,
+          "variant": "control",
+          "whole_process_seconds": 0.06225720909424126
+        },
+        {
+          "compiler_seconds": 0.034158,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 416437995,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 3,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05112608289346099
+        },
+        {
+          "compiler_seconds": 0.037817541,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 441924276,
+          "max_rss_bytes": 31162368,
+          "output_matches": true,
+          "run": 3,
+          "variant": "control",
+          "whole_process_seconds": 0.05487600015476346
+        },
+        {
+          "compiler_seconds": 0.037986958,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 442094616,
+          "max_rss_bytes": 31162368,
+          "output_matches": true,
+          "run": 4,
+          "variant": "control",
+          "whole_process_seconds": 0.05688641709275544
+        },
+        {
+          "compiler_seconds": 0.034147083,
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          },
+          "instructions": 416527996,
+          "max_rss_bytes": 28950528,
+          "output_matches": true,
+          "run": 4,
+          "variant": "candidate",
+          "whole_process_seconds": 0.05275041586719453
+        }
+      ],
+      "source": {
+        "bytes": 23,
+        "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+      }
+    }
+  ],
+  "held_out_fixture_names": [
+    "numeric-changing-capture-tree",
+    "numeric-multiple-children",
+    "numeric-nested-phase-states",
+    "scalar-f64-divide",
+    "scalar-i64-add",
+    "scalar-i64-multiply",
+    "scalar-u64-divide"
+  ],
+  "initial_native_cpu_output_gates": [
+    {
+      "executable": {
+        "bytes": 2060440,
+        "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+      },
+      "exit_code": 0,
+      "files": {
+        "metadata.json": {
+          "bytes": 2519706,
+          "matches_frozen_reference": true,
+          "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+        },
+        "program.mecb": {
+          "bytes": 4733696,
+          "matches_frozen_reference": true,
+          "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+        },
+        "program.o": {
+          "bytes": 1419832,
+          "matches_frozen_reference": true,
+          "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+        },
+        "source.mec": {
+          "bytes": 164243,
+          "matches_frozen_reference": true,
+          "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+        }
+      },
+      "matches_complete_baseline_executable": true,
+      "mode": "control"
+    },
+    {
+      "executable": {
+        "bytes": 2060440,
+        "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+      },
+      "exit_code": 0,
+      "files": {
+        "metadata.json": {
+          "bytes": 2519706,
+          "matches_frozen_reference": true,
+          "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+        },
+        "program.mecb": {
+          "bytes": 4733696,
+          "matches_frozen_reference": true,
+          "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+        },
+        "program.o": {
+          "bytes": 1419832,
+          "matches_frozen_reference": true,
+          "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+        },
+        "source.mec": {
+          "bytes": 164243,
+          "matches_frozen_reference": true,
+          "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+        }
+      },
+      "matches_complete_baseline_executable": true,
+      "mode": "native-control"
+    }
+  ],
+  "merged_profile": {
+    "bytes": 100519368,
+    "sha256": "1ec3bb6f8b8fa2da4f1d8966168d82ffb2e86a1a83eb46572591d4c18f41bd11"
+  },
+  "native_cohort": {
+    "balanced_blocks": [
+      {
+        "candidate": 14.065532562555745,
+        "control": 15.66251579101663,
+        "mean_reduction_fraction": 0.10196211450122517
+      },
+      {
+        "candidate": 13.989429353969172,
+        "control": 15.578959292033687,
+        "mean_reduction_fraction": 0.10203055982547715
+      }
+    ],
+    "numerical_summary": {
+      "native_link_seconds": {
+        "candidate": [
+          0.13698241719976068,
+          0.13213145802728832,
+          0.13335912488400936,
+          0.1274580000899732
+        ],
+        "control": [
+          0.12980037508532405,
+          0.13030912494286895,
+          0.1043839999474585,
+          0.13645824999548495
+        ],
+        "mean_reduction_fraction": -0.05784838606026388
+      },
+      "object_handoff_seconds": {
+        "candidate": [
+          0.0009529998060315847,
+          0.0009881248697638512,
+          0.0010111250448971987,
+          0.0009222498629242182
+        ],
+        "control": [
+          0.0009977910667657852,
+          0.0009528328664600849,
+          0.0009813751094043255,
+          0.0009932920802384615
+        ],
+        "mean_reduction_fraction": 0.012939559808925805
+      },
+      "source_to_executable_seconds": {
+        "candidate": [
+          14.175150792114437,
+          13.955914332997054,
+          13.915407457854599,
+          14.063451250083745
+        ],
+        "control": [
+          15.568784916074947,
+          15.756246665958315,
+          15.49810020904988,
+          15.659818375017494
+        ],
+        "mean_reduction_fraction": 0.10199624563355536
+      },
+      "source_to_object_process_seconds": {
+        "candidate": [
+          14.037215375108644,
+          13.822794750100002,
+          13.781037207925692,
+          13.935071000130847
+        ],
+        "control": [
+          15.437986749922857,
+          15.624984708148986,
+          15.392734833993018,
+          15.52236683294177
+        ],
+        "mean_reduction_fraction": 0.10329386618440084
+      }
+    },
+    "order": [
+      [
+        "control",
+        "native-control-1"
+      ],
+      [
+        "candidate",
+        "native-candidate-1"
+      ],
+      [
+        "candidate",
+        "native-candidate-2"
+      ],
+      [
+        "control",
+        "native-control-2"
+      ],
+      [
+        "candidate",
+        "native-candidate-3"
+      ],
+      [
+        "control",
+        "native-control-3"
+      ],
+      [
+        "control",
+        "native-control-4"
+      ],
+      [
+        "candidate",
+        "native-candidate-4"
+      ]
+    ],
+    "scope": "Eight serial fresh source-to-executable compiles with current fixed adapter cached; same61programflags,2workers and pinnedmimalloc inboth compilerexecutables. Frozen d26/B72 standard compiler versus nativeCPU plus current instrumentation PGO; same source/program/runtime. Combined configuration comparison, no additive component claim. No emitted-program allocator changes; compiler nativeCPU/PGO overrides are the subject. Separate from Object observations and screens."
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.022630792,
+        0.023369583,
+        0.022852833,
+        0.0230845
+      ],
+      "control": [
+        0.02343575,
+        0.023514334,
+        0.023498459,
+        0.023673209
+      ],
+      "mean_reduction_fraction": 0.02320445543767602
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09065079200081527,
+        0.0952230840921402,
+        0.0924767090473324,
+        0.0937660001218319
+      ],
+      "control": [
+        0.09412329201586545,
+        0.09369679191149771,
+        0.094168416922912,
+        0.09570754203014076
+      ],
+      "mean_reduction_fraction": 0.014772348621250098
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.0325145,
+        0.032450166,
+        0.032576083,
+        0.034950833
+      ],
+      "control": [
+        0.038595375,
+        0.036170708,
+        0.036403833,
+        0.036311208
+      ],
+      "mean_reduction_fraction": 0.10163702034166755
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        2.654088499955833,
+        2.647357458015904,
+        2.6501572087872773,
+        2.730171292088926
+      ],
+      "control": [
+        2.976669375086203,
+        3.036958417156711,
+        2.972138874931261,
+        2.9930494998116046
+      ],
+      "mean_reduction_fraction": 0.1082779541865374
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.520408916985616,
+        2.5139894580934197,
+        2.516236666822806,
+        2.595600000116974
+      ],
+      "control": [
+        2.8294293750077486,
+        2.890064249979332,
+        2.825037624919787,
+        2.845826916862279
+      ],
+      "mean_reduction_fraction": 0.10922598802731276
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.13367958297021687,
+        0.13336799992248416,
+        0.13392054196447134,
+        0.13457129197195172
+      ],
+      "control": [
+        0.1472400000784546,
+        0.14689416717737913,
+        0.1471012500114739,
+        0.14722258294932544
+      ],
+      "mean_reduction_fraction": 0.08992754515705059
+    },
+    "compiler_seconds": {
+      "candidate": [
+        13.6380145,
+        14.02796325,
+        13.786845583,
+        14.313918125
+      ],
+      "control": [
+        15.488864708,
+        15.564930416,
+        15.354861708,
+        15.504198959
+      ],
+      "mean_reduction_fraction": 0.09927040603243231
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.010509459,
+        0.010973125,
+        0.010521916,
+        0.010881584
+      ],
+      "control": [
+        0.009368584,
+        0.009393042,
+        0.009394792,
+        0.009373083
+      ],
+      "mean_reduction_fraction": -0.14272992864999723
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.5969425,
+        1.613522583,
+        1.644021958,
+        1.672337459
+      ],
+      "control": [
+        1.648455084,
+        1.660605334,
+        1.663631584,
+        1.692516791
+      ],
+      "mean_reduction_fraction": 0.020762184246251203
+    },
+    "instructions": {
+      "candidate": [
+        193200597108,
+        193255861652,
+        193349119396,
+        193278858480
+      ],
+      "control": [
+        222044983337,
+        222149522201,
+        222189686761,
+        222204169627
+      ],
+      "mean_reduction_fraction": 0.12998586324003525
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4489265152,
+        4490788864,
+        4488757248,
+        4488773632
+      ],
+      "control": [
+        4494278656,
+        4494278656,
+        4492247040,
+        4492754944
+      ],
+      "mean_reduction_fraction": 0.0008887722090501482
+    },
+    "native_seconds": {
+      "candidate": [
+        10.4486355,
+        10.817450042,
+        10.542024667,
+        11.035522
+      ],
+      "control": [
+        11.890573834,
+        11.963847458,
+        11.750509833,
+        11.869826458
+      ],
+      "mean_reduction_fraction": 0.09754921583124287
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        1.7126365420408547,
+        1.8930326669942588,
+        1.7323175419587642,
+        1.9531357910018414
+      ],
+      "control": [
+        2.0605126249138266,
+        2.051971999928355,
+        2.055001584114507,
+        2.053649791982025
+      ],
+      "mean_reduction_fraction": 0.11312468968239942
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.525212583,
+        1.529337833,
+        1.5329972079999998,
+        1.536364792
+      ],
+      "control": [
+        1.876856125,
+        1.869644834,
+        1.870653584,
+        1.871760917
+      ],
+      "mean_reduction_fraction": 0.18226978943623973
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4470148816,
+        4471656120,
+        4469640912,
+        4469640888
+      ],
+      "control": [
+        4471574200,
+        4471574200,
+        4469542584,
+        4470050488
+      ],
+      "mean_reduction_fraction": 9.253256848740232e-05
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.4224637909792364,
+        1.582960041007027,
+        1.454031415982172,
+        1.5112381249200553
+      ],
+      "control": [
+        1.6008897910360247,
+        1.6014496670104563,
+        1.604278916027397,
+        1.635358083061874
+      ],
+      "mean_reduction_fraction": 0.07315815066744347
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.123082999838516,
+        2.150249916827306,
+        2.1411556659732014,
+        2.225470625096932
+      ],
+      "control": [
+        2.403972749831155,
+        2.414865667000413,
+        2.323343207826838,
+        2.3431894998066127
+      ],
+      "mean_reduction_fraction": 0.08912797460803035
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        13.70349937514402,
+        14.09827212500386,
+        13.856118333991617,
+        14.382184083107859
+      ],
+      "control": [
+        15.558964582858607,
+        15.630405999952927,
+        15.423776167212054,
+        15.575273583875969
+      ],
+      "mean_reduction_fraction": 0.09886641891916126
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "pipeline": [
+    {
+      "exit_code": 0,
+      "seconds": 465.84511000011116,
+      "stage": "native-control",
+      "started_utc": "2026-11-15T14:59:38.761205+00:00",
+      "state": "complete"
+    },
+    {
+      "exit_code": 0,
+      "seconds": 33.25023129093461,
+      "stage": "native-output-gates",
+      "started_utc": "2026-11-15T15:07:24.606562+00:00",
+      "state": "complete"
+    },
+    {
+      "exit_code": 0,
+      "seconds": 620.3665850409307,
+      "stage": "generate",
+      "started_utc": "2026-11-15T15:07:57.856967+00:00",
+      "state": "complete"
+    },
+    {
+      "exit_code": 0,
+      "seconds": 25.922401582822204,
+      "stage": "training",
+      "started_utc": "2026-11-15T15:18:18.223314+00:00",
+      "state": "complete"
+    },
+    {
+      "exit_code": 0,
+      "seconds": 427.65305483387783,
+      "stage": "use",
+      "started_utc": "2026-11-15T15:18:44.145887+00:00",
+      "state": "complete"
+    }
+  ],
+  "preliminary_screens": [
+    {
+      "compile": {
+        "bytecode_bytes": 4733696,
+        "bytecode_sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79",
+        "mode": "compact",
+        "object_bytes": 1419832,
+        "object_sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 1.899544958,
+            "total_seconds": 1.8996125419999998
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.040577958,
+            "total_seconds": 1.940245167
+          },
+          {
+            "phase": "frontend",
+            "seconds": 1.6418170829999998,
+            "total_seconds": 3.582076667
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.023376833,
+            "total_seconds": 3.6054670829999997
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009370583,
+            "total_seconds": 3.614851208
+          },
+          {
+            "phase": "native",
+            "seconds": 11.9716645,
+            "total_seconds": 15.587194208
+          }
+        ],
+        "source_bytes": 164243,
+        "source_sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4",
+        "total_seconds": 15.587209375
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2519706,
+          "matches_current_control_output": true,
+          "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+        },
+        "program.mecb": {
+          "bytes": 4733696,
+          "matches_current_control_output": true,
+          "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+        },
+        "program.o": {
+          "bytes": 1419832,
+          "matches_current_control_output": true,
+          "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+        },
+        "source.mec": {
+          "bytes": 164243,
+          "matches_current_control_output": true,
+          "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+        }
+      },
+      "name": "control-screen",
+      "process": {
+        "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/qualification/control",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 16.466837250161916,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "control"
+    },
+    {
+      "compile": {
+        "bytecode_bytes": 4733696,
+        "bytecode_sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79",
+        "mode": "compact",
+        "object_bytes": 1419832,
+        "object_sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 1.5687680830000001,
+            "total_seconds": 1.568776916
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.03736675,
+            "total_seconds": 1.6061868750000001
+          },
+          {
+            "phase": "frontend",
+            "seconds": 1.604555542,
+            "total_seconds": 3.210753291
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.022745458,
+            "total_seconds": 3.233513208
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.010651209,
+            "total_seconds": 3.2441760410000002
+          },
+          {
+            "phase": "native",
+            "seconds": 10.659268083,
+            "total_seconds": 13.904106208
+          }
+        ],
+        "source_bytes": 164243,
+        "source_sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4",
+        "total_seconds": 13.904121291
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2519706,
+          "matches_current_control_output": true,
+          "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+        },
+        "program.mecb": {
+          "bytes": 4733696,
+          "matches_current_control_output": true,
+          "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+        },
+        "program.o": {
+          "bytes": 1419832,
+          "matches_current_control_output": true,
+          "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+        },
+        "source.mec": {
+          "bytes": 164243,
+          "matches_current_control_output": true,
+          "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+        }
+      },
+      "name": "candidate-screen",
+      "process": {
+        "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/qualification/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 14.775392916984856,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "candidate"
+    }
+  ],
+  "program_flags_count": 61,
+  "qualification_pipeline": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-refreshed-native-pgo-20261115/qualification-scripts/mech-screen-refreshed-native-pgo-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 31.5345327090472,
+      "stage": "screens",
+      "started_utc": "2026-11-15T15:27:25.771764+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-refreshed-native-pgo-20261115/qualification-scripts/mech-cached-native-link-refreshed-native-pgo-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.2958730000536889,
+      "stage": "cached-executable-gates",
+      "started_utc": "2026-11-15T15:27:57.308550+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-refreshed-native-pgo-20261115/qualification-scripts/mech-qualify-refreshed-native-pgo-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 122.34273741696961,
+      "stage": "fixtures-object-cohort",
+      "started_utc": "2026-11-15T15:27:57.604731+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-refreshed-native-pgo-20261115/qualification-scripts/mech-heldout-refreshed-native-pgo-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 4.131225083954632,
+      "stage": "heldout-cohorts",
+      "started_utc": "2026-11-15T15:29:59.948125+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-refreshed-native-pgo-20261115/qualification-scripts/mech-native-cohort-refreshed-native-pgo-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 119.37034129211679,
+      "stage": "native-cohort",
+      "started_utc": "2026-11-15T15:30:04.079693+00:00",
+      "state": "complete"
+    }
+  ],
+  "raw_profiles": [
+    {
+      "bytes": 33732280,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29436.profraw",
+      "sha256": "308e061c05305703900e8ee22dc87f3835169b9d09dc9dccad963bba5fe90011"
+    },
+    {
+      "bytes": 33670232,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29438.profraw",
+      "sha256": "8ce3d3372a1a2bd2dff0a6707e999aacf016c770b56dcdc70df700fd2268b340"
+    },
+    {
+      "bytes": 33670552,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29439.profraw",
+      "sha256": "b9a3dbae57e6be35cb61d6682ec4ce9d6d937b74b972e9b045a4c8b79d09308d"
+    },
+    {
+      "bytes": 33662408,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29440.profraw",
+      "sha256": "c5cc5a5abded3cb18e14e6eb7325ee7985c31f6caf7abd6ff3e6309b09eb455d"
+    },
+    {
+      "bytes": 33641368,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29441.profraw",
+      "sha256": "a869396acef7ef03d57ae91995985d57a4b2d22cb011c8bebdf453f4996612a9"
+    },
+    {
+      "bytes": 33641528,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29442.profraw",
+      "sha256": "ca17931ae7c1b88ecad8f9fc68a9e998422bc7822c50799b95a1d3584a6e8a01"
+    },
+    {
+      "bytes": 33641992,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29443.profraw",
+      "sha256": "13315ddff42a77894294eef8ed2e20c1bdb45e68309bf80d3919b07aa7557855"
+    },
+    {
+      "bytes": 33641432,
+      "path": "/private/tmp/mech-refreshed-native-pgo-20261115/raw/7733258552435232662_0-29444.profraw",
+      "sha256": "57f0163e4c4a4215b85024f9268edcbb5fd65bf6997f5c491de7e6fb3778887b"
+    }
+  ],
+  "scope": [
+    "Source d26 contains pinnedcompilerallocator/controlowners/actionoutputinventory/oncequeuedreachability. Newlybuilt nativeCPUcontrol/generate/use have explicit aarch64target,nightly2026-03-03,ThinLTOCGU1,j4,incremental0,-Dwarnings. Absoluteprofilepaths and matchingRustLLVM22profdata. StandardB72controlalreadyqualified39 isreused, notanewcontrolrebuild. Build/trainingexcludedprimary.",
+    "Everytrainingoutput,14fixturepairs,56heldoutcompiles,eightObjectABBA/BAAB andeightcompletefreshsource-to-exe compiles preserveall4outputs/complete metadata. Two preliminarynativeCPUgates,twopreliminaryfinalPGOgates,eightprimarywholeexes anddefault0gate exactcurrentD6. No emitted-program/runtime/grammar/language/proof/accounting changes.",
+    "All primaryruns serialaftereverybuildandtrainingfinishes; noheavybuild/test/profile/hash/archive overlap. Runtime/entryadaptercached withallnativeinputspinned; firstuseexcluded. Allstage/case/block/diagnostic/adverse resultsincluded; nopooledtinyprogrampercentage.",
+    "Rawandmergedprofiles,sourceconfiguration,allbuild/training/qualificationlogs,scripts+derivation/everyprogramartifact/executable/nativeinput included. Compilerbinaries/dependencytarget/source snapshot excludedandhash/Git pinned. Pure replay checksprofiles,diagnostics,rawtimings/stages/counters andoutputs without recompilation orretiming. Subten remainsunproven."
+  ],
+  "source_commit": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+  "source_config_pins": [
+    {
+      "bytes": 102,
+      "path": ".cargo/config.toml",
+      "sha256": "f2c72f8592e13d3f2e86bfc17b9ea314dbfdf35e3d831c5c357a05c0345e9d84"
+    },
+    {
+      "bytes": 24838,
+      "path": "Cargo.toml",
+      "sha256": "1c721339d8c8e3fac313d777827e711fca5e5056b7982c923f43522e787ddce8"
+    },
+    {
+      "bytes": 141224,
+      "path": "Cargo.lock",
+      "sha256": "f8424fc6a26f3bf745f6d2652d1379d1c202403ec101fa0c0dbfa7d208d4d2a5"
+    },
+    {
+      "bytes": 4232,
+      "path": "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "sha256": "1e5cdfaa0cd0aedc600af1b41bd18775c31a237b635068b2de70ad848729b993"
+    },
+    {
+      "bytes": 50025,
+      "path": "benchmarks/mech-deflate/native-profile/Cargo.lock",
+      "sha256": "473e54cda0836e7c4310260da7c642420af197f0eddeac86ea2288b5b682bfb9"
+    },
+    {
+      "bytes": 4681,
+      "path": "benchmarks/mech-deflate/native-profile/compile_profile.rs",
+      "sha256": "a63dbf3347f65bdbbe1058369f5b8f96f9c8375082ebb71ce7121428d3dcb48b"
+    },
+    {
+      "bytes": 4926,
+      "path": "benchmarks/mech-deflate/native-profile/profile_compile.py",
+      "sha256": "f91c8d602320793ffb1fdf6677c965d14cb1dc94691b223fbf5daab3f1ff2c70"
+    }
+  ],
+  "strategy": "Current d26 retained source and program/runtime. Reuse qualified standard B72 control versus target-cpu=native plus instrumentation PGO. Same61programflags and2workers. Three newcompilerbuilds, standardcontrolnotrebuilt. Measurescombinedbuildconfiguration, no component/additive/historicalgain claim.",
+  "training_cases": 8
+}

@@ -1,0 +1,22 @@
+{
+  "after-4": {
+    "bytes": 920536,
+    "sha256": "329e2cb4f4ec40229423b0cbd8061db68147562a8aa365f86fc88fa1332a2c54",
+    "complete_text_byte_exact": true
+  },
+  "compact-4": {
+    "bytes": 917656,
+    "sha256": "aa95e81359771a0810f3ab12847b1eef038a6a842b0820749a5318fb1cb7e338",
+    "complete_text_byte_exact": true
+  },
+  "after-8": {
+    "bytes": 920536,
+    "sha256": "80a2b79d61d5c2fcebed9be589a6ff26e0eff32a7ecbe89e3e237697b92f4fe1",
+    "complete_text_byte_exact": true
+  },
+  "compact-8": {
+    "bytes": 917656,
+    "sha256": "96a7fe282eebad038d6a60d2e4ec49ff01fb2951b35768b40841c197a597140e",
+    "complete_text_byte_exact": true
+  }
+}

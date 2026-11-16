@@ -1,0 +1,265 @@
+{
+  "captured_at_utc": "2026-11-02T13:14:55Z",
+  "upstream": {
+    "url": "https://github.com/zupat/related_post_gen",
+    "sha": "fc2982b0c929b1b701209d401a1dc30c773ef4ab",
+    "implementation": "rust/src/main.rs",
+    "source_modified": false
+  },
+  "machine": {
+    "ssh_host": "mac-mini-runner",
+    "hostname": "Macmini.ht.home",
+    "model": "Macmini9,1",
+    "cpu": "Apple M1",
+    "architecture": "arm64",
+    "memory_bytes": 8589934592,
+    "os": "Darwin 24.6.0"
+  },
+  "compiler": {
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "cargo": "cargo 1.96.0-nightly (f298b8c82 2026-02-24)",
+    "build": "cargo build --release --locked",
+    "release_profile": {
+      "lto": "fat",
+      "codegen-units": 1,
+      "panic": "abort",
+      "debug": false,
+      "strip": true
+    },
+    "extra_flags": null,
+    "binary_bytes": 385360,
+    "binary_sha256": "08785b064f52184488d74d55820e97a72282d7c659f9c99afd57dd0676fcb055"
+  },
+  "paths": {
+    "root": "/private/tmp/mech-related-post-gen-20261102",
+    "upstream": "/private/tmp/mech-related-post-gen-20261102/upstream",
+    "raw_baseline": "/private/tmp/mech-related-post-gen-20261102/rust-official-baseline.md",
+    "datasets": "/private/tmp/mech-related-post-gen-20261102/datasets",
+    "generator": "/private/tmp/mech-related-post-gen-20261102/generate_datasets.py",
+    "strict_verifier": "/private/tmp/mech-related-post-gen-20261102/verify_strict.py",
+    "gnu_time": "/private/tmp/mech-related-post-gen-20261102/gnu-time/bin/gtime"
+  },
+  "protocol": {
+    "official_commands": [
+      "./run.sh rust /private/tmp/mech-related-post-gen-20261102/rust-official-baseline.md",
+      "./run.sh rust /private/tmp/mech-related-post-gen-20261102/rust-official-baseline.md append"
+    ],
+    "repetitions": {
+      "5000": 10,
+      "20000": 3,
+      "60000": 3
+    },
+    "input_selection": "Copy saved posts-N.json to upstream/posts.json before each size; restore original 5000 fixture after completion.",
+    "timed": "Original Rust Instant::now() span: string tag to post-index map construction, shared-tag counting, top-5 selection, output record construction.",
+    "excluded": "File reading, runtime JSON parsing, serialization and writing occur outside original processing timer. External GNU time wall time includes these.",
+    "time_tool": "GNU Time 1.9 built in isolated temporary prefix because no gtime installed. No global tool changes.",
+    "warmup": "None, official run.sh sequence; initial run at each size includes cold effects.",
+    "limitations": [
+      "Spotlight mdworker/mds consumed substantial CPU throughout setup; concurrent DEFLATE compiler work may occur on shared Mac mini.",
+      "Parent compiler build overlapped beginning of initial baseline due to coordination race; first 5k sample is visibly cold/noisy.",
+      "Initial baseline is exploratory, not final interleaved measurement.",
+      "Published upstream Linux table numbers are not directly comparable to Mac mini results."
+    ]
+  },
+  "datasets": [
+    {
+      "posts": 5000,
+      "origin": "Exact upstream fixture",
+      "sha256": "500530b81cb81c5b1a5e48aa30de6a89ba0a350460ad826c4c7bb023e6e46cb8",
+      "bytes": 1113289,
+      "unique_tags": 28,
+      "unique_tag_sets": 4816,
+      "tags_per_post": [
+        4,
+        5
+      ]
+    },
+    {
+      "posts": 20000,
+      "origin": "Upstream gen_fake_posts.py semantics, seeded",
+      "sha256": "5719a06e72fb2e3917075d76aff761cc3a8dc1633f3f48053e07ed2316187e10",
+      "bytes": 2503274,
+      "seed": 20281102,
+      "nanoid_byte_seed": 20281103,
+      "unique_tags": 28,
+      "unique_tag_sets": 17456,
+      "tags_per_post": [
+        4,
+        5
+      ]
+    },
+    {
+      "posts": 60000,
+      "origin": "Upstream gen_fake_posts.py semantics, seeded",
+      "sha256": "3ed8321cb6aba14594fec4b4fc3a43d5a68c94d7747865e22ad6a2e40d161e46",
+      "bytes": 7491165,
+      "seed": 20321102,
+      "nanoid_byte_seed": 20321103,
+      "unique_tags": 28,
+      "unique_tag_sets": 41680,
+      "tags_per_post": [
+        4,
+        5
+      ]
+    }
+  ],
+  "generator_environment": {
+    "python": "3.9.6",
+    "packages": {
+      "Faker": "37.12.0",
+      "nanoid": "2.0.0",
+      "tzdata": "2026.6"
+    },
+    "adaptation": "Source loaded with future annotations for Python3.9; random.seed(seed), Faker.seed(seed), nanoid.algorithm.urandom uses separate random.Random(seed+1) byte stream. Upstream source file unchanged.",
+    "generator_sha256": "e49bbc0a7da6ee4604e357ebfccf7a3ad28dd52291b1197703de36ef2921e925"
+  },
+  "correctness": {
+    "official_5000_verifier": "passed",
+    "independent_strict_verifier_all_sizes": "passed",
+    "independent_algorithm": "Count all tag subsets across source posts. For each distinct tag shape, sum subset frequencies for size-k subsets, remove self C(m,k), then binomial-invert these moments to an exact shared-count histogram. Select five highest scores.",
+    "checks": [
+      "Output count and order match input",
+      "Original id and tags preserved",
+      "Exactly five distinct related posts",
+      "Current post excluded",
+      "Every full related post matches original input record",
+      "Sum of overlaps is globally optimal"
+    ],
+    "verifier_sha256": "2f359c3c2b40eef425e39c55bc24eec8ee0b6eb0a47481f84e0b2047cff4fab8",
+    "reference_5000_matches_committed_correct_related": true,
+    "small_fixtures": {
+      "exact_unmodified_rust_indices": "passed first-10, first-100, first-500, unicode-ties, empty-tags",
+      "sparse_input_behavior": "If fewer than five posts have positive overlap, original Rust fills the unused slots with post index zero. This can repeat a recommendation or recommend self on row zero. Exact fixture mode explicitly preserves it; full benchmark strict validation does not relax distinctness or self exclusion."
+    }
+  },
+  "results": {
+    "5000": {
+      "compute_ms": [
+        23.834041,
+        12.6795,
+        10.721042,
+        10.687833,
+        10.733833,
+        10.756583,
+        10.732583,
+        10.738459,
+        10.734708,
+        10.719167
+      ],
+      "mean_ms": 12.2337749,
+      "median_ms": 10.734270500000001,
+      "min_ms": 10.687833,
+      "max_ms": 23.834041
+    },
+    "20000": {
+      "compute_ms": [
+        162.985208,
+        139.918417,
+        139.606417
+      ],
+      "mean_ms": 147.50334733333332,
+      "median_ms": 139.918417,
+      "min_ms": 139.606417,
+      "max_ms": 162.985208
+    },
+    "60000": {
+      "compute_ms": [
+        1153.464791,
+        1139.516625,
+        1139.619958
+      ],
+      "mean_ms": 1144.200458,
+      "median_ms": 1139.619958,
+      "min_ms": 1139.516625,
+      "max_ms": 1153.464791
+    }
+  },
+  "external_results": {
+    "5000": {
+      "wall_seconds": [
+        0.2,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.02,
+        0.02
+      ],
+      "rss_kib": [
+        4528,
+        4528,
+        4528,
+        4528,
+        4528,
+        4528,
+        4528,
+        4528,
+        4528,
+        4528
+      ]
+    },
+    "20000": {
+      "wall_seconds": [
+        0.36,
+        0.18,
+        0.18
+      ],
+      "rss_kib": [
+        12048,
+        12048,
+        12048
+      ]
+    },
+    "60000": {
+      "wall_seconds": [
+        1.47,
+        1.28,
+        1.29
+      ],
+      "rss_kib": [
+        31088,
+        30704,
+        30704
+      ]
+    }
+  },
+  "rules": {
+    "prohibited": [
+      "FFI/inline assembly",
+      "unsafe blocks",
+      "custom benchmarking",
+      "disabling bounds/runtime checks",
+      "specific hardware targeting",
+      "single-thread SIMD",
+      "hardcoded post count",
+      "lazy untimed evaluation",
+      "computation caching"
+    ],
+    "required": [
+      "Up to 100000 posts",
+      "UTF8 strings",
+      "Runtime JSON parsing",
+      "Up to 100 tags",
+      "Tags represented as strings",
+      "Production ready",
+      "Below 8GB memory"
+    ],
+    "tie_breaking": "Verifier compares summed shared-tag counts; ties and order within related may differ."
+  },
+  "vendored_artifacts": {
+    "license": "LICENSE.upstream",
+    "license_scope": "Upstream MIT license applies to the original 5k dataset, derived first-n fixtures, upstream algorithm references, and generator source loaded from pinned git. Locally authored adapters and independent validator live under the Mech repository license.",
+    "generator": "generate_datasets.py",
+    "generator_sha256": "1bf28f03d2d49e9668c1a81f36fb9f5e96c41329de88df44836d036cc2e30b8f",
+    "strict_verifier": "verify_strict.py",
+    "strict_verifier_sha256": "814f86676daa4691368543d37a009fd0ad4c3f8ef23bec0af6994435867dc551",
+    "raw_baseline": "results/rust-official-baseline.md",
+    "dataset_manifest": "results/datasets.json",
+    "fixture_manifest": "fixtures/manifest.json",
+    "fixture_validation": "results/rust-fixture-correctness.json",
+    "generator_reproduction": "Portable vendored generator reproduced original 5000/20000/60000 dataset manifests byte-for-byte on mac-mini-runner."
+  }
+}

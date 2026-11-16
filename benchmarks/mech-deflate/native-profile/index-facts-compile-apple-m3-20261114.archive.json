@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-index-facts-20261114.tar.gz",
+  "bytes": 12551484,
+  "evidence_files": 414,
+  "files": 414,
+  "format": 1,
+  "manifest_sha256": "02995d5bf863253e6c0058816d528bb2f673e8e7dde21f8a98f80a9d5ea2dac0",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "884d286602c5cd24547b4c73254cf9213a6d06cfad3ec92904ffe6e1a5b64497",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-index-facts-20261114.tar.gz",
+  "sha256": "b58a2c97ad3961c2297fd427729c0dd3bd0b347d38a06d59b8076a067a1a876c",
+  "source_revision": "4a451c748295164aa300d4e03ff9b6a4fdbd740f",
+  "uncompressed_bytes": 88454500,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "b58a2c97ad3961c2297fd427729c0dd3bd0b347d38a06d59b8076a067a1a876c",
+    "source_revision": "4a451c748295164aa300d4e03ff9b6a4fdbd740f",
+    "verified_bytes": 88454500,
+    "verified_files": 414
+  }
+}

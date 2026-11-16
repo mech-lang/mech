@@ -1,3 +1,8 @@
+//! ABI40 adds paid native histogram bank retries at the same original call.
+//! ABI35 permits a proved uniform constructor at its own collection header.
+//! It reuses the existing collection helper lanes and frame layout.
+//! ABI34 adds a checked lexical-integrity failure status, sealed against
+//! the exact admitted visit. All ABI33 mapping representations remain.
 //! ABI33 shares an owner-prepared 16-byte header and 128-byte table allowance.
 //! An exhaustively proved 32-cell projection selects a separate leaf once;
 //! arbitrary maps keep the full 128-cell representation. Signatures remain.
@@ -14,7 +19,10 @@
 use crate::native_artifact::abi::NativeEntryFrame;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use core::ffi::c_void;
-pub(in crate::native_artifact) const VERSION: u64 = 33;
+// ABI38 composes an ordinary admission and zero-word helper in one callback.
+// The frozen scalar prefix and frame layout remain unchanged.
+// ABI41 combines ABI40 related-post helpers with paired word-collection loans.
+pub(in crate::native_artifact) const VERSION: u64 = 42;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;

@@ -1,0 +1,571 @@
+[
+  {
+    "fixture": "first-10",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/actual-first-10.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.013761083,\"input_admission_seconds\":0.000065334,\"json_read_and_parse_seconds\":0.000123709,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00147675,\"posts\":10,\"processing_plus_admission_seconds\":0.001475834,\"retained_bytes\":197765,\"sample\":0,\"seconds\":0.0014105,\"work\":1843760304}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "first-100",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-100.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/actual-first-100.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009117834,\"input_admission_seconds\":0.000019208,\"json_read_and_parse_seconds\":0.000155709,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000957583,\"posts\":100,\"processing_plus_admission_seconds\":0.0009549990000000001,\"retained_bytes\":211076,\"sample\":0,\"seconds\":0.000935791,\"work\":7139442877}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "first-500",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-500.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/actual-first-500.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00919825,\"input_admission_seconds\":0.000029625,\"json_read_and_parse_seconds\":0.000270333,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001758917,\"posts\":500,\"processing_plus_admission_seconds\":0.001754875,\"retained_bytes\":269731,\"sample\":0,\"seconds\":0.00172525,\"work\":33277000216}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "unicode-ties",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-unicode-ties.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/actual-unicode-ties.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009245417,\"input_admission_seconds\":0.000014375,\"json_read_and_parse_seconds\":0.000115292,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000609416,\"posts\":8,\"processing_plus_admission_seconds\":0.000608084,\"retained_bytes\":197035,\"sample\":0,\"seconds\":0.000593709,\"work\":1433882103}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "empty-tags",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-empty-tags.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/actual-empty-tags.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009210834,\"input_admission_seconds\":0.000014292,\"json_read_and_parse_seconds\":0.0000995,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000586292,\"posts\":8,\"processing_plus_admission_seconds\":0.0005852499999999999,\"retained_bytes\":196794,\"sample\":0,\"seconds\":0.000570958,\"work\":1288517178}\n",
+    "stderr": "",
+    "diagnostic_elapsed_excluded_from_benchmark": true,
+    "exact_expected_output": true
+  },
+  {
+    "fixture": "all-empty",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/all-empty/posts.json",
+    "source_posts_sha256": "48b65449ee26a8109b36fe3f33801c8993afd451631b624ae4e832499792d24c",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/all-empty/related_posts_rust.json",
+    "expected_sha256": "4472abb8295c2c4fdf5eac0624cb63340bc659bae73ba0caa814043e42529d44",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/all-empty/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/all-empty/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009310458,\"input_admission_seconds\":0.000014417,\"json_read_and_parse_seconds\":0.000079917,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000204209,\"posts\":7,\"processing_plus_admission_seconds\":0.000203125,\"retained_bytes\":196638,\"sample\":0,\"seconds\":0.000188708,\"work\":47679185}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "one-post",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/one-post/posts.json",
+    "source_posts_sha256": "7ee5ce0a5c6057e8d3eb443461efecd02fab6eaeb2e641e603bdd35150b81284",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/one-post/related_posts_rust.json",
+    "expected_sha256": "a19fa0ffe408b4c2c069666acf76a5773c562e46039017224ae38b7ff843dad4",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/one-post/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/one-post/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009668042,\"input_admission_seconds\":0.000034583,\"json_read_and_parse_seconds\":0.000157625,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000970125,\"posts\":1,\"processing_plus_admission_seconds\":0.000968083,\"retained_bytes\":196371,\"sample\":0,\"seconds\":0.0009335,\"work\":668334790}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "eight-tag-boundary",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/eight-tag-boundary/posts.json",
+    "source_posts_sha256": "fc245e0810464c56b13e99580ab823d32bc2e51df03e3e323e1f9f3546db0911",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/eight-tag-boundary/related_posts_rust.json",
+    "expected_sha256": "addb131c02863a4cea80de1036818a3e904e8f803ad815d75ef629b86809922b",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/eight-tag-boundary/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/eight-tag-boundary/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009183292,\"input_admission_seconds\":0.000017167,\"json_read_and_parse_seconds\":0.000130458,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":16,\"parallel_numeric_work\":1229829318,\"parallel_peak_workers\":4,\"parallel_regions\":1,\"parallel_tasks\":8,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001858959,\"posts\":9,\"processing_plus_admission_seconds\":0.001856209,\"retained_bytes\":198310,\"sample\":0,\"seconds\":0.001839042,\"work\":4054913469}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "duplicate-utf8",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/duplicate-utf8/posts.json",
+    "source_posts_sha256": "8ac1769f76ec4aec63089df94174009f00ac40571abad0a4a510d67c7a2f7f87",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/duplicate-utf8/related_posts_rust.json",
+    "expected_sha256": "e4cc28ed7892bce334d883f3c95de8c266ebcfdab269cf69e2f0f3fd5aad8f43",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/duplicate-utf8/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/duplicate-utf8/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00931525,\"input_admission_seconds\":0.00001375,\"json_read_and_parse_seconds\":0.00007575,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000742,\"posts\":12,\"processing_plus_admission_seconds\":0.00074075,\"retained_bytes\":197538,\"sample\":0,\"seconds\":0.000727,\"work\":986278802}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrapped-u8",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrapped-u8/posts.json",
+    "source_posts_sha256": "a08298a21467d27cd1873e986b6bd76166b4ccbaa27d52b5535208c65e2c6953",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrapped-u8/related_posts_rust.json",
+    "expected_sha256": "2d73c412da9f2bcd421c55bb8e710b7fba58b7b2b5632bb0c05a46a6fafb9bcf",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrapped-u8/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrapped-u8/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.0091825,\"input_admission_seconds\":0.00003675,\"json_read_and_parse_seconds\":0.000307542,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000953125,\"posts\":7,\"processing_plus_admission_seconds\":0.000949917,\"retained_bytes\":198878,\"sample\":0,\"seconds\":0.000913167,\"work\":1857148946}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrap255",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap255/posts.json",
+    "source_posts_sha256": "1b25d59a2ee6d06d487219ca58075a174d4beb4f07c314ad2ae7653e6b061dd1",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap255/related_posts_rust.json",
+    "expected_sha256": "5fa23e9938aa6aaf2cc2162b457784327179c48314107bc9d6daf7915286c093",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap255/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap255/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009167792,\"input_admission_seconds\":0.00001575,\"json_read_and_parse_seconds\":0.000079792,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000690958,\"posts\":7,\"processing_plus_admission_seconds\":0.000689667,\"retained_bytes\":197578,\"sample\":0,\"seconds\":0.000673917,\"work\":999003216}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrap256",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap256/posts.json",
+    "source_posts_sha256": "2157323219b29b6289217e499228f6e08501adf13a494dc645dcfd48b8ad713c",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap256/related_posts_rust.json",
+    "expected_sha256": "449edbac0ac7d00724f6a5b7c1bc5fbdde788a8bed9068ff0d0daffee1807743",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap256/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap256/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009232209,\"input_admission_seconds\":0.000014333,\"json_read_and_parse_seconds\":0.000075916,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000706042,\"posts\":7,\"processing_plus_admission_seconds\":0.0007049580000000001,\"retained_bytes\":197578,\"sample\":0,\"seconds\":0.000690625,\"work\":999003216}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "wrap257",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap257/posts.json",
+    "source_posts_sha256": "5a36e2bb268d2d674f5d117f4644170d9b5a070e8ff1c8249e942808c29f86b2",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap257/related_posts_rust.json",
+    "expected_sha256": "d30cb3a833c0f9b4d7a58d51d29d185a592dc70d7d78106571318995267c05fc",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap257/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/wrap257/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009029917,\"input_admission_seconds\":0.0000155,\"json_read_and_parse_seconds\":0.0000895,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00085375,\"posts\":7,\"processing_plus_admission_seconds\":0.000852583,\"retained_bytes\":202198,\"sample\":0,\"seconds\":0.000837083,\"work\":7167483878}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "long-nine-tags",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-nine-tags/posts.json",
+    "source_posts_sha256": "f83050e9389635b99a61d6cd139c475fd5c1c3294296f154882f5657b311ab06",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-nine-tags/related_posts_rust.json",
+    "expected_sha256": "fa6d2da252d06ee02b6b7af798f9b15b3c0d36965f217ce2ec60539a2fb7baab",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-nine-tags/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-nine-tags/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009060292,\"input_admission_seconds\":0.000014083,\"json_read_and_parse_seconds\":0.000079208,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00065525,\"posts\":9,\"processing_plus_admission_seconds\":0.000653708,\"retained_bytes\":198354,\"sample\":0,\"seconds\":0.000639625,\"work\":1104364228}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "large-vocabulary",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/large-vocabulary/posts.json",
+    "source_posts_sha256": "0962452e508882d564c9f43c53f98e7ffd86109475c0def015f83e895977eebc",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/large-vocabulary/related_posts_rust.json",
+    "expected_sha256": "79f9ba0b430411e86088e5ca013aff409d9c0b6ce7f88fb53a0af389e7b0fef7",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/large-vocabulary/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/large-vocabulary/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009086542,\"input_admission_seconds\":0.000016875,\"json_read_and_parse_seconds\":0.000091125,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001700292,\"posts\":70,\"processing_plus_admission_seconds\":0.001698916,\"retained_bytes\":203752,\"sample\":0,\"seconds\":0.001682041,\"work\":8262156064}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "mixed-full-sparse",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/mixed-full-sparse/posts.json",
+    "source_posts_sha256": "623ecc7b1acfd805e4a40eb3e147569708d54a5ba402c10fccbfb059e58d5bfb",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/mixed-full-sparse/related_posts_rust.json",
+    "expected_sha256": "5d22c798f73e51c5a5f1ddf53ba2f6435311d22a3309ccaf04a4afa671f729f6",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/mixed-full-sparse/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/mixed-full-sparse/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009135833,\"input_admission_seconds\":0.000014458,\"json_read_and_parse_seconds\":0.000076541,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000629,\"posts\":12,\"processing_plus_admission_seconds\":0.0006277079999999999,\"retained_bytes\":197361,\"sample\":0,\"seconds\":0.00061325,\"work\":1367880856}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-five-with-two-tag-fifth",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-five-with-two-tag-fifth/posts.json",
+    "source_posts_sha256": "14b69aab163030129d1f61883b6ba55207b9010c3fd4090d4ea70c46015fe031",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-five-with-two-tag-fifth/related_posts_rust.json",
+    "expected_sha256": "c8e6ac2b11c25bc61563534986ac8dac28b219f2769ad8e452f42628fa2fe90a",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-five-with-two-tag-fifth/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-five-with-two-tag-fifth/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00930275,\"input_admission_seconds\":0.000017583,\"json_read_and_parse_seconds\":0.000083292,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000641833,\"posts\":6,\"processing_plus_admission_seconds\":0.000640458,\"retained_bytes\":196879,\"sample\":0,\"seconds\":0.000622875,\"work\":1392500311}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-six-with-two-tag-extra",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-six-with-two-tag-extra/posts.json",
+    "source_posts_sha256": "6f45a2402d21455583da8dae7394543cd34a7c76a815dbfc7eac05dd1eef9d2a",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-six-with-two-tag-extra/related_posts_rust.json",
+    "expected_sha256": "2a4ab210e18ff088dec749910293dda03012d3c7779ba3e4c8bf6c3116464944",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-six-with-two-tag-extra/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-six-with-two-tag-extra/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009210417,\"input_admission_seconds\":0.000014625,\"json_read_and_parse_seconds\":0.000073834,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000608542,\"posts\":7,\"processing_plus_admission_seconds\":0.000607458,\"retained_bytes\":196978,\"sample\":0,\"seconds\":0.000592833,\"work\":1288919026}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-all-six",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-all-six/posts.json",
+    "source_posts_sha256": "fa0a869e769c45863072bb0d62a413b1cc5982090f466da187169f66a81f5456",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-all-six/related_posts_rust.json",
+    "expected_sha256": "b09e5cff175918ebc5034b232a5cc21def3cb3473bd82928b8ad8941b5f193f0",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-all-six/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-all-six/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00923025,\"input_admission_seconds\":0.000030292,\"json_read_and_parse_seconds\":0.000299709,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000672959,\"posts\":6,\"processing_plus_admission_seconds\":0.000671709,\"retained_bytes\":196896,\"sample\":0,\"seconds\":0.000641417,\"work\":748764229}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-permuted-ties",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-permuted-ties/posts.json",
+    "source_posts_sha256": "a6fdff26341ce7ae31f3662717f662ce9c467bf4f0993249e259220cd052a5a2",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-permuted-ties/related_posts_rust.json",
+    "expected_sha256": "a6a797c424f07ee981bac07120361de23b769e52002dbdb7f93c76c64d717ff0",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-permuted-ties/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-permuted-ties/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009211416,\"input_admission_seconds\":0.00002875,\"json_read_and_parse_seconds\":0.00018025,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.0008725,\"posts\":7,\"processing_plus_admission_seconds\":0.000869959,\"retained_bytes\":196978,\"sample\":0,\"seconds\":0.000841209,\"work\":1288918994}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "utf8-key-prefix",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/utf8-key-prefix/posts.json",
+    "source_posts_sha256": "773d03c6ee3f27d9ba9da5a224bdaea74d92811eba125fdbf57953fe043d54d0",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/utf8-key-prefix/related_posts_rust.json",
+    "expected_sha256": "b6bd6e42890f9afc8cbe6c1fd67477bea71b5dfffd7e3a581b3c98d38539954a",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/utf8-key-prefix/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/utf8-key-prefix/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00906975,\"input_admission_seconds\":0.000016625,\"json_read_and_parse_seconds\":0.000077291,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":16,\"parallel_numeric_work\":30484540,\"parallel_peak_workers\":5,\"parallel_regions\":1,\"parallel_tasks\":8,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00127525,\"posts\":10,\"processing_plus_admission_seconds\":0.001274,\"retained_bytes\":197752,\"sample\":0,\"seconds\":0.001257375,\"work\":2413135272}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "long-utf8-key-prefix",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-utf8-key-prefix/posts.json",
+    "source_posts_sha256": "fb8b2b3ca442958534ccf594fbb8c46c693001766ce461600d4409dc5c0a3085",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-utf8-key-prefix/related_posts_rust.json",
+    "expected_sha256": "7f265e4c8325666161cc38f336eff5c8c89c06f8d27e0d97260786299b0dfe10",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-utf8-key-prefix/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/long-utf8-key-prefix/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009164416,\"input_admission_seconds\":0.000016792,\"json_read_and_parse_seconds\":0.000084083,\"linked\":true,\"parallel_batches\":1,\"parallel_numeric_regions\":16,\"parallel_numeric_work\":16217328,\"parallel_peak_workers\":2,\"parallel_regions\":1,\"parallel_tasks\":8,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.001076625,\"posts\":8,\"processing_plus_admission_seconds\":0.001075542,\"retained_bytes\":198294,\"sample\":0,\"seconds\":0.00105875,\"work\":2381315029}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "coverage-mixed-disjoint",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-mixed-disjoint/posts.json",
+    "source_posts_sha256": "8df45026eb1fb0bd04030b02e177f63f32abfc0e910312a29300cad3ef09339d",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-mixed-disjoint/related_posts_rust.json",
+    "expected_sha256": "90f50ef216587e89d4819e50e96640e0ea6efa1401052399f8d554859ae03dbf",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-mixed-disjoint/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/coverage-mixed-disjoint/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009156084,\"input_admission_seconds\":0.000014042,\"json_read_and_parse_seconds\":0.000072958,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000616292,\"posts\":12,\"processing_plus_admission_seconds\":0.000615167,\"retained_bytes\":197473,\"sample\":0,\"seconds\":0.000601125,\"work\":1455721939}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-0",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-0/posts.json",
+    "source_posts_sha256": "331e4ca150d081f088c6dffac4b1e9858940d078e6849258a14cdf9ed398afcc",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-0/related_posts_rust.json",
+    "expected_sha256": "58354cb037a5d55a3122ed98d58b423dff75d503409b569ae0509590a540e018",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-0/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-0/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009129833,\"input_admission_seconds\":0.000014375,\"json_read_and_parse_seconds\":0.000077583,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.00061175,\"posts\":16,\"processing_plus_admission_seconds\":0.00061075,\"retained_bytes\":198091,\"sample\":0,\"seconds\":0.000596375,\"work\":1856923500}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-1",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-1/posts.json",
+    "source_posts_sha256": "e7e07acdf2b25dd1261435963a11b7a0eb5a1916cfbd001629c8d6bdf0a23849",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-1/related_posts_rust.json",
+    "expected_sha256": "066f936451f02bdb2a944fdaec721a3fc43d846f864185a419f64d08b830174d",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-1/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-1/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009094167,\"input_admission_seconds\":0.000014083,\"json_read_and_parse_seconds\":0.00007875,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000658167,\"posts\":15,\"processing_plus_admission_seconds\":0.000656667,\"retained_bytes\":197883,\"sample\":0,\"seconds\":0.000642584,\"work\":1814980983}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-2",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-2/posts.json",
+    "source_posts_sha256": "578ce462db07ab13a7ce747b5e32d94f514d0aa8d6f098075d4c7438aa809970",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-2/related_posts_rust.json",
+    "expected_sha256": "ded40fc9adca4c3d1eca1beddb9d5b7ea4a268f3fb3534c6e75eb0e83bccb3b7",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-2/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-2/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00911825,\"input_admission_seconds\":0.000052667,\"json_read_and_parse_seconds\":0.001083167,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.0010745,\"posts\":15,\"processing_plus_admission_seconds\":0.001072083,\"retained_bytes\":198447,\"sample\":0,\"seconds\":0.001019416,\"work\":1584345808}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-3",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-3/posts.json",
+    "source_posts_sha256": "3ac7dd2662eb36639dfad93b44c3ff4aa950cb1b452d5f23924827a3bb2caac4",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-3/related_posts_rust.json",
+    "expected_sha256": "bdc01f34edc232a3684d3d538b38c43bbc02b7371f823cbdedff3aa62449e5de",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-3/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-3/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00914725,\"input_admission_seconds\":0.000014292,\"json_read_and_parse_seconds\":0.000076417,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000649875,\"posts\":21,\"processing_plus_admission_seconds\":0.000648292,\"retained_bytes\":199249,\"sample\":0,\"seconds\":0.000634,\"work\":1951907330}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-4",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-4/posts.json",
+    "source_posts_sha256": "a5ab05f9d1288acff3f86cd8b14680f3714b5cb67ea26176fcaa1961719516f7",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-4/related_posts_rust.json",
+    "expected_sha256": "33e1cacce66b18c10f313a8d506002bc0c62bd5c465c009d93f3cd2270109a02",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-4/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-4/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009178791,\"input_admission_seconds\":0.000014208,\"json_read_and_parse_seconds\":0.000078167,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000627125,\"posts\":13,\"processing_plus_admission_seconds\":0.0006262500000000001,\"retained_bytes\":197991,\"sample\":0,\"seconds\":0.000612042,\"work\":1796720236}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-5",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-5/posts.json",
+    "source_posts_sha256": "85262b9cdb415ec1bc454fe9b2e3654e1deab6ce73a43d51185b8ad4780f440a",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-5/related_posts_rust.json",
+    "expected_sha256": "7755299eaf0868f06f910e8e420443a32eb26dac0bd14375ce24feef74423c0d",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-5/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-5/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009500084,\"input_admission_seconds\":0.000013541,\"json_read_and_parse_seconds\":0.000066542,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000659458,\"posts\":9,\"processing_plus_admission_seconds\":0.0006582910000000001,\"retained_bytes\":197412,\"sample\":0,\"seconds\":0.00064475,\"work\":1707017203}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-6",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-6/posts.json",
+    "source_posts_sha256": "872042b10a0943a4d8108bd62cfb4d2270b645f84dae3457b9575fbdc5d63432",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-6/related_posts_rust.json",
+    "expected_sha256": "324dfee068e9408575b914ec219df58ede42ba6b3d2c8da62abff45a09c48c99",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-6/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-6/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.00917325,\"input_admission_seconds\":0.000014208,\"json_read_and_parse_seconds\":0.000077083,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.000637708,\"posts\":22,\"processing_plus_admission_seconds\":0.000636583,\"retained_bytes\":199075,\"sample\":0,\"seconds\":0.000622375,\"work\":1986567374}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  },
+  {
+    "fixture": "random-7",
+    "source_posts": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-7/posts.json",
+    "source_posts_sha256": "fb40868cde25aae2917f05cce1c816b6eec7197e84bfe0d8ded9a3bd56fb9059",
+    "expected": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-7/related_posts_rust.json",
+    "expected_sha256": "0849d7f4b3c054f3e422f9aea3a1a85f335a0c21f253708371d847907652d090",
+    "exit": 0,
+    "command": [
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/runner-aot",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/build/source.mec",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-7/posts.json",
+      "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-8/edges/edges/random-7/actual.json",
+      "1"
+    ],
+    "stdout": "{\"boundary\":\"native evaluate_into (including internal cleanup) + output index export + RelatedPosts materialization; excludes JSON IO, native input admission, compilation/restoration and post-evaluation output/input destruction\",\"compile_or_restore_seconds\":0.009045542,\"input_admission_seconds\":0.000014625,\"json_read_and_parse_seconds\":0.000074125,\"linked\":true,\"parallel_batches\":0,\"parallel_numeric_regions\":0,\"parallel_numeric_work\":0,\"parallel_peak_workers\":0,\"parallel_regions\":0,\"parallel_tasks\":0,\"post_json_boundary\":\"one continuous interval after JSON decoding through input admission, intervening setup, output-slot allocation, native invocation, internal cleanup and RelatedPosts materialization; restoration and JSON IO remain in complete-process time\",\"post_json_seconds\":0.0006015,\"posts\":12,\"processing_plus_admission_seconds\":0.000600334,\"retained_bytes\":197810,\"sample\":0,\"seconds\":0.000585709,\"work\":1814679221}\n",
+    "stderr": "",
+    "exact_rust_output": true,
+    "diagnostic_elapsed_excluded_from_benchmark": true
+  }
+]

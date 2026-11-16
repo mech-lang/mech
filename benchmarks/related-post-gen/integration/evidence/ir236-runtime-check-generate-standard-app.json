@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-local-facts-integration-runtime-check-20261107-v1/generate-standard-app",
+    "/private/tmp/mech-related-local-facts-integration-compiler-20261107",
+    "/private/tmp/mech-related-local-facts-integration-runtime-check-20261107-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.215400124900043,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "80a73119d06c05f889da06b36ebb73f05b199c81efe325588ec11b692b1b6725"
+}

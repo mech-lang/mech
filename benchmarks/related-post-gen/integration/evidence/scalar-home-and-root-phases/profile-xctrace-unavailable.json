@@ -1,0 +1,10 @@
+{
+  "command": [
+    "xctrace",
+    "list",
+    "templates"
+  ],
+  "exit": 1,
+  "stderr": "xcode-select: tool xctrace requires Xcode; active developer directory is CommandLineTools; no /Applications/Xcode*.app present.",
+  "fallback": "Separate diagnostic-only scoped parallel hardware counters and inclusive canonical-call timers; unchanged native Objects, output and linked-byte audit required."
+}

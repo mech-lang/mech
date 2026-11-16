@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-local-facts-integration-old-objects-20261107-v1/235/probe"
+  ],
+  "exit": 0,
+  "seconds": 0.6596153338905424,
+  "stdout": "{\"compiled_module_rejected\":\"canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact\",\"object_bound_rejected\":\"canonical native object binding: program Object identity/ABI/work/target/typed CFG differs from selected artifact\",\"old_entry_never_invoked\":true,\"old_typed_ir\":235}\n",
+  "stderr": ""
+}

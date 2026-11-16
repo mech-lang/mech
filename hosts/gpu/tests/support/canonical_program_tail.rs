@@ -11,6 +11,59 @@ use mech_gpu::native_artifact::{
 };
 
 #[test]
+fn huffman_bit_reversal_runs_word_primitives_inside_a_native_tail_loop() {
+    let source = "+> bits\n#Reverse(value<u64>, width<u64>) => <u64>\n  | :Carry(word<u64>, left<u64>, result<u64>)\n  | :Done(result<u64>).\n#Reverse(value, width) -> :Carry(value, width, 0u64)\n  :Carry(word, left, result)\n    | left == 0u64 -> :Done(result)\n    | * -> :Carry(bits/shift-right-wrap(word, 1u64), left - 1u64, bits/or(bits/shift-left-wrap(result, 1u64), bits/and(word, 1u64)))\n  :Done(result) => result.\n#Reverse(input<u64>, width<u64>)\n";
+    for artifact in artifacts(source).0 {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert!(
+            jit.descriptor()
+                .plan()
+                .blocks()
+                .iter()
+                .any(|block| matches!(
+                    block.action(),
+                    NativeIterationAction::Scalar(
+                        mech_engine::native_artifact::NativeMatchAction::Primitive {
+                            op: mech_engine::native_artifact::NativeScalarOp::U64BitAnd,
+                            ..
+                        }
+                    )
+                ))
+        );
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        for word in [0u64, 1, 0x1234_5678_9abc_def0, u64::MAX] {
+            for width in [0, 1, 8, 15, 32, 64] {
+                let args = inputs(
+                    &artifact,
+                    &[("input", Data::U64(word)), ("width", Data::U64(width))],
+                    &memory,
+                );
+                let ordinary = reference(&artifact, &args);
+                let mut output = vec![None; artifact.outputs().len()];
+                jit.evaluate_into(&args, &mut output, limits(), &memory)
+                    .unwrap();
+                equal(&artifact, &output, &ordinary);
+                let expected = if width == 0 {
+                    0
+                } else {
+                    word.reverse_bits() >> (64 - width)
+                };
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::U64(expected)
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn raw_string_literal_patterns_are_structural_observations_not_library_calls() {
     let source = "pick(s<string>) => (out<bool>) :=\n  out := (s?\n    | \"é\" => true\n    | \" \" => true\n    | \"\\t\" => true\n    | * => false).\npick(input<string>)\n";
     for artifact in artifacts(source).0 {

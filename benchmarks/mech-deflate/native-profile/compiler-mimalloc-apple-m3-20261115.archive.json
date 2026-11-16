@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-compiler-mimalloc-20261115.tar.gz",
+  "bytes": 37968342,
+  "evidence_files": 746,
+  "files": 746,
+  "format": 1,
+  "manifest_sha256": "0c45b2ec4334a874f865bdb3efca58ae9102d90f4c7545a0dc13f1dc07caa951",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "cd596db004d6e03744933713e2d55006f50ef688076c833bfe1a64471ef125e6",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-compiler-mimalloc-20261115.tar.gz",
+  "sha256": "c9d0fd024106fbc0f1e82478745a4e54ba68e0b26eb505d0733fb166aabfc51d",
+  "source_revision": "d834508336e4533320cea8587b3e0e7a53124a94",
+  "uncompressed_bytes": 222305581,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "c9d0fd024106fbc0f1e82478745a4e54ba68e0b26eb505d0733fb166aabfc51d",
+    "source_revision": "d834508336e4533320cea8587b3e0e7a53124a94",
+    "verified_bytes": 222305581,
+    "verified_files": 746
+  }
+}

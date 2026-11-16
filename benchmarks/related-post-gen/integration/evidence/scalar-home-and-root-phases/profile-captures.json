@@ -1,0 +1,1079 @@
+{
+  "schema": "mech.related-post-gen.phase-captures.v1",
+  "rows": [
+    {
+      "label": "after",
+      "sample": 0,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00077775
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5718481,
+              "instructions_per_cycle": 2.465996302164858,
+              "instructions_retired": 14101753,
+              "lifetime_peak_physical_footprint_bytes_after": 17138048,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 17023360,
+              "physical_footprint_bytes_before": 15221120,
+              "resident_bytes_after": 27541504,
+              "resident_bytes_before": 25706496,
+              "system_cpu_seconds": 0.00043854166666666667,
+              "user_cpu_seconds": 0.002275791666666667
+            },
+            "seconds": 0.000762,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 16811656,
+          "instructions_per_cycle": 3.366803900817385,
+          "instructions_retired": 56601549,
+          "lifetime_peak_physical_footprint_bytes_after": 17138048,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 17023360,
+          "physical_footprint_bytes_before": 12829032,
+          "resident_bytes_after": 27541504,
+          "resident_bytes_before": 21970944,
+          "system_cpu_seconds": 0.0019990833333333336,
+          "user_cpu_seconds": 0.006563208333333334
+        },
+        "post_json_seconds": 0.006610667,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14101753,
+        "cycles": 5718481,
+        "user_cpu_seconds": 0.002275791666666667,
+        "system_cpu_seconds": 0.00043854166666666667
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 42499796,
+        "cycles": 11093175,
+        "user_cpu_seconds": 0.004287416666666667,
+        "system_cpu_seconds": 0.0015605416666666669
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "ce86bb4a299fce5e754fedab5731cc8cddb7f89586b262e2ee30a29380f69018",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "before",
+      "sample": 0,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.000753458
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 6789917,
+              "instructions_per_cycle": 2.229668492265811,
+              "instructions_retired": 15139264,
+              "lifetime_peak_physical_footprint_bytes_after": 17105280,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16974208,
+              "physical_footprint_bytes_before": 15073664,
+              "resident_bytes_after": 27607040,
+              "resident_bytes_before": 25657344,
+              "system_cpu_seconds": 0.0006252916666666667,
+              "user_cpu_seconds": 0.0025102916666666667
+            },
+            "seconds": 0.000878375,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 18528630,
+          "instructions_per_cycle": 3.156728964850612,
+          "instructions_retired": 58489863,
+          "lifetime_peak_physical_footprint_bytes_after": 17105280,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16974208,
+          "physical_footprint_bytes_before": 12697960,
+          "resident_bytes_after": 27607040,
+          "resident_bytes_before": 21872640,
+          "system_cpu_seconds": 0.0022492083333333335,
+          "user_cpu_seconds": 0.0066337083333333335
+        },
+        "post_json_seconds": 0.006626292,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 15139264,
+        "cycles": 6789917,
+        "user_cpu_seconds": 0.0025102916666666667,
+        "system_cpu_seconds": 0.0006252916666666667
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 43350599,
+        "cycles": 11738713,
+        "user_cpu_seconds": 0.004123416666666667,
+        "system_cpu_seconds": 0.0016239166666666667
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "6edb6cb803e32b56b4eca621cf10d2b8fd018573279ee22cad5a018c1f72f005",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "after",
+      "sample": 1,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00027725000000000004
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5806292,
+              "instructions_per_cycle": 2.399270825511359,
+              "instructions_retired": 13930867,
+              "lifetime_peak_physical_footprint_bytes_after": 16810368,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16712064,
+              "physical_footprint_bytes_before": 14991744,
+              "resident_bytes_after": 27230208,
+              "resident_bytes_before": 25477120,
+              "system_cpu_seconds": 0.0002754166666666667,
+              "user_cpu_seconds": 0.0013410416666666668
+            },
+            "seconds": 0.000451375,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 15264440,
+          "instructions_per_cycle": 3.4690986370937944,
+          "instructions_retired": 52953848,
+          "lifetime_peak_physical_footprint_bytes_after": 16810368,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16712064,
+          "physical_footprint_bytes_before": 12632424,
+          "resident_bytes_after": 27230208,
+          "resident_bytes_before": 21774336,
+          "system_cpu_seconds": 0.0004386666666666667,
+          "user_cpu_seconds": 0.0036830833333333333
+        },
+        "post_json_seconds": 0.0029585,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 13930867,
+        "cycles": 5806292,
+        "user_cpu_seconds": 0.0013410416666666668,
+        "system_cpu_seconds": 0.0002754166666666667
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39022981,
+        "cycles": 9458148,
+        "user_cpu_seconds": 0.0023420416666666668,
+        "system_cpu_seconds": 0.00016324999999999998
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "ce86bb4a299fce5e754fedab5731cc8cddb7f89586b262e2ee30a29380f69018",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "before",
+      "sample": 1,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00026337400000000003
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 6055824,
+              "instructions_per_cycle": 2.4548868989587542,
+              "instructions_retired": 14866363,
+              "lifetime_peak_physical_footprint_bytes_after": 16712064,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16630144,
+              "physical_footprint_bytes_before": 14909824,
+              "resident_bytes_after": 27262976,
+              "resident_bytes_before": 25493504,
+              "system_cpu_seconds": 0.00030620833333333335,
+              "user_cpu_seconds": 0.001386375
+            },
+            "seconds": 0.000480667,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 15464596,
+          "instructions_per_cycle": 3.528401065246063,
+          "instructions_retired": 54565297,
+          "lifetime_peak_physical_footprint_bytes_after": 16712064,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16630144,
+          "physical_footprint_bytes_before": 12583272,
+          "resident_bytes_after": 27262976,
+          "resident_bytes_before": 21757952,
+          "system_cpu_seconds": 0.0004605416666666667,
+          "user_cpu_seconds": 0.003723875
+        },
+        "post_json_seconds": 0.002973625,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14866363,
+        "cycles": 6055824,
+        "user_cpu_seconds": 0.001386375,
+        "system_cpu_seconds": 0.00030620833333333335
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39698934,
+        "cycles": 9408772,
+        "user_cpu_seconds": 0.0023375,
+        "system_cpu_seconds": 0.00015433333333333336
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "6edb6cb803e32b56b4eca621cf10d2b8fd018573279ee22cad5a018c1f72f005",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "after",
+      "sample": 2,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.000259042
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5903318,
+              "instructions_per_cycle": 2.3690758315916574,
+              "instructions_retired": 13985408,
+              "lifetime_peak_physical_footprint_bytes_after": 16728424,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16630120,
+              "physical_footprint_bytes_before": 14909800,
+              "resident_bytes_after": 27164672,
+              "resident_bytes_before": 25411584,
+              "system_cpu_seconds": 0.00032783333333333335,
+              "user_cpu_seconds": 0.0013215
+            },
+            "seconds": 0.000466416,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 15212803,
+          "instructions_per_cycle": 3.486904681536992,
+          "instructions_retired": 53045594,
+          "lifetime_peak_physical_footprint_bytes_after": 16728424,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16630120,
+          "physical_footprint_bytes_before": 12566888,
+          "resident_bytes_after": 27164672,
+          "resident_bytes_before": 21708800,
+          "system_cpu_seconds": 0.0004898750000000001,
+          "user_cpu_seconds": 0.003623166666666667
+        },
+        "post_json_seconds": 0.002932,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 13985408,
+        "cycles": 5903318,
+        "user_cpu_seconds": 0.0013215,
+        "system_cpu_seconds": 0.00032783333333333335
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39060186,
+        "cycles": 9309485,
+        "user_cpu_seconds": 0.002301666666666667,
+        "system_cpu_seconds": 0.00016204166666666672
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "ce86bb4a299fce5e754fedab5731cc8cddb7f89586b262e2ee30a29380f69018",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "before",
+      "sample": 2,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.000257334
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 6020729,
+              "instructions_per_cycle": 2.4683142190920733,
+              "instructions_retired": 14861051,
+              "lifetime_peak_physical_footprint_bytes_after": 16662912,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16564608,
+              "physical_footprint_bytes_before": 14795112,
+              "resident_bytes_after": 27197440,
+              "resident_bytes_before": 25395200,
+              "system_cpu_seconds": 0.00025445833333333337,
+              "user_cpu_seconds": 0.0014146666666666667
+            },
+            "seconds": 0.000472333,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 15283149,
+          "instructions_per_cycle": 3.5725004055119793,
+          "instructions_retired": 54599056,
+          "lifetime_peak_physical_footprint_bytes_after": 16662912,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16564608,
+          "physical_footprint_bytes_before": 12468584,
+          "resident_bytes_after": 27197440,
+          "resident_bytes_before": 21643264,
+          "system_cpu_seconds": 0.00041333333333333337,
+          "user_cpu_seconds": 0.003711791666666667
+        },
+        "post_json_seconds": 0.002930708,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14861051,
+        "cycles": 6020729,
+        "user_cpu_seconds": 0.0014146666666666667,
+        "system_cpu_seconds": 0.00025445833333333337
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39738005,
+        "cycles": 9262420,
+        "user_cpu_seconds": 0.0022971250000000006,
+        "system_cpu_seconds": 0.000158875
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "6edb6cb803e32b56b4eca621cf10d2b8fd018573279ee22cad5a018c1f72f005",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "before",
+      "sample": 3,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00025250100000000003
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5865286,
+              "instructions_per_cycle": 2.5383249853459833,
+              "instructions_retired": 14888002,
+              "lifetime_peak_physical_footprint_bytes_after": 16744832,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16662912,
+              "physical_footprint_bytes_before": 14893416,
+              "resident_bytes_after": 27295744,
+              "resident_bytes_before": 25493504,
+              "system_cpu_seconds": 0.000264,
+              "user_cpu_seconds": 0.0013627916666666667
+            },
+            "seconds": 0.000468917,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 15001022,
+          "instructions_per_cycle": 3.639612087763087,
+          "instructions_retired": 54597901,
+          "lifetime_peak_physical_footprint_bytes_after": 16744832,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16662912,
+          "physical_footprint_bytes_before": 12599656,
+          "resident_bytes_after": 27295744,
+          "resident_bytes_before": 21774336,
+          "system_cpu_seconds": 0.00041687500000000004,
+          "user_cpu_seconds": 0.0036294583333333335
+        },
+        "post_json_seconds": 0.002890417,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14888002,
+        "cycles": 5865286,
+        "user_cpu_seconds": 0.0013627916666666667,
+        "system_cpu_seconds": 0.000264
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39709899,
+        "cycles": 9135736,
+        "user_cpu_seconds": 0.002266666666666667,
+        "system_cpu_seconds": 0.00015287500000000002
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "6edb6cb803e32b56b4eca621cf10d2b8fd018573279ee22cad5a018c1f72f005",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "after",
+      "sample": 3,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00022591600000000002
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5598210,
+              "instructions_per_cycle": 2.494723670601853,
+              "instructions_retired": 13965987,
+              "lifetime_peak_physical_footprint_bytes_after": 16908672,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16810368,
+              "physical_footprint_bytes_before": 15040896,
+              "resident_bytes_after": 27328512,
+              "resident_bytes_before": 25526272,
+              "system_cpu_seconds": 0.00022675,
+              "user_cpu_seconds": 0.00132825
+            },
+            "seconds": 0.000443,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 14497505,
+          "instructions_per_cycle": 3.653985427147637,
+          "instructions_retired": 52973672,
+          "lifetime_peak_physical_footprint_bytes_after": 16908672,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16810368,
+          "physical_footprint_bytes_before": 12697960,
+          "resident_bytes_after": 27328512,
+          "resident_bytes_before": 21839872,
+          "system_cpu_seconds": 0.00036795833333333336,
+          "user_cpu_seconds": 0.0035454583333333336
+        },
+        "post_json_seconds": 0.002804666,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 13965987,
+        "cycles": 5598210,
+        "user_cpu_seconds": 0.00132825,
+        "system_cpu_seconds": 0.00022675
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39007685,
+        "cycles": 8899295,
+        "user_cpu_seconds": 0.0022172083333333336,
+        "system_cpu_seconds": 0.00014120833333333335
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "ce86bb4a299fce5e754fedab5731cc8cddb7f89586b262e2ee30a29380f69018",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "before",
+      "sample": 4,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.000246169
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5743134,
+              "instructions_per_cycle": 2.58934633947249,
+              "instructions_retired": 14870963,
+              "lifetime_peak_physical_footprint_bytes_after": 16728448,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16630120,
+              "physical_footprint_bytes_before": 14877032,
+              "resident_bytes_after": 27279360,
+              "resident_bytes_before": 25477120,
+              "system_cpu_seconds": 0.0002450416666666667,
+              "user_cpu_seconds": 0.001347375
+            },
+            "seconds": 0.000472416,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 14942139,
+          "instructions_per_cycle": 3.6553353572738145,
+          "instructions_retired": 54618529,
+          "lifetime_peak_physical_footprint_bytes_after": 16728448,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16630120,
+          "physical_footprint_bytes_before": 12517712,
+          "resident_bytes_after": 27279360,
+          "resident_bytes_before": 21708800,
+          "system_cpu_seconds": 0.0004011666666666667,
+          "user_cpu_seconds": 0.003627416666666667
+        },
+        "post_json_seconds": 0.002911083,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14870963,
+        "cycles": 5743134,
+        "user_cpu_seconds": 0.001347375,
+        "system_cpu_seconds": 0.0002450416666666667
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39747566,
+        "cycles": 9199005,
+        "user_cpu_seconds": 0.0022800416666666668,
+        "system_cpu_seconds": 0.00015612500000000001
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "6edb6cb803e32b56b4eca621cf10d2b8fd018573279ee22cad5a018c1f72f005",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "after",
+      "sample": 4,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00022604000000000002
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5657971,
+              "instructions_per_cycle": 2.466612147711609,
+              "instructions_retired": 13956020,
+              "lifetime_peak_physical_footprint_bytes_after": 16826728,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16712016,
+              "physical_footprint_bytes_before": 14975312,
+              "resident_bytes_after": 27262976,
+              "resident_bytes_before": 25493504,
+              "system_cpu_seconds": 0.00023783333333333336,
+              "user_cpu_seconds": 0.0013331666666666667
+            },
+            "seconds": 0.000448791,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 14879308,
+          "instructions_per_cycle": 3.5624594907236276,
+          "instructions_retired": 53006932,
+          "lifetime_peak_physical_footprint_bytes_after": 16826728,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16712016,
+          "physical_footprint_bytes_before": 12648784,
+          "resident_bytes_after": 27262976,
+          "resident_bytes_before": 21807104,
+          "system_cpu_seconds": 0.000384375,
+          "user_cpu_seconds": 0.0036282500000000004
+        },
+        "post_json_seconds": 0.002892375,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 13956020,
+        "cycles": 5657971,
+        "user_cpu_seconds": 0.0013331666666666667,
+        "system_cpu_seconds": 0.00023783333333333336
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39050912,
+        "cycles": 9221337,
+        "user_cpu_seconds": 0.002295083333333334,
+        "system_cpu_seconds": 0.00014654166666666665
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "ce86bb4a299fce5e754fedab5731cc8cddb7f89586b262e2ee30a29380f69018",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "before",
+      "sample": 5,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00022104
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5760333,
+              "instructions_per_cycle": 2.577583448734648,
+              "instructions_retired": 14847739,
+              "lifetime_peak_physical_footprint_bytes_after": 16679272,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16597352,
+              "physical_footprint_bytes_before": 14844264,
+              "resident_bytes_after": 27246592,
+              "resident_bytes_before": 25444352,
+              "system_cpu_seconds": 0.00022120833333333335,
+              "user_cpu_seconds": 0.0013805
+            },
+            "seconds": 0.00046225,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 14711950,
+          "instructions_per_cycle": 3.710084319209894,
+          "instructions_retired": 54582575,
+          "lifetime_peak_physical_footprint_bytes_after": 16679272,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16597352,
+          "physical_footprint_bytes_before": 12517736,
+          "resident_bytes_after": 27246592,
+          "resident_bytes_before": 21692416,
+          "system_cpu_seconds": 0.000368,
+          "user_cpu_seconds": 0.0036047500000000003
+        },
+        "post_json_seconds": 0.002835833,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14847739,
+        "cycles": 5760333,
+        "user_cpu_seconds": 0.0013805,
+        "system_cpu_seconds": 0.00022120833333333335
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39734836,
+        "cycles": 8951617,
+        "user_cpu_seconds": 0.0022242500000000005,
+        "system_cpu_seconds": 0.00014679166666666665
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "6edb6cb803e32b56b4eca621cf10d2b8fd018573279ee22cad5a018c1f72f005",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "after",
+      "sample": 5,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00024291500000000001
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5599042,
+              "instructions_per_cycle": 2.4995052725091185,
+              "instructions_retired": 13994835,
+              "lifetime_peak_physical_footprint_bytes_after": 16810344,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16728424,
+              "physical_footprint_bytes_before": 14942568,
+              "resident_bytes_after": 27262976,
+              "resident_bytes_before": 25444352,
+              "system_cpu_seconds": 0.00021975,
+              "user_cpu_seconds": 0.001333
+            },
+            "seconds": 0.000446666,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 14492722,
+          "instructions_per_cycle": 3.6538605377236935,
+          "instructions_retired": 52954385,
+          "lifetime_peak_physical_footprint_bytes_after": 16810344,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16728424,
+          "physical_footprint_bytes_before": 12697960,
+          "resident_bytes_after": 27262976,
+          "resident_bytes_before": 21839872,
+          "system_cpu_seconds": 0.0003469166666666667,
+          "user_cpu_seconds": 0.0035590833333333334
+        },
+        "post_json_seconds": 0.002801958,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 13994835,
+        "cycles": 5599042,
+        "user_cpu_seconds": 0.001333,
+        "system_cpu_seconds": 0.00021975
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 38959550,
+        "cycles": 8893680,
+        "user_cpu_seconds": 0.0022260833333333334,
+        "system_cpu_seconds": 0.0001271666666666667
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "ce86bb4a299fce5e754fedab5731cc8cddb7f89586b262e2ee30a29380f69018",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "before",
+      "sample": 6,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00022541800000000002
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5689469,
+              "instructions_per_cycle": 2.6148689798643776,
+              "instructions_retired": 14877216,
+              "lifetime_peak_physical_footprint_bytes_after": 16613736,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16531816,
+              "physical_footprint_bytes_before": 14778728,
+              "resident_bytes_after": 27181056,
+              "resident_bytes_before": 25378816,
+              "system_cpu_seconds": 0.0002365,
+              "user_cpu_seconds": 0.0013447916666666667
+            },
+            "seconds": 0.00046025,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 14691072,
+          "instructions_per_cycle": 3.7177267254561137,
+          "instructions_retired": 54617391,
+          "lifetime_peak_physical_footprint_bytes_after": 16613736,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16531816,
+          "physical_footprint_bytes_before": 12452200,
+          "resident_bytes_after": 27181056,
+          "resident_bytes_before": 21626880,
+          "system_cpu_seconds": 0.0003839166666666667,
+          "user_cpu_seconds": 0.0035840000000000004
+        },
+        "post_json_seconds": 0.002849291,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14877216,
+        "cycles": 5689469,
+        "user_cpu_seconds": 0.0013447916666666667,
+        "system_cpu_seconds": 0.0002365
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39740175,
+        "cycles": 9001603,
+        "user_cpu_seconds": 0.0022392083333333335,
+        "system_cpu_seconds": 0.00014741666666666668
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "6edb6cb803e32b56b4eca621cf10d2b8fd018573279ee22cad5a018c1f72f005",
+      "primary_benchmark_timings": false
+    },
+    {
+      "label": "after",
+      "sample": 6,
+      "profile": {
+        "canonical_root_inside_parallel": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "canonical_root_outside_parallel": {
+          "calls": 5,
+          "inclusive_seconds": 0.00023404300000000002
+        },
+        "canonical_workers": {
+          "calls": 0,
+          "inclusive_seconds": 0.0
+        },
+        "limitations": [
+          "Diagnostic observation only; every timing is excluded from benchmark comparisons.",
+          "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
+          "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
+          "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."
+        ],
+        "parallel_run_windows": [
+          {
+            "hardware": {
+              "cycles": 5664076,
+              "instructions_per_cycle": 2.471907509715618,
+              "instructions_retired": 14001072,
+              "lifetime_peak_physical_footprint_bytes_after": 16810368,
+              "pageins": 0,
+              "physical_footprint_bytes_after": 16728448,
+              "physical_footprint_bytes_before": 14958976,
+              "resident_bytes_after": 27246592,
+              "resident_bytes_before": 25444352,
+              "system_cpu_seconds": 0.0002770416666666667,
+              "user_cpu_seconds": 0.001308125
+            },
+            "seconds": 0.000446834,
+            "site": 1261
+          }
+        ],
+        "post_json_hardware": {
+          "cycles": 14610055,
+          "instructions_per_cycle": 3.6293468436634906,
+          "instructions_retired": 53024957,
+          "lifetime_peak_physical_footprint_bytes_after": 16810368,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16728448,
+          "physical_footprint_bytes_before": 12599656,
+          "resident_bytes_after": 27246592,
+          "resident_bytes_before": 21741568,
+          "system_cpu_seconds": 0.00042187500000000005,
+          "user_cpu_seconds": 0.0035380416666666668
+        },
+        "post_json_seconds": 0.0028225,
+        "schema": "mech.related-post-gen.phase-attribution.v1"
+      },
+      "parallel_hardware_sum": {
+        "instructions_retired": 14001072,
+        "cycles": 5664076,
+        "user_cpu_seconds": 0.001308125,
+        "system_cpu_seconds": 0.0002770416666666667
+      },
+      "outside_parallel_hardware": {
+        "instructions_retired": 39023885,
+        "cycles": 8945979,
+        "user_cpu_seconds": 0.0022299166666666665,
+        "system_cpu_seconds": 0.00014483333333333335
+      },
+      "exact_standard_rust_output": true,
+      "output_sha256": "470263449577b9b386d47cf81a5b7ed6ec4155eabc8bb31709f55e2e3634f6fc",
+      "executable_sha256": "ce86bb4a299fce5e754fedab5731cc8cddb7f89586b262e2ee30a29380f69018",
+      "primary_benchmark_timings": false
+    }
+  ],
+  "native_objects_unchanged_and_actual_linked_bytes_audited": true,
+  "all14_outputs_exact": true,
+  "timings_excluded": true,
+  "schedule": [
+    [
+      "after",
+      "before"
+    ],
+    [
+      "after",
+      "before"
+    ],
+    [
+      "after",
+      "before"
+    ],
+    [
+      "before",
+      "after"
+    ],
+    [
+      "before",
+      "after"
+    ],
+    [
+      "before",
+      "after"
+    ],
+    [
+      "before",
+      "after"
+    ]
+  ],
+  "limitations": [
+    "Post-JSON counters include the diagnostic observer.",
+    "Canonical timers are inclusive wall clocks, may overlap and are not CPU-time shares.",
+    "Outside-parallel counters are computed per invocation from nested cumulative counters, not differences of independent medians."
+  ]
+}

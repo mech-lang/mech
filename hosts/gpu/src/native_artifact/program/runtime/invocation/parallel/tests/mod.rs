@@ -4,6 +4,7 @@ use crate::native_artifact::program::runtime::*;
 use std::cell::Cell;
 
 mod credit_tests;
+mod numeric_tests;
 mod schedule_tests;
 
 thread_local! {

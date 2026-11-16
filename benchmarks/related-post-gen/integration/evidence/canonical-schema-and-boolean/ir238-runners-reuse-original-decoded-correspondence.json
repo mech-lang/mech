@@ -1,0 +1,18 @@
+{
+  "all13_bundle_files_byte_identical": true,
+  "files": {
+    "catalog-profile.json": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c",
+    "image-binding.bin": "aa5ec8b92b2c16d5cdfe7a320276fe093898318d56d07fc4546d8e52c875f38b",
+    "frame-summary.json": "f1472782f21c422fa4f593ee3daa84342a6df9e9dbfa01f4b7fdd7aeecb4e6b2",
+    "artifact.mecb": "49612ff092b1b4c8b7ec9ae91a18d812803f4a6dbde804406835bc81780a19b0",
+    "source.mec": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+    "metadata.json": "4b325f379a7dd017278f7166c9ac58685c76d0a321e954269948406ea098de05",
+    "catalog.rs": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a",
+    "native-metadata-binding.bin": "5dd4c30cad505fdca8d61dafdb22500ee6945cd7ff1a354b98b37038009fb273",
+    "native-metadata.bin": "343758a812d892eba00962f83d061e796a80252457b804c5b9faa8291fdae340",
+    "linked.rs": "fdc6fc69d159010e91daf64a18b3e8a079c4ce41ada975c6caf5124e340c5117",
+    "object.o": "e353de67c4ecaabd7c404379087206a50e74b3fc0d391d01b5a70e43c1153e74",
+    "descriptor.json": "7d48740ded55ec0aeeefa6b0fc91684caafccf63682e9496c296b4ec5cb95e5d",
+    "map-facts.txt": "e40dbb83004557a250b45b00bd4aefb748612bf0ceb3b1204b51a6efa573ee64"
+  }
+}

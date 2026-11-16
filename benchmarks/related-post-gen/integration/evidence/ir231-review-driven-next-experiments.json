@@ -1,0 +1,80 @@
+{
+  "status": "accepted_and_auditing_current_compiler",
+  "goal_complete": false,
+  "review_source_sha256": "4e41c8ddc951cdc5e34f6c539a691aee9f0a72ae150ebe79df73f215b435ae98",
+  "reviewed_snapshot": "a6798c570c07abc2a1dbe6500d7a7db2250ea8b0 / IR223",
+  "current_candidate": "fc61145beddd6a9777e40e0469e224801bfe47c8 / IR231",
+  "pr973_integrated_through": "369714775615e4adb85d67467b9e7409a69f92b4",
+  "first_complete_current_review_publication": true,
+  "items": [
+    {
+      "priority": 0,
+      "item": "Preserve exhausted transition payload after reduction",
+      "status": "implemented_and_regression_passes_broad_checks_running",
+      "source": "/private/tmp/mech-related-native-reduction-terminal-transition-compiler-20261106",
+      "before_failure": "/private/tmp/mech-related-reduction-terminal-unfixed-tests-20261106-v1/confirmation.json"
+    },
+    {
+      "priority": 1,
+      "item": "Producer-proven direct Boolean literal branches",
+      "status": "confirmed_still_open_in_current_emitter",
+      "evidence": "terminators.rs still emits equality for LiteralBranch; boolean_branches.rs source proof folds repeated sole-predecessor tests only. IR224 backend Boolean cleanup is separate.",
+      "experiment": "Preserve canonical 0/1 producer provenance through copies and all-reaching producers; unknown/raw values stay checked. Add same-compiler ablation and raw2/error/finite controls, inspect native text before timing."
+    },
+    {
+      "priority": 1,
+      "item": "Ordered subset keys and eligibility mask reuse",
+      "status": "audit_current_source_then_independent_ablation",
+      "experiment": "Check/sort private numeric rows while preserving original post tags and fallback eligibility; simplify key arithmetic separately from retaining eligibility masks. Exact output and unordered/duplicate/escaped/fallback fixtures must pass."
+    },
+    {
+      "priority": 2,
+      "item": "Immutable metadata in one-shot calls and restoration",
+      "status": "open_profile_confirmed_cost",
+      "experiment": "Separate validated immutable types/schemas/plans from invocation-current shapes, ownership, actual footprints and cumulative fuel; no per-op warm-cache workaround."
+    },
+    {
+      "priority": 2,
+      "item": "Bounded native-tree child funding",
+      "status": "open_phase_only_funding_does_not_select_query_tree",
+      "experiment": "Gate maximum cost on current exclusive balance, retain per-visit actual debits, keep checked path when insufficient. No early denial or NoLimits-only shortcut."
+    },
+    {
+      "priority": 2,
+      "item": "Producer-derived posting ranges and vector dimensions",
+      "status": "open_requires_current-producer_provenance",
+      "experiment": "Identify one native guard or division window, trace genuine immutable range/vector authority, invalidate on writes/provenance loss."
+    },
+    {
+      "priority": 3,
+      "item": "Borrowed JSON fields and symmetric output experiments",
+      "status": "open_not_a_native_kernel_gain",
+      "experiment": "Use borrowing-capable string representation with escaped-string fallback; sink/preencoded-output variants must time cache construction and apply comparable changes to both hosts."
+    },
+    {
+      "priority": 3,
+      "item": "Scalar-home retirement and inline arena authority",
+      "status": "lower_priority_measure_in_combination_if_needed",
+      "experiment": "Do not weaken cold-path publication; measure object size/stack/short scalar execution as well as allocation counts."
+    }
+  ],
+  "negative_evidence": {
+    "fresh_traversal_IR229": "464 dead query words identified but complete native text unchanged; no latency gain claim and no performance cohort for no-op code"
+  },
+  "protocol": {
+    "default_order": "retain alternating default",
+    "next_order": "seeded recorded randomized fresh-process rounds",
+    "latency_rounds": 31,
+    "matrix": "Reduced current-parent/candidate/selected Mech plus standard Rust, streaming Rust, narrow-ID/key Rust and eligible full-process preinitialized Rust. Include both fast Rust matched controls and the latest full-process winner.",
+    "timing_boundaries": [
+      "continuous complete post-JSON",
+      "fresh launch through exit"
+    ],
+    "same_mech_variant_required_for_both": true,
+    "resource_phase": "separate all-thread instructions/cycles/CPU, allocations/requested bytes/peak live/RSS and binary/code/stack size",
+    "attribution": "current exact native bytes only; sampled positions not CPU-time percentages",
+    "all_samples_retained": true,
+    "no_background_build_test_profile_or_compression_during_latency": true
+  },
+  "updated_utc": "2026-11-06T22:59:56.170669+00:00"
+}

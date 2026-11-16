@@ -238,6 +238,7 @@ mod build_input_tests {
                 .collect(),
             emit: BuildEmit::Bytecode,
             cranelift: false,
+            native_compile_limits: None,
             native_scalar: false,
             native_loop_fma: false,
             name: Some("output".to_string()),

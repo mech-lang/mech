@@ -1,0 +1,6 @@
+qualify-budgets-run.json passed
+qualify-compact-budgets-run.json passed
+build-run.json passed
+audit-run.json passed
+run.json passed
+Eight forged capacity-frontier cases rejected by both independent and Object-bound loaders

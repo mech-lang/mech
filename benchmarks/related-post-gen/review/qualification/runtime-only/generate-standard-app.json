@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/generate-standard-app",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-compiler-20261106",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.199991709087044,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "53760658d965069f5650976a1e433af5dfa001b095ddc406bdb59910e3bb4fc8"
+}

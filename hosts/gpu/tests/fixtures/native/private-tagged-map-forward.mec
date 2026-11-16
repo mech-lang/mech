@@ -1,0 +1,10 @@
++> map
+#Forward(initial<{string:u64}>, steps<u64>, seed<u64>) => <u64>
+  | :Visit(left<u64>, index<{string:u64}>, total<u64>)
+  | :Done(index<{string:u64}>, total<u64>).
+#Forward(initial, steps, seed) -> :Visit(steps, initial, seed)
+  :Visit(left, index, total)
+    | left > 0u64 -> :Visit(left - 1u64, index, total + 1u64)
+    | * -> :Done(index, total)
+  :Done(index, total) => index{"old"} + total.
+#Forward(initial<{string:u64}>, steps<u64>, seed<u64>)

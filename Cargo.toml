@@ -21,6 +21,13 @@ required-features = ["cli_core"]
 [profile.release]
 debug = false
 
+# Build the compiler with cross-crate optimization without changing runtime
+# consumers of the ordinary release profile.
+[profile.compiler]
+inherits = "release"
+lto = "thin"
+codegen-units = 1
+
 [profile.test]
 # The exhaustive native-factory matrix otherwise produces multi-gigabyte
 # test executables that macOS cannot map alongside the shared dyld cache.
@@ -331,7 +338,7 @@ baselib = ["bool", "string",
       "functions", "formulas",
     ]
 
-compiler = ["mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime?/compiler"]
+compiler = ["mech-core/compiler", "mech-engine/compiler", "mech-syntax/compiler", "mech-runtime?/compiler", "dep:mimalloc"]
 program = ["mech-core/program", "mech-engine/program", "mech-syntax/program"]
 pretty_print = ["mech-core/pretty_print", "mech-engine/pretty_print", "mech-syntax/pretty_print"]
 serde = ["mech-core/serde", "mech-engine/serde", "mech-syntax/serde"]
@@ -477,6 +484,10 @@ tokio = { version = "1.50.0", features = ["full"]}
 include_dir = {version = "0.7.4", features = ["glob"]}
 indicatif = { version = "0.18.4"}
 
+# The CLI owns its allocator; library consumers and emitted programs do not.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+mimalloc = { version = "=0.1.39", default-features = false, optional = true }
+
 [workspace]
 members = [
   "src/abi",
@@ -508,6 +519,9 @@ OriginalFilename = "MECH.EXE"
 LegalCopyright = "Copyright © 2026"
 
 [patch.crates-io]
+cranelift-codegen = { path = "vendor/cranelift-codegen" }
+cranelift-frontend = { path = "vendor/cranelift-frontend" }
+regalloc2 = { path = "vendor/regalloc2" }
 mech-combinatorics = { path = "machines/combinatorics" }
 mech-compare = { path = "machines/compare" }
 mech-logic = { path = "machines/logic" }

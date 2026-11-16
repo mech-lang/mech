@@ -1,0 +1,1144 @@
+{
+  "status": "passed",
+  "isolated_real_Git_objects": true,
+  "synthetic_commit_aliases": false,
+  "required_published_commits": [
+    "1ef5985a9c58fd2857bdf8eedc06a2b7b50ef622",
+    "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164"
+  ],
+  "imported_objects": 4047,
+  "imported_object_types": {
+    "blob": 3009,
+    "tree": 1036,
+    "commit": 2
+  },
+  "optional_IR349_commit_intentionally_absent": true,
+  "native_executions": 0,
+  "verification": {
+    "verified_records": 21857,
+    "unique_blobs": 10296,
+    "compressed_bytes": 65806723,
+    "timed_resource_exact_outputs": 4869,
+    "qualification_exact_outputs": 1856,
+    "census_exact_diagnostic_outputs": 28,
+    "reconstructed_compiler_snapshots": 10,
+    "vendor_files": 246,
+    "literal_includes": 164,
+    "optional_published_IR349_alias_checked": false,
+    "fresh_IR349_profile_checked": true,
+    "broad_passed": {
+      "zero-extend-load-compiler-v1/broad-native-tests.json": 1092,
+      "scalar-edge-homes-compiler-v2/broad-native.json": 1093,
+      "packed-popcount-compiler-v1/broad-native-tests.json": 1094,
+      "packed-selected-homes-compiler-v1/broad-native-tests.json": 1099
+    },
+    "inherited_failures": 16,
+    "native_executions_by_verifier": 0,
+    "source_override_counts": {
+      "dense-producer-comparison-compiler-v1": 14,
+      "compact-bit-count-compiler-v3": 19,
+      "compact-bit-count-tests-v4": 19,
+      "zero-extend-load-compiler-v1": 26,
+      "scalar-edge-homes-compiler-v1": 19,
+      "scalar-edge-homes-compiler-v2": 19,
+      "packed-popcount-compiler-v1": 31,
+      "packed-selected-homes-compiler-v1": 36,
+      "allocation-phase-census-v1/diagnostic-runtime-compiler": 4,
+      "allocation-phase-census-v2/diagnostic-runtime-compiler": 6
+    },
+    "observed_histograms": {
+      "first-packed-native-query-gains": {
+        "mech-managed-producer-element-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-ir336-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-static-replay-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-branch-insert-ir340-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36596926001": 31
+          }
+        },
+        "mech-managed-host-v2-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870728": 31
+          }
+        },
+        "mech-managed-producer-element-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-zero-extend-load-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-retire-overlap": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870728": 31
+          }
+        },
+        "mech-ir345-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-worker-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-dense-producer-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-ir345-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-comparison-chain-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-owned-capture-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-key-u32-probe": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-dense-producer-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-ir345-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir336-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir343-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir336-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-worker-u32": {
+          "peak_workers": {
+            "4": 30,
+            "2": 1
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-dense-comparison-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-scoped-frame": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870728": 31
+          }
+        },
+        "mech-managed-dense-producer-comparison-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-typed-fixed-byte": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36997601270": 1,
+            "36997601046": 2,
+            "36997599566": 1,
+            "36997601942": 1,
+            "36997600934": 1,
+            "36997600126": 1,
+            "36997600926": 1,
+            "36997601878": 1,
+            "36997602846": 1,
+            "36997601886": 1,
+            "36997602230": 1,
+            "36997603646": 1,
+            "36997601750": 1,
+            "36997601718": 1,
+            "36997602462": 1,
+            "36997601358": 1,
+            "36997602062": 1,
+            "36997602574": 1,
+            "36997602550": 1,
+            "36997601246": 1,
+            "36997601742": 1,
+            "36997600838": 1,
+            "36997601598": 1,
+            "36997602150": 1,
+            "36997601950": 1,
+            "36997600262": 1,
+            "36997602054": 1,
+            "36997601558": 1,
+            "36997602886": 1,
+            "36997601366": 1
+          }
+        },
+        "mech-managed-static-replay-byte": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37025278893": 31
+          }
+        },
+        "mech-managed-dense-comparison-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-owned-capture-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-ir320-compact-native-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-guarded-owner-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-comparison-chain-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-zero-extend-load-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-dense-producer-comparison-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-branch-insert-ir346-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36596926001": 31
+          }
+        },
+        "mech-managed-branch-insert-ir343-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36596926001": 31
+          }
+        },
+        "mech-managed-guarded-owner-byte": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37025278893": 31
+          }
+        }
+      },
+      "new-managed-resources/resources-packed-query-first-authoritative": {
+        "mech-ir336-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-producer-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-producer-element-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir336-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-comparison-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-dense-producer-comparison-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-branch-insert-ir346-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36596926001": 7
+          }
+        },
+        "mech-managed-guarded-owner-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir345-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-producer-comparison-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-static-replay-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-dense-worker-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir336-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-guarded-owner-byte": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37025278893": 7
+          }
+        },
+        "mech-managed-owned-capture-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-dense-comparison-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-owned-capture-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-dense-producer-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir343-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-zero-extend-load-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-zero-extend-load-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-branch-insert-ir343-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36596926001": 7
+          }
+        },
+        "mech-managed-comparison-chain-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir345-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-worker-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-scoped-frame": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870728": 7
+          }
+        },
+        "mech-managed-host-v2-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870728": 7
+          }
+        },
+        "mech-managed-static-replay-byte": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37025278893": 7
+          }
+        },
+        "mech-managed-comparison-chain-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-producer-element-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-branch-insert-ir340-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36596926001": 7
+          }
+        },
+        "mech-managed-key-u32-probe": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir345-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        }
+      },
+      "first-scalar-packed-query-gains-v2": {
+        "mech-ir336-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir349-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir349-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-comparison-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-scoped-frame": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870728": 31
+          }
+        },
+        "mech-managed-scalar-edge-homes-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-dense-worker-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-scalar-edge-homes-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-packed-selected-homes-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-ir345-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir336-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir348-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir348-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir343-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-packed-selected-homes-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-dense-producer-comparison-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-dense-comparison-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-packed-popcount-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-dense-producer-comparison-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-zero-extend-load-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-managed-owned-capture-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-managed-packed-popcount-wide": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "36864870920": 31
+          }
+        },
+        "mech-ir343-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir336-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir348-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-zero-extend-load-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-ir345-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-worker-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-ir343-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-ir345-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        },
+        "mech-managed-comparison-chain-u32": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {
+            "37134118305": 31
+          }
+        },
+        "mech-ir349-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 31
+          },
+          "total_work": {}
+        }
+      },
+      "new-managed-resources/resources-scalar-packed-query-first": {
+        "mech-ir349-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-ir345-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-packed-selected-homes-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-zero-extend-load-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-zero-extend-load-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir348-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-producer-comparison-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-dense-producer-comparison-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir345-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-packed-popcount-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir348-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-owned-capture-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-packed-selected-homes-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir336-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-comparison-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-managed-scalar-edge-homes-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir343-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-worker-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir348-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-ir343-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-scoped-frame": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870728": 7
+          }
+        },
+        "mech-managed-packed-popcount-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir349-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-worker-wide": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "36864870920": 7
+          }
+        },
+        "mech-ir336-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-comparison-chain-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir349-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-managed-scalar-edge-homes-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-managed-dense-comparison-u32": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {
+            "37134118305": 7
+          }
+        },
+        "mech-ir343-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-ir336-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        },
+        "mech-ir345-compact-direct-byte-4": {
+          "peak_workers": {
+            "4": 7
+          },
+          "total_work": {}
+        }
+      },
+      "independent-compact-packed-scalar-confirmation-v1": {
+        "mech-ir343-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-ir345-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-ir345-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-ir348-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-ir336-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-ir348-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-ir343-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-ir349-compact-maintained-wide-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        },
+        "mech-managed-dense-worker-u32": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {
+            "37134118305": 13
+          }
+        },
+        "mech-managed-packed-selected-homes-u32": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {
+            "37134118305": 13
+          }
+        },
+        "mech-managed-scoped-frame": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {
+            "36864870728": 13
+          }
+        },
+        "mech-ir349-compact-key-u32-4": {
+          "peak_workers": {
+            "4": 13
+          },
+          "total_work": {}
+        }
+      }
+    }
+  }
+}

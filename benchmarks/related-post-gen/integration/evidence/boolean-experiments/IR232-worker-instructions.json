@@ -1,0 +1,2054 @@
+{
+  "schema": "mech.related-post-gen.native-worker-instruction-observations.v2",
+  "compiler": "41249f58ef58ac0d622f304aa9db26f2ef0e3dd7",
+  "profiled_timings_excluded": true,
+  "variants": {
+    "unchanged": {
+      "binary_sha256": "8d005e1ec675abe6137bea216dc4db92f6b9aee5c2b078bbe17fecc5a1f8e9ec",
+      "all1000_invocations_exact": true,
+      "rows": {
+        "_mech_canonical_program_entry_v1_numeric_101": {
+          "static_machine_instruction_count": 1671,
+          "static_categories": {
+            "other_arithmetic_or_control": 131,
+            "explicit_stack_memory": 167,
+            "register_move": 86,
+            "other_memory": 784,
+            "constant_materialization": 274,
+            "comparison": 72,
+            "branch_or_return": 157
+          },
+          "sampled_pc_observations": 16,
+          "sampled_categories": {
+            "constant_materialization": 7,
+            "other_arithmetic_or_control": 5,
+            "explicit_stack_memory": 1,
+            "other_memory": 2,
+            "comparison": 1
+          },
+          "top_offsets": [
+            {
+              "offset": 2104,
+              "observations": 4,
+              "instruction": "1005bceb8:     \tmov\tx3, #0x8d38             ; =36152",
+              "window": [
+                "1005bceac:     \tmov\tx8, #0x0                ; =0",
+                "1005bceb0:     \tmov\tx7, x14",
+                "1005bceb4:     \tmov\tx10, x8",
+                "1005bceb8:     \tmov\tx3, #0x8d38             ; =36152",
+                "1005bcebc:     \tcmp\tx0, x3",
+                "1005bcec0:     \tb.hs\t0x1005bd010 <_mech_canonical_program_entry_v1_numeric_101+0x990>",
+                "1005bcec4:     \tmov\tx1, #0x0                ; =0"
+              ]
+            },
+            {
+              "offset": 500,
+              "observations": 2,
+              "instruction": "1005bc874:     \tmov\tw0, #0x53b8             ; =21432",
+              "window": [
+                "1005bc868:     \tmov\tx21, x12",
+                "1005bc86c:     \tmov\tx23, x12",
+                "1005bc870:     \tmov\tx24, x12",
+                "1005bc874:     \tmov\tw0, #0x53b8             ; =21432",
+                "1005bc878:     \tmovk\tw0, #0x1, lsl #16",
+                "1005bc87c:     \tcmp\tx10, x0",
+                "1005bc880:     \tb.hs\t0x1005bc9d4 <_mech_canonical_program_entry_v1_numeric_101+0x354>"
+              ]
+            },
+            {
+              "offset": 1204,
+              "observations": 2,
+              "instruction": "1005bcb34:     \tuxtb\tw11, w3",
+              "window": [
+                "1005bcb28:     \tcset\tx5, eq",
+                "1005bcb2c:     \torr\tw3, w3, w5",
+                "1005bcb30:     \tadd\tx5, x22, #0x1",
+                "1005bcb34:     \tuxtb\tw11, w3",
+                "1005bcb38:     \tcbnz\tx11, 0x1005bcb50 <_mech_canonical_program_entry_v1_numeric_101+0x4d0>",
+                "1005bcb3c:     \tadd\tx5, x22, #0x1",
+                "1005bcb40:     \tcbz\tx26, 0x1005be084 <_mech_canonical_program_entry_v1_numeric_101+0x1a04>"
+              ]
+            },
+            {
+              "offset": 1516,
+              "observations": 1,
+              "instruction": "1005bcc6c:     \tand\tx0, x9, x3",
+              "window": [
+                "1005bcc60:     \tuxtb\tw3, w0",
+                "1005bcc64:     \tmov\tx11, x22",
+                "1005bcc68:     \tmov\tx13, x22",
+                "1005bcc6c:     \tand\tx0, x9, x3",
+                "1005bcc70:     \tcbnz\tx0, 0x1005bcc88 <_mech_canonical_program_entry_v1_numeric_101+0x608>",
+                "1005bcc74:     \tcbnz\tx0, 0x1005bd800 <_mech_canonical_program_entry_v1_numeric_101+0x1180>",
+                "1005bcc78:     \tmov\tw0, #0x53b8             ; =21432"
+              ]
+            },
+            {
+              "offset": 2484,
+              "observations": 1,
+              "instruction": "1005bd034:     \tldur\tx14, [sp, #0x10]",
+              "window": [
+                "1005bd028:     \tmov\tx14, x8",
+                "1005bd02c:     \tmov\tx21, x8",
+                "1005bd030:     \tb\t0x1005bd13c <_mech_canonical_program_entry_v1_numeric_101+0xabc>",
+                "1005bd034:     \tldur\tx14, [sp, #0x10]",
+                "1005bd038:     \tcmp\tx7, x14",
+                "1005bd03c:     \tb.lo\t0x1005bd120 <_mech_canonical_program_entry_v1_numeric_101+0xaa0>",
+                "1005bd040:     \tb\t0x1005bdaf0 <_mech_canonical_program_entry_v1_numeric_101+0x1470>"
+              ]
+            },
+            {
+              "offset": 1448,
+              "observations": 1,
+              "instruction": "1005bcc28:     \tuxtb\tw3, w3",
+              "window": [
+                "1005bcc1c:     \tb.ne\t0x1005bd738 <_mech_canonical_program_entry_v1_numeric_101+0x10b8>",
+                "1005bcc20:     \tmov\tx0, #0x3                ; =3",
+                "1005bcc24:     \tb\t0x1005be060 <_mech_canonical_program_entry_v1_numeric_101+0x19e0>",
+                "1005bcc28:     \tuxtb\tw3, w3",
+                "1005bcc2c:     \tcbz\tx3, 0x1005bcc38 <_mech_canonical_program_entry_v1_numeric_101+0x5b8>",
+                "1005bcc30:     \tmov\tx3, x22",
+                "1005bcc34:     \tb\t0x1005bcc48 <_mech_canonical_program_entry_v1_numeric_101+0x5c8>"
+              ]
+            },
+            {
+              "offset": 1480,
+              "observations": 1,
+              "instruction": "1005bcc48:     \tldr\tx11, [x25, x3, lsl #3]",
+              "window": [
+                "1005bcc3c:     \tudiv\tx3, x22, x26",
+                "1005bcc40:     \tmsub\tx11, x3, x26, x22",
+                "1005bcc44:     \tmadd\tx3, x11, x27, x3",
+                "1005bcc48:     \tldr\tx11, [x25, x3, lsl #3]",
+                "1005bcc4c:     \tcmp\tx5, x11",
+                "1005bcc50:     \tb.lo\t0x1005bd740 <_mech_canonical_program_entry_v1_numeric_101+0x10c0>",
+                "1005bcc54:     \tsub\tx0, x5, x11"
+              ]
+            },
+            {
+              "offset": 920,
+              "observations": 1,
+              "instruction": "1005bca18:     \tmov\tx20, #0x2               ; =2",
+              "window": [
+                "1005bca0c:     \tmov\tx13, x22",
+                "1005bca10:     \tmov\tx11, x22",
+                "1005bca14:     \tb\t0x1005bcc6c <_mech_canonical_program_entry_v1_numeric_101+0x5ec>",
+                "1005bca18:     \tmov\tx20, #0x2               ; =2",
+                "1005bca1c:     \tadd\tx0, x22, #0x2",
+                "1005bca20:     \tcmp\tx0, x22",
+                "1005bca24:     \tb.lo\t0x1005bd4c4 <_mech_canonical_program_entry_v1_numeric_101+0xe44>"
+              ]
+            },
+            {
+              "offset": 3256,
+              "observations": 1,
+              "instruction": "1005bd338:     \tldr\tx20, [x25, x3, lsl #3]",
+              "window": [
+                "1005bd32c:     \tudiv\tx3, x13, x26",
+                "1005bd330:     \tmsub\tx15, x3, x26, x13",
+                "1005bd334:     \tmadd\tx3, x15, x27, x3",
+                "1005bd338:     \tldr\tx20, [x25, x3, lsl #3]",
+                "1005bd33c:     \tcmp\tx10, x20",
+                "1005bd340:     \tb.lo\t0x1005bddc0 <_mech_canonical_program_entry_v1_numeric_101+0x1740>",
+                "1005bd344:     \tfmov\td0, x14"
+              ]
+            },
+            {
+              "offset": 3588,
+              "observations": 1,
+              "instruction": "1005bd484:     \tadd\tx14, x3, #0x1",
+              "window": [
+                "1005bd478:     \tmov\tx3, x2",
+                "1005bd47c:     \tmov\tx2, x19",
+                "1005bd480:     \tb\t0x1005bc874 <_mech_canonical_program_entry_v1_numeric_101+0x1f4>",
+                "1005bd484:     \tadd\tx14, x3, #0x1",
+                "1005bd488:     \tcmp\tx14, x3",
+                "1005bd48c:     \tb.lo\t0x1005bdf9c <_mech_canonical_program_entry_v1_numeric_101+0x191c>",
+                "1005bd490:     \tmov\tx7, #0x8d38             ; =36152"
+              ]
+            },
+            {
+              "offset": 1772,
+              "observations": 1,
+              "instruction": "1005bcd6c:     \tcmp\tx26, #0x1",
+              "window": [
+                "1005bcd60:     \tb.ne\t0x1005bd9fc <_mech_canonical_program_entry_v1_numeric_101+0x137c>",
+                "1005bcd64:     \tmov\tx0, #0x3                ; =3",
+                "1005bcd68:     \tb\t0x1005be060 <_mech_canonical_program_entry_v1_numeric_101+0x19e0>",
+                "1005bcd6c:     \tcmp\tx26, #0x1",
+                "1005bcd70:     \tcset\tx0, eq",
+                "1005bcd74:     \tcmp\tx27, #0x1",
+                "1005bcd78:     \tcset\tx3, eq"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_233": {
+          "static_machine_instruction_count": 3200,
+          "static_categories": {
+            "other_arithmetic_or_control": 198,
+            "explicit_stack_memory": 657,
+            "register_move": 50,
+            "other_memory": 1695,
+            "constant_materialization": 314,
+            "comparison": 105,
+            "branch_or_return": 181
+          },
+          "sampled_pc_observations": 58,
+          "sampled_categories": {
+            "other_arithmetic_or_control": 18,
+            "explicit_stack_memory": 23,
+            "register_move": 1,
+            "comparison": 10,
+            "constant_materialization": 2,
+            "other_memory": 3,
+            "branch_or_return": 1
+          },
+          "top_offsets": [
+            {
+              "offset": 5584,
+              "observations": 6,
+              "instruction": "1005bfad0:     \tsub\tx2, x2, x8",
+              "window": [
+                "1005bfac4:     \tcsel\tx8, x8, x1, lo",
+                "1005bfac8:     \tcmp\tx2, x8",
+                "1005bfacc:     \tb.lo\t0x1005c0a00 <_mech_canonical_program_entry_v1_numeric_233+0x2500>",
+                "1005bfad0:     \tsub\tx2, x2, x8",
+                "1005bfad4:     \tcmp\tx15, x5",
+                "1005bfad8:     \tcsel\tx5, x15, x5, hi",
+                "1005bfadc:     \tcmp\tx5, x1"
+              ]
+            },
+            {
+              "offset": 2868,
+              "observations": 5,
+              "instruction": "1005bf034:     \tldur\tx1, [sp, #0xa0]",
+              "window": [
+                "1005bf028:     \tmov\tx1, #0xbda0             ; =48544",
+                "1005bf02c:     \tcmp\tx3, x1",
+                "1005bf030:     \tcset\tx2, hs",
+                "1005bf034:     \tldur\tx1, [sp, #0xa0]",
+                "1005bf038:     \tand\tw1, w2, w1",
+                "1005bf03c:     \tuxtb\tw1, w1",
+                "1005bf040:     \tcbnz\tx1, 0x1005bf27c <_mech_canonical_program_entry_v1_numeric_233+0xd7c>"
+              ]
+            },
+            {
+              "offset": 3584,
+              "observations": 4,
+              "instruction": "1005bf300:     \tand\tw14, w14, w15",
+              "window": [
+                "1005bf2f4:     \tcmp\tx1, #0x0",
+                "1005bf2f8:     \tcset\tx1, ne",
+                "1005bf2fc:     \tand\tw15, w15, w1",
+                "1005bf300:     \tand\tw14, w14, w15",
+                "1005bf304:     \tuxtb\tw14, w14",
+                "1005bf308:     \tcbnz\tx14, 0x1005bf564 <_mech_canonical_program_entry_v1_numeric_233+0x1064>",
+                "1005bf30c:     \tmov\tx14, #0x1               ; =1"
+              ]
+            },
+            {
+              "offset": 5624,
+              "observations": 4,
+              "instruction": "1005bfaf8:     \tsub\tx2, x1, #0x1",
+              "window": [
+                "1005bfaec:     \tsub\tx1, x2, x15",
+                "1005bfaf0:     \tcmp\tx1, #0x0",
+                "1005bfaf4:     \tb.eq\t0x1005c0bf8 <_mech_canonical_program_entry_v1_numeric_233+0x26f8>",
+                "1005bfaf8:     \tsub\tx2, x1, #0x1",
+                "1005bfafc:     \tumulh\tx5, x1, x2",
+                "1005bfb00:     \tcmp\tx5, #0x0",
+                "1005bfb04:     \tb.ne\t0x1005c0cec <_mech_canonical_program_entry_v1_numeric_233+0x27ec>"
+              ]
+            },
+            {
+              "offset": 5660,
+              "observations": 3,
+              "instruction": "1005bfb1c:     \tcmp\tx15, #0x0",
+              "window": [
+                "1005bfb10:     \tadd\tx5, x8, x1",
+                "1005bfb14:     \tcmp\tx5, x8",
+                "1005bfb18:     \tb.lo\t0x1005c0de4 <_mech_canonical_program_entry_v1_numeric_233+0x28e4>",
+                "1005bfb1c:     \tcmp\tx15, #0x0",
+                "1005bfb20:     \tb.eq\t0x1005c0ed8 <_mech_canonical_program_entry_v1_numeric_233+0x29d8>",
+                "1005bfb24:     \tsub\tx1, x15, #0x1",
+                "1005bfb28:     \tumulh\tx2, x15, x1"
+              ]
+            },
+            {
+              "offset": 6248,
+              "observations": 3,
+              "instruction": "1005bfd68:     \tstr\tx5, [x0, #0x2e8]",
+              "window": [
+                "1005bfd5c:     \tstr\tx5, [x0, #0x2d0]",
+                "1005bfd60:     \tstr\tx5, [x0, #0x2d8]",
+                "1005bfd64:     \tstr\tx5, [x0, #0x2e0]",
+                "1005bfd68:     \tstr\tx5, [x0, #0x2e8]",
+                "1005bfd6c:     \tmov\tx12, #0x0               ; =0",
+                "1005bfd70:     \tmov\tx11, x12",
+                "1005bfd74:     \tldur\tx1, [sp, #0x78]"
+              ]
+            },
+            {
+              "offset": 2196,
+              "observations": 3,
+              "instruction": "1005bed94:     \tldur\tx22, [sp, #0xa0]",
+              "window": [
+                "1005bed88:     \tmov\tx5, #0xb588             ; =46472",
+                "1005bed8c:     \tcmp\tx3, x5",
+                "1005bed90:     \tcset\tx14, hs",
+                "1005bed94:     \tldur\tx22, [sp, #0xa0]",
+                "1005bed98:     \tand\tw5, w14, w22",
+                "1005bed9c:     \tuxtb\tw5, w5",
+                "1005beda0:     \tcbnz\tx5, 0x1005befbc <_mech_canonical_program_entry_v1_numeric_233+0xabc>"
+              ]
+            },
+            {
+              "offset": 6308,
+              "observations": 3,
+              "instruction": "1005bfda4:     \tldur\tx2, [sp, #0x88]",
+              "window": [
+                "1005bfd98:     \tstr\tx1, [x0, #0x1f8]",
+                "1005bfd9c:     \tmov\tx9, #0x0                ; =0",
+                "1005bfda0:     \tmov\tx8, x9",
+                "1005bfda4:     \tldur\tx2, [sp, #0x88]",
+                "1005bfda8:     \tcmp\tx2, x26",
+                "1005bfdac:     \tb.lo\t0x1005c0010 <_mech_canonical_program_entry_v1_numeric_233+0x1b10>",
+                "1005bfdb0:     \tmov\tx1, #0x0                ; =0"
+              ]
+            },
+            {
+              "offset": 2796,
+              "observations": 2,
+              "instruction": "1005befec:     \tldur\tx1, [sp, #0x88]",
+              "window": [
+                "1005befe0:     \tstur\tx22, [sp, #0x88]",
+                "1005befe4:     \tcset\tx1, lo",
+                "1005befe8:     \tuxtb\tw22, w1",
+                "1005befec:     \tldur\tx1, [sp, #0x88]",
+                "1005beff0:     \tcmp\tx1, x26",
+                "1005beff4:     \tb.lo\t0x1005bf004 <_mech_canonical_program_entry_v1_numeric_233+0xb04>",
+                "1005beff8:     \tmov\tx1, #0xb588             ; =46472"
+              ]
+            },
+            {
+              "offset": 3484,
+              "observations": 2,
+              "instruction": "1005bf29c:     \tldur\tx1, [sp, #0x78]",
+              "window": [
+                "1005bf290:     \tcmp\tx1, x26",
+                "1005bf294:     \tcset\tx1, lo",
+                "1005bf298:     \tuxtb\tw24, w1",
+                "1005bf29c:     \tldur\tx1, [sp, #0x78]",
+                "1005bf2a0:     \tcmp\tx1, x26",
+                "1005bf2a4:     \tb.lo\t0x1005bf2b4 <_mech_canonical_program_entry_v1_numeric_233+0xdb4>",
+                "1005bf2a8:     \tmov\tx1, #0xbda0             ; =48544"
+              ]
+            },
+            {
+              "offset": 4196,
+              "observations": 2,
+              "instruction": "1005bf564:     \tcmp\tx23, x26",
+              "window": [
+                "1005bf558:     \tldp\tx27, x28, [sp], #0x10",
+                "1005bf55c:     \tldp\tx29, x30, [sp], #0x10",
+                "1005bf560:     \tretab",
+                "1005bf564:     \tcmp\tx23, x26",
+                "1005bf568:     \tcset\tx1, lo",
+                "1005bf56c:     \tuxtb\tw14, w1",
+                "1005bf570:     \tcmp\tx23, x26"
+              ]
+            },
+            {
+              "offset": 5560,
+              "observations": 2,
+              "instruction": "1005bfab8:     \tcmp\tx15, x5",
+              "window": [
+                "1005bfaac:     \tadd\tx2, x8, x1",
+                "1005bfab0:     \tcmp\tx2, x8",
+                "1005bfab4:     \tb.lo\t0x1005c08e8 <_mech_canonical_program_entry_v1_numeric_233+0x23e8>",
+                "1005bfab8:     \tcmp\tx15, x5",
+                "1005bfabc:     \tcsel\tx8, x15, x5, lo",
+                "1005bfac0:     \tcmp\tx8, x1",
+                "1005bfac4:     \tcsel\tx8, x8, x1, lo"
+              ]
+            },
+            {
+              "offset": 6188,
+              "observations": 2,
+              "instruction": "1005bfd2c:     \tstur\tx14, [sp, #0x8]",
+              "window": [
+                "1005bfd20:     \tstur\tx2, [sp, #0x40]",
+                "1005bfd24:     \tstr\tx1, [x5, x14, lsl #3]",
+                "1005bfd28:     \tadd\tx14, x14, #0x1",
+                "1005bfd2c:     \tstur\tx14, [sp, #0x8]",
+                "1005bfd30:     \tmov\tw1, #0x8310             ; =33552",
+                "1005bfd34:     \tmovk\tw1, #0x1, lsl #16",
+                "1005bfd38:     \tsub\tx3, x3, x1"
+              ]
+            },
+            {
+              "offset": 5684,
+              "observations": 2,
+              "instruction": "1005bfb34:     \tcmp\tx15, #0x2",
+              "window": [
+                "1005bfb28:     \tumulh\tx2, x15, x1",
+                "1005bfb2c:     \tcmp\tx2, #0x0",
+                "1005bfb30:     \tb.ne\t0x1005c0fc8 <_mech_canonical_program_entry_v1_numeric_233+0x2ac8>",
+                "1005bfb34:     \tcmp\tx15, #0x2",
+                "1005bfb38:     \tb.lo\t0x1005c10bc <_mech_canonical_program_entry_v1_numeric_233+0x2bbc>",
+                "1005bfb3c:     \tmul\tx1, x15, x1",
+                "1005bfb40:     \tsub\tx2, x15, #0x2"
+              ]
+            },
+            {
+              "offset": 6980,
+              "observations": 2,
+              "instruction": "1005c0044:     \tldur\tx5, [sp, #0x68]",
+              "window": [
+                "1005c0038:     \tb\t0x1005bed88 <_mech_canonical_program_entry_v1_numeric_233+0x888>",
+                "1005c003c:     \tldur\tx1, [sp, #0x60]",
+                "1005c0040:     \tldur\tx2, [sp, #0x88]",
+                "1005c0044:     \tldur\tx5, [sp, #0x68]",
+                "1005c0048:     \tadd\tx8, x20, #0x1",
+                "1005c004c:     \tcmp\tx8, x20",
+                "1005c0050:     \tb.lo\t0x1005c1538 <_mech_canonical_program_entry_v1_numeric_233+0x3038>"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_476": {
+          "static_machine_instruction_count": 509,
+          "static_categories": {
+            "other_arithmetic_or_control": 40,
+            "explicit_stack_memory": 89,
+            "register_move": 25,
+            "other_memory": 165,
+            "constant_materialization": 80,
+            "comparison": 37,
+            "branch_or_return": 73
+          },
+          "sampled_pc_observations": 34,
+          "sampled_categories": {
+            "constant_materialization": 9,
+            "branch_or_return": 4,
+            "comparison": 10,
+            "other_memory": 9,
+            "explicit_stack_memory": 2
+          },
+          "top_offsets": [
+            {
+              "offset": 216,
+              "observations": 9,
+              "instruction": "1005c60d8:     \tmov\tx5, #0x9350             ; =37712",
+              "window": [
+                "1005c60cc:     \tldr\tx2, [x13, #0x60]",
+                "1005c60d0:     \tstur\tx13, [sp, #0x10]",
+                "1005c60d4:     \tmov\tx2, #0x0                ; =0",
+                "1005c60d8:     \tmov\tx5, #0x9350             ; =37712",
+                "1005c60dc:     \tcmp\tx3, x5",
+                "1005c60e0:     \tcset\tx5, hs",
+                "1005c60e4:     \tcmp\tx4, #0x0"
+              ]
+            },
+            {
+              "offset": 472,
+              "observations": 7,
+              "instruction": "1005c61d8:     \tcmp\tx22, x27",
+              "window": [
+                "1005c61cc:     \tmov\tx6, x22",
+                "1005c61d0:     \tmov\tx5, x22",
+                "1005c61d4:     \tb\t0x1005c64e4 <_mech_canonical_program_entry_v1_numeric_476+0x4e4>",
+                "1005c61d8:     \tcmp\tx22, x27",
+                "1005c61dc:     \tb.lo\t0x1005c6290 <_mech_canonical_program_entry_v1_numeric_476+0x290>",
+                "1005c61e0:     \tb\t0x1005c6578 <_mech_canonical_program_entry_v1_numeric_476+0x578>",
+                "1005c61e4:     \tstur\tx5, [sp, #0x10]"
+              ]
+            },
+            {
+              "offset": 664,
+              "observations": 5,
+              "instruction": "1005c6298:     \tldr\tx5, [x26, x22, lsl #3]",
+              "window": [
+                "1005c628c:     \tb\t0x1005c67cc <_mech_canonical_program_entry_v1_numeric_476+0x7cc>",
+                "1005c6290:     \tmov\tx24, x8",
+                "1005c6294:     \tstur\tx5, [sp, #0x10]",
+                "1005c6298:     \tldr\tx5, [x26, x22, lsl #3]",
+                "1005c629c:     \tmov\tx23, #0x1               ; =1",
+                "1005c62a0:     \tadd\tx7, x5, #0x1",
+                "1005c62a4:     \tcmp\tx7, x5"
+              ]
+            },
+            {
+              "offset": 1120,
+              "observations": 4,
+              "instruction": "1005c6460:     \tcbnz\tx2, 0x1005c64d4 <_mech_canonical_program_entry_v1_numeric_476+0x4d4>",
+              "window": [
+                "1005c6454:     \tmov\tx5, x22",
+                "1005c6458:     \tmov\tx6, x22",
+                "1005c645c:     \tb\t0x1005c64e4 <_mech_canonical_program_entry_v1_numeric_476+0x4e4>",
+                "1005c6460:     \tcbnz\tx2, 0x1005c64d4 <_mech_canonical_program_entry_v1_numeric_476+0x4d4>",
+                "1005c6464:     \tb\t0x1005c677c <_mech_canonical_program_entry_v1_numeric_476+0x77c>",
+                "1005c6468:     \tldur\tx0, [sp, #0x10]",
+                "1005c646c:     \tstr\tx22, [x0, #0x10]"
+              ]
+            },
+            {
+              "offset": 1240,
+              "observations": 4,
+              "instruction": "1005c64d8:     \tstr\tx6, [x1, x5, lsl #3]",
+              "window": [
+                "1005c64cc:     \tmov\tx6, x22",
+                "1005c64d0:     \tb\t0x1005c64e4 <_mech_canonical_program_entry_v1_numeric_476+0x4e4>",
+                "1005c64d4:     \tadd\tx6, x7, #0x1",
+                "1005c64d8:     \tstr\tx6, [x1, x5, lsl #3]",
+                "1005c64dc:     \tmov\tx5, x22",
+                "1005c64e0:     \tmov\tx6, x22",
+                "1005c64e4:     \tcmp\tx22, x27"
+              ]
+            },
+            {
+              "offset": 888,
+              "observations": 2,
+              "instruction": "1005c6378:     \tcmp\tx5, x25",
+              "window": [
+                "1005c636c:     \tadd\tx8, x7, #0x1",
+                "1005c6370:     \tcmp\tx8, x7",
+                "1005c6374:     \tb.lo\t0x1005c66d4 <_mech_canonical_program_entry_v1_numeric_476+0x6d4>",
+                "1005c6378:     \tcmp\tx5, x25",
+                "1005c637c:     \tb.lo\t0x1005c6438 <_mech_canonical_program_entry_v1_numeric_476+0x438>",
+                "1005c6380:     \tb\t0x1005c6720 <_mech_canonical_program_entry_v1_numeric_476+0x720>",
+                "1005c6384:     \tldr\tx3, [x19, #0x4d80]"
+              ]
+            },
+            {
+              "offset": 1336,
+              "observations": 2,
+              "instruction": "1005c6538:     \tstur\tx5, [sp, #0x8]",
+              "window": [
+                "1005c652c:     \tldp\tx29, x30, [sp], #0x10",
+                "1005c6530:     \tretab",
+                "1005c6534:     \tmov\tx5, #0x1                ; =1",
+                "1005c6538:     \tstur\tx5, [sp, #0x8]",
+                "1005c653c:     \tadd\tx5, x6, #0x1",
+                "1005c6540:     \tcmp\tx5, x6",
+                "1005c6544:     \tb.lo\t0x1005c67a0 <_mech_canonical_program_entry_v1_numeric_476+0x7a0>"
+              ]
+            },
+            {
+              "offset": 692,
+              "observations": 1,
+              "instruction": "1005c62b4:     \tcmp\tx5, x25",
+              "window": [
+                "1005c62a8:     \tb.lo\t0x1005c65e4 <_mech_canonical_program_entry_v1_numeric_476+0x5e4>",
+                "1005c62ac:     \tcmp\tx7, x5",
+                "1005c62b0:     \tb.lo\t0x1005c6628 <_mech_canonical_program_entry_v1_numeric_476+0x628>",
+                "1005c62b4:     \tcmp\tx5, x25",
+                "1005c62b8:     \tb.lo\t0x1005c6368 <_mech_canonical_program_entry_v1_numeric_476+0x368>",
+                "1005c62bc:     \tb\t0x1005c6674 <_mech_canonical_program_entry_v1_numeric_476+0x674>",
+                "1005c62c0:     \tldr\tx3, [x19, #0x4d80]"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_522": {
+          "static_machine_instruction_count": 347,
+          "static_categories": {
+            "other_arithmetic_or_control": 26,
+            "explicit_stack_memory": 57,
+            "register_move": 25,
+            "other_memory": 122,
+            "constant_materialization": 50,
+            "comparison": 23,
+            "branch_or_return": 44
+          },
+          "sampled_pc_observations": 7,
+          "sampled_categories": {
+            "other_arithmetic_or_control": 3,
+            "constant_materialization": 3,
+            "other_memory": 1
+          },
+          "top_offsets": [
+            {
+              "offset": 248,
+              "observations": 3,
+              "instruction": "1005c68f8:     \tcset\tx10, ne",
+              "window": [
+                "1005c68ec:     \tcset\tx9, ls",
+                "1005c68f0:     \tsub\tx10, x8, x0",
+                "1005c68f4:     \tcmp\tx10, #0x0",
+                "1005c68f8:     \tcset\tx10, ne",
+                "1005c68fc:     \tand\tw9, w9, w10",
+                "1005c6900:     \tand\tw1, w1, w9",
+                "1005c6904:     \tuxtb\tw1, w1"
+              ]
+            },
+            {
+              "offset": 840,
+              "observations": 3,
+              "instruction": "1005c6b48:     \tmov\tx26, #0x1               ; =1",
+              "window": [
+                "1005c6b3c:     \tldp\tx27, x28, [sp], #0x10",
+                "1005c6b40:     \tldp\tx29, x30, [sp], #0x10",
+                "1005c6b44:     \tretab",
+                "1005c6b48:     \tmov\tx26, #0x1               ; =1",
+                "1005c6b4c:     \tadd\tx1, x25, #0x1",
+                "1005c6b50:     \tcmp\tx1, x25",
+                "1005c6b54:     \tb.lo\t0x1005c6ce4 <_mech_canonical_program_entry_v1_numeric_522+0x4e4>"
+              ]
+            },
+            {
+              "offset": 720,
+              "observations": 1,
+              "instruction": "1005c6ad0:     \tldr\tx1, [x20, x5, lsl #3]",
+              "window": [
+                "1005c6ac4:     \tb\t0x1005c6d44 <_mech_canonical_program_entry_v1_numeric_522+0x544>",
+                "1005c6ac8:     \tmov\tx23, x13",
+                "1005c6acc:     \tstur\tx9, [sp, #0x8]",
+                "1005c6ad0:     \tldr\tx1, [x20, x5, lsl #3]",
+                "1005c6ad4:     \tadd\tx22, x3, x1",
+                "1005c6ad8:     \tcmp\tx22, x3",
+                "1005c6adc:     \tb.lo\t0x1005c6c94 <_mech_canonical_program_entry_v1_numeric_522+0x494>"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_589": {
+          "static_machine_instruction_count": 1336,
+          "static_categories": {
+            "other_arithmetic_or_control": 50,
+            "explicit_stack_memory": 246,
+            "register_move": 43,
+            "other_memory": 652,
+            "constant_materialization": 144,
+            "comparison": 65,
+            "branch_or_return": 136
+          },
+          "sampled_pc_observations": 173,
+          "sampled_categories": {
+            "other_memory": 56,
+            "constant_materialization": 39,
+            "explicit_stack_memory": 58,
+            "branch_or_return": 5,
+            "other_arithmetic_or_control": 9,
+            "comparison": 6
+          },
+          "top_offsets": [
+            {
+              "offset": 1392,
+              "observations": 28,
+              "instruction": "1005c72f0:     \tmov\tx0, #0xc0c8             ; =49352",
+              "window": [
+                "1005c72e4:     \tmov\tx7, #0x0                ; =0",
+                "1005c72e8:     \tmov\tx1, #0x2                ; =2",
+                "1005c72ec:     \tstur\tx1, [sp, #0x28]",
+                "1005c72f0:     \tmov\tx0, #0xc0c8             ; =49352",
+                "1005c72f4:     \tcmp\tx3, x0",
+                "1005c72f8:     \tcset\tx0, hs",
+                "1005c72fc:     \tcmp\tx4, #0x2"
+              ]
+            },
+            {
+              "offset": 1820,
+              "observations": 24,
+              "instruction": "1005c749c:     \tldur\tx12, [sp, #0x38]",
+              "window": [
+                "1005c7490:     \tmov\tx12, x25",
+                "1005c7494:     \tldur\tx20, [sp, #0x20]",
+                "1005c7498:     \tb\t0x1005c7b28 <_mech_canonical_program_entry_v1_numeric_589+0xda8>",
+                "1005c749c:     \tldur\tx12, [sp, #0x38]",
+                "1005c74a0:     \tcmp\tx25, x12",
+                "1005c74a4:     \tb.lo\t0x1005c75c0 <_mech_canonical_program_entry_v1_numeric_589+0x840>",
+                "1005c74a8:     \tb\t0x1005c7d64 <_mech_canonical_program_entry_v1_numeric_589+0xfe4>"
+              ]
+            },
+            {
+              "offset": 2976,
+              "observations": 15,
+              "instruction": "1005c7920:     \tldur\tx11, [sp, #0x60]",
+              "window": [
+                "1005c7914:     \tstur\tx0, [sp, #0x10]",
+                "1005c7918:     \tstr\tx23, [x12, x11, lsl #3]",
+                "1005c791c:     \tstur\tx12, [sp, #0x8]",
+                "1005c7920:     \tldur\tx11, [sp, #0x60]",
+                "1005c7924:     \tcmp\tx21, x11",
+                "1005c7928:     \tb.lo\t0x1005c7a40 <_mech_canonical_program_entry_v1_numeric_589+0xcc0>",
+                "1005c792c:     \tb\t0x1005c80b4 <_mech_canonical_program_entry_v1_numeric_589+0x1334>"
+              ]
+            },
+            {
+              "offset": 3488,
+              "observations": 14,
+              "instruction": "1005c7b20:     \tstr\tx28, [x11, x21, lsl #3]",
+              "window": [
+                "1005c7b14:     \tstr\tx6, [x19, #0x4da8]",
+                "1005c7b18:     \tmov\tx12, x25",
+                "1005c7b1c:     \tb\t0x1005c7b28 <_mech_canonical_program_entry_v1_numeric_589+0xda8>",
+                "1005c7b20:     \tstr\tx28, [x11, x21, lsl #3]",
+                "1005c7b24:     \tmov\tx12, x25",
+                "1005c7b28:     \tcmp\tx25, x24",
+                "1005c7b2c:     \tb.lo\t0x1005c7bf8 <_mech_canonical_program_entry_v1_numeric_589+0xe78>"
+              ]
+            },
+            {
+              "offset": 2720,
+              "observations": 10,
+              "instruction": "1005c7820:     \tldr\tx0, [x12, x11, lsl #3]",
+              "window": [
+                "1005c7814:     \tmov\tx0, #0x3                ; =3",
+                "1005c7818:     \tb\t0x1005c823c <_mech_canonical_program_entry_v1_numeric_589+0x14bc>",
+                "1005c781c:     \tldur\tx12, [sp, #0x8]",
+                "1005c7820:     \tldr\tx0, [x12, x11, lsl #3]",
+                "1005c7824:     \tmov\tx1, #0xc0c8             ; =49352",
+                "1005c7828:     \tsub\tx3, x3, x1",
+                "1005c782c:     \tsub\tx4, x4, #0x2"
+              ]
+            },
+            {
+              "offset": 2116,
+              "observations": 10,
+              "instruction": "1005c75c4:     \tldr\tx21, [x11, x25, lsl #3]",
+              "window": [
+                "1005c75b8:     \tmov\tx0, #0x3                ; =3",
+                "1005c75bc:     \tb\t0x1005c823c <_mech_canonical_program_entry_v1_numeric_589+0x14bc>",
+                "1005c75c0:     \tldur\tx11, [sp, #0x40]",
+                "1005c75c4:     \tldr\tx21, [x11, x25, lsl #3]",
+                "1005c75c8:     \tadd\tx26, x21, #0x1",
+                "1005c75cc:     \tcmp\tx26, x21",
+                "1005c75d0:     \tb.lo\t0x1005c7e18 <_mech_canonical_program_entry_v1_numeric_589+0x1098>"
+              ]
+            },
+            {
+              "offset": 3268,
+              "observations": 10,
+              "instruction": "1005c7a44:     \tldr\tx0, [x11, x21, lsl #3]",
+              "window": [
+                "1005c7a38:     \tmov\tx0, #0x3                ; =3",
+                "1005c7a3c:     \tb\t0x1005c823c <_mech_canonical_program_entry_v1_numeric_589+0x14bc>",
+                "1005c7a40:     \tldur\tx11, [sp, #0x18]",
+                "1005c7a44:     \tldr\tx0, [x11, x21, lsl #3]",
+                "1005c7a48:     \tcmp\tx0, x28",
+                "1005c7a4c:     \tb.ne\t0x1005c7a5c <_mech_canonical_program_entry_v1_numeric_589+0xcdc>",
+                "1005c7a50:     \tmov\tx12, x25"
+              ]
+            },
+            {
+              "offset": 1788,
+              "observations": 9,
+              "instruction": "1005c747c:     \tmov\tx0, #0xc0c8             ; =49352",
+              "window": [
+                "1005c7470:     \tuxtb\tw20, w0",
+                "1005c7474:     \tcmp\tx25, x24",
+                "1005c7478:     \tb.lo\t0x1005c749c <_mech_canonical_program_entry_v1_numeric_589+0x71c>",
+                "1005c747c:     \tmov\tx0, #0xc0c8             ; =49352",
+                "1005c7480:     \tsub\tx3, x3, x0",
+                "1005c7484:     \tsub\tx4, x4, #0x2",
+                "1005c7488:     \tadd\tx10, x10, #0x1"
+              ]
+            },
+            {
+              "offset": 3704,
+              "observations": 9,
+              "instruction": "1005c7bf8:     \tadd\tx25, x12, #0x1",
+              "window": [
+                "1005c7bec:     \tmov\tx14, x27",
+                "1005c7bf0:     \tmov\tx11, x19",
+                "1005c7bf4:     \tb\t0x1005c6ef4 <_mech_canonical_program_entry_v1_numeric_589+0x174>",
+                "1005c7bf8:     \tadd\tx25, x12, #0x1",
+                "1005c7bfc:     \tcmp\tx25, x12",
+                "1005c7c00:     \tb.lo\t0x1005c81d8 <_mech_canonical_program_entry_v1_numeric_589+0x1458>",
+                "1005c7c04:     \tmov\tx7, #0x1                ; =1"
+              ]
+            },
+            {
+              "offset": 2412,
+              "observations": 9,
+              "instruction": "1005c76ec:     \tldr\tx11, [x0, x21, lsl #3]",
+              "window": [
+                "1005c76e0:     \tmov\tx0, #0x3                ; =3",
+                "1005c76e4:     \tb\t0x1005c823c <_mech_canonical_program_entry_v1_numeric_589+0x14bc>",
+                "1005c76e8:     \tldur\tx0, [sp, #0x18]",
+                "1005c76ec:     \tldr\tx11, [x0, x21, lsl #3]",
+                "1005c76f0:     \tadd\tx28, x11, #0x1",
+                "1005c76f4:     \tcmp\tx28, x11",
+                "1005c76f8:     \tb.lo\t0x1005c7f4c <_mech_canonical_program_entry_v1_numeric_589+0x11cc>"
+              ]
+            },
+            {
+              "offset": 3292,
+              "observations": 9,
+              "instruction": "1005c7a5c:     \tldur\tx20, [sp, #0x20]",
+              "window": [
+                "1005c7a50:     \tmov\tx12, x25",
+                "1005c7a54:     \tldur\tx20, [sp, #0x20]",
+                "1005c7a58:     \tb\t0x1005c7b28 <_mech_canonical_program_entry_v1_numeric_589+0xda8>",
+                "1005c7a5c:     \tldur\tx20, [sp, #0x20]",
+                "1005c7a60:     \tcbnz\tx20, 0x1005c7b20 <_mech_canonical_program_entry_v1_numeric_589+0xda0>",
+                "1005c7a64:     \tb\t0x1005c8158 <_mech_canonical_program_entry_v1_numeric_589+0x13d8>",
+                "1005c7a68:     \tldur\tx0, [sp, #0x70]"
+              ]
+            },
+            {
+              "offset": 2756,
+              "observations": 7,
+              "instruction": "1005c7844:     \tldur\tx0, [sp, #0x10]",
+              "window": [
+                "1005c7838:     \tb.ne\t0x1005c7844 <_mech_canonical_program_entry_v1_numeric_589+0xac4>",
+                "1005c783c:     \tstur\tx12, [sp, #0x8]",
+                "1005c7840:     \tb\t0x1005c7920 <_mech_canonical_program_entry_v1_numeric_589+0xba0>",
+                "1005c7844:     \tldur\tx0, [sp, #0x10]",
+                "1005c7848:     \tcbnz\tx0, 0x1005c7914 <_mech_canonical_program_entry_v1_numeric_589+0xb94>",
+                "1005c784c:     \tb\t0x1005c8088 <_mech_canonical_program_entry_v1_numeric_589+0x1308>",
+                "1005c7850:     \tldur\tx0, [sp, #0x70]"
+              ]
+            },
+            {
+              "offset": 3496,
+              "observations": 6,
+              "instruction": "1005c7b28:     \tcmp\tx25, x24",
+              "window": [
+                "1005c7b1c:     \tb\t0x1005c7b28 <_mech_canonical_program_entry_v1_numeric_589+0xda8>",
+                "1005c7b20:     \tstr\tx28, [x11, x21, lsl #3]",
+                "1005c7b24:     \tmov\tx12, x25",
+                "1005c7b28:     \tcmp\tx25, x24",
+                "1005c7b2c:     \tb.lo\t0x1005c7bf8 <_mech_canonical_program_entry_v1_numeric_589+0xe78>",
+                "1005c7b30:     \tmov\tx15, #0x0               ; =0",
+                "1005c7b34:     \tstr\tx15, [x9, #0x5b0]"
+              ]
+            },
+            {
+              "offset": 1416,
+              "observations": 5,
+              "instruction": "1005c7308:     \ttbnz\tw0, #0x0, 0x1005c7468 <_mech_canonical_program_entry_v1_numeric_589+0x6e8>",
+              "window": [
+                "1005c72fc:     \tcmp\tx4, #0x2",
+                "1005c7300:     \tcset\tx1, hs",
+                "1005c7304:     \tand\tw0, w0, w1",
+                "1005c7308:     \ttbnz\tw0, #0x0, 0x1005c7468 <_mech_canonical_program_entry_v1_numeric_589+0x6e8>",
+                "1005c730c:     \tmov\tx0, #0x1                ; =1",
+                "1005c7310:     \tstr\tx0, [x19, #0x30]",
+                "1005c7314:     \tldur\tx1, [sp, #0x28]"
+              ]
+            },
+            {
+              "offset": 3528,
+              "observations": 2,
+              "instruction": "1005c7b48:     \tstr\tx15, [x9, #0x5d8]",
+              "window": [
+                "1005c7b3c:     \tstr\tx15, [x9, #0x5c0]",
+                "1005c7b40:     \tstr\tx15, [x9, #0x5c8]",
+                "1005c7b44:     \tstr\tx15, [x9, #0x5d0]",
+                "1005c7b48:     \tstr\tx15, [x9, #0x5d8]",
+                "1005c7b4c:     \tmov\tx8, #0x0                ; =0",
+                "1005c7b50:     \tmov\tx1, x23",
+                "1005c7b54:     \tmov\tx7, x8"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_688": {
+          "static_machine_instruction_count": 861,
+          "static_categories": {
+            "other_arithmetic_or_control": 52,
+            "explicit_stack_memory": 67,
+            "register_move": 52,
+            "other_memory": 430,
+            "constant_materialization": 117,
+            "comparison": 46,
+            "branch_or_return": 97
+          },
+          "sampled_pc_observations": 53,
+          "sampled_categories": {
+            "other_memory": 12,
+            "constant_materialization": 6,
+            "comparison": 22,
+            "branch_or_return": 7,
+            "explicit_stack_memory": 6
+          },
+          "top_offsets": [
+            {
+              "offset": 704,
+              "observations": 7,
+              "instruction": "1005c90c0:     \tcmp\tx7, x27",
+              "window": [
+                "1005c90b4:     \tmov\tx22, x7",
+                "1005c90b8:     \tmov\tx14, x7",
+                "1005c90bc:     \tb\t0x1005c95b0 <_mech_canonical_program_entry_v1_numeric_688+0x7b0>",
+                "1005c90c0:     \tcmp\tx7, x27",
+                "1005c90c4:     \tb.lo\t0x1005c918c <_mech_canonical_program_entry_v1_numeric_688+0x38c>",
+                "1005c90c8:     \tb\t0x1005c9690 <_mech_canonical_program_entry_v1_numeric_688+0x890>",
+                "1005c90cc:     \tstur\tx22, [sp, #0x8]"
+              ]
+            },
+            {
+              "offset": 912,
+              "observations": 6,
+              "instruction": "1005c9190:     \tldr\tx22, [x1, x7, lsl #3]",
+              "window": [
+                "1005c9184:     \tmov\tx0, #0x3                ; =3",
+                "1005c9188:     \tb\t0x1005c9b50 <_mech_canonical_program_entry_v1_numeric_688+0xd50>",
+                "1005c918c:     \tstur\tx22, [sp, #0x8]",
+                "1005c9190:     \tldr\tx22, [x1, x7, lsl #3]",
+                "1005c9194:     \tmov\tx5, #0x1                ; =1",
+                "1005c9198:     \tadd\tx0, x7, #0x1",
+                "1005c919c:     \tcmp\tx0, x27"
+              ]
+            },
+            {
+              "offset": 1984,
+              "observations": 6,
+              "instruction": "1005c95c0:     \tcbnz\tx5, 0x1005c9654 <_mech_canonical_program_entry_v1_numeric_688+0x854>",
+              "window": [
+                "1005c95b4:     \tb.lo\t0x1005c95c0 <_mech_canonical_program_entry_v1_numeric_688+0x7c0>",
+                "1005c95b8:     \tmov\tx0, #0x1                ; =1",
+                "1005c95bc:     \tb\t0x1005c95cc <_mech_canonical_program_entry_v1_numeric_688+0x7cc>",
+                "1005c95c0:     \tcbnz\tx5, 0x1005c9654 <_mech_canonical_program_entry_v1_numeric_688+0x854>",
+                "1005c95c4:     \tcbnz\tx5, 0x1005c9a9c <_mech_canonical_program_entry_v1_numeric_688+0xc9c>",
+                "1005c95c8:     \tmov\tx0, #0x0                ; =0",
+                "1005c95cc:     \tmov\tx1, #0x1                ; =1"
+              ]
+            },
+            {
+              "offset": 652,
+              "observations": 6,
+              "instruction": "1005c908c:     \tldur\tx22, [sp, #0x8]",
+              "window": [
+                "1005c9080:     \tldp\tx29, x30, [sp], #0x10",
+                "1005c9084:     \tretab",
+                "1005c9088:     \tmov\tx19, x5",
+                "1005c908c:     \tldur\tx22, [sp, #0x8]",
+                "1005c9090:     \tcmp\tx7, x6",
+                "1005c9094:     \tcset\tx14, lo",
+                "1005c9098:     \tuxtb\tw14, w14"
+              ]
+            },
+            {
+              "offset": 1968,
+              "observations": 6,
+              "instruction": "1005c95b0:     \tcmp\tx7, x6",
+              "window": [
+                "1005c95a4:     \tmov\tx8, x12",
+                "1005c95a8:     \tmov\tx14, x7",
+                "1005c95ac:     \tmov\tx22, x7",
+                "1005c95b0:     \tcmp\tx7, x6",
+                "1005c95b4:     \tb.lo\t0x1005c95c0 <_mech_canonical_program_entry_v1_numeric_688+0x7c0>",
+                "1005c95b8:     \tmov\tx0, #0x1                ; =1",
+                "1005c95bc:     \tb\t0x1005c95cc <_mech_canonical_program_entry_v1_numeric_688+0x7cc>"
+              ]
+            },
+            {
+              "offset": 1412,
+              "observations": 6,
+              "instruction": "1005c9384:     \tcmp\tx22, x10",
+              "window": [
+                "1005c9378:     \tldp\tx27, x28, [sp], #0x10",
+                "1005c937c:     \tldp\tx29, x30, [sp], #0x10",
+                "1005c9380:     \tretab",
+                "1005c9384:     \tcmp\tx22, x10",
+                "1005c9388:     \tcset\tx0, lo",
+                "1005c938c:     \tuxtb\tw0, w0",
+                "1005c9390:     \tcmp\tx22, x10"
+              ]
+            },
+            {
+              "offset": 1644,
+              "observations": 4,
+              "instruction": "1005c946c:     \tldr\tx11, [x28, x22, lsl #3]",
+              "window": [
+                "1005c9460:     \tb.ne\t0x1005c987c <_mech_canonical_program_entry_v1_numeric_688+0xa7c>",
+                "1005c9464:     \tmov\tx0, #0x3                ; =3",
+                "1005c9468:     \tb\t0x1005c9b50 <_mech_canonical_program_entry_v1_numeric_688+0xd50>",
+                "1005c946c:     \tldr\tx11, [x28, x22, lsl #3]",
+                "1005c9470:     \tadd\tx13, x11, #0x1",
+                "1005c9474:     \tcmp\tx13, x11",
+                "1005c9478:     \tb.lo\t0x1005c9884 <_mech_canonical_program_entry_v1_numeric_688+0xa84>"
+              ]
+            },
+            {
+              "offset": 372,
+              "observations": 4,
+              "instruction": "1005c8f74:     \tmov\tx0, #0xbed0             ; =48848",
+              "window": [
+                "1005c8f68:     \tmov\tx9, x4",
+                "1005c8f6c:     \tmov\tx12, x4",
+                "1005c8f70:     \tmov\tx15, x4",
+                "1005c8f74:     \tmov\tx0, #0xbed0             ; =48848",
+                "1005c8f78:     \tcmp\tx13, x0",
+                "1005c8f7c:     \tb.hs\t0x1005c9088 <_mech_canonical_program_entry_v1_numeric_688+0x288>",
+                "1005c8f80:     \tmov\tx0, #0x1                ; =1"
+              ]
+            },
+            {
+              "offset": 1880,
+              "observations": 3,
+              "instruction": "1005c9558:     \tcmp\tx22, x10",
+              "window": [
+                "1005c954c:     \tuxtb\tw13, w0",
+                "1005c9550:     \tmov\tx0, x22",
+                "1005c9554:     \tmov\tx11, x22",
+                "1005c9558:     \tcmp\tx22, x10",
+                "1005c955c:     \tb.lo\t0x1005c9568 <_mech_canonical_program_entry_v1_numeric_688+0x768>",
+                "1005c9560:     \tmov\tx5, #0x0                ; =0",
+                "1005c9564:     \tb\t0x1005c9594 <_mech_canonical_program_entry_v1_numeric_688+0x794>"
+              ]
+            },
+            {
+              "offset": 1120,
+              "observations": 2,
+              "instruction": "1005c9260:     \tldr\tx10, [x1, x0, lsl #3]",
+              "window": [
+                "1005c9254:     \tb.ne\t0x1005c97c8 <_mech_canonical_program_entry_v1_numeric_688+0x9c8>",
+                "1005c9258:     \tmov\tx0, #0x3                ; =3",
+                "1005c925c:     \tb\t0x1005c9b50 <_mech_canonical_program_entry_v1_numeric_688+0xd50>",
+                "1005c9260:     \tldr\tx10, [x1, x0, lsl #3]",
+                "1005c9264:     \tmov\tx8, #0xbed0             ; =48848",
+                "1005c9268:     \tsub\tx12, x13, x8",
+                "1005c926c:     \tmov\tx8, #0x0                ; =0"
+              ]
+            },
+            {
+              "offset": 2132,
+              "observations": 2,
+              "instruction": "1005c9654:     \tmov\tx0, #0x1                ; =1",
+              "window": [
+                "1005c9648:     \tldp\tx29, x30, [sp], #0x10",
+                "1005c964c:     \tretab",
+                "1005c9650:     \tb\t0x1005c9a9c <_mech_canonical_program_entry_v1_numeric_688+0xc9c>",
+                "1005c9654:     \tmov\tx0, #0x1                ; =1",
+                "1005c9658:     \tadd\tx5, x22, #0x1",
+                "1005c965c:     \tcmp\tx5, x22",
+                "1005c9660:     \tb.lo\t0x1005c9ae8 <_mech_canonical_program_entry_v1_numeric_688+0xce8>"
+              ]
+            },
+            {
+              "offset": 1900,
+              "observations": 1,
+              "instruction": "1005c956c:     \tcbnz\tx13, 0x1005c9a48 <_mech_canonical_program_entry_v1_numeric_688+0xc48>",
+              "window": [
+                "1005c9560:     \tmov\tx5, #0x0                ; =0",
+                "1005c9564:     \tb\t0x1005c9594 <_mech_canonical_program_entry_v1_numeric_688+0x794>",
+                "1005c9568:     \tcbnz\tx13, 0x1005c9594 <_mech_canonical_program_entry_v1_numeric_688+0x794>",
+                "1005c956c:     \tcbnz\tx13, 0x1005c9a48 <_mech_canonical_program_entry_v1_numeric_688+0xc48>",
+                "1005c9570:     \tadd\tx13, x0, #0x1",
+                "1005c9574:     \tcmp\tx13, x0",
+                "1005c9578:     \tb.lo\t0x1005c99c0 <_mech_canonical_program_entry_v1_numeric_688+0xbc0>"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_818": {
+          "static_machine_instruction_count": 4775,
+          "static_categories": {
+            "other_arithmetic_or_control": 249,
+            "explicit_stack_memory": 1063,
+            "register_move": 59,
+            "other_memory": 2600,
+            "constant_materialization": 457,
+            "comparison": 132,
+            "branch_or_return": 215
+          },
+          "sampled_pc_observations": 114,
+          "sampled_categories": {
+            "comparison": 22,
+            "explicit_stack_memory": 55,
+            "other_arithmetic_or_control": 15,
+            "constant_materialization": 8,
+            "branch_or_return": 7,
+            "other_memory": 6,
+            "register_move": 1
+          },
+          "top_offsets": [
+            {
+              "offset": 7928,
+              "observations": 9,
+              "instruction": "1005cc078:     \tcsel\tx1, x13, x8, lo",
+              "window": [
+                "1005cc06c:     \tcmp\tx10, x5",
+                "1005cc070:     \tcsel\tx8, x10, x5, lo",
+                "1005cc074:     \tcmp\tx13, x8",
+                "1005cc078:     \tcsel\tx1, x13, x8, lo",
+                "1005cc07c:     \tcmp\tx1, #0x0",
+                "1005cc080:     \tb.eq\t0x1005cd370 <_mech_canonical_program_entry_v1_numeric_818+0x31f0>",
+                "1005cc084:     \tsub\tx6, x1, #0x1"
+              ]
+            },
+            {
+              "offset": 5848,
+              "observations": 8,
+              "instruction": "1005cb858:     \tmov\tw1, #0x89ac             ; =35244",
+              "window": [
+                "1005cb84c:     \tuxtb\tw7, w1",
+                "1005cb850:     \tcmp\tx21, x24",
+                "1005cb854:     \tb.lo\t0x1005cb874 <_mech_canonical_program_entry_v1_numeric_818+0x16f4>",
+                "1005cb858:     \tmov\tw1, #0x89ac             ; =35244",
+                "1005cb85c:     \tmovk\tw1, #0x2, lsl #16",
+                "1005cb860:     \tsub\tx3, x3, x1",
+                "1005cb864:     \tmov\tx1, x21"
+              ]
+            },
+            {
+              "offset": 5044,
+              "observations": 7,
+              "instruction": "1005cb534:     \tcbnz\tx1, 0x1005cb83c <_mech_canonical_program_entry_v1_numeric_818+0x16bc>",
+              "window": [
+                "1005cb528:     \tand\tw2, w2, w5",
+                "1005cb52c:     \tand\tw1, w1, w2",
+                "1005cb530:     \tuxtb\tw1, w1",
+                "1005cb534:     \tcbnz\tx1, 0x1005cb83c <_mech_canonical_program_entry_v1_numeric_818+0x16bc>",
+                "1005cb538:     \tmov\tx0, #0x1                ; =1",
+                "1005cb53c:     \tstr\tx0, [x19, #0x30]",
+                "1005cb540:     \tldur\tx12, [sp, #0xc8]"
+              ]
+            },
+            {
+              "offset": 5820,
+              "observations": 6,
+              "instruction": "1005cb83c:     \tldur\tx2, [sp, #0x58]",
+              "window": [
+                "1005cb830:     \tldp\tx27, x28, [sp], #0x10",
+                "1005cb834:     \tldp\tx29, x30, [sp], #0x10",
+                "1005cb838:     \tretab",
+                "1005cb83c:     \tldur\tx2, [sp, #0x58]",
+                "1005cb840:     \tmov\tx26, x7",
+                "1005cb844:     \tcmp\tx21, x24",
+                "1005cb848:     \tcset\tx1, lo"
+              ]
+            },
+            {
+              "offset": 8796,
+              "observations": 5,
+              "instruction": "1005cc3dc:     \tcmp\tx21, x24",
+              "window": [
+                "1005cc3d0:     \tmovk\tw1, #0x2, lsl #16",
+                "1005cc3d4:     \tsub\tx3, x3, x1",
+                "1005cc3d8:     \tmov\tx1, x21",
+                "1005cc3dc:     \tcmp\tx21, x24",
+                "1005cc3e0:     \tb.lo\t0x1005cc7b8 <_mech_canonical_program_entry_v1_numeric_818+0x2638>",
+                "1005cc3e4:     \tmov\tx5, #0x0                ; =0",
+                "1005cc3e8:     \tstr\tx5, [x0, #0xa00]"
+              ]
+            },
+            {
+              "offset": 4132,
+              "observations": 5,
+              "instruction": "1005cb1a4:     \tldur\tx1, [sp, #0xf0]",
+              "window": [
+                "1005cb198:     \tmov\tx1, #0xd2bc             ; =53948",
+                "1005cb19c:     \tcmp\tx3, x1",
+                "1005cb1a0:     \tcset\tx2, hs",
+                "1005cb1a4:     \tldur\tx1, [sp, #0xf0]",
+                "1005cb1a8:     \tand\tw1, w2, w1",
+                "1005cb1ac:     \tuxtb\tw1, w1",
+                "1005cb1b0:     \tcbnz\tx1, 0x1005cb48c <_mech_canonical_program_entry_v1_numeric_818+0x130c>"
+              ]
+            },
+            {
+              "offset": 4924,
+              "observations": 5,
+              "instruction": "1005cb4bc:     \tldur\tx12, [sp, #0xa8]",
+              "window": [
+                "1005cb4b0:     \tcset\tx1, lo",
+                "1005cb4b4:     \tuxtb\tw1, w1",
+                "1005cb4b8:     \tmov\tx7, x1",
+                "1005cb4bc:     \tldur\tx12, [sp, #0xa8]",
+                "1005cb4c0:     \tcmp\tx12, x24",
+                "1005cb4c4:     \tb.lo\t0x1005cb4d4 <_mech_canonical_program_entry_v1_numeric_818+0x1354>",
+                "1005cb4c8:     \tmov\tx1, #0xd2bc             ; =53948"
+              ]
+            },
+            {
+              "offset": 5876,
+              "observations": 5,
+              "instruction": "1005cb874:     \tldur\tx10, [sp, #0xf8]",
+              "window": [
+                "1005cb868:     \tstur\tx2, [sp, #0x58]",
+                "1005cb86c:     \tstur\tx11, [sp, #0x68]",
+                "1005cb870:     \tb\t0x1005cc3dc <_mech_canonical_program_entry_v1_numeric_818+0x225c>",
+                "1005cb874:     \tldur\tx10, [sp, #0xf8]",
+                "1005cb878:     \tcmp\tx25, x10",
+                "1005cb87c:     \tb.lo\t0x1005cba5c <_mech_canonical_program_entry_v1_numeric_818+0x18dc>",
+                "1005cb880:     \tb\t0x1005cccec <_mech_canonical_program_entry_v1_numeric_818+0x2b6c>"
+              ]
+            },
+            {
+              "offset": 4060,
+              "observations": 4,
+              "instruction": "1005cb15c:     \tldur\tx2, [sp, #0xc0]",
+              "window": [
+                "1005cb150:     \tcset\tx2, lo",
+                "1005cb154:     \tuxtb\tw2, w2",
+                "1005cb158:     \tstur\tx2, [sp, #0xb8]",
+                "1005cb15c:     \tldur\tx2, [sp, #0xc0]",
+                "1005cb160:     \tcmp\tx2, x24",
+                "1005cb164:     \tb.lo\t0x1005cb174 <_mech_canonical_program_entry_v1_numeric_818+0xff4>",
+                "1005cb168:     \tmov\tx2, #0xcaa4             ; =51876"
+              ]
+            },
+            {
+              "offset": 2556,
+              "observations": 4,
+              "instruction": "1005cab7c:     \tldur\tx4, [sp, #0xf0]",
+              "window": [
+                "1005cab70:     \tmov\tx2, #0xc28c             ; =49804",
+                "1005cab74:     \tcmp\tx3, x2",
+                "1005cab78:     \tcset\tx2, hs",
+                "1005cab7c:     \tldur\tx4, [sp, #0xf0]",
+                "1005cab80:     \tand\tw2, w2, w4",
+                "1005cab84:     \tuxtb\tw2, w2",
+                "1005cab88:     \tcbnz\tx2, 0x1005cae04 <_mech_canonical_program_entry_v1_numeric_818+0xc84>"
+              ]
+            },
+            {
+              "offset": 4016,
+              "observations": 3,
+              "instruction": "1005cb130:     \tstur\tx8, [sp, #0xc8]",
+              "window": [
+                "1005cb124:     \tldp\tx29, x30, [sp], #0x10",
+                "1005cb128:     \tretab",
+                "1005cb12c:     \tmov\tx8, #0x2                ; =2",
+                "1005cb130:     \tstur\tx8, [sp, #0xc8]",
+                "1005cb134:     \tadd\tx8, x20, #0x2",
+                "1005cb138:     \tcmp\tx8, x20",
+                "1005cb13c:     \tb.lo\t0x1005ccad8 <_mech_canonical_program_entry_v1_numeric_818+0x2958>"
+              ]
+            },
+            {
+              "offset": 7984,
+              "observations": 3,
+              "instruction": "1005cc0b0:     \tcmp\tx13, x8",
+              "window": [
+                "1005cc0a4:     \tadd\tx1, x12, x6",
+                "1005cc0a8:     \tcmp\tx1, x12",
+                "1005cc0ac:     \tb.lo\t0x1005cd634 <_mech_canonical_program_entry_v1_numeric_818+0x34b4>",
+                "1005cc0b0:     \tcmp\tx13, x8",
+                "1005cc0b4:     \tcsel\tx13, x13, x8, hi",
+                "1005cc0b8:     \tcmp\tx13, #0x0",
+                "1005cc0bc:     \tb.eq\t0x1005cd78c <_mech_canonical_program_entry_v1_numeric_818+0x360c>"
+              ]
+            },
+            {
+              "offset": 6876,
+              "observations": 3,
+              "instruction": "1005cbc5c:     \tldr\tx5, [x12, x20, lsl #3]",
+              "window": [
+                "1005cbc50:     \tmov\tx0, #0x3                ; =3",
+                "1005cbc54:     \tstur\tx0, [sp, #0xa0]",
+                "1005cbc58:     \tb\t0x1005cebec <_mech_canonical_program_entry_v1_numeric_818+0x4a6c>",
+                "1005cbc5c:     \tldr\tx5, [x12, x20, lsl #3]",
+                "1005cbc60:     \tcmp\tx23, x10",
+                "1005cbc64:     \tb.lo\t0x1005cbe40 <_mech_canonical_program_entry_v1_numeric_818+0x1cc0>",
+                "1005cbc68:     \tb\t0x1005cd024 <_mech_canonical_program_entry_v1_numeric_818+0x2ea4>"
+              ]
+            },
+            {
+              "offset": 8960,
+              "observations": 3,
+              "instruction": "1005cc480:     \tldur\tx2, [sp, #0xe0]",
+              "window": [
+                "1005cc474:     \tstr\tx2, [x0, #0x828]",
+                "1005cc478:     \tmov\tx10, #0x0               ; =0",
+                "1005cc47c:     \tmov\tx6, x10",
+                "1005cc480:     \tldur\tx2, [sp, #0xe0]",
+                "1005cc484:     \tcmp\tx2, x24",
+                "1005cc488:     \tb.lo\t0x1005cc730 <_mech_canonical_program_entry_v1_numeric_818+0x25b0>",
+                "1005cc48c:     \tmov\tx2, #0x0                ; =0"
+              ]
+            },
+            {
+              "offset": 8016,
+              "observations": 3,
+              "instruction": "1005cc0d0:     \tcmp\tx13, #0x2",
+              "window": [
+                "1005cc0c4:     \tumulh\tx2, x13, x8",
+                "1005cc0c8:     \tcmp\tx2, #0x0",
+                "1005cc0cc:     \tb.ne\t0x1005cd8d8 <_mech_canonical_program_entry_v1_numeric_818+0x3758>",
+                "1005cc0d0:     \tcmp\tx13, #0x2",
+                "1005cc0d4:     \tb.lo\t0x1005cda28 <_mech_canonical_program_entry_v1_numeric_818+0x38a8>",
+                "1005cc0d8:     \tmul\tx6, x13, x8",
+                "1005cc0dc:     \tsub\tx2, x13, #0x2"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_1160": {
+          "static_machine_instruction_count": 509,
+          "static_categories": {
+            "other_arithmetic_or_control": 40,
+            "explicit_stack_memory": 89,
+            "register_move": 25,
+            "other_memory": 165,
+            "constant_materialization": 80,
+            "comparison": 37,
+            "branch_or_return": 73
+          },
+          "sampled_pc_observations": 8,
+          "sampled_categories": {
+            "comparison": 4,
+            "other_memory": 3,
+            "constant_materialization": 1
+          },
+          "top_offsets": [
+            {
+              "offset": 472,
+              "observations": 2,
+              "instruction": "1005d87d8:     \tcmp\tx22, x27",
+              "window": [
+                "1005d87cc:     \tmov\tx6, x22",
+                "1005d87d0:     \tmov\tx5, x22",
+                "1005d87d4:     \tb\t0x1005d8ae4 <_mech_canonical_program_entry_v1_numeric_1160+0x4e4>",
+                "1005d87d8:     \tcmp\tx22, x27",
+                "1005d87dc:     \tb.lo\t0x1005d8890 <_mech_canonical_program_entry_v1_numeric_1160+0x290>",
+                "1005d87e0:     \tb\t0x1005d8b78 <_mech_canonical_program_entry_v1_numeric_1160+0x578>",
+                "1005d87e4:     \tstur\tx5, [sp, #0x10]"
+              ]
+            },
+            {
+              "offset": 664,
+              "observations": 2,
+              "instruction": "1005d8898:     \tldr\tx5, [x26, x22, lsl #3]",
+              "window": [
+                "1005d888c:     \tb\t0x1005d8dcc <_mech_canonical_program_entry_v1_numeric_1160+0x7cc>",
+                "1005d8890:     \tmov\tx24, x8",
+                "1005d8894:     \tstur\tx5, [sp, #0x10]",
+                "1005d8898:     \tldr\tx5, [x26, x22, lsl #3]",
+                "1005d889c:     \tmov\tx23, #0x1               ; =1",
+                "1005d88a0:     \tadd\tx7, x5, #0x1",
+                "1005d88a4:     \tcmp\tx7, x5"
+              ]
+            },
+            {
+              "offset": 692,
+              "observations": 1,
+              "instruction": "1005d88b4:     \tcmp\tx5, x25",
+              "window": [
+                "1005d88a8:     \tb.lo\t0x1005d8be4 <_mech_canonical_program_entry_v1_numeric_1160+0x5e4>",
+                "1005d88ac:     \tcmp\tx7, x5",
+                "1005d88b0:     \tb.lo\t0x1005d8c28 <_mech_canonical_program_entry_v1_numeric_1160+0x628>",
+                "1005d88b4:     \tcmp\tx5, x25",
+                "1005d88b8:     \tb.lo\t0x1005d8968 <_mech_canonical_program_entry_v1_numeric_1160+0x368>",
+                "1005d88bc:     \tb\t0x1005d8c74 <_mech_canonical_program_entry_v1_numeric_1160+0x674>",
+                "1005d88c0:     \tldr\tx3, [x19, #0x4e88]"
+              ]
+            },
+            {
+              "offset": 1240,
+              "observations": 1,
+              "instruction": "1005d8ad8:     \tstr\tx6, [x1, x5, lsl #3]",
+              "window": [
+                "1005d8acc:     \tmov\tx6, x22",
+                "1005d8ad0:     \tb\t0x1005d8ae4 <_mech_canonical_program_entry_v1_numeric_1160+0x4e4>",
+                "1005d8ad4:     \tadd\tx6, x7, #0x1",
+                "1005d8ad8:     \tstr\tx6, [x1, x5, lsl #3]",
+                "1005d8adc:     \tmov\tx5, x22",
+                "1005d8ae0:     \tmov\tx6, x22",
+                "1005d8ae4:     \tcmp\tx22, x27"
+              ]
+            },
+            {
+              "offset": 888,
+              "observations": 1,
+              "instruction": "1005d8978:     \tcmp\tx5, x25",
+              "window": [
+                "1005d896c:     \tadd\tx8, x7, #0x1",
+                "1005d8970:     \tcmp\tx8, x7",
+                "1005d8974:     \tb.lo\t0x1005d8cd4 <_mech_canonical_program_entry_v1_numeric_1160+0x6d4>",
+                "1005d8978:     \tcmp\tx5, x25",
+                "1005d897c:     \tb.lo\t0x1005d8a38 <_mech_canonical_program_entry_v1_numeric_1160+0x438>",
+                "1005d8980:     \tb\t0x1005d8d20 <_mech_canonical_program_entry_v1_numeric_1160+0x720>",
+                "1005d8984:     \tldr\tx3, [x19, #0x4e88]"
+              ]
+            },
+            {
+              "offset": 216,
+              "observations": 1,
+              "instruction": "1005d86d8:     \tmov\tx5, #0x9350             ; =37712",
+              "window": [
+                "1005d86cc:     \tldr\tx2, [x13, #0x60]",
+                "1005d86d0:     \tstur\tx13, [sp, #0x10]",
+                "1005d86d4:     \tmov\tx2, #0x0                ; =0",
+                "1005d86d8:     \tmov\tx5, #0x9350             ; =37712",
+                "1005d86dc:     \tcmp\tx3, x5",
+                "1005d86e0:     \tcset\tx5, hs",
+                "1005d86e4:     \tcmp\tx4, #0x0"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_1206": {
+          "static_machine_instruction_count": 347,
+          "static_categories": {
+            "other_arithmetic_or_control": 26,
+            "explicit_stack_memory": 57,
+            "register_move": 25,
+            "other_memory": 122,
+            "constant_materialization": 50,
+            "comparison": 23,
+            "branch_or_return": 44
+          },
+          "sampled_pc_observations": 8,
+          "sampled_categories": {
+            "other_arithmetic_or_control": 5,
+            "explicit_stack_memory": 1,
+            "constant_materialization": 1,
+            "other_memory": 1
+          },
+          "top_offsets": [
+            {
+              "offset": 248,
+              "observations": 5,
+              "instruction": "1005d8ef8:     \tcset\tx10, ne",
+              "window": [
+                "1005d8eec:     \tcset\tx9, ls",
+                "1005d8ef0:     \tsub\tx10, x8, x0",
+                "1005d8ef4:     \tcmp\tx10, #0x0",
+                "1005d8ef8:     \tcset\tx10, ne",
+                "1005d8efc:     \tand\tw9, w9, w10",
+                "1005d8f00:     \tand\tw1, w1, w9",
+                "1005d8f04:     \tuxtb\tw1, w1"
+              ]
+            },
+            {
+              "offset": 460,
+              "observations": 1,
+              "instruction": "1005d8fcc:     \tldur\tx9, [sp, #0x8]",
+              "window": [
+                "1005d8fc0:     \tldp\tx27, x28, [sp], #0x10",
+                "1005d8fc4:     \tldp\tx29, x30, [sp], #0x10",
+                "1005d8fc8:     \tretab",
+                "1005d8fcc:     \tldur\tx9, [sp, #0x8]",
+                "1005d8fd0:     \tmov\tx24, x12",
+                "1005d8fd4:     \tcmp\tx5, x21",
+                "1005d8fd8:     \tcset\tx1, lo"
+              ]
+            },
+            {
+              "offset": 840,
+              "observations": 1,
+              "instruction": "1005d9148:     \tmov\tx26, #0x1               ; =1",
+              "window": [
+                "1005d913c:     \tldp\tx27, x28, [sp], #0x10",
+                "1005d9140:     \tldp\tx29, x30, [sp], #0x10",
+                "1005d9144:     \tretab",
+                "1005d9148:     \tmov\tx26, #0x1               ; =1",
+                "1005d914c:     \tadd\tx1, x25, #0x1",
+                "1005d9150:     \tcmp\tx1, x25",
+                "1005d9154:     \tb.lo\t0x1005d92e4 <_mech_canonical_program_entry_v1_numeric_1206+0x4e4>"
+              ]
+            },
+            {
+              "offset": 720,
+              "observations": 1,
+              "instruction": "1005d90d0:     \tldr\tx1, [x20, x5, lsl #3]",
+              "window": [
+                "1005d90c4:     \tb\t0x1005d9344 <_mech_canonical_program_entry_v1_numeric_1206+0x544>",
+                "1005d90c8:     \tmov\tx23, x13",
+                "1005d90cc:     \tstur\tx9, [sp, #0x8]",
+                "1005d90d0:     \tldr\tx1, [x20, x5, lsl #3]",
+                "1005d90d4:     \tadd\tx22, x3, x1",
+                "1005d90d8:     \tcmp\tx22, x3",
+                "1005d90dc:     \tb.lo\t0x1005d9294 <_mech_canonical_program_entry_v1_numeric_1206+0x494>"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_1273": {
+          "static_machine_instruction_count": 1336,
+          "static_categories": {
+            "other_arithmetic_or_control": 50,
+            "explicit_stack_memory": 246,
+            "register_move": 43,
+            "other_memory": 652,
+            "constant_materialization": 144,
+            "comparison": 65,
+            "branch_or_return": 136
+          },
+          "sampled_pc_observations": 20,
+          "sampled_categories": {
+            "constant_materialization": 3,
+            "comparison": 2,
+            "other_memory": 9,
+            "explicit_stack_memory": 5,
+            "branch_or_return": 1
+          },
+          "top_offsets": [
+            {
+              "offset": 1392,
+              "observations": 2,
+              "instruction": "1005d98f0:     \tmov\tx0, #0xc0c8             ; =49352",
+              "window": [
+                "1005d98e4:     \tmov\tx7, #0x0                ; =0",
+                "1005d98e8:     \tmov\tx1, #0x2                ; =2",
+                "1005d98ec:     \tstur\tx1, [sp, #0x28]",
+                "1005d98f0:     \tmov\tx0, #0xc0c8             ; =49352",
+                "1005d98f4:     \tcmp\tx3, x0",
+                "1005d98f8:     \tcset\tx0, hs",
+                "1005d98fc:     \tcmp\tx4, #0x2"
+              ]
+            },
+            {
+              "offset": 3496,
+              "observations": 2,
+              "instruction": "1005da128:     \tcmp\tx25, x24",
+              "window": [
+                "1005da11c:     \tb\t0x1005da128 <_mech_canonical_program_entry_v1_numeric_1273+0xda8>",
+                "1005da120:     \tstr\tx28, [x11, x21, lsl #3]",
+                "1005da124:     \tmov\tx12, x25",
+                "1005da128:     \tcmp\tx25, x24",
+                "1005da12c:     \tb.lo\t0x1005da1f8 <_mech_canonical_program_entry_v1_numeric_1273+0xe78>",
+                "1005da130:     \tmov\tx15, #0x0               ; =0",
+                "1005da134:     \tstr\tx15, [x9, #0xd70]"
+              ]
+            },
+            {
+              "offset": 3528,
+              "observations": 2,
+              "instruction": "1005da148:     \tstr\tx15, [x9, #0xd98]",
+              "window": [
+                "1005da13c:     \tstr\tx15, [x9, #0xd80]",
+                "1005da140:     \tstr\tx15, [x9, #0xd88]",
+                "1005da144:     \tstr\tx15, [x9, #0xd90]",
+                "1005da148:     \tstr\tx15, [x9, #0xd98]",
+                "1005da14c:     \tmov\tx8, #0x0                ; =0",
+                "1005da150:     \tmov\tx1, x23",
+                "1005da154:     \tmov\tx7, x8"
+              ]
+            },
+            {
+              "offset": 3268,
+              "observations": 2,
+              "instruction": "1005da044:     \tldr\tx0, [x11, x21, lsl #3]",
+              "window": [
+                "1005da038:     \tmov\tx0, #0x3                ; =3",
+                "1005da03c:     \tb\t0x1005da83c <_mech_canonical_program_entry_v1_numeric_1273+0x14bc>",
+                "1005da040:     \tldur\tx11, [sp, #0x18]",
+                "1005da044:     \tldr\tx0, [x11, x21, lsl #3]",
+                "1005da048:     \tcmp\tx0, x28",
+                "1005da04c:     \tb.ne\t0x1005da05c <_mech_canonical_program_entry_v1_numeric_1273+0xcdc>",
+                "1005da050:     \tmov\tx12, x25"
+              ]
+            },
+            {
+              "offset": 2412,
+              "observations": 2,
+              "instruction": "1005d9cec:     \tldr\tx11, [x0, x21, lsl #3]",
+              "window": [
+                "1005d9ce0:     \tmov\tx0, #0x3                ; =3",
+                "1005d9ce4:     \tb\t0x1005da83c <_mech_canonical_program_entry_v1_numeric_1273+0x14bc>",
+                "1005d9ce8:     \tldur\tx0, [sp, #0x18]",
+                "1005d9cec:     \tldr\tx11, [x0, x21, lsl #3]",
+                "1005d9cf0:     \tadd\tx28, x11, #0x1",
+                "1005d9cf4:     \tcmp\tx28, x11",
+                "1005d9cf8:     \tb.lo\t0x1005da54c <_mech_canonical_program_entry_v1_numeric_1273+0x11cc>"
+              ]
+            },
+            {
+              "offset": 2720,
+              "observations": 2,
+              "instruction": "1005d9e20:     \tldr\tx0, [x12, x11, lsl #3]",
+              "window": [
+                "1005d9e14:     \tmov\tx0, #0x3                ; =3",
+                "1005d9e18:     \tb\t0x1005da83c <_mech_canonical_program_entry_v1_numeric_1273+0x14bc>",
+                "1005d9e1c:     \tldur\tx12, [sp, #0x8]",
+                "1005d9e20:     \tldr\tx0, [x12, x11, lsl #3]",
+                "1005d9e24:     \tmov\tx1, #0xc0c8             ; =49352",
+                "1005d9e28:     \tsub\tx3, x3, x1",
+                "1005d9e2c:     \tsub\tx4, x4, #0x2"
+              ]
+            },
+            {
+              "offset": 2756,
+              "observations": 2,
+              "instruction": "1005d9e44:     \tldur\tx0, [sp, #0x10]",
+              "window": [
+                "1005d9e38:     \tb.ne\t0x1005d9e44 <_mech_canonical_program_entry_v1_numeric_1273+0xac4>",
+                "1005d9e3c:     \tstur\tx12, [sp, #0x8]",
+                "1005d9e40:     \tb\t0x1005d9f20 <_mech_canonical_program_entry_v1_numeric_1273+0xba0>",
+                "1005d9e44:     \tldur\tx0, [sp, #0x10]",
+                "1005d9e48:     \tcbnz\tx0, 0x1005d9f14 <_mech_canonical_program_entry_v1_numeric_1273+0xb94>",
+                "1005d9e4c:     \tb\t0x1005da688 <_mech_canonical_program_entry_v1_numeric_1273+0x1308>",
+                "1005d9e50:     \tldur\tx0, [sp, #0x70]"
+              ]
+            },
+            {
+              "offset": 1068,
+              "observations": 1,
+              "instruction": "1005d97ac:     \tldur\tx20, [sp, #0x48]",
+              "window": [
+                "1005d97a0:     \tstur\tx11, [sp, #0x70]",
+                "1005d97a4:     \tldr\tx25, [x20, x23, lsl #3]",
+                "1005d97a8:     \tadd\tx0, x23, #0x1",
+                "1005d97ac:     \tldur\tx20, [sp, #0x48]",
+                "1005d97b0:     \tcmp\tx0, x20",
+                "1005d97b4:     \tb.lo\t0x1005d98cc <_mech_canonical_program_entry_v1_numeric_1273+0x54c>",
+                "1005d97b8:     \tb\t0x1005da2c4 <_mech_canonical_program_entry_v1_numeric_1273+0xf44>"
+              ]
+            },
+            {
+              "offset": 2976,
+              "observations": 1,
+              "instruction": "1005d9f20:     \tldur\tx11, [sp, #0x60]",
+              "window": [
+                "1005d9f14:     \tstur\tx0, [sp, #0x10]",
+                "1005d9f18:     \tstr\tx23, [x12, x11, lsl #3]",
+                "1005d9f1c:     \tstur\tx12, [sp, #0x8]",
+                "1005d9f20:     \tldur\tx11, [sp, #0x60]",
+                "1005d9f24:     \tcmp\tx21, x11",
+                "1005d9f28:     \tb.lo\t0x1005da040 <_mech_canonical_program_entry_v1_numeric_1273+0xcc0>",
+                "1005d9f2c:     \tb\t0x1005da6b4 <_mech_canonical_program_entry_v1_numeric_1273+0x1334>"
+              ]
+            },
+            {
+              "offset": 2116,
+              "observations": 1,
+              "instruction": "1005d9bc4:     \tldr\tx21, [x11, x25, lsl #3]",
+              "window": [
+                "1005d9bb8:     \tmov\tx0, #0x3                ; =3",
+                "1005d9bbc:     \tb\t0x1005da83c <_mech_canonical_program_entry_v1_numeric_1273+0x14bc>",
+                "1005d9bc0:     \tldur\tx11, [sp, #0x40]",
+                "1005d9bc4:     \tldr\tx21, [x11, x25, lsl #3]",
+                "1005d9bc8:     \tadd\tx26, x21, #0x1",
+                "1005d9bcc:     \tcmp\tx26, x21",
+                "1005d9bd0:     \tb.lo\t0x1005da418 <_mech_canonical_program_entry_v1_numeric_1273+0x1098>"
+              ]
+            },
+            {
+              "offset": 1416,
+              "observations": 1,
+              "instruction": "1005d9908:     \ttbnz\tw0, #0x0, 0x1005d9a68 <_mech_canonical_program_entry_v1_numeric_1273+0x6e8>",
+              "window": [
+                "1005d98fc:     \tcmp\tx4, #0x2",
+                "1005d9900:     \tcset\tx1, hs",
+                "1005d9904:     \tand\tw0, w0, w1",
+                "1005d9908:     \ttbnz\tw0, #0x0, 0x1005d9a68 <_mech_canonical_program_entry_v1_numeric_1273+0x6e8>",
+                "1005d990c:     \tmov\tx0, #0x1                ; =1",
+                "1005d9910:     \tstr\tx0, [x19, #0x30]",
+                "1005d9914:     \tldur\tx1, [sp, #0x28]"
+              ]
+            },
+            {
+              "offset": 372,
+              "observations": 1,
+              "instruction": "1005d94f4:     \tmov\tx1, #0xc348             ; =49992",
+              "window": [
+                "1005d94e8:     \tmov\tx13, x5",
+                "1005d94ec:     \tstur\tx5, [sp, #0x10]",
+                "1005d94f0:     \tstur\tx5, [sp, #0x20]",
+                "1005d94f4:     \tmov\tx1, #0xc348             ; =49992",
+                "1005d94f8:     \tcmp\tx3, x1",
+                "1005d94fc:     \tb.hs\t0x1005d9630 <_mech_canonical_program_entry_v1_numeric_1273+0x2b0>",
+                "1005d9500:     \tmov\tx9, #0x1                ; =1"
+              ]
+            },
+            {
+              "offset": 1820,
+              "observations": 1,
+              "instruction": "1005d9a9c:     \tldur\tx12, [sp, #0x38]",
+              "window": [
+                "1005d9a90:     \tmov\tx12, x25",
+                "1005d9a94:     \tldur\tx20, [sp, #0x20]",
+                "1005d9a98:     \tb\t0x1005da128 <_mech_canonical_program_entry_v1_numeric_1273+0xda8>",
+                "1005d9a9c:     \tldur\tx12, [sp, #0x38]",
+                "1005d9aa0:     \tcmp\tx25, x12",
+                "1005d9aa4:     \tb.lo\t0x1005d9bc0 <_mech_canonical_program_entry_v1_numeric_1273+0x840>",
+                "1005d9aa8:     \tb\t0x1005da364 <_mech_canonical_program_entry_v1_numeric_1273+0xfe4>"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_1372": {
+          "static_machine_instruction_count": 904,
+          "static_categories": {
+            "other_arithmetic_or_control": 63,
+            "explicit_stack_memory": 124,
+            "register_move": 78,
+            "other_memory": 411,
+            "constant_materialization": 98,
+            "comparison": 44,
+            "branch_or_return": 86
+          },
+          "sampled_pc_observations": 21,
+          "sampled_categories": {
+            "comparison": 6,
+            "branch_or_return": 2,
+            "register_move": 2,
+            "other_arithmetic_or_control": 5,
+            "constant_materialization": 3,
+            "explicit_stack_memory": 3
+          },
+          "top_offsets": [
+            {
+              "offset": 2204,
+              "observations": 4,
+              "instruction": "1005dbc9c:     \tcmp\tx26, x23",
+              "window": [
+                "1005dbc90:     \torr\tx14, x25, x8",
+                "1005dbc94:     \tmov\tx8, x25",
+                "1005dbc98:     \tmov\tx19, x26",
+                "1005dbc9c:     \tcmp\tx26, x23",
+                "1005dbca0:     \tb.lo\t0x1005dbe7c <_mech_canonical_program_entry_v1_numeric_1372+0xa7c>",
+                "1005dbca4:     \tcbnz\tx15, 0x1005dbda4 <_mech_canonical_program_entry_v1_numeric_1372+0x9a4>",
+                "1005dbca8:     \tb\t0x1005dc0cc <_mech_canonical_program_entry_v1_numeric_1372+0xccc>"
+              ]
+            },
+            {
+              "offset": 2684,
+              "observations": 4,
+              "instruction": "1005dbe7c:     \tadd\tx8, x19, #0x1",
+              "window": [
+                "1005dbe70:     \tmov\tx11, x28",
+                "1005dbe74:     \tmov\tx0, x20",
+                "1005dbe78:     \tb\t0x1005db590 <_mech_canonical_program_entry_v1_numeric_1372+0x190>",
+                "1005dbe7c:     \tadd\tx8, x19, #0x1",
+                "1005dbe80:     \tcmp\tx8, x19",
+                "1005dbe84:     \tb.lo\t0x1005dc160 <_mech_canonical_program_entry_v1_numeric_1372+0xd60>",
+                "1005dbe88:     \tmov\tx6, #0x8c68             ; =35944"
+              ]
+            },
+            {
+              "offset": 1500,
+              "observations": 3,
+              "instruction": "1005db9dc:     \tmov\tx8, #0x8c68             ; =35944",
+              "window": [
+                "1005db9d0:     \tand\tw0, w0, w6",
+                "1005db9d4:     \tmov\tx6, x25",
+                "1005db9d8:     \tmov\tx26, x14",
+                "1005db9dc:     \tmov\tx8, #0x8c68             ; =35944",
+                "1005db9e0:     \tcmp\tx3, x8",
+                "1005db9e4:     \tcset\tx8, hs",
+                "1005db9e8:     \tand\tw8, w8, w0"
+              ]
+            },
+            {
+              "offset": 1860,
+              "observations": 2,
+              "instruction": "1005dbb44:     \tcmp\tx26, x23",
+              "window": [
+                "1005dbb38:     \tldp\tx27, x28, [sp], #0x10",
+                "1005dbb3c:     \tldp\tx29, x30, [sp], #0x10",
+                "1005dbb40:     \tretab",
+                "1005dbb44:     \tcmp\tx26, x23",
+                "1005dbb48:     \tcset\tx14, lo",
+                "1005dbb4c:     \tuxtb\tw14, w14",
+                "1005dbb50:     \tcmp\tx26, x23"
+              ]
+            },
+            {
+              "offset": 1520,
+              "observations": 2,
+              "instruction": "1005db9f0:     \tcbnz\tx8, 0x1005dbb44 <_mech_canonical_program_entry_v1_numeric_1372+0x744>",
+              "window": [
+                "1005db9e4:     \tcset\tx8, hs",
+                "1005db9e8:     \tand\tw8, w8, w0",
+                "1005db9ec:     \tuxtb\tw8, w8",
+                "1005db9f0:     \tcbnz\tx8, 0x1005dbb44 <_mech_canonical_program_entry_v1_numeric_1372+0x744>",
+                "1005db9f4:     \tmov\tx8, #0x0                ; =0",
+                "1005db9f8:     \tstr\tx8, [x20, #0x18]",
+                "1005db9fc:     \tmov\tx0, #0x1                ; =1"
+              ]
+            },
+            {
+              "offset": 1880,
+              "observations": 2,
+              "instruction": "1005dbb58:     \tmov\tx8, x25",
+              "window": [
+                "1005dbb4c:     \tuxtb\tw14, w14",
+                "1005dbb50:     \tcmp\tx26, x23",
+                "1005dbb54:     \tb.lo\t0x1005dbb68 <_mech_canonical_program_entry_v1_numeric_1372+0x768>",
+                "1005dbb58:     \tmov\tx8, x25",
+                "1005dbb5c:     \tmov\tx14, x25",
+                "1005dbb60:     \tmov\tx19, x26",
+                "1005dbb64:     \tb\t0x1005dbc9c <_mech_canonical_program_entry_v1_numeric_1372+0x89c>"
+              ]
+            },
+            {
+              "offset": 1896,
+              "observations": 2,
+              "instruction": "1005dbb68:     \tldur\tx8, [sp, #0x10]",
+              "window": [
+                "1005dbb5c:     \tmov\tx14, x25",
+                "1005dbb60:     \tmov\tx19, x26",
+                "1005dbb64:     \tb\t0x1005dbc9c <_mech_canonical_program_entry_v1_numeric_1372+0x89c>",
+                "1005dbb68:     \tldur\tx8, [sp, #0x10]",
+                "1005dbb6c:     \tcmp\tx26, x8",
+                "1005dbb70:     \tb.lo\t0x1005dbc7c <_mech_canonical_program_entry_v1_numeric_1372+0x87c>",
+                "1005dbb74:     \tb\t0x1005dc014 <_mech_canonical_program_entry_v1_numeric_1372+0xc14>"
+              ]
+            },
+            {
+              "offset": 1408,
+              "observations": 1,
+              "instruction": "1005db980:     \tuxtb\tw6, w0",
+              "window": [
+                "1005db974:     \tmov\tx0, #0x3                ; =3",
+                "1005db978:     \tmov\tx15, x0",
+                "1005db97c:     \tb\t0x1005dc1f0 <_mech_canonical_program_entry_v1_numeric_1372+0xdf0>",
+                "1005db980:     \tuxtb\tw6, w0",
+                "1005db984:     \tcbz\tx6, 0x1005db990 <_mech_canonical_program_entry_v1_numeric_1372+0x590>",
+                "1005db988:     \tldur\tx0, [sp, #0x30]",
+                "1005db98c:     \tb\t0x1005db9a8 <_mech_canonical_program_entry_v1_numeric_1372+0x5a8>"
+              ]
+            },
+            {
+              "offset": 728,
+              "observations": 1,
+              "instruction": "1005db6d8:     \tldur\tx14, [sp, #0x38]",
+              "window": [
+                "1005db6cc:     \tretab",
+                "1005db6d0:     \tmov\tx21, x14",
+                "1005db6d4:     \tmov\tx20, x0",
+                "1005db6d8:     \tldur\tx14, [sp, #0x38]",
+                "1005db6dc:     \tcmp\tx24, x22",
+                "1005db6e0:     \tcset\tx0, lo",
+                "1005db6e4:     \tuxtb\tw12, w0"
+              ]
+            }
+          ]
+        },
+        "_mech_canonical_program_entry_v1_numeric_1471": {
+          "static_machine_instruction_count": 7079,
+          "static_categories": {
+            "other_arithmetic_or_control": 268,
+            "explicit_stack_memory": 1373,
+            "register_move": 140,
+            "other_memory": 4049,
+            "constant_materialization": 761,
+            "comparison": 171,
+            "branch_or_return": 317
+          },
+          "sampled_pc_observations": 843,
+          "sampled_categories": {
+            "constant_materialization": 54,
+            "explicit_stack_memory": 231,
+            "register_move": 122,
+            "other_memory": 64,
+            "comparison": 130,
+            "other_arithmetic_or_control": 195,
+            "branch_or_return": 47
+          },
+          "top_offsets": [
+            {
+              "offset": 16756,
+              "observations": 85,
+              "instruction": "1005e07f4:     \tcmp\tx3, x22",
+              "window": [
+                "1005e07e8:     \tmov\tx9, x1",
+                "1005e07ec:     \tmov\tx20, x11",
+                "1005e07f0:     \tb\t0x1005e08b8 <_mech_canonical_program_entry_v1_numeric_1471+0x4238>",
+                "1005e07f4:     \tcmp\tx3, x22",
+                "1005e07f8:     \tb.ne\t0x1005e0814 <_mech_canonical_program_entry_v1_numeric_1471+0x4194>",
+                "1005e07fc:     \tmov\tx3, x2",
+                "1005e0800:     \tmov\tx5, x0"
+              ]
+            },
+            {
+              "offset": 16732,
+              "observations": 60,
+              "instruction": "1005e07dc:     \tmov\tx3, x2",
+              "window": [
+                "1005e07d0:     \tand\tw4, w4, w5",
+                "1005e07d4:     \tuxtb\tw4, w4",
+                "1005e07d8:     \tcbnz\tx4, 0x1005e07f4 <_mech_canonical_program_entry_v1_numeric_1471+0x4174>",
+                "1005e07dc:     \tmov\tx3, x2",
+                "1005e07e0:     \tmov\tx5, x0",
+                "1005e07e4:     \tmov\tx6, x7",
+                "1005e07e8:     \tmov\tx9, x1"
+              ]
+            },
+            {
+              "offset": 9348,
+              "observations": 55,
+              "instruction": "1005deb04:     \tadd\tx6, x23, #0x1",
+              "window": [
+                "1005deaf8:     \tmov\tx23, x15",
+                "1005deafc:     \tstur\tx27, [sp, #0x40]",
+                "1005deb00:     \tb\t0x1005dee8c <_mech_canonical_program_entry_v1_numeric_1471+0x280c>",
+                "1005deb04:     \tadd\tx6, x23, #0x1",
+                "1005deb08:     \tcmp\tx6, x23",
+                "1005deb0c:     \tb.lo\t0x1005e201c <_mech_canonical_program_entry_v1_numeric_1471+0x599c>",
+                "1005deb10:     \tldr\tx4, [sp, #0x168]"
+              ]
+            },
+            {
+              "offset": 16940,
+              "observations": 52,
+              "instruction": "1005e08ac:     \tcsel\tx6, x20, x7, hi",
+              "window": [
+                "1005e08a0:     \tcmp\tx6, x0",
+                "1005e08a4:     \tcsel\tx20, x6, x0, lo",
+                "1005e08a8:     \tcmp\tx20, x7",
+                "1005e08ac:     \tcsel\tx6, x20, x7, hi",
+                "1005e08b0:     \tcmp\tx20, x7",
+                "1005e08b4:     \tcsel\tx20, x20, x7, lo",
+                "1005e08b8:     \tcbnz\tx4, 0x1005e1370 <_mech_canonical_program_entry_v1_numeric_1471+0x4cf0>"
+              ]
+            },
+            {
+              "offset": 16844,
+              "observations": 29,
+              "instruction": "1005e084c:     \tcset\tx6, ne",
+              "window": [
+                "1005e0840:     \tand\tw5, w5, w6",
+                "1005e0844:     \tand\tx6, x7, #0x3ffffffffffffff",
+                "1005e0848:     \tcmp\tx3, x6",
+                "1005e084c:     \tcset\tx6, ne",
+                "1005e0850:     \tand\tw5, w5, w6",
+                "1005e0854:     \tuxtb\tw5, w5",
+                "1005e0858:     \tcbnz\tx5, 0x1005e0874 <_mech_canonical_program_entry_v1_numeric_1471+0x41f4>"
+              ]
+            },
+            {
+              "offset": 8636,
+              "observations": 27,
+              "instruction": "1005de83c:     \tldr\tx0, [sp, #0x138]",
+              "window": [
+                "1005de830:     \tmov\tx23, x15",
+                "1005de834:     \tstur\tx27, [sp, #0x40]",
+                "1005de838:     \tb\t0x1005deed4 <_mech_canonical_program_entry_v1_numeric_1471+0x2854>",
+                "1005de83c:     \tldr\tx0, [sp, #0x138]",
+                "1005de840:     \tcmp\tx24, x0",
+                "1005de844:     \tb.lo\t0x1005deacc <_mech_canonical_program_entry_v1_numeric_1471+0x244c>",
+                "1005de848:     \tb\t0x1005e1e34 <_mech_canonical_program_entry_v1_numeric_1471+0x57b4>"
+              ]
+            },
+            {
+              "offset": 10440,
+              "observations": 20,
+              "instruction": "1005def48:     \tldur\tx5, [sp, #0xd8]",
+              "window": [
+                "1005def3c:     \tldur\tx4, [sp, #0x18]",
+                "1005def40:     \tstur\tx2, [sp, #0xa8]",
+                "1005def44:     \tldur\tx2, [sp, #0x18]",
+                "1005def48:     \tldur\tx5, [sp, #0xd8]",
+                "1005def4c:     \tcmp\tx2, x5",
+                "1005def50:     \tb.lo\t0x1005e13ac <_mech_canonical_program_entry_v1_numeric_1471+0x4d2c>",
+                "1005def54:     \tmov\tx0, #0x0                ; =0"
+              ]
+            },
+            {
+              "offset": 16952,
+              "observations": 20,
+              "instruction": "1005e08b8:     \tcbnz\tx4, 0x1005e1370 <_mech_canonical_program_entry_v1_numeric_1471+0x4cf0>",
+              "window": [
+                "1005e08ac:     \tcsel\tx6, x20, x7, hi",
+                "1005e08b0:     \tcmp\tx20, x7",
+                "1005e08b4:     \tcsel\tx20, x20, x7, lo",
+                "1005e08b8:     \tcbnz\tx4, 0x1005e1370 <_mech_canonical_program_entry_v1_numeric_1471+0x4cf0>",
+                "1005e08bc:     \tmov\tx3, #0x0                ; =0",
+                "1005e08c0:     \tstr\tx3, [x28, #0x1f90]",
+                "1005e08c4:     \tstr\tx3, [x28, #0x1f98]"
+              ]
+            },
+            {
+              "offset": 10320,
+              "observations": 20,
+              "instruction": "1005deed0:     \tldr\tx28, [sp, #0x1b0]",
+              "window": [
+                "1005deec4:     \tstr\tx0, [sp, #0x1a8]",
+                "1005deec8:     \tmov\tx0, x4",
+                "1005deecc:     \tldr\tx4, [sp, #0x1a8]",
+                "1005deed0:     \tldr\tx28, [sp, #0x1b0]",
+                "1005deed4:     \tcmp\tx24, x5",
+                "1005deed8:     \tb.lo\t0x1005e13e0 <_mech_canonical_program_entry_v1_numeric_1471+0x4d60>",
+                "1005deedc:     \tmov\tx2, #0x0                ; =0"
+              ]
+            },
+            {
+              "offset": 9320,
+              "observations": 18,
+              "instruction": "1005deae8:     \tmov\tx2, x24",
+              "window": [
+                "1005deadc:     \tldr\tx23, [x4, x24, lsl #3]",
+                "1005deae0:     \tcmp\tx23, x22",
+                "1005deae4:     \tb.ne\t0x1005deb04 <_mech_canonical_program_entry_v1_numeric_1471+0x2484>",
+                "1005deae8:     \tmov\tx2, x24",
+                "1005deaec:     \tmov\tx4, x0",
+                "1005deaf0:     \tmov\tx6, x7",
+                "1005deaf4:     \tmov\tx20, x1"
+              ]
+            },
+            {
+              "offset": 16024,
+              "observations": 17,
+              "instruction": "1005e0518:     \tcmp\tx24, x23",
+              "window": [
+                "1005e050c:     \tldp\tx27, x28, [sp], #0x10",
+                "1005e0510:     \tldp\tx29, x30, [sp], #0x10",
+                "1005e0514:     \tretab",
+                "1005e0518:     \tcmp\tx24, x23",
+                "1005e051c:     \tcset\tx4, lo",
+                "1005e0520:     \tuxtb\tw9, w4",
+                "1005e0524:     \tcmp\tx24, x23"
+              ]
+            },
+            {
+              "offset": 16728,
+              "observations": 17,
+              "instruction": "1005e07d8:     \tcbnz\tx4, 0x1005e07f4 <_mech_canonical_program_entry_v1_numeric_1471+0x4174>",
+              "window": [
+                "1005e07cc:     \tcset\tx5, hi",
+                "1005e07d0:     \tand\tw4, w4, w5",
+                "1005e07d4:     \tuxtb\tw4, w4",
+                "1005e07d8:     \tcbnz\tx4, 0x1005e07f4 <_mech_canonical_program_entry_v1_numeric_1471+0x4174>",
+                "1005e07dc:     \tmov\tx3, x2",
+                "1005e07e0:     \tmov\tx5, x0",
+                "1005e07e4:     \tmov\tx6, x7"
+              ]
+            },
+            {
+              "offset": 16860,
+              "observations": 17,
+              "instruction": "1005e085c:     \tmov\tx3, x2",
+              "window": [
+                "1005e0850:     \tand\tw5, w5, w6",
+                "1005e0854:     \tuxtb\tw5, w5",
+                "1005e0858:     \tcbnz\tx5, 0x1005e0874 <_mech_canonical_program_entry_v1_numeric_1471+0x41f4>",
+                "1005e085c:     \tmov\tx3, x2",
+                "1005e0860:     \tmov\tx5, x0",
+                "1005e0864:     \tmov\tx6, x7",
+                "1005e0868:     \tmov\tx9, x1"
+              ]
+            },
+            {
+              "offset": 12844,
+              "observations": 15,
+              "instruction": "1005df8ac:     \tmov\tw11, #0x2646            ; =9798",
+              "window": [
+                "1005df8a0:     \tand\tw9, w7, w9",
+                "1005df8a4:     \tuxtb\tw15, w9",
+                "1005df8a8:     \tcbnz\tx15, 0x1005df8d0 <_mech_canonical_program_entry_v1_numeric_1471+0x3250>",
+                "1005df8ac:     \tmov\tw11, #0x2646            ; =9798",
+                "1005df8b0:     \tmovk\tw11, #0x1, lsl #16",
+                "1005df8b4:     \tsub\tx3, x3, x11",
+                "1005df8b8:     \tldur\tx0, [sp, #0x68]"
+              ]
+            },
+            {
+              "offset": 5440,
+              "observations": 14,
+              "instruction": "1005ddbc0:     \tldr\tx4, [sp, #0x158]",
+              "window": [
+                "1005ddbb4:     \tmov\tx1, x0",
+                "1005ddbb8:     \tldur\tx0, [sp, #0x78]",
+                "1005ddbbc:     \tb\t0x1005def44 <_mech_canonical_program_entry_v1_numeric_1471+0x28c4>",
+                "1005ddbc0:     \tldr\tx4, [sp, #0x158]",
+                "1005ddbc4:     \tcmp\tx1, x4",
+                "1005ddbc8:     \tb.lo\t0x1005dde3c <_mech_canonical_program_entry_v1_numeric_1471+0x17bc>",
+                "1005ddbcc:     \tb\t0x1005e17f8 <_mech_canonical_program_entry_v1_numeric_1471+0x5178>"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "findings": [
+    "Canonical Boolean branches change current native text. Query code falls28448 to28316bytes while its frame grows528 to544bytes. All sampled offsets use the freshly linked current executable; unchanged code is not assumed.",
+    "Explicit stack loads/stores, rank arithmetic, comparisons and register moves remain observed in the current source variant.",
+    "No inherited source mapping is applied to changed functions. A source-versus-private bookkeeping instruction split is not established."
+  ],
+  "limitations": [
+    "Current-PC samples are statistical observations, not dynamic instruction counts or CPU-time shares.",
+    "Static counts include cold error paths.",
+    "A spill or move inheriting a nearby source location does not establish the stored value's origin."
+  ]
+}

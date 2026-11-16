@@ -1,0 +1,115 @@
+{
+  "base_commit": "27a0d7750c9b58833f7c6ce69881d9a094ca4f58",
+  "compiler_reduction_fraction": 0.034785991910517566,
+  "compiler_seconds": {
+    "candidate": [
+      50.55824875,
+      50.157243
+    ],
+    "control": [
+      52.453968792,
+      51.891275792
+    ]
+  },
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "instructions": {
+    "candidate": [
+      772604491541,
+      772899274758
+    ],
+    "control": [
+      792129234758,
+      790161834557
+    ]
+  },
+  "instructions_reduction_fraction": 0.023249390538446102,
+  "max_rss_bytes": {
+    "candidate": [
+      7773536256,
+      7763001344
+    ],
+    "control": [
+      7407878144,
+      7600553984
+    ]
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "parse_reduction_fraction": 0.28053336170074583,
+  "parse_seconds": {
+    "candidate": [
+      2.494457792,
+      2.4515685830000002
+    ],
+    "control": [
+      3.443388083,
+      3.431185541
+    ]
+  },
+  "physical_base_operator_frame_pops": {
+    "candidate": 58758006,
+    "control": 129365126
+  },
+  "physical_parser_counts": {
+    "candidate": {
+      "base_frames": 53558096,
+      "checkpoints": 22723432,
+      "journal_page_mutations": 9089605,
+      "literal_cache_probes": 10798202,
+      "operator_frames": 5199910,
+      "rewinds": 18246758
+    },
+    "control": {
+      "base_frames": 92975818,
+      "checkpoints": 42639485,
+      "journal_page_mutations": 13289669,
+      "literal_cache_probes": 19941589,
+      "operator_frames": 36389308,
+      "rewinds": 35397697
+    }
+  },
+  "scope": [
+    "Fresh full source-to-Object, fixed 52 flags, compiler bootstrap excluded.",
+    "Four serial ABBA observations; no builds, tests, counters or sampling overlap.",
+    "Initial candidate timestamp reuse was detected and excluded before any timing.",
+    "First launches retain extra process startup, separately outside phase timers.",
+    "Higher candidate compiler RSS is retained; its cause is not isolated.",
+    "Program Object and complete metadata are byte-identical; runtime implementation is unchanged.",
+    "Counter elapsed is unqualified; only deterministic operation counts are compared.",
+    "The full compilation remains about 50 seconds; the sub-10-second goal is open."
+  ],
+  "source_commit": "edd52ccbd5",
+  "tests": {
+    "differential": 1667,
+    "differential_sha256": "d5ad4ed9d87c64d3295f31eed97d167f6ba5b41ac1a3852b3e00ff1af8e8b2e7",
+    "suites": 46,
+    "total": 765,
+    "unit": 523
+  },
+  "whole_process_seconds": {
+    "candidate": [
+      51.63135683396831,
+      50.400454791029915
+    ],
+    "control": [
+      53.51236587483436,
+      52.067917708074674
+    ]
+  }
+}

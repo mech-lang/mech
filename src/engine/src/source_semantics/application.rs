@@ -20,7 +20,7 @@ enum ApplicationCount {
 
 pub(super) struct PendingIteration {
     pub(super) count: crate::IterationCount,
-    pub(super) captures: Vec<(u16, SchemaDraft, bool)>,
+    pub(super) captures: Vec<(u16, PendingSchema, bool)>,
     pub(super) carrier: SchemaDraft,
     pub(super) body: PendingControlBlock,
 }
@@ -29,17 +29,17 @@ impl PendingIteration {
     pub(super) fn visit_schemas(
         &self,
         constants: &[PendingConstant],
-        visit: &mut impl FnMut(&SchemaDraft),
+        visit: &mut impl FnMut(SourceSchemaRef<'_>),
     ) {
-        visit(&self.carrier);
+        visit((&self.carrier).into());
         for (_, schema, _) in &self.captures {
-            visit(schema);
+            visit(schema.into());
         }
         for (_, schema) in &self.body.parameters {
-            visit(schema);
+            visit(schema.into());
         }
         for operation in &self.body.operations {
-            visit(&operation.schema);
+            visit((&operation.schema).into());
             match &operation.body {
                 PendingControlOperationBody::Match(nested) => {
                     nested.visit_schemas(constants, visit)
@@ -53,6 +53,7 @@ impl PendingIteration {
                 PendingControlOperationBody::Operation { .. }
                 | PendingControlOperationBody::Recur(_)
                 | PendingControlOperationBody::Suspend
+                | PendingControlOperationBody::Assert
                 | PendingControlOperationBody::Publish => {}
             }
         }
@@ -236,14 +237,14 @@ impl SemanticBuilder {
                     body: *element.clone(),
                     dimension_parameters: Box::new([]),
                 },
-                _ => seed_schema.clone(),
+                _ => seed_schema.clone().into(),
             }
         } else {
             match &callable {
                 ApplicationCallable::Document(name) => {
                     let parameter = self.unary_document_parameter_schema(name, syntax)?;
-                    let seed_type = seed_schema.clone().finalize().map_err(|_| error())?;
-                    let parameter_type = parameter.clone().finalize().map_err(|_| error())?;
+                    let seed_type = seed_schema.finalize_ref().map_err(|_| error())?;
+                    let parameter_type = parameter.finalize_ref().map_err(|_| error())?;
                     if crate::iteration_carrier_compatible(&seed_type, &parameter_type) {
                         parameter
                     } else {
@@ -256,8 +257,8 @@ impl SemanticBuilder {
                 ApplicationCallable::Catalog { .. } => generalized_carrier(&seed_schema),
             }
         };
-        let seed_type = seed_schema.clone().finalize().map_err(|_| error())?;
-        let carrier_type = carrier.clone().finalize().map_err(|_| error())?;
+        let seed_type = seed_schema.finalize_ref().map_err(|_| error())?;
+        let carrier_type = carrier.finalize_ref().map_err(|_| error())?;
         if !crate::is_iteration_carrier_schema(&carrier_type)
             || (!elementwise && !crate::iteration_carrier_compatible(&seed_type, &carrier_type))
             || (elementwise && !crate::is_iteration_carrier_schema(&seed_type))
@@ -280,7 +281,7 @@ impl SemanticBuilder {
             body: PendingNodeBody::CollectionBinding,
             inferable_projection: false,
             inputs: Vec::new(),
-            schema: carrier.clone(),
+            schema: carrier.clone().into(),
             exposes_output: false,
             state: None,
             semantic: SourceSemanticNode {
@@ -329,10 +330,10 @@ impl SemanticBuilder {
                 crate::IterationCount::Elements { input }
             }
         };
-        let mut captures = Vec::<(u16, SchemaDraft, bool)>::new();
+        let mut captures = Vec::<(u16, PendingSchema, bool)>::new();
         let mut parameters = vec![(
             crate::ControlParameterSource::IterationCarrier,
-            carrier.clone(),
+            PendingSchema::from(carrier.clone()),
         )];
         let mut parameter_values = vec![carrier_value];
         let mut resolve =
@@ -356,8 +357,7 @@ impl SemanticBuilder {
                     _ => {
                         let schema = self.schema_draft_of(value)?;
                         if !schema
-                            .clone()
-                            .finalize()
+                            .finalize_ref()
                             .is_ok_and(|schema| crate::is_control_capture_schema(&schema))
                         {
                             return Err(error());
@@ -373,9 +373,12 @@ impl SemanticBuilder {
                         let capture = u16::try_from(captures.len()).map_err(|_| error())?;
                         // A counted invocation retains every lexical capture
                         // once, including a document signal input.
-                        captures.push((input, schema.clone(), true));
+                        captures.push((input, schema.clone().into(), true));
                         let ordinal = u16::try_from(parameters.len()).map_err(|_| error())?;
-                        parameters.push((crate::ControlParameterSource::Capture(capture), schema));
+                        parameters.push((
+                            crate::ControlParameterSource::Capture(capture),
+                            schema,
+                        ));
                         parameter_values.push(value);
                         Ok(PendingControlValue::Parameter(ordinal))
                     }
@@ -387,6 +390,7 @@ impl SemanticBuilder {
                 return Err(error());
             }
             let body = match node.body {
+                PendingNodeBody::LocalAssert => PendingControlOperationBody::Assert,
                 PendingNodeBody::Operation {
                     operation,
                     contract: Some(contract),
@@ -433,7 +437,11 @@ impl SemanticBuilder {
             }),
             inferable_projection: false,
             inputs,
-            schema: if elementwise { seed_schema } else { carrier },
+            schema: if elementwise {
+                seed_schema
+            } else {
+                carrier.into()
+            },
             exposes_output: true,
             state: None,
             semantic: SourceSemanticNode {
@@ -461,8 +469,7 @@ pub(super) fn resolve_iteration(
         schemas
             .find_by_key(
                 draft
-                    .clone()
-                    .finalize()
+                    .finalize_ref()
                     .expect("validated iteration schema")
                     .key(),
             )

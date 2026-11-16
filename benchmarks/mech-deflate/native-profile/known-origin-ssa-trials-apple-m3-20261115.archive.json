@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-known-origin-ssa-trials-20261115.tar.gz",
+  "bytes": 24000411,
+  "evidence_files": 657,
+  "files": 657,
+  "format": 1,
+  "manifest_sha256": "1a29cd2514b3c5c47bf7e561ec6d1c54605e7c4895ffd29a43026132d9ca01ef",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "d7c2719d1eebd3c35d8982c7ac824f67704a74ba3fd7ff82795234baeabe04d7",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-known-origin-ssa-trials-20261115.tar.gz",
+  "sha256": "341ec1831f02c559d6b1d787532f93fa771178c0df49f358f60e0d8b65a4a809",
+  "source_revision": "bfe3ee58198a18c6039c638e434c7aa3800c4d5f",
+  "uncompressed_bytes": 142236357,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "341ec1831f02c559d6b1d787532f93fa771178c0df49f358f60e0d8b65a4a809",
+    "source_revision": "bfe3ee58198a18c6039c638e434c7aa3800c4d5f",
+    "verified_bytes": 142236357,
+    "verified_files": 657
+  }
+}

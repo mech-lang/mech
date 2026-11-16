@@ -334,8 +334,8 @@ class TypeSystemCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/engine/src/source_semantics/frontend.rs",
-            "let schema_identity = schema.clone().finalize()",
-            "let schema_identity = schema.clone().unchecked_draft_identity()",
+            "let schema_identity = schema.finalize_ref()",
+            "let schema_identity = schema.unchecked_draft_identity()",
         )
         self.assert_failure(root, "match arms do not require one exact semantic result schema")
 
@@ -344,8 +344,8 @@ class TypeSystemCheckerTests(unittest.TestCase):
         self.replace(
             root,
             "src/engine/src/source_semantics/frontend.rs",
-            "let schema_identity = schema.clone().finalize()",
-            "let unused_identity = schema.clone().finalize()",
+            "let schema_identity = schema.finalize_ref()",
+            "let unused_identity = schema.finalize_ref()",
         )
         self.assert_failure(root, "match arms do not require one exact semantic result schema")
 

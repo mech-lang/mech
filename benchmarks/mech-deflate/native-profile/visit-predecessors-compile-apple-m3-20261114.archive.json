@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-visit-predecessors-20261114.tar.gz",
+  "bytes": 8074949,
+  "evidence_files": 360,
+  "files": 360,
+  "format": 1,
+  "manifest_sha256": "70b44e2b0c7aa40a10b1fb3d4d90c36d5c92ac8844840f966a36cb40519db202",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "6e113a270c14dab7364700c9764c088a3839173c9c4da1cc4bd627e3d2d58b70",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-visit-predecessors-20261114.tar.gz",
+  "sha256": "6ec4230f07deb3880ad2c57fe4bcf45aff897ee31d2d6a21ed117a9c4da6a8e7",
+  "source_revision": "40c33f0c75865483fa6bc140fb9b4413d23d7cd0",
+  "uncompressed_bytes": 56592165,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "6ec4230f07deb3880ad2c57fe4bcf45aff897ee31d2d6a21ed117a9c4da6a8e7",
+    "source_revision": "40c33f0c75865483fa6bc140fb9b4413d23d7cd0",
+    "verified_bytes": 56592165,
+    "verified_files": 360
+  }
+}

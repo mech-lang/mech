@@ -1,0 +1,515 @@
+{
+  "all_complete_executables_identical": true,
+  "all_four_outputs_identical": true,
+  "balanced_blocks": [
+    {
+      "mean_reduction_fraction": 0.013775329410223969,
+      "parallel": 15.996221937472,
+      "serial": 16.219653000473045
+    },
+    {
+      "mean_reduction_fraction": 0.006844630869497159,
+      "parallel": 16.034937374992296,
+      "serial": 16.145446999929845
+    }
+  ],
+  "compiler": {
+    "bytes": 66939152,
+    "path": "/private/tmp/mech-control-schema-owners-20261115/candidate",
+    "sha256": "c5b0b57e2cc870d3e024d2d2c38c9a478122da5f72faf3bbaa3a868cb494a56f"
+  },
+  "configuration": {
+    "compiler": {
+      "bytes": 66939152,
+      "path": "/private/tmp/mech-control-schema-owners-20261115/candidate",
+      "sha256": "c5b0b57e2cc870d3e024d2d2c38c9a478122da5f72faf3bbaa3a868cb494a56f"
+    },
+    "evidence_head": "c1b3f25975bff8eefff48831f5f9ef36c4f14380",
+    "executable": {
+      "bytes": 2060440,
+      "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    },
+    "flags": {
+      "MECH_ADJACENT_ADDRESSES": "1",
+      "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+      "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+      "MECH_ARM64_SUBTRACT_BRANCH": "1",
+      "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+      "MECH_BORROW_COMPACT_READ_COPIES": "1",
+      "MECH_CARRY_REDUCTION_BOUND": "1",
+      "MECH_CHECKED_APPEND_RUN": "1",
+      "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+      "MECH_COMPACT_REUSE_OVERWRITTEN_RESULT": "1",
+      "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+      "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+      "MECH_CURRENT_PREDICATES": "1",
+      "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+      "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+      "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+      "MECH_FIRST_PACKED_REVERSE_READ": "1",
+      "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+      "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+      "MECH_GROUP_PACKED_HISTOGRAM": "1",
+      "MECH_NARROW_MASKED_ARITHMETIC": "1",
+      "MECH_NARROW_ORDERED_ITEM": "1",
+      "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+      "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+      "MECH_ORDERED_CAPTURE_SPANS": "1",
+      "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+      "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+      "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+      "MECH_PAIR_CHECKED_APPENDS": "1",
+      "MECH_PHASE_ASSERTION_FLOORS": "1",
+      "MECH_PHASE_INVARIANT_VIEWS": "1",
+      "MECH_PHASE_OWNER_TRANSFER": "1",
+      "MECH_PHASE_VECTOR_FAST": "1",
+      "MECH_PREFETCH_PRIVATE_WRITES": "1",
+      "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+      "MECH_PRIVATE_INDEXED_CHAINS": "1",
+      "MECH_PRIVATE_NESTED_PHASES": "1",
+      "MECH_PRIVATE_READ_INTERVALS": "1",
+      "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+      "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+      "MECH_PROVE_PACKED_BASE_SPANS": "1",
+      "MECH_PROVE_SCALAR_SPANS": "1",
+      "MECH_REDUCTION_COUNTDOWN": "1",
+      "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+      "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+      "MECH_REUSE_EQUALITY_PREFIX": "1",
+      "MECH_REUSE_SELECTED_READ_BOUND": "1",
+      "MECH_REUSE_SHIFTED_EQUALITY": "1",
+      "MECH_REVERSE_REDUCTION_CURSOR": "1",
+      "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+      "MECH_SHARE_CLAMP_DECISIONS": "1",
+      "MECH_SHARE_REPEATED_BOUNDS": "1",
+      "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+      "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+      "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+      "MECH_TERMINAL_BYTE_APPENDS": "1",
+      "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+      "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+      "MECH_WHOLE_PHASE_CAPACITY": "1",
+      "MECH_WIDENING_REDUCTION": "1",
+      "MECH_WIDE_ANY_BITS": "1"
+    },
+    "order": [
+      [
+        "serial",
+        1
+      ],
+      [
+        "parallel",
+        1
+      ],
+      [
+        "parallel",
+        2
+      ],
+      [
+        "serial",
+        2
+      ],
+      [
+        "parallel",
+        3
+      ],
+      [
+        "serial",
+        3
+      ],
+      [
+        "serial",
+        4
+      ],
+      [
+        "parallel",
+        4
+      ]
+    ],
+    "reference": {
+      "metadata.json": {
+        "bytes": 2519706,
+        "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+      },
+      "program.mecb": {
+        "bytes": 4733696,
+        "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+      },
+      "program.o": {
+        "bytes": 1419832,
+        "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+      },
+      "source.mec": {
+        "bytes": 164243,
+        "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+      }
+    },
+    "scope": "Current retained compiler; only scheduling zero/two differs. Two preliminary byte gates, then eight uncontended ABBA/BAAB complete fresh source-to-executable builds. Fixed runtime/adapter inputs cached and pinned. No concurrent heavy build/test/profile/hash/archive. Hashes and output checks outside timed boundary. No source change, new runtime timing, or sub-ten-second claim.",
+    "source_commit": "12c50010866066952345c63223bce770cf7578b1",
+    "started_utc": "2026-11-15T13:58:53.461898+00:00",
+    "subjects": {
+      "parallel": 2,
+      "serial": 0
+    }
+  },
+  "excluded_preliminary_gates": [
+    {
+      "cached_adapter_objects": true,
+      "compiler_exit_code": 0,
+      "executable": {
+        "bytes": 2060440,
+        "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2519706,
+          "matches_frozen_reference": true,
+          "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+        },
+        "program.mecb": {
+          "bytes": 4733696,
+          "matches_frozen_reference": true,
+          "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+        },
+        "program.o": {
+          "bytes": 1419832,
+          "matches_frozen_reference": true,
+          "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+        },
+        "source.mec": {
+          "bytes": 164243,
+          "matches_frozen_reference": true,
+          "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+        }
+      },
+      "link_exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "name": "gate-serial",
+      "native_link_seconds": 0.10155112505890429,
+      "object_handoff_seconds": 0.001265041995793581,
+      "primary_cohort": false,
+      "source_to_executable_seconds": 15.476930917007849,
+      "source_to_object_process_seconds": 15.37411474995315,
+      "variant": "serial",
+      "workers": 0
+    },
+    {
+      "cached_adapter_objects": true,
+      "compiler_exit_code": 0,
+      "executable": {
+        "bytes": 2060440,
+        "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2519706,
+          "matches_frozen_reference": true,
+          "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+        },
+        "program.mecb": {
+          "bytes": 4733696,
+          "matches_frozen_reference": true,
+          "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+        },
+        "program.o": {
+          "bytes": 1419832,
+          "matches_frozen_reference": true,
+          "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+        },
+        "source.mec": {
+          "bytes": 164243,
+          "matches_frozen_reference": true,
+          "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+        }
+      },
+      "link_exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "name": "gate-parallel",
+      "native_link_seconds": 0.13815037487074733,
+      "object_handoff_seconds": 0.0009454169776290655,
+      "primary_cohort": false,
+      "source_to_executable_seconds": 15.81353370891884,
+      "source_to_object_process_seconds": 15.674437917070463,
+      "variant": "parallel",
+      "workers": 2
+    }
+  ],
+  "excluded_profiles": [
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-1",
+      "process": {
+        "binary": "/private/tmp/mech-control-schema-owners-20261115/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 15.428854125086218,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    },
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-2",
+      "process": {
+        "binary": "/private/tmp/mech-control-schema-owners-20261115/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 15.50545808300376,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    }
+  ],
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "internal_phase_summary": {
+    "artifact_seconds": {
+      "mean_reduction_fraction": 0.000145227781137236,
+      "means": {
+        "parallel": 0.022587094,
+        "serial": 0.02259037475
+      },
+      "parallel": [
+        0.022448459,
+        0.02262125,
+        0.02260025,
+        0.022678417
+      ],
+      "serial": [
+        0.022293792,
+        0.022701208,
+        0.022783833,
+        0.022582666
+      ]
+    },
+    "catalog_seconds": {
+      "mean_reduction_fraction": -0.010067061999829097,
+      "means": {
+        "parallel": 0.03454933325,
+        "serial": 0.0342049895
+      },
+      "parallel": [
+        0.033144708,
+        0.03541475,
+        0.033203292,
+        0.036434583
+      ],
+      "serial": [
+        0.0354465,
+        0.03362325,
+        0.033610833,
+        0.034139375
+      ]
+    },
+    "encode_seconds": {
+      "mean_reduction_fraction": 0.0010006930387347346,
+      "means": {
+        "parallel": 0.00909932275,
+        "serial": 0.0091084375
+      },
+      "parallel": [
+        0.008969875,
+        0.009157333,
+        0.009198416,
+        0.009071667
+      ],
+      "serial": [
+        0.009076958,
+        0.009094,
+        0.009149875,
+        0.009112917
+      ]
+    },
+    "frontend_seconds": {
+      "mean_reduction_fraction": 0.005957112149751809,
+      "means": {
+        "parallel": 1.65005138575,
+        "serial": 1.6599398335
+      },
+      "parallel": [
+        1.642429125,
+        1.659961542,
+        1.652516459,
+        1.645298417
+      ],
+      "serial": [
+        1.661855042,
+        1.6511434999999999,
+        1.653588958,
+        1.6731718340000001
+      ]
+    },
+    "native_seconds": {
+      "mean_reduction_fraction": 0.013013465577314531,
+      "means": {
+        "parallel": 12.2348365935,
+        "serial": 12.3961535105
+      },
+      "parallel": [
+        12.099140166,
+        12.336070917,
+        12.216665333,
+        12.287469958
+      ],
+      "serial": [
+        12.378556667,
+        12.492491542,
+        12.340090375,
+        12.373475458
+      ]
+    },
+    "parse_seconds": {
+      "mean_reduction_fraction": -0.0014939913685019235,
+      "means": {
+        "parallel": 1.86847581225,
+        "serial": 1.8656884897500001
+      },
+      "parallel": [
+        1.85996125,
+        1.8764033329999998,
+        1.867812416,
+        1.86972625
+      ],
+      "serial": [
+        1.874339042,
+        1.8607586249999999,
+        1.8595928750000001,
+        1.8680634170000001
+      ]
+    },
+    "total_seconds": {
+      "mean_reduction_fraction": 0.01050140743900585,
+      "means": {
+        "parallel": 15.82081001025,
+        "serial": 15.9887140105
+      },
+      "parallel": [
+        15.6670935,
+        15.940630875,
+        15.802995291,
+        15.872520375
+      ],
+      "serial": [
+        15.982601042,
+        16.070841084,
+        15.919829374999999,
+        15.981584541
+      ]
+    }
+  },
+  "numerical_summary": {
+    "native_link_seconds": {
+      "mean_reduction_fraction": 0.00015769054663661297,
+      "means": {
+        "parallel": 0.13308506249450147,
+        "serial": 0.13310605206061155
+      },
+      "parallel": [
+        0.12906179204583168,
+        0.13423679186962545,
+        0.13186533306725323,
+        0.13717633299529552
+      ],
+      "serial": [
+        0.13654841715469956,
+        0.1281805420294404,
+        0.13597979117184877,
+        0.13171545788645744
+      ]
+    },
+    "object_handoff_seconds": {
+      "mean_reduction_fraction": -0.09455925108689822,
+      "means": {
+        "parallel": 0.0012512292596511543,
+        "serial": 0.0011431352468207479
+      },
+      "parallel": [
+        0.0011714999563992023,
+        0.0013148330617696047,
+        0.001140667125582695,
+        0.001377916894853115
+      ],
+      "serial": [
+        0.0013472079299390316,
+        0.0009164579678326845,
+        0.001285000005736947,
+        0.0010238750837743282
+      ]
+    },
+    "source_to_executable_seconds": {
+      "mean_reduction_fraction": 0.010317925417639207,
+      "means": {
+        "parallel": 16.01557965623215,
+        "serial": 16.182550000201445
+      },
+      "parallel": [
+        15.85765687492676,
+        16.13478700001724,
+        15.996088667074218,
+        16.073786082910374
+      ],
+      "serial": [
+        16.180267042014748,
+        16.25903895893134,
+        16.11694062501192,
+        16.17395337484777
+      ]
+    },
+    "source_to_object_process_seconds": {
+      "mean_reduction_fraction": 0.010409665818439495,
+      "means": {
+        "parallel": 15.881243364477996,
+        "serial": 16.048300812894013
+      },
+      "parallel": [
+        15.72742358292453,
+        15.999235375085846,
+        15.863082666881382,
+        15.935231833020225
+      ],
+      "serial": [
+        16.04237141693011,
+        16.12994195893407,
+        15.979675833834335,
+        16.041214041877538
+      ]
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "primary_builds": 8,
+  "scope": "Current unchanged compiler scheduling comparison; primary complete fresh source-to-executable boundary with cached pinned runtime/adapter. No exclusive CPU-share or new runtime-speed claim. Default remains serial. All observations retained; no sub-ten-second result.",
+  "setup_failures": [
+    {
+      "corrected": true,
+      "stage": "source-proof filename before compiler execution"
+    }
+  ],
+  "source_commit": "12c50010866066952345c63223bce770cf7578b1"
+}

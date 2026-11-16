@@ -9,7 +9,11 @@ pub(crate) enum PreparedGraphemeIndex {
         test,
         all(
             feature = "native-artifact",
-            any(feature = "pure_text", feature = "map_ops")
+            any(
+                feature = "pure_text",
+                feature = "map_ops",
+                feature = "sequence_buffers"
+            )
         )
     ))]
     UnitBoundaries {
@@ -41,7 +45,11 @@ impl PreparedGraphemeIndex {
         test,
         all(
             feature = "native-artifact",
-            any(feature = "pure_text", feature = "map_ops")
+            any(
+                feature = "pure_text",
+                feature = "map_ops",
+                feature = "sequence_buffers"
+            )
         )
     ))]
     pub(crate) fn build_compact_with<E>(
@@ -103,7 +111,11 @@ impl PreparedGraphemeIndex {
                 test,
                 all(
                     feature = "native-artifact",
-                    any(feature = "pure_text", feature = "map_ops")
+                    any(
+                        feature = "pure_text",
+                        feature = "map_ops",
+                        feature = "sequence_buffers"
+                    )
                 )
             ))]
             Self::UnitBoundaries { count } => *count,
@@ -119,7 +131,11 @@ impl PreparedGraphemeIndex {
                 test,
                 all(
                     feature = "native-artifact",
-                    any(feature = "pure_text", feature = "map_ops")
+                    any(
+                        feature = "pure_text",
+                        feature = "map_ops",
+                        feature = "sequence_buffers"
+                    )
                 )
             ))]
             Self::UnitBoundaries { count } if ordinal < *count => {
@@ -129,7 +145,11 @@ impl PreparedGraphemeIndex {
                 test,
                 all(
                     feature = "native-artifact",
-                    any(feature = "pure_text", feature = "map_ops")
+                    any(
+                        feature = "pure_text",
+                        feature = "map_ops",
+                        feature = "sequence_buffers"
+                    )
                 )
             ))]
             Self::UnitBoundaries { .. } => None,

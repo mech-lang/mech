@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-tests-20261106-v2/mech_gpu-tests",
+    "--test-threads=1"
+  ],
+  "exit": 101,
+  "seconds": 80.77787516708486,
+  "summary": [
+    "test result: FAILED. 689 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 80.74s"
+  ],
+  "failures": [
+    "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+    "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+  ],
+  "expected_failures_exact": true
+}

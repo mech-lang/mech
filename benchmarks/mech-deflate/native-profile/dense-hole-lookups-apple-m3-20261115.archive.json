@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-dense-hole-lookups-20261115.tar.gz",
+  "bytes": 44312703,
+  "evidence_files": 781,
+  "files": 781,
+  "format": 1,
+  "manifest_sha256": "7f00b8cad21dd0b84a5b33f1bb7c4a0a6b0a4d4ed5a26d0a4edfd4459a4841a7",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "2117305a18645c60a3f779930ced3c81bdc206f53f282cf0768c22b0945607ba",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-dense-hole-lookups-20261115.tar.gz",
+  "sha256": "4b9a0b3cedf4591cba65489ed499bc18200a5c8e64b1c11f0051bcb88f94410d",
+  "source_revision": "931b63c878622ea397aac3b0b5da9755bce8f3ff",
+  "uncompressed_bytes": 257592083,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "4b9a0b3cedf4591cba65489ed499bc18200a5c8e64b1c11f0051bcb88f94410d",
+    "source_revision": "931b63c878622ea397aac3b0b5da9755bce8f3ff",
+    "verified_bytes": 257592083,
+    "verified_files": 781
+  }
+}

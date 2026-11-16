@@ -1,0 +1,21 @@
++> sequence
+capture-ids-next(ids<[u64]>, end<u64>) => (out<[u64]>) :=
+  ~next := ids
+  next[end] = (ids[end] + 1u64) % end
+  out := next.
+capture-inner(data<[u64]>, ids<[u64]>, a<u64>, b<u64>, c<u64>, end<u64>) => (out<[u64]>) :=
+  more := c < end
+  word := (more? | true => (ids[a + 1u64] * end + ids[b + 1u64]) * end + ids[c + 1u64] | false => 0u64)
+  next := (more? | true => sequence/append(data, word) | false => data)
+  out := (more? | true => capture-inner(next, ids, a, b, c + 1u64, end) | false => data).
+capture-middle(data<[u64]>, ids<[u64]>, a<u64>, b<u64>, end<u64>) => (out<[u64]>) :=
+  more := b + 1u64 < end
+  next := (more? | true => capture-inner(data, ids, a, b, b + 1u64, end) | false => data)
+  out := (more? | true => capture-middle(next, ids, a, b + 1u64, end) | false => data).
+capture-outer(data<[u64]>, ids<[u64]>, a<u64>, end<u64>) => (out<[u64]>) :=
+  more := a + 2u64 < end
+  next := (more? | true => capture-middle(data, ids, a, a + 1u64, end) | false => data)
+  next-ids := (more? | true => capture-ids-next(ids, end) | false => ids)
+  out := (more? | true => capture-outer(next, next-ids, a + 1u64, end) | false => data).
+buffer := sequence/with-capacity(0u64, capacity<u64>)
+capture-outer(buffer, ids<[u64]>, 0u64, end<u64>)

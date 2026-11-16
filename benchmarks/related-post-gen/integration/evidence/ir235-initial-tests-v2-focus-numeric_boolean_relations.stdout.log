@@ -1,0 +1,26 @@
+
+running 4 tests
+test native_artifact::program::runtime::composition_tests::numeric_boolean_relations::numeric_boolean_relations_decline_a_real_discard_of_the_appended_version ... ok
+test native_artifact::program::runtime::composition_tests::numeric_boolean_relations::numeric_boolean_relations_keep_finite_boundaries_and_retry ... {"dimension":"control","exact_selected_fragments":3,"minimum":84846619,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":3,"minimum":18522800,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":3,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":3,"minimum":3581624,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":3,"minimum":3970,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":3,"minimum":13448,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"control","exact_selected_fragments":3,"minimum":84846619,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"library","exact_selected_fragments":3,"minimum":18522800,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"comparison","exact_selected_fragments":3,"minimum":0,"witness":"composition-finite-boundary","zero_spending":true}
+{"dimension":"memory","exact_selected_fragments":3,"minimum":3581624,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"nodes","exact_selected_fragments":3,"minimum":3970,"witness":"composition-finite-boundary","zero_spending":false}
+{"dimension":"transport","exact_selected_fragments":3,"minimum":13448,"witness":"composition-finite-boundary","zero_spending":false}
+ok
+test native_artifact::program::runtime::composition_tests::numeric_boolean_relations::numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_visit ... FAILED
+test native_artifact::program::runtime::composition_tests::numeric_boolean_relations::numeric_boolean_relations_preserve_exact_index_arithmetic_errors_publication_and_retry ... ok
+
+failures:
+
+failures:
+    native_artifact::program::runtime::composition_tests::numeric_boolean_relations::numeric_boolean_relations_lower_guarded_mask_reuse_and_preserve_each_current_visit
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 847 filtered out; finished in 0.70s
+

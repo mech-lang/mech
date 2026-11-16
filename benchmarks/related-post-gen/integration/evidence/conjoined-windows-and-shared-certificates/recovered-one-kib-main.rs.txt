@@ -1,0 +1,82 @@
+use mech_core::{ManagedMemoryBudget,Value,ValueDataDraft,snapshot::{SnapshotValidationContext,ValueDraft}};
+use mech_engine::ProgramArtifact;
+use mech_gpu::native_artifact::{JitProgramArtifact,NativeProgramLimitMode};
+#[path="/private/tmp/mech-related-post-compiler-base-20261102/src/core/tests/support/allocation_probe.rs"] mod allocation_probe;
+#[global_allocator] static ALLOCATOR: allocation_probe::ProbeAllocator=allocation_probe::ProbeAllocator;
+fn matrix(bytes:&[u8])->ValueDataDraft {ValueDataDraft::Matrix(bytes.iter().copied().map(ValueDataDraft::U8).collect())}
+fn main(){
+ let argv:Vec<_>=std::env::args().collect();
+ let artifact=mech_engine::decode_program_artifact_bytecode_v1(&std::fs::read(&argv[1]).unwrap()).unwrap();
+ let mode=NativeProgramLimitMode::NoLimits;
+ let started=std::time::Instant::now();
+ let jit=JitProgramArtifact::compile_with_limits(&artifact,&mech_stdlib::source_catalog(),mode.compilation()).unwrap();
+ println!("{}",serde_json::json!({"phase":"one-kib-compiled","seconds":started.elapsed().as_secs_f64()}));
+ let input:Vec<u8>=(0..1024).map(|i| b"related-post compiler regression: alpha beta gamma. \n"[(i*7+i/97)%51]).collect();
+ std::fs::write(&argv[2],&input).unwrap();
+ let mut reference=if argv[3]=="--record" {None} else {Some(std::fs::read(&argv[3]).unwrap())};
+ for sample in 0..3 {
+  let memory=mode.memory_budget(); let args=inputs(&artifact,&[("input",matrix(&input)),("prefix",matrix(&[]))],&memory);let aliases=args.clone();let mut output=vec![None;artifact.outputs().len()];
+  let begin=std::time::Instant::now();let (result,requests,bytes)=allocation_probe::measured_with_bytes(||jit.evaluate_into(&args,&mut output,mode.execution(),&memory));let seconds=begin.elapsed().as_secs_f64();
+  let report=result.unwrap();
+  let ValueDataDraft::Matrix(raw)=output.last().unwrap().as_ref().unwrap().canonical_data_draft().unwrap() else {panic!("bytes")};
+  let raw:Vec<u8>=raw.iter().map(|v|match v{ValueDataDraft::U8(b)=>*b,_=>panic!("byte kind")}).collect();
+  assert_eq!(miniz_oxide::inflate::decompress_to_vec(&raw).unwrap(),input);
+  if let Some(ref expected)=reference{assert_eq!(&raw,expected);}else{std::fs::write(&argv[4],&raw).unwrap();reference=Some(raw.clone());}
+  assert!(args.iter().zip(&aliases).all(|(a,b)|a.shares_frozen_storage(b)));
+  println!("{}",serde_json::json!({"witness":"one-kib-compression-regression","sample":sample,"input_bytes":input.len(),"output_bytes":raw.len(),"seconds":seconds,"allocation_requests":requests,"requested_bytes":bytes,"report":format!("{report:?}"),"expected_kind":"baseline-produced-regression-reference"}));
+  drop((args,aliases,output));assert_eq!((memory.used_bytes(),memory.retained_snapshot_nodes()),(0,0));
+ }
+ println!("{}",serde_json::json!({"phase":"one-kib-verified","independent_inflate":true,"aliases_unchanged":true,"cleanup":true}));
+}
+
+fn inputs(
+    artifact: &ProgramArtifact,
+    named: &[(&str, ValueDataDraft)],
+    memory: &ManagedMemoryBudget,
+) -> Vec<Value> {
+    artifact
+        .inputs()
+        .iter()
+        .map(|input| {
+            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
+            let data = named
+                .iter()
+                .find(|(key, _)| *key == name)
+                .unwrap_or_else(|| panic!("missing {name}"))
+                .1
+                .clone();
+            let shape_values = match &data {
+                ValueDataDraft::Matrix(_)
+                    if artifact
+                        .schemas()
+                        .get(input.schema)
+                        .unwrap()
+                        .dimension_parameters()
+                        .is_empty() =>
+                {
+                    Box::new([])
+                }
+                ValueDataDraft::Matrix(values) => mech_core::shape_for_resolved_extents(
+                    artifact.schemas().get(input.schema).unwrap(),
+                    &[1, values.len() as u64],
+                )
+                .unwrap()
+                .parameter_values()
+                .to_vec()
+                .into_boxed_slice(),
+                _ => Box::new([]),
+            };
+            let value = ValueDraft {
+                schema: input.schema,
+                shape_values,
+                data,
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let mut reservation = memory
+                .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
+                .unwrap();
+            value.into_memory_budget(&mut reservation).unwrap()
+        })
+        .collect()
+}

@@ -185,6 +185,9 @@ fn arguments(values: &[NativeScalarValue]) -> Vec<String> {
         .iter()
         .map(|value| match value {
             NativeScalarValue::Bool(value) => value.to_string(),
+            NativeScalarValue::U8(value) => value.to_string(),
+            NativeScalarValue::U16(value) => value.to_string(),
+            NativeScalarValue::U32(value) => value.to_string(),
             NativeScalarValue::U64(value) => value.to_string(),
             NativeScalarValue::I64(value) => value.to_string(),
             NativeScalarValue::F64(value) => format!("f64:{:016x}", value.bits()),
@@ -219,6 +222,9 @@ fn resident(
                 shape_values: Box::new([]),
                 data: match value {
                     NativeScalarValue::Bool(value) => ValueDataDraft::Bool(*value),
+                    NativeScalarValue::U8(value) => ValueDataDraft::U8(*value),
+                    NativeScalarValue::U16(value) => ValueDataDraft::U16(*value),
+                    NativeScalarValue::U32(value) => ValueDataDraft::U32(*value),
                     NativeScalarValue::U64(value) => ValueDataDraft::U64(*value),
                     NativeScalarValue::I64(value) => ValueDataDraft::I64(*value),
                     NativeScalarValue::F64(value) => ValueDataDraft::F64(*value),
@@ -252,6 +258,9 @@ fn resident(
         .map(
             |index| match instance.copied_output(index).unwrap().data() {
                 ValueData::Bool(value) => NativeScalarValue::Bool(*value),
+                ValueData::U8(value) => NativeScalarValue::U8(*value),
+                ValueData::U16(value) => NativeScalarValue::U16(*value),
+                ValueData::U32(value) => NativeScalarValue::U32(*value),
                 ValueData::U64(value) => NativeScalarValue::U64(*value),
                 ValueData::I64(value) => NativeScalarValue::I64(*value),
                 ValueData::F64(value) => NativeScalarValue::F64(*value),
@@ -970,6 +979,9 @@ fn cast_reference_cases(cast: cast_cases::Cast, artifacts: &[ProgramArtifact; 2]
         }
     }
     let zero = match cast.input {
+        NativeScalarKind::U8 => NativeScalarValue::U8(0),
+        NativeScalarKind::U16 => NativeScalarValue::U16(0),
+        NativeScalarKind::U32 => NativeScalarValue::U32(0),
         NativeScalarKind::U64 => NativeScalarValue::U64(0),
         NativeScalarKind::I64 => NativeScalarValue::I64(0),
         NativeScalarKind::F64 => NativeScalarValue::F64(mech_core::snapshot::F64Bits::from_bits(0)),
@@ -1040,6 +1052,9 @@ fn cast_reference_cases(cast: cast_cases::Cast, artifacts: &[ProgramArtifact; 2]
         &error,
     ));
     let (invalid, diagnostic) = match cast.input {
+        NativeScalarKind::U8 => (["-1", "256", "1.0"], "invalid U8 argument"),
+        NativeScalarKind::U16 => (["-1", "65536", "1.0"], "invalid U16 argument"),
+        NativeScalarKind::U32 => (["-1", "4294967296", "1.0"], "invalid U32 argument"),
         NativeScalarKind::U64 => (["-1", "1.0", " 1"], "invalid U64 argument"),
         NativeScalarKind::I64 => (["+1", "1.0", " 1"], "invalid I64 argument"),
         NativeScalarKind::F64 => (
@@ -1548,7 +1563,7 @@ fn linked_scalar_factory_owner_features_preserve_checked_execution() {
 }
 
 #[test]
-#[ignore = "explicit six directed scalar cast Object applications; clean pinned checkout and fresh external evidence required"]
+#[ignore = "explicit eighteen directed scalar cast Object applications; clean pinned checkout and fresh external evidence required"]
 fn linked_canonical_artifact_cast_applications_preserve_checked_boundaries() {
     let workspace = workspace().canonicalize().unwrap();
     let commit = std::env::var("MECH_CANONICAL_NATIVE_SOURCE_COMMIT").expect("pin immutable HEAD");
@@ -1568,7 +1583,7 @@ fn linked_canonical_artifact_cast_applications_preserve_checked_boundaries() {
         .iter()
         .map(|cast| qualify(&evidence, cast.name, cast.source))
         .collect::<Vec<_>>();
-    assert_eq!(applications.len(), 6);
+    assert_eq!(applications.len(), 18);
     assert_eq!(pin(&workspace.join("Cargo.lock")), lock);
     clean(&workspace, &evidence, &commit, "after");
     fs::write(evidence.join("qualification.json"),serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-artifact-linked-cast-qualification.v1","source_commit":commit,"source_checkout_clean_before_and_after":true,"route":"canonical-artifact-cranelift-object","linked":true,"executed":true,"benchmark_measurements":0,"applications":applications})).unwrap()).unwrap();

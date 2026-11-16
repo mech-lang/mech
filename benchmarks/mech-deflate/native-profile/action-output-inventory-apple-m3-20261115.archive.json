@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-action-output-inventory-20261115.tar.gz",
+  "bytes": 36081317,
+  "evidence_files": 719,
+  "files": 719,
+  "format": 1,
+  "manifest_sha256": "a8f43cbad01bb2e6757c558f5238985da2abf3aececd4b4ce4cc618561d431c5",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "14d049c11250a8255e17c8e10e29533f1c7c090998390199c78e5af601394379",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-action-output-inventory-20261115.tar.gz",
+  "sha256": "ae3c31a963ff5b0559101b083d5ca91c1f04232f53eed63f37a88b5129a90c84",
+  "source_revision": "f077bec331089ff1dfc2eb28d876ccaa17dec92b",
+  "uncompressed_bytes": 211064800,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "ae3c31a963ff5b0559101b083d5ca91c1f04232f53eed63f37a88b5129a90c84",
+    "source_revision": "f077bec331089ff1dfc2eb28d876ccaa17dec92b",
+    "verified_bytes": 211064800,
+    "verified_files": 719
+  }
+}

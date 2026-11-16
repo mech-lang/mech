@@ -1,0 +1,19 @@
+// Children observe the parent's current private contents and logical length.
++> sequence
+prefix-current(nodes<[u64]>, at<u64>, end<u64>, sum<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  allowed! := allowed
+  more := at < end
+  word := (more? | true => nodes[at + 1u64] | false => 0u64)
+  out := (more? | true => prefix-current(nodes, at + 1u64, end, sum + word, allowed, divisor) | false => sum / divisor).
+candidates-current(nodes<[u64]>, end<u64>, sum<u64>, allowed<bool>, divisor<u64>) => (out<u64>) :=
+  allowed! := allowed
+  more := end <= sequence/length(nodes)
+  prefix := (more? | true => prefix-current(nodes, 0u64, end, 0u64, allowed, divisor) | false => 0u64)
+  out := (more? | true => candidates-current(nodes, end + 1u64, sum + prefix, allowed, divisor) | false => sum).
+scan-current(nodes<[u64]>, left<u64>, at<u64>, allowed<bool>, deny-at<u64>, divisor<u64>) => (out<[u64]>) :=
+  more := left != 0u64
+  permit := allowed && (at != deny-at)
+  number := (more? | true => candidates-current(nodes, 1u64, 0u64, permit, divisor) | false => 0u64)
+  next := (more? | true => sequence/append(nodes, number + at) | false => nodes)
+  out := (more? | true => scan-current(next, left - 1u64, at + 1u64, allowed, deny-at, divisor) | false => nodes).
+scan-current(sequence/reserve(nodes<[u64]>, 305257u64), steps<u64>, 0u64, allowed<bool>, deny-at<u64>, divisor<u64>)

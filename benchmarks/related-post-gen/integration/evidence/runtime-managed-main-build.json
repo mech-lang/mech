@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15/build.json",
+    "--source",
+    "/private/tmp/mech-related-latest-deflate-integration-runtime-check-20261106-v1/managed-app/src/main.rs",
+    "--out",
+    "/private/tmp/mech-related-latest-deflate-integration-runtime-check-20261106-v1/managed-app/runner-standard",
+    "--bundle",
+    "/private/tmp/mech-related-latest-deflate-integration-runtime-check-20261106-v1/managed-app/audit-bundle",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 1.1509301660116762,
+  "stdout": "{\"seconds\": 0.5020469590090215, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "63f960c05c80c42005ba4fd0fc8678de99ecf7c2cfef2184b6e48d9614bf55ad"
+}

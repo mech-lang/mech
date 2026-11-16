@@ -14,6 +14,20 @@ pub(in crate::native_artifact) enum OptimizationPass {
     LoopBounds,
     LookupFacts,
     CfgCleanup,
+    DemandLiveness,
+    /// Propagate unsigned widths through every current SSA input and fold only
+    /// guards proved by those bounds and a dominating selected length floor.
+    ProvedWordWidths,
+    /// Retained DEFLATE structural SSA passes; every option is emission-only.
+    CurrentPredicates,
+    IdentityRoutes,
+    LoopEdgeThreading,
+    ScopedBitwiseConstants,
+    FixedWindowBounds,
+    OrderedCaptureSpans,
+    AdjacentAddresses,
+    EarlyIdentities,
+    BooleanConditions,
     LoopOutlining,
     LoopInvariants,
     PreservingCalls,
@@ -26,8 +40,80 @@ pub(in crate::native_artifact) enum OptimizationPass {
     CandidateValues,
     PairedCandidates,
     ScalarLoops,
+    /// Public compilation enables both current-funded numeric trees and proved phases. Tests may
+    /// ablate only their emission to exercise the independently proved smaller
+    /// parent pieces and leaf loans retained on the ordinary fallback route.
+    NumericTrees,
+    /// Keep per-node counters in tests; settle their exact weighted projection
+    /// only at cold boundaries instead of maintaining it in the native loop.
+    ProjectedNumericDebits,
+    /// Derive projected child totals from the unchanged native fuel ledger.
+    FuelDerivedNumericDebits,
+    /// Emission-only ablation retains the ordinary collection error path.
+    UniformWords,
+    NumericCollections,
+    /// Omit capacity guards at a proved frontier with no append operation.
+    ZeroAppendFrontiers,
+    /// Refine a declined static capacity frontier using only a bounded pure
+    /// source prefix. No source operation, debit or mutation is performed.
+    RefinedAppendCapacity,
+    SourceLiveness,
+    PrivateLiveness,
+    /// Omit repeated zero stores until a resumable helper can reify homes.
+    ScalarHomeRetirement,
+    NumericOutlining,
+    BooleanBranches,
+    BitCounts,
+    ScalarSelects,
+    UnsignedGuardFacts,
+    /// Preserve a convex unsigned range through one common modular addition
+    /// wrap, including canonicalized subtraction by a negative immediate.
+    ModularUnsignedRanges,
+    GuardedNumericLoads,
+    /// Reuse a surviving successful U64 cell read for an immediately proved
+    /// checked increment of the same current cell; retain ownership boundaries.
+    CheckedIncrementWrites,
+    /// Preserve a checked cell across a replacement of a proved independent
+    /// logical carrier value, including its original copy-on-write boundary.
+    IndependentViewUpdates,
+    /// Use an exact fixed matrix extent certified by this numeric loan's
+    /// original selected factory. Growing views retain their current length.
+    StaticNumericExtents,
+    /// Reconstruct immutable producer element bounds and conditional target
+    /// length from the exact source Program; retain independent cold guards.
+    ProducerElementRanges,
+    /// Preserve bytewise FNV while loading bounded words and admitting exact
+    /// two-byte equality tails in native immutable UTF8 work.
+    Utf8WordChunks,
+    /// Reuse native equality classes of an unchanged String matrix when a
+    /// later immutable dictionary lookup reads the same source.
+    ReuseStringClasses,
+    /// Borrow a selected String-matrix cell only for its adjacent retained
+    /// insertion. Ablation keeps the original canonical String construction.
+    BorrowedMatrixMapKeys,
+    /// Keep a complete-use Map-key result private across length/frame/cell uses.
+    BorrowedMapKeys,
+    /// Retain a completed generic dictionary through one native UTF8 lookup.
+    GenericDictionary,
+    /// Omit a complete-use initial Map-state aggregate, retaining its real children.
+    DictionarySeedFrames,
+    /// Keep admitted immutable Map keys and independent current native U64 cells.
+    BorrowedDictionaryValues,
+    /// Emit a closed fixed-key map body; ablation keeps its ordered callbacks.
+    FixedKeyMapLoops,
+    /// Retire same-plan dead canonical pins at a selected tree's first write.
+    NumericTreeOwnerHandoff,
+    /// Test private ownership before loading/comparing an old write target.
+    PrivateWritesFirst,
+    /// Stronger immutable-cell facts require the guarded-load optimization.
+    MovableCaptureReads,
     DisjointState,
     NontrappingHomes,
+    ChildFunding,
+    /// Reconstruct current canonical Boolean homes from proved selected edges.
+    ScalarEdgeHomes,
+    /// Prove checked I64 +1 through bounded exact selected-edge SSA transport.
+    SelectedUnsignedIncrements,
 }
 #[cfg(feature = "canonical-native-program")]
 impl OptimizationOptions {
@@ -51,6 +137,9 @@ pub(in crate::native_artifact) struct EmissionCounters {
     pub loop_bounds: (usize, usize),
     pub lookup_facts: (usize, usize),
     pub cfg_cleanup: (usize, usize),
+    pub scalar_selects: usize,
+    pub unsigned_guards: usize,
+    pub selected_unsigned_increments: usize,
     pub loop_outlining: usize,
     pub loop_invariants: (usize, usize, usize),
     pub preserving_calls: usize,
@@ -69,6 +158,7 @@ pub(in crate::native_artifact) struct CompilationControls {
     options: OptimizationOptions,
     packed_regions: std::cell::Cell<usize>,
     scalar_regions: std::cell::Cell<usize>,
+    scalar_captures: std::cell::RefCell<std::collections::BTreeSet<usize>>,
     invariant: EmissionBudget,
     mutation: EmissionBudget,
     count_value: EmissionBudget,
@@ -81,6 +171,7 @@ impl CompilationControls {
             options,
             packed_regions: Default::default(),
             scalar_regions: Default::default(),
+            scalar_captures: Default::default(),
             invariant: Default::default(),
             mutation: Default::default(),
             count_value: Default::default(),
@@ -126,6 +217,20 @@ impl CompilationControls {
     }
     pub fn emitted_scalar_region(&self) {
         self.scalar_regions.set(self.scalar_regions.get() + 1);
+    }
+    pub fn reserve_scalar_capture(&self, header: usize) -> bool {
+        if self.scalar_captures.borrow().contains(&header) {
+            return true;
+        }
+        if !self.scalar_region_available() {
+            return false;
+        }
+        self.emitted_scalar_region();
+        self.scalar_captures.borrow_mut().insert(header);
+        true
+    }
+    pub fn scalar_capture_selected(&self, header: usize) -> bool {
+        self.scalar_captures.borrow().contains(&header)
     }
     pub fn reserve_invariant_region(&self, records: usize) -> bool {
         self.invariant.reserve(records)

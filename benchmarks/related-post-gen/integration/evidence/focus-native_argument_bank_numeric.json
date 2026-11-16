@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-tests-20261106-v10/mech_gpu-tests",
+    "native_argument_bank_numeric",
+    "--test-threads=1",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 0.21187608409672976
+}

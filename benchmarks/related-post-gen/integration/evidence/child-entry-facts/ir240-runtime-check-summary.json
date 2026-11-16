@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "runtime_only_scalar_and_program_builds": true,
+  "runtime_only_full5000_exact_rust": true,
+  "generated_main_executed_unmodified": true,
+  "manifest_pins_exact": true,
+  "generated_main_sha256": "cb903bfa81fba944d5955095b848b05c3374ff8220764ea5bfdff6502cefcce3",
+  "actual_native_object_exports_audited": true,
+  "cases": [
+    {
+      "case": "success",
+      "command": [
+        "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/runner-standard",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "--",
+        "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/success-input.json"
+      ],
+      "exit": 0,
+      "stdout": "6d6563682d736e617073686f742d7631008acc0fbb41907aaf93b042e514ac5f59d3b228e5ee277a2a30fcee6902690a480500000000000000010000000008000000000000002a00000000000000\n",
+      "stderr": ""
+    },
+    {
+      "case": "overflow",
+      "command": [
+        "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/runner-standard",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "--",
+        "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/overflow-input.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "canonical native program: Control(Arithmetic { origin: NativeMatchOrigin { node: NodeId(0), block: None, local: None } })\n"
+    },
+    {
+      "case": "work-denial",
+      "command": [
+        "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/runner-standard",
+        "0",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "1000000000000",
+        "--",
+        "/private/tmp/mech-related-child-entry-facts-integration-runtime-check-20261107-v1/managed-app/work-denial-input.json"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "canonical native program: Base(WorkLimit { phase: Setup, required: 284, limit: 0 })\n"
+    }
+  ],
+  "compiler_build_sha256": "81c377e73f480eb5ad3813d1b062ce2e2b24e172abaa3d2e35d24455ce08df43"
+}

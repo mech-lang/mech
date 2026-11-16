@@ -1,0 +1,37 @@
+{
+  "archive_name": "level12-rootless-dimension-compile-apple-m3-20261113-v2.tar.gz",
+  "bytes": 6192054,
+  "evidence_files": 220,
+  "files": 220,
+  "format": 1,
+  "manifest_sha256": "d5e86ccc20c40b683597d1eac491885082adc56980912c58ffdb847b07d094b2",
+  "sha256": "ae5358906aa28c364a69d5f7b2f7b9999018c3af310b6de0f60cd920fe30e4f0",
+  "source_revision": "6d7390e59616e52c5d1dce30f7514cf89167731a",
+  "uncompressed_bytes": 45267708,
+  "repository": "mech-lang/mech",
+  "release_tag": "evidence-native-compression-experiments-6",
+  "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-rootless-dimension-compile-apple-m3-20261113-v2.tar.gz",
+  "publication": "published",
+  "replay_sha256": "cb5b78295f7f017463d7b591c11d10a127382386fb04d09daf244a709dd3f6e3",
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "ae5358906aa28c364a69d5f7b2f7b9999018c3af310b6de0f60cd920fe30e4f0",
+    "source_revision": "6d7390e59616e52c5d1dce30f7514cf89167731a",
+    "verified_bytes": 45267708,
+    "verified_files": 220
+  },
+  "public_verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "ae5358906aa28c364a69d5f7b2f7b9999018c3af310b6de0f60cd920fe30e4f0",
+    "source_revision": "6d7390e59616e52c5d1dce30f7514cf89167731a",
+    "verified_bytes": 45267708,
+    "verified_files": 220,
+    "replay_sha256": "cb5b78295f7f017463d7b591c11d10a127382386fb04d09daf244a709dd3f6e3"
+  },
+  "supersedes": {
+    "original_archive_sha256": "1cee49012aa7166d7c5255b535a7e5134abf78a8556a19afc38984d9ada2f7bd",
+    "original_download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-rootless-dimension-compile-apple-m3-20261113.tar.gz",
+    "original_replay_sha256": "db879c9881697a693c600e0b803e5ecf30ae3773eedd771ec979ad7dff7aca8d",
+    "reason": "The first packet inherited an incorrect overlapping-RSS-ranges sentence. Candidate minimum 7757414400 exceeds control maximum 7736623104. All raw observations, output checks and source are unchanged. This replacement corrects the narrative; the original public archive remains available."
+  }
+}

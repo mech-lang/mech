@@ -1,0 +1,79 @@
+{
+  "archive_name": "native-compression-evidence-through-r78.tar.gz",
+  "bytes": 243067759,
+  "evidence_files": 12112,
+  "files": 12125,
+  "format": 1,
+  "manifest_sha256": "5d2f61698c47485753665111a4ad33644d7ff343ee1b79db12562c91c550dc07",
+  "sha256": "6b6e0c1a12cdd7bb56830958bd66db18941a4728f9b089f4e7ddaacb75265c4e",
+  "source_revision": "6ab75037bc5d4ec138d735c7dcfe1c4b653d31fa",
+  "uncompressed_bytes": 306034228,
+  "repository": "mech-lang/mech",
+  "release_tag": "evidence-native-compression-r78-20261031",
+  "release_url": "https://github.com/mech-lang/mech/releases/tag/evidence-native-compression-r78-20261031",
+  "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-r78-20261031/native-compression-evidence-through-r78.tar.gz",
+  "release_id": 430333734,
+  "asset_id": 697181887,
+  "retrieval_verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "6b6e0c1a12cdd7bb56830958bd66db18941a4728f9b089f4e7ddaacb75265c4e",
+    "source_revision": "6ab75037bc5d4ec138d735c7dcfe1c4b653d31fa",
+    "verified_bytes": 306034228,
+    "verified_files": 12125
+  },
+  "replay_verification": {
+    "76": {
+      "archives": 103,
+      "verified_file_occurrences": 996,
+      "unique_paths": 711,
+      "paths_with_multiple_preserved_versions": 3,
+      "byte_identical_outputs": [
+        "success-tail.json",
+        "diagnostic-counts/summary.json",
+        "scorecard.json",
+        "scorecard.csv",
+        "allocation-comparison.json",
+        "profile-numbers.json",
+        "validation.json",
+        "allocation-mechanism.json",
+        "host-assembly-comparison.json",
+        "instruction-window-comparison.json"
+      ]
+    },
+    "77": {
+      "archives": 74,
+      "verified_file_occurrences": 790,
+      "unique_paths": 510,
+      "paths_with_multiple_preserved_versions": 0,
+      "byte_identical_outputs": [
+        "success-tail.json",
+        "diagnostic-counts/summary.json",
+        "scorecard.json",
+        "scorecard.csv",
+        "allocation-comparison.json",
+        "profile-numbers.json",
+        "validation.json",
+        "allocation-mechanism.json",
+        "host-assembly-comparison.json",
+        "instruction-window-comparison.json"
+      ]
+    },
+    "78": {
+      "archives": 112,
+      "verified_file_occurrences": 937,
+      "unique_paths": 703,
+      "paths_with_multiple_preserved_versions": 13,
+      "byte_identical_outputs": [
+        "analysis/scorecard.json",
+        "analysis/scorecard.csv",
+        "diagnostic-counts/summary.json",
+        "profile-numbers.json",
+        "allocation-comparison.json",
+        "instruction-window-comparison.json",
+        "callback-comparison.json",
+        "validation.json"
+      ]
+    }
+  },
+  "disposition": "Every tracked historical results file and license preserved externally. Accepted R76, rejected R77 and accepted R78 reconstructed byte-identically from an independent retrieval before source-tip removal. No source history rewrite."
+}

@@ -1,0 +1,8 @@
+
+running 3 tests
+test native_artifact::program::runtime::composition_tests::child_funding::bounded_child_funding_keeps_a_fallible_operation_inside_the_funded_visit ... ok
+test native_artifact::program::runtime::composition_tests::child_funding::bounded_child_funding_preserves_actual_work_finite_prefixes_aliases_cleanup_and_retry ... ok
+test native_artifact::program::runtime::composition_tests::child_funding::bounded_child_funding_uses_current_generic_recurrence_and_refuses_changed_captures ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 852 filtered out; finished in 12.38s
+

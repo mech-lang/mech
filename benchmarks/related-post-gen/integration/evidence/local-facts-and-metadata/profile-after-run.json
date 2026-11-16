@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/private/tmp/mech-related-owned-shape-metadata-pc-profile-20261107-v1/after/runner-pc",
+    "/private/tmp/mech-related-owned-shape-metadata-pc-profile-20261107-v1/after/build/source.mec",
+    "/private/tmp/mech-related-post-rust-local-20261102/posts.json",
+    "/private/tmp/mech-related-owned-shape-metadata-pc-profile-20261107-v1/after/output.json",
+    "1000"
+  ],
+  "exit": 0,
+  "seconds": 4.517572833923623,
+  "stdout": "{\"all_iterations_indices_exact\":true,\"compile_or_restore_seconds\":0.023764709,\"completed_iterations\":1000,\"diagnostic_only\":true,\"parallel_numeric_regions\":8,\"parallel_peak_workers\":4,\"parallel_tasks\":4}\n",
+  "stderr": "execution-profile-ready\n",
+  "profiled_timings_excluded": true
+}

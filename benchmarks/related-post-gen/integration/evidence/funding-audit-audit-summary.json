@@ -1,0 +1,36 @@
+{
+  "schema": "mech.related-post-gen.child-funding-control-audit.v1",
+  "status": "passed",
+  "compiler_commit": "dae0b9b6c33b39ce55104880660501929ee07b6b",
+  "compiler_identity": "IR227/work115/ABI41/image9",
+  "artifact": {
+    "artifact": "/private/tmp/mech-related-deflate-regression/baseline-compressor.bc",
+    "artifact_sha256": "a2daaaf746d6bcc8668c5439f84a782ecea2aff376546566c01d4fc0f8c6f585",
+    "reference_sha256": "cc18621bae108dd1dec32cf45a8ae80e3b4c8453e7b7b4fa6cc76dc4f0acf4f5",
+    "prior_control": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v1/one-kib-run.json"
+  },
+  "scalar_cases_exact_IR225": 128,
+  "compression_rows": 5,
+  "compression_all_nontiming_fields_equal_IR226": true,
+  "production_disabled_pass_all_nontiming_fields_equal": true,
+  "same_compiler_unit_disabled_enabled_reports_equal": true,
+  "same_compiler_unit_disabled_enabled_outputs_equal": true,
+  "disabled_funded_activations": 0,
+  "enabled_funded_activations": 4700,
+  "disabled_enabled_phase_sites_and_entry_counts_equal": true,
+  "independent_inflate": true,
+  "aliases_unchanged": true,
+  "cleanup": true,
+  "IR226_repeat_exact_original": true,
+  "IR225_differences_preserved": true,
+  "correction": {
+    "previous_claim": "IR226 matches all133 controls in every non-timing field.",
+    "correct_claim": "All128 scalar rows match; the three compression measurement rows differ from IR225 already in IR226. All five compression rows match IR227 exactly.",
+    "cause": "The IR226 harness recorded all_nontiming_fields_equal_IR225=false and differences, but printed true without asserting that flag. The later summary trusted the misleading printed headline. This is an evidence reporting error, not a fresh-process execution variation.",
+    "current_strict_cross_IR225_harness_exit": 1,
+    "no_counter_exemptions_or_source_changes": true
+  },
+  "timing_claim": false,
+  "qualified_for_unselected_related_post_screen": true,
+  "selected_speed_compiler": "c3a6925108ad3523f4e29022b66f1c17b92c9878"
+}

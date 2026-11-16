@@ -1,0 +1,7 @@
+qualify-all-originals-run.json passed
+compile-run.json passed
+host-build-run.json passed
+audit-run.json passed
+edge-run.json passed
+metrics-build-run.json passed
+Fourteen original loaders and new source passed; nine latency/ten resource entries prepared

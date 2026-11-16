@@ -1,0 +1,31 @@
+{
+  "archive_name": "mech-dimension-native-pgo-20261115.tar.gz",
+  "bytes": 55309989,
+  "compression": {
+    "codec": "gzip",
+    "intermediate_bytes": 69350857,
+    "intermediate_sha256": "d4b642e4aeaba1998cb810ad39a13fca1ebddee69eda68739b3c027db8b23b42",
+    "level": 9,
+    "method": "Recompress exact tar stream from maintained pack tool; manifest/Git blobs/file bytes unchanged.",
+    "mtime": 0
+  },
+  "evidence_files": 1750,
+  "files": 1750,
+  "format": 1,
+  "manifest_sha256": "5f56748c24905e0f35e5ea17a06dcfb0051311e27538b915f0ef6ad7814ecd0e",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "d44c8405b062c00d9dca9c65e937ee3bf77acc33c1482f20e2c8e9533025b71a",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-dimension-native-pgo-20261115.tar.gz",
+  "sha256": "2abcd8228d4894ea0ebc03bf50effaf4bd7a77bc0ba519b1e3f4c67d701e28b5",
+  "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+  "uncompressed_bytes": 373599771,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "2abcd8228d4894ea0ebc03bf50effaf4bd7a77bc0ba519b1e3f4c67d701e28b5",
+    "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+    "verified_bytes": 373599771,
+    "verified_files": 1750
+  }
+}

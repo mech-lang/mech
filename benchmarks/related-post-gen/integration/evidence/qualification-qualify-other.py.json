@@ -1,0 +1,8 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/qualify-other.py"
+  ],
+  "exit": 0,
+  "seconds": 28.490307833068073
+}

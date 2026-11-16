@@ -1,0 +1,504 @@
+diff --git a/.github/workflows/ci-full.yml b/.github/workflows/ci-full.yml
+index 70035d650e..aeea27f05c 100644
+--- a/.github/workflows/ci-full.yml
++++ b/.github/workflows/ci-full.yml
+@@ -758,13 +758,13 @@ jobs:
+           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+             --no-default-features --features canonical-native-program --lib -- \
+             composition_tests parent_continuation_is_single_use native_parent_continuation_prepares native_paid_iteration_guard native_runtime_consolidation \
+-            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests numeric_branches::tests numeric_read_packs::tests traversal_facts::tests traversal_facts::completion:: ordered_reduction::tests cfg_cleanup captured_window numeric_first_change entry_locals_snapshot admitted_helper_tests invocation::numeric_segments::tests maps::admission_tests dead_constant_owners argument_bank_tests ssa_words::tests readonly_numeric::exits::liveness_tests checked_unsigned_tests canonical_relation \
++            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests numeric_branches::tests numeric_read_packs::tests numeric_retirement::tests traversal_facts::tests traversal_facts::completion:: ordered_reduction::tests cfg_cleanup captured_window numeric_first_change entry_locals_snapshot admitted_helper_tests invocation::numeric_segments::tests maps::admission_tests dead_constant_owners argument_bank_tests ssa_words::tests readonly_numeric::exits::liveness_tests checked_unsigned_tests canonical_relation \
+             --list | tee native-composition-tests.txt
+-          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 363
++          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 366
+           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+             --no-default-features --features canonical-native-program --lib -- \
+             composition_tests parent_continuation_is_single_use native_parent_continuation_prepares native_paid_iteration_guard native_runtime_consolidation \
+-            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests numeric_branches::tests numeric_read_packs::tests traversal_facts::tests traversal_facts::completion:: ordered_reduction::tests cfg_cleanup captured_window numeric_first_change entry_locals_snapshot admitted_helper_tests invocation::numeric_segments::tests maps::admission_tests dead_constant_owners argument_bank_tests ssa_words::tests readonly_numeric::exits::liveness_tests checked_unsigned_tests canonical_relation \
++            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests numeric_branches::tests numeric_read_packs::tests numeric_retirement::tests traversal_facts::tests traversal_facts::completion:: ordered_reduction::tests cfg_cleanup captured_window numeric_first_change entry_locals_snapshot admitted_helper_tests invocation::numeric_segments::tests maps::admission_tests dead_constant_owners argument_bank_tests ssa_words::tests readonly_numeric::exits::liveness_tests checked_unsigned_tests canonical_relation \
+             --test-threads=1
+       - name: Execute secured canonical reference bytecode admission
+         if: ${{ matrix.suite == 'cli' }}
+diff --git a/hosts/gpu/src/native_artifact/codegen/options.rs b/hosts/gpu/src/native_artifact/codegen/options.rs
+index c3c7a91230..5962138384 100644
+--- a/hosts/gpu/src/native_artifact/codegen/options.rs
++++ b/hosts/gpu/src/native_artifact/codegen/options.rs
+@@ -44,6 +44,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
+     ZeroAppendFrontiers,
+     SourceLiveness,
+     PrivateLiveness,
++    /// Omit repeated zero stores until a resumable helper can reify homes.
++    ScalarHomeRetirement,
+     NumericOutlining,
+     BooleanBranches,
+     BitCounts,
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/mod.rs b/hosts/gpu/src/native_artifact/program/codegen/mod.rs
+index c62b622b58..1db3118abd 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/mod.rs
+@@ -45,6 +45,8 @@ mod numeric_fuel;
+ #[cfg(feature = "canonical-native-program")]
+ mod numeric_read_packs;
+ #[cfg(feature = "canonical-native-program")]
++mod numeric_retirement;
++#[cfg(feature = "canonical-native-program")]
+ pub(in crate::native_artifact) mod numeric_segments;
+ #[cfg(feature = "canonical-native-program")]
+ pub(in crate::native_artifact) mod numeric_tree;
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/numeric_boundary.rs b/hosts/gpu/src/native_artifact/program/codegen/numeric_boundary.rs
+index bac354dba6..47d708bdef 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/numeric_boundary.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/numeric_boundary.rs
+@@ -78,6 +78,7 @@ pub(super) fn materialize(
+     hooks: &Hooks,
+     error: Block,
+     fuel_debits: Option<&super::super::numeric_fuel_debits::Anchors>,
++    retirement: Option<&super::super::numeric_retirement::ScalarHomes>,
+ ) -> Result<(), NativeCompileError> {
+     let options = controls.options();
+     if let Some(anchors) = fuel_debits {
+@@ -240,5 +241,8 @@ pub(super) fn materialize(
+     if let Some(anchors) = fuel_debits {
+         anchors.refresh(b, words);
+     }
++    if let Some(retirement) = retirement {
++        retirement.materialized(b);
++    }
+     Ok(())
+ }
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/numeric_retirement.rs b/hosts/gpu/src/native_artifact/program/codegen/numeric_retirement.rs
+new file mode 100644
+index 0000000000..4cf7fb760a
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/program/codegen/numeric_retirement.rs
+@@ -0,0 +1,89 @@
++//! Compiler-local dirty masks for physical scalar homes. A cleared bit means
++//! these exact homes were zeroed since the last resumable helper. The mask is
++//! never serialized, passed to the runtime, or used as execution authority.
++use crate::native_artifact::NativeCompileError;
++use cranelift_codegen::ir::{InstBuilder, types};
++use cranelift_frontend::{FunctionBuilder, Variable};
++use std::collections::BTreeMap;
++
++struct Mask {
++    variable: Variable,
++    initial: u64,
++}
++
++pub(super) struct ScalarHomes {
++    masks: Vec<Mask>,
++    nodes: BTreeMap<usize, (usize, u64)>,
++}
++
++impl ScalarHomes {
++    pub(super) fn new(b: &mut FunctionBuilder<'_>, nodes: impl IntoIterator<Item = usize>) -> Self {
++        let nodes = nodes
++            .into_iter()
++            .enumerate()
++            .map(|(ordinal, node)| (node, (ordinal / 64, 1u64 << (ordinal % 64))))
++            .collect::<BTreeMap<_, _>>();
++        let mut initial = Vec::<u64>::new();
++        for &(word, bit) in nodes.values() {
++            if word >= initial.len() {
++                initial.resize(word + 1, 0);
++            }
++            initial[word] |= bit;
++        }
++        let masks = initial
++            .into_iter()
++            .map(|initial| {
++                let variable = b.declare_var(types::I64);
++                // Entry is conservatively dirty, including reentry after an
++                // ordinary continuation. No zero-home admission assumption.
++                let value = b.ins().iconst(types::I64, initial as i64);
++                b.def_var(variable, value);
++                Mask { variable, initial }
++            })
++            .collect();
++        Self { masks, nodes }
++    }
++
++    pub(super) fn word_count(&self) -> usize {
++        self.masks.len()
++    }
++
++    /// A first change may reify active carriers and refresh the bank pointer.
++    /// Conservatively forget every clean bit, including inactive siblings and
++    /// any physical aliases, rather than relying on callback implementation.
++    pub(super) fn materialized(&self, b: &mut FunctionBuilder<'_>) {
++        for mask in &self.masks {
++            let value = b.ins().iconst(types::I64, mask.initial as i64);
++            b.def_var(mask.variable, value);
++        }
++    }
++
++    pub(super) fn retire(
++        &self,
++        b: &mut FunctionBuilder<'_>,
++        node: usize,
++        clear: impl FnOnce(&mut FunctionBuilder<'_>) -> Result<(), NativeCompileError>,
++    ) -> Result<(), NativeCompileError> {
++        let Some(&(word, bit)) = self.nodes.get(&node) else {
++            return clear(b);
++        };
++        let mask = &self.masks[word];
++        let before = b.use_var(mask.variable);
++        let pending = b.ins().band_imm(before, bit as i64);
++        let dirty = b.create_block();
++        let done = b.create_block();
++        b.set_cold_block(dirty);
++        b.ins().brif(pending, dirty, &[], done, &[]);
++        b.switch_to_block(dirty);
++        clear(b)?;
++        let after = b.ins().band_imm(before, (!bit) as i64);
++        b.def_var(mask.variable, after);
++        b.ins().jump(done, &[]);
++        b.switch_to_block(done);
++        Ok(())
++    }
++}
++
++#[cfg(test)]
++#[path = "numeric_retirement_tests.rs"]
++mod tests;
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/numeric_retirement_tests.rs b/hosts/gpu/src/native_artifact/program/codegen/numeric_retirement_tests.rs
+new file mode 100644
+index 0000000000..d8c65e46e9
+--- /dev/null
++++ b/hosts/gpu/src/native_artifact/program/codegen/numeric_retirement_tests.rs
+@@ -0,0 +1,111 @@
++//! Execute the real emitted masks across loops, dirty entry, bit63, a second
++//! mask word and a simulated resumable helper that dirties physical homes.
++use super::ScalarHomes;
++use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
++use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext, Variable};
++use cranelift_module::{Linkage, Module, default_libcall_names};
++
++fn traversals(
++    b: &mut FunctionBuilder<'_>,
++    homes: &ScalarHomes,
++    bank: Value,
++    rounds: Value,
++    clears: Variable,
++) {
++    let at = b.declare_var(types::I64);
++    let zero = b.ins().iconst(types::I64, 0);
++    b.def_var(at, zero);
++    let header = b.create_block();
++    let body = b.create_block();
++    let done = b.create_block();
++    b.ins().jump(header, &[]);
++    b.switch_to_block(header);
++    let index = b.use_var(at);
++    let more = b.ins().icmp(IntCC::UnsignedLessThan, index, rounds);
++    b.ins().brif(more, body, &[], done, &[]);
++    b.switch_to_block(body);
++    for node in [1usize, 64, 65] {
++        homes
++            .retire(b, node, |b| {
++                let zero = b.ins().iconst(types::I64, 0);
++                let offset = ((node - 1) * 16) as i32;
++                b.ins().store(MemFlags::new(), zero, bank, offset);
++                b.ins().store(MemFlags::new(), zero, bank, offset + 8);
++                let count = b.use_var(clears);
++                let count = b.ins().iadd_imm(count, 1);
++                b.def_var(clears, count);
++                Ok(())
++            })
++            .unwrap();
++    }
++    let index = b.use_var(at);
++    let next = b.ins().iadd_imm(index, 1);
++    b.def_var(at, next);
++    b.ins().jump(header, &[]);
++    b.switch_to_block(done);
++}
++
++#[test]
++fn scalar_home_masks_preserve_dirty_entry_repeated_exits_and_helper_reentry() {
++    let mut module = cranelift_jit::JITModule::new(
++        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
++            .unwrap(),
++    );
++    let mut context = module.make_context();
++    context.func.signature = module.make_signature();
++    context.func.signature.params = vec![AbiParam::new(types::I64); 2];
++    context.func.signature.returns = vec![AbiParam::new(types::I64)];
++    let mut frontend = FunctionBuilderContext::new();
++    {
++        let mut b = FunctionBuilder::new(&mut context.func, &mut frontend);
++        let entry = b.create_block();
++        b.append_block_params_for_function_params(entry);
++        b.switch_to_block(entry);
++        let bank = b.block_params(entry)[0];
++        let rounds = b.block_params(entry)[1];
++        let homes = ScalarHomes::new(&mut b, 1..=65);
++        assert_eq!(homes.word_count(), 2);
++        let clears = b.declare_var(types::I64);
++        let zero = b.ins().iconst(types::I64, 0);
++        b.def_var(clears, zero);
++        traversals(&mut b, &homes, bank, rounds, clears);
++        // Model any resumable callback's physical-bank writes, including a
++        // nonzero payload with a cleared validity word. All masks reset.
++        for node in [1usize, 64, 65] {
++            let offset = ((node - 1) * 16) as i32;
++            let dirty = b.ins().iconst(types::I64, -17);
++            let zero = b.ins().iconst(types::I64, 0);
++            b.ins().store(MemFlags::new(), dirty, bank, offset);
++            b.ins().store(MemFlags::new(), zero, bank, offset + 8);
++        }
++        homes.materialized(&mut b);
++        traversals(&mut b, &homes, bank, rounds, clears);
++        let count = b.use_var(clears);
++        b.ins().return_(&[count]);
++        b.seal_all_blocks();
++        b.finalize();
++    }
++    let id = module
++        .declare_function("scalar_home_masks", Linkage::Local, &context.func.signature)
++        .unwrap();
++    module.define_function(id, &mut context).unwrap();
++    module.finalize_definitions().unwrap();
++    // SAFETY: this retained generated function takes a pointer to130 writable
++    // u64 cells and a bounded loop count, and returns its observed clear count.
++    let run: unsafe extern "C" fn(u64, u64) -> u64 =
++        unsafe { core::mem::transmute(module.get_finalized_function(id)) };
++    for rounds in [0, 1, 2, 17] {
++        let mut bank = (0u64..130).map(|i| i.wrapping_mul(17)).collect::<Vec<_>>();
++        let mut expected = bank.clone();
++        for node in [1usize, 64, 65] {
++            let at = (node - 1) * 2;
++            expected[at] = if rounds == 0 { (-17i64) as u64 } else { 0 };
++            expected[at + 1] = 0;
++        }
++        // SAFETY: every emitted access lies in the live130-cell bank; no
++        // pointer escapes, and both loops execute at most17 traversals.
++        let count = unsafe { run(bank.as_mut_ptr() as u64, rounds) };
++        assert_eq!(count, if rounds == 0 { 0 } else { 6 });
++        assert_eq!(bank, expected, "rounds={rounds}");
++    }
++}
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/numeric_tree.rs b/hosts/gpu/src/native_artifact/program/codegen/numeric_tree.rs
+index 9d813981fe..72091c5403 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/numeric_tree.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/numeric_tree.rs
+@@ -13,6 +13,7 @@ pub(super) fn control(
+     shadow: usize,
+     tree: &Proof,
+     site: usize,
++    retirement: Option<&super::numeric_retirement::ScalarHomes>,
+ ) -> Result<(), NativeCompileError> {
+     for (index, node) in tree.nodes.iter().enumerate() {
+         let zero = b.ins().iconst(types::I64, 0);
+@@ -28,21 +29,29 @@ pub(super) fn control(
+             // A cold first change may have reified this activation's scalar
+             // carrier. Retire exactly those homes at its source return edge.
+             if !node.scalar_bindings.is_empty() {
+-                let bank = words.read(b, shadow + tree.bank());
+-                for binding in &node.scalar_bindings {
+-                    let at = binding
+-                        .physical
+-                        .checked_mul(2)
+-                        .ok_or_else(|| backend("numeric tree retirement offset overflows"))?;
+-                    b.ins().store(MemFlags::new(), zero, bank, offset(at)?);
+-                    b.ins().store(
+-                        MemFlags::new(),
+-                        zero,
+-                        bank,
+-                        offset(at.checked_add(1).ok_or_else(|| {
+-                            backend("numeric tree retirement validity offset overflows")
+-                        })?)?,
+-                    );
++                let clear = |b: &mut FunctionBuilder<'_>| {
++                    let bank = words.read(b, shadow + tree.bank());
++                    for binding in &node.scalar_bindings {
++                        let at = binding
++                            .physical
++                            .checked_mul(2)
++                            .ok_or_else(|| backend("numeric tree retirement offset overflows"))?;
++                        b.ins().store(MemFlags::new(), zero, bank, offset(at)?);
++                        b.ins().store(
++                            MemFlags::new(),
++                            zero,
++                            bank,
++                            offset(at.checked_add(1).ok_or_else(|| {
++                                backend("numeric tree retirement validity offset overflows")
++                            })?)?,
++                        );
++                    }
++                    Ok(())
++                };
++                if let Some(retirement) = retirement {
++                    retirement.retire(b, index, clear)?;
++                } else {
++                    clear(b)?;
+                 }
+             }
+             words.write(b, shadow + tree.active(index), zero);
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs b/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs
+index 2f85cb180b..8fe801af90 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs
+@@ -67,6 +67,8 @@ pub(in crate::native_artifact) struct Report {
+     pub source_home_words: usize,
+     pub terminal_scalar_words_omitted: usize,
+     pub runtime_scalar_path_walks: usize,
++    pub guarded_scalar_retirement_nodes: Vec<usize>,
++    pub scalar_retirement_mask_words: usize,
+     pub tree_nodes: Vec<usize>,
+     pub projected_child_debit_nodes: usize,
+     pub fuel_derived_child_debit_nodes: usize,
+@@ -350,6 +352,21 @@ pub(in crate::native_artifact) fn emit_entry(
+         .map(|tree| {
+             super::numeric_fuel_debits::Anchors::new(b, &words, region.words, shadow, tree)
+         });
++    let retirement = region
++        .numeric_tree
++        .as_ref()
++        .filter(|_| controls.enabled(OptimizationPass::ScalarHomeRetirement))
++        .map(|tree| {
++            super::numeric_retirement::ScalarHomes::new(
++                b,
++                tree.nodes
++                    .iter()
++                    .enumerate()
++                    .skip(1)
++                    .filter(|(_, node)| !node.scalar_bindings.is_empty())
++                    .map(|(index, _)| index),
++            )
++        });
+     // Every ordinary scalar operand home is retained conservatively. Private
+     // virtual-frame intermediates have no cold consumer: reconciliation reads
+     // only current carrier/result leaves and exact view/flag/capacity lanes.
+@@ -513,6 +530,21 @@ pub(in crate::native_artifact) fn emit_entry(
+         source_home_words: source_homes.len(),
+         terminal_scalar_words_omitted: 0,
+         runtime_scalar_path_walks: 0,
++        guarded_scalar_retirement_nodes: region.numeric_tree.as_ref().map_or_else(
++            Vec::new,
++            |tree| {
++                if retirement.is_none() {
++                    return Vec::new();
++                }
++                tree.nodes
++                    .iter()
++                    .skip(1)
++                    .filter(|node| !node.scalar_bindings.is_empty())
++                    .map(|node| node.tail.header() as usize)
++                    .collect()
++            },
++        ),
++        scalar_retirement_mask_words: retirement.as_ref().map_or(0, |r| r.word_count()),
+         tree_nodes: region.numeric_tree.as_ref().map_or_else(Vec::new, |tree| {
+             tree.nodes
+                 .iter()
+@@ -876,6 +908,7 @@ pub(in crate::native_artifact) fn emit_entry(
+                     hooks,
+                     error,
+                     fuel_debits.as_ref(),
++                    retirement.as_ref(),
+                 )?;
+                 b.ins().jump(done, &[]);
+                 b.switch_to_block(store);
+@@ -953,6 +986,7 @@ pub(in crate::native_artifact) fn emit_entry(
+                     hooks,
+                     error,
+                     fuel_debits.as_ref(),
++                    retirement.as_ref(),
+                 )?;
+                 b.ins().jump(done, &[]);
+                 b.switch_to_block(store);
+@@ -1106,6 +1140,7 @@ pub(in crate::native_artifact) fn emit_entry(
+                             hooks,
+                             error,
+                             fuel_debits.as_ref(),
++                            retirement.as_ref(),
+                         )?;
+                         b.ins().jump(done, &[]);
+                         b.switch_to_block(store);
+@@ -1165,7 +1200,7 @@ pub(in crate::native_artifact) fn emit_entry(
+             },
+         }
+         if let Some(tree) = &region.numeric_tree {
+-            super::numeric_tree::control(b, &words, shadow, tree, site)?;
++            super::numeric_tree::control(b, &words, shadow, tree, site, retirement.as_ref())?;
+         }
+         if let Some(window) = versions.iter().find(|v| v.initialize == site) {
+             // Initialize just copied this child's current source arguments.
+diff --git a/hosts/gpu/src/native_artifact/program/image/identity.rs b/hosts/gpu/src/native_artifact/program/image/identity.rs
+index 81d90eee30..6fb66f2d6f 100644
+--- a/hosts/gpu/src/native_artifact/program/image/identity.rs
++++ b/hosts/gpu/src/native_artifact/program/image/identity.rs
+@@ -405,7 +405,9 @@ fn selected_template(
+ // canonical schema nodes into one buffer and reuses their bytes for table keys.
+ // IR240 integrates PR973/IR200 current transferred child-argument admission facts.
+ // IR239 Boolean branch lowering remains a separate unselected experiment.
+-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 240;
++// IR241 tracks compiler-local dirty scalar-home masks across native child
++// returns, resetting conservatively after every resumable first-change helper.
++pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 241;
+ // Shared immutable schema arenas and the admitted two-phase entry protocol
+ // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
+ // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree.rs b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree.rs
+index bdb6ada3f6..ff8e3bcd4e 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_tree.rs
+@@ -339,6 +339,11 @@ fn numeric_tree_private_liveness_ablation_keeps_outputs_errors_and_retry() {
+     check_emission_ablation(OptimizationPass::PrivateLiveness);
+ }
+ 
++#[test]
++fn numeric_tree_scalar_home_retirement_keeps_cold_writes_reports_errors_and_retry() {
++    check_emission_ablation(OptimizationPass::ScalarHomeRetirement);
++}
++
+ #[test]
+ fn numeric_tree_outlining_ablation_keeps_outputs_errors_and_retry() {
+     check_emission_ablation(OptimizationPass::NumericOutlining);
+@@ -575,6 +580,33 @@ fn check_emission_ablation_source(pass: OptimizationPass, source: &str) {
+                 "native-produced Boolean branches must remove emitted comparisons"
+             );
+         }
++        if pass == OptimizationPass::ScalarHomeRetirement {
++            let object = crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
++            let old = crate::native_artifact::program::compiler::emit_program_object_for_test(
++                &artifact, &catalog, pass,
++            )
++            .unwrap();
++            let guarded = |metadata: &serde_json::Value| {
++                [
++                    "compiled_numeric_write_loops",
++                    "compiled_readonly_numeric_loops",
++                ]
++                .into_iter()
++                .flat_map(|key| metadata[key].as_array().unwrap())
++                .map(|row| {
++                    row["guarded_scalar_retirement_nodes"]
++                        .as_array()
++                        .unwrap()
++                        .len()
++                })
++                .sum::<usize>()
++            };
++            assert!(
++                guarded(&object.metadata()) > 0,
++                "exercise real scalar retirement guards"
++            );
++            assert_eq!(guarded(&old.metadata()), 0);
++        }
+         for restored in [false, true] {
+             let memory = mode.memory_budget();
+             let mut outputs = [
+@@ -857,6 +889,11 @@ fn numeric_tree_private_liveness_finite_fuel_matches_conservative_reconciliation
+     check_numeric_tree_finite_fuel(Some(OptimizationPass::PrivateLiveness));
+ }
+ 
++#[test]
++fn numeric_tree_scalar_home_retirement_keeps_finite_fuel_publication_and_reentry() {
++    check_numeric_tree_finite_fuel(Some(OptimizationPass::ScalarHomeRetirement));
++}
++
+ #[test]
+ fn numeric_tree_outlining_finite_fuel_keeps_each_ordinary_continuation() {
+     check_numeric_tree_finite_fuel(Some(OptimizationPass::NumericOutlining));

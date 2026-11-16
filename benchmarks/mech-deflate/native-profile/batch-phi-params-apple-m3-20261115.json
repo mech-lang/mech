@@ -1,0 +1,573 @@
+{
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.459132791962475,
+      "control": 15.336728979018517,
+      "mean_reduction_fraction": -0.007981089912419526
+    },
+    {
+      "candidate": 15.429237645934336,
+      "control": 15.492736646090634,
+      "mean_reduction_fraction": 0.004098630319926189
+    }
+  ],
+  "base_commit": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+      "binary": "/private/tmp/mech-batch-phi-params-20261115/candidate",
+      "binary_sha256": "7a5dd073281fb9dda246522ed0e61a7794160dadc491da1097ff41b295a62a40",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "b0ae8952b0d92628b581892aaf50701b0eb67ab2acf8a1d7a306b94a0a4a3eac",
+      "seconds": 263.0690593330655
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "b0ae8952b0d92628b581892aaf50701b0eb67ab2acf8a1d7a306b94a0a4a3eac",
+      "seconds": 13.609846833860502
+    },
+    "candidate-cli-check": {
+      "base_commit": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "b0ae8952b0d92628b581892aaf50701b0eb67ab2acf8a1d7a306b94a0a4a3eac",
+      "seconds": 15.83758654189296
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66940112,
+      "path": "/private/tmp/mech-batch-phi-params-20261115/candidate",
+      "sha256": "7a5dd073281fb9dda246522ed0e61a7794160dadc491da1097ff41b295a62a40"
+    },
+    "control": {
+      "bytes": 66939952,
+      "path": "/private/tmp/mech-batch-phi-params-20261115/control",
+      "sha256": "dd7dc5bc906325a213422a127a2e87ec134a3f8564b713dbbe50e1d1308571a0"
+    },
+    "focused/tests": {
+      "bytes": 3193368,
+      "path": "/private/tmp/mech-batch-phi-params-20261115/focused/tests",
+      "sha256": "84fc21f8c471b71a6c210756353947513b3909cc66089955b115f2e85aba156b"
+    }
+  },
+  "decision": {
+    "all_four_outputs_complete_metadata_whole_exe_identical": true,
+    "combined_new_source_pgo_qualified": false,
+    "current_best_pgo_seconds": 14.027480958262458,
+    "current_best_pgo_source": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+    "default_serial_candidate_gate_run": false,
+    "focused_tests": 3,
+    "full_native_balanced_blocks": [
+      {
+        "candidate": 15.459132791962475,
+        "control": 15.336728979018517,
+        "mean_reduction_fraction": -0.007981089912419526
+      },
+      {
+        "candidate": 15.429237645934336,
+        "control": 15.492736646090634,
+        "mean_reduction_fraction": 0.004098630319926189
+      }
+    ],
+    "object_balanced_compiler_blocks": [
+      {
+        "candidate": 15.136566,
+        "control": 15.2332406665,
+        "mean_reduction_fraction": 0.006346296800299411
+      },
+      {
+        "candidate": 15.1746991875,
+        "control": 15.279974354,
+        "mean_reduction_fraction": 0.006889747591260931
+      }
+    ],
+    "paired_ir_cases": 128,
+    "primary_runs_uncontended": true,
+    "program_runtime_campaign": false,
+    "reason": "Reject: lower Object/compiler work does not produce repeatable complete-build improvement. Full native mean15.414733->15.444185s(+.1911%), firstblock+.7981%, secondblock-.4099%. All artifacts/fullmetadata/wholeexecutables exact; focusedtests pass. Original source and immutable standardtool restored.",
+    "restoration": {
+      "all_reference_hashes_match": true,
+      "canonical_standard_compiler_sha256": "dd7dc5bc906325a213422a127a2e87ec134a3f8564b713dbbe50e1d1308571a0",
+      "cargo_dependency_cache_note": "Cargo-managed executable restored from immutable control; dependent rlibs still correspond to rejected candidate until the next genuine Cargo rebuild. Restored source mtimes are fresh so Cargo recompiles; never trust this target as a newly built baseline without rebuilding. Selected PGO5a1 untouched.",
+      "source_commit": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+      "source_paths": [
+        "vendor/cranelift-codegen/src/ir/dfg.rs",
+        "vendor/cranelift-codegen/src/remove_constant_phis.rs"
+      ],
+      "working_tree_clean": true
+    },
+    "retain_source_change": false
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "focused_tests": 3,
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.12763816700316966,
+        0.13092133402824402,
+        0.13103304104879498,
+        0.10943345888517797
+      ],
+      "control": [
+        0.13276341697201133,
+        0.13720337487757206,
+        0.12755175004713237,
+        0.13599191699177027
+      ],
+      "mean_reduction_fraction": 0.0646368920207192
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0009841658174991608,
+        0.001194999786093831,
+        0.0015730420127511024,
+        0.0009002501610666513
+      ],
+      "control": [
+        0.0015092911198735237,
+        0.0009454169776290655,
+        0.0009594999719411135,
+        0.0009736660867929459
+      ],
+      "mean_reduction_fraction": -0.06029881709301854
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.427501416997984,
+        15.490764166926965,
+        15.365949457976967,
+        15.492525833891705
+      ],
+      "control": [
+        15.31978170806542,
+        15.353676249971613,
+        15.39589412510395,
+        15.589579167077318
+      ],
+      "mean_reduction_fraction": -0.001910666033072106
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        15.298879084177315,
+        15.358647833112627,
+        15.233343374915421,
+        15.38219212484546
+      ],
+      "control": [
+        15.185508999973536,
+        15.215527458116412,
+        15.267382875084877,
+        15.452613583998755
+      ],
+      "mean_reduction_fraction": -0.0024873516140222485
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.023053375,
+        0.02311525,
+        0.023027416,
+        0.023178833
+      ],
+      "control": [
+        0.023076083,
+        0.023076291,
+        0.023206667,
+        0.0231835
+      ],
+      "mean_reduction_fraction": 0.0018117829723306444
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.0930073328781873,
+        0.09444695804268122,
+        0.09468987490981817,
+        0.09377933293581009
+      ],
+      "control": [
+        0.09443120798096061,
+        0.0935069581028074,
+        0.09356904099695385,
+        0.09374516713432968
+      ],
+      "mean_reduction_fraction": -0.0017884618394463647
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.035739125,
+        0.036022417,
+        0.03606825,
+        0.035809084
+      ],
+      "control": [
+        0.03635125,
+        0.03623375,
+        0.036263917,
+        0.039451417
+      ],
+      "mean_reduction_fraction": 0.031432552269235026
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        2.8937370830681175,
+        2.9357252919580787,
+        2.8834620001725852,
+        2.9590966659598053
+      ],
+      "control": [
+        2.959668542025611,
+        3.0299074170179665,
+        3.02898458391428,
+        2.962759208166972
+      ],
+      "mean_reduction_fraction": 0.025815078504787037
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.747088500065729,
+        2.7893072080332786,
+        2.736608708044514,
+        2.8122281250543892
+      ],
+      "control": [
+        2.8173955420497805,
+        2.887274666922167,
+        2.886435041902587,
+        2.8203237501438707
+      ],
+      "mean_reduction_fraction": 0.028585066759945876
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14664858300238848,
+        0.14641808392480016,
+        0.1468532921280712,
+        0.146868540905416
+      ],
+      "control": [
+        0.14227299997583032,
+        0.14263275009579957,
+        0.14254954201169312,
+        0.1424354580231011
+      ],
+      "mean_reduction_fraction": -0.02965085825852798
+    },
+    "compiler_seconds": {
+      "candidate": [
+        15.075260667,
+        15.197871333,
+        15.089909125,
+        15.25948925
+      ],
+      "control": [
+        15.1255555,
+        15.340925833,
+        15.364174333,
+        15.195774375
+      ],
+      "mean_reduction_fraction": 0.00661843836725573
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009136459,
+        0.0090635,
+        0.009261458,
+        0.00904525
+      ],
+      "control": [
+        0.00923525,
+        0.009089709,
+        0.009110791,
+        0.009073666
+      ],
+      "mean_reduction_fraction": 7.529564427988245e-05
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.5797442080000001,
+        1.5820362079999999,
+        1.5908765,
+        1.5860065840000002
+      ],
+      "control": [
+        1.5826459590000002,
+        1.585567709,
+        1.569562125,
+        1.590633417
+      ],
+      "mean_reduction_fraction": -0.0016203582384963777
+    },
+    "instructions": {
+      "candidate": [
+        218891821859,
+        218843258344,
+        218836871099,
+        218804063424
+      ],
+      "control": [
+        220629770145,
+        220646979449,
+        220630806558,
+        220665010162
+      ],
+      "mean_reduction_fraction": 0.008154062184434152
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4489265152,
+        4489723904,
+        4490231808,
+        4488331264
+      ],
+      "control": [
+        4489756672,
+        4490264576,
+        4489756672,
+        4489756672
+      ],
+      "mean_reduction_fraction": 0.00011038504310034725
+    },
+    "native_seconds": {
+      "candidate": [
+        11.560864625,
+        11.663321167,
+        11.563916625,
+        11.734625667
+      ],
+      "control": [
+        11.60769775,
+        11.82637075,
+        11.858403917,
+        11.660033
+      ],
+      "mean_reduction_fraction": 0.009153448344939363
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.052798999939114,
+        2.0431211250834167,
+        2.053441582946107,
+        2.043404833879322
+      ],
+      "control": [
+        2.0416745410766453,
+        2.052349208155647,
+        2.067441917024553,
+        2.0550696249119937
+      ],
+      "mean_reduction_fraction": 0.0028927946486673184
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.865969333,
+        1.8835807500000001,
+        1.8659704590000001,
+        1.868851083
+      ],
+      "control": [
+        1.865789167,
+        1.859836125,
+        1.8660125,
+        1.871483042
+      ],
+      "mean_reduction_fraction": -0.002847440296449122
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4466609872,
+        4467052216,
+        4467560120,
+        4465675984
+      ],
+      "control": [
+        4467052216,
+        4467560120,
+        4467052216,
+        4467052216
+      ],
+      "mean_reduction_fraction": 0.00010177429211122302
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.5924249170348048,
+        1.595212958054617,
+        1.6285766251385212,
+        1.5938344581518322
+      ],
+      "control": [
+        1.606296416837722,
+        1.5991091248579323,
+        1.5985140418633819,
+        1.598021375015378
+      ],
+      "mean_reduction_fraction": -0.0012664908748496462
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.2257984580937773,
+        2.2670455418992788,
+        2.223540083039552,
+        2.295773000223562
+      ],
+      "control": [
+        2.2277143748942763,
+        2.315373165998608,
+        2.317797166062519,
+        2.233922375133261
+      ],
+      "mean_reduction_fraction": 0.009087603297849522
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        15.141030583065003,
+        15.266070917015895,
+        15.157883167034015,
+        15.328025083057582
+      ],
+      "control": [
+        15.194085791008547,
+        15.412218334153295,
+        15.430789292091504,
+        15.261323290877044
+      ],
+      "mean_reduction_fraction": 0.006613661163357931
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "paired_ir": {
+    "all_identical": true,
+    "cases_sha256": "b47ffc6ae74c13bb7d4a35fcd24704df21d2d16b0ec6fd043340db2c177f43c5",
+    "paired_ir_cases": 128,
+    "small_masks": 2047,
+    "unit_tests": 3,
+    "wide_cases": 20
+  },
+  "patch_sha256": "b0ae8952b0d92628b581892aaf50701b0eb67ab2acf8a1d7a306b94a0a4a3eac",
+  "scope": "Stable bulk removal of already selected constant-phi formals. Unchanged solver, choices, reverse alias order and incoming-argument filtering. Each retained suffix ordinal updated once. Same61flags/two workers/pinnedmimalloc; standarddd7 versus standardcandidate, no new-source PGO claim. Separate selected5a1 diagnostics, same reference source modules. Fulloutput/metadata/executable identity, no grammar/proof/program-runtime changes orsub-ten claim.",
+  "selection_profile": [
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-1",
+      "process": {
+        "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/use",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 14.503281333018094,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    },
+    {
+      "all_outputs_match": true,
+      "excluded_from_primary": true,
+      "name": "sample-2",
+      "process": {
+        "binary": "/private/tmp/mech-refreshed-native-pgo-20261115/use",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 13.509747124975547,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "whole_executable_sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+    }
+  ],
+  "source_commit": null,
+  "source_state": {
+    "base_commit": "5d0b9cec8b8dd1bbc367db97a51268199accf1a1",
+    "files": [
+      {
+        "candidate_sha256": "f96e8dbf4ed0c05eb65acc22dae9a7194da7cbbc9fbf74bc4603535f50f7baab",
+        "path": "vendor/cranelift-codegen/src/ir/dfg.rs",
+        "sha256": "ecd8a5aaa0632da501537d02676777bad07b20401ce0fa98b22476cf8855d9c5"
+      },
+      {
+        "candidate_sha256": "fe67313663ac195150ab640d59379758ad4c3416969af1a178886d7569b9940a",
+        "path": "vendor/cranelift-codegen/src/remove_constant_phis.rs",
+        "sha256": "28210ee1156fbd1b41ba1de8623ec820305290a00d6194f88b96c57d0f8f5f82"
+      }
+    ],
+    "patch_sha256": "b0ae8952b0d92628b581892aaf50701b0eb67ab2acf8a1d7a306b94a0a4a3eac",
+    "scope": "Stable bulk removal of the already selected constant-phi formal parameters. One suffix pass updates survivors once; unchanged solver, selection, reverse alias insertion and incoming-argument filtering. No local-phi changes, pass/order/CFG analysis changes, grammar/proof/program-output changes. Standard dd7 control; no new-source PGO claim. Tests cover all2047 small masks and20 wide/pool boundary cases."
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-owned-shape-metadata-opt-20261107-v1/compiler-decoded",
+    "/private/tmp/mech-related-owned-shape-metadata-runners-20261107-v1/after-4/build/source.mec",
+    "/private/tmp/mech-related-owned-shape-metadata-runners-20261107-v1/after-4-decoded-bundle"
+  ],
+  "exit": 0,
+  "seconds": 6.940324833150953,
+  "stdout": "{\"code_bytes\":905904,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1520}\n",
+  "stderr": ""
+}

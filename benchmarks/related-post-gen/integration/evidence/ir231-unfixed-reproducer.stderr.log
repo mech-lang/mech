@@ -1,0 +1,6 @@
+
+thread 'native_artifact::program::runtime::composition_tests::ordered_reduction_terminal::numeric_ordered_reduction_preserves_exhausted_payload_updates' (19958631) panicked at /private/tmp/mech-related-native-reduction-terminal-transition-compiler-20261106/hosts/gpu/src/native_artifact/program/runtime/composition_tests/ordered_reduction_terminal.rs:128:29:
+assertion `left == right` failed: case=0, start=0, stop=1, seed=9, restored=false
+  left: Tuple([U32(9), U64(119), U64(1)])
+ right: Tuple([U32(0), U64(119), U64(1)])
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

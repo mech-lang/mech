@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-parser-event-cursor-20261115.tar.gz",
+  "bytes": 47441654,
+  "evidence_files": 1472,
+  "files": 1472,
+  "format": 1,
+  "manifest_sha256": "839e45e2b41824da8f90c55328ffe1ce0738eca1b1fd25e1640d265d2575602b",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "13a33f58e16ad06b1f2f2f090cc5934da411e5accaf2353bf0228ce80fb759a9",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parser-event-cursor-20261115.tar.gz",
+  "sha256": "8b4d4b647c1c557110033e3277b4185dd332198ec34a71c2224a968ccf49827c",
+  "source_revision": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+  "uncompressed_bytes": 274979361,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "8b4d4b647c1c557110033e3277b4185dd332198ec34a71c2224a968ccf49827c",
+    "source_revision": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+    "verified_bytes": 274979361,
+    "verified_files": 1472
+  }
+}

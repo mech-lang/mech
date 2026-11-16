@@ -2,29 +2,28 @@
 //! Callers admit their complete construction envelope before producing cells.
 use super::*;
 use crate::snapshot::{F32Bits, F64Bits};
+use core::borrow::Borrow;
 
-fn from_numeric_matrix(
+fn from_numeric_matrix<S: Borrow<ShapeInstance> + Into<Arc<ShapeInstance>>>(
     schema: SchemaId,
-    shape: ShapeInstance,
+    shape: S,
     expected_element: SchemaBody,
     elements: SequenceStorage,
     schemas: Arc<SchemaTable>,
 ) -> Result<Value, SnapshotValueError> {
+    let current_shape: &ShapeInstance = shape.borrow();
     let entry = schemas
         .entry(schema)
         .ok_or(SnapshotValueError::UnknownSnapshotSchema { schema })?;
     let mismatch = || SnapshotValueError::SnapshotSchemaDefinitionMismatch { key: entry.key() };
-    let checked = entry
+    entry
         .schema()
-        .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
+        .validate_shape(current_shape)
         .map_err(|_| mismatch())?;
-    if checked != shape {
-        return Err(mismatch());
-    }
     let SchemaBody::Matrix {
         element,
         dimensions,
-    } = entry.schema().closed_body(&shape).map_err(|_| mismatch())?
+    } = entry.schema().body()
     else {
         return Err(mismatch());
     };
@@ -35,7 +34,7 @@ fn from_numeric_matrix(
     }
     let count = dimensions.iter().try_fold(1u64, |count, dimension| {
         count
-            .checked_mul(shape.resolve_dimension(dimension)?)
+            .checked_mul(current_shape.resolve_dimension(dimension)?)
             .ok_or_else(mismatch)
     })?;
     ensure_cardinality(&SnapshotPath::root(), count, elements.view().len())?;
@@ -56,6 +55,115 @@ fn from_numeric_matrix(
     ))
 }
 
+/// Detached packed words. Length describes initialized logical elements;
+/// capacity describes owned storage and is never encoded as matrix data.
+#[derive(Debug)]
+pub enum UnsignedMatrixBuffer {
+    U8(Vec<u8>),
+    U16(Vec<u16>),
+    U32(Vec<u32>),
+    U64(Vec<u64>),
+}
+impl UnsignedMatrixBuffer {
+    fn into_storage(self) -> (IntegerWidth, SequenceStorage) {
+        use IntegerWidth as W;
+        match self {
+            Self::U8(words) => (W::W8, SequenceStorage::U8(words)),
+            Self::U16(words) => (W::W16, SequenceStorage::U16(words)),
+            Self::U32(words) => (W::W32, SequenceStorage::U32(words)),
+            Self::U64(words) => (W::W64, SequenceStorage::U64(words)),
+        }
+    }
+    pub fn elements(&self) -> super::super::SequenceView<'_> {
+        use super::super::SequenceView;
+        match self {
+            Self::U8(words) => SequenceView::U8(words),
+            Self::U16(words) => SequenceView::U16(words),
+            Self::U32(words) => SequenceView::U32(words),
+            Self::U64(words) => SequenceView::U64(words),
+        }
+    }
+    pub fn capacity_bytes(&self) -> usize {
+        match self {
+            Self::U8(words) => words.capacity(),
+            Self::U16(words) => words.capacity() * core::mem::size_of::<u16>(),
+            Self::U32(words) => words.capacity() * core::mem::size_of::<u32>(),
+            Self::U64(words) => words.capacity() * core::mem::size_of::<u64>(),
+        }
+    }
+}
+
+/// A shape-preserving replacement retains immutable metadata only. It holds no
+/// source payload, frozen root, registration, reservation or mutation authority.
+#[derive(Debug)]
+pub struct UnsignedMatrixSnapshotConstructor {
+    schema: SchemaId,
+    shape: Arc<ShapeInstance>,
+    schemas: Arc<SchemaTable>,
+}
+
+impl UnsignedMatrixSnapshotConstructor {
+    /// Recheck the exact kind, shape and cardinality and create fresh frozen
+    /// data around a caller-admitted buffer. Sharing shape never shares the
+    /// changed payload's frozen identity or grants budget authority.
+    pub fn finish(self, buffer: UnsignedMatrixBuffer) -> Result<Value, SnapshotValueError> {
+        let (width, storage) = buffer.into_storage();
+        from_numeric_matrix(
+            self.schema,
+            self.shape,
+            SchemaBody::UnsignedInteger(width),
+            storage,
+            self.schemas,
+        )
+    }
+}
+
+impl Value {
+    /// Retain this value's immutable shape for a same-schema unsigned update.
+    /// The supplied arena is checked by key, not just by numeric schema ID.
+    /// Callers retain their ordinary work/capacity admission and ownership
+    /// checks before consuming any source backing.
+    pub fn unsigned_matrix_replacement_constructor(
+        &self,
+        schemas: Arc<SchemaTable>,
+    ) -> Result<UnsignedMatrixSnapshotConstructor, SnapshotValueError> {
+        use IntegerWidth as W;
+        let definition = self.validate_against(&schemas)?;
+        if !matches!(definition.body(), SchemaBody::Matrix { element, .. }
+            if matches!(element.as_ref(), SchemaBody::UnsignedInteger(
+                W::W8 | W::W16 | W::W32 | W::W64)))
+        {
+            return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
+                key: self.schema_key,
+            });
+        }
+        Ok(UnsignedMatrixSnapshotConstructor {
+            schema: self.schema,
+            shape: self.shape.clone(),
+            schemas,
+        })
+    }
+
+    /// Freeze a caller-admitted packed buffer without shrinking its allocation
+    /// or initializing unused capacity. Ordinary schema/shape checks still run.
+    /// This detached constructor grants no execution or budget authority.
+    pub fn from_unsigned_matrix_buffer(
+        schema: SchemaId,
+        shape: ShapeInstance,
+        buffer: UnsignedMatrixBuffer,
+        schemas: Arc<SchemaTable>,
+    ) -> Result<Self, SnapshotValueError> {
+        let (width, storage) = buffer.into_storage();
+        from_numeric_matrix(
+            schema,
+            shape,
+            SchemaBody::UnsignedInteger(width),
+            storage,
+            schemas,
+        )
+    }
+}
+
 macro_rules! constructor {
     ($name:ident, $ty:ty, $storage:ident, $body:expr) => {
         /// Transfer an already-admitted numeric buffer into canonical packed
@@ -73,7 +181,7 @@ macro_rules! constructor {
                 schema,
                 shape,
                 $body,
-                SequenceStorage::$storage(elements),
+                SequenceStorage::$storage(elements.into()),
                 schemas,
             )
         }

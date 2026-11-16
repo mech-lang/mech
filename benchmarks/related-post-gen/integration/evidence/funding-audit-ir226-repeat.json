@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v1/one-kib",
+    "/private/tmp/mech-related-deflate-regression/baseline-compressor.bc",
+    "/private/tmp/mech-related-deflate-regression/one-kib.input",
+    "/private/tmp/mech-related-deflate-regression/one-kib-baseline.deflate"
+  ],
+  "exit": 0,
+  "seconds": 146.09659045911394
+}

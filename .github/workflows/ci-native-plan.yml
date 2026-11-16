@@ -281,8 +281,8 @@ jobs:
   canonical-policy:
     name: Same-binary native policy controls
     runs-on: ubuntu-latest
-    # Serial Actions ceilings total 297 minutes; bounded orchestration headroom.
-    timeout-minutes: 315
+    # Serial Actions ceilings total 308 minutes, with orchestration headroom.
+    timeout-minutes: 320
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
@@ -320,7 +320,19 @@ jobs:
           python3 scripts/probe-unix-kill-targeting.py
       - name: Fetch locked benchmark policy dependencies
         timeout-minutes: 10
-        run: cargo +nightly-2026-03-03 fetch --locked
+        run: |
+          cargo +nightly-2026-03-03 fetch --locked
+          cargo +nightly-2026-03-03 fetch --locked --manifest-path vendor/cranelift-codegen/Cargo.toml
+      - name: Verify Apple ARM64 cold epilogues on Linux
+        timeout-minutes: 11
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage cold-epilogues --timeout-secs 600 -- \
+            cargo +nightly-2026-03-03 test --locked --offline \
+            --manifest-path vendor/cranelift-codegen/Cargo.toml \
+            --target-dir target/cold-epilogues \
+            --no-default-features --features std,unwind,arm64,experimental-cmp-reuse \
+            --lib isa::aarch64::cold_epilogues_tests::
+          python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/cold-epilogues.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("8", "0", "0")]'
       - name: Compile benchmark policy contracts without execution
         timeout-minutes: 20
         run: |

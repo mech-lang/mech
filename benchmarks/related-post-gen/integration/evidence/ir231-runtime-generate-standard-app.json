@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-reduction-terminal-transition-runtime-check-20261106-v1/generate-standard-app",
+    "/private/tmp/mech-related-native-reduction-terminal-transition-compiler-20261106",
+    "/private/tmp/mech-related-native-reduction-terminal-transition-runtime-check-20261106-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.4316859999671578,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "e808b1bb2009ae37bdd8bc10eda03ba9538c038a566cc08e272ab66f1fac80d3"
+}

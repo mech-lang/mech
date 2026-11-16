@@ -1,0 +1,449 @@
+{
+  "date": "2026-11-13",
+  "baseline_head": "4fff511238df193562e976dfa34fc3c354c60256",
+  "pull_request": "https://github.com/mech-lang/mech/pull/973",
+  "machine": {
+    "chip": "Apple M3",
+    "cores": 8,
+    "performance_cores": 4,
+    "efficiency_cores": 4,
+    "memory_bytes": 17179869184,
+    "macOS": "26.2 (25C56)"
+  },
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0\n",
+  "compile_boundary": "fresh pinned level-12 source to compact diagnostic native Object; excludes building the Rust compiler tool, linking a generated host, and compression runtime",
+  "sampling": {
+    "duration_seconds": 20,
+    "interval_milliseconds": 5,
+    "clean_run_sampled": false
+  },
+  "source_blocks": 41039,
+  "source_values": 22460,
+  "typed_ir_version": 355,
+  "native_code_bytes": 926880,
+  "native_stack_bytes": 51680,
+  "runs": {
+    "baseline-profile": {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1141992,
+        "object_sha256": "2a5cf7742a71959b288b40a7f1e5dfc3ca1a2b7502dee4304329fce1508896ff",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 10.475340042,
+            "total_seconds": 10.475350792
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.045099625,
+            "total_seconds": 10.520482
+          },
+          {
+            "phase": "frontend",
+            "seconds": 25.133472542,
+            "total_seconds": 35.6539705
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.031544458,
+            "total_seconds": 35.685530833
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.010313792,
+            "total_seconds": 35.69586
+          },
+          {
+            "phase": "native",
+            "seconds": 444.845806208,
+            "total_seconds": 480.542194792
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 480.542209583
+      },
+      "resources": {
+        "maximum resident set size": 7757365248,
+        "instructions retired": 9194292503066,
+        "cycles elapsed": 1794854060281,
+        "peak memory footprint": 7552211496,
+        "real_seconds": 481.61,
+        "user_seconds": 472.67,
+        "sys_seconds": 2.47
+      },
+      "native_stages": {
+        "canonical_lowering_seconds": 3.8242583328392357,
+        "preparation_seconds": 53.22038512513973,
+        "guard_and_owner_region_seconds": 353.72866529086605
+      },
+      "process": {
+        "exit_code": 0,
+        "elapsed_seconds": 481.6320482909214,
+        "samples": 24,
+        "binary": "/private/tmp/mech-level12-compile-target/release/compile_profile",
+        "source": "benchmark",
+        "mode": "compact"
+      }
+    },
+    "guard-profile": {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1141992,
+        "object_sha256": "2a5cf7742a71959b288b40a7f1e5dfc3ca1a2b7502dee4304329fce1508896ff",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 10.5088445,
+            "total_seconds": 10.508900708
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.047526458,
+            "total_seconds": 10.556474708
+          },
+          {
+            "phase": "frontend",
+            "seconds": 25.518670125,
+            "total_seconds": 36.07516025
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.0314305,
+            "total_seconds": 36.106613083
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.010020375,
+            "total_seconds": 36.116649833
+          },
+          {
+            "phase": "native",
+            "seconds": 291.387725875,
+            "total_seconds": 327.504901
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 327.504915666
+      },
+      "resources": {
+        "maximum resident set size": 7543799808,
+        "instructions retired": 6057192299219,
+        "cycles elapsed": 1226932186637,
+        "peak memory footprint": 7564155336,
+        "real_seconds": 328.91,
+        "user_seconds": 321.04,
+        "sys_seconds": 2.52
+      },
+      "native_stages": {
+        "canonical_lowering_seconds": 3.825304541969672,
+        "preparation_seconds": 52.92618433292955,
+        "guard_and_owner_region_seconds": 200.62452829093672
+      },
+      "process": {
+        "exit_code": 0,
+        "elapsed_seconds": 328.93279962497763,
+        "samples": 18,
+        "binary": "/private/tmp/mech-level12-compile-target/release/compile_profile",
+        "source": "benchmark",
+        "mode": "compact"
+      }
+    },
+    "indexed-guard-profile": {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1141992,
+        "object_sha256": "2a5cf7742a71959b288b40a7f1e5dfc3ca1a2b7502dee4304329fce1508896ff",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 10.900999459,
+            "total_seconds": 10.901012625
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.047860333,
+            "total_seconds": 10.948912708
+          },
+          {
+            "phase": "frontend",
+            "seconds": 26.375623834,
+            "total_seconds": 37.324553041
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.031911417,
+            "total_seconds": 37.356497666
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.011570459,
+            "total_seconds": 37.368083208
+          },
+          {
+            "phase": "native",
+            "seconds": 212.225597041,
+            "total_seconds": 249.594570208
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 249.594583625
+      },
+      "resources": {
+        "maximum resident set size": 7703216128,
+        "instructions retired": 4210650165610,
+        "cycles elapsed": 921264305580,
+        "peak memory footprint": 7535991312,
+        "real_seconds": 251.1,
+        "user_seconds": 244.08,
+        "sys_seconds": 2.36
+      },
+      "native_stages": {
+        "canonical_lowering_seconds": 4.189055374823511,
+        "preparation_seconds": 54.181196875171736,
+        "guard_and_owner_region_seconds": 119.73885287507437
+      },
+      "process": {
+        "exit_code": 0,
+        "elapsed_seconds": 251.12023495789617,
+        "samples": 14,
+        "binary": "/private/tmp/mech-level12-compile-target/release/compile_profile",
+        "source": "benchmark",
+        "mode": "compact"
+      }
+    },
+    "packed-guard-profile": {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1141992,
+        "object_sha256": "2a5cf7742a71959b288b40a7f1e5dfc3ca1a2b7502dee4304329fce1508896ff",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 10.309398458,
+            "total_seconds": 10.309412958
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.042539041,
+            "total_seconds": 10.351999208
+          },
+          {
+            "phase": "frontend",
+            "seconds": 25.048927125,
+            "total_seconds": 35.400940292
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.030885208,
+            "total_seconds": 35.431859375
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.01015175,
+            "total_seconds": 35.442022375
+          },
+          {
+            "phase": "native",
+            "seconds": 137.124827541,
+            "total_seconds": 172.567401958
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 172.567415583
+      },
+      "resources": {
+        "maximum resident set size": 7551959040,
+        "instructions retired": 2651395389509,
+        "cycles elapsed": 652577911699,
+        "peak memory footprint": 7683119656,
+        "real_seconds": 173.59,
+        "user_seconds": 168.17,
+        "sys_seconds": 2.19
+      },
+      "native_stages": {
+        "canonical_lowering_seconds": 3.8353664171881974,
+        "preparation_seconds": 52.365186624927446,
+        "guard_and_owner_region_seconds": 47.07907783286646
+      },
+      "process": {
+        "exit_code": 0,
+        "elapsed_seconds": 173.61040795804,
+        "samples": 9,
+        "binary": "/private/tmp/mech-level12-compile-target/release/compile_profile",
+        "source": "benchmark",
+        "mode": "compact"
+      }
+    },
+    "packed-guard-clean": {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1141992,
+        "object_sha256": "2a5cf7742a71959b288b40a7f1e5dfc3ca1a2b7502dee4304329fce1508896ff",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 10.396563083,
+            "total_seconds": 10.396569084
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.037516959,
+            "total_seconds": 10.434117584
+          },
+          {
+            "phase": "frontend",
+            "seconds": 24.923054167,
+            "total_seconds": 35.357187875
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.029456208,
+            "total_seconds": 35.386660792
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009737625,
+            "total_seconds": 35.396412667
+          },
+          {
+            "phase": "native",
+            "seconds": 137.841954667,
+            "total_seconds": 173.238955334
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 173.238970625
+      },
+      "resources": {
+        "maximum resident set size": 7818477568,
+        "instructions retired": 2651113420761,
+        "cycles elapsed": 654508434409,
+        "peak memory footprint": 7618746896,
+        "real_seconds": 173.28,
+        "user_seconds": 171.25,
+        "sys_seconds": 1.97
+      },
+      "native_stages": {
+        "canonical_lowering_seconds": 3.767573832999915,
+        "preparation_seconds": 53.08976170793176,
+        "guard_and_owner_region_seconds": 46.25426208297722
+      },
+      "process": {
+        "exit_code": 0,
+        "elapsed_seconds": 173.40836808411404,
+        "samples": 0,
+        "binary": "/private/tmp/mech-level12-compile-target/release/compile_profile",
+        "source": "benchmark",
+        "mode": "compact"
+      }
+    }
+  },
+  "validation": {
+    "guard_state_tests_passed": 9,
+    "original_reference_update_steps": 64000,
+    "packed_fact_update_steps": 4096,
+    "small_source_controls": 7,
+    "all_compiler_variants_byte_identical": true,
+    "canonical_decode_reencode_exact": true,
+    "runner_scalar_smoke_passed": true
+  },
+  "files": {
+    "baseline_binary_sha256": "369bcaae5d95e72e991b940dd0e87b6e4931fb628084af732693b822ab54235d",
+    "shared_maps_binary_sha256": "929437f8448747076fb51ca4c8a62c41076a44fff0c8aca35b8fc4543ffde54b",
+    "ordered_maps_binary_sha256": "67bb4e3291b39fbd949a679a45c111231e94e48b3d2b14e2ca4e6c49a647e838",
+    "packed_binary_sha256": "42cb15c41cb63a5f327f875578902abed42506d495f80f87c81c1659a82ffc50",
+    "hosts/gpu/src/native_artifact/program/compact/guards.rs": "49513450b390bcc2567d678b215189f35a553f1fd6f77957d8cca8c449d74ce3",
+    "hosts/gpu/src/native_artifact/program/compact/guard_state.rs": "705d93fb5843fc489b1bd3c7f045e07958999a9b1d69ba9b07ec8eb57a10d6ec",
+    "benchmarks/mech-deflate/native-profile/compile_profile.rs": "105692d2543c2465e47a7f6af8492fcac4820fc4cab28d2eb876013adab2d1b3",
+    "benchmarks/mech-deflate/native-profile/profile_compile.py": "67d5f117bc85f3e90318edec82f0b780c92bb671a0fe266271e638b64f21ff7a",
+    "actual_capture_driver_sha256": "818f16dcc7168a0b83b1d08a03e8ba2f1bc7b544c630f4baa88a6134f1fac34c"
+  },
+  "source_status": "The five-run cohort uses modified source over baseline 4fff511238; its actual measured source files and hashes are sealed in the primary archive. Integration over eb006ab94e and the restored seventh upstream regression test are pinned separately below.",
+  "archive": {
+    "archive_name": "level12-compile-apple-m3-20261113.tar.gz",
+    "bytes": 7429089,
+    "evidence_files": 309,
+    "files": 309,
+    "format": 1,
+    "manifest_sha256": "817e0ab1e95d14485de71397e37e6a275cf70d526582f0109f23679a0ddb72c4",
+    "sha256": "e53452f3fc120d7f9a76e04d0786570fbb35b39e1d40306ffe80f8880db2e2a9",
+    "source_revision": "4fff511238df193562e976dfa34fc3c354c60256",
+    "uncompressed_bytes": 39670749,
+    "archive_local_path": "benchmarks/mech-deflate/.experiments/compile-time-apple-m3-20261113/level12-compile-apple-m3-20261113.tar.gz",
+    "publication": "published",
+    "source_state": "source_revision is the baseline; final modified source snapshots and their hashes are sealed in final-source/ and summary.json",
+    "verification": {
+      "all_git_blobs_match": true,
+      "archive_sha256": "e53452f3fc120d7f9a76e04d0786570fbb35b39e1d40306ffe80f8880db2e2a9",
+      "source_revision": "4fff511238df193562e976dfa34fc3c354c60256",
+      "verified_bytes": 39670749,
+      "verified_files": 309
+    },
+    "replay_sha256": "145352f551bccb1106dcd3b931922d6e2bee048154430af1e0f830a048317690",
+    "repository": "mech-lang/mech",
+    "release_tag": "evidence-native-compression-experiments-6",
+    "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compile-apple-m3-20261113.tar.gz"
+  },
+  "replay": {
+    "baseline_seconds": 480.542209583,
+    "canonical_decode_reencode_exact": true,
+    "clean_after_seconds": 173.238970625,
+    "compressor_variants_exact": 5,
+    "focused_tests_passed": 9,
+    "profiled_after_seconds": 172.567415583,
+    "profiled_speedup": 2.7846636513593315,
+    "small_controls_exact": 7
+  },
+  "integration": {
+    "exact_upstream_reference_update_join_steps": 64000,
+    "focused_tests_passed": 10,
+    "integration_base": "eb006ab94e2880fa67ed67821c4da9d1b30601a1",
+    "process_counter_capture_succeeded": false,
+    "process_seconds": 172.50733258319087,
+    "runtime_timing_campaign_rerun": false,
+    "source_bytecode_object_metadata_match_pinned_baseline": true,
+    "source_revision": "63bb43573054cf4315a78ef11bd379055970a51e",
+    "source_to_object_seconds": 171.451009583,
+    "timing_disposition": "Compiler phase receipt complete; outer process counter wrapper failed after emission; no successful process-counter cohort claimed",
+    "compiler_binary_sha256": "a67a69a8c14939b3158796fe828d5ada6948dd151afd66e9a5699c857a677e83",
+    "archive": {
+      "archive_name": "level12-compile-apple-m3-20261113-integration.tar.gz",
+      "bytes": 1111257,
+      "evidence_files": 23,
+      "files": 23,
+      "format": 1,
+      "manifest_sha256": "fc3349d08ce050a6f1d295677a46494cac0c5f4b68f9a09d1c2f9131594a43ff",
+      "sha256": "566608b8d4285950b29196e0202ef53649fd1e0f747904ee30fe7500c6ca9bae",
+      "source_revision": "63bb43573054cf4315a78ef11bd379055970a51e",
+      "uncompressed_bytes": 7575417,
+      "repository": "mech-lang/mech",
+      "release_tag": "evidence-native-compression-experiments-6",
+      "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compile-apple-m3-20261113-integration.tar.gz",
+      "publication": "published",
+      "replay_sha256": "804cb265a77f7b4d8d23ee547e2f1a1be3f2633db0881c7b083c8176c071789d",
+      "verification": {
+        "archive_sha256": "566608b8d4285950b29196e0202ef53649fd1e0f747904ee30fe7500c6ca9bae",
+        "source_revision": "63bb43573054cf4315a78ef11bd379055970a51e",
+        "verified_files": 23,
+        "verified_bytes": 7575417,
+        "all_git_blobs_match": true
+      }
+    }
+  }
+}

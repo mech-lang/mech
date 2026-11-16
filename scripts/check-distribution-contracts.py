@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -89,7 +90,7 @@ class DistributionContractError(RuntimeError):
     pass
 
 
-def command(arguments: list[str]) -> str:
+def command(arguments: list[str], *, environment: dict[str, str] | None = None) -> str:
     process = subprocess.run(
         arguments,
         cwd=ROOT,
@@ -97,6 +98,7 @@ def command(arguments: list[str]) -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         check=False,
+        env=environment,
     )
     if process.returncode:
         raise DistributionContractError(
@@ -144,6 +146,21 @@ def catalog_surface(profile: str, selected_features: set[str]) -> dict[str, obje
         raise DistributionContractError(
             f"{profile} graph selected no mech-stdlib catalog features"
         )
+    if not selected_features.intersection({"standard_compiler", "full_runtime"}):
+        raise DistributionContractError(f"{profile} graph omitted its predecessor catalog proof")
+    # Preserve the frozen catalog before the eleven word and three map
+    # additions; refreshing its current snapshot must not hide other drift.
+    predecessors = {
+        "standard": (1709, 79, "b92424ab874c3ee4eb968e50ce8d73a3ef4dcfdd7a05f1ae65fd3ab9676e4c8f"),
+        "full": (15709, 129, "2ab905a5774fbe6fccc6ce7c5df3a3a5d7536d136816d0b10be26cd4e2438923"),
+    }
+    factories, specializers, digest = predecessors[profile]
+    environment = dict(os.environ)
+    environment.update({
+        "MECH_EXPECT_PRE_WORD_MAP_RUNTIME_FACTORY_COUNT": str(factories),
+        "MECH_EXPECT_PRE_WORD_MAP_SOURCE_SPECIALIZER_COUNT": str(specializers),
+        "MECH_EXPECT_PRE_WORD_MAP_RUNTIME_SURFACE_DIGEST": digest,
+    })
     output = command(
         [
             "cargo", "test", "--locked", "--offline", "-p", "mech-stdlib",
@@ -151,7 +168,8 @@ def catalog_surface(profile: str, selected_features: set[str]) -> dict[str, obje
             ",".join(sorted(selected_features)),
             "distribution_size_report_catalog_counts",
             "--", "--exact", "--nocapture",
-        ]
+        ],
+        environment=environment,
     )
     match = CATALOG_COUNTS_LINE.search(output)
     if match is None:

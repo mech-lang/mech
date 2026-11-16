@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-borrowed-schema-20261114.tar.gz",
+  "bytes": 6039304,
+  "evidence_files": 371,
+  "files": 371,
+  "format": 1,
+  "manifest_sha256": "bee64617d2722d3d48025c9ceffb5d3e0c1761b6dba5d30ca67793a7e9c14d4a",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "8925f4c2d62c016943a45b697fe0af338dabbf37a8af9f88b1e28c4a14c14953",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-borrowed-schema-20261114.tar.gz",
+  "sha256": "b6d8363213d5a47daa8b3aa7eb726f1478a9141426067dd0f81caf7ddb273492",
+  "source_revision": "2f4134024e19ed316437334331a837874b1701b5",
+  "uncompressed_bytes": 41679390,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "b6d8363213d5a47daa8b3aa7eb726f1478a9141426067dd0f81caf7ddb273492",
+    "source_revision": "2f4134024e19ed316437334331a837874b1701b5",
+    "verified_bytes": 41679390,
+    "verified_files": 371
+  }
+}

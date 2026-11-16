@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-imported-analysis-owner-20261115.tar.gz",
+  "bytes": 34126013,
+  "evidence_files": 702,
+  "files": 702,
+  "format": 1,
+  "manifest_sha256": "a1dfea9dcc0caeb811b07e75fb4d6804263c887d831d66f6ecf1b4331b18d531",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "a2da2ad1869e95454d916e88ed5cd306f98ff8f696f0d1d9abc6efb51c4fc33b",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-imported-analysis-owner-20261115.tar.gz",
+  "sha256": "c0b52fb341aa66e4f2e0269a7b83f552d95ff21053d507c04941479931304a3e",
+  "source_revision": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+  "uncompressed_bytes": 200188293,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "c0b52fb341aa66e4f2e0269a7b83f552d95ff21053d507c04941479931304a3e",
+    "source_revision": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+    "verified_bytes": 200188293,
+    "verified_files": 702
+  }
+}

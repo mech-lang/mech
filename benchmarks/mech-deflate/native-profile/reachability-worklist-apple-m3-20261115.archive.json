@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-reachability-worklist-20261115.tar.gz",
+  "bytes": 36836106,
+  "evidence_files": 729,
+  "files": 729,
+  "format": 1,
+  "manifest_sha256": "758f5cfba1fddd2d7feec1d736be0055f031509832c55f4f74795f6663315f27",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "b75a5bcd07485c792ed31a3615ae6854adeda233d13b5dde66e627cdb08f1ffd",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-reachability-worklist-20261115.tar.gz",
+  "sha256": "ee7e67554605ca7f873ccb641b5c043d7c3c3dd48f7b0fd24fc515a9ef0c9d38",
+  "source_revision": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+  "uncompressed_bytes": 220146764,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "ee7e67554605ca7f873ccb641b5c043d7c3c3dd48f7b0fd24fc515a9ef0c9d38",
+    "source_revision": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+    "verified_bytes": 220146764,
+    "verified_files": 729
+  }
+}

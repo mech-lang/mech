@@ -1,0 +1,15 @@
+
+running 2 tests
+test native_artifact::program::runtime::composition_tests::huffman_parent_cleanup_selects_funded_retirement_batches ... huffman-cleanup work=88651086 batches=7
+huffman-cleanup work=88651086 batches=7
+huffman-cleanup work=88651086 batches=7
+huffman-cleanup work=88651086 batches=7
+ok
+test native_artifact::program::runtime::composition_tests::huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase ... huffman-cleanup work=41515826 batches=1
+huffman-cleanup work=41515826 batches=1
+huffman-cleanup work=41515826 batches=1
+huffman-cleanup work=41515826 batches=1
+ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 849 filtered out; finished in 0.28s
+

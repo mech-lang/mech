@@ -1,0 +1,1151 @@
+{
+  "schema": "mech.related-post-gen.deflate-backend-integration.v1",
+  "compiler": {
+    "identity": "IR312/work126/ABI42/image11",
+    "source_measured_commit": "82dd18fe5d8f162557071d23cfd7e30625154c52",
+    "source_rebased_commit": "dfa5374f98dcae358de7286000531e2a2b6bfee9",
+    "PR973_base": "69d48c4d6b5353d04fa2f2c35f96dd30f97e49cc",
+    "code_identity_after_rebase": {
+      "original_measured_commit": "82dd18fe5d8f162557071d23cfd7e30625154c52",
+      "rebased_identical_compiler_commit": "dfa5374f98dcae358de7286000531e2a2b6bfee9",
+      "current_PR973_base": "69d48c4d6b5353d04fa2f2c35f96dd30f97e49cc",
+      "code_diff_empty": true,
+      "verified_inventory_files": 2384,
+      "inventory_mismatches": [],
+      "scope": "hosts/gpu, src, vendor and root Cargo/build configuration; upstream added experiment records and design documentation only"
+    },
+    "production_backend": "Cranelift 0.131.3",
+    "allocator": "regalloc2 0.15.2",
+    "required_LLVM_dependency": false,
+    "borrowed_DEFLATE_rounds": [
+      264,
+      285,
+      286,
+      292
+    ],
+    "all_R293_Mech_passes_imported": false,
+    "remaining_R293_source_files": 94
+  },
+  "decision": {
+    "backend_retained": true,
+    "basis": "Verified native instruction/code savings with inconclusive first latency, no allocation/heap change; no whole-process gate. This does not claim a new latency winner.",
+    "selected_Mech_source_unchanged": true,
+    "source_variants_selected": false,
+    "independent_latency_confirmation_not_run": "First backend latency confidence interval crosses zero; source variants clearly adverse. No unchanged rerun.",
+    "goal_met": false
+  },
+  "qualification": {
+    "compiler_contracts": 498,
+    "all_484_selected_IR308_contracts_retained": true,
+    "allocator_resolver_contracts": 8,
+    "AArch64_compare_tracker_contracts": 8,
+    "scalar_non_timing_exact_rows": 128,
+    "one_kib_DEFLATE_non_timing_exact_rows": 5,
+    "original_and_restored_actual5000": true,
+    "linked_exact_outputs": 160,
+    "linked_outputs_by_variant": 32,
+    "same_Object_audits": 5,
+    "latency_exact_outputs": 899,
+    "resource_exact_outputs": 210
+  },
+  "latency": {
+    "mech-ir308-numeric-owner-handoff-4": {
+      "post_json_seconds": 0.001704417,
+      "wall_seconds": 0.04922674992121756,
+      "compile_or_restore_seconds": 0.021321958,
+      "times_fastest_eligible_Rust": 1.1239460637881167
+    },
+    "mech-ir311-rebased-4": {
+      "post_json_seconds": 0.001697625,
+      "wall_seconds": 0.047169707948341966,
+      "compile_or_restore_seconds": 0.021211666,
+      "times_fastest_eligible_Rust": 1.1194672058177673
+    },
+    "mech-ir312-stock-4": {
+      "post_json_seconds": 0.001701959,
+      "wall_seconds": 0.04675645800307393,
+      "compile_or_restore_seconds": 0.021240709,
+      "times_fastest_eligible_Rust": 1.1223251814425457
+    },
+    "mech-ir312-patched-4": {
+      "post_json_seconds": 0.001698625,
+      "wall_seconds": 0.04703970905393362,
+      "compile_or_restore_seconds": 0.021218708,
+      "times_fastest_eligible_Rust": 1.1201266372032723
+    },
+    "mech-ir312-byte-ids-4": {
+      "post_json_seconds": 0.001737667,
+      "wall_seconds": 0.04704712494276464,
+      "compile_or_restore_seconds": 0.021369166,
+      "times_fastest_eligible_Rust": 1.145872157356155
+    },
+    "mech-ir312-tables256-4": {
+      "post_json_seconds": 0.001735417,
+      "wall_seconds": 0.049664834048599005,
+      "compile_or_restore_seconds": 0.022257041,
+      "times_fastest_eligible_Rust": 1.1443884367387689
+    },
+    "mech-ir312-byte-tables256-4": {
+      "post_json_seconds": 0.001764875,
+      "wall_seconds": 0.04829041683115065,
+      "compile_or_restore_seconds": 0.022389417,
+      "times_fastest_eligible_Rust": 1.1638139664929723
+    }
+  },
+  "fastest_eligible_Rust": {
+    "variant": "rust-ordered-mask-tables256-apple-m3",
+    "median_seconds": 0.001516458,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32",
+      "rust-ordered-scan-only",
+      "rust-ordered-ordered",
+      "rust-ordered-mask-reuse",
+      "rust-ordered-ordered-mask",
+      "rust-ordered-ordered-mask-tables",
+      "rust-apple-m3",
+      "rust-mech-control-streaming-apple-m3",
+      "rust-mech-control-u32-casts-apple-m3",
+      "rust-mech-control-u8-ids-u32-apple-m3",
+      "rust-ordered-scan-only-apple-m3",
+      "rust-ordered-ordered-apple-m3",
+      "rust-ordered-mask-reuse-apple-m3",
+      "rust-ordered-ordered-mask-apple-m3",
+      "rust-ordered-ordered-mask-tables-apple-m3",
+      "rust-ordered-mask-tables256",
+      "rust-ordered-mask-tables256-apple-m3"
+    ]
+  },
+  "paired_backend_latency": {
+    "candidate": "mech-ir312-patched-4",
+    "baseline": "mech-ir312-stock-4",
+    "pairs": 31,
+    "wins": 18,
+    "median_paired_relative_change": -0.0008705418847377855,
+    "two_sided_95_interval": [
+      -0.012814911311454513,
+      0.004080840279992115
+    ],
+    "all_pair_changes": [
+      0.06108357216553939,
+      -5.167904605407614e-05,
+      0.014713093764606278,
+      -0.007507738904940386,
+      0.01667990762124716,
+      -0.00020565970584507376,
+      0.02630201557793943,
+      -0.041241446301110374,
+      -0.017483590588940556,
+      0.002221523253201463,
+      0.009508951786642905,
+      -0.0340257385200351,
+      -0.004383082347991674,
+      0.021843207660083852,
+      -0.029035364541684094,
+      -0.01905702425169331,
+      -0.012814911311454513,
+      -0.027125797101449245,
+      -0.0008705418847377855,
+      0.005251396779661466,
+      0.004080840279992115,
+      0.011211141020429194,
+      0.016847610849062278,
+      0.009937426210153477,
+      -0.019987192548391874,
+      -0.009573263156798073,
+      -0.029928340592946467,
+      -0.11066267413097253,
+      -0.004151241358933744,
+      0.002082409738519253,
+      -0.022198998059530073
+    ]
+  },
+  "backend_resource_delta": {
+    "instructions": -655406,
+    "instructions_fraction": -0.020125420076682277,
+    "cycles": -132222,
+    "same_allocations": true,
+    "same_requested_bytes": true,
+    "same_peak_additional_heap": true,
+    "native_code_bytes": -4568,
+    "reported_stack_bound_bytes": 16
+  },
+  "static_code": {
+    "total_code_bytes": {
+      "stock": 1036532,
+      "patched": 1031964
+    },
+    "module_reported_stack_bound": {
+      "stock": 1568,
+      "patched": 1584
+    },
+    "executable_bytes": {
+      "stock": 17182896,
+      "patched": 17182896
+    },
+    "native_functions": {
+      "stock": 49,
+      "patched": 49
+    },
+    "tool": "/usr/bin/otool -tvV",
+    "limitation": "Static instructions and stack references include padding; these are not dynamic spill or CPU costs."
+  },
+  "evidence_limits": [
+    "All first and adverse results retained, including compiler/host build and source preflight failures.",
+    "Old deleted Rust source/build receipts were not fabricated: exact executable hashes were reverified against prior published pins; availability notes remain in config.",
+    "Latency source preflight failure and resource preflight correction started zero timed calls; original failed receipts retained.",
+    "Resource and profile instrumentation is excluded from authoritative latency.",
+    "Sample top-of-stack categories have a >=5 reporting threshold, include short-lived worker effects and OS sampling disturbance, and are not CPU or wall-time shares.",
+    "The full R293 experimental Mech source was reconstructed and hash verified, but only the listed applicable backend changes are imported in this update."
+  ],
+  "artifacts": [
+    {
+      "path": "records/ir312-first-v2/latency-config.json.gz",
+      "sha256": "fb850dc6cf685559b6586bec07b850c9fa24ade1e9fb25997c82fc4bef883574",
+      "uncompressed_sha256": "0830daa758d817302b4a83c6e2fd262b7107b70d2ba65a543faf688bed6e8aec",
+      "uncompressed_bytes": 56240,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/latency-config.json"
+    },
+    {
+      "path": "records/ir312-first-v2/latency-quiet.json.gz",
+      "sha256": "1b93959e4e0b91530fdeaa60c5c252a60c220ab326619c63ca563e3300e9150a",
+      "uncompressed_sha256": "d21689cc0b6ed102a3ca16d7c90cc788ee954bd16b2e27e2b833ffbcc2481930",
+      "uncompressed_bytes": 149,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/latency-quiet.json"
+    },
+    {
+      "path": "records/ir312-first-v2/latency-run.json.gz",
+      "sha256": "9a39cfc92b25bf85d6efc85fc4ed41612b6c6487e418643d113defbd04b6a071",
+      "uncompressed_sha256": "9e2aa71e5f4807104f67cacd4b929a212cb9e95f33c03c1d92aceddf555024a6",
+      "uncompressed_bytes": 112465,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/latency-run.json"
+    },
+    {
+      "path": "records/ir312-first-v2/latency.json.gz",
+      "sha256": "5d0509e9a71cf42e1f558343199df84db1eaf2de7960d2e4a366a6b99c0f78cc",
+      "uncompressed_sha256": "b44e8a5c1218e0b769646b4a5ac4c2a67d220347ec8d86d1479da891b46f6c02",
+      "uncompressed_bytes": 1312577,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/latency.json"
+    },
+    {
+      "path": "records/ir312-first-v2/paired-analysis.json.gz",
+      "sha256": "8a1b861d8bc33e76f136983e8096f98f691098a1c2dcde6058b14a11748f2783",
+      "uncompressed_sha256": "7d0cdfdadea4fdc27753ec2a35e11b5c799b12e5599b3ab05762a8e347061814",
+      "uncompressed_bytes": 64450,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/paired-analysis.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resource-reference-recovery.json.gz",
+      "sha256": "9de6d7ab6c65f1ecf7bcbe6cb55fd8bafe326f510b424466d8a5f355c3168899",
+      "uncompressed_sha256": "66b8a536a7b6a5172dc320816563f381ba6e8aa68ca89ed85f26bc922755ab52",
+      "uncompressed_bytes": 1950,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resource-reference-recovery.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resources-config-v2.json.gz",
+      "sha256": "bded84af35ac61f6018d33c13f6fbfa6a62196881e74f763b7a2751b08c31cb6",
+      "uncompressed_sha256": "06ca543e8e45dd78c5fb9e9c2a21d589388210994eef0a5f97fae98ceab1c5ef",
+      "uncompressed_bytes": 39146,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resources-config-v2.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resources-config.json.gz",
+      "sha256": "b6e13e014936124e77f41ca970561a87693d82a5cb6f95d3e6aee756949c60e8",
+      "uncompressed_sha256": "755019d1caa7941aa273388c3df70d5fd768e38ab37a6b44d354314766ee958e",
+      "uncompressed_bytes": 36676,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resources-config.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resources-quiet.json.gz",
+      "sha256": "522cdd81c91357556a2fd2daa2e9df5447615c4d4e9626b32d7b1576443032d8",
+      "uncompressed_sha256": "db703fa7dec1e0dce78b2f1e5b116382d8b5a68d5861fafd89d6aa83b534188f",
+      "uncompressed_bytes": 149,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resources-quiet.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resources-run-v2.json.gz",
+      "sha256": "9e11b3abc520f8b7ddfca71d87519d1a0c94715a472103f031524a2c9aab7578",
+      "uncompressed_sha256": "12c21232482b1eea340b37d31d588091084028f449a26cd36711c669cf9d7ec2",
+      "uncompressed_bytes": 184633,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resources-run-v2.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resources-run.json.gz",
+      "sha256": "e73593b09ce694807e21eb57d238802cf24331f502edd417b6b92259d07e7acd",
+      "uncompressed_sha256": "cc23d59082d80fcb747820d0a7225dd085171c9035850914e93fab68f68c079b",
+      "uncompressed_bytes": 2105,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resources-run.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resources-v2-quiet.json.gz",
+      "sha256": "90db44a115d019baea38f62ea79f554d0f55f7cc7ae201d8367a9e5fd4e59bff",
+      "uncompressed_sha256": "ceb4dc441709a4e2011096c06c7eff28e01437920519364618aa3025ebcb0d8c",
+      "uncompressed_bytes": 149,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resources-v2-quiet.json"
+    },
+    {
+      "path": "records/ir312-first-v2/resources-v2.json.gz",
+      "sha256": "0fbde267afb57e2545e33bc700ff3321d6db1e38cd8890e244f985f03446e0ca",
+      "uncompressed_sha256": "b094b3a4bbbce0a699db5bf76d0d54bd5932b334eba389259a632272204df88d",
+      "uncompressed_bytes": 1647734,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/resources-v2.json"
+    },
+    {
+      "path": "records/ir312-first-v2/source-freeze.json.gz",
+      "sha256": "b087a8d49b5eac1916f8a5afd0d59c1d99f1677e5920a7a0f8742fde242f84c3",
+      "uncompressed_sha256": "4d0cca2e99c4eb882844bd96666f83055e01735ea761d0978015699859672035",
+      "uncompressed_bytes": 320,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first-v2/source-freeze.json"
+    },
+    {
+      "path": "records/ir312-qualification/actual-source-full5000.json.gz",
+      "sha256": "54e86e07fccdf33897cf6b9597b046f4b8beba1460ede401f11e61cc7d8aee75",
+      "uncompressed_sha256": "1812d053071c755fc8f3f8fe12d97241d308d98f4915fb2ee2cd74c4028efb94",
+      "uncompressed_bytes": 5016,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/actual-source-full5000.json"
+    },
+    {
+      "path": "records/ir312-qualification/all-retained-map-contracts.json.gz",
+      "sha256": "41a38e4d8fe79c147408c428e993a496c4aac4e78ac3b87f14080e5f4e05f527",
+      "uncompressed_sha256": "8afeaa6094d5c161ab3b9e87034525c21b815e9e75f843ccc8ee8cf1d3ab1c51",
+      "uncompressed_bytes": 26854,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/all-retained-map-contracts.json"
+    },
+    {
+      "path": "records/ir312-qualification/classification-UTF8-range-protocol.json.gz",
+      "sha256": "a2883c849c28669b5e408cfe4f23fb2325902db306bdac1383e4e6607f6ba697",
+      "uncompressed_sha256": "abf73be1158ca6fc86e225dfff9eea7f6edff68c1f36e1cb54aae79f69395e19",
+      "uncompressed_bytes": 4815,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/classification-UTF8-range-protocol.json"
+    },
+    {
+      "path": "records/ir312-qualification/critical-native-mechanisms.json.gz",
+      "sha256": "5b717c3fdd9ee5d6f92b5c78979a32d8276a66d3e914dd09f8d2f9c114ff5143",
+      "uncompressed_sha256": "78cfef7f1181fec3639802828ed38deffb0ff5fbb356100bbffc98b503cd7bd3",
+      "uncompressed_bytes": 5557,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/critical-native-mechanisms.json"
+    },
+    {
+      "path": "records/ir312-qualification/image-and-caller-geometry.json.gz",
+      "sha256": "478dff89363c8c812f35033dd060876b6d3357040c6af79b56bee1e0b67823e5",
+      "uncompressed_sha256": "c97d5d6bbb7e562677c198c782bcf36f2f22ef39a303aff79d96f8593b96f6e9",
+      "uncompressed_bytes": 4490,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/image-and-caller-geometry.json"
+    },
+    {
+      "path": "records/ir312-qualification/integrated-ci-execute.json.gz",
+      "sha256": "7961cf8e256f21f09ca7db037bb7fdf647b0a98c9b2c401d0a1cf812e26d849d",
+      "uncompressed_sha256": "d576bb95c332a4ff779f4446e65b6a3e950c1b38b30890c27117bed2ed574950",
+      "uncompressed_bytes": 78248,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/integrated-ci-execute.json"
+    },
+    {
+      "path": "records/ir312-qualification/integrated-ci-inventory.json.gz",
+      "sha256": "9862b49169021c71340bdddc043c8de6d5b6ea67bb0c900d9e04c67123e446b6",
+      "uncompressed_sha256": "c58bd7b670d47c2e5b12c637f963e847a7d2dc685cec594969db5e72e9a0f75f",
+      "uncompressed_bytes": 77058,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/integrated-ci-inventory.json"
+    },
+    {
+      "path": "records/ir312-qualification/integrated-ci-list.json.gz",
+      "sha256": "3f6403c589e4c5edfbcb0ef1c3fa9727d5467d27602599ec3f290eea47ca36a2",
+      "uncompressed_sha256": "5bf80094cd4fe9ecdeb80587baa091166bab059b2cd37e4d502e3d1a74a48271",
+      "uncompressed_bytes": 75151,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/integrated-ci-list.json"
+    },
+    {
+      "path": "records/ir312-qualification/packed-frame-effects.json.gz",
+      "sha256": "0b7598f3c3f5ccdca0acb291868b1d79b51352cbc4c7907d4b77dc68108456f3",
+      "uncompressed_sha256": "7558de5dc933267850bdf63a74eef5b3fd1003a06dbdde8f6929bf08ecaafe9c",
+      "uncompressed_bytes": 722,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-qualification/packed-frame-effects.json"
+    },
+    {
+      "path": "records/ir312-regression-controls/comparison.json.gz",
+      "sha256": "d77a32a0df74ed6cc085e198623f1b74cfee80e93c609a0f1bb63756de5177ef",
+      "uncompressed_sha256": "d22d2dc73716c6ed54512b02b659327b6e536bba7a0cea83d8c2cde733acd505",
+      "uncompressed_bytes": 216,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-regression-controls/comparison.json"
+    },
+    {
+      "path": "records/ir312-regression-controls/one-kib-build.json.gz",
+      "sha256": "b98730b1de64687b275ab3032181170fbd79f00143323c03165a2bf9cde3b55c",
+      "uncompressed_sha256": "7b64bbd056bc10ec879cf1daf4c62dabdbda7a14d36ea8b1968d08f7afe8ae3b",
+      "uncompressed_bytes": 4884,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-regression-controls/one-kib-build.json"
+    },
+    {
+      "path": "records/ir312-regression-controls/one-kib-run.json.gz",
+      "sha256": "829913659c8e0389b3785f1f4160e1ef07e02419e74fe83ae0c176c13539ed77",
+      "uncompressed_sha256": "52fc588bdbe20e737d8f4c92d5ad7084fd77a343f89b771b144bacb1e2b96b3e",
+      "uncompressed_bytes": 3160,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-regression-controls/one-kib-run.json"
+    },
+    {
+      "path": "records/ir312-regression-controls/scalar-build.json.gz",
+      "sha256": "9209caeb516965e8fe8915655f4abe121969ca2ab7445ec4a18c62bc83c17574",
+      "uncompressed_sha256": "79b1dde5dfa9dc2e986c7435fbd4c2cba326f8060202d95f8807b3afb8df9d85",
+      "uncompressed_bytes": 2242,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-regression-controls/scalar-build.json"
+    },
+    {
+      "path": "records/ir312-regression-controls/scalar-run.json.gz",
+      "sha256": "a83495efe43ea34751e440fb2390dd86e825e4924ed9386073abfc0daae8da3f",
+      "uncompressed_sha256": "3cc2bb07a1db4146390fb37ff32fdec7e2e0ff56712c0752b712546315e978a0",
+      "uncompressed_bytes": 39426,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-regression-controls/scalar-run.json"
+    },
+    {
+      "path": "records/Rust-source-restoration.json.gz",
+      "sha256": "26f7898f8c6877e031d6160b0507920ff7bb9315d0cb190eea7f84fc4b0646e5",
+      "uncompressed_sha256": "f1125c3d9f06133dd9286f1add9967e238489b29a3d43ceba3e0e36e1c2e618c",
+      "uncompressed_bytes": 1279,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/Rust-source-restoration.json"
+    },
+    {
+      "path": "records/ir312-first/preflight-failure-audit.json.gz",
+      "sha256": "6546a4b8c051f66936c690dae5e92f3da6beea509b9be01ea88ac4f5519c77c7",
+      "uncompressed_sha256": "06c06913d75d82af7db2b676413c108c2c09a205ffd2ab47ef51621566bf0685",
+      "uncompressed_bytes": 281,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first/preflight-failure-audit.json"
+    },
+    {
+      "path": "records/ir312-first/latency-run.json.gz",
+      "sha256": "d84bfddc35c867956ae4d8374b101f3b41f2538a977be839011648e8e1d4baf8",
+      "uncompressed_sha256": "17d2bd678bafd324f61861095cea035d6ece362fa3b3220ca8b1374c40091c96",
+      "uncompressed_bytes": 2019,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first/latency-run.json"
+    },
+    {
+      "path": "records/ir312-first/source-freeze.json.gz",
+      "sha256": "c76c5a78d2cc6bf7342165faa70f2364a90b782822c0d916fe538ac252af461f",
+      "uncompressed_sha256": "44cb7f43b9fecefc2d78d97778234eccae7fbc6c48b5a656d54d231696cc1f7a",
+      "uncompressed_bytes": 320,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-first/source-freeze.json"
+    },
+    {
+      "path": "records/ir312-prospective-rule.json.gz",
+      "sha256": "7f238fdbf27ff6d6679d7be4dd061c4afe8496cc3b227b26ccdc9c8155428885",
+      "uncompressed_sha256": "a33f31ff5c25b71e53fd353c25dbadc0cf3f11a733be6a46b582a2bc1e93e47a",
+      "uncompressed_bytes": 1611,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-prospective-rule.json"
+    },
+    {
+      "path": "records/rebase-after-measurement-source-identity.json.gz",
+      "sha256": "48bdf62d7f9d6c2e67f4c7f9c18b911ff9a6ecd9a7e33b422dae6625fc9c7410",
+      "uncompressed_sha256": "197d6e9ceda5bfb5207a79a39d609674c72f4014db2d04f90b5a223e04a08fac",
+      "uncompressed_bytes": 458,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/rebase-after-measurement-source-identity.json"
+    },
+    {
+      "path": "records/deflate-r293-source-reconstruction.json.gz",
+      "sha256": "4bef7cfee324287ea517c5d69741d28c3b0363ab835262b4c12f89dc82b36ee4",
+      "uncompressed_sha256": "fea653ff4de525f0a61e4faf465ae5e86929de6ab344a517df8d16f554889da3",
+      "uncompressed_bytes": 116882,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/deflate-r293-source-reconstruction.json"
+    },
+    {
+      "path": "records/deflate-compiler-source-delta.json.gz",
+      "sha256": "7f0b4a6d4fab83b20a85955c4630058952421f54ed68670e557674315f85ffc7",
+      "uncompressed_sha256": "2803fd883a634d442242e63776cffe22b3c685c0bf92f4ba1a691430284f5eee",
+      "uncompressed_bytes": 22071,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/deflate-compiler-source-delta.json"
+    },
+    {
+      "path": "records/deflate-selected-source-chain.json.gz",
+      "sha256": "be89f80aebe76cdeec7b5db028ec5892d1b0dde9cd5d596efd023139ca325ddf",
+      "uncompressed_sha256": "1120fd1f894bfeb9c56e87ce3b9ef96365537a527eb80580d7a75eb6d638b8a3",
+      "uncompressed_bytes": 1978312,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/deflate-selected-source-chain.json"
+    },
+    {
+      "path": "records/compare-reuse-tests-run.json.gz",
+      "sha256": "70515053f034f1d2451b397aed714db248664fbd228b3d51c155ff8574f20623",
+      "uncompressed_sha256": "5dd196ecaa50bb9224ea57aefbd4d67e2724b481dc266648ed7dff1f8ac2ed59",
+      "uncompressed_bytes": 808,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/compare-reuse-tests-run.json"
+    },
+    {
+      "path": "records/regalloc-tests-declared-cfg.stdout.gz",
+      "sha256": "bfe3f08b98a2498ac378704e71ddf409f0f9925e0323132de64452d896be419b",
+      "uncompressed_sha256": "fe4ff957619c5323e5d6e99a7046609c35a854db7a6f11bbcd049e5faeea7538",
+      "uncompressed_bytes": 983,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/regalloc-tests-declared-cfg.stdout"
+    },
+    {
+      "path": "records/regalloc-tests-declared-cfg.stderr.gz",
+      "sha256": "4a26c24ef3de048bc237920a6ae74299b08fc4a12836feb48b1da6f7ac29e4ce",
+      "uncompressed_sha256": "bf606039b1ca2ca676419387c6d60765358ecb329ce141c9ea994bba78b12735",
+      "uncompressed_bytes": 317,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/regalloc-tests-declared-cfg.stderr"
+    },
+    {
+      "path": "records/ir312-native-code-inspection.json.gz",
+      "sha256": "42903ff88e4b99121ef3edf4ac2cbb5c96d8635b2b9c3513f9959d315c01088c",
+      "uncompressed_sha256": "b1ebd8698404bb852ff3f40e9c28fba72e63e34ecc0d4557a6ab6502a707ebc2",
+      "uncompressed_bytes": 84743,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-native-code-inspection.json"
+    },
+    {
+      "path": "records/ir312-test-build.json.gz",
+      "sha256": "35077187570aa2a52227e0b28c6ca15173b70a4bd957e25d25f361bec813268e",
+      "uncompressed_sha256": "c01d9ba90a8cace97843dbe701a77953f3cbebab77ad9344cad54752e78bd879",
+      "uncompressed_bytes": 6431,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-test-build.json"
+    },
+    {
+      "path": "records/ir312-test-build-attempt-2.json.gz",
+      "sha256": "3f828505e2d0685c596b1c7ae278d05753709292cef6611fb95fbce8dd4e54a8",
+      "uncompressed_sha256": "d373e917193258857fc0ae03c8dc6c1b82c562fb09a8b90b0b533b9bc6cde263",
+      "uncompressed_bytes": 5434,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-test-build-attempt-2.json"
+    },
+    {
+      "path": "records/cargo-patched-compiler/build.json.gz",
+      "sha256": "e7be609ae080e73c0230b4807fb4e788ff27db78d01305df5841a14d136ae999",
+      "uncompressed_sha256": "0624505e94fa0d25a47337700673d0f71eb9fec3dc30b684bbb832ea710171d8",
+      "uncompressed_bytes": 113903,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/cargo-patched-compiler/build.json"
+    },
+    {
+      "path": "records/cargo-patched-compiler/source-inventory.json.gz",
+      "sha256": "fd84c5ebc910347af485e3ddd854e77ee263672f3cc7cf8a01c336d3261cf535",
+      "uncompressed_sha256": "9e29bad87ef6d56758b155ec888aab77f3f0b935f031379cbe7e8cf8125fa1d8",
+      "uncompressed_bytes": 347877,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/cargo-patched-compiler/source-inventory.json"
+    },
+    {
+      "path": "records/cargo-stock-compiler/build.json.gz",
+      "sha256": "8e87834bf2ceb6c00ecc378a4ed28ff8abc5607044c9a2d710b899965b1a0bde",
+      "uncompressed_sha256": "47849e79e5420456c08d6f69d8747f1c43e42661d112374717c48e1842fc0651",
+      "uncompressed_bytes": 113885,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/cargo-stock-compiler/build.json"
+    },
+    {
+      "path": "records/backend-libraries.json.gz",
+      "sha256": "636208d7f3ea2dba0340bb2820967ab6d8c9fc4e024c47f9125dd158cc0c366a",
+      "uncompressed_sha256": "25239dd2b2c1de35b848871de34df5cc957bf445a4eacce5177abe693375a9d7",
+      "uncompressed_bytes": 7515,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/backend-libraries.json"
+    },
+    {
+      "path": "records/ir312-runners/patched-edges.json.gz",
+      "sha256": "e1fb95ed370c3c656d649cee17e341b8b1cc7e17b305d9b7e6d410e3bbc4e892",
+      "uncompressed_sha256": "8dde2fa452dd78beaeab8776fe90754a0dfd739c2a758823c1de20248dfd1267",
+      "uncompressed_bytes": 2935,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched-edges.json"
+    },
+    {
+      "path": "records/ir312-runners/patched-full5000.json.gz",
+      "sha256": "e762f3eb2461351b21007137d4f8223359dc79bb13b05b4583ab58e86e00b9a9",
+      "uncompressed_sha256": "ead1634927cc943ddc2c563788f1a5af1407d7fc79bf677735a6e3defade0f0a",
+      "uncompressed_bytes": 1523,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched-full5000.json"
+    },
+    {
+      "path": "records/ir312-runners/patched-native-audit.json.gz",
+      "sha256": "e7f0a0efe57f06c78f4e101187fcf1f641b3695ed13a8c4d5ee3eb599c968138",
+      "uncompressed_sha256": "814c8904bbee34d584f81ffa50544b5b4e1812e4733913df7b575af55269dc0f",
+      "uncompressed_bytes": 793,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched-native-audit.json"
+    },
+    {
+      "path": "records/ir312-runners/patched-runner-build.json.gz",
+      "sha256": "318f96828accf1400b166606e186baaaa05e28f8fb8d48ea583b5f28b5cba645",
+      "uncompressed_sha256": "97fd59a8255fe285741b7ee045626c2c561a654d5ae6c5194024fb903a4eb4b8",
+      "uncompressed_bytes": 2757,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched-runner-build.json"
+    },
+    {
+      "path": "records/ir312-runners/runtime-build.json.gz",
+      "sha256": "1865f2de91e2a320bf34a950d46711cc3fed0bbeea25e071f770977144a0098a",
+      "uncompressed_sha256": "d997488d4dd21cfd8bd17455a5ca83026762b77de2b040cdf1e663827b900294",
+      "uncompressed_bytes": 4793,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/runtime-build.json"
+    },
+    {
+      "path": "records/ir312-runners/stock-edges.json.gz",
+      "sha256": "86e4c40915b95a7508d1388c4a93c52a8145968f5262689cca1ef1369efbdfc6",
+      "uncompressed_sha256": "494e13b5a66a4dd71036425b64d87d4697a1eb57a2e5af8e0c878a745a947be5",
+      "uncompressed_bytes": 2929,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock-edges.json"
+    },
+    {
+      "path": "records/ir312-runners/stock-full5000.json.gz",
+      "sha256": "8df34277ecdc9be230232955b9db853f538f001c741e25ff4c5e7a235a5028cc",
+      "uncompressed_sha256": "dd3fc04f38861cbd65b53a09c1c82da8bf267ad36560e2b797d2d24632a5aef0",
+      "uncompressed_bytes": 1516,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock-full5000.json"
+    },
+    {
+      "path": "records/ir312-runners/stock-native-audit.json.gz",
+      "sha256": "a7d5e4bda36eeda0848f55754980bba743c8013ddc7320c4165f528ed4636bcf",
+      "uncompressed_sha256": "4f2b986e0063ef231b7d499f4080bed5f471e3f574b2ee879eae999db22534b0",
+      "uncompressed_bytes": 787,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock-native-audit.json"
+    },
+    {
+      "path": "records/ir312-runners/stock-runner-build.json.gz",
+      "sha256": "03e8583508913241d4a50b85f6f1638a29f3db84533e81d6dff0f34e0753a6f8",
+      "uncompressed_sha256": "24264ada0900fb803e032efa47de9149b4d55a1df4bce26a59f5797f14ba2c11",
+      "uncompressed_bytes": 2742,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock-runner-build.json"
+    },
+    {
+      "path": "records/ir312-runners/stock/native-link-proof.json.gz",
+      "sha256": "938f4f51766a58d39768317f3186264ca4528ef8d524a1a44c76a9f693ea4e52",
+      "uncompressed_sha256": "f3d4ffce5326568156abe2c8947d2c79f61f2d7d83e290b0f932d4d7815cd41a",
+      "uncompressed_bytes": 12540,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock/native-link-proof.json"
+    },
+    {
+      "path": "records/ir312-runners/stock/runner-aot.build.json.gz",
+      "sha256": "c5d537f6b5c81122b468d400bd25ba3a644c48d42806cf5c131d0444c2140181",
+      "uncompressed_sha256": "9fc5d7a2038324352b739a3554595e7cc2ff7306656b56e4afdd4e5b1668308c",
+      "uncompressed_bytes": 10628,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock/runner-aot.build.json"
+    },
+    {
+      "path": "records/ir312-runners/stock/build/metadata.json.gz",
+      "sha256": "8731e9869dfbcb4d84188fe1d7e53521d505dc5207e64aa561fe1399027cdfc4",
+      "uncompressed_sha256": "66d31a06aae0934098838ca8989673661fa9dae0a172f4f46183d617b2daaf30",
+      "uncompressed_bytes": 2738758,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock/build/metadata.json"
+    },
+    {
+      "path": "records/ir312-runners/stock/build/frame-summary.json.gz",
+      "sha256": "a551527659664d059f9a9e8d4870a97eecd51dc37a9b03275e86b268f6f735cb",
+      "uncompressed_sha256": "e5151eb215606713e38115c57b272feb09e924b0ab448db895eb10530de41933",
+      "uncompressed_bytes": 161224,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock/build/frame-summary.json"
+    },
+    {
+      "path": "records/ir312-runners/stock/build/descriptor.json.gz",
+      "sha256": "f82907e54bd99cf223583458aa53cf8ab9b5ffe3a6d26bb718b9dcac78c54001",
+      "uncompressed_sha256": "c8d45313b8fa88d0a1d1527f74335836ff85df145676fe29a35fef09b382f0fa",
+      "uncompressed_bytes": 7550301,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/stock/build/descriptor.json"
+    },
+    {
+      "path": "records/ir312-runners/patched/native-link-proof.json.gz",
+      "sha256": "d86e2b295d6643f8a392258c3680c53b0868e1b0fec899828d8bde66394f6719",
+      "uncompressed_sha256": "ee2422ad7fb2aa39f0168961786a85aeac94cd308f69dac7fdcad8d79b29af0b",
+      "uncompressed_bytes": 12544,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched/native-link-proof.json"
+    },
+    {
+      "path": "records/ir312-runners/patched/runner-aot.build.json.gz",
+      "sha256": "74929db623b660239ed5d2af35f51a524fecfc39edba12123215a01c6d3650a3",
+      "uncompressed_sha256": "2881f2c0d1de65ec67cb00dba2a78c565a1950001498f30581c5e2a8afe1997e",
+      "uncompressed_bytes": 10670,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched/runner-aot.build.json"
+    },
+    {
+      "path": "records/ir312-runners/patched/build/metadata.json.gz",
+      "sha256": "5d822e54ff22951ba382b3dd6db6646967c356fd99b25a020f0cb75b48470460",
+      "uncompressed_sha256": "c5feae1b10383dfa66b6e2cc7b1ccd9629ecad1df53653a47aa7580112ca9290",
+      "uncompressed_bytes": 2738758,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched/build/metadata.json"
+    },
+    {
+      "path": "records/ir312-runners/patched/build/frame-summary.json.gz",
+      "sha256": "a551527659664d059f9a9e8d4870a97eecd51dc37a9b03275e86b268f6f735cb",
+      "uncompressed_sha256": "e5151eb215606713e38115c57b272feb09e924b0ab448db895eb10530de41933",
+      "uncompressed_bytes": 161224,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched/build/frame-summary.json"
+    },
+    {
+      "path": "records/ir312-runners/patched/build/descriptor.json.gz",
+      "sha256": "96b3ed37c6c2c6ca4551fa7e94cbb9c77a7636d12f7b999cbf1586e4aa4de078",
+      "uncompressed_sha256": "dd61832d7b9cddc10334e607f64fd463eab44a87ae3e0c2127fd5517fefd9fed",
+      "uncompressed_bytes": 7550301,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/patched/build/descriptor.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/native-link-proof.json.gz",
+      "sha256": "e15176c3efe01d366f23cbf940c64d6988c7ea7a51c10b10d9f12b39e2eb37fc",
+      "uncompressed_sha256": "3c9f6ad04cd126f87833c8891d8b16904e28b8d215aee2928fc8ff6c7b770146",
+      "uncompressed_bytes": 12545,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/native-link-proof.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/runner-aot.build.json.gz",
+      "sha256": "6a95b367becca61baba5f219ad18ce53b0ea2da5cc0cc20140e49b5196ca0ac1",
+      "uncompressed_sha256": "cde6b24b69d9368af4f41fd6c111d088c98d863fcf4ef1a43e36d9c902b7505b",
+      "uncompressed_bytes": 10691,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/runner-aot.build.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/compile.json.gz",
+      "sha256": "4dfa06a9e8a769e0980e9321874b1c14dd73b7457d9c116fd6282ca9503c5f70",
+      "uncompressed_sha256": "069485be1184d6a7eb74b8a7fabc259737afb199acced7b90995e818e6f88da0",
+      "uncompressed_bytes": 496,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/compile.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/runner-build.json.gz",
+      "sha256": "3266ceb874adeb6b1f87c9a75d25b7405f2d1cd78c3d97136ae50a295e2ae997",
+      "uncompressed_sha256": "f6b366235073e9c7c3a90a0f0a17fa3de56f02fdbe41431167b410c68cd4b2c5",
+      "uncompressed_bytes": 2745,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/runner-build.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/audit.json.gz",
+      "sha256": "079e40a5e8c92be8a310642d7e61a1b2cf5a611e545c2078340ef69359d3975d",
+      "uncompressed_sha256": "fe86870e5f16bf1262421f0366056a3f1a76edd111506c0c99044baa38735de7",
+      "uncompressed_bytes": 774,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/audit.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/full5000.json.gz",
+      "sha256": "30660294b69efb70d71e495e2ac6c080feb2a5e538e30b4ad4f5729d158a82d1",
+      "uncompressed_sha256": "58bff9ade9f3ca9a40a37e820749ed98d87c0db5b10a7c2f787b591e752434f1",
+      "uncompressed_bytes": 1505,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/full5000.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/edge-run.json.gz",
+      "sha256": "8e1e3c2a8afca79fb26a188adb0ba24e5b8d1c9d3866b967b96336fc457c05cf",
+      "uncompressed_sha256": "fdfd470c27a9704fab2fc56cb45b1fafe9dc10bb75a9a80c44de91d1bffa09a8",
+      "uncompressed_bytes": 2916,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/edge-run.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/build/metadata.json.gz",
+      "sha256": "0354e434213bcd7acb6d79c2fe53829d3496fc0efc4ffbfd06367bc057d389f9",
+      "uncompressed_sha256": "7d2e19f6e9988d7227f701237d4da89fad4aafed0a036103cc245aec31fd4969",
+      "uncompressed_bytes": 2720653,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/build/metadata.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/build/frame-summary.json.gz",
+      "sha256": "721a1a565642cd160b39862b7e8b958aeec51f4fa958a13a0ebd7cfe27e7b354",
+      "uncompressed_sha256": "2602733e564c23a78c4ddefeb908e724d561ca582a5bda20c7330ab9fa8c1508",
+      "uncompressed_bytes": 156641,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/build/frame-summary.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-ids/build/descriptor.json.gz",
+      "sha256": "28b559c7b50c579654b166ce6499a242eccb88b520fa80aeeead4e8338057477",
+      "uncompressed_sha256": "cc1d717d12096597432b079d0b999abb23e63c2abb6528ca39e79543cb7369d2",
+      "uncompressed_bytes": 7498873,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-ids/build/descriptor.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/native-link-proof.json.gz",
+      "sha256": "37debf3ae8f47bb9d52a24e41007fa26d85b8c041b54afbe877a8a82c79dd359",
+      "uncompressed_sha256": "0ff57b6b3c2ddc3ab02f36b7e58e655aaa062f5af36c5068ce43f059c1464a4a",
+      "uncompressed_bytes": 12548,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/native-link-proof.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/runner-aot.build.json.gz",
+      "sha256": "42ce8d4ad08ee980a0474e4026a0f9b3da63bffe3a6881dd99b54c6f26d5cc73",
+      "uncompressed_sha256": "64abc0e7cfa1ff4946be2e007766ee75a625030f7ece74149c9063c1870505ae",
+      "uncompressed_bytes": 10712,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/runner-aot.build.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/compile.json.gz",
+      "sha256": "f9bae8329ba00c34e490ef282d7a761faad1dfd5105b4b1d8eb806c284e55810",
+      "uncompressed_sha256": "688e2d0696888d8632181f58cb11d93b9ca9cb7784420cf188fee305ba181d7a",
+      "uncompressed_bytes": 499,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/compile.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/runner-build.json.gz",
+      "sha256": "5fc7e923e26b465ee576542b1aaa91e1ef303081f8e7fb7749e43c199a2ad46a",
+      "uncompressed_sha256": "ffa3bd83b6836c6f382f6fbcf4394615e4371b87d6ad599abebf1f7c772298dc",
+      "uncompressed_bytes": 2753,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/runner-build.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/audit.json.gz",
+      "sha256": "68bde560d6f97f98f251d01806d52eed0c073a614437b640817bf79af2374fee",
+      "uncompressed_sha256": "72ad99e8a6529abb5483538f143e34d557f89b04a22675c6a2d94adeb54189fa",
+      "uncompressed_bytes": 778,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/audit.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/full5000.json.gz",
+      "sha256": "553fe82b8cff9ea610bc2791207546735fd9da56a02428d9e983f193787619e4",
+      "uncompressed_sha256": "8ea9e3a7d29d6a588757176b6e88ba1895e4a03ae0b7217951496eb9b6133b20",
+      "uncompressed_bytes": 1505,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/full5000.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/edge-run.json.gz",
+      "sha256": "86f2b3af200892c782bab3939132d002c768f7e4752e90a2e2a2452f6316b757",
+      "uncompressed_sha256": "cd24933ae3dbecf283179de33752f18d1778af400a8bae078b2e7a59bff73ac3",
+      "uncompressed_bytes": 2920,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/edge-run.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/build/metadata.json.gz",
+      "sha256": "7c2e0d06bf9f5b128298f151e63c36e17124d3e58ca1da0f579972fbebfdb30d",
+      "uncompressed_sha256": "cb72e769d4b344a80b0349d76c7f4bda8e4bef9bb507e8e6cfffab491bfd980a",
+      "uncompressed_bytes": 2759859,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/build/metadata.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/build/frame-summary.json.gz",
+      "sha256": "1e29205a91a434d3d2bfd703f27a70e54c350544d135d309500030541d7e3668",
+      "uncompressed_sha256": "8f8eee568fa1ccd41a7b366cd122c2d81c44a5cc2604802b8e4a678d456c37a7",
+      "uncompressed_bytes": 161880,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/build/frame-summary.json"
+    },
+    {
+      "path": "records/ir312-runners/tables256/build/descriptor.json.gz",
+      "sha256": "478cbb03a80263a86cdb1366205d81479f9d358bbccb23fb249598f15fb77bd4",
+      "uncompressed_sha256": "075ca7e5e397a87cdd7bbd10dc5c4380549b5aaf4d4371fc3ba3823b992539ab",
+      "uncompressed_bytes": 8098014,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/tables256/build/descriptor.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/native-link-proof.json.gz",
+      "sha256": "47f5430bc599f0374ea8d5a6c84571a65e7e8ede20c504eb493a8cc0d705482a",
+      "uncompressed_sha256": "968810f65e81179b967883f9973a600e5211582c5161e0bf46d2f0f393f1b1b9",
+      "uncompressed_bytes": 12557,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/native-link-proof.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/runner-aot.build.json.gz",
+      "sha256": "0c4dfbe84b508ea48cf4ad0e94864b10bd56ff0503bbfb9a69394a2ecc70c286",
+      "uncompressed_sha256": "e40e182775c0eb25a525ddb3c9d794ecc184cffed17bb03fd53f86e7f7a2b0c2",
+      "uncompressed_bytes": 10817,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/runner-aot.build.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/compile.json.gz",
+      "sha256": "c9ba30d1186d8bc35fde7787b89f5aaa667ffa29e1cd5c18c108e96ad63594f8",
+      "uncompressed_sha256": "d1a0b3192546407808829ed13d3cfd451275df1efb004a09b4e0a73323c74dec",
+      "uncompressed_bytes": 508,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/compile.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/runner-build.json.gz",
+      "sha256": "c0a3b8158e9387c79292f6b1173be8ae64acccdc05c62aa7908fd9533b555245",
+      "uncompressed_sha256": "525a7c23d4e495b2874139374ad9259884afb79212af8946fb6deea10c11345b",
+      "uncompressed_bytes": 2793,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/runner-build.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/audit.json.gz",
+      "sha256": "3c7e9c24cd642628c76d1add7af9e94b8d5955b4f6d1389fd2e9ce9286c9b5ad",
+      "uncompressed_sha256": "b1d2e93dbb80c5747cbe5dfadf8f72c6cc6a50611ecb931ac8a587c62e274909",
+      "uncompressed_bytes": 792,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/audit.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/full5000.json.gz",
+      "sha256": "dc9804bf5e9d0a47b2198866e691f7b13c8a42df6ecfe5a4d408a57e7e8f95ba",
+      "uncompressed_sha256": "c19838c92f155f415623b53627241250fadbe94480fe7b83555a129039ab9898",
+      "uncompressed_bytes": 1520,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/full5000.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/edge-run.json.gz",
+      "sha256": "67c9f44c71d6ff7bfc1b81e8c0fcb08619ac7a28f5d24998c26eacc609b110f7",
+      "uncompressed_sha256": "6b7c113ea367efcaf5672a325909897e9f606b60c973ad325b76d5d9bf2df4ee",
+      "uncompressed_bytes": 2935,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/edge-run.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/build/metadata.json.gz",
+      "sha256": "a6efb6533a27be40af436963c95acf35b041c74ed49ada2f3e4fef38744a87b7",
+      "uncompressed_sha256": "7b7db90b310fece81d5444ac59f42ddc84fd60ee203f38f82d025ccc73e71bfd",
+      "uncompressed_bytes": 2741800,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/build/metadata.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/build/frame-summary.json.gz",
+      "sha256": "fbb4832127a79d4ea4783b7b820bf10bd6a666fa9be68dcc072d973e656170ea",
+      "uncompressed_sha256": "dda0879aad5fd744ca7b05b9a626b23880e4119901b02a335f43bc4f076fea3a",
+      "uncompressed_bytes": 157250,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/build/frame-summary.json"
+    },
+    {
+      "path": "records/ir312-runners/byte-tables256/build/descriptor.json.gz",
+      "sha256": "cb093e6045e6032966df7d8df1ab760f050cf6e4621b7372b0fc74ab859bcce2",
+      "uncompressed_sha256": "62e1f6bd909bbfcb0002761b4056e1f590b60ba780c1fc260c8acf40374c7a35",
+      "uncompressed_bytes": 8049481,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-runners/byte-tables256/build/descriptor.json"
+    },
+    {
+      "path": "records/ir312-profile/quiet-before-profiles.json.gz",
+      "sha256": "2247347cc064c2434f105ab7befa25dbd0463076de00c3dd2a34ef244ebffc2a",
+      "uncompressed_sha256": "327c4c124132dd8e9df76014fa0fa345bbd2aef91f067bf4bd53c836c881b11e",
+      "uncompressed_bytes": 131,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/quiet-before-profiles.json"
+    },
+    {
+      "path": "records/ir312-profile/analysis.json.gz",
+      "sha256": "d2d11290c173e3faa7873c7f4383866b8f80754dffd490bb36219b994d04da6a",
+      "uncompressed_sha256": "d45a678a84c28cf54917f5341853877932d4524901a2615e25f5ebcda3a39992",
+      "uncompressed_bytes": 110793,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/analysis.json"
+    },
+    {
+      "path": "records/ir312-profile/stock-build.json.gz",
+      "sha256": "dde47bdee1f2d2e9fce36ee2f3fdef85e2acaa8b45e89d9ccca9ad4662efed08",
+      "uncompressed_sha256": "01fd56dbb76a471d7d79e38e7d808fa220c8e15b619a49f62603711389c7a68a",
+      "uncompressed_bytes": 2695,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock-build.json"
+    },
+    {
+      "path": "records/ir312-profile/patched-build.json.gz",
+      "sha256": "1133bddca7b5e340bbe1e8d837867a3681617fdeb50aec220cebd6109c8f3ba8",
+      "uncompressed_sha256": "d541b3760e5150f90b065b3c67d93625f8078383490c82b3a4a0300f2267ae73",
+      "uncompressed_bytes": 2711,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched-build.json"
+    },
+    {
+      "path": "records/ir312-profile/stock-audit.json.gz",
+      "sha256": "f4564ddbef3ac445cbb914c9a799da9888625e72bebbbb6ccd272ba4b5ff5fc4",
+      "uncompressed_sha256": "268680c6a3c0e7945981bb3b378a703d3089a710938a215fb5b568504b5e13ac",
+      "uncompressed_bytes": 740,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock-audit.json"
+    },
+    {
+      "path": "records/ir312-profile/patched-audit.json.gz",
+      "sha256": "65b04c1a19b2d3cd4914ff3356945b929b41d2eb50bbaebf5005bb620bbadac2",
+      "uncompressed_sha256": "9c2ce700fdebfd881c31715953e36d437119d4745a49969bb3e1f65ca1768c7d",
+      "uncompressed_bytes": 746,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched-audit.json"
+    },
+    {
+      "path": "records/ir312-profile/stock/receipt.json.gz",
+      "sha256": "25b2fafcb01e47aaa73fb89a31807e92c7ed979425d387894cbc17a61fbfc9f8",
+      "uncompressed_sha256": "b67e1e09312cf1aedbfdf430e5e3c06e58272ca758c95df2cf59d11713d1f78d",
+      "uncompressed_bytes": 1644,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock/receipt.json"
+    },
+    {
+      "path": "records/ir312-profile/stock/same-object-audit.json.gz",
+      "sha256": "c63089252618c1cfd441814bff1438526cebe6cd371f22fc271bf5b3e2772d9a",
+      "uncompressed_sha256": "43eb7f54bd45ebfdb908dbc3dabf4e4555cff59ea63098ce9bb4444fbd4bfe4c",
+      "uncompressed_bytes": 12544,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock/same-object-audit.json"
+    },
+    {
+      "path": "records/ir312-profile/stock/runner-profile.build.json.gz",
+      "sha256": "e8a8de538927ac70403803c175971b652382b8e0520bdfaa8defd02194dd4756",
+      "uncompressed_sha256": "dcf8df4bcd3244b47839cbad425fd24c70a619a0d142520dbc73fa6d7d71e2b2",
+      "uncompressed_bytes": 10628,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock/runner-profile.build.json"
+    },
+    {
+      "path": "records/ir312-profile/stock/native.sample.txt.gz",
+      "sha256": "5da50fcab585d968a59ce908779ad67b5af8a59bbb100f4c395473458b90b69a",
+      "uncompressed_sha256": "7bfdd48491cc32aadcc70ac88f8ed1209a3a4216a5beba7bef82e39011839081",
+      "uncompressed_bytes": 5137830,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock/native.sample.txt"
+    },
+    {
+      "path": "records/ir312-profile/stock/runner.rs.gz",
+      "sha256": "adc88e658cee11974d5ade6b6c1864e9a045fb811ad8f8d92c56226924cd10a6",
+      "uncompressed_sha256": "176c2b2206162d4c27b696a01e7c8cdf55aced88f19843e49da30fa00128459b",
+      "uncompressed_bytes": 9339,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock/runner.rs"
+    },
+    {
+      "path": "records/ir312-profile/stock/stdout.txt.gz",
+      "sha256": "06a0a56117559fc158b6fd29bd88cdc0613ebcfdaebc7ae68fcd0a01f7a4f406",
+      "uncompressed_sha256": "93ccdb1142f48490d02d40f1ecca3e3b867acfefefe113aa83156c849d99e455",
+      "uncompressed_bytes": 956,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock/stdout.txt"
+    },
+    {
+      "path": "records/ir312-profile/stock/stderr.txt.gz",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "uncompressed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "uncompressed_bytes": 0,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/stock/stderr.txt"
+    },
+    {
+      "path": "records/ir312-profile/patched/receipt.json.gz",
+      "sha256": "078720b4665318a427ae199b1f96feaef2c7af6069740e8779f772ad5a83b3ea",
+      "uncompressed_sha256": "1e8b7e452c9204e5a807dbe7627319f135e991a8d5fb0b64ff89297d4027ea3f",
+      "uncompressed_bytes": 1654,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched/receipt.json"
+    },
+    {
+      "path": "records/ir312-profile/patched/same-object-audit.json.gz",
+      "sha256": "433159727fabfacb2b391158e40c37dc51f0198f11107569f94055c247a0baa4",
+      "uncompressed_sha256": "f4aaf23803d9089a7a589c52b302c751b4779335d5601818fe4239f9d3ba5562",
+      "uncompressed_bytes": 12548,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched/same-object-audit.json"
+    },
+    {
+      "path": "records/ir312-profile/patched/runner-profile.build.json.gz",
+      "sha256": "22a8bf3952e7fcc0def19d41c72c63a8d3ecc4fe8dd6c10406f669f9d1e6d82d",
+      "uncompressed_sha256": "c18b7606c782b1e1b5b13bdcb6e09b47d952ee7a24a20a2f0b30faf7bf7fa85d",
+      "uncompressed_bytes": 10670,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched/runner-profile.build.json"
+    },
+    {
+      "path": "records/ir312-profile/patched/native.sample.txt.gz",
+      "sha256": "437ff70d83f7fbce8e731e529030bb207026ba99f1c9c2820b605e5ded422a4d",
+      "uncompressed_sha256": "1fbb5ca1ac18d427d796ca4ed308f412dd3c02b95b6e3ae181f41f5bfebe9e63",
+      "uncompressed_bytes": 4987507,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched/native.sample.txt"
+    },
+    {
+      "path": "records/ir312-profile/patched/runner.rs.gz",
+      "sha256": "adc88e658cee11974d5ade6b6c1864e9a045fb811ad8f8d92c56226924cd10a6",
+      "uncompressed_sha256": "176c2b2206162d4c27b696a01e7c8cdf55aced88f19843e49da30fa00128459b",
+      "uncompressed_bytes": 9339,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched/runner.rs"
+    },
+    {
+      "path": "records/ir312-profile/patched/stdout.txt.gz",
+      "sha256": "3b243de77ad63f4414f7f05e8ca854cf015211bea741ce3da6b23cdb9c9d2b3b",
+      "uncompressed_sha256": "e71a09cda892c7721ea443780496d8aa44cb50bc903290ad0abec8fca8a5f38a",
+      "uncompressed_bytes": 948,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched/stdout.txt"
+    },
+    {
+      "path": "records/ir312-profile/patched/stderr.txt.gz",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "uncompressed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "uncompressed_bytes": 0,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-profile/patched/stderr.txt"
+    },
+    {
+      "path": "records/analyze-ir312.py.gz",
+      "sha256": "ae2cd5796da684b3676a9210cf7136532bb8c35669426506771f075508d6f2f6",
+      "uncompressed_sha256": "e3ec84f961f15f55a777365c610ab23b214bf1ad4bea9e6d7d7286d1b183bdf9",
+      "uncompressed_bytes": 3773,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/analyze-ir312.py"
+    },
+    {
+      "path": "records/analyze-ir312-profile.py.gz",
+      "sha256": "6c1011c4c763d7811ed94501bba93a3fb358cfeaa0a350fca59ea662ff7450e6",
+      "uncompressed_sha256": "b489a4c82a0787588efe727a476581a955f94b50fc40e55d21f80a374e8537ac",
+      "uncompressed_bytes": 2533,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/analyze-ir312-profile.py"
+    },
+    {
+      "path": "records/profile-ir312.py.gz",
+      "sha256": "462d34b51e8c14c3bfb6d6cd5c2a881d8a0b7a61cb2ddcbf27a620765382dc77",
+      "uncompressed_sha256": "7e3d13abf83b8942735a0c503f2d82db6c636f70979a0e850eb704e464903331",
+      "uncompressed_bytes": 3109,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/profile-ir312.py"
+    },
+    {
+      "path": "records/build-312-runners.py.gz",
+      "sha256": "3b1e7f6a14b53b83e63cb76176e205af72db64f1688252ef5af2a7ad7acc1284",
+      "uncompressed_sha256": "55c591ddceff5277e4b4502ed665081b7abf597b487ce18e20553fdeba167953",
+      "uncompressed_bytes": 2865,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/build-312-runners.py"
+    },
+    {
+      "path": "records/build-312-source-variants.py.gz",
+      "sha256": "ad15b1ae87bf6adc245dd23e23890984fa44291e7a03c3df2474c26e466fd36b",
+      "uncompressed_sha256": "c0f332bac1e19d1fb52f614580f7ebdab30069940e91de76237c1681fe2ba75c",
+      "uncompressed_bytes": 2137,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/build-312-source-variants.py"
+    },
+    {
+      "path": "records/build-312-tests.py.gz",
+      "sha256": "006ce16cbf5218ed577e60a5b3e8e4ad619bd68e5eff83dad57679a9099ef582",
+      "uncompressed_sha256": "9aeba5224d4a01d9586d8693631c00f953491e6d156cd60154be022b46effa58",
+      "uncompressed_bytes": 760,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/build-312-tests.py"
+    },
+    {
+      "path": "records/cargo-gpu-command.py.gz",
+      "sha256": "ae0b2e0c1a595983980c63ef13cc3c0aaa8996a7faad3025c00e85313d6b509f",
+      "uncompressed_sha256": "a59d27c851076ee5bfe77ab9693d2dd8803448bb457678c24fb074b6ef7d52bc",
+      "uncompressed_bytes": 1623,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/cargo-gpu-command.py"
+    },
+    {
+      "path": "records/build-cargo-host.py.gz",
+      "sha256": "a886e9e302bf2ae40a8377d0e769303eeed17320f7edfa7fc78f9b468e88f218",
+      "uncompressed_sha256": "3e9531191d9b5a0daf948d88a210386e4f1ef28dc4ea1352128f37ca71e27235",
+      "uncompressed_bytes": 5582,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/build-cargo-host.py"
+    },
+    {
+      "path": "records/build-cargo-metrics.py.gz",
+      "sha256": "d07142a409bdf870ee5af09c195fbe6dd77ff5f94640489bb7da66862bb725ff",
+      "uncompressed_sha256": "39414ef1e7cdfc441e6ecd79a037cf75ff10b4969dd5fdec9007d0a7ab07cb56",
+      "uncompressed_bytes": 13217,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/build-cargo-metrics.py"
+    },
+    {
+      "path": "records/prepare-312-cohort.py.gz",
+      "sha256": "602a3d1e34ffd9ba65775b654788eb8fbfaee77c67cbb3a956b2e04cebf78e79",
+      "uncompressed_sha256": "4370eec4c115c7b1d54dae5bc1da411ae0f041def6ec0d58ff137d12fd0f25b6",
+      "uncompressed_bytes": 3540,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/prepare-312-cohort.py"
+    },
+    {
+      "path": "records/qualify-312.py.gz",
+      "sha256": "eb6f348216a7b101895f73ea558c5c34b1621236280a1b6781023eef106464fc",
+      "uncompressed_sha256": "2cf2ea0745a52a0f7772cfa1ee4520e639739cebfa539540f7ca02b803ca446d",
+      "uncompressed_bytes": 3452,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/qualify-312.py"
+    },
+    {
+      "path": "records/fetch-deflate-closure.py.gz",
+      "sha256": "5a6567465e296ac0cd25b60083c4acdef8a8cc4fd5d6d0796f2fb4d64b81bca2",
+      "uncompressed_sha256": "29c9126eeb394a671e46df102fd9782674ac2a7ee1267c4da465effa103bb4cf",
+      "uncompressed_bytes": 1424,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/fetch-deflate-closure.py"
+    },
+    {
+      "path": "records/reconstruct-deflate-closure.py.gz",
+      "sha256": "55c8b60385907b46caef77f1218aa6926d0d412ff490286efa273d401b000967",
+      "uncompressed_sha256": "7501cf616973ffa0c7ab27010313404f726dfa022db8f9e15ce4b88f7562d3e4",
+      "uncompressed_bytes": 2413,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/reconstruct-deflate-closure.py"
+    },
+    {
+      "path": "records/export-cargo-build.py.gz",
+      "sha256": "ac33466a9735c03cf328b9dfc409ab87b31fe38385799c2ad68dc96aa436396e",
+      "uncompressed_sha256": "1cb41a3dea43382c5eb126c38ab6d9b302f3b1f4c88a33d9f2e9f31111a86d39",
+      "uncompressed_bytes": 2268,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/export-cargo-build.py"
+    },
+    {
+      "path": "records/first-build-failure/build.json.gz",
+      "sha256": "020651b09e8469158718520e79fa195f38bf81d14e56036976e28ae9746177d4",
+      "uncompressed_sha256": "037f01dc1541f2889f08d4a6db9aa059dbf235d2de4b0bd6b84481ac5fc20ae8",
+      "uncompressed_bytes": 110725,
+      "original_path": "/private/tmp/mech-related-pr990-backend-opt-20261111/build.json"
+    },
+    {
+      "path": "records/ir312-metrics-v2/source-pins.json.gz",
+      "sha256": "4a1f0209ad2fcca4785575a8ce264ddef196c277efa04e3016bf660bc77301ff",
+      "uncompressed_sha256": "2cf00b7840ed1ebb2d32a1941478b79f5ec85eee5d6550116148bf600852fb45",
+      "uncompressed_bytes": 4439,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-metrics-v2/source-pins.json"
+    },
+    {
+      "path": "records/ir312-metrics-v2/metrics-config.json.gz",
+      "sha256": "1c9c6c1a9f73abf12bf819111476a47ce6a1b85777f7bdc331e1746df7c48e2a",
+      "uncompressed_sha256": "b8630e7996417fe6ff7bdef7005c5e368bcc30518bf914bc11e4f6d487088177",
+      "uncompressed_bytes": 9915,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/ir312-metrics-v2/metrics-config.json"
+    },
+    {
+      "path": "records/build-backend-compiler.py.gz",
+      "sha256": "d5764a03a071e9016b5f13a28e99a5179ff68ce1843f190f6160b72b42d4c454",
+      "uncompressed_sha256": "2d30aec5c690d1557fb016fad07834dda3676b78dc947844d6f93ef007a27b86",
+      "uncompressed_bytes": 2873,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/build-backend-compiler.py"
+    },
+    {
+      "path": "records/vendor-deflate-backend.py.gz",
+      "sha256": "5cb91067ac5cb23780f9272e98b051776f99d0500daa5d8323f08d49bae7a298",
+      "uncompressed_sha256": "66fda56faee4253e4c42d055f5f9acb90a39e5ffa79054723ea065529f2d260c",
+      "uncompressed_bytes": 3827,
+      "original_path": "/private/tmp/mech-related-pr990-rebase-evidence-20261111/vendor-deflate-backend.py"
+    }
+  ]
+}

@@ -1,0 +1,1578 @@
+{
+  "base_commit": "c58562fdc38350b6e3b49fce3ba49ca220e529de",
+  "blocks": [
+    {
+      "compiler_mean_reduction_fraction": 0.0350508836501815,
+      "order": [
+        "control-1",
+        "candidate-1",
+        "candidate-2",
+        "control-2"
+      ]
+    },
+    {
+      "compiler_mean_reduction_fraction": 0.03987336763654514,
+      "order": [
+        "candidate-3",
+        "control-3",
+        "control-4",
+        "candidate-4"
+      ]
+    }
+  ],
+  "candidate_patch_sha256": "1992d76a3061fdc02cc5a3029ee965d013306d329908400fea2cd69754b371e3",
+  "candidate_rebuild_seconds": 403.89135499997064,
+  "compiler_binary_sha256": {
+    "candidate": "412920dd3a157c3104d94c4376ff9e166e6303fd7145469b6ba88280bc6fdc88",
+    "control": "251dabfad438c8c6fc43deb5f936f44cc685d1c9d473b1322653bb6262490ad5"
+  },
+  "compiler_executable_bytes": {
+    "candidate": 66564864,
+    "control": 66545776
+  },
+  "control_source_commit": "610f3692c0ad0b894d6537f206a79a4de8833ede",
+  "decision": "Retain scope-sized topology and definition-row storage in fresh current-visit validation; identical generated program bytes",
+  "diagnostic_control_profile": {
+    "command": {
+      "binary_sha256": "251dabfad438c8c6fc43deb5f936f44cc685d1c9d473b1322653bb6262490ad5",
+      "command": [
+        "/usr/bin/time",
+        "-lp",
+        "/private/tmp/mech-shared-schema-20261114/candidate",
+        "benchmark",
+        "/private/tmp/mech-native-after-sharing-20261114/output",
+        "compact"
+      ],
+      "flags": {
+        "MECH_ADJACENT_ADDRESSES": "1",
+        "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+        "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+        "MECH_ARM64_SUBTRACT_BRANCH": "1",
+        "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+        "MECH_BORROW_COMPACT_READ_COPIES": "1",
+        "MECH_CARRY_REDUCTION_BOUND": "1",
+        "MECH_CHECKED_APPEND_RUN": "1",
+        "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+        "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+        "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+        "MECH_CURRENT_PREDICATES": "1",
+        "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+        "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+        "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+        "MECH_FIRST_PACKED_REVERSE_READ": "1",
+        "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+        "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+        "MECH_GROUP_PACKED_HISTOGRAM": "1",
+        "MECH_NARROW_MASKED_ARITHMETIC": "1",
+        "MECH_NARROW_ORDERED_ITEM": "1",
+        "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+        "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+        "MECH_ORDERED_CAPTURE_SPANS": "1",
+        "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+        "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+        "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+        "MECH_PAIR_CHECKED_APPENDS": "1",
+        "MECH_PHASE_ASSERTION_FLOORS": "1",
+        "MECH_PHASE_INVARIANT_VIEWS": "1",
+        "MECH_PHASE_OWNER_TRANSFER": "1",
+        "MECH_PHASE_VECTOR_FAST": "1",
+        "MECH_PREFETCH_PRIVATE_WRITES": "1",
+        "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+        "MECH_PRIVATE_INDEXED_CHAINS": "1",
+        "MECH_PRIVATE_NESTED_PHASES": "1",
+        "MECH_PRIVATE_READ_INTERVALS": "1",
+        "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+        "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+        "MECH_PROVE_PACKED_BASE_SPANS": "1",
+        "MECH_PROVE_SCALAR_SPANS": "1",
+        "MECH_REDUCTION_COUNTDOWN": "1",
+        "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+        "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+        "MECH_REUSE_EQUALITY_PREFIX": "1",
+        "MECH_REUSE_SELECTED_READ_BOUND": "1",
+        "MECH_REUSE_SHIFTED_EQUALITY": "1",
+        "MECH_REVERSE_REDUCTION_CURSOR": "1",
+        "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+        "MECH_SHARE_CLAMP_DECISIONS": "1",
+        "MECH_SHARE_REPEATED_BOUNDS": "1",
+        "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+        "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+        "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+        "MECH_TERMINAL_BYTE_APPENDS": "1",
+        "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+        "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+        "MECH_WHOLE_PHASE_CAPACITY": "1",
+        "MECH_WIDENING_REDUCTION": "1",
+        "MECH_WIDE_ANY_BITS": "1"
+      },
+      "scope": "Separate diagnostic stage CPU profile; excluded from primary timings.",
+      "source_commit": "610f3692c0"
+    },
+    "completed_sample_files": 5,
+    "cpu_self_samples": {
+      "cleanup-sample.txt": [
+        {
+          "image": "candidate",
+          "self_samples": 95,
+          "symbol": "mech_gpu::native_artifact::program::codegen::cfg_cleanup::optimize_ordered"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 94,
+          "symbol": "cranelift_codegen::remove_constant_phis::do_remove_constant_phis"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 58,
+          "symbol": "<cranelift_codegen::dominator_tree::DominatorTree>::compute"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 56,
+          "symbol": "<cranelift_codegen::ir::dfg::DataFlowGraph>::remove_block_param"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 54,
+          "symbol": "<cranelift_codegen::verifier::Verifier>::run"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 28,
+          "symbol": "<cranelift_codegen::ir::dfg::DataFlowGraph>::value_def"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 22,
+          "symbol": "mech_gpu::native_artifact::program::codegen::cfg_cleanup::boolean_words::derive"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 15,
+          "symbol": "core::iter::adapters::chain::and_then_or_clear::<core::iter::adapters::chain::Chain<core::iter::adapters::copied::Copied<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<cranelift_codegen::ir::instructions::BlockCall>, core::iter::adapters::filter_map::FilterMap<core::iter::adapters::map::Map<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>, <cranelift_codegen::ir::instructions::BlockCall>::args::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}>>, cranelift_codegen::ir::entities::Value, <core::iter::adapters::chain::Chain<core::iter::adapters::copied::Copied<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<cranelift_codegen::ir::instructions::BlockCall>, core::iter::adapters::filter_map::FilterMap<core::iter::adapters::map::Map<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>, <cranelift_codegen::ir::instructions::BlockCall>::args::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}>> as core::iter::traits::iterator::Iterator>::next>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 15,
+          "symbol": "<cranelift_codegen::flowgraph::ControlFlowGraph>::compute_block::{closure#0}"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 15,
+          "symbol": "_xzm_free"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 14,
+          "symbol": "cranelift_codegen::ir::dfg::maybe_resolve_aliases"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 11,
+          "symbol": "<cranelift_entity::map::SecondaryMap<cranelift_codegen::ir::entities::Block, cranelift_codegen::remove_constant_phis::BlockSummary>>::resize_for_index_mut"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 10,
+          "symbol": "<deduplicated_symbol>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 10,
+          "symbol": "mech_gpu::native_artifact::program::codegen::cfg_cleanup::boolean_words::inputs"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 9,
+          "symbol": "<hashbrown::raw::RawTable<(cranelift_codegen::ir::entities::Value, cranelift_codegen::remove_constant_phis::AbstractValue)>>::reserve_rehash::<hashbrown::map::make_hasher<cranelift_codegen::ir::entities::Value, cranelift_codegen::remove_constant_phis::AbstractValue, rustc_hash::FxBuildHasher>::{closure#0}>"
+        }
+      ],
+      "machine-code-sample.txt": [
+        {
+          "image": "candidate",
+          "self_samples": 123,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::try_to_allocate_bundle_to_reg"
+        },
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 97,
+          "symbol": "_platform_memmove"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 67,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::init"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 50,
+          "symbol": "<regalloc2::indexset::IndexSet>::union_with"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 46,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::run"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 39,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::add_liverange_to_vreg"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 27,
+          "symbol": "<hashbrown::map::HashMap<u32, u64, core::hash::BuildHasherDefault<rustc_hash::FxHasher>> as core::clone::Clone>::clone"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 19,
+          "symbol": "<alloc::collections::btree::map::BTreeMap<regalloc2::ion::data_structures::LiveRangeKey, regalloc2::ion::data_structures::LiveRangeIndex>>::insert"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 18,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::compute_requirement"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 17,
+          "symbol": "<alloc::collections::btree::map::BTreeMap<regalloc2::ion::data_structures::LiveRangeKey, regalloc2::ion::data_structures::LiveRangeIndex>>::range::<regalloc2::ion::data_structures::LiveRangeKey, core::ops::range::RangeFrom<regalloc2::ion::data_structures::LiveRangeKey>>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 16,
+          "symbol": "core::slice::sort::unstable::quicksort::quicksort::<regalloc2::ion::data_structures::LiveRangeListEntry, <[regalloc2::ion::data_structures::LiveRangeListEntry]>::sort_unstable_by_key<regalloc2::ProgPoint, <regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::merge_bundles::{closure#3}>::{closure#0}>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 12,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::merge_bundles"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 11,
+          "symbol": "<cranelift_codegen::machinst::lower::Lower<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>::lower::<cranelift_codegen::isa::aarch64::AArch64Backend>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 11,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::recompute_bundle_properties"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 10,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::split_and_requeue_bundle"
+        }
+      ],
+      "numeric-helpers-sample.txt": [
+        {
+          "image": "candidate",
+          "self_samples": 137,
+          "symbol": "<alloc::collections::btree::map::BTreeMap<usize, alloc::collections::btree::set_val::SetValZST>>::insert"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 105,
+          "symbol": "mech_gpu::native_artifact::program::codegen::numeric_traversal::analyze"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 87,
+          "symbol": "mech_gpu::native_artifact::program::codegen::numeric_minimal::liveness::required"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 45,
+          "symbol": "_xzm_free"
+        },
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 33,
+          "symbol": "_platform_memmove"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 30,
+          "symbol": "_xzm_xzone_malloc"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 27,
+          "symbol": "<core::cell::once::OnceCell<core::result::Result<alloc::vec::Vec<alloc::vec::Vec<mech_engine::native_artifact::fusion_semantics::facts::NativeProgramDefinition>>, &str>>>::try_init::<<core::cell::once::OnceCell<core::result::Result<alloc::vec::Vec<alloc::vec::Vec<mech_engine::native_artifact::fusion_semantics::facts::NativeProgramDefinition>>, &str>>>::get_or_init<<mech_engine::native_artifact::fusion_semantics::facts::NativeProgramFacts>::definition_sites::{closure#0}>::{closure#0}, !>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 22,
+          "symbol": "<alloc::collections::btree::map::BTreeMap<usize, alloc::collections::btree::set_val::SetValZST> as core::cmp::PartialEq>::eq"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 20,
+          "symbol": "mech_gpu::native_artifact::program::codegen::numeric_traversal::analyze::{closure#0}"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 16,
+          "symbol": "<cranelift_codegen::flowgraph::ControlFlowGraph>::recompute_block"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 13,
+          "symbol": "_free"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 12,
+          "symbol": "<deduplicated_symbol>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 11,
+          "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 10,
+          "symbol": "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::try_to_allocate_bundle_to_reg"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 10,
+          "symbol": "_malloc_zone_malloc"
+        }
+      ],
+      "preparation-sample.txt": [
+        {
+          "image": "candidate",
+          "self_samples": 188,
+          "symbol": "mech_gpu::native_artifact::program::prepare::phase_numeric::exits::live_query"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 169,
+          "symbol": "mech_engine::native_artifact::iteration_validation::check_scope::<mech_engine::native_artifact::program::NativeProgramArtifactPlan>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 72,
+          "symbol": "<mech_engine::native_artifact::iteration_validation::definitions::DefinitionSet as alloc::vec::spec_from_elem::SpecFromElem>::from_elem::<alloc::alloc::Global>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 57,
+          "symbol": "<alloc::vec::Vec<usize> as alloc::vec::spec_from_elem::SpecFromElem>::from_elem::<alloc::alloc::Global>"
+        },
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 31,
+          "symbol": "_platform_memmove"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 25,
+          "symbol": "mech_gpu::native_artifact::iteration_abi::control_visits::<core::iter::adapters::map::Map<core::slice::iter::Iter<mech_engine::native_artifact::collection::NativeControlLoop>, <&mech_engine::native_artifact::collection::NativeControlLoop as core::convert::Into<mech_engine::native_artifact::collection::NativeControlLoopRef>>::into>>"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 19,
+          "symbol": "_xzm_free"
+        },
+        {
+          "image": "libsystem_kernel.dylib",
+          "self_samples": 15,
+          "symbol": "mach_vm_reclaim_update_kernel_accounting_trap"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 12,
+          "symbol": "mech_engine::native_artifact::range_cursor::candidate"
+        },
+        {
+          "image": "libsystem_kernel.dylib",
+          "self_samples": 11,
+          "symbol": "madvise"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 10,
+          "symbol": "<mech_core::schema::SchemaBody as core::cmp::PartialEq>::eq"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 9,
+          "symbol": "_free"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 9,
+          "symbol": "_xzm_xzone_malloc"
+        },
+        {
+          "image": "libsystem_malloc.dylib",
+          "self_samples": 8,
+          "symbol": "_malloc_zone_malloc"
+        },
+        {
+          "image": "libsystem_platform.dylib",
+          "self_samples": 6,
+          "symbol": "_platform_memset"
+        }
+      ],
+      "source-cfg-sample.txt": [
+        {
+          "image": "candidate",
+          "self_samples": 329,
+          "symbol": "<cranelift_frontend::ssa::SSABuilder>::use_var_nonlocal"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 115,
+          "symbol": "<cranelift_frontend::ssa::VariableDefs>::insert"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 96,
+          "symbol": "<hashbrown::raw::RawTable<(cranelift_codegen::ir::entities::Block, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::Value>)>>::reserve_rehash::<hashbrown::map::make_hasher<cranelift_codegen::ir::entities::Block, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::Value>, rustc_hash::FxBuildHasher>::{closure#0}>"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 61,
+          "symbol": "<cranelift_frontend::ssa::SSABuilder>::run_state_machine"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 33,
+          "symbol": "cranelift_codegen::ir::dfg::maybe_resolve_aliases"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 22,
+          "symbol": "<cranelift_entity::list::EntityList<cranelift_codegen::ir::entities::Value>>::push"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 19,
+          "symbol": "<cranelift_frontend::ssa::SSABuilder>::begin_predecessors_lookup"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 15,
+          "symbol": "<cranelift_codegen::ir::dfg::DataFlowGraph>::remove_block_param"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 11,
+          "symbol": "<cranelift_codegen::ir::layout::Layout>::assign_inst_seq"
+        },
+        {
+          "image": "candidate",
+          "self_samples": 5,
+          "symbol": "<mech_gpu::native_artifact::program::compact::owner_flow::OwnerFlow>::slots_in"
+        }
+      ]
+    },
+    "main_thread_waits_excluded": true,
+    "samples": [
+      {
+        "command": [
+          "/usr/bin/sample",
+          "70223",
+          "1",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/mech-native-after-sharing-20261114/preparation-sample.txt"
+        ],
+        "end_seconds": 6.306940915994346,
+        "exit_code": 0,
+        "last_stage": "compact-stage: preparation blocks=41039 values=22460",
+        "stage": "preparation",
+        "start_seconds": 5.061412791023031,
+        "trigger": {
+          "elapsed": 5.0610782080329955,
+          "line": "compact-stage: preparation blocks=41039 values=22460"
+        }
+      },
+      {
+        "command": [
+          "/usr/bin/sample",
+          "70223",
+          "1",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/mech-native-after-sharing-20261114/numeric-helpers-sample.txt"
+        ],
+        "end_seconds": 9.704468082869425,
+        "exit_code": 0,
+        "last_stage": "compact-stage: numeric phase mech_compact_numeric_837",
+        "stage": "numeric-helpers",
+        "start_seconds": 8.596451707882807,
+        "trigger": {
+          "elapsed": 8.596234832890332,
+          "line": "compact-stage: native module"
+        }
+      },
+      {
+        "command": [
+          "/usr/bin/sample",
+          "70223",
+          "1",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/mech-native-after-sharing-20261114/source-cfg-sample.txt"
+        ],
+        "end_seconds": 14.231655332958326,
+        "exit_code": 0,
+        "last_stage": "compact-stage: source site 32768/41039",
+        "stage": "source-cfg",
+        "start_seconds": 13.135930374963209,
+        "trigger": {
+          "elapsed": 13.135731749935076,
+          "line": "compact-stage: source CFG"
+        }
+      },
+      {
+        "command": [
+          "/usr/bin/sample",
+          "70223",
+          "1",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/mech-native-after-sharing-20261114/cleanup-sample.txt"
+        ],
+        "end_seconds": 16.887896874919534,
+        "exit_code": 0,
+        "last_stage": "compact-stage: CFG cleanup",
+        "stage": "cleanup",
+        "start_seconds": 15.788233625004068,
+        "trigger": {
+          "elapsed": 15.788059832993895,
+          "line": "compact-stage: CFG cleanup"
+        }
+      },
+      {
+        "command": [
+          "/usr/bin/sample",
+          "70223",
+          "1",
+          "1",
+          "-mayDie",
+          "-file",
+          "/private/tmp/mech-native-after-sharing-20261114/machine-code-sample.txt"
+        ],
+        "end_seconds": 20.012930541066453,
+        "exit_code": 0,
+        "last_stage": "compact-stage: machine code",
+        "stage": "machine-code",
+        "start_seconds": 18.915968290995806,
+        "trigger": {
+          "elapsed": 18.91569812502712,
+          "line": "compact-stage: machine code"
+        }
+      }
+    ]
+  },
+  "duplicate_direct_graph_tests": 4,
+  "fixture_output_comparisons": [
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-nested-phase.mec",
+      "source_sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "assembled:numeric-nested-phase-states",
+      "source_sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-private-fixed-nested.mec",
+      "source_sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-changing-capture-tree.mec",
+      "source_sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-array-windows.mec",
+      "source_sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-multiple-children.mec",
+      "source_sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-bool-equal",
+      "source_sha256": "ed35e11836e7eafd1cb388079a9bed6efb738a997a1f2d9dcfbf1b8146e44740",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2389,
+              "sha256": "81d9fe8d69a5db677583333eaba12e303dd38b4a7a138b48bfce28e345258869"
+            },
+            "program.mecb": {
+              "bytes": 1717,
+              "sha256": "abce07a2299622b93471a882d0ca3e0577fc76ea7549d0228ff7726178f0830f"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "3c0c285c712702bdd575b9bb454a397f941c64387bcd135f1bc99eaec7bb5353"
+            },
+            "source.mec": {
+              "bytes": 26,
+              "sha256": "ed35e11836e7eafd1cb388079a9bed6efb738a997a1f2d9dcfbf1b8146e44740"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2389,
+              "sha256": "81d9fe8d69a5db677583333eaba12e303dd38b4a7a138b48bfce28e345258869"
+            },
+            "program.mecb": {
+              "bytes": 1717,
+              "sha256": "abce07a2299622b93471a882d0ca3e0577fc76ea7549d0228ff7726178f0830f"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "3c0c285c712702bdd575b9bb454a397f941c64387bcd135f1bc99eaec7bb5353"
+            },
+            "source.mec": {
+              "bytes": 26,
+              "sha256": "ed35e11836e7eafd1cb388079a9bed6efb738a997a1f2d9dcfbf1b8146e44740"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-u64-add",
+      "source_sha256": "6f1d1e0e8a0bd15469096d19d3665387590517e70e6f8210f6cb878cce16e399",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "b3c4af6f86b8597d72bc1c2b74b3e32c279360e9e02d0ac9c0a84388f23ac299"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6"
+            },
+            "program.o": {
+              "bytes": 408,
+              "sha256": "f1a15d9c181ee498a414bd78f889cafaf198c5408bd4043577b460bf737efa6a"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "6f1d1e0e8a0bd15469096d19d3665387590517e70e6f8210f6cb878cce16e399"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "b3c4af6f86b8597d72bc1c2b74b3e32c279360e9e02d0ac9c0a84388f23ac299"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6"
+            },
+            "program.o": {
+              "bytes": 408,
+              "sha256": "f1a15d9c181ee498a414bd78f889cafaf198c5408bd4043577b460bf737efa6a"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "6f1d1e0e8a0bd15469096d19d3665387590517e70e6f8210f6cb878cce16e399"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-u64-divide",
+      "source_sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-i64-add",
+      "source_sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-i64-multiply",
+      "source_sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-i64-divide",
+      "source_sha256": "d805731f4ce8eb57e098c8a6600a163a35aa8208cb3093914da3be07ddc04243",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2388,
+              "sha256": "93f3ba69b320de4045a445c568209b40bd64fdff0d87ff58aa9cb922942b10d9"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "1ef7eea6ed269c58e5f2a0a2a329c42694662673761b97098c28e477b4ffeb6b"
+            },
+            "program.o": {
+              "bytes": 448,
+              "sha256": "0881b61e1717e6a89711f3bcf6b380bafc6786a5d8d2ea666d5e98945a2094c7"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "d805731f4ce8eb57e098c8a6600a163a35aa8208cb3093914da3be07ddc04243"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2388,
+              "sha256": "93f3ba69b320de4045a445c568209b40bd64fdff0d87ff58aa9cb922942b10d9"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "1ef7eea6ed269c58e5f2a0a2a329c42694662673761b97098c28e477b4ffeb6b"
+            },
+            "program.o": {
+              "bytes": 448,
+              "sha256": "0881b61e1717e6a89711f3bcf6b380bafc6786a5d8d2ea666d5e98945a2094c7"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "d805731f4ce8eb57e098c8a6600a163a35aa8208cb3093914da3be07ddc04243"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-f64-add",
+      "source_sha256": "3cb481a21c920b5276a476e6c980202db9046adaaad8874fcf01ae4ba2983a14",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "d490149aa7c3e31990e0da65973e1a76fa4f13cb7d443382afe2494a2f724b75"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3cb481a21c920b5276a476e6c980202db9046adaaad8874fcf01ae4ba2983a14"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "d490149aa7c3e31990e0da65973e1a76fa4f13cb7d443382afe2494a2f724b75"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3cb481a21c920b5276a476e6c980202db9046adaaad8874fcf01ae4ba2983a14"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-f64-divide",
+      "source_sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "flags_count": 60,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292704,
+      "sha256": "0f6caeb3b18c65552dcda3e5fa460e1796884e4131e275473cfd2858339382cf"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1238328,
+      "sha256": "8a4c2b172798d06252055b20398cdbf9517b4b5be76730ea1824435ef89bbba4"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "profile_settings": {
+    "Cargo.toml": {
+      "codegen-units": 1,
+      "inherits": "release",
+      "lto": "thin"
+    },
+    "benchmarks/mech-deflate/native-profile/Cargo.toml": {
+      "codegen-units": 1,
+      "inherits": "release",
+      "lto": "thin"
+    }
+  },
+  "qualified": {
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.0984522090293467,
+        0.09778433293104172,
+        0.09769845800474286,
+        0.09736800007522106
+      ],
+      "control": [
+        0.2061730830464512,
+        0.2065989589318633,
+        0.20720999990589917,
+        0.2082631669472903
+      ],
+      "mean_reduction_fraction": 0.5275517493274652
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.405404832912609,
+        3.3357533330563456,
+        3.4726308749523014,
+        3.406490708934143
+      ],
+      "control": [
+        3.4559081671759486,
+        3.3992111671250314,
+        3.53131691692397,
+        3.4596927920356393
+      ],
+      "mean_reduction_fraction": 0.016311367075920735
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        3.23434079089202,
+        3.1655993331223726,
+        3.302555416012183,
+        3.235770917031914
+      ],
+      "control": [
+        3.288986625149846,
+        3.2331570419482887,
+        3.3649969999678433,
+        3.289627708029002
+      ],
+      "mean_reduction_fraction": 0.01810018293159621
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.1710640420205891,
+        0.17015399993397295,
+        0.17007545894011855,
+        0.1707197919022292
+      ],
+      "control": [
+        0.16692154202610254,
+        0.16605412517674267,
+        0.1663199169561267,
+        0.17006508400663733
+      ],
+      "mean_reduction_fraction": -0.018902551693058545
+    },
+    "compiler_seconds": {
+      "candidate": [
+        20.609356958,
+        20.256195542,
+        20.517710542,
+        20.341747625
+      ],
+      "control": [
+        21.316759084,
+        21.033196792,
+        21.229041416,
+        21.327280625
+      ],
+      "mean_reduction_fraction": 0.037467986208391424
+    },
+    "frontend_seconds": {
+      "candidate": [
+        2.537528542,
+        2.496729583,
+        2.511980417,
+        2.503254417
+      ],
+      "control": [
+        2.525548166,
+        2.511880875,
+        2.520738792,
+        2.5330719999999998
+      ],
+      "mean_reduction_fraction": 0.0041369420101858845
+    },
+    "instructions": {
+      "candidate": [
+        311348789415,
+        311392429555,
+        311601204996,
+        311604359979
+      ],
+      "control": [
+        318981207371,
+        319231416438,
+        318981776365,
+        318971858197
+      ],
+      "mean_reduction_fraction": 0.02367988828083778
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        5912281088,
+        5912018944,
+        5911281664,
+        5910904832
+      ],
+      "control": [
+        5910298624,
+        5911232512,
+        5910315008,
+        5912788992
+      ],
+      "mean_reduction_fraction": -7.830072189118908e-05
+    },
+    "native_seconds": {
+      "candidate": [
+        15.546801167,
+        15.264908083,
+        15.502150791,
+        15.336683
+      ],
+      "control": [
+        16.299158416,
+        16.040960834,
+        16.209421667,
+        16.296841125
+      ],
+      "mean_reduction_fraction": 0.049283227535039775
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        3.869393792003393,
+        3.8545327079482377,
+        3.859436082886532,
+        3.8407288750167936
+      ],
+      "control": [
+        3.883675874909386,
+        3.849517042050138,
+        3.8385972920805216,
+        3.860620958963409
+      ],
+      "mean_reduction_fraction": 0.0005391063041235711
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.453078542,
+        2.421426792,
+        2.4299305,
+        2.428200209
+      ],
+      "control": [
+        2.415684667,
+        2.403829709,
+        2.4223536660000002,
+        2.420804541
+      ],
+      "mean_reduction_fraction": -0.007240590985468254
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        5881976016,
+        5881697464,
+        5880960184,
+        5880599760
+      ],
+      "control": [
+        5879960760,
+        5880911056,
+        5879977144,
+        5882451128
+      ],
+      "mean_reduction_fraction": -8.218812805882436e-05
+    },
+    "preparation_seconds": {
+      "candidate": [
+        3.0539908329956234,
+        2.9903550420422107,
+        3.002658792072907,
+        2.997677291976288
+      ],
+      "control": [
+        3.5434701670892537,
+        3.5556349579710513,
+        3.5848291250877082,
+        3.6264222911559045
+      ],
+      "mean_reduction_fraction": 0.1583241183179107
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.412965916097164,
+        2.3380140408407897,
+        2.33434662502259,
+        2.336812041932717
+      ],
+      "control": [
+        2.403359041083604,
+        2.326044667046517,
+        2.333754082908854,
+        2.412560167023912
+      ],
+      "mean_reduction_fraction": 0.005654382539323599
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        20.776889541884884,
+        20.368043707916513,
+        20.773873875150457,
+        20.576705957995728
+      ],
+      "control": [
+        21.415445000166073,
+        21.20751604088582,
+        21.402011790778488,
+        21.41330154100433
+      ],
+      "mean_reduction_fraction": 0.03444312647333603
+    }
+  },
+  "rebuild_scope": "Observed locked/offline optimized-profile rebuild with existing Cargo caches. Excluded from Mech compilation timing; no matched cold-bootstrap comparison.",
+  "rust_tests": {
+    "engine-tests": {
+      "command": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "--offline",
+          "--release",
+          "-j2",
+          "--manifest-path",
+          "src/engine/Cargo.toml",
+          "--lib",
+          "--no-default-features",
+          "--features",
+          "full_compiler,async,native-artifact,native-plan,sequence_buffers,pure_text,mech-core/full,mech-core/math_pow,mech-syntax/full",
+          "native_artifact"
+        ],
+        "exit_code": 0,
+        "seconds": 208.84091283311136,
+        "source_patch_sha256": "1992d76a3061fdc02cc5a3029ee965d013306d329908400fea2cd69754b371e3"
+      },
+      "passed": 152
+    },
+    "graph-tests": {
+      "command": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+        "command": [
+          "/private/tmp/mech-scope-graph-20261114/graph-tests"
+        ],
+        "exit_code": 0,
+        "seconds": 0.38394433399662375,
+        "source_patch_sha256": "1992d76a3061fdc02cc5a3029ee965d013306d329908400fea2cd69754b371e3"
+      },
+      "passed": 4
+    }
+  },
+  "scope": [
+    "Eight serial fresh source-to-Object primary observations in ABBA then BAAB order, identical 60 runtime flags and compiler build profile. No cached Object or decoded-only substitute.",
+    "Builds, tests, CPU sampling, screens, fixtures, hashing, copying and packet work do not overlap primary timing. All source, MBC, Object and complete metadata bytes match the qualified program in both screens and every primary observation; fourteen successful fixture pairs match all four files.",
+    "Current-visit validation remains fresh on every call. Only topology scratch storage changes: a single ordinal scratch table serves per-call scope graphs, and only reachable scope nodes own edges and definition rows. The original DFS callback order, predecessor order, ready order and proof transfer remain. No definition, scope or execution authority is cached across calls.",
+    "The original conservative definition-table admission calculation and limit remain unchanged. Grammar, language, checked errors, native scalar emission, runtime accounting, factory selection and backend optimization settings remain unchanged.",
+    "Final source passes 152 engine native-artifact tests including four graph tests. Four standalone runs of those production graph tests are duplicate coverage, not four additional unique tests.",
+    "The separate control CPU profile contains five requested one-second stage windows with raw and demangled stacks, commands, self tables, existing demangler source/pin and identical output bytes. Main-thread waits are excluded from CPU hotspot tables. Samples are not phase-exclusive elapsed or exact source-line attribution.",
+    "Both subjects include retired-value compaction and its measured cost. Generated machine code and complete metadata are byte-identical. No new compressor-runtime timing campaign is claimed. Complete compilation remains above ten seconds."
+  ],
+  "source_commit": "7feb94669905d3413d7a79fb9f8b89b851027226",
+  "unique_engine_tests": 152
+}

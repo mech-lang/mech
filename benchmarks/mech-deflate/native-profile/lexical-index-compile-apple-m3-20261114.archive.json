@@ -1,0 +1,31 @@
+{
+  "archive_name": "level12-lexical-index-compile-apple-m3-20261114.tar.gz",
+  "bytes": 7032996,
+  "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-lexical-index-compile-apple-m3-20261114.tar.gz",
+  "evidence_files": 234,
+  "files": 234,
+  "format": 1,
+  "manifest_sha256": "9a60e0a9b1564bdae6c60b3c0dad0645d16055fb5116dd396bd7fa3eaebece83",
+  "public_verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "91a93c6d7faf5b0b56d1723f7e5550f548aa38fa362d7b5f19351414f3674460",
+    "replay_sha256": "13e03edcb2436d3f17673621c086febd27be06ffcee6ec007c8cfe92ee1c4fd3",
+    "source_revision": "89f84855d203cd40a133b0c866b8c727fd0d9ffc",
+    "verified_bytes": 49129297,
+    "verified_files": 234
+  },
+  "publication": "published",
+  "release_tag": "evidence-native-compression-experiments-6",
+  "replay_sha256": "13e03edcb2436d3f17673621c086febd27be06ffcee6ec007c8cfe92ee1c4fd3",
+  "repository": "mech-lang/mech",
+  "sha256": "91a93c6d7faf5b0b56d1723f7e5550f548aa38fa362d7b5f19351414f3674460",
+  "source_revision": "89f84855d203cd40a133b0c866b8c727fd0d9ffc",
+  "uncompressed_bytes": 49129297,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "91a93c6d7faf5b0b56d1723f7e5550f548aa38fa362d7b5f19351414f3674460",
+    "source_revision": "89f84855d203cd40a133b0c866b8c727fd0d9ffc",
+    "verified_bytes": 49129297,
+    "verified_files": 234
+  }
+}

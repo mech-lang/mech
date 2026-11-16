@@ -1,0 +1,31 @@
+{
+  "archive_name": "mech-parser-execution-trials-20261115.tar.gz",
+  "bytes": 6662104,
+  "compression": {
+    "codec": "gzip",
+    "intermediate_bytes": 8473028,
+    "intermediate_sha256": "db3b5f8ced2643f5439ba4932a4de542099cbb54e245a8c44caf9569eca93108",
+    "level": 9,
+    "method": "Recompress exact tar stream from maintained pack tool; manifest/Git blobs/file bytes unchanged.",
+    "mtime": 0
+  },
+  "evidence_files": 2121,
+  "files": 2121,
+  "format": 1,
+  "manifest_sha256": "7f9242a051178b1b0d3e117ffdded151c837d25306104cfeb74bb81149d8f252",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "64b35ca45e8dd5b2503f9654f2ea2ce8875d1961fce999ff68c9178a26af39b3",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-parser-execution-trials-20261115.tar.gz",
+  "sha256": "1a877b36383a12e6b402c0848d0ac253b039b1308e1fcde1ca93b3673b6e5d21",
+  "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+  "uncompressed_bytes": 71466526,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "1a877b36383a12e6b402c0848d0ac253b039b1308e1fcde1ca93b3673b6e5d21",
+    "source_revision": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+    "verified_bytes": 71466526,
+    "verified_files": 2121
+  }
+}

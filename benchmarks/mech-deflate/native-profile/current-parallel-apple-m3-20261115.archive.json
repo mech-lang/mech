@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-current-parallel-20261115.tar.gz",
+  "bytes": 29974986,
+  "evidence_files": 361,
+  "files": 361,
+  "format": 1,
+  "manifest_sha256": "eb7faaf3d789dd2696597cb3df44c3dcd277600a527d25b22b0f8d00857c3112",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "1bff4eb16d781b6b789e8deb8753f31e5bcff2784c273624c0facbbff8c64ca7",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-current-parallel-20261115.tar.gz",
+  "sha256": "a56ac6d14567d5205c6fa64b6d953a18af06b0754e08bc7dd81b3053e6f54d90",
+  "source_revision": "12c50010866066952345c63223bce770cf7578b1",
+  "uncompressed_bytes": 168774664,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "a56ac6d14567d5205c6fa64b6d953a18af06b0754e08bc7dd81b3053e6f54d90",
+    "source_revision": "12c50010866066952345c63223bce770cf7578b1",
+    "verified_bytes": 168774664,
+    "verified_files": 361
+  }
+}

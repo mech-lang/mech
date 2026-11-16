@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/audit-native-link.py",
+    "--object",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/runtime-compact-runner/build/object.o",
+    "--executable",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/runtime-compact-runner/runner-aot",
+    "--output",
+    "/private/tmp/mech-related-native-fixed-frame-arenas-runtime-check-20261106-v2/runtime-compact-runner/native-link-audit.json"
+  ],
+  "exit": 0,
+  "seconds": 0.10900995810516179,
+  "stdout": "{\"status\": \"passed\", \"defined_native_function_count\": 55, \"normalized_text_sha256\": \"aa95e81359771a0810f3ab12847b1eef038a6a842b0820749a5318fb1cb7e338\"}\n",
+  "stderr": ""
+}

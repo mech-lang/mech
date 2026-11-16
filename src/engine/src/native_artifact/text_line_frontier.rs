@@ -13,7 +13,6 @@ use super::{
     fusion_semantics::{Read, SemanticActions, reads, semantic_actions},
     iteration_validation::ControlPlan,
 };
-use mech_core::ValueData;
 
 #[path = "text_line_availability.rs"]
 pub(in crate::native_artifact) mod availability;
@@ -157,22 +156,10 @@ fn successors(terminator: Terminator) -> [Option<u32>; 2] {
         Terminator::Scalar(Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. }) => {
             [Some(yes), Some(no)]
         }
-        Terminator::Scalar(Term::Complete | Term::Reject) => [None, None],
+        Terminator::Scalar(Term::Complete | Term::Reject | Term::IntegrityFailure) => [None, None],
         Terminator::Header { body, exit, .. } => [Some(body), Some(exit)],
         Terminator::TailHeader { body, .. } => [Some(body), None],
     }
-}
-
-fn bool_constant(plan: &Plan, value: Value) -> Option<bool> {
-    plan.constants().iter().find_map(|constant| {
-        if constant.value() == value
-            && let ValueData::Bool(value) = constant.constant().data()
-        {
-            Some(*value)
-        } else {
-            None
-        }
-    })
 }
 
 fn guards_for_comparison(
@@ -228,6 +215,7 @@ fn predicate_branches(
     definitions: &[Vec<Option<Value>>],
 ) -> Option<Vec<(u32, u32, u32)>> {
     let block = &plan.blocks()[site as usize];
+    let facts = plan.facts();
     if definitions[predicate.get() as usize].as_slice() != [None] {
         return None;
     }
@@ -246,7 +234,7 @@ fn predicate_branches(
                         return None;
                     };
                     if *source != value
-                        || definitions[output.get() as usize].as_slice() != [Some(value)]
+                        || facts.unique_identity_copy(*output) != Some(value)
                         || aliases.contains(output)
                         || plan.lifecycle_barrier(reader as usize)
                     {
@@ -260,39 +248,8 @@ fn predicate_branches(
                     {
                         return None;
                     }
-                    let (yes, no, truth) = match plan.blocks()[reader as usize].terminator() {
-                        Terminator::Scalar(Term::Branch { condition, yes, no })
-                            if condition == value =>
-                        {
-                            (yes, no, true)
-                        }
-                        Terminator::Scalar(Term::LiteralBranch {
-                            left,
-                            right,
-                            yes,
-                            no,
-                        }) => {
-                            let literal = if left == value {
-                                bool_constant(plan, right)?
-                            } else if right == value {
-                                bool_constant(plan, left)?
-                            } else {
-                                return None;
-                            };
-                            (yes, no, literal)
-                        }
-                        _ => return None,
-                    };
-                    // Removing the EOF edge must NOT also remove an available
-                    // edge to the same successor.
-                    if yes == no {
-                        return None;
-                    }
-                    branches.push((
-                        reader,
-                        if truth { no } else { yes },
-                        if truth { yes } else { no },
-                    ));
+                    let (no, yes) = facts.boolean_branch_edges(reader, value)?;
+                    branches.push((reader, no, yes));
                 }
                 Read::Other => return None,
             }

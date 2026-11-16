@@ -8441,7 +8441,14 @@ fn canonical_document_functions_inline_typed_named_calls_without_leaking_binding
     let recursive = canonical_planning_test_document(
         "loop(value<f32>) = result<f32> :=\n  result := loop(value).\n\nanswer := loop(1f32)\n",
     );
-    assert!(compiler.compile_document(&recursive).is_err());
+    // Ordinary recursive statement functions now retain a canonical call
+    // frame. Compilation is valid even though this particular call never ends.
+    let recursive = compiler.compile_document(&recursive).unwrap();
+    assert!(recursive.artifact().nodes().iter().any(|node| {
+        matches!(&node.body, mech_engine::ExecutableNodeBody::Match(control)
+            if control.arms.iter().any(|arm| arm.body.operations.iter().any(|operation|
+                matches!(operation.body, mech_engine::ControlOperationBody::Recur(0)))))
+    }));
     let missing_output = canonical_planning_test_document(
         "result := 42f32\nmissing(value<f32>) = result<f32> :=\n  local := value.\n\nanswer := missing(1f32)\n",
     );

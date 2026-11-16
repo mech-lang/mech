@@ -1,0 +1,199 @@
+{
+  "all_parent_observations_retained": true,
+  "classification_counts": {
+    "current24": 24,
+    "custom_source20": 20,
+    "unchanged_repository_source4": 4
+  },
+  "default_rust_con_binary_sha256": "1f8c55519b0afd796c8d1bf60d5fcb9c88c617bfdaad65c8fc3e8c32a4e83d25",
+  "default_rust_con_exact_original_binary_alias": true,
+  "default_rust_con_source_git_blob": "a486e1482040618829cdccc78093845d66500b5d",
+  "default_rust_con_source_sha256": "dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e",
+  "frozen_utc": "2026-11-12T11:25:56.237679+00:00",
+  "independent_exact_observations": 676,
+  "interpretation": "Current Mech managed and compact post-JSON intervals are below the original rust_con reported interval in both retained cohorts, while its existing preinitialized-pool timer advantage is explicitly preserved. Whole-process results remain visible and are not inferred from processing ratios.",
+  "original_clone": {
+    "exists_now": false,
+    "note": "Original clone path preserved by initial baseline notes; currently absent. Retained source/file/Git-blob pins and published build receipts are the local provenance authority used here.",
+    "path": "/private/tmp/mech-related-post-gen-20261102/upstream"
+  },
+  "primary_exact_observations": 1612,
+  "reports": {
+    "current_52_variant_config": {
+      "artifact": "reports/current_52_variant_config.json.gz",
+      "bytes": 149266,
+      "compression": "gzip",
+      "original_path": "/private/tmp/mech-related-managed-parity-evidence-20261111/first-u16-host-mask-source-gains-v1/config.json",
+      "sha256": "ac82dd33d5888b6dc46bb882b16559dfdfbf30b89816734f8e13b4af2efc0e59",
+      "stored_sha256": "aef55ea35f9872b2b6aa9707eb351c86020debc3c18269f161620d797f23551d"
+    },
+    "historical_expanded_sweep": {
+      "artifact": "reports/historical_expanded_sweep.json.gz",
+      "bytes": 75391,
+      "compression": "gzip",
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/comparison-fastest-refresh-20261104-5000-m3.json",
+      "sha256": "075115371bf50c8ae8216183b302614f800d23316277e66ad8c1f564245a9acc",
+      "stored_sha256": "0affea690ca4998546137510fa007b42ef161692a9fb1c1d9228386b428d9ad6"
+    },
+    "independent_13_round_report": {
+      "artifact": "reports/independent_13_round_report.json.gz",
+      "bytes": 1803815,
+      "compression": "gzip",
+      "original_path": "/private/tmp/mech-related-managed-parity-evidence-20261111/independent-u16-host-mask-confirmation-v1/report.json",
+      "sha256": "75c5662c6a31ada6ea7cc899cf408227957874d452139dcf37948df863018919",
+      "stored_sha256": "8adbc69f86806196353dc7daaac868ca7610a01d739c89b273122d9cfdb83e1f"
+    },
+    "independent_plan": {
+      "artifact": "reports/independent_plan.json.gz",
+      "bytes": 312210,
+      "compression": "gzip",
+      "original_path": "/private/tmp/mech-related-managed-parity-evidence-20261111/independent-u16-host-mask-confirmation-v1/plan.json",
+      "sha256": "df7eabeb9723c4fbff54f68fd658872ffee1e6a4f652a68d79be916cd9dfdb32",
+      "stored_sha256": "c170545c444a75b693a4a6be3a6a3b9db1e678ce0f91eda33d39534cb0ebdf1f"
+    },
+    "primary_31_round_report": {
+      "artifact": "reports/primary_31_round_report.json.gz",
+      "bytes": 5699124,
+      "compression": "gzip",
+      "original_path": "/private/tmp/mech-related-managed-parity-evidence-20261111/first-u16-host-mask-source-gains-v1/latency.json",
+      "sha256": "a1d8be804821c451ff0bff5e813a57565c8e8fd39e6da8d7929d376649623e31",
+      "stored_sha256": "9b43c483265751a2931f56303d3f708c1992550406b6868ffaf10adf8348d27c"
+    }
+  },
+  "rust_con_aliases": [
+    {
+      "classification": "unchanged_repository_example_source",
+      "classification_note": "Identical repository source, with recorded build flags and original timer boundary preserved.",
+      "completion_target_candidate": true,
+      "executable_file_bytes": 504544,
+      "executable_path": "/private/tmp/mech-related-narrow-updates-20261111/frozen-inputs/rust-preinitialized/rust_rayon",
+      "executable_sha256": "1f8c55519b0afd796c8d1bf60d5fcb9c88c617bfdaad65c8fc3e8c32a4e83d25",
+      "git_blob_sha1": "a486e1482040618829cdccc78093845d66500b5d",
+      "name": "rust-preinitialized",
+      "original_calculation_boundary": "preinitialized_workers",
+      "original_category": "concurrent_8_physical_workers",
+      "original_config_kind": "upstream",
+      "original_processing_boundary": "Global eight-thread Rayon pool created before JSON decoding and processing timer; scratch buffers and tag index inside processing timer; no explicit pool teardown in processing timer.",
+      "repository_path": "rust_con/src/main.rs",
+      "source_artifact": "sources/dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e.rs",
+      "source_build_variant": "default_build",
+      "source_bytes": 3492,
+      "source_sha256": "dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e"
+    },
+    {
+      "classification": "unchanged_repository_example_source",
+      "classification_note": "Identical repository source, with recorded build flags and original timer boundary preserved.",
+      "completion_target_candidate": true,
+      "executable_file_bytes": 504624,
+      "executable_path": "/private/tmp/mech-related-narrow-updates-20261111/frozen-inputs/rust-preinitialized-apple-m3/rust_rayon",
+      "executable_sha256": "c2ba588021b73d859cb399abcfc41f42abc141829bcaed69368c65b5a99e750e",
+      "git_blob_sha1": "a486e1482040618829cdccc78093845d66500b5d",
+      "name": "rust-preinitialized-apple-m3",
+      "original_calculation_boundary": "preinitialized_workers",
+      "original_category": "concurrent_8_physical_workers",
+      "original_config_kind": "upstream",
+      "original_processing_boundary": "Global eight-thread Rayon pool created before JSON decoding and processing timer; scratch buffers and tag index inside processing timer; no explicit pool teardown in processing timer.",
+      "repository_path": "rust_con/src/main.rs",
+      "source_artifact": "sources/dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e.rs",
+      "source_build_variant": "apple-m3_target_cpu_build",
+      "source_bytes": 3492,
+      "source_sha256": "dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e"
+    }
+  ],
+  "schema": "related-post-fixed-benchmark-provenance-v1",
+  "scope": "Source provenance and offline interpretation only. No Rust optimization, compilation, native execution, or changes to old reports.",
+  "selection_and_completion_decision": "Owned by root/user fixed benchmark policy. No candidate is selected solely by this provenance audit.",
+  "source_pin_receipts": {
+    "expanded_sweep_other_source_pins": {
+      "artifact": "source-pin-receipts/expanded_sweep_other_source_pins.json",
+      "bytes": 2490,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-refresh-builds-20261104/source-pins.json",
+      "sha256": "7554fde5e221c806d0d1ca29eff0e64d1c11ead1bb19a2877cb5dc4ac368de5d",
+      "stored_sha256": "7554fde5e221c806d0d1ca29eff0e64d1c11ead1bb19a2877cb5dc4ac368de5d"
+    },
+    "fixed_target_policy": {
+      "artifact": "source-pin-receipts/fixed_target_policy.json",
+      "bytes": 1135,
+      "compression": null,
+      "original_path": "/private/tmp/mech-related-managed-parity-evidence-20261111/benchmark-target-policy-20261112.json",
+      "sha256": "9c41505556565375752ad6d44981abe13e127a3c117c66a1fe58d614419955cf",
+      "stored_sha256": "9c41505556565375752ad6d44981abe13e127a3c117c66a1fe58d614419955cf"
+    },
+    "original_baseline": {
+      "artifact": "source-pin-receipts/original_baseline.json",
+      "bytes": 9034,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/rust-baseline-notes.json",
+      "sha256": "03d183281d5d04c893ca719607460c5b56785f0de3a1a77dfd4baa5e928f28c2",
+      "stored_sha256": "03d183281d5d04c893ca719607460c5b56785f0de3a1a77dfd4baa5e928f28c2"
+    },
+    "original_rust_con_main.rs": {
+      "artifact": "source-pin-receipts/rust_con/src/main.rs",
+      "bytes": 3492,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-rust-analysis-20261104/rust-concurrent/src/main.rs",
+      "sha256": "dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e",
+      "stored_sha256": "dbfbb70ae223195f9d928c9833b4bd8ea18eddbf46da10a8b7ec2080c4c1052e"
+    },
+    "original_rust_con_types.rs": {
+      "artifact": "source-pin-receipts/rust_con/src/types.rs",
+      "bytes": 454,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-rust-analysis-20261104/rust-concurrent/src/types.rs",
+      "sha256": "25be70799325ea1511b921030fcf4978d5191ee19415a467eb157528849569e2",
+      "stored_sha256": "25be70799325ea1511b921030fcf4978d5191ee19415a467eb157528849569e2"
+    },
+    "original_rust_con_utils.rs": {
+      "artifact": "source-pin-receipts/rust_con/src/utils.rs",
+      "bytes": 478,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-rust-analysis-20261104/rust-concurrent/src/utils.rs",
+      "sha256": "6723047b80e229c0989fe25e901b6966c3ac25b6f399e5d884860892394a6278",
+      "stored_sha256": "6723047b80e229c0989fe25e901b6966c3ac25b6f399e5d884860892394a6278"
+    },
+    "retained_original_rust_con_source_inventory": {
+      "artifact": "source-pin-receipts/retained_original_rust_con_source_inventory.json",
+      "bytes": 512,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-rust-analysis-20261104/source-sha256.json",
+      "sha256": "94955ad37d343d4aa93bcfc8260fae6f5a6a11a8db9322e985a3eb9f70bab711",
+      "stored_sha256": "94955ad37d343d4aa93bcfc8260fae6f5a6a11a8db9322e985a3eb9f70bab711"
+    },
+    "upstream_revision_and_directory_inventory": {
+      "artifact": "source-pin-receipts/upstream_revision_and_directory_inventory.json",
+      "bytes": 22269,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-upstream-refresh-20261104.json",
+      "sha256": "63f71f0a20d6e4e802fb2ade3b9cc0eb57e9144463411d8fe52d3f75c3e37c8b",
+      "stored_sha256": "63f71f0a20d6e4e802fb2ade3b9cc0eb57e9144463411d8fe52d3f75c3e37c8b"
+    },
+    "upstream_rust_con_build": {
+      "artifact": "source-pin-receipts/upstream_rust_con_build.json",
+      "bytes": 1022,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-upstream-builds-20261104/rust_con.json",
+      "sha256": "5a697b3b833dc2dc5a05fead54e3f28c689a093b457250f15dfd899c24c67d7f",
+      "stored_sha256": "5a697b3b833dc2dc5a05fead54e3f28c689a093b457250f15dfd899c24c67d7f"
+    },
+    "upstream_rust_ho_build": {
+      "artifact": "source-pin-receipts/upstream_rust_ho_build.json",
+      "bytes": 769,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-upstream-builds-20261104/rust_ho.json",
+      "sha256": "7e0eb9b5b324065e12f521899ce95e62d298673b758ee678087617e86ea9e598",
+      "stored_sha256": "7e0eb9b5b324065e12f521899ce95e62d298673b758ee678087617e86ea9e598"
+    },
+    "upstream_source_git_blob_pins": {
+      "artifact": "source-pin-receipts/upstream_source_git_blob_pins.json",
+      "bytes": 2149,
+      "compression": null,
+      "original_path": "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/results/fastest-upstream-builds-20261104/source-pins.json",
+      "sha256": "e1facaf04dd4c4031f3a65cfde9665a4e7419f3567125fbc524fe82465e59ebe",
+      "stored_sha256": "e1facaf04dd4c4031f3a65cfde9665a4e7419f3567125fbc524fe82465e59ebe"
+    }
+  },
+  "timing_eligibility_unchanged": true,
+  "upstream_commit": "fc2982b0c929b1b701209d401a1dc30c773ef4ab",
+  "upstream_url": "https://github.com/zupat/related_post_gen"
+}

@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-nested-parser-20261114.tar.gz",
+  "bytes": 16998866,
+  "evidence_files": 1156,
+  "files": 1156,
+  "format": 1,
+  "manifest_sha256": "442d3b4651493e85e41e85cea5a560de5b2425bea8efb3374d498ecafe1cdc2f",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "85e056ca3fb40d3ce49688ed7fa79c16c5ae891fb54d4d5611de609b44b74e24",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-nested-parser-20261114.tar.gz",
+  "sha256": "24f8e8cfcfe0c45b69099921252091c510482ee0b60162ccbaec8ecea1c919a2",
+  "source_revision": "ee77e992e12f1880901c2e6b0745e23fcf7f1fe6",
+  "uncompressed_bytes": 115197148,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "24f8e8cfcfe0c45b69099921252091c510482ee0b60162ccbaec8ecea1c919a2",
+    "source_revision": "ee77e992e12f1880901c2e6b0745e23fcf7f1fe6",
+    "verified_bytes": 115197148,
+    "verified_files": 1156
+  }
+}

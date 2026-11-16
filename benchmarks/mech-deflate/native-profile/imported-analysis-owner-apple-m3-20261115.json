@@ -1,0 +1,566 @@
+{
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.240998312365264,
+      "control": 15.180209687910974,
+      "mean_reduction_fraction": -0.004004465399624957
+    },
+    {
+      "candidate": 15.321204354404472,
+      "control": 15.394009582931176,
+      "mean_reduction_fraction": 0.004729451942619978
+    }
+  ],
+  "base_commit": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+      "binary": "/private/tmp/mech-imported-analysis-owner-20261115/candidate",
+      "binary_sha256": "017c533881e50e330048b9d26efde9705c02bf522e9b54b33c45230879a3b62b",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "219ca96bfb85057caf061ce5259fd8f001ba7f77469a720d80d760488ffcfeb3",
+      "seconds": 260.3054289999418
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "219ca96bfb85057caf061ce5259fd8f001ba7f77469a720d80d760488ffcfeb3",
+      "seconds": 13.398251417092979
+    },
+    "candidate-cli-check": {
+      "base_commit": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "219ca96bfb85057caf061ce5259fd8f001ba7f77469a720d80d760488ffcfeb3",
+      "seconds": 15.559068250004202
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66940016,
+      "path": "/private/tmp/mech-imported-analysis-owner-20261115/candidate",
+      "sha256": "017c533881e50e330048b9d26efde9705c02bf522e9b54b33c45230879a3b62b"
+    },
+    "control": {
+      "bytes": 66939952,
+      "path": "/private/tmp/mech-imported-analysis-owner-20261115/control",
+      "sha256": "dd7dc5bc906325a213422a127a2e87ec134a3f8564b713dbbe50e1d1308571a0"
+    },
+    "focused/tests": {
+      "bytes": 1239576,
+      "path": "/private/tmp/mech-imported-analysis-owner-20261115/focused/tests",
+      "sha256": "7719b4e6957e66218af9081f80747650eff8f9f57f108d94d7b05b4901e5c056"
+    }
+  },
+  "decision": {
+    "all_four_outputs_complete_metadata_whole_exe_identical": true,
+    "combined_new_source_pgo_qualified": false,
+    "current_best_pgo_seconds": 14.027480958262458,
+    "current_best_pgo_source": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+    "default_serial_candidate_gate_run": false,
+    "focused_tests": 3,
+    "full_native_balanced_blocks": [
+      {
+        "candidate": 15.240998312365264,
+        "control": 15.180209687910974,
+        "mean_reduction_fraction": -0.004004465399624957
+      },
+      {
+        "candidate": 15.321204354404472,
+        "control": 15.394009582931176,
+        "mean_reduction_fraction": 0.004729451942619978
+      }
+    ],
+    "object_balanced_compiler_blocks": [
+      {
+        "candidate": 15.129447958,
+        "control": 15.218029937499999,
+        "mean_reduction_fraction": 0.005820857224213771
+      },
+      {
+        "candidate": 15.146564979,
+        "control": 15.165076917,
+        "mean_reduction_fraction": 0.0012206952923032865
+      }
+    ],
+    "primary_runs_uncontended": true,
+    "program_runtime_campaign": false,
+    "reason": "Reject no useful complete-build saving:15.287110->15.281101s(-.0393%), firstblock+.40045%, secondblock-.47295%. Source-to-Object partofthefull cohort+.05466%; fasterlink(-10.58%) masks it. Objectcompiler-.3525%, cleanup-1.0146%, instructions-.3833% are small workreductions. Every artifact/fullmetadata/wholeexe exact, focusedtests pass. OriginalsourceandstdDD7 restored; newownercomplexity notretained.",
+    "restoration": {
+      "all_reference_hashes_match": true,
+      "canonical_standard_compiler_sha256": "dd7dc5bc906325a213422a127a2e87ec134a3f8564b713dbbe50e1d1308571a0",
+      "cargo_dependency_cache_note": "Cargo-managed executable restored from immutable control. GPU rlibs still correspond to the rejected source until the next genuine Cargo rebuild. Source mtimes are fresh to force it; do not treat target cache as a newly rebuilt baseline. Selected5a1 PGO artifact untouched.",
+      "source_commit": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+      "source_paths": [
+        "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs",
+        "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/tests.rs"
+      ],
+      "working_tree_clean": true
+    },
+    "retain_source_change": false
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "focused_analysis_cases": {
+    "all_fresh_analysis_comparisons_identical": true,
+    "graph_only_then_normalized_alias_seeds": 16,
+    "successor_order_and_layout_seeds": 16,
+    "unchanged_graph_seeds": 64,
+    "unit_tests": 3
+  },
+  "focused_tests": 3,
+  "mutation_audit": {
+    "flags": "Original eligibility/enable checks run before preparation andeverypass stillrunsin originalorder; no proof/permission decisioncached.",
+    "invalidation": "Every positive report invalidates both graph andalias facts BEFORE original postcleanup/verification. Error propagation stops the sequence. Shared state cannot outlive the exclusive borrowed Context.",
+    "passes": {
+      "adjacent_addresses::fold": "Collect edits read-only; mutation loopforedits; returnsedits.len.",
+      "selected_homes::optimize": "All instructions/params added under counted constants orplans; zero-report final rewrite mayreconstruct identicalbranchargumentstorage with emptyactive map. It addsnoaliases/blocks/edges/orderchanges andkeeps already-normalized values.",
+      "selected_increments::optimize": "Collect acceptedbranchchanges read-only; mutateonlychangesloop; returnschanges.len. Originalgraph-onlypreparation preserved.",
+      "window_bounds::combine": "Mutation loop iterates only accepted nonempty groups of at least2windows, every rewritten branch incrementsremoved; removed0 means no mutation.",
+      "window_bounds::ordered_spans::fold": "Collect changes read-only; emission onlyforchanges; returnschanges.len."
+    },
+    "scope": "Only these reported-zero suffix passes share analyses; earlier passes retain existing entry normalization/rebuilds."
+  },
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.13086579088121653,
+        0.13283599982969463,
+        0.13209658302366734,
+        0.08575429185293615
+      ],
+      "control": [
+        0.1373647500295192,
+        0.12997495895251632,
+        0.13077662489376962,
+        0.1404145839624107
+      ],
+      "mean_reduction_fraction": 0.10580312172126483
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0009245839901268482,
+        0.0014606250915676355,
+        0.0009076669812202454,
+        0.000836583087220788
+      ],
+      "control": [
+        0.0013706248719245195,
+        0.0010015000589191914,
+        0.000965458108112216,
+        0.0009749159216880798
+      ],
+      "mean_reduction_fraction": 0.042444024260392066
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.306846832856536,
+        15.175149791873991,
+        15.408462999854237,
+        15.233945708954707
+      ],
+      "control": [
+        15.042039833962917,
+        15.31837954185903,
+        15.335360415978357,
+        15.452658749883994
+      ],
+      "mean_reduction_fraction": 0.0003930306107234882
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        15.175056457985193,
+        15.04085316695273,
+        15.27545874984935,
+        15.14735483401455
+      ],
+      "control": [
+        14.903304459061474,
+        15.187403082847595,
+        15.203618332976475,
+        15.311269249999896
+      ],
+      "mean_reduction_fraction": -0.0005466175828834352
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.023096,
+        0.022982709,
+        0.023197125,
+        0.023015334
+      ],
+      "control": [
+        0.023287458,
+        0.023082916,
+        0.023322375,
+        0.023094
+      ],
+      "mean_reduction_fraction": 0.0053410751571866255
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09417758299969137,
+        0.09378404216840863,
+        0.09400379215367138,
+        0.09384350012987852
+      ],
+      "control": [
+        0.0951199580449611,
+        0.09314758307300508,
+        0.09372387500479817,
+        0.09348691697232425
+      ],
+      "mean_reduction_fraction": -0.0008804352406603932
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.035784292,
+        0.036190708,
+        0.036210333,
+        0.036246709
+      ],
+      "control": [
+        0.035159791,
+        0.038348208,
+        0.035992834,
+        0.036121
+      ],
+      "mean_reduction_fraction": 0.008170416313877826
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        2.9128992080222815,
+        2.974336375016719,
+        2.973135583102703,
+        2.9051476661115885
+      ],
+      "control": [
+        2.9574530001264066,
+        3.011040084064007,
+        2.9633726249448955,
+        2.954245917033404
+      ],
+      "mean_reduction_fraction": 0.010145689162965765
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.7651064582169056,
+        2.826496500056237,
+        2.82507983292453,
+        2.7535986250732094
+      ],
+      "control": [
+        2.8148074171040207,
+        2.868138042045757,
+        2.82077108300291,
+        2.8118567501660436
+      ],
+      "mean_reduction_fraction": 0.012839992485973006
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14779274980537593,
+        0.14783987496048212,
+        0.14805575017817318,
+        0.15154904103837907
+      ],
+      "control": [
+        0.14264558302238584,
+        0.14290204201824963,
+        0.1426015419419855,
+        0.14238916686736047
+      ],
+      "mean_reduction_fraction": -0.04329083720941229
+    },
+    "compiler_seconds": {
+      "candidate": [
+        15.028594583,
+        15.230301333,
+        15.247475833,
+        15.045654125
+      ],
+      "control": [
+        15.188113167,
+        15.247946708,
+        15.15605225,
+        15.174101584
+      ],
+      "mean_reduction_fraction": 0.0035247849409494325
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009161042,
+        0.009080917,
+        0.009142625,
+        0.009083541
+      ],
+      "control": [
+        0.0091615,
+        0.009137084,
+        0.009046875,
+        0.009236416
+      ],
+      "mean_reduction_fraction": 0.0031094633612955835
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.5746014590000001,
+        1.578466083,
+        1.572306333,
+        1.5739060409999999
+      ],
+      "control": [
+        1.5910614170000001,
+        1.579842542,
+        1.571648667,
+        1.577485083
+      ],
+      "mean_reduction_fraction": 0.0032844413207282486
+    },
+    "instructions": {
+      "candidate": [
+        219807494056,
+        219811865216,
+        219808153659,
+        219814898961
+      ],
+      "control": [
+        220663290424,
+        220698230070,
+        220654846431,
+        220608850139
+      ],
+      "mean_reduction_fraction": 0.0038326631809282308
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4489723904,
+        4489723904,
+        4490231808,
+        4489723904
+      ],
+      "control": [
+        4489756672,
+        4489756672,
+        4489756672,
+        4487856128
+      ],
+      "mean_reduction_fraction": -0.0001268229660880138
+    },
+    "native_seconds": {
+      "candidate": [
+        11.520582083,
+        11.715910417,
+        11.738902834,
+        11.539917625
+      ],
+      "control": [
+        11.657441208,
+        11.716974292,
+        11.653954791,
+        11.662215459
+      ],
+      "mean_reduction_fraction": 0.0037539214422898093
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.0277572909835726,
+        2.02924762503244,
+        2.0398089580703527,
+        2.0400713752023876
+      ],
+      "control": [
+        2.0302119171246886,
+        2.0416750418953598,
+        2.047527417074889,
+        2.0424682090524584
+      ],
+      "mean_reduction_fraction": 0.0030626924116908816
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.864617958,
+        1.865851167,
+        1.866977292,
+        1.862756084
+      ],
+      "control": [
+        1.871219833,
+        1.879801916,
+        1.861338333,
+        1.865215417
+      ],
+      "mean_reduction_fraction": 0.0023233463844429814
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4467068624,
+        4467052216,
+        4467576528,
+        4467052216
+      ],
+      "control": [
+        4467052216,
+        4467052216,
+        4467052216,
+        4465168080
+      ],
+      "mean_reduction_fraction": -0.00013572214973800456
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.600799708859995,
+        1.599627082934603,
+        1.5987264579162002,
+        1.6008806668687612
+      ],
+      "control": [
+        1.633913624798879,
+        1.612181792035699,
+        1.602430708007887,
+        1.6371879579965025
+      ],
+      "mean_reduction_fraction": 0.013210598735167167
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.217808125074953,
+        2.294097540900111,
+        2.283218458062038,
+        2.224353834055364
+      ],
+      "control": [
+        2.2296220830176026,
+        2.2235665840562433,
+        2.2297972498927265,
+        2.229522458044812
+      ],
+      "mean_reduction_fraction": -0.012002185981782487
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        15.097650042036548,
+        15.299959666095674,
+        15.315610375022516,
+        15.115215749945492
+      ],
+      "control": [
+        15.254017209168524,
+        15.313999916892499,
+        15.22387845814228,
+        15.24089500005357
+      ],
+      "mean_reduction_fraction": 0.0033482780190843275
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "patch_sha256": "219ca96bfb85057caf061ce5259fd8f001ba7f77469a720d80d760488ffcfeb3",
+  "scope": "Borrowed same-Context owner reuses normalized aliases and complete CFG/dominator analyses only across audited no-change imported suffix passes. Every positive mutation invalidates, including successor ordering; samepasssequence/guards/verification, graph-onlystages preserved. Standarddd7 control versus standardcandidate, same61flags/two workers/pinnedmimalloc. Exact source/MBC/Object/fullmetadata/wholeexe gates before primary timing. No grammar/proof/permission cache or program-runtime change. CurrentbestPGO5a1/d26 remains separate; no new-source PGO or subten claim.",
+  "selection_metadata": {
+    "main_cleanup": {
+      "adjacent_addresses_reused": 0,
+      "after_blocks": 82895,
+      "after_instructions": 162023,
+      "before_blocks": 490850,
+      "before_instructions": 1342586,
+      "ordered_capture_spans": 0,
+      "rounds": 3,
+      "selected_home_constant_operands": 0,
+      "selected_home_merge_parameters": 0,
+      "selected_increment_guards_removed": 0,
+      "window_bounds_combined": 0
+    },
+    "reference_metadata_sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1",
+    "scope": "Sourceaudit selection only. Counts are metadata fromthe qualified baseline; they do notmeasure per-analysis cost or promise savings. No additional compiler/profile observation."
+  },
+  "source_commit": null,
+  "source_state": {
+    "base_commit": "a90a3d81d9f155242a29c593b1df49651cdc561c",
+    "files": [
+      {
+        "candidate_sha256": "5b29e0cabcae9e82620f5bdb981a5a38dbd42c6a681c1e207b824906a9db3db2",
+        "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs",
+        "sha256": "c0e4edc85bd954a251ad39c153c54c1e93291425f73050daf0275f283b973992"
+      },
+      {
+        "candidate_sha256": "9406cfa22d743ceee9317e046eafb70f968ddc4c04af92c4af9c87cbb5ebfcb4",
+        "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/tests.rs",
+        "sha256": "f2feb9d2321a219b191caf1f0054bfe924b4417bcc3be89084ac3914e8e50f1d"
+      }
+    ],
+    "patch_sha256": "219ca96bfb85057caf061ce5259fd8f001ba7f77469a720d80d760488ffcfeb3",
+    "scope": "One borrowed same-Context owner reuses alias-normalization and full CFG/dominator analyses across the audited imported-cleanup suffix: fixed windows, ordered spans, adjacent addresses, Boolean homes, selected increments. Original pass order/round limits/guards/verification/refusal and transforms remain. Invalidate both facts for every positive change, including successor ordering/layout/aliases; conservative recomputation after mutations. Graph-only stages retain their original absence of alias normalization. Standalone wrappers start fresh; home wrapper is test-only because no standalone production caller exists. No permission/factory/current-visit proof cache, grammar or program-runtime change. Standard dd7 control only; no new-source PGO claim."
+  }
+}

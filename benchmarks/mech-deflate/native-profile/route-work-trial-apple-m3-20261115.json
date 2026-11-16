@@ -1,0 +1,668 @@
+{
+  "balanced_blocks": [
+    {
+      "cleanup_including_compaction_seconds": {
+        "candidate": 3.327766021597199,
+        "control": 3.3157450209837407,
+        "mean_reduction_fraction": -0.003625429741244801
+      },
+      "compiler_seconds": {
+        "candidate": 16.982346854,
+        "control": 16.8007542915,
+        "mean_reduction_fraction": -0.010808595813574406
+      },
+      "instructions": {
+        "candidate": 255623083513.5,
+        "control": 255646707022,
+        "mean_reduction_fraction": 9.240685622435851e-05
+      },
+      "whole_process_seconds": {
+        "candidate": 17.0355401460547,
+        "control": 16.852450271020643,
+        "mean_reduction_fraction": -0.010864288105860487
+      }
+    },
+    {
+      "cleanup_including_compaction_seconds": {
+        "candidate": 3.3744758958928287,
+        "control": 3.3562077914830297,
+        "mean_reduction_fraction": -0.005443079077570134
+      },
+      "compiler_seconds": {
+        "candidate": 17.031629396,
+        "control": 17.0140739165,
+        "mean_reduction_fraction": -0.0010318210433408748
+      },
+      "instructions": {
+        "candidate": 255574523382.5,
+        "control": 255769737098.5,
+        "mean_reduction_fraction": 0.0007632400854555854
+      },
+      "whole_process_seconds": {
+        "candidate": 17.112768499995582,
+        "control": 17.066887103952467,
+        "mean_reduction_fraction": -0.0026883283262879587
+      }
+    }
+  ],
+  "base_commit": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+  "build": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "binary": "/private/tmp/mech-empty-repair-walk-20261114/candidate",
+    "binary_sha256": "8033fcc66d87d70bf588bcdd6866f3e3c99cfdb7eb03d2bad50e2a9b8bc01213",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "head": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+    "original_constant_phi_source_sha256": "28210ee1156fbd1b41ba1de8623ec820305290a00d6194f88b96c57d0f8f5f82",
+    "patch_sha256": "1b2b92496fc6daee638bcf672dd1dc31f0361bb8be74d796cc50c89ad3fb076d",
+    "seconds": 263.6440171250142
+  },
+  "check": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "head": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+    "original_constant_phi_source_sha256": "28210ee1156fbd1b41ba1de8623ec820305290a00d6194f88b96c57d0f8f5f82",
+    "patch_sha256": "1b2b92496fc6daee638bcf672dd1dc31f0361bb8be74d796cc50c89ad3fb076d",
+    "seconds": 13.929156916914508
+  },
+  "common_compile_threads": 2,
+  "compiler_binary_sha256": {
+    "candidate": "8033fcc66d87d70bf588bcdd6866f3e3c99cfdb7eb03d2bad50e2a9b8bc01213",
+    "control": "1d482447c6a395483a9c336820f23463c455e9f751ca1539d9371634464ac353"
+  },
+  "decision": "rejected",
+  "final_links": [
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.11188466683961451,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "control"
+    },
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.08784804190509021,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "candidate"
+    }
+  ],
+  "fixture_pairs": 14,
+  "focused_test": {
+    "exit_code": 0,
+    "seconds": 0.45018095802515745
+  },
+  "focused_test_build": {
+    "binary_sha256": "0164900d34b88c957a4b0bdd6291fd254dcf98fb41dc2af479c59ce00493ad12",
+    "exit_code": 0,
+    "seconds": 19.744185583898798
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.025803125,
+        0.025963208,
+        0.026059542,
+        0.026402333
+      ],
+      "control": [
+        0.025113625,
+        0.025903708,
+        0.026166417,
+        0.026056417
+      ],
+      "mean_reduction_fraction": -0.009570315786102901
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09873870783485472,
+        0.09973133308812976,
+        0.09823983279056847,
+        0.09911612491123378
+      ],
+      "control": [
+        0.0949214578140527,
+        0.10344233294017613,
+        0.09967966703698039,
+        0.09816804202273488
+      ],
+      "mean_reduction_fraction": 0.0009729681983949856
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.0352285,
+        0.034956584,
+        0.035882959,
+        0.036848167
+      ],
+      "control": [
+        0.034542209,
+        0.03534275,
+        0.0360915,
+        0.036290166
+      ],
+      "mean_reduction_fraction": -0.004565969003622605
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.2886504591442645,
+        3.366881584050134,
+        3.331078916788101,
+        3.417872874997556
+      ],
+      "control": [
+        3.2432651249691844,
+        3.388224916998297,
+        3.3500485830008984,
+        3.362366999965161
+      ],
+      "mean_reduction_fraction": -0.004539766073684115
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        3.1276059169322252,
+        3.2030476671643555,
+        3.1674982919357717,
+        3.252488625003025
+      ],
+      "control": [
+        3.08471112488769,
+        3.2237654582131654,
+        3.186301250010729,
+        3.198779083089903
+      ],
+      "mean_reduction_fraction": -0.0044970519461753344
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.16104454221203923,
+        0.1638339168857783,
+        0.1635806248523295,
+        0.16538424999453127
+      ],
+      "control": [
+        0.15855400008149445,
+        0.16445945878513157,
+        0.16374733299016953,
+        0.1635879168752581
+      ],
+      "mean_reduction_fraction": -0.005373463752142982
+    },
+    "compiler_seconds": {
+      "candidate": [
+        16.867351415999998,
+        17.097342292,
+        16.900589625,
+        17.162669167
+      ],
+      "control": [
+        16.484227125,
+        17.117281458,
+        17.048873458,
+        16.979274375
+      ],
+      "mean_reduction_fraction": -0.005889370212825318
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009266375,
+        0.009229375,
+        0.009225709,
+        0.0092025
+      ],
+      "control": [
+        0.008871042,
+        0.009541625,
+        0.009162167,
+        0.009263167
+      ],
+      "mean_reduction_fraction": -0.002333405659009413
+    },
+    "frontend_seconds": {
+      "candidate": [
+        2.377082125,
+        2.367137834,
+        2.367391875,
+        2.3641055
+      ],
+      "control": [
+        2.2987835,
+        2.367660958,
+        2.358428334,
+        2.362072375
+      ],
+      "mean_reduction_fraction": -0.009456981522815378
+    },
+    "instructions": {
+      "candidate": [
+        255659345951,
+        255586821076,
+        255567422869,
+        255581623896
+      ],
+      "control": [
+        255616293335,
+        255677120709,
+        255768197553,
+        255771276644
+      ],
+      "mean_reduction_fraction": 0.000427904161111492
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        6367215616,
+        5912576000,
+        5912117248,
+        5911904256
+      ],
+      "control": [
+        5912002560,
+        6133219328,
+        5911609344,
+        5912887296
+      ],
+      "mean_reduction_fraction": -0.009807178569173347
+    },
+    "native_seconds": {
+      "candidate": [
+        12.340994125,
+        12.560093167,
+        12.371240958,
+        12.630730208
+      ],
+      "control": [
+        12.135072375,
+        12.595271291,
+        12.545495625000001,
+        12.455843417
+      ],
+      "mean_reduction_fraction": -0.003446007467839518
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        1.961113833123818,
+        1.9602938331663609,
+        1.9775306249503046,
+        2.0038978750817478
+      ],
+      "control": [
+        1.936598208034411,
+        1.9800287908874452,
+        1.9825987501535565,
+        1.9985975411254913
+      ],
+      "mean_reduction_fraction": -0.000634716166357796
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.07731775,
+        2.098475833,
+        2.089464625,
+        2.09468
+      ],
+      "control": [
+        1.981224,
+        2.082739125,
+        2.072029458,
+        2.088275417
+      ],
+      "mean_reduction_fraction": -0.01649632623839592
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        6337074720,
+        5882205392,
+        5881730232,
+        5881517240
+      ],
+      "control": [
+        5881631928,
+        6102963552,
+        5881238712,
+        5882516664
+      ],
+      "mean_reduction_fraction": -0.009860757465642633
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.9783302920404822,
+        1.9951603338122368,
+        1.994644375052303,
+        2.001296541886404
+      ],
+      "control": [
+        1.914571875007823,
+        1.996396292001009,
+        2.028318957891315,
+        2.0025428750086576
+      ],
+      "mean_reduction_fraction": -0.003475463826717373
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.328698999946937,
+        2.4143838330637664,
+        2.3354145418852568,
+        2.4127179170027375
+      ],
+      "control": [
+        2.295152666978538,
+        2.3997250420507044,
+        2.392199666937813,
+        2.319042833056301
+      ],
+      "mean_reduction_fraction": -0.009046778159788937
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        16.91964404215105,
+        17.15143624995835,
+        16.98108262498863,
+        17.244454375002533
+      ],
+      "control": [
+        16.53782600001432,
+        17.167074542026967,
+        17.100965792080387,
+        17.032808415824547
+      ],
+      "mean_reduction_fraction": -0.006750464153999491
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292881,
+      "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1238656,
+      "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "paired_complete_ir_alias_machine_comparisons": 128,
+  "preliminary_screens": [
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.049649667,
+            "total_seconds": 2.049692791
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.039285666,
+            "total_seconds": 2.089022916
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.311799541,
+            "total_seconds": 4.400837041
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.025353167,
+            "total_seconds": 4.426204833
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009105084,
+            "total_seconds": 4.43532275
+          },
+          {
+            "phase": "native",
+            "seconds": 12.242008583,
+            "total_seconds": 16.677844666
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 16.677857791
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "control-screen",
+      "process": {
+        "binary": "/private/tmp/mech-empty-repair-walk-20261114/control",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 17.885285709053278,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "control"
+    },
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.115882625,
+            "total_seconds": 2.1159285
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.042144792,
+            "total_seconds": 2.158118708
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.363582541,
+            "total_seconds": 4.52171575
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.025854917,
+            "total_seconds": 4.5475864999999995
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009356875,
+            "total_seconds": 4.556957
+          },
+          {
+            "phase": "native",
+            "seconds": 12.379125125,
+            "total_seconds": 16.936620791
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 16.936637375
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "candidate-screen",
+      "process": {
+        "binary": "/private/tmp/mech-empty-repair-walk-20261114/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 19.04692987492308,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "candidate"
+    }
+  ],
+  "production_source_restored": true,
+  "program_flags_count": 61,
+  "scope": [
+    "The trial skips operand-repair traversal only when all transport replacement maps are empty. Fresh ordinary-edge checks still run before route discovery. One exact-helper differential test passes128 complete IR/alias/machine comparisons over shared argument storage, loops and scoped integer/float replacements. Its first unused-import harness failure executes no tests and remains.",
+    "Eight primary source-to-Object compiles run serially inABBA/BAAB order with same61flags+scheduling2 and no concurrent heavy build/test/profile/hash/archive work. Compiler phases and cleanup are slower in both blocks, with higher RSS; a tiny instruction saving does not establish a useful improvement. The source and qualified default profiling executable are restored. No balanced full-native cohort is run for the rejected trial.",
+    "Both screens,14paired fixtures and both cached complete-executable gates reproduce every source/bytecode/Object/metadata/executable byte. No language/grammar change, weaker proof check, scalar retirement or fresh emitted-program runtime campaign is claimed.",
+    "Two separate current-worker stack samples use the qualified source1090/compiler1d with same61flags+scheduling2 and unchanged outputs. Sampled process time and counters are diagnostic, excluded from primary means. Launcher/worker waiting observations are not CPU-time shares; no exclusive phase-time claim is made.",
+    "All raw observations, source/patches, exact helper test/harness, failures, outputs, samples and native linker inputs are included. Compiler/test binaries and intermediates are excluded/SHA-pinned. Pure replay validates saved data without rebuilding/rerunning timing. Sub-ten-second complete compilation remains unachieved."
+  ],
+  "source_revision": "aaef2a932bf81c7638c522dc777a2b78f0abcb5d",
+  "worker_stack_samples": [
+    {
+      "exit_code": 0,
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_frozen_reference": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_frozen_reference": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_frozen_reference": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_frozen_reference": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "sample-1",
+      "process": {
+        "binary": "/private/tmp/mech-current-workers-profile-20261114/compiler",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 17.485365291126072,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      }
+    },
+    {
+      "exit_code": 0,
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_frozen_reference": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_frozen_reference": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_frozen_reference": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_frozen_reference": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "sample-2",
+      "process": {
+        "binary": "/private/tmp/mech-current-workers-profile-20261114/compiler",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 16.908428208902478,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 1,
+        "sampling_error": null,
+        "source": "benchmark"
+      }
+    }
+  ]
+}

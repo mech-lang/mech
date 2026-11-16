@@ -70,6 +70,12 @@ pub(crate) fn command() -> Command {
                 ),
         )
         .arg(
+            Arg::new("native_compile_limits")
+                .long("native-compile-limits")
+                .value_name("JSON")
+                .help("Explicit compiler limits file for --backend cranelift; separate from runtime launch policy."),
+        )
+        .arg(
             Arg::new("native_scalar")
                 .long("scalar")
                 .action(ArgAction::SetTrue)
@@ -213,6 +219,7 @@ pub(crate) struct BuildOptions {
     pub paths: Vec<String>,
     pub emit: BuildEmit,
     pub cranelift: bool,
+    pub native_compile_limits: Option<PathBuf>,
     pub native_scalar: bool,
     pub native_loop_fma: bool,
     pub name: Option<String>,
@@ -253,6 +260,9 @@ impl BuildOptions {
             cranelift: matches
                 .get_one::<String>("build_backend")
                 .is_some_and(|b| b == "cranelift"),
+            native_compile_limits: matches
+                .get_one::<String>("native_compile_limits")
+                .map(PathBuf::from),
             native_scalar: matches.get_flag("native_scalar"),
             native_loop_fma: matches.get_flag("native_loop_fma"),
             name: matches.get_one::<String>("build_name").cloned(),
@@ -380,6 +390,9 @@ fn validate_prepared_build_config(
 pub(crate) fn run(options: BuildOptions) -> MResult<CliOutcome> {
     if options.cranelift {
         return run_cranelift(options);
+    }
+    if options.native_compile_limits.is_some() {
+        return build_error("`--native-compile-limits` requires `--backend cranelift`");
     }
     if options.native_scalar || options.native_loop_fma {
         return build_error("`--scalar` and `--fp-contract-loop` require `--backend cranelift`");
@@ -954,6 +967,7 @@ mod tests {
                 paths: vec![source.to_string_lossy().into_owned()],
                 emit: BuildEmit::Native,
                 cranelift: true,
+                native_compile_limits: None,
                 native_scalar: false,
                 native_loop_fma: false,
                 name: Some("demo".into()),

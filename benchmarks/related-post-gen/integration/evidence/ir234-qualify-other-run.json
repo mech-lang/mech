@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/qualify-other.py"
+  ],
+  "exit": 0,
+  "seconds": 38.4428679170087,
+  "stdout": "qualify-budgets-run.json passed\nqualify-compact-budgets-run.json passed\nbuild-run.json passed\naudit-run.json passed\nrun.json passed\nEight forged capacity-frontier cases rejected by both independent and Object-bound loaders\n",
+  "stderr": ""
+}

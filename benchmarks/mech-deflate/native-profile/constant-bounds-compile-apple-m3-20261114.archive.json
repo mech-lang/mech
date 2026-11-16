@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-constant-bounds-20261114.tar.gz",
+  "bytes": 9869447,
+  "evidence_files": 404,
+  "files": 404,
+  "format": 1,
+  "manifest_sha256": "c31bc76a39b0e2d7b7388c0a8a128753e26a0889b38ac5883bbd2c46e04a6068",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "5f50e7e62bdfe6cfe7061c6d3c191be7d5204e97b130e0c7ef22354070a02fab",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-constant-bounds-20261114.tar.gz",
+  "sha256": "d003a9041cd05ba1a2dd02365018f90059d1070afd06a5d743481b38a277dcaf",
+  "source_revision": "7d0c06d002758d029839c81a774d5e704e56d440",
+  "uncompressed_bytes": 71680114,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "d003a9041cd05ba1a2dd02365018f90059d1070afd06a5d743481b38a277dcaf",
+    "source_revision": "7d0c06d002758d029839c81a774d5e704e56d440",
+    "verified_bytes": 71680114,
+    "verified_files": 404
+  }
+}

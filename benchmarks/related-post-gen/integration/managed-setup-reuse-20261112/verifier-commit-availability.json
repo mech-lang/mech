@@ -1,0 +1,17 @@
+{
+  "scope": "Verifier portability correction only; no measurement rerun or source modification",
+  "problem": "Original IR338 commit6f7e was not published before docs-only rebase; fresh branch checkout cannot require that Gitobject. OriginalIR3364b also no longer ancestry.",
+  "required_source_aliases": {
+    "IR336": "0fca4d1030556dda112da254cb09e2ea5fcb7577",
+    "IR338": "b939e42a6cbbb6e9cd5a747d6c5ba1ba09567164"
+  },
+  "required_source_inventory_files": {
+    "IR336": 2814,
+    "IR338": 2817
+  },
+  "historical_commits": "Byte-verify if available; frozen original pins and publication/rebase receipts remain unchanged",
+  "prior_receipts_retained": [
+    "verification.json",
+    "root-verification-before-alias-fix.json"
+  ]
+}

@@ -1,0 +1,75 @@
+diff --git a/hosts/gpu/src/native_artifact/program/image/identity.rs b/hosts/gpu/src/native_artifact/program/image/identity.rs
+index 3b098cc01b..5860d1d6dc 100644
+--- a/hosts/gpu/src/native_artifact/program/image/identity.rs
++++ b/hosts/gpu/src/native_artifact/program/image/identity.rs
+@@ -401,7 +401,9 @@ fn selected_template(
+ // traversal and the independently proved complete-child funding path.
+ // IR236 integrates PR973/IR199's facts through checked shape-preserving writes
+ // and closed supported prefixes. Opaque continuations retain their guards.
+-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 236;
++// IR237 revalidates owned current shapes without copying their parameter
++// storage, and refreshes call descriptors without cloning replaced metadata.
++pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 237;
+ // Shared immutable schema arenas and the admitted two-phase entry protocol
+ // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
+ // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
+diff --git a/src/core/src/function/specialization.rs b/src/core/src/function/specialization.rs
+index 36bf90a315..e0a89efefb 100644
+--- a/src/core/src/function/specialization.rs
++++ b/src/core/src/function/specialization.rs
+@@ -699,9 +699,12 @@ impl BoundCall {
+             }
+         }
+         Ok(Self {
++            operation: self.operation.clone(),
++            origin: self.origin.clone(),
+             inputs,
+             outputs,
+-            ..self.clone()
++            implementation: self.implementation.clone(),
++            target: self.target,
+         })
+     }
+ 
+diff --git a/src/core/src/type_system/resolved_value.rs b/src/core/src/type_system/resolved_value.rs
+index 6ff63370ff..1b0cb027ec 100644
+--- a/src/core/src/type_system/resolved_value.rs
++++ b/src/core/src/type_system/resolved_value.rs
+@@ -75,8 +75,8 @@ impl ResolvedValueDescriptor {
+         schema: Schema,
+         shape: ShapeInstance,
+     ) -> Result<Self, TypeResolutionError> {
+-        let shape = schema
+-            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
++        schema
++            .validate_shape(&shape)
+             .map_err(TypeResolutionError::semantic)?;
+         let derived = ResolvedType::from_schema(&schema, &shape)?;
+         if !exact_type_equal(&resolved_type, &derived) {
+@@ -90,11 +90,11 @@ impl ResolvedValueDescriptor {
+     }
+ 
+     pub fn from_schema(schema: Schema, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
+-        // The schema is this constructor's sole type authority. Canonicalize
++        // The schema is this constructor's sole type authority. Validate
+         // the supplied shape and derive its type once; `new` must instead
+         // rederive and compare because it also accepts an independent type.
+-        let shape = schema
+-            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
++        schema
++            .validate_shape(&shape)
+             .map_err(TypeResolutionError::semantic)?;
+         let resolved_type = ResolvedType::from_schema(&schema, &shape)?;
+         Ok(Self {
+@@ -109,9 +109,8 @@ impl ResolvedValueDescriptor {
+     /// on current parameter values. Bounds and all body extents are checked
+     /// again; this retains no value or execution admission.
+     pub fn with_current_shape(&self, shape: ShapeInstance) -> Result<Self, TypeResolutionError> {
+-        let shape = self
+-            .schema
+-            .instantiate_shape(shape.parameter_values().to_vec().into_boxed_slice())
++        self.schema
++            .validate_shape(&shape)
+             .map_err(TypeResolutionError::semantic)?;
+         Ok(Self {
+             resolved_type: self.resolved_type.clone(),

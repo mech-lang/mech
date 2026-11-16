@@ -585,12 +585,13 @@ impl Continuation {
                 }
                 Frame::Literal(mut scan) => {
                     let before = *allowance;
-                    let progress = scan.advance(
-                        parser.source(),
+                    let progress = scan.advance_cached(
+                        parser.source,
                         parser.cursor().end(),
                         parser.cursor().context_end(),
                         final_input,
                         allowance,
+                        &mut parser.state.literal_cache,
                     );
                     self.work += before - *allowance;
                     match progress {

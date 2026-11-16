@@ -240,6 +240,16 @@ impl BuiltinKindPredicate {
 pub(crate) struct BuiltinKindPredicateSet(u16);
 
 impl BuiltinKindPredicateSet {
+    #[cfg(feature = "serde")]
+    pub(crate) const fn image_bits(self) -> u16 {
+        self.0
+    }
+
+    #[cfg(feature = "serde")]
+    pub(crate) fn from_image_bits(bits: u16) -> Option<Self> {
+        (bits & !((1 << BuiltinKindPredicate::ALL.len()) - 1) == 0).then_some(Self(bits))
+    }
+
     pub(crate) const fn empty() -> Self {
         Self(0)
     }

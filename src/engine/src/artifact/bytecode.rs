@@ -29,7 +29,7 @@ use super::{
 const DEFAULT_MAX_ARTIFACT_SECTION_BYTES: usize = 16_777_216;
 const DEFAULT_MAX_ARTIFACT_BYTES: usize = 67_108_864;
 const DEFAULT_MAX_CONSTANT_CANONICALIZATION_WORK: u64 = 65_536;
-const WIRE_GRAPH_REVISION: u32 = 13;
+const WIRE_GRAPH_REVISION: u32 = 14;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ArtifactDecodeLimits {
@@ -394,6 +394,7 @@ enum WireControlOperationBody {
     Match(WireMatchDeclaration),
     Comprehension(WireComprehensionDeclaration),
     Recur(u8),
+    Assert,
 
     Suspend,
     Publish,
@@ -776,7 +777,13 @@ fn decode_program_artifact_sections_owned(
         });
     }
     preflight_control_graph(&sections.nodes, &limits)?;
-    let graph: WireGraph = serde_json::from_slice(&sections.nodes)?;
+    // Only this already-preflighted control section uses its own finite wire
+    // bound instead of serde_json's shallower generic container limit. The
+    // first pass has admitted every count and the maximum lexical/wire depth.
+    let mut decoder = serde_json::Deserializer::from_slice(&sections.nodes);
+    decoder.disable_recursion_limit();
+    let graph = WireGraph::deserialize(&mut decoder)?;
+    decoder.end()?;
     if graph.revision != WIRE_GRAPH_REVISION {
         return Err(ArtifactBytecodeError::InvalidWireTag {
             section: "graph revision",
@@ -1780,6 +1787,7 @@ fn wire_control_operation_body(
             WireControlOperationBody::Comprehension(wire_comprehension(control, operations))
         }
         super::ControlOperationBody::Recur(ancestor) => WireControlOperationBody::Recur(*ancestor),
+        super::ControlOperationBody::Assert => WireControlOperationBody::Assert,
 
         super::ControlOperationBody::Suspend => WireControlOperationBody::Suspend,
         super::ControlOperationBody::Publish => WireControlOperationBody::Publish,
@@ -2240,6 +2248,7 @@ fn control_operation_body_from_wire(
             super::ControlOperationBody::Comprehension(comprehension_from_wire(control, operation)?)
         }
         WireControlOperationBody::Recur(ancestor) => super::ControlOperationBody::Recur(ancestor),
+        WireControlOperationBody::Assert => super::ControlOperationBody::Assert,
 
         WireControlOperationBody::Suspend => super::ControlOperationBody::Suspend,
         WireControlOperationBody::Publish => super::ControlOperationBody::Publish,
@@ -2462,6 +2471,7 @@ fn wire_control_body_operation_ids(body: &WireControlOperationBody) -> Vec<u32> 
         WireControlOperationBody::Iteration(control) => wire_iteration_operation_ids(control),
         WireControlOperationBody::Recur(_)
         | WireControlOperationBody::Suspend
+        | WireControlOperationBody::Assert
         | WireControlOperationBody::Publish => Vec::new(),
     }
 }
@@ -2500,17 +2510,19 @@ fn wire_match_operation_ids(control: &WireMatchDeclaration) -> Vec<u32> {
         .collect()
 }
 
+// A control layer adds up to eight JSON containers (declaration, arms or
+// steps, block and nested operation). A leaf may also contain a structured
+// FSM value, with an enum object, struct object and items array per layer.
+// This remains a finite independent wire bound, including unknown fields.
+const MAX_CONTROL_GRAPH_WIRE_DEPTH: usize =
+    super::MAX_CONTROL_DEPTH * 8 + super::fsm::MAX_FSM_VALUE_DEPTH * 3 + 16;
+
 /// First pass visits tokens without constructing graph arrays. The typed decode
 /// can allocate only after aggregate control counts and nesting are admitted.
 fn preflight_control_graph(
     bytes: &[u8],
     limits: &ArtifactDecodeLimits,
 ) -> Result<(), ArtifactBytecodeError> {
-    // A structured FSM value adds an enum object, a struct object, and an
-    // items array at each admitted semantic layer. The remaining allowance
-    // covers the graph, node, FSM body, stage, and leaf containers.
-    const MAX_CONTROL_GRAPH_WIRE_DEPTH: usize = super::fsm::MAX_FSM_VALUE_DEPTH * 3 + 16;
-
     #[derive(Clone, Copy)]
     enum Field {
         Other,
@@ -2585,8 +2597,8 @@ fn preflight_control_graph(
             mut self,
             deserializer: D,
         ) -> Result<(), D::Error> {
-            // Keep the complete declared control depth below serde_json's own
-            // recursion bound while admitting every valid FSM value depth.
+            // Admit complete declared control/FSM depth before constructing
+            // typed graph arrays; excessive arbitrary JSON also fails here.
             if self.depth > MAX_CONTROL_GRAPH_WIRE_DEPTH
                 || self.control_depth > super::MAX_CONTROL_DEPTH
             {
@@ -2701,6 +2713,7 @@ fn preflight_control_graph(
         operands: 0,
     };
     let mut decoder = serde_json::Deserializer::from_slice(bytes);
+    decoder.disable_recursion_limit();
     Scan {
         counts: &mut counts,
         limits,
@@ -2830,6 +2843,24 @@ mod execution_authority_tests {
     }
 
     #[test]
+    fn full_decoder_rejects_previous_graph_revision() {
+        let mut sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
+        let mut graph: serde_json::Value = serde_json::from_slice(&sections.nodes).unwrap();
+        graph["revision"] = serde_json::json!(13);
+        sections.nodes = serde_json::to_vec(&graph).unwrap();
+        let bytes = write_bytecode_with_artifact(&empty_envelope(), &sections).unwrap();
+        // The outer format remains valid; admission rejects the stale graph.
+        assert!(mech_core::CanonicalArtifactBytecode::from_bytes(&bytes).is_ok());
+        assert!(matches!(
+            decode_program_artifact_bytecode_v1(&bytes),
+            Err(ArtifactBytecodeError::InvalidWireTag {
+                section: "graph revision",
+                tag: 13
+            })
+        ));
+    }
+
+    #[test]
     fn full_decoder_keeps_semantic_section_validation_after_strict_envelope() {
         let mut sections = encode_program_artifact_sections(&empty_artifact()).unwrap();
         sections.schemas = b"null".to_vec();
@@ -2919,7 +2950,7 @@ mod source_nominal_declaration_tests {
         let sections = encode_program_artifact_sections(&artifact).unwrap();
         assert_eq!(
             sections.nodes,
-            br#"{"revision":13,"requirements":[],"nodes":[]}"#
+            br#"{"revision":14,"requirements":[],"nodes":[]}"#
         );
         let artifact = artifact
             .with_source_nominal_declarations(Box::new([]))
@@ -3093,6 +3124,26 @@ mod source_nominal_declaration_tests {
 #[cfg(test)]
 mod control_preflight_tests {
     use super::{ArtifactDecodeLimits, WireComprehensionStep, preflight_control_graph};
+
+    #[test]
+    fn wire_depth_remains_finite_when_generic_json_recursion_limit_is_replaced() {
+        let nested = |depth| format!("{}0{}", "{\"unknown\":".repeat(depth), "}".repeat(depth));
+        let limits = ArtifactDecodeLimits::default();
+        assert!(
+            preflight_control_graph(
+                nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH).as_bytes(),
+                &limits,
+            )
+            .is_ok()
+        );
+        assert!(
+            preflight_control_graph(
+                nested(super::MAX_CONTROL_GRAPH_WIRE_DEPTH + 1).as_bytes(),
+                &limits,
+            )
+            .is_err()
+        );
+    }
 
     #[test]
     fn unknown_fields_cannot_hide_generator_patterns_from_admission() {

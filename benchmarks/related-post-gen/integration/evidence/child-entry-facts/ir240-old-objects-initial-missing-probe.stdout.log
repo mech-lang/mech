@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-related-child-entry-facts-integration-old-objects-20261107-v1/run.py", line 9, in <module>
+    (p/'probe.rs').write_text((P/'probe.rs').read_text().replace('"old_typed_ir":197','"old_typed_ir":'+str(ir)))
+                              ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 787, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/private/tmp/mech-related-child-entry-facts-integration-old-objects-20261107-v1/probe.rs'

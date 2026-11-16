@@ -1,0 +1,3293 @@
+{
+  "schema": "mech.related-post-gen.boolean-implication-native-mask-reuse.v1",
+  "compiler": "cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b",
+  "identity": "IR235/work115/ABI41/image9",
+  "incoming_973": "176d8134133befb8e35a6413fb8f98387bacebb3",
+  "problem": "A conjunction guarding append and a later read of the same Bool tuple field lost correlation; the numeric tree rejected an allegedly older returned array.",
+  "fix": "Prove every Boolean producer canonical, normalize exact current private scalar projections, require collectively dominating producers with at most one producer execution per traversal, and propagate And-true/Or-false/Not implications. Reset facts at lexical header/exit; unknown representations retain the checked route.",
+  "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+  "source_unchanged_across_compilers": true,
+  "qualification": {
+    "status": "passed",
+    "loader_fixtures_exact": 558,
+    "fixtures": {
+      "edges-after-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "61492f98dd3b4aee7617930d030b6e869fd5430a64c2058d88707db628274a1b"
+      },
+      "edges-after-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "ee827a52dca8b130f4bb8928f9d44f3e70ffa06c93c9400b55930a8176285457"
+      },
+      "edges-after-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "9a7cecb5ca96bd7d01f6196a3b9e574ff2dcfe2b5c3bda69b196a1339498381c"
+      },
+      "edges-after-8-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "8ecad5f9bde77764226565a6f6216aa144db396e5dcd5e2ec34b15592e21e9f8"
+      },
+      "edges-after-8-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "3dc09817da63180f8ad5c945ae08a731b39b30f184082a34c9c0fe3aa71b7260"
+      },
+      "edges-compact-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "8a69aaba64df96bde13f4ed1b044437f588811162c0b618465c133c54cccbf25"
+      },
+      "edges-compact-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "d170785123d6ef01a721b9cde284cf1d92489ca04e2f4548f5cd2e5a0f0ccc40"
+      },
+      "edges-compact-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "f9d58483e480231880fbb3ff3c8e693dcfdb841594148ce17f4f0e28343baaa4"
+      },
+      "edges-compact-8-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "4ef98a706b648c2a85ff4d889fab4d5c45251c18f0575e248a516c66f21e8144"
+      },
+      "edges-compact-8-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "21b3f11c6422d8d7c32dd52011c79f1839cf768616ea4bcd0ed4636a9831401a"
+      },
+      "edges-reuse-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "4e212fc316ea3da8833d57111640363fd2ede2e255d062e057c55f455e5e7385"
+      },
+      "edges-reuse-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "28290426d48cbce77e8d9cabd69f4a2193c0385476c4147cb7f92b7953344c1f"
+      },
+      "edges-reuse-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "38775cf8e0ce77af6c19941e69887ad94cc40b36097dedeb5e0ad01fcd9d8352"
+      },
+      "after-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "b27e6a5ec77e091968295ecaa35abab0a2ec5c0a30a856bdad59a921bcf69850"
+      },
+      "after-8/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "57016e1bc2da525161f009785fb00e18e0fe6480bd2c57ba8f2103cdf114c4bc"
+      },
+      "compact-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "5fecce17d81052d328ff101bf077c8ab285470e0f084e9b8cf3265f7c7d55cea"
+      },
+      "compact-8/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "44a1a7fcba4f28d6352caaaa04b91f1c71abddb475f884552f75f87b6984d2be"
+      },
+      "reuse-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "cc211debebf6fec5455908d5af2c55566f224c7578e7df2e59f5168c382da329"
+      }
+    },
+    "decoded_bundle_files_exact": 65,
+    "finite_denials_exact": 48,
+    "finite_small_full_successes_exact": 12,
+    "forged_frontier_rejections": 16,
+    "gpu_passed": 849,
+    "inherited_gpu_failures": [
+      "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+      "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+    ],
+    "ci_selected_names_passed": 354,
+    "new_regressions_passed": 5,
+    "accounting_observations": 112
+  },
+  "latency_summary": {
+    "rust": {
+      "median_seconds": 0.008752875,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "single_core_standard",
+      "median_whole_process_seconds": 0.03176916693337262,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.008752875,
+      "over_fastest": 5.476680757448342,
+      "over_rust": 1.0,
+      "whole_process_over_fastest": 1.2948772940418671,
+      "post_json_over_fastest_matched_native": 5.476680757448342
+    },
+    "rust-preinitialized": {
+      "median_seconds": 0.001856833,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "concurrent_8_physical_workers",
+      "median_whole_process_seconds": 0.0252981660887599,
+      "calculation_boundary": "preinitialized_workers",
+      "over_fastest": 1.161821865489348,
+      "over_rust": 0.21213978264284591,
+      "whole_process_over_fastest": 1.0311262148590923
+    },
+    "rust-mech-control-streaming": {
+      "median_seconds": 0.001617542,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "single_core_same_numeric_algorithm_post_json_streaming_histogram_no_mech_accounting",
+      "median_whole_process_seconds": 0.025433999951928854,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001617542,
+      "over_fastest": 1.0120972989748518,
+      "over_rust": 0.18480122245547892,
+      "whole_process_over_fastest": 1.0366626579628209,
+      "post_json_over_fastest_matched_native": 1.0120972989748518
+    },
+    "rust-mech-control-u32-casts": {
+      "median_seconds": 0.001610958,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "single_core_streaming_histogram_checked_u32_combinadic_casts",
+      "median_whole_process_seconds": 0.024534499971196055,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001610958,
+      "over_fastest": 1.007977685007208,
+      "over_rust": 0.18404901246733216,
+      "whole_process_over_fastest": 1.0,
+      "post_json_over_fastest_matched_native": 1.007977685007208
+    },
+    "rust-mech-control-u8-ids-u32": {
+      "median_seconds": 0.001598208,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "single_core_streaming_histogram_checked_u8_ids_u32_combinadic",
+      "median_whole_process_seconds": 0.024599208030849695,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001598208,
+      "over_fastest": 1.0,
+      "over_rust": 0.18259234822843923,
+      "whole_process_over_fastest": 1.0026374313611286,
+      "post_json_over_fastest_matched_native": 1.0
+    },
+    "mech-parent-original-4": {
+      "median_seconds": 0.002783583,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "IR234_original",
+      "median_processing_plus_admission_seconds": 0.002939958,
+      "median_whole_process_seconds": 0.03754495899192989,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002947458,
+      "over_fastest": 1.7416900678760212,
+      "over_rust": 0.3180192793796324,
+      "whole_process_over_fastest": 1.5302924060408138,
+      "processing_plus_admission_over_fastest": 1.8395340281114847,
+      "processing_plus_admission_over_rust": 0.33588483783899575,
+      "post_json_over_fastest_matched_native": 1.8442267839980777
+    },
+    "mech-parent-reuse-4": {
+      "median_seconds": 0.016755084,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "IR234_fused_ordering_reused_masks_source",
+      "median_processing_plus_admission_seconds": 0.016905875,
+      "median_whole_process_seconds": 0.05327595793642104,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.016914833,
+      "over_fastest": 10.483669209514655,
+      "over_rust": 1.9142377790154663,
+      "whole_process_over_fastest": 2.171471112065376,
+      "processing_plus_admission_over_fastest": 10.578019256567355,
+      "processing_plus_admission_over_rust": 1.9314653756622824,
+      "post_json_over_fastest_matched_native": 10.583624284198303
+    },
+    "mech-current-original-4": {
+      "median_seconds": 0.002781375,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "IR235_after-4",
+      "median_processing_plus_admission_seconds": 0.002937416,
+      "median_whole_process_seconds": 0.03737104102037847,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.00294425,
+      "over_fastest": 1.7403085205430082,
+      "over_rust": 0.3177670194079088,
+      "whole_process_over_fastest": 1.523203695378049,
+      "processing_plus_admission_over_fastest": 1.8379434967163222,
+      "processing_plus_admission_over_rust": 0.33559441897662196,
+      "post_json_over_fastest_matched_native": 1.8422195358801856
+    },
+    "mech-current-reuse-4": {
+      "median_seconds": 0.002733625,
+      "samples": 31,
+      "all_exact_rust": true,
+      "category": "IR235_reuse-4",
+      "median_processing_plus_admission_seconds": 0.0028829999999999997,
+      "median_whole_process_seconds": 0.037271915934979916,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002891875,
+      "over_fastest": 1.7104313080650329,
+      "over_rust": 0.31231166902303525,
+      "whole_process_over_fastest": 1.519163462827358,
+      "processing_plus_admission_over_fastest": 1.8038953628063428,
+      "processing_plus_admission_over_rust": 0.32937749025320245,
+      "post_json_over_fastest_matched_native": 1.8094484572721448
+    }
+  },
+  "matched_reference": {
+    "variant": "rust-mech-control-u8-ids-u32",
+    "median_seconds": 0.001598208,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32"
+    ]
+  },
+  "whole_process_reference": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.024534499971196055,
+    "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+  },
+  "paired": {
+    "mech-current-original-4": {
+      "mech-parent-original-4": {
+        "post_json_seconds": {
+          "rounds": 31,
+          "wins": 19,
+          "median_paired_delta_seconds": -7.000000000000062e-06
+        },
+        "wall_seconds": {
+          "rounds": 31,
+          "wins": 20,
+          "median_paired_delta_seconds": -0.0002739990595728159
+        }
+      },
+      "mech-parent-reuse-4": {
+        "post_json_seconds": {
+          "rounds": 31,
+          "wins": 31,
+          "median_paired_delta_seconds": -0.013977458999999998
+        },
+        "wall_seconds": {
+          "rounds": 31,
+          "wins": 31,
+          "median_paired_delta_seconds": -0.016098333057016134
+        }
+      }
+    },
+    "mech-current-reuse-4": {
+      "mech-parent-original-4": {
+        "post_json_seconds": {
+          "rounds": 31,
+          "wins": 26,
+          "median_paired_delta_seconds": -6.041700000000011e-05
+        },
+        "wall_seconds": {
+          "rounds": 31,
+          "wins": 17,
+          "median_paired_delta_seconds": -9.383424185216427e-05
+        }
+      },
+      "mech-parent-reuse-4": {
+        "post_json_seconds": {
+          "rounds": 31,
+          "wins": 31,
+          "median_paired_delta_seconds": -0.014041292
+        },
+        "wall_seconds": {
+          "rounds": 31,
+          "wins": 31,
+          "median_paired_delta_seconds": -0.016002626158297062
+        }
+      },
+      "mech-current-original-4": {
+        "post_json_seconds": {
+          "rounds": 31,
+          "wins": 27,
+          "median_paired_delta_seconds": -6.462500000000001e-05
+        },
+        "wall_seconds": {
+          "rounds": 31,
+          "wins": 14,
+          "median_paired_delta_seconds": 0.0001492910087108612
+        }
+      }
+    }
+  },
+  "resources_summary": {
+    "rust": {
+      "median_seconds": 0.008634209,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "single_core_standard",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 67878465,
+        "instructions_retired": 330715812,
+        "involuntary_context_switches": 5,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 443,
+        "peak_physical_footprint_bytes": 4325688,
+        "peak_resident_bytes": 4849664,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "median_whole_process_seconds": 0.03917091689072549,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.008634209,
+      "over_fastest": 5.187786225601352,
+      "over_rust": 1.0,
+      "whole_process_over_fastest": 1.197580646280713,
+      "post_json_over_fastest_matched_native": 5.187786225601352,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 1.9686324870547025,
+          "page_reclaims": 0.8585271317829457,
+          "peak_resident_bytes": 0.8043478260869565,
+          "cycles": 1.6199535682360493,
+          "wall_seconds": 1.0,
+          "involuntary_context_switches": 1.0,
+          "peak_physical_footprint_bytes": 0.7928011542081973
+        }
+      }
+    },
+    "rust-mech-control-streaming-instrumented": {
+      "median_seconds": 0.001664334,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "single_core_same_numeric_algorithm_post_json_streaming_histogram_no_mech_accounting_instrumented",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 41475327,
+        "instructions_retired": 168382099,
+        "involuntary_context_switches": 5,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 516,
+        "peak_physical_footprint_bytes": 5456208,
+        "peak_resident_bytes": 6029312,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.0,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.01
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 57,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 5652548,
+        "hardware": {
+          "cycles": 6269587,
+          "instructions_per_cycle": 3.13788436144199,
+          "instructions_retired": 19663828,
+          "lifetime_peak_physical_footprint_bytes_after": 5456208,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 5456208,
+          "physical_footprint_bytes_before": 2916640,
+          "resident_bytes_after": 5980160,
+          "resident_bytes_before": 3440640,
+          "system_cpu_seconds": 0.00010445833333333334,
+          "user_cpu_seconds": 0.0015538750000000001
+        },
+        "live_requested_heap_bytes_after": 3205712,
+        "live_requested_heap_bytes_before": 2055085,
+        "peak_additional_live_requested_heap_bytes": 5585586,
+        "peak_live_requested_heap_bytes": 7640671,
+        "requested_allocation_bytes": 6803175
+      },
+      "stage_measurements_median": {
+        "preparation": {
+          "allocation_requests": 7551,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 620960,
+          "hardware": {
+            "cycles": 4598392,
+            "instructions_per_cycle": 4.67557354831863,
+            "instructions_retired": 21530669,
+            "lifetime_peak_physical_footprint_bytes_after": 2916640,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 2916640,
+            "physical_footprint_bytes_before": 917792,
+            "resident_bytes_after": 3440640,
+            "resident_bytes_before": 1359872,
+            "system_cpu_seconds": 0.00016620833333333334,
+            "user_cpu_seconds": 0.0010535833333333335
+          },
+          "live_requested_heap_bytes_after": 2055085,
+          "live_requested_heap_bytes_before": 612,
+          "peak_additional_live_requested_heap_bytes": 2054473,
+          "peak_live_requested_heap_bytes": 2055085,
+          "requested_allocation_bytes": 2675433
+        }
+      },
+      "median_whole_process_seconds": 0.032708375016227365,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.001664334,
+      "over_fastest": 1.0,
+      "over_rust": 0.19276044858307229,
+      "whole_process_over_fastest": 1.0,
+      "post_json_over_fastest_matched_native": 1.0,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 1.0023181786356834,
+          "page_reclaims": 1.0,
+          "peak_resident_bytes": 1.0,
+          "cycles": 0.989829454266636,
+          "wall_seconds": 0.5,
+          "involuntary_context_switches": 1.0,
+          "peak_physical_footprint_bytes": 1.0
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 0.9970589344490017,
+          "requested_allocation_bytes": 0.9966980738862006,
+          "live_requested_heap_bytes_after": 1.0,
+          "freed_allocation_bytes": 0.9960286064387395,
+          "hardware": {
+            "resident_bytes_before": 1.0,
+            "lifetime_peak_physical_footprint_bytes_after": 0.9970061718469054,
+            "instructions_retired": 1.0234446552524317,
+            "system_cpu_seconds": 0.9063629790310919,
+            "physical_footprint_bytes_before": 1.0,
+            "instructions_per_cycle": 1.0347391603259006,
+            "resident_bytes_after": 0.9972677595628415,
+            "user_cpu_seconds": 0.9912551166870449,
+            "cycles": 0.9902281575946895,
+            "physical_footprint_bytes_after": 0.9970061718469054
+          },
+          "peak_additional_live_requested_heap_bytes": 0.9959811872918645,
+          "live_requested_heap_bytes_before": 1.0,
+          "allocation_requests": 0.9827586206896551
+        }
+      },
+      "post_json_instructions_per_post": 3932.7656,
+      "post_json_cycles_per_post": 1253.9174
+    },
+    "rust-mech-control-u32-casts-instrumented": {
+      "median_seconds": 0.0016674580000000001,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "single_core_streaming_histogram_checked_u32_combinadic_casts_instrumented",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 41901488,
+        "instructions_retired": 167992662,
+        "involuntary_context_switches": 5,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 516,
+        "peak_physical_footprint_bytes": 5456208,
+        "peak_resident_bytes": 6029312,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.0,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 57,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 5652548,
+        "hardware": {
+          "cycles": 6308101,
+          "instructions_per_cycle": 3.052656417517728,
+          "instructions_retired": 19281861,
+          "lifetime_peak_physical_footprint_bytes_after": 5456208,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 5456208,
+          "physical_footprint_bytes_before": 2933024,
+          "resident_bytes_after": 5980160,
+          "resident_bytes_before": 3457024,
+          "system_cpu_seconds": 0.00011233333333333334,
+          "user_cpu_seconds": 0.001552875
+        },
+        "live_requested_heap_bytes_after": 3205712,
+        "live_requested_heap_bytes_before": 2055085,
+        "peak_additional_live_requested_heap_bytes": 5585586,
+        "peak_live_requested_heap_bytes": 7640671,
+        "requested_allocation_bytes": 6803175
+      },
+      "stage_measurements_median": {
+        "preparation": {
+          "allocation_requests": 7551,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 620960,
+          "hardware": {
+            "cycles": 4748629,
+            "instructions_per_cycle": 4.534983255166912,
+            "instructions_retired": 21519401,
+            "lifetime_peak_physical_footprint_bytes_after": 2933024,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 2933024,
+            "physical_footprint_bytes_before": 934176,
+            "resident_bytes_after": 3457024,
+            "resident_bytes_before": 1376256,
+            "system_cpu_seconds": 0.000176125,
+            "user_cpu_seconds": 0.0010855416666666667
+          },
+          "live_requested_heap_bytes_after": 2055085,
+          "live_requested_heap_bytes_before": 612,
+          "peak_additional_live_requested_heap_bytes": 2054473,
+          "peak_live_requested_heap_bytes": 2055085,
+          "requested_allocation_bytes": 2675433
+        }
+      },
+      "median_whole_process_seconds": 0.033005291130393744,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0016674580000000001,
+      "over_fastest": 1.0018770270871111,
+      "over_rust": 0.19312226516638642,
+      "whole_process_over_fastest": 1.0090776785462154,
+      "post_json_over_fastest_matched_native": 1.0018770270871111,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 1.0,
+          "page_reclaims": 1.0,
+          "peak_resident_bytes": 1.0,
+          "cycles": 1.0,
+          "wall_seconds": 1.0,
+          "involuntary_context_switches": 1.0,
+          "peak_physical_footprint_bytes": 1.0
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 0.9970589344490017,
+          "requested_allocation_bytes": 0.9966980738862006,
+          "live_requested_heap_bytes_after": 1.0,
+          "freed_allocation_bytes": 0.9960286064387395,
+          "hardware": {
+            "resident_bytes_before": 1.0047619047619047,
+            "lifetime_peak_physical_footprint_bytes_after": 0.9970061718469054,
+            "instructions_retired": 1.0035643916215249,
+            "system_cpu_seconds": 0.9746926970354303,
+            "physical_footprint_bytes_before": 1.0056174227878656,
+            "instructions_per_cycle": 1.006634653921475,
+            "resident_bytes_after": 0.9972677595628415,
+            "user_cpu_seconds": 0.9906171920684705,
+            "cycles": 0.9963111176463806,
+            "physical_footprint_bytes_after": 0.9970061718469054
+          },
+          "peak_additional_live_requested_heap_bytes": 0.9959811872918645,
+          "live_requested_heap_bytes_before": 1.0,
+          "allocation_requests": 0.9827586206896551
+        }
+      },
+      "post_json_instructions_per_post": 3856.3722,
+      "post_json_cycles_per_post": 1261.6202
+    },
+    "rust-mech-control-u8-ids-u32-instrumented": {
+      "median_seconds": 0.0016755000000000001,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "single_core_streaming_histogram_checked_u8_ids_u32_combinadic_instrumented",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 41952852,
+        "instructions_retired": 168650395,
+        "involuntary_context_switches": 5,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 517,
+        "peak_physical_footprint_bytes": 5472592,
+        "peak_resident_bytes": 6045696,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.0,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.01
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 58,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 5675086,
+        "hardware": {
+          "cycles": 6331457,
+          "instructions_per_cycle": 3.032536586760362,
+          "instructions_retired": 19213377,
+          "lifetime_peak_physical_footprint_bytes_after": 5472592,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 5472592,
+          "physical_footprint_bytes_before": 2916640,
+          "resident_bytes_after": 5996544,
+          "resident_bytes_before": 3440640,
+          "system_cpu_seconds": 0.00011525000000000001,
+          "user_cpu_seconds": 0.0015675833333333334
+        },
+        "live_requested_heap_bytes_after": 3205712,
+        "live_requested_heap_bytes_before": 2055085,
+        "peak_additional_live_requested_heap_bytes": 5608124,
+        "peak_live_requested_heap_bytes": 7663209,
+        "requested_allocation_bytes": 6825713
+      },
+      "stage_measurements_median": {
+        "preparation": {
+          "allocation_requests": 7551,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 620960,
+          "hardware": {
+            "cycles": 4615050,
+            "instructions_per_cycle": 4.660450513707605,
+            "instructions_retired": 21517284,
+            "lifetime_peak_physical_footprint_bytes_after": 2916640,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 2916640,
+            "physical_footprint_bytes_before": 934176,
+            "resident_bytes_after": 3440640,
+            "resident_bytes_before": 1376256,
+            "system_cpu_seconds": 0.00017383333333333335,
+            "user_cpu_seconds": 0.0010471666666666667
+          },
+          "live_requested_heap_bytes_after": 2055085,
+          "live_requested_heap_bytes_before": 612,
+          "peak_additional_live_requested_heap_bytes": 2054473,
+          "peak_live_requested_heap_bytes": 2055085,
+          "requested_allocation_bytes": 2675433
+        }
+      },
+      "median_whole_process_seconds": 0.033819207921624184,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.0016755000000000001,
+      "over_fastest": 1.0067089899022674,
+      "over_rust": 0.19405367648617264,
+      "whole_process_over_fastest": 1.0339617270758854,
+      "post_json_over_fastest_matched_native": 1.0067089899022674,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 1.003915248393409,
+          "page_reclaims": 1.001937984496124,
+          "peak_resident_bytes": 1.002717391304348,
+          "cycles": 1.0012258275887482,
+          "wall_seconds": 0.5,
+          "involuntary_context_switches": 1.0,
+          "peak_physical_footprint_bytes": 1.0030028180743842
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 1.0,
+          "requested_allocation_bytes": 1.0,
+          "live_requested_heap_bytes_after": 1.0,
+          "freed_allocation_bytes": 1.0,
+          "hardware": {
+            "resident_bytes_before": 1.0,
+            "lifetime_peak_physical_footprint_bytes_after": 1.0,
+            "instructions_retired": 1.0,
+            "system_cpu_seconds": 1.0,
+            "physical_footprint_bytes_before": 1.0,
+            "instructions_per_cycle": 1.0,
+            "resident_bytes_after": 1.0,
+            "user_cpu_seconds": 1.0,
+            "cycles": 1.0,
+            "physical_footprint_bytes_after": 1.0
+          },
+          "peak_additional_live_requested_heap_bytes": 1.0,
+          "live_requested_heap_bytes_before": 1.0,
+          "allocation_requests": 1.0
+        }
+      },
+      "post_json_instructions_per_post": 3842.6754,
+      "post_json_cycles_per_post": 1266.2914
+    },
+    "rust-standard-instrumented": {
+      "median_seconds": 0.00873875,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "single_core_standard_instrumented",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 68209546,
+        "instructions_retired": 331317548,
+        "involuntary_context_switches": 5,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 448,
+        "peak_physical_footprint_bytes": 4358456,
+        "peak_resident_bytes": 4931584,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 31,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 0,
+        "hardware": {
+          "cycles": 33644828,
+          "instructions_per_cycle": 5.525976800951398,
+          "instructions_retired": 185917363,
+          "lifetime_peak_physical_footprint_bytes_after": 4342072,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 4342072,
+          "physical_footprint_bytes_before": 3539256,
+          "resident_bytes_after": 4849664,
+          "resident_bytes_before": 4046848,
+          "system_cpu_seconds": 7.154166666666667e-05,
+          "user_cpu_seconds": 0.008663375000000001
+        },
+        "live_requested_heap_bytes_after": 2890869,
+        "live_requested_heap_bytes_before": 2120621,
+        "peak_additional_live_requested_heap_bytes": 770248,
+        "peak_live_requested_heap_bytes": 2890869,
+        "requested_allocation_bytes": 770248
+      },
+      "stage_measurements_median": {
+        "preparation": {
+          "allocation_requests": 7551,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 686464,
+          "hardware": {
+            "cycles": 4713307,
+            "instructions_per_cycle": 4.819835627087309,
+            "instructions_retired": 22705490,
+            "lifetime_peak_physical_footprint_bytes_after": 3539256,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 3539256,
+            "physical_footprint_bytes_before": 934176,
+            "resident_bytes_after": 4046848,
+            "resident_bytes_before": 1359872,
+            "system_cpu_seconds": 0.00019120833333333335,
+            "user_cpu_seconds": 0.0010559583333333334
+          },
+          "live_requested_heap_bytes_after": 2120621,
+          "live_requested_heap_bytes_before": 612,
+          "peak_additional_live_requested_heap_bytes": 2120009,
+          "peak_live_requested_heap_bytes": 2120621,
+          "requested_allocation_bytes": 2806473
+        }
+      },
+      "median_whole_process_seconds": 0.040069208946079016,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.00873875,
+      "over_fastest": 5.2505987379936965,
+      "over_rust": 1.012107768065378,
+      "whole_process_over_fastest": 1.225044317432455,
+      "post_json_over_fastest_matched_native": 5.2505987379936965,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 1.9722144054125412,
+          "page_reclaims": 0.8682170542635659,
+          "peak_resident_bytes": 0.8179347826086957,
+          "cycles": 1.6278549821428776,
+          "wall_seconds": 1.0,
+          "involuntary_context_switches": 1.0,
+          "peak_physical_footprint_bytes": 0.7988067903569659
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 0.3772400048073855,
+          "requested_allocation_bytes": 0.11284506102146398,
+          "live_requested_heap_bytes_after": 0.9017868729318167,
+          "freed_allocation_bytes": 0.0,
+          "hardware": {
+            "resident_bytes_before": 1.1761904761904762,
+            "lifetime_peak_physical_footprint_bytes_after": 0.7934214719460175,
+            "instructions_retired": 9.676454222493005,
+            "system_cpu_seconds": 0.6207519884309471,
+            "physical_footprint_bytes_before": 1.2134702945855504,
+            "instructions_per_cycle": 1.8222292272011005,
+            "resident_bytes_after": 0.8087431693989071,
+            "user_cpu_seconds": 5.526580192440594,
+            "cycles": 5.31391558056858,
+            "physical_footprint_bytes_after": 0.7934214719460175
+          },
+          "peak_additional_live_requested_heap_bytes": 0.1373450373065931,
+          "live_requested_heap_bytes_before": 1.0318896785291118,
+          "allocation_requests": 0.5344827586206896
+        }
+      },
+      "post_json_instructions_per_post": 37183.4726,
+      "post_json_cycles_per_post": 6728.9656
+    },
+    "rust-preinitialized-instrumented": {
+      "median_seconds": 0.001869125,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "concurrent_8_physical_workers_instrumented",
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 79771255,
+        "instructions_retired": 335508808,
+        "involuntary_context_switches": 187,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 530,
+        "peak_physical_footprint_bytes": 5718568,
+        "peak_resident_bytes": 6225920,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.02
+      },
+      "measurement_boundary": "processing",
+      "processing_measurement_median": {
+        "allocation_requests": 44,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 125624,
+        "hardware": {
+          "cycles": 41645891,
+          "instructions_per_cycle": 4.507779795130329,
+          "instructions_retired": 187730506,
+          "lifetime_peak_physical_footprint_bytes_after": 5718568,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 5718568,
+          "physical_footprint_bytes_before": 5046824,
+          "resident_bytes_after": 6209536,
+          "resident_bytes_before": 5537792,
+          "system_cpu_seconds": 0.0008165416666666667,
+          "user_cpu_seconds": 0.012127
+        },
+        "live_requested_heap_bytes_after": 2864805,
+        "live_requested_heap_bytes_before": 2184181,
+        "peak_additional_live_requested_heap_bytes": 805816,
+        "peak_live_requested_heap_bytes": 2989997,
+        "requested_allocation_bytes": 806248
+      },
+      "stage_measurements_median": {
+        "preparation": {
+          "allocation_requests": 7681,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 687168,
+          "hardware": {
+            "cycles": 7222765,
+            "instructions_per_cycle": 3.221120720388937,
+            "instructions_retired": 23263192,
+            "lifetime_peak_physical_footprint_bytes_after": 5046824,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 5046824,
+            "physical_footprint_bytes_before": 1114448,
+            "resident_bytes_after": 5537792,
+            "resident_bytes_before": 1622016,
+            "system_cpu_seconds": 0.0009703333333333334,
+            "user_cpu_seconds": 0.0010875000000000001
+          },
+          "live_requested_heap_bytes_after": 2184181,
+          "live_requested_heap_bytes_before": 612,
+          "peak_additional_live_requested_heap_bytes": 2183569,
+          "peak_live_requested_heap_bytes": 2184181,
+          "requested_allocation_bytes": 2870737
+        }
+      },
+      "median_whole_process_seconds": 0.03377083293162286,
+      "calculation_boundary": "preinitialized_workers",
+      "over_fastest": 1.1230468163241272,
+      "over_rust": 0.21647900809442994,
+      "whole_process_over_fastest": 1.0324827483746406,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 1.9971634713425757,
+          "page_reclaims": 1.0271317829457365,
+          "peak_resident_bytes": 1.0326086956521738,
+          "cycles": 1.9037809588050907,
+          "wall_seconds": 1.0,
+          "involuntary_context_switches": 37.4,
+          "peak_physical_footprint_bytes": 1.048084677123746
+        }
+      },
+      "processing_instructions_per_post": 37546.1012,
+      "processing_cycles_per_post": 8329.1782
+    },
+    "mech-parent-original-4-instrumented": {
+      "median_seconds": 0.002653333,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR234_original_instrumented",
+      "median_processing_plus_admission_seconds": 0.002807542,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 87715604,
+        "instructions_retired": 353874086,
+        "involuntary_context_switches": 15,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1824,
+        "peak_physical_footprint_bytes": 16400744,
+        "peak_resident_bytes": 27197440,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3858,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7322164,
+        "hardware": {
+          "cycles": 15639259,
+          "instructions_per_cycle": 3.651926091894763,
+          "instructions_retired": 57085397,
+          "lifetime_peak_physical_footprint_bytes_after": 16384360,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16302440,
+          "physical_footprint_bytes_before": 12534120,
+          "resident_bytes_after": 27066368,
+          "resident_bytes_before": 21872640,
+          "system_cpu_seconds": 0.0003945416666666667,
+          "user_cpu_seconds": 0.003647875
+        },
+        "live_requested_heap_bytes_after": 8739975,
+        "live_requested_heap_bytes_before": 8018133,
+        "peak_additional_live_requested_heap_bytes": 5598047,
+        "peak_live_requested_heap_bytes": 13616180,
+        "requested_allocation_bytes": 8044006
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 36618,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6780543,
+          "hardware": {
+            "cycles": 32573656,
+            "instructions_per_cycle": 4.185295534526428,
+            "instructions_retired": 136279096,
+            "lifetime_peak_physical_footprint_bytes_after": 9847144,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9847144,
+            "physical_footprint_bytes_before": 1179984,
+            "resident_bytes_after": 19152896,
+            "resident_bytes_before": 2015232,
+            "system_cpu_seconds": 0.0006430416666666667,
+            "user_cpu_seconds": 0.00792025
+          },
+          "live_requested_heap_bytes_after": 6593198,
+          "live_requested_heap_bytes_before": 6361,
+          "peak_additional_live_requested_heap_bytes": 7263763,
+          "peak_live_requested_heap_bytes": 7270124,
+          "requested_allocation_bytes": 13367380
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6604779,
+            "instructions_per_cycle": 4.793799156640971,
+            "instructions_retired": 31615187,
+            "lifetime_peak_physical_footprint_bytes_after": 12534120,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12534120,
+            "physical_footprint_bytes_before": 9847144,
+            "resident_bytes_after": 21872640,
+            "resident_bytes_before": 19152896,
+            "system_cpu_seconds": 0.0002052916666666667,
+            "user_cpu_seconds": 0.0014535416666666668
+          },
+          "live_requested_heap_bytes_after": 8018133,
+          "live_requested_heap_bytes_before": 6593198,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 9131422,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.04675229196436703,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002814958,
+      "over_fastest": 1.5942310858277244,
+      "over_rust": 0.30730469924923054,
+      "whole_process_over_fastest": 1.429367614293653,
+      "processing_plus_admission_over_fastest": 1.6868861658777625,
+      "processing_plus_admission_over_rust": 0.32516493404317637,
+      "post_json_over_fastest_matched_native": 1.6913420022663719,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 2.1064853773196357,
+          "page_reclaims": 3.5348837209302326,
+          "peak_resident_bytes": 4.510869565217392,
+          "cycles": 2.093376827095019,
+          "wall_seconds": 1.5,
+          "involuntary_context_switches": 3.0,
+          "peak_physical_footprint_bytes": 3.005886872347975
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 1.7768248262575117,
+          "requested_allocation_bytes": 1.1784858226532524,
+          "live_requested_heap_bytes_after": 2.726375607041431,
+          "freed_allocation_bytes": 1.2902296106173545,
+          "hardware": {
+            "resident_bytes_before": 6.357142857142857,
+            "lifetime_peak_physical_footprint_bytes_after": 2.993893935451428,
+            "instructions_retired": 2.97112772002548,
+            "system_cpu_seconds": 3.423355025307303,
+            "physical_footprint_bytes_before": 4.297451862417028,
+            "instructions_per_cycle": 1.204247990886102,
+            "resident_bytes_after": 4.5136612021857925,
+            "user_cpu_seconds": 2.3270692679815004,
+            "cycles": 2.470088480424016,
+            "physical_footprint_bytes_after": 2.978924794685955
+          },
+          "peak_additional_live_requested_heap_bytes": 0.9982031424412157,
+          "live_requested_heap_bytes_before": 3.9016065028940408,
+          "allocation_requests": 66.51724137931035
+        }
+      },
+      "post_json_instructions_per_post": 11417.0794,
+      "post_json_cycles_per_post": 3127.8518
+    },
+    "mech-parent-reuse-4-instrumented": {
+      "median_seconds": 0.016647334,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR234_fused_ordering_reused_masks_source_instrumented",
+      "median_processing_plus_admission_seconds": 0.016795251,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 140408590,
+        "instructions_retired": 580008630,
+        "involuntary_context_switches": 15,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1800,
+        "peak_physical_footprint_bytes": 16138600,
+        "peak_resident_bytes": 26804224,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.03,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.04
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 33847,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 209369404,
+        "hardware": {
+          "cycles": 68628938,
+          "instructions_per_cycle": 4.18834900228239,
+          "instructions_retired": 287497378,
+          "lifetime_peak_physical_footprint_bytes_after": 16138600,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16040296,
+          "physical_footprint_bytes_before": 12058984,
+          "resident_bytes_after": 26722304,
+          "resident_bytes_before": 21151744,
+          "system_cpu_seconds": 0.0010554166666666667,
+          "user_cpu_seconds": 0.016880875
+        },
+        "live_requested_heap_bytes_after": 8491195,
+        "live_requested_heap_bytes_before": 7769353,
+        "peak_additional_live_requested_heap_bytes": 5567047,
+        "peak_live_requested_heap_bytes": 13336400,
+        "requested_allocation_bytes": 210091246
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 36414,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6748692,
+          "hardware": {
+            "cycles": 31514656,
+            "instructions_per_cycle": 4.196105551651905,
+            "instructions_retired": 132246279,
+            "lifetime_peak_physical_footprint_bytes_after": 9634152,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9634152,
+            "physical_footprint_bytes_before": 1163600,
+            "resident_bytes_after": 18677760,
+            "resident_bytes_before": 2031616,
+            "system_cpu_seconds": 0.0006360000000000001,
+            "user_cpu_seconds": 0.0076262916666666675
+          },
+          "live_requested_heap_bytes_after": 6344418,
+          "live_requested_heap_bytes_before": 6335,
+          "peak_additional_live_requested_heap_bytes": 6996321,
+          "peak_live_requested_heap_bytes": 7002656,
+          "requested_allocation_bytes": 13086775
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6606070,
+            "instructions_per_cycle": 4.762079572272168,
+            "instructions_retired": 31458631,
+            "lifetime_peak_physical_footprint_bytes_after": 12058984,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12058984,
+            "physical_footprint_bytes_before": 9634152,
+            "resident_bytes_after": 21151744,
+            "resident_bytes_before": 18694144,
+            "system_cpu_seconds": 0.00019829166666666668,
+            "user_cpu_seconds": 0.0014509166666666668
+          },
+          "live_requested_heap_bytes_after": 7769353,
+          "live_requested_heap_bytes_before": 6344418,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8882642,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.05980608286336064,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.016801833,
+      "over_fastest": 10.00239975870228,
+      "over_rust": 1.9280670643946654,
+      "whole_process_over_fastest": 1.8284638975091088,
+      "processing_plus_admission_over_fastest": 10.091274347576869,
+      "processing_plus_admission_over_rust": 1.9451985700137673,
+      "post_json_over_fastest_matched_native": 10.09522908262404,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 3.4525831253272243,
+          "page_reclaims": 3.488372093023256,
+          "peak_resident_bytes": 4.445652173913044,
+          "cycles": 3.350921332435736,
+          "wall_seconds": 2.0,
+          "involuntary_context_switches": 3.0,
+          "peak_physical_footprint_bytes": 2.9578417831578268
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 1.7403153169905714,
+          "requested_allocation_bytes": 30.779384659155753,
+          "live_requested_heap_bytes_after": 2.648770382367474,
+          "freed_allocation_bytes": 36.89272796923254,
+          "hardware": {
+            "resident_bytes_before": 6.147619047619048,
+            "lifetime_peak_physical_footprint_bytes_after": 2.9489865131550097,
+            "instructions_retired": 14.963396491933718,
+            "system_cpu_seconds": 9.15762834417932,
+            "physical_footprint_bytes_before": 4.134546601568928,
+            "instructions_per_cycle": 1.3811371709637885,
+            "resident_bytes_after": 4.456284153005464,
+            "user_cpu_seconds": 10.768725745574399,
+            "cycles": 10.83935940811096,
+            "physical_footprint_bytes_after": 2.9310235442364423
+          },
+          "peak_additional_live_requested_heap_bytes": 0.9926754472618651,
+          "live_requested_heap_bytes_before": 3.7805506828184723,
+          "allocation_requests": 583.5689655172414
+        }
+      },
+      "post_json_instructions_per_post": 57499.4756,
+      "post_json_cycles_per_post": 13725.7876
+    },
+    "mech-current-original-4-instrumented": {
+      "median_seconds": 0.002727375,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR235_after-4_instrumented",
+      "median_processing_plus_admission_seconds": 0.002887167,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 88295350,
+        "instructions_retired": 353777108,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1828,
+        "peak_physical_footprint_bytes": 16367976,
+        "peak_resident_bytes": 27262976,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3858,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7322164,
+        "hardware": {
+          "cycles": 15710712,
+          "instructions_per_cycle": 3.6314158772689615,
+          "instructions_retired": 57099888,
+          "lifetime_peak_physical_footprint_bytes_after": 16367976,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 16367976,
+          "physical_footprint_bytes_before": 12501328,
+          "resident_bytes_after": 27181056,
+          "resident_bytes_before": 21823488,
+          "system_cpu_seconds": 0.00039812500000000004,
+          "user_cpu_seconds": 0.0037157916666666667
+        },
+        "live_requested_heap_bytes_after": 8739976,
+        "live_requested_heap_bytes_before": 8018134,
+        "peak_additional_live_requested_heap_bytes": 5598047,
+        "peak_live_requested_heap_bytes": 13616181,
+        "requested_allocation_bytes": 8044006
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 36618,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6780543,
+          "hardware": {
+            "cycles": 32451683,
+            "instructions_per_cycle": 4.203117385314037,
+            "instructions_retired": 136296654,
+            "lifetime_peak_physical_footprint_bytes_after": 9830760,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9830760,
+            "physical_footprint_bytes_before": 1163600,
+            "resident_bytes_after": 19087360,
+            "resident_bytes_before": 1982464,
+            "system_cpu_seconds": 0.0006479583333333334,
+            "user_cpu_seconds": 0.007976708333333334
+          },
+          "live_requested_heap_bytes_after": 6593199,
+          "live_requested_heap_bytes_before": 6362,
+          "peak_additional_live_requested_heap_bytes": 7263763,
+          "peak_live_requested_heap_bytes": 7270125,
+          "requested_allocation_bytes": 13367380
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6486237,
+            "instructions_per_cycle": 4.848745320221942,
+            "instructions_retired": 31436878,
+            "lifetime_peak_physical_footprint_bytes_after": 12501328,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12501328,
+            "physical_footprint_bytes_before": 9830760,
+            "resident_bytes_after": 21823488,
+            "resident_bytes_before": 19103744,
+            "system_cpu_seconds": 0.00019087500000000002,
+            "user_cpu_seconds": 0.001478375
+          },
+          "live_requested_heap_bytes_after": 8018134,
+          "live_requested_heap_bytes_before": 6593199,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 9131423,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.04803808405995369,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002894625,
+      "over_fastest": 1.6387185504832564,
+      "over_rust": 0.3158801228925545,
+      "whole_process_over_fastest": 1.4686784053356643,
+      "processing_plus_admission_over_fastest": 1.734728125484428,
+      "processing_plus_admission_over_rust": 0.3343869716380504,
+      "post_json_over_fastest_matched_native": 1.7392091971923906,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 2.105908102105079,
+          "page_reclaims": 3.5426356589147288,
+          "peak_resident_bytes": 4.521739130434782,
+          "cycles": 2.1072127557856657,
+          "wall_seconds": 1.5,
+          "involuntary_context_switches": 3.2,
+          "peak_physical_footprint_bytes": 2.9998812361992067
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 1.776824956751147,
+          "requested_allocation_bytes": 1.1784858226532524,
+          "live_requested_heap_bytes_after": 2.7263759189846124,
+          "freed_allocation_bytes": 1.2902296106173545,
+          "hardware": {
+            "resident_bytes_before": 6.3428571428571425,
+            "lifetime_peak_physical_footprint_bytes_after": 2.990900107298333,
+            "instructions_retired": 2.9718819341337026,
+            "system_cpu_seconds": 3.4544468546637743,
+            "physical_footprint_bytes_before": 4.286208788194635,
+            "instructions_per_cycle": 1.1974846051728525,
+            "resident_bytes_after": 4.532786885245901,
+            "user_cpu_seconds": 2.370394981659667,
+            "cycles": 2.4813738765026754,
+            "physical_footprint_bytes_after": 2.990900107298333
+          },
+          "peak_additional_live_requested_heap_bytes": 0.9982031424412157,
+          "live_requested_heap_bytes_before": 3.9016069894919188,
+          "allocation_requests": 66.51724137931035
+        }
+      },
+      "post_json_instructions_per_post": 11419.9776,
+      "post_json_cycles_per_post": 3142.1424
+    },
+    "mech-current-reuse-4-instrumented": {
+      "median_seconds": 0.002632042,
+      "samples": 7,
+      "all_exact_rust": true,
+      "category": "IR235_reuse-4_instrumented",
+      "median_processing_plus_admission_seconds": 0.0027854169999999997,
+      "process_resources_median": {
+        "average_shared_memory_size": 0,
+        "average_unshared_data_size": 0,
+        "average_unshared_stack_size": 0,
+        "block_input_operations": 0,
+        "block_output_operations": 0,
+        "cycles": 86861958,
+        "instructions_retired": 347008059,
+        "involuntary_context_switches": 16,
+        "messages_received": 0,
+        "messages_sent": 0,
+        "page_faults": 0,
+        "page_reclaims": 1789,
+        "peak_physical_footprint_bytes": 16073064,
+        "peak_resident_bytes": 26624000,
+        "signals_received": 0,
+        "swaps": 0,
+        "system_cpu_seconds": 0.0,
+        "user_cpu_seconds": 0.01,
+        "voluntary_context_switches": 0,
+        "wall_seconds": 0.03
+      },
+      "measurement_boundary": "post_json_including_setup",
+      "post_json_measurement_median": {
+        "allocation_requests": 3858,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 7291284,
+        "hardware": {
+          "cycles": 15211142,
+          "instructions_per_cycle": 3.624581967612951,
+          "instructions_retired": 55052841,
+          "lifetime_peak_physical_footprint_bytes_after": 16073064,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 15974736,
+          "physical_footprint_bytes_before": 12009808,
+          "resident_bytes_after": 26542080,
+          "resident_bytes_before": 21217280,
+          "system_cpu_seconds": 0.00037725000000000004,
+          "user_cpu_seconds": 0.003583166666666667
+        },
+        "live_requested_heap_bytes_after": 8498751,
+        "live_requested_heap_bytes_before": 7776909,
+        "peak_additional_live_requested_heap_bytes": 5567167,
+        "peak_live_requested_heap_bytes": 13344076,
+        "requested_allocation_bytes": 8013126
+      },
+      "stage_measurements_median": {
+        "restore": {
+          "allocation_requests": 36437,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 6748692,
+          "hardware": {
+            "cycles": 31812513,
+            "instructions_per_cycle": 4.167250760730534,
+            "instructions_retired": 132499754,
+            "lifetime_peak_physical_footprint_bytes_after": 9634152,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 9634152,
+            "physical_footprint_bytes_before": 1147216,
+            "resident_bytes_after": 18776064,
+            "resident_bytes_before": 2048000,
+            "system_cpu_seconds": 0.0006400416666666667,
+            "user_cpu_seconds": 0.007802958333333334
+          },
+          "live_requested_heap_bytes_after": 6351974,
+          "live_requested_heap_bytes_before": 6359,
+          "peak_additional_live_requested_heap_bytes": 7003853,
+          "peak_live_requested_heap_bytes": 7010212,
+          "requested_allocation_bytes": 13094307
+        },
+        "json": {
+          "allocation_requests": 40089,
+          "allocator_accounting_underflows": 0,
+          "allocator_lifetime_accounting_underflows": 0,
+          "freed_allocation_bytes": 1865257,
+          "hardware": {
+            "cycles": 6364967,
+            "instructions_per_cycle": 4.836487746054723,
+            "instructions_retired": 30757656,
+            "lifetime_peak_physical_footprint_bytes_after": 12009808,
+            "pageins": 0,
+            "physical_footprint_bytes_after": 12009808,
+            "physical_footprint_bytes_before": 9634152,
+            "resident_bytes_after": 21217280,
+            "resident_bytes_before": 18792448,
+            "system_cpu_seconds": 0.00018570833333333335,
+            "user_cpu_seconds": 0.0014531666666666668
+          },
+          "live_requested_heap_bytes_after": 7776909,
+          "live_requested_heap_bytes_before": 6351974,
+          "peak_additional_live_requested_heap_bytes": 2538224,
+          "peak_live_requested_heap_bytes": 8890198,
+          "requested_allocation_bytes": 3290192
+        }
+      },
+      "median_whole_process_seconds": 0.04856658400967717,
+      "calculation_boundary": "post_json_including_setup",
+      "median_post_json_seconds": 0.002791875,
+      "over_fastest": 1.5814385814385814,
+      "over_rust": 0.3048388103646784,
+      "whole_process_over_fastest": 1.4848363449906083,
+      "processing_plus_admission_over_fastest": 1.673592560147182,
+      "processing_plus_admission_over_rust": 0.3226024526392631,
+      "post_json_over_fastest_matched_native": 1.6774727909181693,
+      "resource_ratios_to_fastest_rust": {
+        "whole_process": {
+          "instructions_retired": 2.0656143837996925,
+          "page_reclaims": 3.4670542635658914,
+          "peak_resident_bytes": 4.415760869565218,
+          "cycles": 2.0730041377050856,
+          "wall_seconds": 1.5,
+          "involuntary_context_switches": 3.2,
+          "peak_physical_footprint_bytes": 2.9458305108602896
+        },
+        "post_json": {
+          "peak_live_requested_heap_bytes": 1.7413169861346598,
+          "requested_allocation_bytes": 1.173961753153114,
+          "live_requested_heap_bytes_after": 2.651127425046292,
+          "freed_allocation_bytes": 1.2847882833846043,
+          "hardware": {
+            "resident_bytes_before": 6.166666666666667,
+            "lifetime_peak_physical_footprint_bytes_after": 2.9370112005426314,
+            "instructions_retired": 2.8653391332507554,
+            "system_cpu_seconds": 3.2733188720173536,
+            "physical_footprint_bytes_before": 4.11768610455867,
+            "instructions_per_cycle": 1.1952310760032965,
+            "resident_bytes_after": 4.426229508196721,
+            "user_cpu_seconds": 2.285790229121259,
+            "cycles": 2.4024710268110483,
+            "physical_footprint_bytes_after": 2.9190438461336052
+          },
+          "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+          "live_requested_heap_bytes_before": 3.7842274163842373,
+          "allocation_requests": 66.51724137931035
+        }
+      },
+      "post_json_instructions_per_post": 11010.5682,
+      "post_json_cycles_per_post": 3042.2284
+    }
+  },
+  "size_metrics": {
+    "schema": "mech.related-post-gen.code-size.v1",
+    "reference": "rust-mech-control-u8-ids-u32",
+    "implementations": [
+      {
+        "variant": "rust",
+        "category": "single_core_standard",
+        "executable": "/private/tmp/mech-related-post-rust-local-20261102/rust/target/release/rust",
+        "executable_sha256": "d7d8edc63938fa5bad4391dee162cb3eb668f10c9e81565170935e48c5d95a6c",
+        "executable_file_bytes": 385360,
+        "executable_sections_bytes": {
+          "__text": 269016,
+          "__stubs": 816,
+          "__stub_helper": 840,
+          "__const": 28032,
+          "__gcc_except_tab": 3996,
+          "__cstring": 7347,
+          "__unwind_info": 4376,
+          "__eh_frame": 22656,
+          "__got": 16,
+          "__la_symbol_ptr": 544,
+          "__data": 2496,
+          "__thread_vars": 120,
+          "__thread_data": 32,
+          "__thread_bss": 33,
+          "__bss": 184
+        },
+        "executable_text_bytes": 269016,
+        "size_tool_stdout": "/private/tmp/mech-related-post-rust-local-20261102/rust/target/release/rust  :\nsection                size         addr\n__text               269016   4294983696\n__stubs                 816   4295252712\n__stub_helper           840   4295253528\n__const               18616   4295254368\n__gcc_except_tab       3996   4295272984\n__cstring              7347   4295276980\n__unwind_info          4376   4295284328\n__eh_frame            22656   4295288704\n__got                    16   4295311360\n__const                9416   4295311376\n__la_symbol_ptr         544   4295327744\n__data                 2496   4295328288\n__thread_vars           120   4295330784\n__thread_data            32   4295330904\n__thread_bss             33   4295330936\n__bss                   184   4295330976\nTotal                340504\n\n\n",
+        "executable_file_bytes_over_fastest_rust": 0.920750821928282,
+        "executable_text_bytes_over_fastest_rust": 0.8970070422535211
+      },
+      {
+        "variant": "rust-preinitialized",
+        "category": "concurrent_8_physical_workers",
+        "executable": "/private/tmp/mech-related-c-family-20261104/rust_con/target/release/rust_rayon",
+        "executable_sha256": "1f8c55519b0afd796c8d1bf60d5fcb9c88c617bfdaad65c8fc3e8c32a4e83d25",
+        "executable_file_bytes": 504544,
+        "executable_sections_bytes": {
+          "__text": 371884,
+          "__stubs": 1104,
+          "__stub_helper": 1128,
+          "__const": 35536,
+          "__gcc_except_tab": 4656,
+          "__cstring": 12560,
+          "__unwind_info": 5632,
+          "__eh_frame": 24328,
+          "__got": 48,
+          "__mod_init_func": 8,
+          "__la_symbol_ptr": 736,
+          "__data": 8064,
+          "__thread_vars": 288,
+          "__thread_data": 40,
+          "__thread_bss": 154,
+          "__bss": 198528,
+          "__common": 656
+        },
+        "executable_text_bytes": 371884,
+        "size_tool_stdout": "/private/tmp/mech-related-c-family-20261104/rust_con/target/release/rust_rayon  :\nsection                size         addr\n__text               371884   4294984924\n__stubs                1104   4295356808\n__stub_helper          1128   4295357912\n__const               19792   4295359040\n__gcc_except_tab       4656   4295378832\n__cstring             12560   4295383488\n__unwind_info          5632   4295396048\n__eh_frame            24328   4295401680\n__got                    48   4295426048\n__mod_init_func           8   4295426096\n__const               15744   4295426112\n__la_symbol_ptr         736   4295442432\n__data                 8064   4295443168\n__thread_vars           288   4295451232\n__thread_data            40   4295451520\n__thread_bss            154   4295451560\n__bss                198528   4295451776\n__common                656   4295650304\nTotal                665350\n\n\n",
+        "executable_file_bytes_over_fastest_rust": 1.2055202997171037,
+        "executable_text_bytes_over_fastest_rust": 1.240010136577038
+      },
+      {
+        "variant": "rust-mech-control-streaming",
+        "category": "single_core_same_numeric_algorithm_post_json_streaming_histogram_no_mech_accounting",
+        "executable": "/private/tmp/mech-related-streaming-histogram-rust-controls-20261105-v1/streaming/target/release/rust_mech",
+        "executable_sha256": "3d5c21d057f64f906f73316763cc8447b11c01081fc2181a7157b73f7146dac2",
+        "executable_file_bytes": 418528,
+        "executable_sections_bytes": {
+          "__text": 299328,
+          "__stubs": 828,
+          "__stub_helper": 852,
+          "__const": 42556,
+          "__gcc_except_tab": 4056,
+          "__cstring": 8829,
+          "__unwind_info": 4568,
+          "__eh_frame": 22880,
+          "__got": 16,
+          "__la_symbol_ptr": 552,
+          "__data": 2496,
+          "__thread_vars": 120,
+          "__thread_data": 32,
+          "__thread_bss": 33,
+          "__bss": 184
+        },
+        "executable_text_bytes": 299328,
+        "size_tool_stdout": "/private/tmp/mech-related-streaming-histogram-rust-controls-20261105-v1/streaming/target/release/rust_mech  :\nsection                size         addr\n__text               299328   4294972976\n__stubs                 828   4295272304\n__stub_helper           852   4295273132\n__const               29796   4295273984\n__gcc_except_tab       4056   4295303780\n__cstring              8829   4295307836\n__unwind_info          4568   4295316668\n__eh_frame            22880   4295321240\n__got                    16   4295344128\n__const               12760   4295344144\n__la_symbol_ptr         552   4295360512\n__data                 2496   4295361064\n__thread_vars           120   4295363560\n__thread_data            32   4295363680\n__thread_bss             33   4295363712\n__bss                   184   4295363752\nTotal                387330\n\n\n",
+        "executable_file_bytes_over_fastest_rust": 1.0,
+        "executable_text_bytes_over_fastest_rust": 0.9980793854033291
+      },
+      {
+        "variant": "rust-mech-control-u32-casts",
+        "category": "single_core_streaming_histogram_checked_u32_combinadic_casts",
+        "executable": "/private/tmp/mech-related-u32-rank-rust-control-20261106-v1/target/release/rust_mech",
+        "executable_sha256": "89d3f3eb18f08a6ceacaafeb7b05853f5d89ccf67ff5aae8aa84ecd27a337074",
+        "executable_file_bytes": 418528,
+        "executable_sections_bytes": {
+          "__text": 299920,
+          "__stubs": 828,
+          "__stub_helper": 852,
+          "__const": 42700,
+          "__gcc_except_tab": 4056,
+          "__cstring": 8829,
+          "__unwind_info": 4584,
+          "__eh_frame": 22880,
+          "__got": 16,
+          "__la_symbol_ptr": 552,
+          "__data": 2496,
+          "__thread_vars": 120,
+          "__thread_data": 32,
+          "__thread_bss": 33,
+          "__bss": 184
+        },
+        "executable_text_bytes": 299920,
+        "size_tool_stdout": "/private/tmp/mech-related-u32-rank-rust-control-20261106-v1/target/release/rust_mech  :\nsection                size         addr\n__text               299920   4294972336\n__stubs                 828   4295272256\n__stub_helper           852   4295273084\n__const               29836   4295273936\n__gcc_except_tab       4056   4295303772\n__cstring              8829   4295307828\n__unwind_info          4584   4295316660\n__eh_frame            22880   4295321248\n__got                    16   4295344128\n__const               12864   4295344144\n__la_symbol_ptr         552   4295360512\n__data                 2496   4295361064\n__thread_vars           120   4295363560\n__thread_data            32   4295363680\n__thread_bss             33   4295363712\n__bss                   184   4295363752\nTotal                388082\n\n\n",
+        "executable_file_bytes_over_fastest_rust": 1.0,
+        "executable_text_bytes_over_fastest_rust": 1.0000533504054632
+      },
+      {
+        "variant": "rust-mech-control-u8-ids-u32",
+        "category": "single_core_streaming_histogram_checked_u8_ids_u32_combinadic",
+        "executable": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech",
+        "executable_sha256": "3e4aaf6c13523b2278d18ca89b5ae6678d116335050940f1d3a90fc32fbc0c7a",
+        "executable_file_bytes": 418528,
+        "executable_sections_bytes": {
+          "__text": 299904,
+          "__stubs": 828,
+          "__stub_helper": 852,
+          "__const": 42556,
+          "__gcc_except_tab": 4056,
+          "__cstring": 8829,
+          "__unwind_info": 4584,
+          "__eh_frame": 22880,
+          "__got": 16,
+          "__la_symbol_ptr": 552,
+          "__data": 2496,
+          "__thread_vars": 120,
+          "__thread_data": 32,
+          "__thread_bss": 33,
+          "__bss": 184
+        },
+        "executable_text_bytes": 299904,
+        "size_tool_stdout": "/private/tmp/mech-related-u8-ids-u32-rank-rust-control-20261106-v1/target/release/rust_mech  :\nsection                size         addr\n__text               299904   4294972352\n__stubs                 828   4295272256\n__stub_helper           852   4295273084\n__const               29836   4295273936\n__gcc_except_tab       4056   4295303772\n__cstring              8829   4295307828\n__unwind_info          4584   4295316660\n__eh_frame            22880   4295321248\n__got                    16   4295344128\n__const               12720   4295344144\n__la_symbol_ptr         552   4295360512\n__data                 2496   4295361064\n__thread_vars           120   4295363560\n__thread_data            32   4295363680\n__thread_bss             33   4295363712\n__bss                   184   4295363752\nTotal                387922\n\n\n",
+        "executable_file_bytes_over_fastest_rust": 1.0,
+        "executable_text_bytes_over_fastest_rust": 1.0
+      },
+      {
+        "variant": "mech-parent-original-4",
+        "category": "IR234_original",
+        "executable": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-4/runner-aot",
+        "executable_sha256": "872d9552478cbd6c8efdb70681f31a7ec1e89f7f7b6cab87097b4e358ff9df6a",
+        "executable_file_bytes": 16822048,
+        "executable_sections_bytes": {
+          "__text": 6973608,
+          "__stubs": 1044,
+          "__stub_helper": 1068,
+          "__gcc_except_tab": 272840,
+          "__const": 5488760,
+          "__cstring": 48037,
+          "__unwind_info": 125536,
+          "__eh_frame": 751060,
+          "__got": 16,
+          "__la_symbol_ptr": 696,
+          "__data": 3024,
+          "__thread_vars": 312,
+          "__thread_data": 32,
+          "__thread_bss": 465,
+          "__common": 96,
+          "__bss": 144
+        },
+        "executable_text_bytes": 6973608,
+        "size_tool_stdout": "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/after-4/runner-aot  :\nsection                 size         addr\n__text               6973608   4294985472\n__stubs                 1044   4301959080\n__stub_helper           1068   4301960124\n__gcc_except_tab      272840   4301961192\n__const              5358152   4302234048\n__cstring              48037   4307592200\n__unwind_info         125536   4307640240\n__eh_frame            751060   4307765776\n__got                     16   4308516864\n__const               130608   4308516880\n__la_symbol_ptr          696   4308647936\n__data                  3024   4308648632\n__thread_vars            312   4308651656\n__thread_data             32   4308651968\n__thread_bss             465   4308652000\n__common                  96   4308652472\n__bss                    144   4308652568\nTotal               13666738\n\n\n",
+        "native_program": {
+          "code_bytes": 908464,
+          "object_bytes": 5984888,
+          "object_file_bytes": 5984888,
+          "artifact_bytecode_bytes": 451609,
+          "descriptor_json_bytes": 6751708,
+          "native_main_stack_frame_bytes": 1520,
+          "max_numeric_function_stack_frame_bytes": 896,
+          "numeric_function_count": 53,
+          "main_ir_instructions_before_cleanup": 140678,
+          "main_ir_instructions_after_cleanup": 92243,
+          "numeric_function_ir_instructions_before_cleanup": 499930,
+          "numeric_function_ir_instructions_after_cleanup": 124697,
+          "typed_ir_version": 234,
+          "work_policy_version": 115,
+          "abi_version": 41,
+          "optimization": "speed",
+          "requested_adapter_thread_stack_bytes": 33554432,
+          "requested_numeric_worker_stack_bytes": 2097152
+        },
+        "symbol_policy": "strip=debuginfo; native symbols retained for link auditing",
+        "executable_file_bytes_over_fastest_rust": 40.193363406988304,
+        "executable_text_bytes_over_fastest_rust": 23.25280089628681
+      },
+      {
+        "variant": "mech-parent-reuse-4",
+        "category": "IR234_fused_ordering_reused_masks_source",
+        "executable": "/private/tmp/mech-related-ordered-subsets-reused-masks-source-20261106-v1/runner-aot",
+        "executable_sha256": "6dc28b0b063324bd1600f91894af4ff554e22a03b2814b3257df7b3e3b298861",
+        "executable_file_bytes": 16607200,
+        "executable_sections_bytes": {
+          "__text": 6935340,
+          "__stubs": 1044,
+          "__stub_helper": 1068,
+          "__gcc_except_tab": 272840,
+          "__const": 5325784,
+          "__cstring": 47985,
+          "__unwind_info": 125536,
+          "__eh_frame": 751060,
+          "__got": 16,
+          "__la_symbol_ptr": 696,
+          "__data": 3024,
+          "__thread_vars": 312,
+          "__thread_data": 32,
+          "__thread_bss": 465,
+          "__common": 96,
+          "__bss": 144
+        },
+        "executable_text_bytes": 6935340,
+        "size_tool_stdout": "/private/tmp/mech-related-ordered-subsets-reused-masks-source-20261106-v1/runner-aot  :\nsection                 size         addr\n__text               6935340   4294973696\n__stubs                 1044   4301909036\n__stub_helper           1068   4301910080\n__gcc_except_tab      272840   4301911148\n__const              5195176   4302184000\n__cstring              47985   4307379176\n__unwind_info         125536   4307427164\n__eh_frame            751060   4307552704\n__got                     16   4308303872\n__const               130608   4308303888\n__la_symbol_ptr          696   4308434944\n__data                  3024   4308435640\n__thread_vars            312   4308438664\n__thread_data             32   4308438976\n__thread_bss             465   4308439008\n__common                  96   4308439480\n__bss                    144   4308439576\nTotal               13465442\n\n\n",
+        "native_program": {
+          "code_bytes": 870360,
+          "object_bytes": 5783632,
+          "object_file_bytes": 5783632,
+          "artifact_bytecode_bytes": 434828,
+          "descriptor_json_bytes": 6592066,
+          "native_main_stack_frame_bytes": 1536,
+          "max_numeric_function_stack_frame_bytes": 896,
+          "numeric_function_count": 50,
+          "main_ir_instructions_before_cleanup": 135141,
+          "main_ir_instructions_after_cleanup": 88387,
+          "numeric_function_ir_instructions_before_cleanup": 440495,
+          "numeric_function_ir_instructions_after_cleanup": 117003,
+          "typed_ir_version": 234,
+          "work_policy_version": 115,
+          "abi_version": 41,
+          "optimization": "speed",
+          "requested_adapter_thread_stack_bytes": 33554432,
+          "requested_numeric_worker_stack_bytes": 2097152
+        },
+        "symbol_policy": "strip=debuginfo; native symbols retained for link auditing",
+        "executable_file_bytes_over_fastest_rust": 39.68002140836455,
+        "executable_text_bytes_over_fastest_rust": 23.125200064020486
+      },
+      {
+        "variant": "mech-current-original-4",
+        "category": "IR235_after-4",
+        "executable": "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/after-4/runner-aot",
+        "executable_sha256": "3c8ca0d9e5b256ac7dc223a438133250b98eac99aae6885024b67315b5c343f0",
+        "executable_file_bytes": 16809280,
+        "executable_sections_bytes": {
+          "__text": 6972500,
+          "__stubs": 1044,
+          "__stub_helper": 1068,
+          "__gcc_except_tab": 272708,
+          "__const": 5489312,
+          "__cstring": 47433,
+          "__unwind_info": 125408,
+          "__eh_frame": 750204,
+          "__got": 16,
+          "__la_symbol_ptr": 696,
+          "__data": 3024,
+          "__thread_vars": 312,
+          "__thread_data": 32,
+          "__thread_bss": 465,
+          "__common": 96,
+          "__bss": 144
+        },
+        "executable_text_bytes": 6972500,
+        "size_tool_stdout": "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/after-4/runner-aot  :\nsection                 size         addr\n__text               6972500   4294971520\n__stubs                 1044   4301944020\n__stub_helper           1068   4301945064\n__gcc_except_tab      272708   4301946132\n__const              5358536   4302218880\n__cstring              47433   4307577416\n__unwind_info         125408   4307624852\n__eh_frame            750204   4307750264\n__got                     16   4308500480\n__const               130776   4308500496\n__la_symbol_ptr          696   4308631552\n__data                  3024   4308632248\n__thread_vars            312   4308635272\n__thread_data             32   4308635584\n__thread_bss             465   4308635616\n__common                  96   4308636088\n__bss                    144   4308636184\nTotal               13664462\n\n\n",
+        "native_program": {
+          "code_bytes": 908464,
+          "object_bytes": 5984888,
+          "object_file_bytes": 5984888,
+          "artifact_bytecode_bytes": 451609,
+          "descriptor_json_bytes": 6751703,
+          "native_main_stack_frame_bytes": 1520,
+          "max_numeric_function_stack_frame_bytes": 896,
+          "numeric_function_count": 53,
+          "main_ir_instructions_before_cleanup": 140678,
+          "main_ir_instructions_after_cleanup": 92243,
+          "numeric_function_ir_instructions_before_cleanup": 499930,
+          "numeric_function_ir_instructions_after_cleanup": 124697,
+          "typed_ir_version": 235,
+          "work_policy_version": 115,
+          "abi_version": 41,
+          "optimization": "speed",
+          "requested_adapter_thread_stack_bytes": 33554432,
+          "requested_numeric_worker_stack_bytes": 2097152
+        },
+        "symbol_policy": "strip=debuginfo; native symbols retained for link auditing",
+        "executable_file_bytes_over_fastest_rust": 40.16285648749904,
+        "executable_text_bytes_over_fastest_rust": 23.249106380708493
+      },
+      {
+        "variant": "mech-current-reuse-4",
+        "category": "IR235_reuse-4",
+        "executable": "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/reuse-4/runner-aot",
+        "executable_sha256": "d0a237e12925f9b8ae1e7159aab619b4b9e2668d66669c37a9dbceee0b5a761c",
+        "executable_file_bytes": 16627520,
+        "executable_sections_bytes": {
+          "__text": 6940644,
+          "__stubs": 1044,
+          "__stub_helper": 1068,
+          "__gcc_except_tab": 272708,
+          "__const": 5334760,
+          "__cstring": 47433,
+          "__unwind_info": 125408,
+          "__eh_frame": 750204,
+          "__got": 16,
+          "__la_symbol_ptr": 696,
+          "__data": 3024,
+          "__thread_vars": 312,
+          "__thread_data": 32,
+          "__thread_bss": 465,
+          "__common": 96,
+          "__bss": 144
+        },
+        "executable_text_bytes": 6940644,
+        "size_tool_stdout": "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/reuse-4/runner-aot  :\nsection                 size         addr\n__text               6940644   4294977664\n__stubs                 1044   4301918308\n__stub_helper           1068   4301919352\n__gcc_except_tab      272708   4301920420\n__const              5203984   4302193152\n__cstring              47433   4307397136\n__unwind_info         125408   4307444572\n__eh_frame            750204   4307569984\n__got                     16   4308320256\n__const               130776   4308320272\n__la_symbol_ptr          696   4308451328\n__data                  3024   4308452024\n__thread_vars            312   4308455048\n__thread_data             32   4308455360\n__thread_bss             465   4308455392\n__common                  96   4308455864\n__bss                    144   4308455960\nTotal               13478054\n\n\n",
+        "native_program": {
+          "code_bytes": 876720,
+          "object_bytes": 5798536,
+          "object_file_bytes": 5798536,
+          "artifact_bytecode_bytes": 434828,
+          "descriptor_json_bytes": 6597058,
+          "native_main_stack_frame_bytes": 1536,
+          "max_numeric_function_stack_frame_bytes": 896,
+          "numeric_function_count": 51,
+          "main_ir_instructions_before_cleanup": 135169,
+          "main_ir_instructions_after_cleanup": 88415,
+          "numeric_function_ir_instructions_before_cleanup": 447574,
+          "numeric_function_ir_instructions_after_cleanup": 118764,
+          "typed_ir_version": 235,
+          "work_policy_version": 115,
+          "abi_version": 41,
+          "optimization": "speed",
+          "requested_adapter_thread_stack_bytes": 33554432,
+          "requested_numeric_worker_stack_bytes": 2097152
+        },
+        "symbol_policy": "strip=debuginfo; native symbols retained for link auditing",
+        "executable_file_bytes_over_fastest_rust": 39.72857252083492,
+        "executable_text_bytes_over_fastest_rust": 23.142885723431498
+      }
+    ],
+    "limitations": [
+      "Original latency executables, not the instrumented adapters. File size includes symbols, embedded images and runtime; symbol/stripping policies differ.",
+      "Whole-executable text is comparable as a deployment cost. Mech native-program-only code excludes its adapter/runtime and is a separately labeled subset.",
+      "IR instruction counts are static compiler instructions, not machine instructions or dynamic retired instructions.",
+      "Stack figures are individual generated frame sizes or requested OS stack reservations; they are not measured peak call-stack use."
+    ]
+  },
+  "all_four_original_native_text_sections_equal_IR234": true,
+  "new_source_numeric_functions": 51,
+  "new_source_native_code_bytes": 876720,
+  "new_source_main_stack_bytes": 1536,
+  "profile_invocations_exact": 2000,
+  "profile": {
+    "schema": "mech.related-post-gen.post-json-all-symbol-observations.v1",
+    "compilers": {
+      "before": "c4649860a5e445c1ce1bdec8503870e8a455da17",
+      "after": "cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b"
+    },
+    "all2000_invocations_exact": true,
+    "profiled_timings_excluded": true,
+    "rows": {
+      "before": {
+        "records": 18564,
+        "all_resolved_symbols_from_same_live_process": true,
+        "unresolved_external_records": 26,
+        "observed_post_json_epochs": 875,
+        "phase_range": [
+          1,
+          1749
+        ],
+        "record_bytes": 56,
+        "raw_sha256": "ef8c639b21e4f8f0dd4ab1d98805f555a8fa31044ef081e63d89aef8ab8ce9ca",
+        "observation_categories": {
+          "system_wait_position": 9170,
+          "other_emitted_native": 111,
+          "root_native": 213,
+          "other_executable_code": 5153,
+          "other_system_code": 2476,
+          "system_allocator": 407,
+          "outlined_numeric_native": 980,
+          "system_thread_management": 28,
+          "unresolved_external": 26
+        },
+        "top_symbols": [
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "__ulock_wait",
+            "demangled": "__ulock_wait",
+            "observations": 9161
+          },
+          {
+            "image": "/usr/lib/system/libsystem_platform.dylib",
+            "symbol": "_platform_memmove",
+            "demangled": "_platform_memmove",
+            "observations": 1041
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "demangled": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "observations": 1031
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_1282",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_1282",
+            "observations": 489
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB4_10Invocation21begin_numeric_segment",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_segment",
+            "observations": 397
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "observations": 348
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "observations": 318
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+            "observations": 295
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "mach_absolute_time",
+            "demangled": "mach_absolute_time",
+            "observations": 214
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1",
+            "demangled": "_mech_canonical_program_entry_v1",
+            "observations": 213
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvXsC_NtNtCsgDHHaSskbIF_4core5slice3cmpmNtB5_13SliceContains14slice_contains",
+            "demangled": "<u32 as core::slice::cmp::SliceContains>::slice_contains",
+            "observations": 145
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_256",
+            "observations": 137
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs3_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+            "demangled": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+            "observations": 127
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget18unscoped_remaining0INtNtCsgDHHaSskbIF_4core6option6OptionTyyEEEB10_",
+            "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::unscoped_remaining::{closure#0}, core::option::Option<(u64, u64)>>",
+            "observations": 121
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+            "demangled": "<mech_core::snapshot::validation::Value>::memory_budget_retained_bytes",
+            "observations": 113
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+            "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+            "observations": 111
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames14retire_prepaid",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire_prepaid",
+            "observations": 110
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+            "demangled": "<mech_engine::resident::budget::CONTROL_WORK_CONTEXT::{K#0}::{closure#0} as core::ops::function::FnOnce<(core::option::Option<&mut core::option::Option<mech_engine::resident::budget::ControlWorkContext>>,)>>::call_once",
+            "observations": 109
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCINvMNtNtB4G_8prepared16unsigned_buffersNtB6c_25NativePreparedLibraryCall20unsigned_buffer_withB3H_NCNvB69_28unsigned_buffer_with_sublist0E0E0IB36_B35_NtNtNtB3N_8function8resident19ResidentKernelErrorEEB10_",
+            "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<mech_core::snapshot::validation::Value, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_buffer_with<mech_core::snapshot::validation::Value, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::unsigned_buffer_with_sublist::{closure#0}>::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<mech_core::snapshot::validation::Value, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "observations": 108
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNCNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB6_10Invocation19end_numeric_segments4_0Be_",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::end_numeric_segment::{closure#6}",
+            "observations": 104
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+            "demangled": "<mech_engine::resident::budget::native_turn_plan_cache::string_projection::NativeProjectionIndexContext>::check",
+            "observations": 101
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs0_NtNtCs2f6zuEJIbcT_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+            "demangled": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+            "observations": 98
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames12current_leaf",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::current_leaf",
+            "observations": 95
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB4_10Invocation19end_numeric_segment",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::end_numeric_segment",
+            "observations": 94
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals",
+            "observations": 94
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_801",
+            "observations": 94
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_572",
+            "observations": 85
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+            "demangled": "mech_core::schema::shape::evaluate_dimension",
+            "observations": 83
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_xzm_free",
+            "demangled": "_xzm_free",
+            "observations": 82
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_xzm_segment_group_find_and_allocate_chunk",
+            "demangled": "_xzm_segment_group_find_and_allocate_chunk",
+            "observations": 77
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_numeric_views",
+            "observations": 75
+          },
+          {
+            "image": "/usr/lib/system/libsystem_platform.dylib",
+            "symbol": "_platform_memset",
+            "demangled": "_platform_memset",
+            "observations": 73
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+            "observations": 73
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::needs_move",
+            "observations": 66
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+            "observations": 58
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionRNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7prepare13map_admission5GroupE6filterNCNvMs1_NtNtBP_7runtime10invocationNtB2o_10Invocation5visits5_0EBT_",
+            "demangled": "<core::option::Option<&mech_gpu::native_artifact::program::prepare::map_admission::Group>>::filter::<<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit::{closure#7}>",
+            "observations": 55
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+            "observations": 52
+          },
+          {
+            "image": "/usr/lib/system/libdyld.dylib",
+            "symbol": "_tlv_get_addr",
+            "demangled": "_tlv_get_addr",
+            "observations": 51
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+            "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+            "observations": 47
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_459",
+            "observations": 45
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation21admission_predecessor",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::admission_predecessor",
+            "observations": 44
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation23arm_parent_continuation",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::arm_parent_continuation",
+            "observations": 41
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+            "demangled": "mech_core::schema::shape::evaluate_body_extents",
+            "observations": 40
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_1166",
+            "observations": 39
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire",
+            "observations": 37
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+            "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner",
+            "observations": 37
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames22current_scalar_binding",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::current_scalar_binding",
+            "observations": 37
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime5hooks13admit_current",
+            "demangled": "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "observations": 37
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_146",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_146",
+            "observations": 36
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+            "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+            "observations": 35
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_free",
+            "demangled": "_free",
+            "observations": 35
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs0_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::validate_span_boundary",
+            "observations": 33
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value16validate_against",
+            "demangled": "<mech_core::snapshot::validation::Value>::validate_against",
+            "observations": 33
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs0_NtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation14numeric_matrixNtB7_5Value27from_unsigned_matrix_buffer",
+            "demangled": "<mech_core::snapshot::validation::Value>::from_unsigned_matrix_buffer",
+            "observations": 33
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+            "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+            "observations": 32
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_malloc_zone_malloc",
+            "demangled": "_malloc_zone_malloc",
+            "observations": 30
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+            "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::put",
+            "observations": 30
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation4tailNtB6_10Invocation19begin_closed_region",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_closed_region",
+            "observations": 30
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            "demangled": "core::ptr::drop_in_place::<mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>",
+            "observations": 30
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena22retire_current_prepaid",
+            "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::retire_current_prepaid",
+            "observations": 30
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+            "demangled": "<<mech_core::snapshot::validation::FrozenSnapshotStorage>::unlink_budget_registration::{closure#0} as core::ops::function::FnOnce<(&mut core::option::Option<alloc::sync::Arc<mech_core::snapshot::validation::SnapshotBudgetRegistration>>,)>>::call_once",
+            "observations": 29
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs1_NtNtCs2f6zuEJIbcT_11mech_engine15native_artifact13buffer_framesNtB5_18NativeBufferFrames9fields_at",
+            "demangled": "<mech_engine::native_artifact::buffer_frames::NativeBufferFrames>::fields_at",
+            "observations": 28
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_xzm_xzone_malloc",
+            "demangled": "_xzm_xzone_malloc",
+            "observations": 28
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtCs5noBob9g3z0_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+            "demangled": "<mech_gpu::native_artifact::work::NativeWorkMeter>::charge",
+            "observations": 28
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation8borrowedNtB4_10Invocation15borrowed_action",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::borrowed_action",
+            "observations": 28
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7prepare16frame_retirementNtB2_16FrameRetirements3get",
+            "demangled": "<mech_gpu::native_artifact::program::prepare::frame_retirement::FrameRetirements>::get",
+            "observations": 27
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation28complete_parent_continuation",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::complete_parent_continuation",
+            "observations": 27
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames10check_copy",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "observations": 26
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/before/runner-pc",
+            "symbol": "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+            "demangled": "<mech_core::snapshot::validation::Value>::into_memory_budget_inner::{closure#5}",
+            "observations": 25
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "xzm_malloc",
+            "demangled": "xzm_malloc",
+            "observations": 25
+          }
+        ],
+        "external_positions_with_own_executable_lr": [
+          [
+            "__RNvNtNtCs2f6zuEJIbcT_11mech_engine10intrinsics16sequence_buffers24copy_buffer_with_sublist",
+            1030
+          ],
+          [
+            "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames14retire_prepaid",
+            50
+          ],
+          [
+            "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+            50
+          ],
+          [
+            "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation15finalized_valueNtNtNtB6_6schema5shape13ShapeInstanceEB6_",
+            47
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation18FrozenSnapshotDataEBM_",
+            42
+          ],
+          [
+            "__RNvNtNtCsfBfheTzTBUt_9mech_core11type_system14resolved_value31shape_for_declared_lower_bounds",
+            19
+          ],
+          [
+            "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation21FrozenSnapshotStorageE9drop_slowBM_",
+            18
+          ],
+          [
+            "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+            14
+          ],
+          [
+            "__RNvCsg2Tlac8ZPZa_6runner3run",
+            13
+          ],
+          [
+            "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs2f6zuEJIbcT_11mech_engine",
+            13
+          ],
+          [
+            "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+            12
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs5noBob9g3z0_8mech_gpu",
+            9
+          ],
+          [
+            "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcNtNtNtCsfBfheTzTBUt_9mech_core6schema5shape13ShapeInstanceE9drop_slowBM_",
+            8
+          ],
+          [
+            "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex8try_lock",
+            7
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23SnapshotBudgetOwnershipEBM_",
+            6
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+            5
+          ],
+          [
+            "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+            4
+          ],
+          [
+            "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core6schema8encodingNtB6_6Schema3key",
+            4
+          ],
+          [
+            "__RNvNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls8prepared12word_updates4copy",
+            3
+          ],
+          [
+            "__RNvXNtCsfBfheTzTBUt_9mech_core9kind_exprNtB2_8KindExprNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+            2
+          ],
+          [
+            "__RNvXsf_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxeENtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+            2
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model14CallMemoryPlanECs2f6zuEJIbcT_11mech_engine",
+            2
+          ],
+          [
+            "__RINvMNtNtNtCsgKscDXrlV49_5alloc11collections5btree6appendINtNtB5_4node7NodeRefNtNtBW_6marker5OwnedmNtNtB5_7set_val9SetValZSTNtB1g_14LeafOrInternalE9bulk_pushINtNtB5_17dedup_sorted_iter15DedupSortedItermB1z_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtNtB9_3vec9into_iter8IntoItermENCINvMse_NtB5_3setINtB4O_8BTreeSetmE16from_sorted_iterB46_E0EENtNtB9_5alloc6GlobalECs2f6zuEJIbcT_11mech_engine",
+            2
+          ],
+          [
+            "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs5noBob9g3z0_8mech_gpu",
+            1
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core11type_system14resolved_value23ResolvedValueDescriptorECs2f6zuEJIbcT_11mech_engine",
+            1
+          ],
+          [
+            "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsfBfheTzTBUt_9mech_core9dimension13DimensionExprENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneBM_",
+            1
+          ],
+          [
+            "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            1
+          ],
+          [
+            "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+            1
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsfBfheTzTBUt_9mech_core9kind_expr8KindExprECs2f6zuEJIbcT_11mech_engine",
+            1
+          ],
+          [
+            "__RINvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime7sessionNtB5_8Prepared6finishNCNvMNtB9_6linkedNtB1F_21LinkedProgramArtifact13evaluate_into0EBd_",
+            1
+          ]
+        ]
+      },
+      "after": {
+        "records": 3893,
+        "all_resolved_symbols_from_same_live_process": true,
+        "unresolved_external_records": 6,
+        "observed_post_json_epochs": 1000,
+        "phase_range": [
+          1,
+          1999
+        ],
+        "record_bytes": 56,
+        "raw_sha256": "fe51bfba6b02982a69e14b3a2df51077e2b4c7967ccfcae0627272f9ed24048c",
+        "observation_categories": {
+          "system_wait_position": 1799,
+          "other_executable_code": 376,
+          "other_emitted_native": 202,
+          "root_native": 178,
+          "outlined_numeric_native": 1170,
+          "unresolved_external": 6,
+          "system_allocator": 65,
+          "other_system_code": 55,
+          "system_thread_management": 42
+        },
+        "top_symbols": [
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "__ulock_wait",
+            "demangled": "__ulock_wait",
+            "observations": 1795
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_1282",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_1282",
+            "observations": 590
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_utf8_histogram",
+            "demangled": "_mech_canonical_program_entry_v1_utf8_histogram",
+            "observations": 202
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1",
+            "demangled": "_mech_canonical_program_entry_v1",
+            "observations": 178
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_256",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_256",
+            "observations": 138
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_801",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_801",
+            "observations": 97
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_459",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_459",
+            "observations": 96
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_572",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_572",
+            "observations": 86
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_1166",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_1166",
+            "observations": 66
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+            "demangled": "mech_gpu::native_artifact::program::runtime::collections::data::element",
+            "observations": 62
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_107",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_107",
+            "observations": 38
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_xzm_free",
+            "demangled": "_xzm_free",
+            "observations": 28
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_1053",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_1053",
+            "observations": 25
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+            "demangled": "<mech_core::snapshot::encoding::LengthSnapshotSink as mech_core::snapshot::encoding::SnapshotByteSink>::write_sequence",
+            "observations": 24
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+            "demangled": "<mech_core::snapshot::sequence::SequenceStorage>::view",
+            "observations": 23
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+            "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::encoding::ValueFootprintError>",
+            "observations": 20
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_1099",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_1099",
+            "observations": 18
+          },
+          {
+            "image": "/usr/lib/system/libsystem_platform.dylib",
+            "symbol": "_platform_memmove",
+            "demangled": "_platform_memmove",
+            "observations": 14
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::push_row_block",
+            "observations": 14
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+            "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::memory::NativeTypedStorage<core::option::Option<mech_core::snapshot::validation::Value>>>",
+            "observations": 14
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+            "demangled": "mech_core::snapshot::encoding::visit_sequence_work::<mech_core::memory_plan::error::MemoryPlanError, <mech_engine::resident::general::live::InputDataMemo>::measure<mech_engine::resident::general::live::footprint_impl<mech_engine::resident::general::native_collection_calls::invocation::measurement::NativeMeasurementCheck>::{closure#3}>::{closure#0}>",
+            "observations": 13
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "__bsdthread_terminate",
+            "demangled": "__bsdthread_terminate",
+            "observations": 13
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_free",
+            "demangled": "_free",
+            "observations": 12
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_671",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_671",
+            "observations": 10
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+            "demangled": "mech_core::snapshot::encoding::retained_sequence_footprint",
+            "observations": 10
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_xzm_xzone_malloc_tiny",
+            "demangled": "_xzm_xzone_malloc_tiny",
+            "observations": 9
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers11lock_escrow",
+            "demangled": "mech_engine::resident::budget::workers::lock_escrow",
+            "observations": 7
+          },
+          {
+            "image": "/usr/lib/system/libsystem_pthread.dylib",
+            "symbol": "pthread_mutex_unlock",
+            "demangled": "pthread_mutex_unlock",
+            "observations": 7
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_utf8_read",
+            "observations": 7
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvCsg2Tlac8ZPZa_6runner3run",
+            "demangled": "runner::run",
+            "observations": 6
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+            "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::PostView, <alloc::vec::Vec<runner::PostView>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::enumerate::Enumerate<core::slice::iter::Iter<runner::Post>>, runner::post_views::{closure#1}>>::{closure#0}>::{closure#0}>",
+            "observations": 6
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "__bsdthread_create",
+            "demangled": "__bsdthread_create",
+            "observations": 6
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "_mech_canonical_program_entry_v1_numeric_505",
+            "demangled": "_mech_canonical_program_entry_v1_numeric_505",
+            "observations": 6
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "demangled": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "observations": 6
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections9utf8_read5fixedNtNtNtB6_4maps9utf8_read4CellEBc_",
+            "demangled": "mech_gpu::native_artifact::program::runtime::collections::utf8_read::fixed::<mech_gpu::native_artifact::program::runtime::maps::utf8_read::Cell>",
+            "observations": 6
+          },
+          {
+            "image": "/usr/lib/system/libsystem_platform.dylib",
+            "symbol": "_platform_memset",
+            "demangled": "_platform_memset",
+            "observations": 6
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+            "observations": 5
+          },
+          {
+            "image": "/usr/lib/system/libdyld.dylib",
+            "symbol": "_tlv_get_addr",
+            "demangled": "_tlv_get_addr",
+            "observations": 5
+          },
+          {
+            "image": "/usr/lib/system/libsystem_pthread.dylib",
+            "symbol": "pthread_mutex_trylock",
+            "demangled": "pthread_mutex_trylock",
+            "observations": 5
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "__munmap",
+            "demangled": "__munmap",
+            "observations": 5
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::histogram_helper",
+            "observations": 5
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_xzm_xzone_malloc",
+            "demangled": "_xzm_xzone_malloc",
+            "observations": 5
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "-",
+            "demangled": "-",
+            "observations": 4
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMs_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7sessionNtB4_8Prepared10run_worker",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run_worker",
+            "observations": 4
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+            "demangled": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "observations": 4
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+            "demangled": "<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}> as core::iter::traits::iterator::Iterator>::fold::<(), core::iter::traits::iterator::Iterator::for_each::call<runner::Related, <alloc::vec::Vec<runner::Related>>::extend_trusted<core::iter::adapters::map::Map<core::iter::adapters::zip::Zip<core::slice::iter::Iter<runner::PostView>, core::slice::iter::ChunksExact<u64>>, runner::run::{closure#0}>>::{closure#0}>::{closure#0}>",
+            "observations": 4
+          },
+          {
+            "image": "/usr/lib/system/libsystem_pthread.dylib",
+            "symbol": "_pthread_create",
+            "demangled": "_pthread_create",
+            "observations": 4
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMs1_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "observations": 4
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "mach_absolute_time",
+            "demangled": "mach_absolute_time",
+            "observations": 4
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "__ulock_wake",
+            "demangled": "__ulock_wake",
+            "observations": 4
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCs8ajBNycbQ5U_8mech_gpu",
+            "demangled": "<mech_core::memory_runtime::allocation::FixedHostArenaPlan<core::option::Option<mech_core::snapshot::validation::Value>>>::materialize",
+            "observations": 4
+          },
+          {
+            "image": "/usr/lib/system/libsystem_pthread.dylib",
+            "symbol": "_pthread_tsd_cleanup",
+            "demangled": "_pthread_tsd_cleanup",
+            "observations": 4
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7session14CallCacheEntryEBQ_",
+            "demangled": "core::ptr::drop_in_place::<mech_gpu::native_artifact::program::runtime::session::CallCacheEntry>",
+            "observations": 3
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs8ajBNycbQ5U_8mech_gpu",
+            "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::validation::Value>",
+            "observations": 3
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10retirement3run",
+            "demangled": "mech_gpu::native_artifact::program::runtime::retirement::run",
+            "observations": 3
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+            "demangled": "mech_core::schema::shape::evaluate_dimension",
+            "observations": 3
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation14numeric_writesNtB4_10Invocation21prepare_numeric_write",
+            "demangled": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepare_numeric_write",
+            "observations": 3
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "__psynch_mutexwait",
+            "demangled": "__psynch_mutexwait",
+            "observations": 3
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvMs1_NtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+            "demangled": "<mech_gpu::native_artifact::values::NativeValueArena>::retire_current",
+            "observations": 3
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+            "demangled": "core::ptr::drop_in_place::<mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>",
+            "observations": 3
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "_malloc_zone_malloc",
+            "demangled": "_malloc_zone_malloc",
+            "observations": 3
+          },
+          {
+            "image": "/usr/lib/system/libsystem_kernel.dylib",
+            "symbol": "_kernelrpc_mach_vm_deallocate_trap",
+            "demangled": "_kernelrpc_mach_vm_deallocate_trap",
+            "observations": 3
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "xzm_malloc",
+            "demangled": "xzm_malloc",
+            "observations": 3
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers17next_after_native",
+            "demangled": "mech_engine::resident::budget::workers::next_after_native",
+            "observations": 2
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvCsfBzVIH1HIC6_7___rustc11___rdl_alloc",
+            "demangled": "__rustc::__rdl_alloc",
+            "observations": 2
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+            "demangled": "std::sys::pal::unix::stack_overflow::imp::drop_handler",
+            "observations": 2
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<mech_engine::resident::budget::observe_control_work::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+            "observations": 2
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            "demangled": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+            "observations": 2
+          },
+          {
+            "image": "/private/tmp/mech-related-native-boolean-implication-mask-reuse-pc-profile-20261106-v1/after/runner-pc",
+            "symbol": "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+            "demangled": "core::ptr::drop_in_place::<mech_core::snapshot::validation::SnapshotBudgetRegistration>",
+            "observations": 2
+          },
+          {
+            "image": "/usr/lib/system/libsystem_malloc.dylib",
+            "symbol": "xzm_realloc",
+            "demangled": "xzm_realloc",
+            "observations": 2
+          }
+        ],
+        "external_positions_with_own_executable_lr": [
+          [
+            "__RNvCsg2Tlac8ZPZa_6runner3run",
+            19
+          ],
+          [
+            "__RNvNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls8prepared12word_updates4copy",
+            6
+          ],
+          [
+            "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex8try_lock",
+            5
+          ],
+          [
+            "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+            5
+          ],
+          [
+            "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            4
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+            3
+          ],
+          [
+            "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+            3
+          ],
+          [
+            "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs8ajBNycbQ5U_8mech_gpu",
+            3
+          ],
+          [
+            "__RNvXs_NtNtNtNtCsgirOGyZpP7g_3std3sys4sync5mutex7pthreadNtB4_5MutexNtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4drop",
+            2
+          ],
+          [
+            "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+            2
+          ],
+          [
+            "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+            2
+          ],
+          [
+            "__RNvMNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix4sync5mutexNtB2_5Mutex4lock",
+            2
+          ],
+          [
+            "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot5errorNtB4_12SnapshotPath5child",
+            2
+          ],
+          [
+            "__RINvMsa_NtCsd0jj78El3J_9hashbrown3rawNtB6_13RawTableInner16drop_inner_tableTINtNtCsgKscDXrlV49_5alloc5boxed3BoxeEyENtNtNtNtCs1SzEm9rEJgZ_14allocator_api26stable5alloc6global6GlobalECs8ajBNycbQ5U_8mech_gpu",
+            1
+          ],
+          [
+            "__RNvMNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation23private_unsigned_matrixNtB2_21PrivateUnsignedMatrix5admit",
+            1
+          ],
+          [
+            "__RNvNvMs0_NtNtNtCsgirOGyZpP7g_3std3sys6thread4unixNtB7_6Thread3new12thread_start",
+            1
+          ],
+          [
+            "__RNvMs_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7sessionNtB4_8Prepared15new_with_budget",
+            1
+          ],
+          [
+            "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtNtCsgirOGyZpP7g_3std4sync6poison5mutex5MutexNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers6EscrowEE9drop_slowB1D_",
+            1
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs8ajBNycbQ5U_8mech_gpu",
+            1
+          ],
+          [
+            "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceCs8ajBNycbQ5U_8mech_gpu",
+            1
+          ],
+          [
+            "__RNvXs_NtNtCsgKscDXrlV49_5alloc3vec16in_place_collectINtB6_3VecTRNtNtCsfBfheTzTBUt_9mech_core6schema10SchemaBodyB10_EEINtNtB6_14spec_from_iter12SpecFromIterBY_INtNtNtCsgDHHaSskbIF_4core4iter8adapters12GenericShuntINtNtB2z_3map3MapINtNtB2z_3zip3ZipINtNtB6_9into_iter8IntoIterBZ_EINtNtNtB2D_5slice4iter4IterTNtNtB14_17semantic_identity8SchemaIdNtNtB12_5shape13ShapeInstanceEEENCNvMs9_NtNtB14_8snapshot10validationNtB67_28CompositeSnapshotConstructor18shape_for_childrens_0EINtNtB2D_6result6ResultNtNtB2D_7convert10InfallibleNtNtB69_5error18SnapshotValueErrorEEE9from_iterB14_",
+            1
+          ],
+          [
+            "__RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcNtNtNtCsfBfheTzTBUt_9mech_core6schema5shape13ShapeInstanceE9drop_slowBM_",
+            1
+          ],
+          [
+            "__RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtNtCsfBfheTzTBUt_9mech_core11memory_plan5model14AllocationPlanENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCs2f6zuEJIbcT_11mech_engine",
+            1
+          ],
+          [
+            "__RNvXNtCsfBfheTzTBUt_9mech_core9kind_exprNtB2_8KindExprNtNtCsgDHHaSskbIF_4core5clone5Clone5clone",
+            1
+          ],
+          [
+            "__RNvMs_NtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtNtB6_4data15CollectedValues10append_row",
+            1
+          ],
+          [
+            "__RNvNtNtCs2f6zuEJIbcT_11mech_engine14memory_planner4turn15scope_turn_call",
+            1
+          ],
+          [
+            "__RNvNtNtCsfBfheTzTBUt_9mech_core11memory_plan6derive25derive_dimension_capacity",
+            1
+          ],
+          [
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8sequence15SequenceStorageEBM_",
+            1
+          ],
+          [
+            "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot9relations16insert_map_entry",
+            1
+          ],
+          [
+            "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growB7_",
+            1
+          ]
+        ]
+      }
+    },
+    "limitations": [
+      "These are statistical current-PC observations, not CPU-time shares or dynamic instruction counts. Waiting threads can retain a wait PC while consuming no CPU.",
+      "A single odd epoch must surround each accepted register observation; sampling across a phase boundary is discarded.",
+      "JSON decoding, output verification and teardown occur outside the gate. Restored program and original JSON text are reused.",
+      "System names are resolved after sampling in the same live process; executable-local names use the exact profiled Mach-O."
+    ]
+  },
+  "query_instruction_profile": {
+    "static_machine_instruction_count": 7112,
+    "static_categories": {
+      "other_arithmetic_or_control": 303,
+      "explicit_stack_memory": 1358,
+      "register_move": 153,
+      "other_memory": 4049,
+      "constant_materialization": 761,
+      "comparison": 171,
+      "branch_or_return": 317
+    },
+    "sampled_pc_observations": 590,
+    "sampled_categories": {
+      "register_move": 94,
+      "comparison": 86,
+      "constant_materialization": 32,
+      "other_memory": 48,
+      "explicit_stack_memory": 153,
+      "other_arithmetic_or_control": 132,
+      "branch_or_return": 45
+    },
+    "top_offsets": [
+      {
+        "offset": 9360,
+        "observations": 58,
+        "instruction": "1005dae90:     \tadd\tx4, x24, #0x1",
+        "window": [
+          "1005dae84:     \tmov\tx24, x15",
+          "1005dae88:     \tstur\tx2, [sp, #0x38]",
+          "1005dae8c:     \tb\t0x1005db220 <_mech_canonical_program_entry_v1_numeric_1282+0x2820>",
+          "1005dae90:     \tadd\tx4, x24, #0x1",
+          "1005dae94:     \tcmp\tx4, x24",
+          "1005dae98:     \tb.lo\t0x1005de3cc <_mech_canonical_program_entry_v1_numeric_1282+0x59cc>",
+          "1005dae9c:     \tldr\tx6, [sp, #0x160]"
+        ]
+      },
+      {
+        "offset": 16768,
+        "observations": 57,
+        "instruction": "1005dcb80:     \tcmp\tx2, x22",
+        "window": [
+          "1005dcb74:     \tmov\tx9, x11",
+          "1005dcb78:     \tmov\tx20, x24",
+          "1005dcb7c:     \tb\t0x1005dcc44 <_mech_canonical_program_entry_v1_numeric_1282+0x4244>",
+          "1005dcb80:     \tcmp\tx2, x22",
+          "1005dcb84:     \tb.ne\t0x1005dcba0 <_mech_canonical_program_entry_v1_numeric_1282+0x41a0>",
+          "1005dcb88:     \tmov\tx2, x1",
+          "1005dcb8c:     \tmov\tx4, x0"
+        ]
+      },
+      {
+        "offset": 16744,
+        "observations": 46,
+        "instruction": "1005dcb68:     \tmov\tx2, x1",
+        "window": [
+          "1005dcb5c:     \tand\tw9, w4, w9",
+          "1005dcb60:     \tuxtb\tw5, w9",
+          "1005dcb64:     \ttbnz\tw5, #0x0, 0x1005dcb80 <_mech_canonical_program_entry_v1_numeric_1282+0x4180>",
+          "1005dcb68:     \tmov\tx2, x1",
+          "1005dcb6c:     \tmov\tx4, x0",
+          "1005dcb70:     \tmov\tx6, x7",
+          "1005dcb74:     \tmov\tx9, x11"
+        ]
+      },
+      {
+        "offset": 16952,
+        "observations": 24,
+        "instruction": "1005dcc38:     \tcsel\tx9, x20, x11, hi",
+        "window": [
+          "1005dcc2c:     \tcmp\tx9, x7",
+          "1005dcc30:     \tcsel\tx20, x9, x7, lo",
+          "1005dcc34:     \tcmp\tx20, x11",
+          "1005dcc38:     \tcsel\tx9, x20, x11, hi",
+          "1005dcc3c:     \tcmp\tx20, x11",
+          "1005dcc40:     \tcsel\tx20, x20, x11, lo",
+          "1005dcc44:     \ttbnz\tw5, #0x0, 0x1005dd704 <_mech_canonical_program_entry_v1_numeric_1282+0x4d04>"
+        ]
+      },
+      {
+        "offset": 8660,
+        "observations": 23,
+        "instruction": "1005dabd4:     \tldr\tx1, [sp, #0x130]",
+        "window": [
+          "1005dabc8:     \tmov\tx24, x15",
+          "1005dabcc:     \tstur\tx2, [sp, #0x38]",
+          "1005dabd0:     \tb\t0x1005db268 <_mech_canonical_program_entry_v1_numeric_1282+0x2868>",
+          "1005dabd4:     \tldr\tx1, [sp, #0x130]",
+          "1005dabd8:     \tcmp\tx27, x1",
+          "1005dabdc:     \tb.lo\t0x1005dae5c <_mech_canonical_program_entry_v1_numeric_1282+0x245c>",
+          "1005dabe0:     \tb\t0x1005de1dc <_mech_canonical_program_entry_v1_numeric_1282+0x57dc>"
+        ]
+      },
+      {
+        "offset": 16740,
+        "observations": 21,
+        "instruction": "1005dcb64:     \ttbnz\tw5, #0x0, 0x1005dcb80 <_mech_canonical_program_entry_v1_numeric_1282+0x4180>",
+        "window": [
+          "1005dcb58:     \tcset\tx9, hi",
+          "1005dcb5c:     \tand\tw9, w4, w9",
+          "1005dcb60:     \tuxtb\tw5, w9",
+          "1005dcb64:     \ttbnz\tw5, #0x0, 0x1005dcb80 <_mech_canonical_program_entry_v1_numeric_1282+0x4180>",
+          "1005dcb68:     \tmov\tx2, x1",
+          "1005dcb6c:     \tmov\tx4, x0",
+          "1005dcb70:     \tmov\tx6, x7"
+        ]
+      },
+      {
+        "offset": 16856,
+        "observations": 20,
+        "instruction": "1005dcbd8:     \tcset\tx2, ne",
+        "window": [
+          "1005dcbcc:     \tand\tw4, w4, w9",
+          "1005dcbd0:     \tand\tx9, x11, #0x3ffffffffffffff",
+          "1005dcbd4:     \tcmp\tx2, x9",
+          "1005dcbd8:     \tcset\tx2, ne",
+          "1005dcbdc:     \tand\tw2, w4, w2",
+          "1005dcbe0:     \tuxtb\tw2, w2",
+          "1005dcbe4:     \ttbnz\tw2, #0x0, 0x1005dcc00 <_mech_canonical_program_entry_v1_numeric_1282+0x4200>"
+        ]
+      },
+      {
+        "offset": 10340,
+        "observations": 18,
+        "instruction": "1005db264:     \tldr\tx28, [sp, #0x1a8]",
+        "window": [
+          "1005db258:     \tstr\tx0, [sp, #0x1a0]",
+          "1005db25c:     \tmov\tx0, x6",
+          "1005db260:     \tldr\tx6, [sp, #0x1a0]",
+          "1005db264:     \tldr\tx28, [sp, #0x1a8]",
+          "1005db268:     \tcmp\tx27, x5",
+          "1005db26c:     \tb.lo\t0x1005dd76c <_mech_canonical_program_entry_v1_numeric_1282+0x4d6c>",
+          "1005db270:     \tmov\tx5, #0x0                ; =0"
+        ]
+      },
+      {
+        "offset": 16872,
+        "observations": 14,
+        "instruction": "1005dcbe8:     \tmov\tx2, x1",
+        "window": [
+          "1005dcbdc:     \tand\tw2, w4, w2",
+          "1005dcbe0:     \tuxtb\tw2, w2",
+          "1005dcbe4:     \ttbnz\tw2, #0x0, 0x1005dcc00 <_mech_canonical_program_entry_v1_numeric_1282+0x4200>",
+          "1005dcbe8:     \tmov\tx2, x1",
+          "1005dcbec:     \tmov\tx4, x0",
+          "1005dcbf0:     \tmov\tx6, x7",
+          "1005dcbf4:     \tmov\tx9, x11"
+        ]
+      },
+      {
+        "offset": 16776,
+        "observations": 14,
+        "instruction": "1005dcb88:     \tmov\tx2, x1",
+        "window": [
+          "1005dcb7c:     \tb\t0x1005dcc44 <_mech_canonical_program_entry_v1_numeric_1282+0x4244>",
+          "1005dcb80:     \tcmp\tx2, x22",
+          "1005dcb84:     \tb.ne\t0x1005dcba0 <_mech_canonical_program_entry_v1_numeric_1282+0x41a0>",
+          "1005dcb88:     \tmov\tx2, x1",
+          "1005dcb8c:     \tmov\tx4, x0",
+          "1005dcb90:     \tmov\tx6, x7",
+          "1005dcb94:     \tmov\tx9, x11"
+        ]
+      },
+      {
+        "offset": 10464,
+        "observations": 13,
+        "instruction": "1005db2e0:     \tldur\tx27, [sp, #0x18]",
+        "window": [
+          "1005db2d4:     \tldur\tx5, [sp, #0x98]",
+          "1005db2d8:     \tstur\tx5, [sp, #0xa0]",
+          "1005db2dc:     \tmov\tx5, x26",
+          "1005db2e0:     \tldur\tx27, [sp, #0x18]",
+          "1005db2e4:     \tcmp\tx27, x5",
+          "1005db2e8:     \tb.lo\t0x1005dd740 <_mech_canonical_program_entry_v1_numeric_1282+0x4d40>",
+          "1005db2ec:     \tmov\tx0, #0x0                ; =0"
+        ]
+      },
+      {
+        "offset": 16964,
+        "observations": 13,
+        "instruction": "1005dcc44:     \ttbnz\tw5, #0x0, 0x1005dd704 <_mech_canonical_program_entry_v1_numeric_1282+0x4d04>",
+        "window": [
+          "1005dcc38:     \tcsel\tx9, x20, x11, hi",
+          "1005dcc3c:     \tcmp\tx20, x11",
+          "1005dcc40:     \tcsel\tx20, x20, x11, lo",
+          "1005dcc44:     \ttbnz\tw5, #0x0, 0x1005dd704 <_mech_canonical_program_entry_v1_numeric_1282+0x4d04>",
+          "1005dcc48:     \tmov\tx2, #0x0                ; =0",
+          "1005dcc4c:     \tstr\tx2, [x28, #0x1fc0]",
+          "1005dcc50:     \tstr\tx2, [x28, #0x1fc8]"
+        ]
+      },
+      {
+        "offset": 14968,
+        "observations": 12,
+        "instruction": "1005dc478:     \tldur\tx4, [sp, #0xe8]",
+        "window": [
+          "1005dc46c:     \tmovk\tw2, #0x2, lsl #16",
+          "1005dc470:     \tcmp\tx3, x2",
+          "1005dc474:     \tcset\tx2, hs",
+          "1005dc478:     \tldur\tx4, [sp, #0xe8]",
+          "1005dc47c:     \tand\tw2, w2, w4",
+          "1005dc480:     \tuxtb\tw2, w2",
+          "1005dc484:     \tcbnz\tx2, 0x1005dc894 <_mech_canonical_program_entry_v1_numeric_1282+0x3e94>"
+        ]
+      },
+      {
+        "offset": 16020,
+        "observations": 11,
+        "instruction": "1005dc894:     \tcmp\tx27, x13",
+        "window": [
+          "1005dc888:     \tldp\tx27, x28, [sp], #0x10",
+          "1005dc88c:     \tldp\tx29, x30, [sp], #0x10",
+          "1005dc890:     \tretab",
+          "1005dc894:     \tcmp\tx27, x13",
+          "1005dc898:     \tcset\tx4, lo",
+          "1005dc89c:     \tcmp\tx27, x13",
+          "1005dc8a0:     \tb.lo\t0x1005dc8ac <_mech_canonical_program_entry_v1_numeric_1282+0x3eac>"
+        ]
+      },
+      {
+        "offset": 10344,
+        "observations": 10,
+        "instruction": "1005db268:     \tcmp\tx27, x5",
+        "window": [
+          "1005db25c:     \tmov\tx0, x6",
+          "1005db260:     \tldr\tx6, [sp, #0x1a0]",
+          "1005db264:     \tldr\tx28, [sp, #0x1a8]",
+          "1005db268:     \tcmp\tx27, x5",
+          "1005db26c:     \tb.lo\t0x1005dd76c <_mech_canonical_program_entry_v1_numeric_1282+0x4d6c>",
+          "1005db270:     \tmov\tx5, #0x0                ; =0",
+          "1005db274:     \tstr\tx5, [x28, #0x15d0]"
+        ]
+      }
+    ]
+  },
+  "work_accounting": {
+    "all_totals_retained": true,
+    "production_prices_meter_or_funding_changed": false,
+    "source_price_tables_equal": true,
+    "first_fixture_reference_total": 202217009,
+    "first_fixture_native_total": 84816871,
+    "first_fixture_outside_callbacks_both": 907408,
+    "first_fixture_difference_within_callbacks": 117400138,
+    "total_work_includes_actual_runtime_owner_metadata_and_transport_charges": true
+  },
+  "selected": false,
+  "selected_speed_checkpoint": "IR208",
+  "goal_complete": false,
+  "limitations": [
+    "The sixfold gain repairs the same source regression; the original benchmark improves only modestly.",
+    "Current source wins27/31 processing pairs but only14/31 full-process pairs against same-compiler original source. Whole-process improvement is not established.",
+    "Ordered source sends unordered unique rows to the exact general fallback. This scope tradeoff remains explicit; source stays unselected.",
+    "Instruction/resource samples are separate from latency. PC observations and waiting positions are not CPU-time percentages.",
+    "No hosted-CI-green, merge, or remotely uploaded raw-archive claim."
+  ],
+  "next_targets": [
+    "Cheaper immutable first-invocation and restoration metadata; avoid discarded descriptor clones and redundant owned-shape parameter copies.",
+    "Producer-derived immutable posting-ID/index ranges, bounded native-tree funding, and cold scalar-home materialization/retirement.",
+    "Combine compact source representations and ordered key/mask reuse only with separate exactness, counter and latency evidence."
+  ]
+}

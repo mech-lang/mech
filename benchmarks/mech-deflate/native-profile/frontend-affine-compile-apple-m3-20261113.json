@@ -1,0 +1,492 @@
+{
+  "base_commit": "a7446375db3feac086438065170a1a1455093aef",
+  "candidate_patch_sha256": "84dc55dab4c9e4ee512aa8354b6e1a20455ff60b4dbe66d1dd7328a70c30dd49",
+  "compiler_binary_sha256": {
+    "candidate": "a6e73b5503d41eca43c5e299b7313bf5852ebf1f2069933541c1a32ab6d93340",
+    "control": "992a0ea85eb888981a36a237eeb2b6b5498def6514c6a53b06fdc207ccaabbe8"
+  },
+  "compiler_bootstrap_seconds": 243.8674057079479,
+  "decision": "retain inline storage for consecutive dimension remapping",
+  "fixture_output_comparisons": [
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-nested-phase.mec",
+      "source_sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "assembled:numeric-nested-phase-states",
+      "source_sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-private-fixed-nested.mec",
+      "source_sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-changing-capture-tree.mec",
+      "source_sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-array-windows.mec",
+      "source_sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-multiple-children.mec",
+      "source_sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "flags_count": 52,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "integration": {
+    "all_four_outputs_identical": true,
+    "commit": "2a0c025994100e27dc37b38df4a0f038a29a9481",
+    "compiler_binary_sha256": "5d856d1d17fa39959580b786e065bc541fbc40092b1c0904f352df7925c8a876",
+    "compiler_bootstrap_seconds": 80.00732108298689,
+    "compiler_seconds": 39.957662208,
+    "excluded_from_abba": true,
+    "frontend_seconds": 7.662232958,
+    "whole_process_seconds": 41.123611374991015
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "qualified": {
+    "cleanup_seconds": {
+      "candidate": [
+        5.047056500101462,
+        4.97970995795913
+      ],
+      "control": [
+        5.015282541047782,
+        5.002176208887249
+      ]
+    },
+    "compiler_seconds": {
+      "candidate": [
+        39.112475208,
+        38.902572041
+      ],
+      "control": [
+        41.251693417,
+        40.451702042
+      ],
+      "mean_reduction_fraction": 0.045143144777267996
+    },
+    "frontend_seconds": {
+      "candidate": [
+        6.830909709,
+        6.834229083
+      ],
+      "control": [
+        9.051579083,
+        8.378378333
+      ],
+      "mean_reduction_fraction": 0.21599700642665065
+    },
+    "instructions": {
+      "candidate": [
+        614020001619,
+        614092387182
+      ],
+      "control": [
+        636828638765,
+        635332280083
+      ],
+      "mean_reduction_fraction": 0.03462496716758756
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        7760216064,
+        7758938112
+      ],
+      "control": [
+        7473135616,
+        7769096192
+      ]
+    },
+    "native_seconds": {
+      "candidate": [
+        29.7247085,
+        29.527552666
+      ],
+      "control": [
+        29.639634167,
+        29.539582833
+      ],
+      "mean_reduction_fraction": -0.0012342874695350226
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        4.7050666669383645,
+        4.682021250016987
+      ],
+      "control": [
+        4.701374040916562,
+        4.706336334114894
+      ],
+      "mean_reduction_fraction": 0.002192080458900736
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.475366458,
+        2.460926625
+      ],
+      "control": [
+        2.475881625,
+        2.449285292
+      ]
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        7729486280,
+        7728191944
+      ],
+      "control": [
+        7757535736,
+        7738415608
+      ]
+    },
+    "preparation_seconds": {
+      "candidate": [
+        10.708979000104591,
+        10.662185125052929
+      ],
+      "control": [
+        10.723486084025353,
+        10.675662499852479
+      ],
+      "mean_reduction_fraction": 0.0013077370162939417
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.51888275006786,
+        2.511528166010976
+      ],
+      "control": [
+        2.5234392499551177,
+        2.4532469999976456
+      ]
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        40.233752249972895,
+        39.05476379208267
+      ],
+      "control": [
+        42.362657458055764,
+        40.69659204198979
+      ]
+    }
+  },
+  "scope": [
+    "Fresh full source-to-Object, the same 52 flags, compiler bootstrap excluded.",
+    "Four serial ABBA observations; no builds, tests, fixtures or CPU sampling overlap primary timings.",
+    "Stage intervals are independently stamped and included in native time.",
+    "Both elapsed pairs improve; four observations do not establish a statistical population.",
+    "The first control frontend interval is 9.052 seconds and retained; it enlarges the observed mean improvement.",
+    "Initial launches of both subjects retain about one second of extra startup outside compiler phase timers.",
+    "Native time rises 0.12% by the mean and parse time varies; this change targets frontend identity-map storage.",
+    "Candidate maximum RSS has a higher mean and overlapping ranges; no causal whole-compiler memory saving is established.",
+    "Source, bytecode, native Object and complete metadata are byte-identical in all four level-12 observations.",
+    "Six complete additional programs preserve all four emitted outputs; these are compilation comparisons, not execution campaigns.",
+    "The enum-state helper uses the maintained test assembly; there is no fragment-only launch in this cohort.",
+    "Insertions remain ordered and checked; irregular mappings materialize the original bounded dense/sparse map.",
+    "Only compiler temporary storage changes; grammar, language semantics and validation remain unchanged.",
+    "Generated runtime instructions and complete metadata are unchanged; no new runtime timing campaign is claimed.",
+    "The Rust 2021 formatting command fails on existing let chains; the corrected Rust 2024 check passes, and both logs remain.",
+    "The prior frontend CPU sample is diagnostic only and motivated this optimization.",
+    "PR 973 advanced with an independent runtime owner-slot change after primary measurement. It is merged and freshly rebuilt; integration preserves all four emitted outputs.",
+    "The integration compile is an output gate and is excluded from the balanced timing comparison.",
+    "Compiler/test executables stay local, with hashes retained.",
+    "Full compilation remains about 39 seconds; the sub-10-second goal remains open."
+  ],
+  "source_commit": "cfd97b6a35911fbd5286dbf122186426c4425433",
+  "tests": {
+    "focused_total": 63,
+    "identical_complete_fixture_programs": 6,
+    "suites": 5
+  }
+}

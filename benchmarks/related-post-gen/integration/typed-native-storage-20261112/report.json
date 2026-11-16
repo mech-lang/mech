@@ -1,0 +1,234 @@
+{
+  "schema": "mech.related-post-gen.typed-native-storage-evidence.v1",
+  "measured_source_commit": "4b6133f85ae85f858bfe29f8cc871aada58a77bb",
+  "base_IR334_source_commit": "6cd626c3dfb5cdac2efc3c6978949a717ada27a8",
+  "typed_IR": 336,
+  "work_policy": 127,
+  "ABI": 42,
+  "image": 11,
+  "managed_selected": "IR334; IR336 wide inconclusive and byte/U32 regress",
+  "compact_selected": "IR336 U32 storage; confirmed faster than current IR336 wide",
+  "fastest_Rust_target_met": false,
+  "whole_process_is_acceptance_gate": false,
+  "timed_exact_outputs": 1660,
+  "primary": {
+    "record": "first-guarded-typed/latency.json",
+    "exact_outputs": 1085,
+    "rounds": 31,
+    "variants": 35,
+    "seed": 202611120913,
+    "bootstrap_seed": 202611120914,
+    "paired": "first-guarded-typed/paired-comparisons.json",
+    "current_fastest_Rust": {
+      "variant": "rust-ordered-mask-tables256-fresh4",
+      "median_seconds": 0.0012493749999999998,
+      "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+      "eligible_variants": [
+        "rust",
+        "rust-mech-control-streaming",
+        "rust-mech-control-u32-casts",
+        "rust-mech-control-u8-ids-u32",
+        "rust-ordered-scan-only",
+        "rust-ordered-ordered",
+        "rust-ordered-mask-reuse",
+        "rust-ordered-ordered-mask",
+        "rust-ordered-ordered-mask-tables",
+        "rust-apple-m3",
+        "rust-mech-control-streaming-apple-m3",
+        "rust-mech-control-u32-casts-apple-m3",
+        "rust-mech-control-u8-ids-u32-apple-m3",
+        "rust-ordered-scan-only-apple-m3",
+        "rust-ordered-ordered-apple-m3",
+        "rust-ordered-mask-reuse-apple-m3",
+        "rust-ordered-ordered-mask-apple-m3",
+        "rust-ordered-ordered-mask-tables-apple-m3",
+        "rust-ordered-mask-tables256",
+        "rust-ordered-mask-tables256-apple-m3",
+        "rust-ordered-mask-tables256-fresh4",
+        "rust-ordered-mask-tables256-fresh4-apple-m3"
+      ]
+    },
+    "rows": [
+      {
+        "variant": "rust-ordered-mask-tables256",
+        "post_json_ms": 1.563333,
+        "times_current_fastest_Rust": 1.2512920460230117,
+        "whole_process_ms": 30.53620900027454
+      },
+      {
+        "variant": "mech-managed-host-v2-4",
+        "post_json_ms": 1.6381670000000002,
+        "times_current_fastest_Rust": 1.3111891945972989,
+        "whole_process_ms": 55.393500020727515
+      },
+      {
+        "variant": "rust-ordered-mask-tables256-fresh4",
+        "post_json_ms": 1.249375,
+        "times_current_fastest_Rust": 1.0,
+        "whole_process_ms": 31.04791697114706
+      },
+      {
+        "variant": "mech-managed-retire-overlap",
+        "post_json_ms": 1.483125,
+        "times_current_fastest_Rust": 1.187093546773387,
+        "whole_process_ms": 55.829707998782396
+      },
+      {
+        "variant": "mech-ir320-compact-native-4",
+        "post_json_ms": 1.349459,
+        "times_current_fastest_Rust": 1.0801072536268135,
+        "whole_process_ms": 33.35362486541271
+      },
+      {
+        "variant": "mech-managed-scoped-frame",
+        "post_json_ms": 1.448625,
+        "times_current_fastest_Rust": 1.1594797398699352,
+        "whole_process_ms": 54.35308301821351
+      },
+      {
+        "variant": "mech-managed-typed-fixed-byte",
+        "post_json_ms": 1.563084,
+        "times_current_fastest_Rust": 1.2510927463731867,
+        "whole_process_ms": 61.392375035211444
+      },
+      {
+        "variant": "mech-managed-guarded-owner-wide",
+        "post_json_ms": 1.461208,
+        "times_current_fastest_Rust": 1.169551175587794,
+        "whole_process_ms": 55.24187511764467
+      },
+      {
+        "variant": "mech-managed-guarded-owner-byte",
+        "post_json_ms": 1.487375,
+        "times_current_fastest_Rust": 1.190495247623812,
+        "whole_process_ms": 61.97262508794665
+      },
+      {
+        "variant": "mech-managed-key-u32-probe",
+        "post_json_ms": 1.489584,
+        "times_current_fastest_Rust": 1.192263331665833,
+        "whole_process_ms": 60.750833014026284
+      },
+      {
+        "variant": "mech-ir336-compact-maintained-wide-4",
+        "post_json_ms": 1.3122500000000001,
+        "times_current_fastest_Rust": 1.0503251625812908,
+        "whole_process_ms": 34.228208009153605
+      },
+      {
+        "variant": "mech-ir336-compact-direct-byte-4",
+        "post_json_ms": 1.288958,
+        "times_current_fastest_Rust": 1.0316822411205604,
+        "whole_process_ms": 34.318082965910435
+      },
+      {
+        "variant": "mech-ir336-compact-key-u32-4",
+        "post_json_ms": 1.278459,
+        "times_current_fastest_Rust": 1.02327883941971,
+        "whole_process_ms": 33.857124857604504
+      }
+    ]
+  },
+  "confirmation": {
+    "record": "independent-compact-key-u32-prepared/report.json",
+    "plan": "independent-compact-key-u32-prepared/plan.json",
+    "exact_outputs": 351,
+    "rounds": 13,
+    "variants": 27
+  },
+  "resources": {
+    "record": "new-managed-resources/resources-guarded-first/report.json",
+    "plan": "new-managed-resources/resources-guarded-first/plan.json",
+    "exact_outputs": 224,
+    "rounds": 7,
+    "variants": 32,
+    "instrumented_latency_selection_forbidden": true
+  },
+  "profiles": {
+    "record": "fullpath-profile-preparation-v2/completed-profiles.json",
+    "successful_runs": 2,
+    "iterations_per_run": 5001,
+    "diagnostic_only": true,
+    "included_in_timed_exact_outputs": false,
+    "prior_partial_failure_retained": "fullpath-profile-preparation/ir334-scoped-frame/profile/receipt.json",
+    "prelaunch_schema_error_retained": "fullpath-profile-preparation-v2/prelaunch-schema-error.json"
+  },
+  "source_closure": {
+    "inventory_overrides": {
+      "typed-replay-compiler-v3": {
+        "hosts/gpu/src/native_artifact/program/codegen/map_owner.rs": "19e8ee42dd4119ac396c0090544c500779994ea2c9101648752ab91b09111cb0",
+        "hosts/gpu/src/native_artifact/program/codegen/source_liveness.rs": "2d342d3481f3265787fe4addc7052f5c0b869f7db023dccc119787d44c085a73",
+        "hosts/gpu/src/native_artifact/program/image/identity.rs": "e7708dc6716856a029421453fc5544c07262cbdbcffb1c951d633665c9d6e913",
+        "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "766c51779663978509571c3781a0ec666401695f5713d3aff8199fcaab6feb82",
+        "hosts/gpu/src/native_artifact/program/prepare/generic_dictionary.rs": "0123f5fb77c5bbd08d755fb5912ebc9fc874f260e26e7cea7e5996e1936b01b3",
+        "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "5e25ed9f100592815e0302a7c198b1d11228ffedebdda194e937ac9a3bc8fe74",
+        "hosts/gpu/src/native_artifact/program/runtime/composition_tests/generic_dictionary.rs": "c93547ca43d4a26bcf6a6660dec7ecdf0213aef155d3c48cc4557653cb7591ca",
+        "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "80c3bcf714d09acc9ae27ed22154fe3ea4108b07e62fafd2bd71c99d0dbfb712"
+      },
+      "guarded-owner-compiler-v1": {
+        "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "80c3bcf714d09acc9ae27ed22154fe3ea4108b07e62fafd2bd71c99d0dbfb712",
+        "hosts/gpu/src/native_artifact/program/runtime/composition_tests/generic_dictionary.rs": "a98b431193d726ab8bd267405a0d6d7b48443fc617865f66397b95f50ae5a967"
+      },
+      "guarded-owner-fixture-tests-v2": {
+        "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "80c3bcf714d09acc9ae27ed22154fe3ea4108b07e62fafd2bd71c99d0dbfb712"
+      },
+      "guarded-owner-version-fixture-tests-v3": {}
+    },
+    "source_files": 2814,
+    "literal_includes": 164,
+    "overlay": {
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "cafde858d249e7e1f33379400f546c846a8ab7bb8f432df949ea8e6773f83747",
+      "hosts/gpu/src/native_artifact/program/codegen/map_owner.rs": "69c7a88492ca502eeaea5326e4e5cb97bd0fe76e89a5a55f2d33f54e186943b2",
+      "hosts/gpu/src/native_artifact/program/codegen/source_liveness.rs": "5f82277e46fe6b92f4ffbe570c99cabbf21829b1e1b233310e1966ecf1d4b610",
+      "hosts/gpu/src/native_artifact/program/codegen/utf8_lookup.rs": "cc462cf4b5f9391e9c82dfcba6d3ac882069d8fab4ca4f5b2b8315a445926e1b",
+      "hosts/gpu/src/native_artifact/program/codegen/utf8_lookup_tests.rs": "fa8f8082fba5f7eb55c02b30f4defe464cbcd9407bdd5bf80d4cd9a598e135b0",
+      "hosts/gpu/src/native_artifact/program/compact/utf8_classes.rs": "1147a16b1d012aadaae13d99dc87eafc3ac618cc5a430f6b3ee9d30a5073df94",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs": "4803ff651d5540ded707c36539d25cc04cb929e3872d3769d32e8ed903e43a50",
+      "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "c746437e5261985f1fb1bcb0cb6d1e15406ffa2ed815f9707a611b8233c7ab1c",
+      "hosts/gpu/src/native_artifact/program/prepare/generic_dictionary.rs": "6f0a7f9d955757c3fd2687a56db32c50045ccc769261b3a3f110a54181c069a2",
+      "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "f03e8db0c5996fd299beb3155a2a7e83f519811189ba58c770d00670e8b70e16",
+      "hosts/gpu/src/native_artifact/program/prepare/utf8_reads.rs": "fcb0ba996b713834cb9b05b1bb2fc3ee163f29ba929a05a347b8d0e1dc21a14b",
+      "hosts/gpu/src/native_artifact/program/runtime/collections/utf8_read.rs": "d33161ab1aef8db3660331d780dacd4f7f7b6e59a2b29445623dd890a9260baf",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/generic_dictionary.rs": "2b28b1367af2c2310786724fda96b29708b3ec8bf90a3a00c0692850b98a029c",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "1cbc12953ef7ef57da40c85015606dfed7937dfc92853c8833479a3aeafe383f",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/utf8_reads.rs": "341f51fb9abc9c59c3b47e88a5dd29d92149bce11c57bf08a29345efcbe06303",
+      "hosts/gpu/src/native_artifact/program/runtime/invocation/utf8_read.rs": "e98853e09e96e7b55f8ca045226457f3ad5889faf5f83baee77694826db7fc27",
+      "hosts/gpu/src/native_artifact/program/runtime/maps/owner/generic_dictionary.rs": "5fabbadacb774180cf1ddc1136edca0cf972c451175909070df97fbcc1ec4112",
+      "src/engine/src/resident/general/native_collection_borrowed_record_map_tests.rs": "47387ed1196564a045906510c253d01b71cd729ed4b13ed3f72c1fcb0a7aa398",
+      "src/engine/src/resident/general/native_collection_cache_capacity.rs": "e8f8f7c78f044fe41a9966f7e17907dfcaeff9d23f2da2fc4e8159af9cba6aec",
+      "src/engine/src/resident/general/native_collection_invocation.rs": "d65b8a1bb08bfc709c8abbbe4879ed7db0222d2d28679237a4a1662a98de0b45",
+      "src/engine/src/resident/general/native_collection_prepared.rs": "0c1219022836bfacbddc4fce7fe630b51208c23f24a3a8fe1e3e3a802a62a62e",
+      "src/engine/src/resident/native_snapshot_footprint.rs": "4ca5b856d0635ba744a4d6cfe6832ce062b66b93c397f0db59bda383231d1342",
+      "src/engine/src/resident/native_turn_plan_cache.rs": "3d984bd90017b6bb23ffabf54f9891035326dd40931f7df7e6f485d695325bf2"
+    },
+    "patch": "measured-source/IR334-to-IR336.patch"
+  },
+  "qualification": {
+    "managed": [
+      "typed-fixed-byte",
+      "guarded-owner-wide",
+      "guarded-owner-byte",
+      "key-u32-probe"
+    ],
+    "compact": "compact-guarded-preparation/qualification.json",
+    "compact_resource_adapters": "compact-guarded-resource-preparation/qualification.json",
+    "compact_resource_qualification_executions": 96,
+    "full_posts": 5000,
+    "edges_per_variant": 31,
+    "broad": "guarded-owner-broad-attribution/attribution.json",
+    "broad_counts": {
+      "passed": 1067,
+      "failed": 18,
+      "ignored": 11
+    },
+    "inherited_failures": 16,
+    "stale_version_assertions_fixed": 2,
+    "broad_rerun_after_test_only_fix": false
+  },
+  "retention": {
+    "executables_and_libraries": "build/link/hash receipts; not duplicated",
+    "source_snapshots": "full inventories plus minimal changed/override bytes",
+    "outputs": "all logical output paths retained; identical bytes stored once",
+    "initial_failures": "retained without replacement or benchmark reruns"
+  }
+}

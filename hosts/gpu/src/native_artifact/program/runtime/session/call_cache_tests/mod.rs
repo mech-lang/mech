@@ -7,6 +7,68 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
+#[test]
+fn cache_backing_contains_only_the_complete_prepared_call_inventory() {
+    let mut saw_non_library = false;
+    for source in [
+        "seed<u64> + 1u64\n",
+        "+> sequence\nsequence/length(seed<string>)\n",
+        "[i | i <- 0u64..count<u64>]\n",
+        "+> text\ntext/join([(seed<string>)[1u64..=2u64] | attempt <- 1u64..=2u64], \"|\")\n",
+    ] {
+        for artifact in artifacts(source) {
+            let jit = crate::native_artifact::JitProgramArtifact::compile(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+            )
+            .unwrap();
+            let descriptor = jit.descriptor();
+            let expected = descriptor
+                .metadata()
+                .calls
+                .iter()
+                .filter(|c| c.is_some())
+                .count();
+            saw_non_library |= descriptor
+                .metadata()
+                .calls
+                .iter()
+                .zip(descriptor.metadata().plan.blocks())
+                .any(|(call, block)| {
+                    call.is_some()
+                        && !matches!(block.action(), NativeIterationAction::LibraryCall { .. })
+                });
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let (lane, library) = lane(descriptor, &memory);
+            assert_eq!(
+                lane.entries.len(),
+                expected,
+                "cache backing includes blocks without prepared calls"
+            );
+            for (site, (call, block)) in descriptor
+                .metadata()
+                .calls
+                .iter()
+                .zip(descriptor.metadata().plan.blocks())
+                .enumerate()
+            {
+                assert_eq!(lane.entry(site).is_some(), call.is_some(), "site {site}");
+                if let Some(entry) = lane.entry(site) {
+                    assert_eq!(
+                        matches!(entry, CallCacheEntry::Repeated(..)),
+                        block.iteration().is_some(),
+                        "site {site}"
+                    );
+                }
+            }
+            assert!(lane.entry(usize::MAX).is_none());
+            drop((lane, library));
+            assert_eq!((memory.used_bytes(), memory.retained_nodes()), (0, 0));
+        }
+    }
+    assert!(saw_non_library);
+}
+
 pub(in crate::native_artifact::program::runtime::session) fn artifacts(
     source: &str,
 ) -> [mech_engine::ProgramArtifact; 2] {
@@ -40,10 +102,10 @@ pub(in crate::native_artifact::program::runtime::session) fn policy() -> MemoryB
     limits
 }
 
-fn lane(
-    descriptor: &NativeProgramDescriptor,
+fn lane<'plan>(
+    descriptor: &'plan NativeProgramDescriptor,
     memory: &ManagedMemoryBudget,
-) -> (CallCacheLane, NativeLibraryWorkBudget) {
+) -> (CallCacheLane<'plan>, NativeLibraryWorkBudget) {
     let mut work = NativeWorkMeter::new(1_000_000_000).unwrap();
     work.bind_memory_budget(memory).unwrap();
     let lane = CallCacheLane::new(descriptor, 128 * 1024 * 1024, memory, &mut work).unwrap();
@@ -109,7 +171,7 @@ fn once_library_slot_retains_no_binding_or_planner_metadata() {
         );
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let (mut lane, library) = lane(descriptor, &memory);
-        assert!(matches!(&lane.entries[site], CallCacheEntry::Once));
+        assert!(matches!(lane.entry(site).unwrap(), CallCacheEntry::Once));
         let args = [Some(text(descriptor, site, "e\u{301}A", &memory))];
         let before = memory.used_bytes();
         let mut output = None;
@@ -127,7 +189,7 @@ fn once_library_slot_retains_no_binding_or_planner_metadata() {
         // The output's complete ownership retires; there is no bound call,
         // planner population or weak String-index shell left in this slot.
         assert_eq!(memory.used_bytes(), before);
-        assert!(matches!(&lane.entries[site], CallCacheEntry::Once));
+        assert!(matches!(lane.entry(site).unwrap(), CallCacheEntry::Once));
         drop((args, lane, library));
         assert_eq!(memory.used_bytes(), 0);
     }
@@ -146,8 +208,8 @@ fn repeated_cache_demand_is_read_only_account_bound_and_keeps_nested_fuel() {
         let site = only_leaf(descriptor);
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let (mut lane, library) = lane(descriptor, &memory);
-        let demand = |lane: &CallCacheLane, work: &NativeLibraryWorkBudget| {
-            let CallCacheEntry::Repeated(cache, _) = &lane.entries[site] else {
+        let demand = |lane: &CallCacheLane<'_>, work: &NativeLibraryWorkBudget| {
+            let CallCacheEntry::Repeated(cache, _) = lane.entry(site).unwrap() else {
                 panic!("repeated");
             };
             cache.retained_metadata_demand(work)
@@ -252,7 +314,10 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
         );
         let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
         let (mut lane, library) = lane(descriptor, &memory);
-        assert!(matches!(&lane.entries[site], CallCacheEntry::Repeated(..)));
+        assert!(matches!(
+            lane.entry(site).unwrap(),
+            CallCacheEntry::Repeated(..)
+        ));
         // Equal byte lengths and empty shape tapes are not value identity.
         let args = ["ABC", "e\u{301}"].map(|value| [Some(text(descriptor, site, value, &memory))]);
         let before = memory.used_bytes();
@@ -294,8 +359,7 @@ fn repeated_library_slot_reuses_binding_but_reads_fresh_values_and_recovers() {
         drop((output, lane));
         assert_eq!(
             memory.used_bytes(),
-            before
-                - CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len()).unwrap()
+            before - CallCacheLane::metadata_bytes(descriptor.metadata().call_cache.len()).unwrap()
         );
         drop((args, library));
         assert_eq!(memory.used_bytes(), 0);
@@ -361,7 +425,7 @@ fn once_repeatable_witness_covers_activation_matches_counted_collections_and_tai
                 if !matches!(block.action(), NativeIterationAction::LibraryCall { .. }) {
                     continue;
                 }
-                match (&lane.entries[site], block.iteration()) {
+                match (lane.entry(site).unwrap(), block.iteration()) {
                     (CallCacheEntry::Once, None) => once_calls += 1,
                     (CallCacheEntry::Repeated(..), Some(_)) => repeated_calls += 1,
                     _ => panic!("cache storage differs from the validated lexical scope"),

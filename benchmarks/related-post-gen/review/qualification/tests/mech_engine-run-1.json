@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-fixed-frame-arenas-tests-20261106-v1/mech_engine-tests",
+    "memory_planner::",
+    "--test-threads=1"
+  ],
+  "exit": 0,
+  "seconds": 0.01674054190516472
+}

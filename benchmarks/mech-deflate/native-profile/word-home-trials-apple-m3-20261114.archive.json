@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-word-home-trials-20261114.tar.gz",
+  "bytes": 39038284,
+  "evidence_files": 1135,
+  "files": 1135,
+  "format": 1,
+  "manifest_sha256": "f219c4edc50cfea3d2e9b946399fdc767727830a961fc6f63c8931fb05892e19",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "5dd0edfcafb46e528aff3ff3e498107b6a17abfb43e59e2795ba179758ded805",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-word-home-trials-20261114.tar.gz",
+  "sha256": "8d2c2270276ae32a4a431b76303362158f17a59a399468fca53e04909ea0aefd",
+  "source_revision": "51b18380c07cbbdd4e0c0ffd472c3820289dbc0d",
+  "uncompressed_bytes": 250001891,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "8d2c2270276ae32a4a431b76303362158f17a59a399468fca53e04909ea0aefd",
+    "source_revision": "51b18380c07cbbdd4e0c0ffd472c3820289dbc0d",
+    "verified_bytes": 250001891,
+    "verified_files": 1135
+  }
+}

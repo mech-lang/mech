@@ -1,0 +1,684 @@
+// Source composition: reuse the histogram map as the interning map, current IR291/fused generators.
+// Independent IR282 source experiment: both-fusion.
+// Source experiment: specialize checked four/five-tag rows; all other row sizes retain the generic loops.
+// Unselected source experiment: check row ordering once, then avoid repeated subset sorting.
+// Source experiment: replace pairwise duplicate checks with a native bitmask/popcount proof.
+// Four native numeric query workers with direct enumeration of unique keys.
+// Source experiment: directly enumerate already-unique sorted tags; no membership test or FSM state.
+// Source experiment: combine early query exclusion with scalar compare/swap insertion.
+// Source experiment: exclude the query before scoring and candidate duplicate checks.
+// Source experiment: independent queries with five scalar ranks and no epoch array.
+// Source experiment: exact quartet scoring, then bounded ascending triple candidates.
+// Source experiment: score each distinct triple candidate once using tag masks and query epochs.
+// Source experiment: reuse CSR boundaries as mutable positions; the final sentinel is unused.
+// Source experiment: load each touched-chain word once before splitting link and score.
+// Source experiment: encode each (score, inverse post index) in one unsigned rank.
+// Source experiment: prove complete triple candidate coverage before building fallback state.
+// Source variant: bulk distinct-tag discovery before dictionary interning.
+// Existing generic histogram/keys operations; all indexing and scoring remain Mech.
+// Isolated algorithm experiment: adaptive triple-subset postings with sparse linked counters.
+// Original scoring remains the exact fallback for duplicate/long tags and sparse queries.
+// Port of the Rust algorithm in zupat/related_post_gen (MIT); see LICENSE.upstream.
+// Related posts: zero-based CSR boundaries into flattened string tags. Mech
+// performs string interning, builds a numeric CSR inverted index, scores posts,
+// and returns five zero-based post indices per post. The host parses JSON only.
+// This preserves Rust's u8 counters, chunk64 precheck, strict top-five ties,
+// and index-zero defaults when fewer than five posts share a tag.
++> map
++> sequence
++> bits
+
+related-set64(values<[u64]>, at<u64>, value<u64>) => (out<[u64]>) :=
+  ~next := values
+  next[at] = value
+  out := next.
+related-set8(values<[u8]>, at<u64>, value<u8>) => (out<[u8]>) :=
+  ~next := values
+  next[at] = value
+  out := next.
+
+<related-words> := <{index<{string:u64}> count<u64>}>
+<related-top> := <(u8,u8,u8,u8,u8,u64,u64,u64,u64,u64)>
+<related-scan> := <([u8],related-top)>
+<related-output> := <([u8],[u64])>
+
+#RelatedIntern(tags<[string]>, tag-count<u64>, initial<{string:u64}>) => <related-words>
+  | :Next(at<u64>, index<{string:u64}>, count<u64>)
+  | :Done(index<{string:u64}>, count<u64>).
+#RelatedIntern(tags, tag-count, initial) -> :Next(0u64, initial, 0u64)
+  :Next(at, index, count)
+    | at < tag-count -> {
+        tag := tags[at + 1u64]
+        found := tag ∈ index
+        next-index := (found? | true => index | false => map/insert(index, tag, count))
+        next-count := (found? | true => count | false => count + 1u64)
+      } -> :Next(at + 1u64, next-index, next-count)
+    | * -> :Done(index, count)
+  :Done(index, count) => {index: index, count: count}.
+
+related-tag-counts(ids<[u64]>, at<u64>, counts<[u64]>) => (out<[u64]>) :=
+  more := at < sequence/length(ids)
+  next := (more? | true => related-tag-count-step(ids, at, counts) | false => counts)
+  out := (more? | true => related-tag-counts(ids, at + 1u64, next) | false => counts).
+related-tag-count-step(ids<[u64]>, at<u64>, counts<[u64]>) => (out<[u64]>) :=
+  id := ids[at + 1u64]
+  out := related-set64(counts, id + 1u64, counts[id + 1u64] + 1u64).
+
+related-offsets(counts<[u64]>, at<u64>, total<u64>, offsets<[u64]>) => (out<[u64]>) :=
+  more := at < sequence/length(counts)
+  next-total := (more? | true => total + counts[at + 1u64] | false => total)
+  out := (more?
+    | true => related-offsets(counts, at + 1u64, next-total, sequence/append(offsets, next-total))
+    | false => offsets).
+
+<related-index> := <([u64],[u64])>
+// Fused emission retains each key and increments its checked dense count.
+<subset-counted-index> := <([u64],[u64],[u64])>
+counted-key(state<related-index>, key<u64>) => (out<related-index>) :=
+  next-keys := sequence/append(state.1, key)
+  next-counts := related-set64(state.2, key + 1u64, state.2[key + 1u64] + 1u64)
+  out := (next-keys, next-counts).
+
+related-index-tags(ids<[u64]>, at<u64>, end<u64>, post<u64>, positions<[u64]>, postings<[u64]>) => (out<related-index>) :=
+  more := at < end
+  step := (more?
+    | true => related-index-tag-step(ids, at, end, post, positions, postings)
+    | false => (positions, postings))
+  (next-positions, next-postings) := step
+  out := (more?
+    | true => related-index-tags(ids, at + 1u64, end, post, next-positions, next-postings)
+    | false => (next-positions, next-postings)).
+related-index-tag-step(ids<[u64]>, at<u64>, end<u64>, post<u64>, positions<[u64]>, postings<[u64]>) => (out<related-index>) :=
+  id := ids[at + 1u64]
+  destination := positions[id + 1u64]
+  next-postings := related-set64(postings, destination + 1u64, post)
+  next-positions := related-set64(positions, id + 1u64, destination + 1u64)
+  out := (next-positions, next-postings).
+related-index-posts(offsets<[u64]>, ids<[u64]>, post<u64>, posts<u64>, positions<[u64]>, postings<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  step := (more?
+    | true => related-index-tags(ids, offsets[post + 1u64], offsets[post + 2u64], post, positions, postings)
+    | false => (positions, postings))
+  (next-positions, next-postings) := step
+  out := (more?
+    | true => related-index-posts(offsets, ids, post + 1u64, posts, next-positions, next-postings)
+    | false => postings).
+
+related-hits(postings<[u64]>, at<u64>, end<u64>, counts<[u8]>) => (out<[u8]>) :=
+  more := at < end
+  next := (more? | true => related-hit-step(postings, at, end, counts) | false => counts)
+  out := (more? | true => related-hits(postings, at + 1u64, end, next) | false => counts).
+// Rust release counters wrap; Mech arithmetic is checked, so encode modulo256.
+related-hit-step(postings<[u64]>, at<u64>, end<u64>, counts<[u8]>) => (out<[u8]>) :=
+  slot := postings[at + 1u64] + 1u64
+  previous := counts[slot]
+  value := ((previous == 255u8)? | true => 0u8 | false => previous + 1u8)
+  next := related-set8(counts, slot, value)
+  out := next.
+related-count(ids<[u64]>, tag-offsets<[u64]>, postings<[u64]>, at<u64>, end<u64>, counts<[u8]>) => (out<[u8]>) :=
+  more := at < end
+  next := (more? | true => related-count-step(ids, tag-offsets, postings, at, end, counts) | false => counts)
+  out := (more? | true => related-count(ids, tag-offsets, postings, at + 1u64, end, next) | false => counts).
+related-count-step(ids<[u64]>, tag-offsets<[u64]>, postings<[u64]>, at<u64>, end<u64>, counts<[u8]>) => (out<[u8]>) :=
+  id := ids[at + 1u64]
+  next := related-hits(postings, tag-offsets[id + 1u64], tag-offsets[id + 2u64], counts)
+  out := next.
+
+// Strict comparisons preserve Rust's ascending post-index order for ties.
+related-insert(top<related-top>, count<u8>, post<u64>) => (out<related-top>) :=
+  out := ((count > top.1)?
+    | true => (count, top.1, top.2, top.3, top.4, post, top.6, top.7, top.8, top.9)
+    | false => ((count > top.2)?
+      | true => (top.1, count, top.2, top.3, top.4, top.6, post, top.7, top.8, top.9)
+      | false => ((count > top.3)?
+        | true => (top.1, top.2, count, top.3, top.4, top.6, top.7, post, top.8, top.9)
+        | false => ((count > top.4)?
+          | true => (top.1, top.2, top.3, count, top.4, top.6, top.7, top.8, post, top.9)
+          | false => (top.1, top.2, top.3, top.4, count, top.6, top.7, top.8, top.9, post))))).
+
+// Scalar-only FSM captures the read-only counter array.
+#RelatedChunkCheck(counts<[u8]>, base<u64>, minimum<u8>) => <bool>
+  | :Check(lane<u64>, process<bool>)
+  | :Done(process<bool>).
+#RelatedChunkCheck(counts, base, minimum) -> :Check(0u64, false)
+  :Check(lane, process)
+    | lane < 64u64 -> :Check(lane + 1u64, process || (counts[base + lane + 1u64] > minimum))
+    | * -> :Done(process)
+  :Done(process) => process.
+
+related-scan-chunk(counts<[u8]>, base<u64>, lane<u64>, process<bool>, top<related-top>) => (out<related-scan>) :=
+  more := lane < 64u64
+  step := (more?
+    | true => related-scan-lane(counts, base, lane, process, top)
+    | false => (counts, top))
+  (next-counts, next-top) := step
+  out := (more?
+    | true => related-scan-chunk(next-counts, base, lane + 1u64, process, next-top)
+    | false => (next-counts, next-top)).
+related-scan-lane(counts<[u8]>, base<u64>, lane<u64>, process<bool>, top<related-top>) => (out<related-scan>) :=
+  post := base + lane
+  count := counts[post + 1u64]
+  next-top := ((process && (count > top.5))? | true => related-insert(top, count, post) | false => top)
+  next-counts := related-set8(counts, post + 1u64, 0u8)
+  out := (next-counts, next-top).
+related-top(counts<[u8]>, base<u64>, top<related-top>) => (out<related-scan>) :=
+  more := base < sequence/length(counts)
+  step := (more?
+    | true => related-scan-chunk(counts, base, 0u64, #RelatedChunkCheck(counts, base, top.5), top)
+    | false => (counts, top))
+  (next-counts, next-top) := step
+  out := (more? | true => related-top(next-counts, base + 64u64, next-top) | false => (next-counts, next-top)).
+
+related-append-top(output<[u64]>, top<related-top>) => (out<[u64]>) :=
+  a := sequence/append(output, top.6)
+  b := sequence/append(a, top.7)
+  c := sequence/append(b, top.8)
+  d := sequence/append(c, top.9)
+  out := sequence/append(d, top.10).
+
+related-posts(offsets<[u64]>, ids<[u64]>, tag-offsets<[u64]>, postings<[u64]>, post<u64>, posts<u64>, empty<related-top>, counts<[u8]>, output<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  step := (more?
+    | true => related-post-step(offsets, ids, tag-offsets, postings, post, posts, empty, counts, output)
+    | false => (counts, output))
+  (next-counts, next-output) := step
+  out := (more?
+    | true => related-posts(offsets, ids, tag-offsets, postings, post + 1u64, posts, empty, next-counts, next-output)
+    | false => output).
+related-post-step(offsets<[u64]>, ids<[u64]>, tag-offsets<[u64]>, postings<[u64]>, post<u64>, posts<u64>, empty<related-top>, counts<[u8]>, output<[u64]>) => (out<related-output>) :=
+  hits := related-count(ids, tag-offsets, postings, offsets[post + 1u64], offsets[post + 2u64], counts)
+  without-self := related-set8(hits, post + 1u64, 0u8)
+  selected := related-top(without-self, 0u64, empty)
+  next-output := related-append-top(output, selected.2)
+  out := (selected.1, next-output).
+
+// map/keys(histogram) supplies sorted distinct keys. The loop index is its ID.
+intern-unique(tags<[string]>, at<u64>, end<u64>, index<{string:u64}>) => (out<{string:u64}>) :=
+  more := at < end
+  next := (more? | true => map/insert(index, tags[at + 1u64], at) | false => index)
+  out := (more? | true => intern-unique(tags, at + 1u64, end, next) | false => index).
+
+related-with-tags(offsets<[u64]>, tags<[string]>) => (out<[u64]>) :=
+  posts := sequence/length(offsets) - 1u64
+  empty-index<{string:u64}> := map/new()
+  unique-tags := map/keys(map/histogram(tags))
+  vocabulary := sequence/length(unique-tags)
+  index := intern-unique(unique-tags, 0u64, vocabulary, empty-index)
+  ids := [index{tag} | tag <- tags]
+  empty-tag-counts := [0u64 | i <- 1u64..=vocabulary]
+  tag-counts := related-tag-counts(ids, 0u64, empty-tag-counts)
+  offset-buffer := sequence/with-capacity(0u64, vocabulary + 1u64)
+  offset-zero := sequence/append(offset-buffer, 0u64)
+  tag-offsets := related-offsets(tag-counts, 0u64, 0u64, offset-zero)
+  positions := tag-offsets
+  posting-buffer := [0u64 | i <- 1u64..=sequence/length(tags)]
+  postings := related-index-posts(offsets, ids, 0u64, posts, positions, posting-buffer)
+  padded := ((posts + 63u64) / 64u64) * 64u64
+  counts := [0u8 | i <- 1u64..=padded]
+  empty<related-top> := (0u8, 0u8, 0u8, 0u8, 0u8, 0u64, 0u64, 0u64, 0u64, 0u64)
+  output := sequence/with-capacity(0u64, posts * 5u64)
+  out := related-posts(offsets, ids, tag-offsets, postings, 0u64, posts, empty, counts, output).
+
+related-empty(posts<u64>) => (out<[u64]>) :=
+  out := ((posts == 0u64)?
+    | true => sequence/with-capacity(0u64, 0u64)
+    | false => [0u64 | i <- 1u64..=(posts * 5u64)]).
+
+related(offsets<[u64]>, tags<[string]>) => (out<[u64]>) :=
+  out := ((sequence/length(tags) == 0u64)?
+    | true => related-empty(sequence/length(offsets) - 1u64)
+    | false => subset-adaptive(offsets, tags)).
+
+// A triple match contributes C(shared-tags,3): 1,4,10,20,35,56 for
+// 3..8 shared tags. This is strictly rank-equivalent when tags are distinct.
+// A zero fifth score triggers exact original scoring for that one query.
+// Vocabulary<=64 bounds the dense C(vocabulary,3) index to41664 buckets;
+// max8 tags bounds the linked counter's six-bit score to56. These capacity
+// guards are independent of the number of posts and dataset vocabulary text.
+<subset-chain> := <([u64],u64)>
+<subset-scan> := <([u64],(u64,u64,u64,u64,u64))>
+<subset-top> := <(u64,u64,u64,u64,u64)>
+<subset-post-result> := <([u64],[u8],[u64])>
+
+// Return the already checked masks with eligibility. For interned IDs<64,
+// bit>mask proves strict ordering and uniqueness in the same per-tag scan.
+<subset-row-mask> := <(u64,bool)>
+<subset-prepared> := <([u64],bool)>
+subset-row-mask(ids<[u64]>, at<u64>, end<u64>, mask<u64>) => (out<subset-row-mask>) :=
+  more := at < end
+  bit := (more? | true => bits/shift-left-wrap(1u64, ids[at + 1u64]) | false => 0u64)
+  increasing := bit > mask
+  next := bits/or(mask, bit)
+  out := (more? | true => (increasing? | true => subset-row-mask(ids, at + 1u64, end, next) | false => (mask,false)) | false => (mask,true)).
+subset-prepare(offsets<[u64]>, ids<[u64]>, post<u64>, posts<u64>, output<[u64]>) => (out<subset-prepared>) :=
+  more := post < posts
+  valid := (more? | true => (offsets[post + 2u64] - offsets[post + 1u64]) <= 8u64 | false => true)
+  row := ((more && valid)? | true => subset-row-mask(ids, offsets[post + 1u64], offsets[post + 2u64], 0u64) | false => (0u64,valid))
+  next := ((more && row.2)? | true => sequence/append(output, row.1) | false => output)
+  out := (more? | true => (row.2? | true => subset-prepare(offsets, ids, post + 1u64, posts, next) | false => (output,false)) | false => (output,true)).
+
+subset-key(a<u64>, b<u64>, c<u64>) => (out<u64>) :=
+  out := a + b * (b - 1u64) / 2u64 + c * (c - 1u64) * (c - 2u64) / 6u64.
+subset-third(ids<[u64]>, first<u64>, second<u64>, third<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  more := third < end
+  next := (more? | true => counted-key(output, subset-key(ids[first + 1u64], ids[second + 1u64], ids[third + 1u64])) | false => output)
+  out := (more? | true => subset-third(ids, first, second, third + 1u64, end, next) | false => output).
+subset-second(ids<[u64]>, first<u64>, second<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  more := second + 1u64 < end
+  next := (more? | true => subset-third(ids, first, second, second + 1u64, end, output) | false => output)
+  out := (more? | true => subset-second(ids, first, second + 1u64, end, next) | false => output).
+subset-first-generic(ids<[u64]>, first<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  more := first + 2u64 < end
+  next := (more? | true => subset-second(ids, first, first + 1u64, end, output) | false => output)
+  out := (more? | true => subset-first-generic(ids, first + 1u64, end, next) | false => output).
+subset-row-4(ids<[u64]>, first<u64>, output<related-index>) => (out<related-index>) :=
+  a := ids[first + 1u64]
+  b := ids[first + 2u64]
+  c := ids[first + 3u64]
+  d := ids[first + 4u64]
+  b2 := b * (b - 1u64) / 2u64
+  c2 := c * (c - 1u64) / 2u64
+  c3 := c * (c - 1u64) * (c - 2u64) / 6u64
+  d3 := d * (d - 1u64) * (d - 2u64) / 6u64
+  row0 := counted-key(output, a + b2 + c3)
+  row1 := counted-key(row0, a + b2 + d3)
+  row2 := counted-key(row1, a + c2 + d3)
+  row3 := counted-key(row2, b + c2 + d3)
+  out := row3.
+
+subset-row-5(ids<[u64]>, first<u64>, output<related-index>) => (out<related-index>) :=
+  a := ids[first + 1u64]
+  b := ids[first + 2u64]
+  c := ids[first + 3u64]
+  d := ids[first + 4u64]
+  e := ids[first + 5u64]
+  b2 := b * (b - 1u64) / 2u64
+  c2 := c * (c - 1u64) / 2u64
+  d2 := d * (d - 1u64) / 2u64
+  c3 := c * (c - 1u64) * (c - 2u64) / 6u64
+  d3 := d * (d - 1u64) * (d - 2u64) / 6u64
+  e3 := e * (e - 1u64) * (e - 2u64) / 6u64
+  row0 := counted-key(output, a + b2 + c3)
+  row1 := counted-key(row0, a + b2 + d3)
+  row2 := counted-key(row1, a + b2 + e3)
+  row3 := counted-key(row2, a + c2 + d3)
+  row4 := counted-key(row3, a + c2 + e3)
+  row5 := counted-key(row4, a + d2 + e3)
+  row6 := counted-key(row5, b + c2 + d3)
+  row7 := counted-key(row6, b + c2 + e3)
+  row8 := counted-key(row7, b + d2 + e3)
+  row9 := counted-key(row8, c + d2 + e3)
+  out := row9.
+
+subset-first(ids<[u64]>, first<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  ordered := end >= first
+  count := (ordered? | true => end - first | false => 0u64)
+  out := ((count == 4u64)?
+    | true => subset-row-4(ids, first, output)
+    | false => ((count == 5u64)?
+      | true => subset-row-5(ids, first, output)
+      | false => subset-first-generic(ids, first, end, output))).
+
+subset-build(offsets<[u64]>, ids<[u64]>, post<u64>, posts<u64>, boundaries<[u64]>, output<related-index>) => (out<subset-counted-index>) :=
+  more := post < posts
+  next := (more? | true => subset-first(ids, offsets[post + 1u64], offsets[post + 2u64], output) | false => output)
+  next-boundaries := (more? | true => sequence/append(boundaries, sequence/length(next.1)) | false => boundaries)
+  out := (more? | true => subset-build(offsets, ids, post + 1u64, posts, next-boundaries, next) | false => (boundaries, output.1, output.2)).
+
+// One u64 per post stores (next-touched-post-plus-one)*64 + triple-hit-count.
+// The first hit links that post; later hits change only its low six bits.
+subset-hit(postings<[u64]>, at<u64>, chain<[u64]>, head<u64>) => (out<subset-chain>) :=
+  slot := postings[at + 1u64] + 1u64
+  old := chain[slot]
+  fresh := old == 0u64
+  value := (fresh? | true => head * 64u64 + 1u64 | false => old + 1u64)
+  next := related-set64(chain, slot, value)
+  out := (next, (fresh? | true => slot | false => head)).
+subset-hits(postings<[u64]>, at<u64>, end<u64>, chain<[u64]>, head<u64>) => (out<subset-chain>) :=
+  more := at < end
+  next := (more? | true => subset-hit(postings, at, chain, head) | false => (chain, head))
+  (next-chain, next-head) := next
+  out := (more? | true => subset-hits(postings, at + 1u64, end, next-chain, next-head) | false => (chain, head)).
+subset-count(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, at<u64>, end<u64>, chain<[u64]>, head<u64>) => (out<subset-chain>) :=
+  more := at < end
+  next := (more? | true => subset-count-step(ids, boundaries, postings, at, chain, head) | false => (chain, head))
+  (next-chain, next-head) := next
+  out := (more? | true => subset-count(ids, boundaries, postings, at + 1u64, end, next-chain, next-head) | false => (chain, head)).
+subset-count-step(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, at<u64>, chain<[u64]>, head<u64>) => (out<subset-chain>) :=
+  id := ids[at + 1u64]
+  out := subset-hits(postings, boundaries[id + 1u64], boundaries[id + 2u64], chain, head).
+
+// Eligibility bounds scores to56 and post indices to58 bits. A larger rank
+// means a larger score, then a smaller post index. Zero is the empty sentinel.
+// Five ranks replace five scores plus five post indices and explicit tie tests.
+subset-rank(score<u64>, post<u64>) => (out<u64>) :=
+  out := bits/or(bits/shift-left-wrap(score, 58u64), bits/xor(288230376151711743u64, post)).
+subset-unrank(rank<u64>) => (out<u64>) :=
+  out := bits/xor(288230376151711743u64, bits/and(rank, 288230376151711743u64)).
+subset-insert(top<subset-top>, rank<u64>) => (out<subset-top>) :=
+  first := ((rank > top.1)? | true => (rank, top.1) | false => (top.1, rank))
+  second := ((first.2 > top.2)? | true => (first.2, top.2) | false => (top.2, first.2))
+  third := ((second.2 > top.3)? | true => (second.2, top.3) | false => (top.3, second.2))
+  fourth := ((third.2 > top.4)? | true => (third.2, top.4) | false => (top.4, third.2))
+  out := (first.1, second.1, third.1, fourth.1, fourth.2).
+subset-scan(chain<[u64]>, head<u64>, query<u64>, top<subset-top>) => (out<subset-scan>) :=
+  more := head > 0u64
+  word := (more? | true => chain[head] | false => 0u64)
+  next-head := word / 64u64
+  next := (more? | true => subset-scan-step(chain, head, word, query, top) | false => (chain, top))
+  (next-chain, next-top) := next
+  out := (more? | true => subset-scan(next-chain, next-head, query, next-top) | false => (chain, top)).
+subset-scan-step(chain<[u64]>, head<u64>, word<u64>, query<u64>, top<subset-top>) => (out<subset-scan>) :=
+  score := word % 64u64
+  post := head - 1u64
+  rank := subset-rank(score, post)
+  better := (post != query) && (rank > top.5)
+  next-top := (better? | true => subset-insert(top, rank) | false => top)
+  next-chain := related-set64(chain, head, 0u64)
+  out := (next-chain, next-top).
+// Called only after proving that all five ranks are positive candidates.
+subset-append(output<[u64]>, top<subset-top>) => (out<[u64]>) :=
+  a := sequence/append(output, subset-unrank(top.1))
+  b := sequence/append(a, subset-unrank(top.2))
+  c := sequence/append(b, subset-unrank(top.3))
+  d := sequence/append(c, subset-unrank(top.4))
+  out := sequence/append(d, subset-unrank(top.5)).
+subset-posts(offsets<[u64]>, ids<[u64]>, tag-boundaries<[u64]>, postings<[u64]>, sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, post<u64>, posts<u64>, chain<[u64]>, fallback<[u8]>, output<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  step := (more? | true => subset-post-step(offsets, ids, tag-boundaries, postings, sub-offsets, sub-ids, sub-boundaries, sub-postings, post, posts, chain, fallback, output) | false => (chain, fallback, output))
+  (next-chain, next-fallback, next-output) := step
+  out := (more? | true => subset-posts(offsets, ids, tag-boundaries, postings, sub-offsets, sub-ids, sub-boundaries, sub-postings, post + 1u64, posts, next-chain, next-fallback, next-output) | false => output).
+subset-post-step(offsets<[u64]>, ids<[u64]>, tag-boundaries<[u64]>, postings<[u64]>, sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, post<u64>, posts<u64>, chain<[u64]>, fallback<[u8]>, output<[u64]>) => (out<subset-post-result>) :=
+  hits := subset-count(sub-ids, sub-boundaries, sub-postings, sub-offsets[post + 1u64], sub-offsets[post + 2u64], chain, 0u64)
+  empty<subset-top> := (0u64,0u64,0u64,0u64,0u64)
+  selected := subset-scan(hits.1, hits.2, post, empty)
+  (next-chain, selected-top) := selected
+  full := selected-top.5 > 0u64
+  ordinary := (full? | true => (fallback, output) | false => related-post-step(offsets, ids, tag-boundaries, postings, post, posts, (0u8,0u8,0u8,0u8,0u8,0u64,0u64,0u64,0u64,0u64), fallback, output))
+  (next-fallback, ordinary-output) := ordinary
+  next-output := (full? | true => subset-append(output, selected-top) | false => ordinary-output)
+  out := (next-chain, next-fallback, next-output).
+
+// If one triple occurs in at least six distinct posts, its query has five
+// positive candidates after excluding itself. Eligibility has already proved
+// distinct tags, so bucket frequency counts distinct posts exactly.
+subset-covered-query(ids<[u64]>, counts<[u64]>, at<u64>, end<u64>) => (out<bool>) :=
+  more := at < end
+  covered := (more? | true => counts[ids[at + 1u64] + 1u64] >= 6u64 | false => false)
+  out := (more? | true => (covered? | true => true | false => subset-covered-query(ids, counts, at + 1u64, end)) | false => false).
+subset-covered(offsets<[u64]>, ids<[u64]>, counts<[u64]>, post<u64>, posts<u64>) => (out<bool>) :=
+  more := post < posts
+  covered := (more? | true => subset-covered-query(ids, counts, offsets[post + 1u64], offsets[post + 2u64]) | false => true)
+  out := (more? | true => (covered? | true => subset-covered(offsets, ids, counts, post + 1u64, posts) | false => false) | false => true).
+
+// A proved complete triple candidate set needs no ordinary tag index,
+// counter array, per-query fallback branch or fallback state in its loop.
+subset-fast-posts(offsets<[u64]>, ids<[u64]>, boundaries<[u64]>, postings<[u64]>, post<u64>, posts<u64>, chain<[u64]>, output<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  next := (more? | true => subset-fast-step(offsets, ids, boundaries, postings, post, chain, output) | false => (chain, output))
+  (next-chain, next-output) := next
+  out := (more? | true => subset-fast-posts(offsets, ids, boundaries, postings, post + 1u64, posts, next-chain, next-output) | false => output).
+subset-fast-step(offsets<[u64]>, ids<[u64]>, boundaries<[u64]>, postings<[u64]>, post<u64>, chain<[u64]>, output<[u64]>) => (out<related-index>) :=
+  hits := subset-count(ids, boundaries, postings, offsets[post + 1u64], offsets[post + 2u64], chain, 0u64)
+  empty<subset-top> := (0u64,0u64,0u64,0u64,0u64)
+  selected := subset-scan(hits.1, hits.2, post, empty)
+  out := (selected.1, subset-append(output, selected.2)).
+
+// Bitset candidate scoring. This source-only control expresses popcount with
+// existing word operations; the compiler comparison will also use native popcount.
+mask-popcount(value<u64>) => (out<u64>) :=
+  a := bits/wrapping-sub(value, bits/and(bits/shift-right-wrap(value, 1u64), 6148914691236517205u64))
+  b := bits/wrapping-add(bits/and(a, 3689348814741910323u64), bits/and(bits/shift-right-wrap(a, 2u64), 3689348814741910323u64))
+  c := bits/and(bits/wrapping-add(b, bits/shift-right-wrap(b, 4u64)), 1085102592571150095u64)
+  out := bits/shift-right-wrap(bits/wrapping-mul(c, 72340172838076673u64), 56u64).
+mask-tags(ids<[u64]>, at<u64>, end<u64>, mask<u64>) => (out<u64>) :=
+  more := at < end
+  next := (more? | true => bits/or(mask, bits/shift-left-wrap(1u64, ids[at + 1u64])) | false => mask)
+  out := (more? | true => mask-tags(ids, at + 1u64, end, next) | false => mask).
+mask-build(offsets<[u64]>, ids<[u64]>, post<u64>, posts<u64>, output<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  next := (more? | true => sequence/append(output, mask-tags(ids, offsets[post + 1u64], offsets[post + 2u64], 0u64)) | false => output)
+  out := (more? | true => mask-build(offsets, ids, post + 1u64, posts, next) | false => output).
+mask-visit(masks<[u64]>, slot<u64>, epoch<u64>, query-mask<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  score := mask-popcount(bits/and(query-mask, masks[slot]))
+  rank := subset-rank(score, slot - 1u64)
+  next-top := ((rank > top.5)? | true => subset-insert(top, rank) | false => top)
+  out := (related-set64(stamps, slot, epoch), next-top).
+mask-hit(postings<[u64]>, masks<[u64]>, at<u64>, epoch<u64>, query-mask<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  slot := postings[at + 1u64] + 1u64
+  fresh := (slot != epoch) && (stamps[slot] != epoch)
+  out := (fresh? | true => mask-visit(masks, slot, epoch, query-mask, stamps, top) | false => (stamps, top)).
+mask-hits(postings<[u64]>, masks<[u64]>, at<u64>, end<u64>, epoch<u64>, query-mask<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  more := at < end
+  next := (more? | true => mask-hit(postings, masks, at, epoch, query-mask, stamps, top) | false => (stamps, top))
+  (next-stamps, next-top) := next
+  out := (more? | true => mask-hits(postings, masks, at + 1u64, end, epoch, query-mask, next-stamps, next-top) | false => (stamps, top)).
+mask-count(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, masks<[u64]>, at<u64>, end<u64>, epoch<u64>, query-mask<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  more := at < end
+  next := (more? | true => mask-count-step(ids, boundaries, postings, masks, at, epoch, query-mask, stamps, top) | false => (stamps, top))
+  (next-stamps, next-top) := next
+  out := (more? | true => mask-count(ids, boundaries, postings, masks, at + 1u64, end, epoch, query-mask, next-stamps, next-top) | false => (stamps, top)).
+mask-count-step(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, masks<[u64]>, at<u64>, epoch<u64>, query-mask<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  id := ids[at + 1u64]
+  out := mask-hits(postings, masks, boundaries[id + 1u64], boundaries[id + 2u64], epoch, query-mask, stamps, top).
+mask-posts(offsets<[u64]>, ids<[u64]>, boundaries<[u64]>, postings<[u64]>, masks<[u64]>, post<u64>, posts<u64>, stamps<[u64]>, output<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  next := (more? | true => mask-post-step(offsets, ids, boundaries, postings, masks, post, stamps, output) | false => (stamps, output))
+  (next-stamps, next-output) := next
+  out := (more? | true => mask-posts(offsets, ids, boundaries, postings, masks, post + 1u64, posts, next-stamps, next-output) | false => output).
+mask-post-step(offsets<[u64]>, ids<[u64]>, boundaries<[u64]>, postings<[u64]>, masks<[u64]>, post<u64>, stamps<[u64]>, output<[u64]>) => (out<related-index>) :=
+  empty<subset-top> := (0u64,0u64,0u64,0u64,0u64)
+  selected := mask-count(ids, boundaries, postings, masks, offsets[post + 1u64], offsets[post + 2u64], post + 1u64, masks[post + 1u64], stamps, empty)
+  out := (selected.1, subset-append(output, selected.2)).
+mask-fast(offsets<[u64]>, ids<[u64]>, sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, posts<u64>) => (out<[u64]>) :=
+  masks := mask-build(offsets, ids, 0u64, posts, sequence/with-capacity(0u64, posts))
+  out := mask-posts(sub-offsets, sub-ids, sub-boundaries, sub-postings, masks, 0u64, posts, [0u64 | i <- 1u64..=posts], sequence/with-capacity(0u64, posts * 5u64)).
+
+// Quartet candidates are scored exactly first. All remaining triple candidates
+// have score exactly three, so their sorted posting lists can stop at the
+// current fifth rank. Both passes share query-epoch stamps.
+quartet-key(a<u64>, b<u64>, c<u64>, d<u64>) => (out<u64>) :=
+  out := a + b * (b - 1u64) / 2u64 + c * (c - 1u64) * (c - 2u64) / 6u64 + d * (d - 1u64) * (d - 2u64) * (d - 3u64) / 24u64.
+quartet-fourth(ids<[u64]>, first<u64>, second<u64>, third<u64>, fourth<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  more := fourth < end
+  next := (more? | true => counted-key(output, quartet-key(ids[first + 1u64], ids[second + 1u64], ids[third + 1u64], ids[fourth + 1u64])) | false => output)
+  out := (more? | true => quartet-fourth(ids, first, second, third, fourth + 1u64, end, next) | false => output).
+quartet-third(ids<[u64]>, first<u64>, second<u64>, third<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  more := third + 1u64 < end
+  next := (more? | true => quartet-fourth(ids, first, second, third, third + 1u64, end, output) | false => output)
+  out := (more? | true => quartet-third(ids, first, second, third + 1u64, end, next) | false => output).
+quartet-second(ids<[u64]>, first<u64>, second<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  more := second + 2u64 < end
+  next := (more? | true => quartet-third(ids, first, second, second + 1u64, end, output) | false => output)
+  out := (more? | true => quartet-second(ids, first, second + 1u64, end, next) | false => output).
+quartet-first-generic(ids<[u64]>, first<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  more := first + 3u64 < end
+  next := (more? | true => quartet-second(ids, first, first + 1u64, end, output) | false => output)
+  out := (more? | true => quartet-first-generic(ids, first + 1u64, end, next) | false => output).
+quartet-row-4(ids<[u64]>, first<u64>, output<related-index>) => (out<related-index>) :=
+  a := ids[first + 1u64]
+  b := ids[first + 2u64]
+  c := ids[first + 3u64]
+  d := ids[first + 4u64]
+  b2 := b * (b - 1u64) / 2u64
+  c3 := c * (c - 1u64) * (c - 2u64) / 6u64
+  d4 := d * (d - 1u64) * (d - 2u64) * (d - 3u64) / 24u64
+  row0 := counted-key(output, a + b2 + c3 + d4)
+  out := row0.
+
+quartet-row-5(ids<[u64]>, first<u64>, output<related-index>) => (out<related-index>) :=
+  a := ids[first + 1u64]
+  b := ids[first + 2u64]
+  c := ids[first + 3u64]
+  d := ids[first + 4u64]
+  e := ids[first + 5u64]
+  b2 := b * (b - 1u64) / 2u64
+  c2 := c * (c - 1u64) / 2u64
+  c3 := c * (c - 1u64) * (c - 2u64) / 6u64
+  d3 := d * (d - 1u64) * (d - 2u64) / 6u64
+  d4 := d * (d - 1u64) * (d - 2u64) * (d - 3u64) / 24u64
+  e4 := e * (e - 1u64) * (e - 2u64) * (e - 3u64) / 24u64
+  row0 := counted-key(output, a + b2 + c3 + d4)
+  row1 := counted-key(row0, a + b2 + c3 + e4)
+  row2 := counted-key(row1, a + b2 + d3 + e4)
+  row3 := counted-key(row2, a + c2 + d3 + e4)
+  row4 := counted-key(row3, b + c2 + d3 + e4)
+  out := row4.
+
+quartet-first(ids<[u64]>, first<u64>, end<u64>, output<related-index>) => (out<related-index>) :=
+  ordered := end >= first
+  count := (ordered? | true => end - first | false => 0u64)
+  out := ((count == 4u64)?
+    | true => quartet-row-4(ids, first, output)
+    | false => ((count == 5u64)?
+      | true => quartet-row-5(ids, first, output)
+      | false => quartet-first-generic(ids, first, end, output))).
+
+quartet-build(offsets<[u64]>, ids<[u64]>, post<u64>, posts<u64>, boundaries<[u64]>, output<related-index>) => (out<subset-counted-index>) :=
+  more := post < posts
+  next := (more? | true => quartet-first(ids, offsets[post + 1u64], offsets[post + 2u64], output) | false => output)
+  next-boundaries := (more? | true => sequence/append(boundaries, sequence/length(next.1)) | false => boundaries)
+  out := (more? | true => quartet-build(offsets, ids, post + 1u64, posts, next-boundaries, next) | false => (boundaries, output.1, output.2)).
+tier-three-hit(slot<u64>, epoch<u64>, rank<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  fresh := (slot != epoch) && (stamps[slot] != epoch)
+  next-stamps := (fresh? | true => related-set64(stamps, slot, epoch) | false => stamps)
+  next-top := (fresh? | true => subset-insert(top, rank) | false => top)
+  out := (next-stamps, next-top).
+tier-three-hits(postings<[u64]>, at<u64>, end<u64>, epoch<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  more := at < end
+  post := (more? | true => postings[at + 1u64] | false => 0u64)
+  rank := subset-rank(3u64, post)
+  useful := more && (rank > top.5)
+  next := (useful? | true => tier-three-hit(post + 1u64, epoch, rank, stamps, top) | false => (stamps, top))
+  (next-stamps, next-top) := next
+  out := (useful? | true => tier-three-hits(postings, at + 1u64, end, epoch, next-stamps, next-top) | false => (stamps, top)).
+tier-three-count(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, at<u64>, end<u64>, epoch<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  more := at < end
+  next := (more? | true => tier-three-step(ids, boundaries, postings, at, epoch, stamps, top) | false => (stamps, top))
+  (next-stamps, next-top) := next
+  out := (more? | true => tier-three-count(ids, boundaries, postings, at + 1u64, end, epoch, next-stamps, next-top) | false => (stamps, top)).
+tier-three-step(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, at<u64>, epoch<u64>, stamps<[u64]>, top<subset-top>) => (out<subset-scan>) :=
+  id := ids[at + 1u64]
+  out := tier-three-hits(postings, boundaries[id + 1u64], boundaries[id + 2u64], epoch, stamps, top).
+tier-posts(sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, quad-offsets<[u64]>, quad-ids<[u64]>, quad-boundaries<[u64]>, quad-postings<[u64]>, masks<[u64]>, post<u64>, posts<u64>, stamps<[u64]>, output<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  next := (more? | true => tier-post-step(sub-offsets, sub-ids, sub-boundaries, sub-postings, quad-offsets, quad-ids, quad-boundaries, quad-postings, masks, post, stamps, output) | false => (stamps, output))
+  (next-stamps, next-output) := next
+  out := (more? | true => tier-posts(sub-offsets, sub-ids, sub-boundaries, sub-postings, quad-offsets, quad-ids, quad-boundaries, quad-postings, masks, post + 1u64, posts, next-stamps, next-output) | false => output).
+tier-post-step(sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, quad-offsets<[u64]>, quad-ids<[u64]>, quad-boundaries<[u64]>, quad-postings<[u64]>, masks<[u64]>, post<u64>, stamps<[u64]>, output<[u64]>) => (out<related-index>) :=
+  empty<subset-top> := (0u64,0u64,0u64,0u64,0u64)
+  high := mask-count(quad-ids, quad-boundaries, quad-postings, masks, quad-offsets[post + 1u64], quad-offsets[post + 2u64], post + 1u64, masks[post + 1u64], stamps, empty)
+  low := tier-three-count(sub-ids, sub-boundaries, sub-postings, sub-offsets[post + 1u64], sub-offsets[post + 2u64], post + 1u64, high.1, high.2)
+  out := (low.1, subset-append(output, low.2)).
+// All query state is five scalar ranks. Duplicate candidates are detected
+// against those ranks; no per-query array or state shared across queries.
+top-only-quad-visit(post<u64>, query<u64>, query-mask<u64>, masks<[u64]>, top<subset-top>) => (out<subset-top>) :=
+  out := ((post != query)? | true => top-only-quad-candidate(post, query-mask, masks, top) | false => top).
+top-only-quad-candidate(post<u64>, query-mask<u64>, masks<[u64]>, top<subset-top>) => (out<subset-top>) :=
+  score := mask-popcount(bits/and(query-mask, masks[post + 1u64]))
+  rank := subset-rank(score, post)
+  useful := (rank > top.5) && (rank != top.1) && (rank != top.2) && (rank != top.3) && (rank != top.4)
+  out := (useful? | true => subset-insert(top, rank) | false => top).
+top-only-quad-hits(postings<[u64]>, masks<[u64]>, at<u64>, end<u64>, query<u64>, query-mask<u64>, top<subset-top>) => (out<subset-top>) :=
+  more := at < end
+  next := (more? | true => top-only-quad-visit(postings[at + 1u64], query, query-mask, masks, top) | false => top)
+  out := (more? | true => top-only-quad-hits(postings, masks, at + 1u64, end, query, query-mask, next) | false => top).
+top-only-quad-count(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, masks<[u64]>, at<u64>, end<u64>, query<u64>, query-mask<u64>, top<subset-top>) => (out<subset-top>) :=
+  more := at < end
+  next := (more? | true => top-only-quad-step(ids, boundaries, postings, masks, at, query, query-mask, top) | false => top)
+  out := (more? | true => top-only-quad-count(ids, boundaries, postings, masks, at + 1u64, end, query, query-mask, next) | false => top).
+top-only-quad-step(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, masks<[u64]>, at<u64>, query<u64>, query-mask<u64>, top<subset-top>) => (out<subset-top>) :=
+  id := ids[at + 1u64]
+  out := top-only-quad-hits(postings, masks, boundaries[id + 1u64], boundaries[id + 2u64], query, query-mask, top).
+top-only-three-visit(post<u64>, query<u64>, rank<u64>, top<subset-top>) => (out<subset-top>) :=
+  out := ((post != query)? | true => top-only-three-candidate(post, rank, top) | false => top).
+top-only-three-candidate(post<u64>, rank<u64>, top<subset-top>) => (out<subset-top>) :=
+  inverse := bits/xor(288230376151711743u64, post)
+  fresh := (inverse != bits/and(top.1, 288230376151711743u64)) && (inverse != bits/and(top.2, 288230376151711743u64)) && (inverse != bits/and(top.3, 288230376151711743u64)) && (inverse != bits/and(top.4, 288230376151711743u64))
+  out := (fresh? | true => subset-insert(top, rank) | false => top).
+top-only-three-hits(postings<[u64]>, at<u64>, end<u64>, query<u64>, top<subset-top>) => (out<subset-top>) :=
+  more := at < end
+  post := (more? | true => postings[at + 1u64] | false => 0u64)
+  rank := subset-rank(3u64, post)
+  useful := more && (rank > top.5)
+  next := (useful? | true => top-only-three-visit(post, query, rank, top) | false => top)
+  out := (useful? | true => top-only-three-hits(postings, at + 1u64, end, query, next) | false => top).
+top-only-three-count(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, at<u64>, end<u64>, query<u64>, top<subset-top>) => (out<subset-top>) :=
+  more := (at < end) && (top.5 < 1152921504606846976u64)
+  next := (more? | true => top-only-three-step(ids, boundaries, postings, at, query, top) | false => top)
+  out := (more? | true => top-only-three-count(ids, boundaries, postings, at + 1u64, end, query, next) | false => top).
+top-only-three-step(ids<[u64]>, boundaries<[u64]>, postings<[u64]>, at<u64>, query<u64>, top<subset-top>) => (out<subset-top>) :=
+  id := ids[at + 1u64]
+  out := top-only-three-hits(postings, boundaries[id + 1u64], boundaries[id + 2u64], query, top).
+top-only-query(sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, quad-offsets<[u64]>, quad-ids<[u64]>, quad-boundaries<[u64]>, quad-postings<[u64]>, masks<[u64]>, post<u64>) => (out<subset-top>) :=
+  empty<subset-top> := (0u64,0u64,0u64,0u64,0u64)
+  high := top-only-quad-count(quad-ids, quad-boundaries, quad-postings, masks, quad-offsets[post + 1u64], quad-offsets[post + 2u64], post, masks[post + 1u64], empty)
+  out := top-only-three-count(sub-ids, sub-boundaries, sub-postings, sub-offsets[post + 1u64], sub-offsets[post + 2u64], post, high).
+top-only-posts(sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, quad-offsets<[u64]>, quad-ids<[u64]>, quad-boundaries<[u64]>, quad-postings<[u64]>, masks<[u64]>, post<u64>, posts<u64>, output<[u64]>) => (out<[u64]>) :=
+  more := post < posts
+  selected := (more? | true => top-only-query(sub-offsets, sub-ids, sub-boundaries, sub-postings, quad-offsets, quad-ids, quad-boundaries, quad-postings, masks, post) | false => (0u64,0u64,0u64,0u64,0u64))
+  next := (more? | true => subset-append(output, selected) | false => output)
+  out := (more? | true => top-only-posts(sub-offsets, sub-ids, sub-boundaries, sub-postings, quad-offsets, quad-ids, quad-boundaries, quad-postings, masks, post + 1u64, posts, next) | false => output).
+
+// Each chunk owns its output; all candidate indexes are immutable captures.
+// Integer partitions cover every post exactly once, including uneven lengths.
+top-only-chunk(sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, quad-offsets<[u64]>, quad-ids<[u64]>, quad-boundaries<[u64]>, quad-postings<[u64]>, masks<[u64]>, chunk<u64>, posts<u64>) => (out<[u64]>) :=
+  start := posts * chunk / 4u64
+  end := posts * (chunk + 1u64) / 4u64
+  out := top-only-posts(sub-offsets, sub-ids, sub-boundaries, sub-postings, quad-offsets, quad-ids, quad-boundaries, quad-postings, masks, start, end, sequence/with-capacity(0u64, (end - start) * 5u64)).
+
+tier-fast(offsets<[u64]>, ids<[u64]>, vocabulary<u64>, sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, posts<u64>, buckets<u64>, masks<[u64]>) => (out<[u64]>) :=
+  quads := quartet-build(offsets, ids, 0u64, posts, sequence/append(sequence/with-capacity(0u64, posts + 1u64), 0u64), (sequence/with-capacity(0u64, sequence/length(sub-ids) * 2u64), [0u64 | i <- 1u64..=buckets]))
+  quad-counts := quads.3
+  quad-boundaries := related-offsets(quad-counts, 0u64, 0u64, sequence/append(sequence/with-capacity(0u64, buckets + 1u64), 0u64))
+  quad-positions := quad-boundaries
+  quad-count := sequence/length(quads.2)
+  empty-quads := ((quad-count == 0u64)? | true => sequence/with-capacity(0u64, 0u64) | false => [0u64 | i <- 1u64..=quad-count])
+  quad-postings := related-index-posts(quads.1, quads.2, 0u64, posts, quad-positions, empty-quads)
+  chunks := [0u64 1u64 2u64 3u64]
+  out := [top-only-chunk(sub-offsets, sub-ids, sub-boundaries, sub-postings, quads.1, quads.2, quad-boundaries, quad-postings, masks, chunk, posts) | chunk <- chunks].
+tier-select(offsets<[u64]>, ids<[u64]>, vocabulary<u64>, sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>, posts<u64>, masks<[u64]>) => (out<[u64]>) :=
+  buckets := ((vocabulary >= 4u64)? | true => vocabulary * (vocabulary - 1u64) * (vocabulary - 2u64) * (vocabulary - 3u64) / 24u64 | false => 0u64)
+  out := (((buckets > 0u64) && (buckets <= 131072u64))?
+    | true => tier-fast(offsets, ids, vocabulary, sub-offsets, sub-ids, sub-boundaries, sub-postings, posts, buckets, masks)
+    | false => subset-fast-posts(sub-offsets, sub-ids, sub-boundaries, sub-postings, 0u64, posts, [0u64 | i <- 1u64..=posts], sequence/with-capacity(0u64, posts * 5u64))).
+
+subset-fallback-indexed(offsets<[u64]>, ids<[u64]>, vocabulary<u64>, posts<u64>, sub-offsets<[u64]>, sub-ids<[u64]>, sub-boundaries<[u64]>, sub-postings<[u64]>) => (out<[u64]>) :=
+  tag-counts := related-tag-counts(ids, 0u64, [0u64 | i <- 1u64..=vocabulary])
+  tag-boundaries := related-offsets(tag-counts, 0u64, 0u64, sequence/append(sequence/with-capacity(0u64, vocabulary + 1u64), 0u64))
+  positions := tag-boundaries
+  postings := related-index-posts(offsets, ids, 0u64, posts, positions, [0u64 | i <- 1u64..=sequence/length(ids)])
+  chain := [0u64 | i <- 1u64..=posts]
+  padded := ((posts + 63u64) / 64u64) * 64u64
+  fallback := [0u8 | i <- 1u64..=padded]
+  output := sequence/with-capacity(0u64, posts * 5u64)
+  out := subset-posts(offsets, ids, tag-boundaries, postings, sub-offsets, sub-ids, sub-boundaries, sub-postings, 0u64, posts, chain, fallback, output).
+
+subset-indexed(offsets<[u64]>, ids<[u64]>, vocabulary<u64>, posts<u64>, masks<[u64]>) => (out<[u64]>) :=
+  buckets := vocabulary * (vocabulary - 1u64) * (vocabulary - 2u64) / 6u64
+  built := subset-build(offsets, ids, 0u64, posts, sequence/append(sequence/with-capacity(0u64, posts + 1u64), 0u64), (sequence/with-capacity(0u64, sequence/length(ids) * 7u64), [0u64 | i <- 1u64..=buckets]))
+  sub-counts := built.3
+  sub-boundaries := related-offsets(sub-counts, 0u64, 0u64, sequence/append(sequence/with-capacity(0u64, buckets + 1u64), 0u64))
+  sub-positions := sub-boundaries
+  triple-count := sequence/length(built.2)
+  empty-sub-postings := ((triple-count == 0u64)? | true => sequence/with-capacity(0u64, 0u64) | false => [0u64 | i <- 1u64..=triple-count])
+  sub-postings := related-index-posts(built.1, built.2, 0u64, posts, sub-positions, empty-sub-postings)
+  covered := subset-covered(built.1, built.2, sub-counts, 0u64, posts)
+  out := (covered?
+    | true => tier-select(offsets, ids, vocabulary, built.1, built.2, sub-boundaries, sub-postings, posts, masks)
+    | false => subset-fallback-indexed(offsets, ids, vocabulary, posts, built.1, built.2, sub-boundaries, sub-postings)).
+
+subset-adaptive(offsets<[u64]>, tags<[string]>) => (out<[u64]>) :=
+  posts := sequence/length(offsets) - 1u64
+  histogram := map/histogram(tags)
+  unique-tags := map/keys(histogram)
+  vocabulary := sequence/length(unique-tags)
+  index := intern-unique(unique-tags, 0u64, vocabulary, histogram)
+  ids := [index{tag} | tag <- tags]
+  bounded := (vocabulary >= 3u64) && (vocabulary <= 64u64) && (posts <= 288230376151711743u64)
+  prepared := (bounded?
+    | true => subset-prepare(offsets, ids, 0u64, posts, sequence/with-capacity(0u64, posts))
+    | false => (sequence/with-capacity(0u64, 0u64),false))
+  out := (prepared.2? | true => subset-indexed(offsets, ids, vocabulary, posts, prepared.1) | false => related-with-tags(offsets, tags)).
+
+related(offsets<[u64]>, tags<[string]>)

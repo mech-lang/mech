@@ -7,7 +7,7 @@ use mech_engine::native_artifact::{
     NativeScalarType,
 };
 
-pub(in crate::native_artifact) const VERSION: u64 = 2;
+pub(in crate::native_artifact) const VERSION: u64 = 3;
 #[cfg(feature = "canonical-native")]
 pub(in crate::native_artifact) const ENTRY: &str = "mech_canonical_scalar_match_entry_v1";
 pub(in crate::native_artifact) const STATUS_REJECT: u64 = 4;
@@ -20,6 +20,8 @@ pub struct NativeMatchVisit {
     pub(in crate::native_artifact) successors: [Option<u32>; 2],
     pub(in crate::native_artifact) complete: bool,
     pub(in crate::native_artifact) arithmetic: bool,
+    pub(in crate::native_artifact) reject: bool,
+    pub(in crate::native_artifact) integrity: bool,
     pub(in crate::native_artifact) work: u64,
 }
 impl NativeMatchVisit {
@@ -72,7 +74,9 @@ impl NativeMatchDescriptor {
                         ([Some(yes), Some(no)], false)
                     }
                     NativeMatchTerminator::Complete => ([None, None], true),
-                    NativeMatchTerminator::Reject => ([None, None], false),
+                    NativeMatchTerminator::Reject | NativeMatchTerminator::IntegrityFailure => {
+                        ([None, None], false)
+                    }
                 };
                 let work = if complete {
                     completion
@@ -89,6 +93,8 @@ impl NativeMatchDescriptor {
                     successors,
                     complete,
                     arithmetic: matches!(block.action(), NativeMatchAction::Primitive { .. }),
+                    reject: block.terminator() == NativeMatchTerminator::Reject,
+                    integrity: block.terminator() == NativeMatchTerminator::IntegrityFailure,
                     work,
                 }
             })

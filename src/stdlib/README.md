@@ -97,3 +97,20 @@ inputs leave the previous published result intact.
 The crate does not own execution, host integration, parsing, dynamic modules,
 or dynamic-library loading. `mech-engine`, `mech-runtime`, and host-provider
 crates remain independent of standard distribution composition.
+
+The `bits` module supplies scalar `u64` word operations through the
+`integer_bits` feature, included in the standard and full profiles:
+`and`, `or`, `xor`, `not`, `shift-left-wrap`, `shift-right-wrap`,
+`leading-zeros`, `trailing-zeros`, `wrapping-add`, `wrapping-sub`, and
+`wrapping-mul`. Binary arguments and results are `u64`; the zero-count
+functions return `64` for a zero word. Shifts use the count modulo 64 and
+fill vacated bits with zeros. Wrapping arithmetic reduces modulo 2^64;
+ordinary arithmetic remains checked. These are word operations, without
+implicit matrix broadcasting or floating-point conversion.
+
+```mech
++> bits
+word := bits/xor(305419896u64, 4294967295u64)
+low-byte := bits/and(word, 255u64)
+bits/trailing-zeros(word)
+```

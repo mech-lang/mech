@@ -1,0 +1,20 @@
+{
+  "status": "pass",
+  "scope": "Root independently executed full offline verifier, no native executions",
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-compact-native-development-20261111/benchmarks/related-post-gen/integration/managed-setup-reuse-20261112/verify.py",
+    "--help"
+  ],
+  "note": "The verifier has no argument parser; the extra argument was ignored and the complete checks executed. Root observed terminal exit0 and all verification counts shown in output.",
+  "verifier_sha256": "e67111330199d905f8ceb69be2e12557aaeb09a8ec712b7f9ca4aaa0399cc88e",
+  "manifest_sha256": "eefa42329193df287e2d52f0f78460dc8f06879d76e0dc8b12d435d3f26d70e7",
+  "report_sha256": "62c11789bd4cc92a680d13e96ac795cf600507cc27af1a0c0cffbdea03f70bb5",
+  "verified_records": 6229,
+  "unique_blobs": 3085,
+  "new_timed_exact_outputs": 1468,
+  "managed_IR334_still_selected": true,
+  "new_managed_gain_established": false,
+  "fastest_Rust_target_met": false,
+  "native_executions_by_verifier": 0
+}

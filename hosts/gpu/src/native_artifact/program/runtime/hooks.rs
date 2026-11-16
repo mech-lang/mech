@@ -60,14 +60,7 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn admit(
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
-    let outcome = context.visit(site);
-    match outcome {
-        Ok(()) => STATUS_OK,
-        Err(error) => {
-            context.error = Some(error);
-            STATUS_ADMISSION
-        }
-    }
+    admit_current(context, site)
 }
 pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
     context: *mut c_void,
@@ -86,16 +79,78 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
+    let fused_numeric = GlobalHelper::decode(operation) == GlobalHelper::AdmitNumericSegmentBegin;
+    let mut scalar_ready = 0;
+    let operation = match GlobalHelper::decode(operation) {
+        GlobalHelper::AdmitNumericSegmentBegin => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            scalar_ready = context.scalar_admission_word(site).unwrap_or(0);
+            GlobalHelper::NumericSegmentBegin.raw()
+        }
+        GlobalHelper::AdmitMove => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            GlobalHelper::Move.raw()
+        }
+        GlobalHelper::AdmitStructuralObservation => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            GlobalHelper::StructuralObservation.raw()
+        }
+        _ => operation,
+    };
     let outcome = if result.is_null() || result != context.result {
         Err(invalid("helper result pointer mismatch"))
     } else {
         context.helper(site, operation, [first, second, third])
     };
+    let outcome = if fused_numeric {
+        outcome.and_then(|word| match word {
+            Some(selected @ 0..=1) => Ok(Some((selected << 1) | scalar_ready)),
+            _ => Err(invalid(
+                "fused numeric entry did not return a selection bit",
+            )),
+        })
+    } else {
+        outcome
+    };
+    finish_callback(context, outcome)
+}
+
+#[inline]
+fn admit_current(context: &mut Invocation<'_, '_, '_>, site: u64) -> u64 {
+    // Finish the complete original admission, including its optional scalar
+    // decision word, before validating any helper pointer or operand. A fused
+    // callback grants no permission beyond the same current visit.
+    let outcome = context
+        .visit(site)
+        .map(|()| context.scalar_admission_word(site));
+    finish_callback(context, outcome)
+}
+
+#[inline]
+fn finish_callback(
+    context: &mut Invocation<'_, '_, '_>,
+    outcome: Result<Option<u64>, NativeProgramExecutionError>,
+) -> u64 {
     match outcome {
         Ok(word) => {
             if let Some(word) = word {
-                // SAFETY: equality above proves this is the private one-word
-                // result lane, disjoint from borrowed control and Value arenas.
+                let result = context.result;
+                if result.is_null() {
+                    context.error = Some(invalid("missing private callback result lane"));
+                    return STATUS_ABI;
+                }
+                // SAFETY: the owning session registers this exact one-word
+                // result lane, disjoint from control and Value arenas. Helper
+                // calls additionally check the caller's pointer equality.
                 unsafe {
                     *result = word;
                 }

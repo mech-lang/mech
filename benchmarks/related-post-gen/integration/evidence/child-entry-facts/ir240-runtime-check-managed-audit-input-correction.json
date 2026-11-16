@@ -1,0 +1,7 @@
+{
+  "reason": "Generated legacy packed JSON is not the Object-owned typed metadata. Audit exact typed export bytes and linked binding, preserve and verify legacy pins separately.",
+  "legacy_packed_json_sha256": "5dd90d0951bb111b3aad88c94b3749a51f1d29ed9e2a75c51a14fc19f606604c",
+  "typed_metadata_sha256": "bb2e8a488639ce390ba49331fcc22988cb2848c588fd7a6cfee80a99d6d95a07",
+  "typed_metadata_bytes": 6286,
+  "object_sha256": "406ac35f7b067d8d0216792f335d1eea480bab78f75dfafb05f864bf08d69294"
+}

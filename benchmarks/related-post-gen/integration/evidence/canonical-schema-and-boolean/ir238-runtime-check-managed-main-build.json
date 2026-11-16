@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/build-host.py",
+    "--compiler-build",
+    "/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1/build.json",
+    "--source",
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/managed-app/src/main.rs",
+    "--out",
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/managed-app/runner-standard",
+    "--bundle",
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/managed-app/audit-bundle",
+    "--linked"
+  ],
+  "exit": 0,
+  "seconds": 0.975507291033864,
+  "stdout": "{\"seconds\": 0.4731011250987649, \"exit\": 0}\n",
+  "stderr": "",
+  "compiler_source_sha256": "34fab362ddaa5301a1932109ccdfac14ae71668a49347e85f82c3a52b3c4f413"
+}

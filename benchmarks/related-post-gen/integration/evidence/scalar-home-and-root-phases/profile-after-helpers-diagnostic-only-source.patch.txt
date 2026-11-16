@@ -1,0 +1,422 @@
+diff --git a/hosts/gpu/src/lib.rs b/hosts/gpu/src/lib.rs
+index 073cff73a6..2383a27aad 100644
+--- a/hosts/gpu/src/lib.rs
++++ b/hosts/gpu/src/lib.rs
+@@ -2208,3 +2208,6 @@ pub mod control;
+ pub mod execution;
+ #[cfg(feature = "native-build")]
+ pub mod native_build;
++
++#[cfg(feature = "canonical-native-program")]
++pub mod related_phase_profile;
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/invocation/helper_fallbacks.rs b/hosts/gpu/src/native_artifact/program/runtime/invocation/helper_fallbacks.rs
+index 896702ac2d..7463bf2199 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/invocation/helper_fallbacks.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/invocation/helper_fallbacks.rs
+@@ -139,6 +139,7 @@ impl Invocation<'_, '_, '_> {
+         output: NativeMatchValue,
+         words: &[u64],
+     ) -> Result<Option<u64>, Error> {
++        let _phase = crate::related_phase_profile::Canonical::new();
+         let descriptor = self.descriptor;
+         for (index, &operand) in operands.iter().enumerate() {
+             let value = if descriptor.metadata().plan.values()[operand.get() as usize]
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs b/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
+index 607ab544a3..7dc5fa2fda 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/invocation/mod.rs
+@@ -479,6 +479,37 @@ impl Invocation<'_, '_, '_> {
+         site: u64,
+         operation: u64,
+         args: [u64; 3],
++    ) -> Result<Option<u64>, NativeProgramExecutionError> {
++        let phase = crate::related_phase_profile::helper_begin(site, operation);
++        let result = self.helper_inner(site, operation, args);
++        let next = self
++            .closed_tail
++            .as_ref()
++            .and_then(|state| match state.region {
++                tail::Region::Tail(id) => self
++                    .descriptor
++                    .metadata()
++                    .closed_tails
++                    .regions
++                    .get(id)
++                    .map(|region| (1, region.tail.header() as usize)),
++                tail::Region::Segment(id) => self
++                    .descriptor
++                    .metadata()
++                    .compositions
++                    .region(id)
++                    .and_then(|(_, region)| region.sites.first().copied())
++                    .map(|site| (2, site as usize)),
++            });
++        crate::related_phase_profile::helper_end(phase, site, operation, next);
++        result
++    }
++    #[inline(always)]
++    pub(in crate::native_artifact::program::runtime) fn helper_inner(
++        &mut self,
++        site: u64,
++        operation: u64,
++        args: [u64; 3],
+     ) -> Result<Option<u64>, NativeProgramExecutionError> {
+         let tag = GlobalHelper::decode(operation);
+         if self.histogram.is_some() && tag != GlobalHelper::HistogramFinish {
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/mod.rs b/hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/mod.rs
+index 5aaa0fa624..9102e3ea0b 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/mod.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/mod.rs
+@@ -197,6 +197,7 @@ impl Invocation<'_, '_, '_> {
+     }
+ 
+     fn run_parallel(&mut self, site: usize, args: [u64; 3]) -> Result<Option<u64>, Error> {
++        let _phase = crate::related_phase_profile::Parallel::new(site);
+         let descriptor = self.descriptor;
+         let id = usize::try_from(args[2]).map_err(|_| invalid("parallel region index overflow"))?;
+         let region = descriptor
+diff --git a/hosts/gpu/src/related_phase_profile.rs b/hosts/gpu/src/related_phase_profile.rs
+new file mode 100644
+index 0000000000..409447d6f6
+--- /dev/null
++++ b/hosts/gpu/src/related_phase_profile.rs
+@@ -0,0 +1,339 @@
++//! Diagnostic-only phase observation; never linked into latency candidates.
++use std::sync::{
++    Mutex, OnceLock,
++    atomic::{AtomicU64, Ordering::Relaxed},
++};
++use std::time::Instant;
++
++static ROOT: OnceLock<std::thread::ThreadId> = OnceLock::new();
++static POST: Mutex<Option<(Instant, Option<os::Snapshot>)>> = Mutex::new(None);
++static IN_PARALLEL: AtomicU64 = AtomicU64::new(0);
++static ROWS: Mutex<Vec<ParallelRow>> = Mutex::new(Vec::new());
++struct Counter {
++    calls: AtomicU64,
++    ns: AtomicU64,
++}
++impl Counter {
++    const fn new() -> Self {
++        Self {
++            calls: AtomicU64::new(0),
++            ns: AtomicU64::new(0),
++        }
++    }
++}
++static CANONICAL: [Counter; 3] = [Counter::new(), Counter::new(), Counter::new()];
++
++pub fn start() {
++    ROOT.set(std::thread::current().id()).unwrap();
++    let snapshot = os::Snapshot::read();
++    *POST.lock().unwrap() = Some((Instant::now(), snapshot));
++    begin_span(0, 8192, 63);
++}
++
++pub struct Canonical {
++    start: Instant,
++    bucket: usize,
++}
++impl Canonical {
++    pub fn new() -> Self {
++        let root = ROOT.get() == Some(&std::thread::current().id());
++        let bucket = if !root {
++            2
++        } else if IN_PARALLEL.load(Relaxed) != 0 {
++            1
++        } else {
++            0
++        };
++        Self {
++            start: Instant::now(),
++            bucket,
++        }
++    }
++}
++impl Drop for Canonical {
++    fn drop(&mut self) {
++        let counter = &CANONICAL[self.bucket];
++        counter
++            .ns
++            .fetch_add(self.start.elapsed().as_nanos().try_into().unwrap(), Relaxed);
++        counter.calls.fetch_add(1, Relaxed);
++    }
++}
++
++#[derive(serde::Serialize)]
++struct ParallelRow {
++    site: usize,
++    seconds: f64,
++    hardware: Option<os::Hardware>,
++}
++pub struct Parallel {
++    site: usize,
++    start: Instant,
++    before: Option<os::Snapshot>,
++}
++impl Parallel {
++    pub fn new(site: usize) -> Option<Self> {
++        if ROOT.get() != Some(&std::thread::current().id())
++            || IN_PARALLEL
++                .compare_exchange(0, 1, Relaxed, Relaxed)
++                .is_err()
++        {
++            return None;
++        }
++        let before = os::Snapshot::read();
++        Some(Self {
++            site,
++            start: Instant::now(),
++            before,
++        })
++    }
++}
++impl Drop for Parallel {
++    fn drop(&mut self) {
++        let seconds = self.start.elapsed().as_secs_f64();
++        let after = os::Snapshot::read();
++        let hardware = self.before.zip(after).and_then(|(a, b)| a.difference(b));
++        IN_PARALLEL.store(0, Relaxed);
++        ROWS.lock().unwrap().push(ParallelRow {
++            site: self.site,
++            seconds,
++            hardware,
++        });
++    }
++}
++
++pub fn finish() -> serde_json::Value {
++    end_span();
++    let end = os::Snapshot::read();
++    let (started, before) = POST.lock().unwrap().take().unwrap();
++    let wall = started.elapsed().as_secs_f64();
++    let hardware = before.zip(end).and_then(|(a, b)| a.difference(b));
++    let counters = CANONICAL.iter().map(|c| serde_json::json!({
++        "calls": c.calls.load(Relaxed), "inclusive_seconds": c.ns.load(Relaxed) as f64 * 1e-9
++    })).collect::<Vec<_>>();
++    serde_json::json!({"schema":"mech.related-post-gen.phase-attribution.v2",
++        "post_json_seconds":wall,"post_json_hardware":hardware,
++        "root_helper_counts":nonzero(&ROOT_OPS),"worker_helper_counts":nonzero(&WORKER_OPS),
++        "root_helper_ns_by_operation":nonzero(&HELPER_NS),"root_helper_ns_by_site":nonzero(&HELPER_SITE_NS),
++        "root_native_tail_ns_by_header":nonzero(&TAIL_NS),"root_native_segment_ns_by_start":nonzero(&SEGMENT_NS),
++        "root_other_ns_by_site":nonzero(&OTHER_NS),"root_other_ns_by_operation":nonzero(&OTHER_OP_NS),
++        "site_overflow_count":SITE_OVERFLOWS.load(Relaxed),
++        "parallel_run_windows":*ROWS.lock().unwrap(),
++        "canonical_root_outside_parallel":counters[0],
++        "canonical_root_inside_parallel":counters[1],
++        "canonical_workers":counters[2],
++        "limitations":["Diagnostic observation only; every timing is excluded from benchmark comparisons.",
++            "Parallel hardware windows include admission, worker creation/run/join and transport, across all process threads.",
++            "Canonical-call wall times are inclusive and may overlap; they are not CPU-time shares.",
++            "Post-JSON hardware includes the observer; parallel windows are disjoint outermost root-thread scopes."]})
++}
++
++#[cfg(target_os = "macos")]
++mod os {
++    use serde::Serialize;
++
++    // Exact RUSAGE_INFO_V4 layout from the installed macOS SDK. The companion
++    // C probe verifies sizeof=296 and offsetof(ri_instructions)=248.
++    #[repr(C)]
++    #[derive(Clone, Copy, Default)]
++    pub struct Snapshot {
++        uuid: [u8; 16],
++        user: u64,
++        system: u64,
++        idle_wakeups: u64,
++        interrupt_wakeups: u64,
++        pageins: u64,
++        wired: u64,
++        resident: u64,
++        footprint: u64,
++        start: u64,
++        exit: u64,
++        child_user: u64,
++        child_system: u64,
++        child_idle: u64,
++        child_interrupt: u64,
++        child_pageins: u64,
++        child_elapsed: u64,
++        disk_read: u64,
++        disk_written: u64,
++        qos_default: u64,
++        qos_maintenance: u64,
++        qos_background: u64,
++        qos_utility: u64,
++        qos_legacy: u64,
++        qos_initiated: u64,
++        qos_interactive: u64,
++        billed_system: u64,
++        serviced_system: u64,
++        logical_writes: u64,
++        lifetime_peak_footprint: u64,
++        instructions: u64,
++        cycles: u64,
++        billed_energy: u64,
++        serviced_energy: u64,
++        interval_peak_footprint: u64,
++        runnable: u64,
++    }
++    const _: () = assert!(std::mem::size_of::<Snapshot>() == 296);
++    const _: () = assert!(std::mem::offset_of!(Snapshot, instructions) == 248);
++    #[repr(C)]
++    struct Timebase {
++        numer: u32,
++        denom: u32,
++    }
++    #[link(name = "proc")]
++    unsafe extern "C" {
++        fn proc_pid_rusage(pid: i32, flavor: i32, buffer: *mut std::ffi::c_void) -> i32;
++        fn getpid() -> i32;
++        fn mach_timebase_info(info: *mut Timebase) -> i32;
++    }
++    impl Snapshot {
++        pub fn read() -> Option<Self> {
++            let mut value = Self::default();
++            // SAFETY: caller-owned, correctly sized/aligned SDK structure.
++            let result = unsafe { proc_pid_rusage(getpid(), 4, (&mut value as *mut Self).cast()) };
++            (result == 0).then_some(value)
++        }
++        pub fn difference(self, end: Self) -> Option<Hardware> {
++            let mut timebase = Timebase { numer: 0, denom: 0 };
++            // ri_user_time and ri_system_time use Mach ticks, verified against
++            // getrusage timeval by the SDK C probe; convert rather than assume ns.
++            if unsafe { mach_timebase_info(&mut timebase) } != 0 || timebase.denom == 0 {
++                return None;
++            }
++            let seconds = f64::from(timebase.numer) / f64::from(timebase.denom) * 1e-9;
++            let instructions = end.instructions.checked_sub(self.instructions)?;
++            let cycles = end.cycles.checked_sub(self.cycles)?;
++            Some(Hardware {
++                instructions_retired: instructions,
++                cycles,
++                instructions_per_cycle: (cycles != 0)
++                    .then_some(instructions as f64 / cycles as f64),
++                user_cpu_seconds: end.user.checked_sub(self.user)? as f64 * seconds,
++                system_cpu_seconds: end.system.checked_sub(self.system)? as f64 * seconds,
++                resident_bytes_before: self.resident,
++                resident_bytes_after: end.resident,
++                physical_footprint_bytes_before: self.footprint,
++                physical_footprint_bytes_after: end.footprint,
++                lifetime_peak_physical_footprint_bytes_after: end.lifetime_peak_footprint,
++                pageins: end.pageins.checked_sub(self.pageins)?,
++            })
++        }
++    }
++    #[derive(Serialize)]
++    pub struct Hardware {
++        instructions_retired: u64,
++        cycles: u64,
++        instructions_per_cycle: Option<f64>,
++        user_cpu_seconds: f64,
++        system_cpu_seconds: f64,
++        resident_bytes_before: u64,
++        resident_bytes_after: u64,
++        physical_footprint_bytes_before: u64,
++        physical_footprint_bytes_after: u64,
++        lifetime_peak_physical_footprint_bytes_after: u64,
++        pageins: u64,
++    }
++}
++
++#[cfg(not(target_os = "macos"))]
++mod os {
++    pub struct Snapshot;
++    impl Snapshot {
++        pub fn read() -> Option<Self> {
++            None
++        }
++        pub fn difference(self, _: Self) -> Option<()> {
++            None
++        }
++    }
++    pub type Hardware = ();
++}
++
++const SITES: usize = 8193;
++const OPS: usize = 64;
++static ROOT_OPS: [AtomicU64; OPS] = [const { AtomicU64::new(0) }; OPS];
++static WORKER_OPS: [AtomicU64; OPS] = [const { AtomicU64::new(0) }; OPS];
++static HELPER_NS: [AtomicU64; OPS] = [const { AtomicU64::new(0) }; OPS];
++static HELPER_SITE_NS: [AtomicU64; SITES] = [const { AtomicU64::new(0) }; SITES];
++static TAIL_NS: [AtomicU64; SITES] = [const { AtomicU64::new(0) }; SITES];
++static SEGMENT_NS: [AtomicU64; SITES] = [const { AtomicU64::new(0) }; SITES];
++static OTHER_NS: [AtomicU64; SITES] = [const { AtomicU64::new(0) }; SITES];
++static OTHER_OP_NS: [AtomicU64; OPS] = [const { AtomicU64::new(0) }; OPS];
++static SITE_OVERFLOWS: AtomicU64 = AtomicU64::new(0);
++thread_local! {
++    static SPAN: std::cell::Cell<Option<(u8, usize, usize, Instant)>> = const { std::cell::Cell::new(None) };
++}
++fn operation_bucket(operation: u64) -> usize {
++    if operation <= 2 {
++        operation as usize
++    } else if operation >= u64::MAX - 44 {
++        3 + (u64::MAX - operation) as usize
++    } else {
++        63
++    }
++}
++fn source_site(site: u64) -> usize {
++    if site < 8192 {
++        site as usize
++    } else {
++        SITE_OVERFLOWS.fetch_add(1, Relaxed);
++        8192
++    }
++}
++fn begin_span(kind: u8, site: usize, operation: usize) {
++    SPAN.set(Some((kind, site, operation, Instant::now())));
++}
++fn end_span() {
++    if let Some((kind, site, operation, start)) = SPAN.take() {
++        let ns = start.elapsed().as_nanos().try_into().unwrap();
++        let counter = match kind {
++            1 => &TAIL_NS,
++            2 => &SEGMENT_NS,
++            _ => &OTHER_NS,
++        };
++        counter[site].fetch_add(ns, Relaxed);
++        if kind == 0 {
++            OTHER_OP_NS[operation].fetch_add(ns, Relaxed);
++        }
++    }
++}
++pub(crate) fn helper_begin(site: u64, operation: u64) -> Option<Instant> {
++    let root = ROOT.get()?;
++    let key = operation_bucket(operation);
++    if root != &std::thread::current().id() {
++        WORKER_OPS[key].fetch_add(1, Relaxed);
++        return None;
++    }
++    end_span();
++    let _ = source_site(site);
++    ROOT_OPS[key].fetch_add(1, Relaxed);
++    Some(Instant::now())
++}
++pub(crate) fn helper_end(
++    start: Option<Instant>,
++    site: u64,
++    operation: u64,
++    next: Option<(u8, usize)>,
++) {
++    let Some(start) = start else {
++        return;
++    };
++    let key = operation_bucket(operation);
++    let site = source_site(site);
++    let ns = start.elapsed().as_nanos().try_into().unwrap();
++    HELPER_NS[key].fetch_add(ns, Relaxed);
++    HELPER_SITE_NS[site].fetch_add(ns, Relaxed);
++    let (kind, next_site) = next.unwrap_or((0, site));
++    begin_span(kind, source_site(next_site as u64), key);
++}
++fn nonzero(values: &[AtomicU64]) -> Vec<(usize, u64)> {
++    values
++        .iter()
++        .enumerate()
++        .filter_map(|(index, value)| {
++            let value = value.load(Relaxed);
++            (value != 0).then_some((index, value))
++        })
++        .collect()
++}

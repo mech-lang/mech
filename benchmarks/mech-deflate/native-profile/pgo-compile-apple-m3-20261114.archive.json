@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-round2-pgo-20261114.tar.gz",
+  "bytes": 96602322,
+  "evidence_files": 1273,
+  "files": 1273,
+  "format": 1,
+  "manifest_sha256": "98d0ef0a75aea1a108464a1c43e66adcc9303a19d14f672c7a46b15ec311b7cf",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "63f73460bec36751ef29d14605ea23f9770da2cd0fa47683527e7732d3f69587",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-round2-pgo-20261114.tar.gz",
+  "sha256": "44df6b20c41773afcb5eab3a4214ea1122969fc79e94c46804b1a9834b1877e0",
+  "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+  "uncompressed_bytes": 589309912,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "44df6b20c41773afcb5eab3a4214ea1122969fc79e94c46804b1a9834b1877e0",
+    "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+    "verified_bytes": 589309912,
+    "verified_files": 1273
+  }
+}

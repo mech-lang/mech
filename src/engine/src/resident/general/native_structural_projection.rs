@@ -54,9 +54,6 @@ pub fn native_project_structural_value(
         .ok_or(Error::InvalidInput)?;
     if source.schema() != input_type.schema()
         || source.schema_key() != expected.key()
-        || !target.dimension_parameters().is_empty()
-        || !expected.dimension_parameters().is_empty()
-        || !source.shape().parameter_values().is_empty()
         || prior.is_some_and(|value| {
             value.schema() != output_type.schema() || value.schema_key() != target.key()
         })
@@ -127,18 +124,108 @@ pub fn native_project_structural_value(
                 _ => return Err(Error::InvalidInput),
             };
         }
-        if body != target.body() || !crate::native_artifact::structural_values::supported(body) {
+        if !crate::native_artifact::structural_values::carrier_component_matches(
+            target.body(),
+            body,
+        ) || !crate::native_artifact::structural_values::supported(body)
+        {
             return Err(Error::InvalidInput);
         }
+        // Ownership import retains the complete schema arena. The same
+        // prepaid traversal also bounds shape closure before any schema tree
+        // or dimension witness is cloned below.
+        let schema_bytes = meter.precharge_schema_layout(schemas)?;
+        let shape_bytes = if target.dimension_parameters().is_empty() && target.body() == body {
+            0
+        } else {
+            // Full source closure, the selected child, resolver witnesses,
+            // and target closure coexist. Dimension closure only replaces
+            // expressions with constants, so the retained schema clone bound
+            // covers each tree; the multiplier also covers vector growth and
+            // shape tapes. No buffer elements are expanded in this stage.
+            add(&[mul(&[schema_bytes, 16])?, 4096])?
+        };
+        let (_shape_reservation, closed, shape) = if shape_bytes == 0 {
+            (
+                None,
+                None,
+                target
+                    .instantiate_shape(Box::new([]))
+                    .map_err(|_| Error::InvalidInput)?,
+            )
+        } else {
+            let demand = ResourceDemand {
+                turn_peak_bytes: add(&[
+                    source_footprint.retained_bytes,
+                    prior_footprint.map_or(0, |v| v.retained_bytes),
+                    shape_bytes,
+                ])?,
+                retained_nodes: add(&[
+                    source_footprint.node_count,
+                    prior_footprint.map_or(0, |v| v.node_count),
+                ])?,
+                ..ResourceDemand::default()
+            };
+            if let Some(violation) = mech_core::evaluate_call_memory_budget(
+                mech_core::MemoryObjectOwner::NodeOutput {
+                    node: block.origin().node(),
+                    port: 0,
+                },
+                demand,
+                0,
+                0,
+                limits,
+            )
+            .first()
+            {
+                return Err(Error::Plan(
+                    mech_core::MemoryPlanError::TargetLimitExceeded {
+                        violation: violation.clone(),
+                    },
+                ));
+            }
+            meter.charge_compute_work(mul(&[shape_bytes, 8])?)?;
+            let reservation = memory.reserve_capacity(shape_bytes)?;
+            let source_body = expected
+                .closed_body(source.shape())
+                .map_err(|_| Error::InvalidInput)?;
+            let mut selected = &source_body;
+            for step in path {
+                selected = match (step, selected) {
+                    (
+                        NativeStructuralStep::EnumPayload { ordinal },
+                        SchemaBody::Enum { variants, .. },
+                    ) => variants
+                        .get(*ordinal as usize)
+                        .and_then(|variant| variant.payload.as_ref())
+                        .ok_or(Error::InvalidInput)?,
+                    (NativeStructuralStep::TupleItem { ordinal }, SchemaBody::Tuple(fields)) => {
+                        fields.get(*ordinal as usize).ok_or(Error::InvalidInput)?
+                    }
+                    _ => return Err(Error::InvalidInput),
+                };
+            }
+            let closed = selected.clone();
+            let shape = mech_core::shape_for_schema_components(
+                target,
+                &[(target.body(), closed.clone())],
+                None,
+            )
+            .map_err(|_| Error::InvalidInput)?;
+            (Some(reservation), Some(closed), shape)
+        };
+        let body = closed.as_ref().unwrap_or(body);
         let item = budget::measure_canonical_data_footprint(&mut meter, body, data)?;
         let finalization_work =
             budget::preflight_canonical_data_finalization(&mut meter, body, data)?;
-        let published = budget::projected_canonical_value_footprint(item, 0)?;
+        let published =
+            budget::projected_canonical_value_footprint(item, shape.parameter_values().len())?;
         let footprint = CurrentMemoryFootprint {
             logical_elements: item.node_count,
             payload_bytes: item.retained_bytes,
             encoded_bytes: item.encoded_bytes,
             retained_nodes: item.node_count,
+            shape_parameter_count: budget::checked_u64(shape.parameter_values().len())?,
             schema_bytes: budget::checked_u64(
                 schemas
                     .entry(output_type.schema())
@@ -148,16 +235,6 @@ pub fn native_project_structural_value(
             )?,
             ..CurrentMemoryFootprint::default()
         };
-        // Ownership import retains the complete schema arena, even though
-        // finalization shares it. Prepay each measured schema contribution.
-        let schema_bytes = schemas
-            .clone_allocation_bound_bytes_with_precharge(|bytes| meter.charge_compute_work(bytes))
-            .map_err(|error| match error {
-                mech_core::SchemaAllocationBoundError::Precharge(error) => error,
-                mech_core::SchemaAllocationBoundError::ArithmeticOverflow => {
-                    ResidentKernelError::InvalidShape
-                }
-            })?;
         let owner_envelope = add(&[
             mul(&[
                 add(&[
@@ -169,9 +246,20 @@ pub fn native_project_structural_value(
             ])?,
             4096,
         ])?;
+        let packed = crate::resident::structural_values::word_matrix(body);
+        let draft_bytes = if packed {
+            // The typed constructor consumes one packed clone. It never
+            // allocates an intermediate draft or canonical cell per word.
+            0
+        } else {
+            add(&[
+                budget::unsigned_word_draft_expansion(&mut meter, body, data)?,
+                mech_core::canonical_snapshot_draft_bytes(footprint)?,
+            ])?
+        };
         let workspace = add(&[
             owner_envelope,
-            mech_core::canonical_snapshot_draft_bytes(footprint)?,
+            draft_bytes,
             mech_core::canonical_snapshot_finalization_bytes(footprint)?,
             mul(&[Value::memory_budget_claim_metadata_bytes(), 2])?,
         ])?;
@@ -187,6 +275,7 @@ pub fn native_project_structural_value(
             turn_peak_bytes: add(&[
                 source_footprint.retained_bytes,
                 prior_footprint.map_or(0, |v| v.retained_bytes),
+                shape_bytes,
                 workspace,
             ])?,
             retained_nodes: nodes,
@@ -218,16 +307,26 @@ pub fn native_project_structural_value(
         let canonical = mech_core::snapshot::SnapshotCanonicalizationBudget::new(finalization_work);
         let context = mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(schemas)
             .with_canonicalization_budget(&canonical);
-        let data =
-            mech_core::snapshot::canonical_snapshot_data_draft_with_context(body, data, &context)
-                .map_err(|_| ResidentKernelError::InvalidInput)?;
-        let value = ValueDraft {
-            schema: output_type.schema(),
-            shape_values: Box::new([]),
-            data,
-        }
-        .finalize(&context)
-        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        let value = if packed {
+            crate::resident::packed_word_matrix::copy(
+                output_type.schema(),
+                shape,
+                data,
+                Arc::clone(schemas),
+            )?
+        } else {
+            let data = mech_core::snapshot::canonical_snapshot_data_draft_with_context(
+                body, data, &context,
+            )
+            .map_err(|_| ResidentKernelError::InvalidInput)?;
+            ValueDraft {
+                schema: output_type.schema(),
+                shape_values: shape.parameter_values().to_vec().into_boxed_slice(),
+                data,
+            }
+            .finalize(&context)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+        };
         Ok(value.into_memory_budget(&mut reservation)?)
     })?
 }

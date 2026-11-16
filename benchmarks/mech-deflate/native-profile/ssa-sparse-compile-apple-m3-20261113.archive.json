@@ -1,0 +1,31 @@
+{
+  "archive_name": "level12-ssa-sparse-compile-apple-m3-20261113.tar.gz",
+  "bytes": 5858020,
+  "evidence_files": 102,
+  "files": 102,
+  "format": 1,
+  "manifest_sha256": "458eb10b9aac2dc86d2d0b1ab35e6ff6af4a69a4b92ed6e621480eefdf5f241a",
+  "sha256": "06b7de6c030cb24d40ebac29a7f2dc6727661bf98dd2f4073be6b0397e4bbf5d",
+  "source_revision": "7c30083b39b25e7e3945bdbb532653370fb9765c",
+  "uncompressed_bytes": 41872351,
+  "repository": "mech-lang/mech",
+  "release_tag": "evidence-native-compression-experiments-6",
+  "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-ssa-sparse-compile-apple-m3-20261113.tar.gz",
+  "publication": "published",
+  "replay_sha256": "26413aa8f5c1b5ad1dccaee9b63b2b7029d84cb789b1c6eeca21e293592a2ab5",
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "06b7de6c030cb24d40ebac29a7f2dc6727661bf98dd2f4073be6b0397e4bbf5d",
+    "source_revision": "7c30083b39b25e7e3945bdbb532653370fb9765c",
+    "verified_bytes": 41872351,
+    "verified_files": 102
+  },
+  "public_verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "06b7de6c030cb24d40ebac29a7f2dc6727661bf98dd2f4073be6b0397e4bbf5d",
+    "source_revision": "7c30083b39b25e7e3945bdbb532653370fb9765c",
+    "verified_bytes": 41872351,
+    "verified_files": 102,
+    "replay_sha256": "26413aa8f5c1b5ad1dccaee9b63b2b7029d84cb789b1c6eeca21e293592a2ab5"
+  }
+}

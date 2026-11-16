@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-round2-planning-20261114.tar.gz",
+  "bytes": 15968949,
+  "evidence_files": 747,
+  "files": 747,
+  "format": 1,
+  "manifest_sha256": "789f7292f97af31af4cf213e7dc55659dc58f816db61b6657f49215cbecfa3f0",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "473969c6ad9641390f4f011e60d2aab987521cad6c6cf2973ca8075c5dc5138c",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-round2-planning-20261114.tar.gz",
+  "sha256": "15a1773c8e16928d6a4577db666ecf58c21d15e4f216ca4e0eb7d8ddfebc5a0a",
+  "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+  "uncompressed_bytes": 78239230,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "15a1773c8e16928d6a4577db666ecf58c21d15e4f216ca4e0eb7d8ddfebc5a0a",
+    "source_revision": "fad53d24d9d2cad61262cb94932405fd9ee40341",
+    "verified_bytes": 78239230,
+    "verified_files": 747
+  }
+}

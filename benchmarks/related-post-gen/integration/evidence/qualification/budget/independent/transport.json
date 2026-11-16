@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/budget/independent/runner-budget",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/budget/independent/build/source.mec",
+    "/Users/cim310/mech-lang/mech/benchmarks/related-post-gen/fixtures/posts-first-10.json",
+    "/private/tmp/mech-related-latest-deflate-integration-runners-20261106-v5/budget/independent/transport-output.json",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 0.30155583284795284,
+  "stdout": "{\"budget_case\":\"transport\",\"error\":\"Base(TransportLimit { required: 412768, limit: 0 })\",\"output_unpublished\":true,\"retained_bytes\":0,\"retained_nodes\":0}\n",
+  "stderr": ""
+}

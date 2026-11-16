@@ -730,6 +730,21 @@ pub fn maintained_source_type_declaration(
         "sequence/length" => {
             declaration.parameter_names = Some(vec!["value".into()].into_boxed_slice())
         }
+        "sequence/with-capacity" => {
+            declaration.parameter_names =
+                Some(vec!["prototype".into(), "capacity".into()].into_boxed_slice())
+        }
+        "sequence/reserve" => {
+            declaration.parameter_names =
+                Some(vec!["values".into(), "additional".into()].into_boxed_slice())
+        }
+        "sequence/append" => {
+            declaration.parameter_names =
+                Some(vec!["values".into(), "element".into()].into_boxed_slice())
+        }
+        "sequence/clear" => {
+            declaration.parameter_names = Some(vec!["values".into()].into_boxed_slice())
+        }
         "sequence/sort-indices" => {
             declaration.parameter_names = Some(
                 vec![

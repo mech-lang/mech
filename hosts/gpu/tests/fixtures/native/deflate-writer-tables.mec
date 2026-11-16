@@ -1,0 +1,48 @@
+// BlockOut.roc pack_codes and pack_offsets at
+// 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include deflate-huffman-level12.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+block-pack-code(codewords<[u32]>, lens<[u8]>, i<u64>) => (out<u64>) :=
+  word<u64> := huff-get32(codewords, i)
+  width<u64> := huff-get8(lens, i)
+  out := bits/or(word, bits/shift-left-wrap(width, 32u64)).
+block-pack-codes-at(codewords<[u32]>, lens<[u8]>, packed<[u64]>, i<u64>, n<u64>) => <[u64]>
+  | (codewords, lens, packed, i, n) => ((i < n)? | true => block-pack-codes-at(codewords, lens, sequence/append(packed, block-pack-code(codewords, lens, i)), i + 1u64, n) | false => packed).
+block-pack-codes(codewords<[u32]>, lens<[u8]>) => (out<[u64]>) :=
+  n := sequence/length(codewords)
+  packed := sequence/with-capacity(0u64, n)
+  out := block-pack-codes-at(codewords, lens, packed, 0u64, n).
+block-pack-offset(codewords<[u32]>, lens<[u8]>, extra-bits<[u8]>, bases<[u32]>, i<u64>) => (out<u64>) :=
+  word<u64> := huff-get32(codewords, i)
+  width<u64> := huff-get8(lens, i)
+  extra<u64> := huff-get8(extra-bits, i)
+  base<u64> := huff-get32(bases, i)
+  out := bits/or(bits/or(bits/or(word, bits/shift-left-wrap(width, 16u64)), bits/shift-left-wrap(extra, 24u64)), bits/shift-left-wrap(base, 32u64)).
+block-pack-offsets-at(codewords<[u32]>, lens<[u8]>, extra-bits<[u8]>, bases<[u32]>, packed<[u64]>, i<u64>, n<u64>) => <[u64]>
+  | (codewords, lens, extra-bits, bases, packed, i, n) => ((i < n)? | true => block-pack-offsets-at(codewords, lens, extra-bits, bases, sequence/append(packed, block-pack-offset(codewords, lens, extra-bits, bases, i)), i + 1u64, n) | false => packed).
+block-pack-offsets(codewords<[u32]>, lens<[u8]>, extra-bits<[u8]>, bases<[u32]>) => (out<[u64]>) :=
+  n := sequence/length(codewords)
+  packed := sequence/with-capacity(0u64, n)
+  out := block-pack-offsets-at(codewords, lens, extra-bits, bases, packed, 0u64, n).
+
+<block-full-lens> := <{codewords<[u32]> lens<[u8]>}>
+block-full-length-step(litlen-lens<[u8]>, litlen-words<[u32]>, slots<[u8]>, bases<[u32]>, extra-bits<[u8]>, words<[u32]>, lens<[u8]>, length<u64>) => (out<block-full-lens>) :=
+  slot<u64> := huff-get8(slots, length)
+  symbol := 257u64 + slot
+  length32<u32> := length
+  extra := length32 - huff-get32(bases, slot)
+  width := huff-get8(litlen-lens, symbol)
+  wide-width<u64> := width
+  shifted := huff-packed(bits/shift-left-wrap(huff-word(extra), bits/and(wide-width, 31u64)))
+  word := huff-packed(bits/or(huff-word(huff-get32(litlen-words, symbol)), huff-word(shifted)))
+  next-words := huff-set32(words, length, word)
+  next-lens := huff-set8(lens, length, width + huff-get8(extra-bits, slot))
+  out := {codewords: next-words, lens: next-lens}.
+block-full-length-at(litlen-lens<[u8]>, litlen-words<[u32]>, slots<[u8]>, bases<[u32]>, extra-bits<[u8]>, words<[u32]>, lens<[u8]>, length<u64>) => (out<block-full-lens>) :=
+  more := length <= 258u64
+  step := (more? | true => block-full-length-step(litlen-lens, litlen-words, slots, bases, extra-bits, words, lens, length) | false => {codewords: words, lens: lens})
+  out := (more? | true => block-full-length-at(litlen-lens, litlen-words, slots, bases, extra-bits, step.codewords, step.lens, length + 1u64) | false => step).
+block-compute-full-length-codewords(litlen-lens<[u8]>, litlen-words<[u32]>, slots<[u8]>, bases<[u32]>, extra-bits<[u8]>) => (out<block-full-lens>) :=
+  words := [0u32 | i <- 0u64..=259u64, i < 259u64]
+  lens := [0u8 | i <- 0u64..=259u64, i < 259u64]
+  out := block-full-length-at(litlen-lens, litlen-words, slots, bases, extra-bits, words, lens, 3u64).

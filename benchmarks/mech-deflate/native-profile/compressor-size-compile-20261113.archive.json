@@ -1,0 +1,24 @@
+{
+  "archive_name": "level12-compressor-size-compile-20261113.tar.gz",
+  "bytes": 181023,
+  "evidence_files": 38,
+  "files": 38,
+  "format": 1,
+  "manifest_sha256": "7f346902a7e8e7001673fd20741ed05ca0ab61b5b5b45eb6b86262f1ac02062b",
+  "sha256": "f337bdddcd215bb053855675b7c99c9cf96c54a16f17e1168a011a2d669aafd1",
+  "source_revision": "64eda4ca6330e7a8112ab27409acc2fc7816ab39",
+  "uncompressed_bytes": 638229,
+  "repository": "mech-lang/mech",
+  "release_tag": "evidence-native-compression-experiments-6",
+  "download_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/level12-compressor-size-compile-20261113.tar.gz",
+  "publication": "published",
+  "replay_sha256": "bd29933329b56ead54e4ed7eac0442ce8b284c726952e6fd367837c9bc90c4d9",
+  "public_verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "f337bdddcd215bb053855675b7c99c9cf96c54a16f17e1168a011a2d669aafd1",
+    "source_revision": "64eda4ca6330e7a8112ab27409acc2fc7816ab39",
+    "verified_bytes": 638229,
+    "verified_files": 38,
+    "replay_sha256": "bd29933329b56ead54e4ed7eac0442ce8b284c726952e6fd367837c9bc90c4d9"
+  }
+}

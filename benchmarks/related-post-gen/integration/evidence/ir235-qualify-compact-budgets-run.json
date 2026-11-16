@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/qualify-compact-budgets.py"
+  ],
+  "exit": 0,
+  "seconds": 12.738316708011553,
+  "stdout": "eight denials exact across three loaders\nfinite first10/full5000 outputs exact across three loaders\n",
+  "stderr": ""
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "_id": "sparse-0",
+    "title": "Sparse post 0",
+    "tags": []
+  },
+  {
+    "_id": "sparse-1",
+    "title": "Sparse post 1",
+    "tags": [
+      "α"
+    ]
+  },
+  {
+    "_id": "sparse-2",
+    "title": "Sparse post 2",
+    "tags": [
+      "α"
+    ]
+  },
+  {
+    "_id": "sparse-3",
+    "title": "Sparse post 3",
+    "tags": [
+      "β"
+    ]
+  },
+  {
+    "_id": "sparse-4",
+    "title": "Sparse post 4",
+    "tags": [
+      "β"
+    ]
+  },
+  {
+    "_id": "sparse-5",
+    "title": "Sparse post 5",
+    "tags": [
+      "γ"
+    ]
+  },
+  {
+    "_id": "sparse-6",
+    "title": "Sparse post 6",
+    "tags": []
+  },
+  {
+    "_id": "sparse-7",
+    "title": "Sparse post 7",
+    "tags": [
+      "δ"
+    ]
+  }
+]

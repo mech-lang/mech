@@ -13,6 +13,8 @@ use std::sync::Arc;
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub enum NativeCollectionPrimitive {
     CompositePack(usize),
+    MatrixHorizontal(usize),
+    MatrixVertical(usize),
     EnumPack,
     RangeExclusive,
     RangeInclusive,
@@ -22,7 +24,11 @@ pub enum NativeCollectionPrimitive {
     #[cfg(feature = "native-artifact")]
     MatrixScalarAccess,
     #[cfg(feature = "native-artifact")]
+    TupleScalarProjection,
+    RecordFieldAccess,
+    #[cfg(feature = "native-artifact")]
     MatrixRangeAccess,
+    MatrixIndexedReplace,
     #[cfg(feature = "native-artifact")]
     MapKeyAccess,
     SetContains,
@@ -34,11 +40,25 @@ pub enum NativeCollectionPrimitive {
     SumRows,
     #[cfg(feature = "sequence_sort")]
     SortIndices,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceWithCapacity,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceReserve,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceAppend,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceAppendLeBytes,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceAppendSublist,
+    #[cfg(feature = "sequence_buffers")]
+    SequenceClear,
     StringRangeAccess,
     #[cfg(feature = "native-artifact")]
     StringAllAccess,
     #[cfg(feature = "convert")]
     MatrixConversion,
+    #[cfg(all(feature = "convert", feature = "native-artifact"))]
+    UnsignedWordConversion,
     #[cfg(feature = "convert")]
     MatrixToSetConversion,
     #[cfg(feature = "pure_text")]
@@ -90,6 +110,22 @@ pub mod linkage_factories {
         CanonicalFinalize,
         super::super::composite::bind_composite_pack,
         NativeCollectionPrimitive::CompositePack(0)
+    );
+    factory!(
+        NUMERIC_MATRIX_HORZCAT,
+        &["matrix"],
+        "horzcat",
+        CanonicalFinalize,
+        super::super::numeric::bind_horizontal,
+        NativeCollectionPrimitive::MatrixHorizontal(0)
+    );
+    factory!(
+        NUMERIC_MATRIX_VERTCAT,
+        &["matrix"],
+        "vertcat",
+        CanonicalFinalize,
+        super::super::numeric::bind_vertical,
+        NativeCollectionPrimitive::MatrixVertical(0)
     );
     factory!(
         CORE_ENUM_PACK,
@@ -146,6 +182,22 @@ pub mod linkage_factories {
         ImplementationMemoryClass::PackedStringMatrixOrCanonicalFinalize,
         super::super::numeric::bind_semantic_range_access,
         NativeCollectionPrimitive::StringRangeAccess
+    );
+    factory!(
+        ACCESS_COLUMN,
+        &["access"],
+        "column",
+        CanonicalFinalize,
+        super::super::numeric::bind_snapshot_access,
+        NativeCollectionPrimitive::RecordFieldAccess
+    );
+    factory!(
+        CORE_ASSIGN_INDEXED_AXIS,
+        &["core", "assign"],
+        "indexed-axis",
+        ImplementationMemoryClass::PackedUnsignedMatrixUpdateOrCanonicalFinalize,
+        super::super::numeric::bind_indexed_assign,
+        NativeCollectionPrimitive::MatrixIndexedReplace
     );
     #[cfg(feature = "convert")]
     factory!(
@@ -266,6 +318,24 @@ pub mod linkage_factories {
         super::super::pure_text::bind_length,
         NativeCollectionPrimitive::SequenceLength
     );
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_WITH_CAPACITY, &["sequence_buffers"], &["sequence"], "with-capacity", CanonicalFinalize,
+        super::super::sequence_buffers::bind_with_capacity, NativeCollectionPrimitive::SequenceWithCapacity);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_RESERVE, &["sequence_buffers"], &["sequence"], "reserve", CanonicalFinalize,
+        super::super::sequence_buffers::bind_reserve, NativeCollectionPrimitive::SequenceReserve);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_APPEND, &["sequence_buffers"], &["sequence"], "append", CanonicalFinalize,
+        super::super::sequence_buffers::bind_append, NativeCollectionPrimitive::SequenceAppend);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_APPEND_LE_BYTES, &["sequence_buffers"], &["sequence"], "append-le-bytes", CanonicalFinalize,
+        super::super::sequence_buffers::bind_append_le_bytes, NativeCollectionPrimitive::SequenceAppendLeBytes);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_APPEND_SUBLIST, &["sequence_buffers"], &["sequence"], "append-sublist", CanonicalFinalize,
+        super::super::sequence_buffers::bind_append_sublist, NativeCollectionPrimitive::SequenceAppendSublist);
+    #[cfg(feature = "sequence_buffers")]
+    factory!(@features SEQUENCE_CLEAR, &["sequence_buffers"], &["sequence"], "clear", CanonicalFinalize,
+        super::super::sequence_buffers::bind_clear, NativeCollectionPrimitive::SequenceClear);
     #[cfg(feature = "map_ops")]
     factory!(
         @features MAP_NEW, &["map_ops"], &["map"], "new", CanonicalFinalize,
@@ -339,6 +409,14 @@ pub(super) fn register_access(builder: &mut FunctionCatalogBuilder, scalar: bool
     } else {
         ACCESS_RANGE.install(builder)
     }
+}
+
+pub(super) fn register_column_access(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    ACCESS_COLUMN.install(builder)
+}
+
+pub(super) fn register_indexed_assignment(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    CORE_ASSIGN_INDEXED_AXIS.install(builder)
 }
 
 #[cfg(feature = "convert")]
@@ -416,6 +494,16 @@ pub(super) fn register_text(builder: &mut FunctionCatalogBuilder) -> MResult<()>
 pub(super) fn register_format_and_length(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
     NUMBER_FORMAT.install(builder)?;
     SEQUENCE_LENGTH.install(builder)
+}
+
+#[cfg(feature = "sequence_buffers")]
+pub(crate) fn register_sequence_buffers(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
+    SEQUENCE_WITH_CAPACITY.install(builder)?;
+    SEQUENCE_RESERVE.install(builder)?;
+    SEQUENCE_APPEND.install(builder)?;
+    SEQUENCE_APPEND_LE_BYTES.install(builder)?;
+    SEQUENCE_APPEND_SUBLIST.install(builder)?;
+    SEQUENCE_CLEAR.install(builder)
 }
 
 #[cfg(feature = "map_ops")]

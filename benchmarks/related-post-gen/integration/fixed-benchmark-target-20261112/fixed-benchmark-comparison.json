@@ -1,0 +1,120 @@
+{
+  "schema": "fixed-benchmark-example-comparison-v1",
+  "upstream_commit": "fc2982b0c929b1b701209d401a1dc30c773ef4ab",
+  "reference_scope": "Fastest locally verified existing repository example from expanded original-source sweep; unbuilt entries not silently claimed measured.",
+  "custom_Rust": "All local source experiments retained separately as additional data; not completion gate; no further Rustoptimization.",
+  "raw_reports_unchanged": true,
+  "primary_sha256": "a1d8be804821c451ff0bff5e813a57565c8e8fd39e6da8d7929d376649623e31",
+  "independent_sha256": "75c5662c6a31ada6ea7cc899cf408227957874d452139dcf37948df863018919",
+  "all31_and13_observations_retained": true,
+  "comparisons": [
+    {
+      "cohort": "primary",
+      "reference": "rust-preinitialized",
+      "reference_median_ms": 1.870584,
+      "variant": "mech-managed-scoped-frame",
+      "median_ms": 1.44925,
+      "multiple_of_fixed_example": 0.7747580434773311,
+      "speedup": 1.2907255476970847,
+      "median_paired_percent": -22.074577197115154,
+      "bootstrap95_percent": [
+        -23.18787002116709,
+        -21.559684034504734
+      ],
+      "faster_pairs": 30,
+      "pairs": 31,
+      "seed": 202611121501,
+      "scope": "Mech complete postJSON vs unchanged upstream rust_con own reported processing timer. Rustpool initialization is excluded from Rusttimer; Mechfreshworker lifecycle included. This conservative winning comparison does not relabel Rust as equivalent continuouspostJSON eligibility."
+    },
+    {
+      "cohort": "primary",
+      "reference": "rust-preinitialized",
+      "reference_median_ms": 1.870584,
+      "variant": "mech-ir355-managed-guarded-u16-4",
+      "median_ms": 1.433,
+      "multiple_of_fixed_example": 0.7660709168901263,
+      "speedup": 1.3053621772505233,
+      "median_paired_percent": -23.762035351925594,
+      "bootstrap95_percent": [
+        -26.681948430202873,
+        -22.56544062859853
+      ],
+      "faster_pairs": 31,
+      "pairs": 31,
+      "seed": 202611121502,
+      "scope": "Mech complete postJSON vs unchanged upstream rust_con own reported processing timer. Rustpool initialization is excluded from Rusttimer; Mechfreshworker lifecycle included. This conservative winning comparison does not relabel Rust as equivalent continuouspostJSON eligibility."
+    },
+    {
+      "cohort": "primary",
+      "reference": "rust-preinitialized",
+      "reference_median_ms": 1.870584,
+      "variant": "mech-ir353-compact-guarded-u16-4",
+      "median_ms": 1.224125,
+      "multiple_of_fixed_example": 0.6544079282192086,
+      "speedup": 1.5280988461145717,
+      "median_paired_percent": -34.45625590801444,
+      "bootstrap95_percent": [
+        -35.90505253044686,
+        -34.143777155583365
+      ],
+      "faster_pairs": 31,
+      "pairs": 31,
+      "seed": 202611121503,
+      "scope": "Mech complete postJSON vs unchanged upstream rust_con own reported processing timer. Rustpool initialization is excluded from Rusttimer; Mechfreshworker lifecycle included. This conservative winning comparison does not relabel Rust as equivalent continuouspostJSON eligibility."
+    },
+    {
+      "cohort": "confirmation",
+      "reference": "rust-preinitialized",
+      "reference_median_ms": 1.86625,
+      "variant": "mech-managed-scoped-frame",
+      "median_ms": 1.4282080000000001,
+      "multiple_of_fixed_example": 0.7652822505023442,
+      "speedup": 1.3067074263692684,
+      "median_paired_percent": -23.33776289350301,
+      "bootstrap95_percent": [
+        -24.329797951048484,
+        -22.99003583688807
+      ],
+      "faster_pairs": 13,
+      "pairs": 13,
+      "seed": 202611121505,
+      "scope": "Mech complete postJSON vs unchanged upstream rust_con own reported processing timer. Rustpool initialization is excluded from Rusttimer; Mechfreshworker lifecycle included. This conservative winning comparison does not relabel Rust as equivalent continuouspostJSON eligibility."
+    },
+    {
+      "cohort": "confirmation",
+      "reference": "rust-preinitialized",
+      "reference_median_ms": 1.86625,
+      "variant": "mech-ir355-managed-guarded-u16-4",
+      "median_ms": 1.400292,
+      "multiple_of_fixed_example": 0.7503239115874079,
+      "speedup": 1.3327577391001306,
+      "median_paired_percent": -25.739962640282798,
+      "bootstrap95_percent": [
+        -26.645588818629395,
+        -24.208616170441555
+      ],
+      "faster_pairs": 13,
+      "pairs": 13,
+      "seed": 202611121506,
+      "scope": "Mech complete postJSON vs unchanged upstream rust_con own reported processing timer. Rustpool initialization is excluded from Rusttimer; Mechfreshworker lifecycle included. This conservative winning comparison does not relabel Rust as equivalent continuouspostJSON eligibility."
+    },
+    {
+      "cohort": "confirmation",
+      "reference": "rust-preinitialized",
+      "reference_median_ms": 1.86625,
+      "variant": "mech-ir353-compact-guarded-u16-4",
+      "median_ms": 1.1743750000000002,
+      "multiple_of_fixed_example": 0.62926992632284,
+      "speedup": 1.5891431612559872,
+      "median_paired_percent": -37.34132613470005,
+      "bootstrap95_percent": [
+        -37.8900732576114,
+        -35.81832434736655
+      ],
+      "faster_pairs": 13,
+      "pairs": 13,
+      "seed": 202611121507,
+      "scope": "Mech complete postJSON vs unchanged upstream rust_con own reported processing timer. Rustpool initialization is excluded from Rusttimer; Mechfreshworker lifecycle included. This conservative winning comparison does not relabel Rust as equivalent continuouspostJSON eligibility."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-local-facts-integration-runners-20261107-v1/build-linked-and-check.py"
+  ],
+  "exit": 0,
+  "seconds": 240.7052555831615,
+  "stdout": "after-4 linked Object audited,31 exact outputs\nafter-8 linked Object audited,31 exact outputs\ncompact-4 linked Object audited,31 exact outputs\ncompact-8 linked Object audited,31 exact outputs\nqualify-loaders.py passed\nqualify-other.py passed\n",
+  "stderr": ""
+}

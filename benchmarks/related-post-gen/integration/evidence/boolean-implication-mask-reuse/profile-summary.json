@@ -1,0 +1,1306 @@
+{
+  "schema": "mech.related-post-gen.boolean-implication-mask-reuse-post-json-native-pc-profile.v1",
+  "rows": {
+    "before": {
+      "compiler": "c4649860a5e445c1ce1bdec8503870e8a455da17",
+      "source": "/private/tmp/mech-related-ordered-subsets-reused-masks-source-20261106-v1/build/source.mec",
+      "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "profiled_timings_excluded": true,
+      "all1000_index_arrays_and_final_rust_output_exact": true,
+      "sampler": {
+        "records": 18564,
+        "record_bytes": 56,
+        "image_base": 4335828992,
+        "capacity": 60000,
+        "scans": 8978,
+        "attempts": 18719,
+        "suspended": 0,
+        "resumed": 0,
+        "states": 18571,
+        "stopped": 0,
+        "suspend_failures": 0,
+        "state_failures": 148,
+        "resume_terminated": 0,
+        "full": 0,
+        "first_ns": 1320430894171000,
+        "last_ns": 1320445893339000,
+        "last_phase_epoch": 2000,
+        "phase_changed": 6,
+        "post_json_only": true
+      },
+      "post_json_phase_gate": {
+        "all_records_within_one_odd_epoch": true,
+        "observed_epochs": 875,
+        "total_epochs": 1000
+      },
+      "top_symbol_observations": [
+        [
+          "_mech_canonical_program_entry_v1_numeric_1282",
+          489
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB4_10Invocation21begin_numeric_segment",
+          397
+        ],
+        [
+          "__RNvNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          348
+        ],
+        [
+          "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          318
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          295
+        ],
+        [
+          "_mech_canonical_program_entry_v1",
+          213
+        ],
+        [
+          "__RNvXsC_NtNtCsgDHHaSskbIF_4core5slice3cmpmNtB5_13SliceContains14slice_contains",
+          145
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_256",
+          137
+        ],
+        [
+          "__RNvMs3_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          127
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget18unscoped_remaining0INtNtCsgDHHaSskbIF_4core6option6OptionTyyEEEB10_",
+          121
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value28memory_budget_retained_bytes",
+          113
+        ],
+        [
+          "_mech_canonical_program_entry_v1_utf8_histogram",
+          111
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames14retire_prepaid",
+          110
+        ],
+        [
+          "__RNvYNCNKNvNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget20CONTROL_WORK_CONTEXT00INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTINtNtB1o_6option6OptionQIB23_NtB8_18ControlWorkContextEEEE9call_onceBc_",
+          109
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueNtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCINvMNtNtB4G_8prepared16unsigned_buffersNtB6c_25NativePreparedLibraryCall20unsigned_buffer_withB3H_NCNvB69_28unsigned_buffer_with_sublist0E0E0IB36_B35_NtNtNtB3N_8function8resident19ResidentKernelErrorEEB10_",
+          108
+        ],
+        [
+          "__RNCNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB6_10Invocation19end_numeric_segments4_0Be_",
+          104
+        ],
+        [
+          "__RNvMNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          101
+        ],
+        [
+          "__RNvMs0_NtNtCs2f6zuEJIbcT_11mech_engine8resident6budgetNtB5_23NativeLibraryWorkBudget25charge_compute_with_limit",
+          98
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames12current_leaf",
+          95
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16numeric_segmentsNtB4_10Invocation19end_numeric_segment",
+          94
+        ],
+        [
+          "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation18retire_tail_locals",
+          94
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_801",
+          94
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_572",
+          85
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          83
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          75
+        ],
+        [
+          "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation15action_required",
+          73
+        ],
+        [
+          "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          66
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          58
+        ],
+        [
+          "__RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionRNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7prepare13map_admission5GroupE6filterNCNvMs1_NtNtBP_7runtime10invocationNtB2o_10Invocation5visits5_0EBT_",
+          55
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation14selected_callsNtB4_10Invocation21prepared_library_call",
+          52
+        ],
+        [
+          "__RNvNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          47
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_459",
+          45
+        ],
+        [
+          "__RNvMs1_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation21admission_predecessor",
+          44
+        ],
+        [
+          "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation23arm_parent_continuation",
+          41
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape21evaluate_body_extents",
+          40
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1166",
+          39
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          37
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          37
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames22current_scalar_binding",
+          37
+        ],
+        [
+          "__RNvNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime5hooks13admit_current",
+          37
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_146",
+          36
+        ],
+        [
+          "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          35
+        ],
+        [
+          "__RNvMs0_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime11collections11string_spanNtB7_5State22validate_span_boundary",
+          33
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value16validate_against",
+          33
+        ],
+        [
+          "__RNvMs0_NtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation14numeric_matrixNtB7_5Value27from_unsigned_matrix_buffer",
+          33
+        ],
+        [
+          "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          32
+        ],
+        [
+          "__RNvMs1_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena3put",
+          30
+        ],
+        [
+          "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation4tailNtB6_10Invocation19begin_closed_region",
+          30
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          30
+        ],
+        [
+          "__RNvMs1_NtNtCs5noBob9g3z0_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena22retire_current_prepaid",
+          30
+        ],
+        [
+          "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          29
+        ],
+        [
+          "__RNvMs1_NtNtCs2f6zuEJIbcT_11mech_engine15native_artifact13buffer_framesNtB5_18NativeBufferFrames9fields_at",
+          28
+        ],
+        [
+          "__RNvMNtNtCs5noBob9g3z0_8mech_gpu15native_artifact4workNtB2_15NativeWorkMeter6charge",
+          28
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation8borrowedNtB4_10Invocation15borrowed_action",
+          28
+        ],
+        [
+          "__RNvMNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7prepare16frame_retirementNtB2_16FrameRetirements3get",
+          27
+        ],
+        [
+          "__RNvMs_NtNtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocation12continuationNtB6_10Invocation28complete_parent_continuation",
+          27
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames10check_copy",
+          26
+        ],
+        [
+          "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          25
+        ],
+        [
+          "__RNvMs0_NtNtNtNtCs5noBob9g3z0_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation22numeric_source_prepaid",
+          23
+        ],
+        [
+          "__RNvXNtNtCsgDHHaSskbIF_4core5slice10specializeSINtNtB6_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEINtB2_8SpecFillBI_E9spec_fillCs5noBob9g3z0_8mech_gpu",
+          23
+        ]
+      ],
+      "native_function_observations": {
+        "_mech_canonical_program_entry_v1_utf8_histogram": 111,
+        "_mech_canonical_program_entry_v1": 213,
+        "_mech_canonical_program_entry_v1_numeric_256": 137,
+        "_mech_canonical_program_entry_v1_numeric_1282": 489,
+        "_mech_canonical_program_entry_v1_numeric_146": 36,
+        "_mech_canonical_program_entry_v1_numeric_801": 94,
+        "_mech_canonical_program_entry_v1_numeric_1099": 23,
+        "_mech_canonical_program_entry_v1_numeric_572": 85,
+        "_mech_canonical_program_entry_v1_numeric_459": 45,
+        "_mech_canonical_program_entry_v1_numeric_1166": 39,
+        "_mech_canonical_program_entry_v1_numeric_1053": 20,
+        "_mech_canonical_program_entry_v1_numeric_671": 12
+      },
+      "native_pc_offsets": {
+        "_mech_canonical_program_entry_v1_utf8_histogram": {
+          "392": 4,
+          "396": 2,
+          "632": 6,
+          "800": 5,
+          "492": 4,
+          "900": 3,
+          "936": 2,
+          "612": 8,
+          "772": 7,
+          "336": 7,
+          "412": 4,
+          "332": 6,
+          "344": 7,
+          "536": 2,
+          "996": 3,
+          "372": 5,
+          "592": 12,
+          "792": 2,
+          "744": 4,
+          "544": 4,
+          "784": 2,
+          "556": 1,
+          "272": 2,
+          "984": 1,
+          "524": 4,
+          "328": 1,
+          "660": 3
+        },
+        "_mech_canonical_program_entry_v1": {
+          "6036": 46,
+          "6044": 23,
+          "133072": 9,
+          "6268": 11,
+          "14360": 2,
+          "12244": 3,
+          "338852": 4,
+          "359688": 13,
+          "6144": 8,
+          "19164": 1,
+          "9028": 1,
+          "5972": 4,
+          "6052": 4,
+          "19040": 1,
+          "17864": 1,
+          "6196": 1,
+          "329448": 3,
+          "18904": 2,
+          "14576": 1,
+          "17852": 2,
+          "18892": 1,
+          "358860": 1,
+          "6232": 5,
+          "14476": 1,
+          "17692": 1,
+          "8940": 3,
+          "6192": 1,
+          "18804": 2,
+          "18856": 2,
+          "17876": 1,
+          "6092": 7,
+          "14480": 1,
+          "6216": 1,
+          "13800": 2,
+          "18508": 2,
+          "359136": 2,
+          "14356": 1,
+          "6164": 4,
+          "14320": 1,
+          "359120": 2,
+          "18860": 1,
+          "359212": 1,
+          "6148": 3,
+          "20908": 1,
+          "14424": 1,
+          "12144": 1,
+          "9044": 1,
+          "19060": 2,
+          "19000": 2,
+          "12700": 1,
+          "123672": 1,
+          "14640": 1,
+          "6080": 1,
+          "14260": 1,
+          "18840": 1,
+          "14468": 2,
+          "17784": 2,
+          "359208": 1,
+          "13852": 1,
+          "17796": 2,
+          "359040": 1,
+          "19096": 1,
+          "14148": 1,
+          "18900": 1,
+          "14224": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_256": {
+          "1648": 2,
+          "5028": 9,
+          "6148": 5,
+          "3504": 6,
+          "6176": 1,
+          "6848": 6,
+          "4156": 8,
+          "5528": 2,
+          "5504": 5,
+          "2716": 1,
+          "3408": 4,
+          "6900": 7,
+          "2820": 4,
+          "4140": 6,
+          "3532": 10,
+          "5476": 4,
+          "6048": 5,
+          "2164": 4,
+          "1572": 3,
+          "4176": 6,
+          "6032": 5,
+          "6752": 1,
+          "6100": 3,
+          "3416": 5,
+          "5448": 6,
+          "5576": 3,
+          "592": 4,
+          "6088": 3,
+          "4596": 4,
+          "6904": 1,
+          "5588": 1,
+          "2724": 1,
+          "5596": 1,
+          "4152": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1282": {
+          "10136": 1,
+          "11924": 11,
+          "9332": 13,
+          "17052": 5,
+          "8660": 19,
+          "16740": 24,
+          "16964": 21,
+          "16856": 13,
+          "9320": 7,
+          "9360": 39,
+          "19628": 1,
+          "10344": 6,
+          "16760": 2,
+          "16952": 28,
+          "13612": 1,
+          "16768": 36,
+          "10508": 2,
+          "5360": 5,
+          "10340": 16,
+          "7496": 6,
+          "16744": 33,
+          "10424": 3,
+          "10420": 1,
+          "10304": 2,
+          "16872": 9,
+          "12880": 2,
+          "16020": 9,
+          "10416": 1,
+          "6792": 2,
+          "10336": 2,
+          "12940": 2,
+          "16776": 6,
+          "1492": 2,
+          "16960": 3,
+          "8624": 8,
+          "5424": 8,
+          "18476": 1,
+          "16044": 5,
+          "10116": 6,
+          "17036": 2,
+          "10392": 1,
+          "11908": 3,
+          "4400": 4,
+          "14968": 12,
+          "17152": 2,
+          "7500": 10,
+          "3048": 1,
+          "8600": 3,
+          "12904": 3,
+          "7492": 1,
+          "10448": 3,
+          "19780": 2,
+          "10112": 1,
+          "5376": 6,
+          "17616": 2,
+          "19716": 1,
+          "10460": 1,
+          "16712": 1,
+          "17000": 3,
+          "14272": 4,
+          "10384": 1,
+          "8656": 1,
+          "10292": 1,
+          "1516": 1,
+          "16896": 3,
+          "10464": 5,
+          "8596": 6,
+          "19632": 1,
+          "16800": 7,
+          "8616": 1,
+          "6120": 1,
+          "7476": 1,
+          "10412": 1,
+          "10272": 1,
+          "6104": 3,
+          "10552": 2,
+          "10088": 2,
+          "10124": 2,
+          "10444": 1,
+          "18484": 1,
+          "7448": 1,
+          "10096": 1,
+          "16944": 2,
+          "4404": 1,
+          "10328": 1,
+          "10348": 2,
+          "11228": 2,
+          "17056": 2,
+          "10300": 2,
+          "10252": 1,
+          "10224": 1,
+          "19668": 1,
+          "10388": 1,
+          "12888": 1,
+          "14940": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_146": {
+          "712": 2,
+          "420": 7,
+          "652": 4,
+          "440": 3,
+          "464": 6,
+          "20": 1,
+          "756": 2,
+          "92": 2,
+          "772": 3,
+          "668": 2,
+          "764": 1,
+          "252": 1,
+          "136": 1,
+          "232": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_801": {
+          "5784": 5,
+          "4848": 4,
+          "4968": 7,
+          "7960": 1,
+          "4948": 1,
+          "8624": 1,
+          "7856": 1,
+          "6812": 3,
+          "4068": 7,
+          "8684": 4,
+          "8816": 2,
+          "8664": 3,
+          "9496": 2,
+          "2472": 2,
+          "3156": 1,
+          "3956": 3,
+          "9544": 1,
+          "3240": 2,
+          "7828": 2,
+          "1300": 2,
+          "2376": 1,
+          "8604": 3,
+          "4076": 1,
+          "5760": 2,
+          "7900": 2,
+          "700": 1,
+          "7956": 1,
+          "7884": 1,
+          "7876": 1,
+          "1904": 2,
+          "1824": 3,
+          "7980": 1,
+          "5812": 4,
+          "8100": 1,
+          "8032": 1,
+          "3256": 2,
+          "8788": 3,
+          "4820": 2,
+          "8740": 2,
+          "9588": 1,
+          "3184": 1,
+          "7328": 1,
+          "4896": 1,
+          "8004": 1,
+          "7840": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1099": {
+          "716": 4,
+          "248": 12,
+          "836": 3,
+          "508": 1,
+          "460": 3
+        },
+        "_mech_canonical_program_entry_v1_numeric_572": {
+          "1772": 6,
+          "2716": 10,
+          "1388": 9,
+          "2964": 3,
+          "3260": 7,
+          "1804": 7,
+          "2096": 4,
+          "1412": 5,
+          "3696": 8,
+          "2392": 4,
+          "3284": 7,
+          "3480": 7,
+          "3488": 4,
+          "2752": 3,
+          "2112": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_459": {
+          "880": 3,
+          "468": 7,
+          "684": 8,
+          "656": 4,
+          "1240": 6,
+          "1112": 7,
+          "216": 8,
+          "1336": 2
+        },
+        "_mech_canonical_program_entry_v1_numeric_1166": {
+          "3284": 1,
+          "2964": 4,
+          "2716": 2,
+          "3480": 3,
+          "3488": 2,
+          "2392": 1,
+          "2096": 4,
+          "1388": 7,
+          "3260": 1,
+          "3696": 2,
+          "1772": 4,
+          "1804": 5,
+          "1076": 2,
+          "2408": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1053": {
+          "1240": 3,
+          "216": 4,
+          "468": 3,
+          "656": 3,
+          "1336": 3,
+          "1112": 2,
+          "684": 1,
+          "880": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_671": {
+          "644": 1,
+          "1988": 2,
+          "904": 1,
+          "1644": 2,
+          "1448": 1,
+          "1884": 3,
+          "1416": 1,
+          "372": 1
+        }
+      },
+      "limitations": [
+        "Register observations are statistical samples, not executed instruction counts or CPU-time shares.",
+        "Restored program and original JSON text are reused. Every epoch begins after JSON decoding and ends after RelatedPosts materialization, matching the continuous post-JSON boundary. Verification and teardown occur with the gate closed.",
+        "Every timed value from this profiler is excluded from comparative latency."
+      ]
+    },
+    "after": {
+      "compiler": "cbe5b47839b4fe2300fe16ebc1fcacfcfa03f98b",
+      "source": "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/reuse-4/build/source.mec",
+      "source_sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99",
+      "profiled_timings_excluded": true,
+      "all1000_index_arrays_and_final_rust_output_exact": true,
+      "sampler": {
+        "records": 3893,
+        "record_bytes": 56,
+        "image_base": 4310417408,
+        "capacity": 60000,
+        "scans": 1578,
+        "attempts": 3994,
+        "suspended": 0,
+        "resumed": 0,
+        "states": 3900,
+        "stopped": 0,
+        "suspend_failures": 0,
+        "state_failures": 94,
+        "resume_terminated": 0,
+        "full": 0,
+        "first_ns": 1320449979416000,
+        "last_ns": 1320453979512000,
+        "last_phase_epoch": 2000,
+        "phase_changed": 6,
+        "post_json_only": true
+      },
+      "post_json_phase_gate": {
+        "all_records_within_one_odd_epoch": true,
+        "observed_epochs": 1000,
+        "total_epochs": 1000
+      },
+      "top_symbol_observations": [
+        [
+          "_mech_canonical_program_entry_v1_numeric_1282",
+          590
+        ],
+        [
+          "_mech_canonical_program_entry_v1_utf8_histogram",
+          202
+        ],
+        [
+          "_mech_canonical_program_entry_v1",
+          178
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_256",
+          138
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_801",
+          97
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_459",
+          96
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_572",
+          86
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1166",
+          66
+        ],
+        [
+          "__RNvNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections4data7element",
+          62
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_107",
+          38
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1053",
+          25
+        ],
+        [
+          "__RNvXs2_NtNtCsfBfheTzTBUt_9mech_core8snapshot8encodingNtB5_18LengthSnapshotSinkNtB5_16SnapshotByteSink14write_sequence",
+          24
+        ],
+        [
+          "__RNvMs_NtNtCsfBfheTzTBUt_9mech_core8snapshot8sequenceNtB4_15SequenceStorage4view",
+          23
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19ValueFootprintErrorEBM_",
+          20
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_1099",
+          18
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections10row_blocksNtB4_5State14push_row_block",
+          14
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact6memory18NativeTypedStorageINtNtB4_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueEEEBN_",
+          14
+        ],
+        [
+          "__RINvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding19visit_sequence_workNtNtNtB6_11memory_plan5error15MemoryPlanErrorNCINvMs_NtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general4liveNtB1Y_13InputDataMemo7measureNCINvB1Y_14footprint_implNtNtNtNtB20_23native_collection_calls10invocation11measurement22NativeMeasurementCheckEs1_0E0EB24_",
+          13
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_671",
+          10
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot8encoding27retained_sequence_footprint",
+          10
+        ],
+        [
+          "__RNvNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers11lock_escrow",
+          7
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections9utf8_readNtB4_5State17prepare_utf8_read",
+          7
+        ],
+        [
+          "__RNvCsg2Tlac8ZPZa_6runner3run",
+          6
+        ],
+        [
+          "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner4PostEENCNvB1R_10post_viewss_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2H_8for_each4callNtB1R_8PostViewNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB48_3VecB3K_E14extend_trustedBN_E0E0EB1R_",
+          6
+        ],
+        [
+          "_mech_canonical_program_entry_v1_numeric_505",
+          6
+        ],
+        [
+          "__RINvNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime11collections9utf8_read5fixedNtNtNtB6_4maps9utf8_read4CellEBc_",
+          6
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget25charge_compute_with_limits0_0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          5
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation9histogramNtB4_10Invocation16histogram_helper",
+          5
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7sessionNtB4_8Prepared10run_worker",
+          4
+        ],
+        [
+          "__RNvNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime5hooks6helper",
+          4
+        ],
+        [
+          "__RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_3zip3ZipINtNtNtBc_5slice4iter4IterNtCsg2Tlac8ZPZa_6runner8PostViewEINtB1g_11ChunksExactyEENCNvB1F_3run0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB2L_8for_each4callNtB1F_7RelatedNCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB4b_3VecB3O_E14extend_trustedBN_E0E0EB1F_",
+          4
+        ],
+        [
+          "__RNvMs1_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation5visit",
+          4
+        ],
+        [
+          "__RNvMs3_NtNtCsfBfheTzTBUt_9mech_core14memory_runtime10allocationINtB5_18FixedHostArenaPlanINtNtCsgDHHaSskbIF_4core6option6OptionNtNtNtB9_8snapshot10validation5ValueEE11materializeCs8ajBNycbQ5U_8mech_gpu",
+          4
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime7session14CallCacheEntryEBQ_",
+          3
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueECs8ajBNycbQ5U_8mech_gpu",
+          3
+        ],
+        [
+          "__RNvNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10retirement3run",
+          3
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core6schema5shape18evaluate_dimension",
+          3
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation14numeric_writesNtB4_10Invocation21prepare_numeric_write",
+          3
+        ],
+        [
+          "__RNvMs1_NtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact6valuesNtB5_16NativeValueArena14retire_current",
+          3
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident7general23native_collection_calls10invocation31NativeCollectionInvocationErrorEBQ_",
+          3
+        ],
+        [
+          "__RNvNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget7workers17next_after_native",
+          2
+        ],
+        [
+          "__RNvCsfBzVIH1HIC6_7___rustc11___rdl_alloc",
+          2
+        ],
+        [
+          "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow3imp12drop_handler",
+          2
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvBW_20observe_control_work0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          2
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCNvMs0_BW_NtBW_23NativeLibraryWorkBudget6charge0INtNtCsgDHHaSskbIF_4core6result6ResultuNtNtNtCsfBfheTzTBUt_9mech_core8function8resident19ResidentKernelErrorEEB10_",
+          2
+        ],
+        [
+          "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation26SnapshotBudgetRegistrationEBM_",
+          2
+        ],
+        [
+          "__RNvMs3_NtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact17iteration_runtimeINtB5_11ControlViewNtNtNtB7_7program5image23NativeProgramDescriptorE16visit_from_entryB9_",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core11memory_plan6derive26derive_scratch_allocations",
+          2
+        ],
+        [
+          "__RINvMs2_NtNtCsgirOGyZpP7g_3std6thread5localINtB6_8LocalKeyNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget18ControlWorkContextE4withNCINvMs0_BW_NtBW_23NativeLibraryWorkBudget16with_call_limitsINtNtCsgDHHaSskbIF_4core6result6ResultINtNtB3a_6option6OptionNtNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation5ValueENtNtNtNtBY_7general23native_collection_calls10invocation31NativeCollectionInvocationErrorENCNvMNtNtB54_8prepared12string_readsNtB6z_25NativePreparedLibraryCall21string_matrix_elements_0E0IB36_B35_NtNtNtB4a_8function8resident19ResidentKernelErrorEEB10_",
+          2
+        ],
+        [
+          "__RNvNtNtCs2f6zuEJIbcT_11mech_engine8resident7numeric26snapshot_matrix_dimensions",
+          2
+        ],
+        [
+          "__RNvNtNtCsfBfheTzTBUt_9mech_core8snapshot10validation13finalize_data",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation16readonly_numericNtB4_10Invocation19begin_numeric_views",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtCs2f6zuEJIbcT_11mech_engine8resident6budget22native_turn_plan_cache17string_projectionNtB2_28NativeProjectionIndexContext5check",
+          2
+        ],
+        [
+          "__RNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB5_5Value24into_memory_budget_inner",
+          2
+        ],
+        [
+          "__RNvMNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation13buffer_framesNtB4_10Invocation19buffer_frame_action",
+          2
+        ],
+        [
+          "__RNCNvMs7_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtB7_5Value24into_memory_budget_inners3_0Bb_",
+          2
+        ],
+        [
+          "__RNvYNCNvMs4_NtNtCsfBfheTzTBUt_9mech_core8snapshot10validationNtBa_21FrozenSnapshotStorage26unlink_budget_registration0INtNtNtCsgDHHaSskbIF_4core3ops8function6FnOnceTQINtNtB1Z_6option6OptionINtNtCsgKscDXrlV49_5alloc4sync3ArcNtBa_26SnapshotBudgetRegistrationEEEE9call_onceBe_",
+          2
+        ],
+        [
+          "__RNvMs_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime13buffer_framesNtB4_12BufferFrames6retire",
+          2
+        ],
+        [
+          "__RNvMs1_NtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocationNtB5_10Invocation10needs_move",
+          2
+        ],
+        [
+          "__RNvNtNtNtNtNtNtCs8ajBNycbQ5U_8mech_gpu15native_artifact7program7runtime10invocation8parallel9admission9supported",
+          2
+        ]
+      ],
+      "native_function_observations": {
+        "_mech_canonical_program_entry_v1_utf8_histogram": 202,
+        "_mech_canonical_program_entry_v1": 178,
+        "_mech_canonical_program_entry_v1_numeric_572": 86,
+        "_mech_canonical_program_entry_v1_numeric_1282": 590,
+        "_mech_canonical_program_entry_v1_numeric_459": 96,
+        "_mech_canonical_program_entry_v1_numeric_801": 97,
+        "_mech_canonical_program_entry_v1_numeric_671": 10,
+        "_mech_canonical_program_entry_v1_numeric_256": 138,
+        "_mech_canonical_program_entry_v1_numeric_1166": 66,
+        "_mech_canonical_program_entry_v1_numeric_1053": 25,
+        "_mech_canonical_program_entry_v1_numeric_107": 38,
+        "_mech_canonical_program_entry_v1_numeric_1099": 18,
+        "_mech_canonical_program_entry_v1_numeric_505": 6
+      },
+      "native_pc_offsets": {
+        "_mech_canonical_program_entry_v1_utf8_histogram": {
+          "332": 9,
+          "772": 9,
+          "556": 5,
+          "336": 21,
+          "592": 23,
+          "800": 9,
+          "392": 10,
+          "900": 4,
+          "544": 3,
+          "660": 1,
+          "412": 3,
+          "492": 11,
+          "632": 5,
+          "996": 10,
+          "612": 13,
+          "744": 6,
+          "888": 2,
+          "344": 14,
+          "512": 4,
+          "524": 4,
+          "792": 5,
+          "372": 10,
+          "984": 3,
+          "272": 6,
+          "784": 3,
+          "396": 2,
+          "684": 2,
+          "328": 2,
+          "388": 2,
+          "936": 1
+        },
+        "_mech_canonical_program_entry_v1": {
+          "359796": 12,
+          "5976": 11,
+          "337608": 1,
+          "6148": 10,
+          "366768": 1,
+          "6040": 53,
+          "6048": 30,
+          "366700": 1,
+          "6272": 5,
+          "6232": 2,
+          "6056": 6,
+          "6196": 1,
+          "6236": 6,
+          "6152": 4,
+          "6348": 7,
+          "6096": 7,
+          "6168": 4,
+          "133208": 6,
+          "416508": 1,
+          "338964": 2,
+          "123808": 1,
+          "329576": 3,
+          "6084": 3,
+          "6264": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_572": {
+          "2752": 6,
+          "3480": 8,
+          "1388": 12,
+          "2096": 6,
+          "3260": 6,
+          "1804": 10,
+          "3284": 6,
+          "768": 1,
+          "2716": 5,
+          "1772": 4,
+          "3488": 7,
+          "708": 1,
+          "1412": 2,
+          "2964": 4,
+          "3696": 2,
+          "2392": 4,
+          "2408": 2
+        },
+        "_mech_canonical_program_entry_v1_numeric_1282": {
+          "8596": 8,
+          "16768": 57,
+          "12904": 7,
+          "7500": 7,
+          "13612": 8,
+          "4396": 2,
+          "6120": 1,
+          "16872": 14,
+          "10464": 13,
+          "8660": 23,
+          "9360": 58,
+          "7496": 6,
+          "16856": 20,
+          "10088": 3,
+          "14968": 12,
+          "16740": 21,
+          "11924": 5,
+          "4348": 2,
+          "10412": 2,
+          "16744": 46,
+          "10344": 10,
+          "16952": 24,
+          "5376": 6,
+          "10444": 1,
+          "10340": 18,
+          "17036": 3,
+          "9320": 7,
+          "10456": 1,
+          "10068": 1,
+          "3048": 2,
+          "16964": 13,
+          "16776": 14,
+          "12940": 7,
+          "16020": 11,
+          "12880": 6,
+          "5424": 6,
+          "8624": 5,
+          "19780": 2,
+          "9332": 7,
+          "10224": 1,
+          "17052": 10,
+          "19716": 5,
+          "10508": 1,
+          "10552": 4,
+          "5360": 4,
+          "10252": 1,
+          "16044": 2,
+          "4400": 6,
+          "16800": 3,
+          "17028": 1,
+          "18048": 1,
+          "12892": 2,
+          "10236": 3,
+          "10424": 3,
+          "17152": 1,
+          "16896": 4,
+          "10160": 2,
+          "10388": 1,
+          "6104": 1,
+          "1524": 1,
+          "10300": 2,
+          "17616": 1,
+          "10348": 2,
+          "1516": 2,
+          "10448": 1,
+          "16860": 1,
+          "19668": 1,
+          "18908": 2,
+          "13628": 4,
+          "10116": 2,
+          "6792": 1,
+          "10308": 1,
+          "17056": 4,
+          "5408": 2,
+          "14272": 2,
+          "17000": 9,
+          "10136": 2,
+          "10460": 1,
+          "10124": 1,
+          "10420": 3,
+          "16868": 1,
+          "11228": 2,
+          "18476": 2,
+          "11908": 3,
+          "7476": 1,
+          "10384": 2,
+          "2328": 1,
+          "8600": 2,
+          "2340": 2,
+          "19628": 1,
+          "17092": 1,
+          "16944": 1,
+          "19868": 1,
+          "14944": 1,
+          "10304": 1,
+          "16712": 1,
+          "12952": 2,
+          "10472": 1,
+          "17120": 1,
+          "6124": 1,
+          "8620": 1,
+          "10316": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_459": {
+          "684": 18,
+          "1240": 9,
+          "216": 16,
+          "468": 5,
+          "1112": 9,
+          "656": 10,
+          "1336": 17,
+          "880": 12
+        },
+        "_mech_canonical_program_entry_v1_numeric_801": {
+          "7960": 1,
+          "7908": 2,
+          "3184": 2,
+          "4968": 7,
+          "8664": 2,
+          "1904": 2,
+          "3256": 8,
+          "8032": 2,
+          "4068": 5,
+          "3992": 1,
+          "5760": 2,
+          "4924": 3,
+          "8788": 4,
+          "6812": 1,
+          "1824": 2,
+          "7884": 2,
+          "7980": 1,
+          "5812": 3,
+          "7840": 1,
+          "3156": 1,
+          "8100": 3,
+          "4940": 1,
+          "9444": 2,
+          "4076": 3,
+          "7828": 3,
+          "8684": 3,
+          "8004": 2,
+          "5784": 6,
+          "3956": 2,
+          "4848": 4,
+          "6308": 3,
+          "8604": 3,
+          "9248": 1,
+          "3240": 1,
+          "7328": 1,
+          "8728": 1,
+          "9544": 1,
+          "2472": 1,
+          "4896": 1,
+          "2376": 1,
+          "8740": 1,
+          "7856": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_671": {
+          "1416": 2,
+          "1644": 1,
+          "1884": 1,
+          "1988": 1,
+          "1448": 1,
+          "2140": 1,
+          "1900": 1,
+          "1904": 1,
+          "1112": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_256": {
+          "5448": 5,
+          "4152": 3,
+          "3492": 2,
+          "3532": 13,
+          "4176": 8,
+          "5528": 7,
+          "6148": 6,
+          "6032": 8,
+          "1152": 2,
+          "3416": 4,
+          "2820": 12,
+          "3504": 3,
+          "2164": 2,
+          "5504": 6,
+          "6900": 5,
+          "2716": 1,
+          "5028": 4,
+          "6848": 4,
+          "4140": 10,
+          "4156": 2,
+          "6088": 1,
+          "6752": 1,
+          "6852": 2,
+          "6916": 1,
+          "6800": 1,
+          "1572": 2,
+          "5576": 3,
+          "6572": 1,
+          "5476": 6,
+          "1648": 1,
+          "6100": 1,
+          "4596": 2,
+          "3512": 1,
+          "6076": 2,
+          "6048": 2,
+          "5588": 1,
+          "592": 2,
+          "2724": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1166": {
+          "1804": 10,
+          "2716": 3,
+          "1388": 9,
+          "3284": 5,
+          "1772": 6,
+          "3480": 7,
+          "2964": 3,
+          "2408": 1,
+          "2096": 3,
+          "2112": 2,
+          "3520": 2,
+          "1076": 4,
+          "368": 3,
+          "2752": 2,
+          "1412": 2,
+          "3260": 2,
+          "708": 1,
+          "3696": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1053": {
+          "468": 4,
+          "656": 5,
+          "216": 7,
+          "880": 3,
+          "684": 3,
+          "1336": 1,
+          "1112": 1,
+          "1240": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_107": {
+          "3816": 2,
+          "576": 2,
+          "2564": 9,
+          "1648": 1,
+          "3284": 9,
+          "3300": 4,
+          "1744": 1,
+          "2952": 1,
+          "3768": 1,
+          "2568": 1,
+          "3616": 2,
+          "1292": 1,
+          "1776": 1,
+          "2972": 1,
+          "1656": 1,
+          "1724": 1
+        },
+        "_mech_canonical_program_entry_v1_numeric_1099": {
+          "716": 2,
+          "248": 10,
+          "836": 1,
+          "460": 2,
+          "256": 3
+        },
+        "_mech_canonical_program_entry_v1_numeric_505": {
+          "248": 4,
+          "460": 1,
+          "716": 1
+        }
+      },
+      "limitations": [
+        "Register observations are statistical samples, not executed instruction counts or CPU-time shares.",
+        "Restored program and original JSON text are reused. Every epoch begins after JSON decoding and ends after RelatedPosts materialization, matching the continuous post-JSON boundary. Verification and teardown occur with the gate closed.",
+        "Every timed value from this profiler is excluded from comparative latency."
+      ]
+    }
+  }
+}

@@ -1,0 +1,504 @@
+{
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.399594020447694,
+      "control": 15.668657957925461,
+      "mean_reduction_fraction": 0.017172111242728993
+    },
+    {
+      "candidate": 15.527813687571324,
+      "control": 15.721036562463269,
+      "mean_reduction_fraction": 0.012290721042739539
+    }
+  ],
+  "base_commit": "6b29f4a0fdacd5cbad2356144e402dae42323aff",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "6b29f4a0fdacd5cbad2356144e402dae42323aff",
+      "binary": "/private/tmp/mech-reachability-worklist-20261115/candidate",
+      "binary_sha256": "b72ff590c3ea6760f9a77372ba2bb6761f3b2d2885cdbef029ee040509bb51ba",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "8a313dd1bf6550f9546e161bc5ccb0fc32ded92ca5e8879053936e2ff339f073",
+      "seconds": 250.46175912488252
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "6b29f4a0fdacd5cbad2356144e402dae42323aff",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "8a313dd1bf6550f9546e161bc5ccb0fc32ded92ca5e8879053936e2ff339f073",
+      "seconds": 6.582359750056639
+    },
+    "candidate-cli-check": {
+      "base_commit": "6b29f4a0fdacd5cbad2356144e402dae42323aff",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "8a313dd1bf6550f9546e161bc5ccb0fc32ded92ca5e8879053936e2ff339f073",
+      "seconds": 8.967875791946426
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66939952,
+      "path": "/private/tmp/mech-reachability-worklist-20261115/candidate",
+      "sha256": "b72ff590c3ea6760f9a77372ba2bb6761f3b2d2885cdbef029ee040509bb51ba"
+    },
+    "control": {
+      "bytes": 66939952,
+      "path": "/private/tmp/mech-reachability-worklist-20261115/control",
+      "sha256": "95765da02083977c08a4cbe9368e841ef7922006a0a02f0e70b9cd2d5e1aea79"
+    },
+    "focused/tests": {
+      "bytes": 1014024,
+      "path": "/private/tmp/mech-reachability-worklist-20261115/focused/tests",
+      "sha256": "2b21af1d768b326edd6069d2114751dfefc1418e71d3dbbc9370ebdd853e2378"
+    }
+  },
+  "decision": {
+    "adverse": "Fullnative link+1.32536%,handoff+5.53423%(0.053ms). Objectparse+0.17720%,catalog+3.80561%,preparation+0.33579%,sourceCFG+0.56483%,canonicalLowering+0.01275%,RSS+0.00292%,footprint+0.00266%. Allstage/observation movement remains. No linker or unrelated-stage implementationchange; movements observational.",
+    "blocks": [
+      {
+        "candidate": 15.399594020447694,
+        "control": 15.668657957925461,
+        "mean_reduction_fraction": 0.017172111242728993
+      },
+      {
+        "candidate": 15.527813687571324,
+        "control": 15.721036562463269,
+        "mean_reduction_fraction": 0.012290721042739539
+      }
+    ],
+    "cleanup_reduction": 0.05451482855615575,
+    "decision": "retain",
+    "default_serial_byte_gate_passed": true,
+    "goal_complete": false,
+    "instruction_reduction": 0.004060503086306455,
+    "reason": "Complete source-to-executable1.472734%faster, bothABBA/BAABblocks1.7172%/1.2291%faster. Objectcompiler1.393529%lowerbothblocks0.8377%/1.9451%;cleanupinclcompaction5.451483%and instructions0.406050%lower. All4outputs/complete metadata/wholeexe and14fixturepairs identical;3focused suites/compilercheckbuild/explicitnativeCLIcheck pass. Separatedefault0gate reproducesall4outputs andcompleteexe.",
+    "selection": "Both savedC5BsamplecallerPCs normalize0x1022cba08; disassembly proves pending.extend successor bulkcopy. Earlier32rowFIFOshift guess disproved; no FIFOchange. PriorC5Bsource reach.rs matchescurrent957reference exactly. Raw/demangled stacks and bridge/analysis, ASLRbases+PCs, boundeddisassembly/MachOheaders retained.",
+    "setup_failures": [],
+    "source_to_executable_candidate_seconds": 15.463703854009509,
+    "source_to_executable_control_seconds": 15.694847260194365,
+    "source_to_executable_reduction": 0.014727343462021869
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "focused_tests": 3,
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.13984091696329415,
+        0.1275650830939412,
+        0.1291094170883298,
+        0.13856733310967684
+      ],
+      "control": [
+        0.12893087486736476,
+        0.1322999580297619,
+        0.13441199995577335,
+        0.13244091696105897
+      ],
+      "mean_reduction_fraction": -0.01325358040982838
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0010472910944372416,
+        0.0010090828873217106,
+        0.0009910420048981905,
+        0.001008792081847787
+      ],
+      "control": [
+        0.0009320001117885113,
+        0.0009574168361723423,
+        0.0009658751077950001,
+        0.0009882079903036356
+      ],
+      "mean_reduction_fraction": -0.055342271340289795
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.35562437493354,
+        15.443563665961847,
+        15.610459333984181,
+        15.445168041158468
+      ],
+      "control": [
+        15.493089207913727,
+        15.844226707937196,
+        15.658567749895155,
+        15.783505375031382
+      ],
+      "mean_reduction_fraction": 0.014727343462021869
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        15.21473616687581,
+        15.314989499980584,
+        15.480358874890953,
+        15.305591915966943
+      ],
+      "control": [
+        15.363226332934573,
+        15.710969333071262,
+        15.523189874831587,
+        15.65007625008002
+      ],
+      "mean_reduction_fraction": 0.014969049442255522
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.023049875,
+        0.023240208,
+        0.02313675,
+        0.023289291
+      ],
+      "control": [
+        0.02317075,
+        0.023058459,
+        0.023360666,
+        0.023437292
+      ],
+      "mean_reduction_fraction": 0.003343571668693257
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09397562500089407,
+        0.09493499994277954,
+        0.09326958283782005,
+        0.09393058391287923
+      ],
+      "control": [
+        0.09385195793583989,
+        0.09400220797397196,
+        0.09399474994279444,
+        0.09421391692012548
+      ],
+      "mean_reduction_fraction": -0.0001275290123394779
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.035971875,
+        0.036065916,
+        0.038418333,
+        0.036456542
+      ],
+      "control": [
+        0.034912,
+        0.035434833,
+        0.035626458,
+        0.035553416
+      ],
+      "mean_reduction_fraction": -0.03805613169534139
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        2.969089249847457,
+        2.983381374971941,
+        2.962444458156824,
+        2.9622034169733524
+      ],
+      "control": [
+        3.089075082913041,
+        3.097186000086367,
+        3.2051079999655485,
+        3.1705608749762177
+      ],
+      "mean_reduction_fraction": 0.05451482855615575
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.821843707934022,
+        2.8357910001650453,
+        2.8150874581187963,
+        2.814933208981529
+      ],
+      "control": [
+        2.9417414169292897,
+        2.949441875098273,
+        3.057437499985099,
+        3.023520209128037
+      ],
+      "mean_reduction_fraction": 0.05717320117396618
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14724554191343486,
+        0.14759037480689585,
+        0.14735700003802776,
+        0.14727020799182355
+      ],
+      "control": [
+        0.14733366598375142,
+        0.14774412498809397,
+        0.14767049998044968,
+        0.14704066584818065
+      ],
+      "mean_reduction_fraction": 0.0005524553258190457
+    },
+    "compiler_seconds": {
+      "candidate": [
+        15.199355042,
+        15.364016583,
+        15.227263792,
+        15.229364792
+      ],
+      "control": [
+        15.38015375,
+        15.441415584,
+        15.520064,
+        15.540715542000001
+      ],
+      "mean_reduction_fraction": 0.013935293062775855
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009118417,
+        0.009278,
+        0.00918625,
+        0.009103666
+      ],
+      "control": [
+        0.009137333,
+        0.009234042,
+        0.009232334,
+        0.00912825
+      ],
+      "mean_reduction_fraction": 0.0012421335872664363
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.577699875,
+        1.600291666,
+        1.58874525,
+        1.592613791
+      ],
+      "control": [
+        1.595410916,
+        1.596789666,
+        1.591202833,
+        1.5960739579999998
+      ],
+      "mean_reduction_fraction": 0.003154927876252489
+    },
+    "instructions": {
+      "candidate": [
+        221744864799,
+        221760621982,
+        221747315203,
+        221752734686
+      ],
+      "control": [
+        222669155914,
+        222649126723,
+        222651662478,
+        222651964568
+      ],
+      "mean_reduction_fraction": 0.004060503086306455
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4490264576,
+        4489756672,
+        4489756672,
+        4489756672
+      ],
+      "control": [
+        4489740288,
+        4489740288,
+        4489281536,
+        4490248192
+      ],
+      "mean_reduction_fraction": -2.9193590912024447e-05
+    },
+    "native_seconds": {
+      "candidate": [
+        11.683545916,
+        11.8246575,
+        11.689066125,
+        11.695672166
+      ],
+      "control": [
+        11.852133166,
+        11.910590417,
+        11.988251875,
+        12.002554125
+      ],
+      "mean_reduction_fraction": 0.018021450634433722
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.0338028338737786,
+        2.052641457878053,
+        2.038980499841273,
+        2.043305540923029
+      ],
+      "control": [
+        2.040848125005141,
+        2.0484150408301502,
+        2.049531291006133,
+        2.0498212079983205
+      ],
+      "mean_reduction_fraction": 0.002428411973099953
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.86919975,
+        1.86972,
+        1.8779415,
+        1.871443583
+      ],
+      "control": [
+        1.864656,
+        1.865537125,
+        1.871637625,
+        1.873227916
+      ],
+      "mean_reduction_fraction": -0.001772048567357798
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4467576528,
+        4467052216,
+        4467052216,
+        4467052216
+      ],
+      "control": [
+        4467052216,
+        4467052216,
+        4466593464,
+        4467560120
+      ],
+      "mean_reduction_fraction": -2.65924075852908e-05
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.6012902499642223,
+        1.6320854590740055,
+        1.6000816251616925,
+        1.5994990000035614
+      ],
+      "control": [
+        1.6074345840606838,
+        1.6008742090780288,
+        1.6010113339871168,
+        1.6021075421012938
+      ],
+      "mean_reduction_fraction": -0.0033578582005517887
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.3184147907886654,
+        2.3831070840824395,
+        2.3165868329815567,
+        2.3210367502178997
+      ],
+      "control": [
+        2.32179387495853,
+        2.320864292094484,
+        2.3246324160136282,
+        2.319401166867465
+      ],
+      "mean_reduction_fraction": -0.005648266309348227
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        15.265178666915745,
+        15.431548916036263,
+        15.294417625060305,
+        15.29654504195787
+      ],
+      "control": [
+        15.448892125161365,
+        15.508734375005588,
+        15.588077709078789,
+        15.61112462496385
+      ],
+      "mean_reduction_fraction": 0.013982994315196673
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "patch_sha256": "8a313dd1bf6550f9546e161bc5ccb0fc32ded92ca5e8879053936e2ff339f073",
+  "scope": "Immutable-CFG reachability queues each non-stop block once. Same full boolean results and32-rowFIFOcache, same61flags/twoworkers/pinnedmimalloc. Eight uncontended Object observations; complete source-to-executable cohort if present remains separate. Exactall4outputs/complete metadata/wholeexe before primary timing. No runtime/grammar/proof changes or sub-ten-second claim.",
+  "source_commit": "d26cf2c65eac2f5978cabba257bb8bebbe4b0a80",
+  "source_state": {
+    "base_commit": "6b29f4a0fdacd5cbad2356144e402dae42323aff",
+    "files": [
+      {
+        "candidate_sha256": "7938a499d72fa134b31ac4ac49921c9e9da1ecea81cbd43087ef8eef3e6650d0",
+        "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/identity_routes/reach.rs",
+        "sha256": "2125514765f0cc597c288c42c9a8e30f2ec25010f09d1e121ce3db4995ee464f"
+      }
+    ],
+    "patch_sha256": "8a313dd1bf6550f9546e161bc5ccb0fc32ded92ca5e8879053936e2ff339f073",
+    "scope": "Exact immutable-CFG reachability marks/enqueues each non-stop block once rather than bulk-enqueueing every successor and dropping duplicates at pop. Same final boolean vector and existing32-row FIFO memo, no eligibility/proof/grammar/runtime change. Original512shortgraphs plus newparallel-edge/stopped-cycle cases. One-file entire frozen patch."
+  }
+}

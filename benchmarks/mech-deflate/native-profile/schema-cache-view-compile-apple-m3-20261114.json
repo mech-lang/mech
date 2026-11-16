@@ -1,0 +1,794 @@
+{
+  "balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 17.378732583,
+        "control": 17.3628600625,
+        "mean_reduction_fraction": -0.0009141650881747676
+      },
+      "frontend_seconds": {
+        "candidate": 2.4742280835,
+        "control": 2.531832938,
+        "mean_reduction_fraction": 0.022752233623085982
+      },
+      "instructions": {
+        "candidate": 256938887855.5,
+        "control": 257543576979.5,
+        "mean_reduction_fraction": 0.0023479099385504965
+      },
+      "whole_process_seconds": {
+        "candidate": 17.44826735451352,
+        "control": 17.417478708550334,
+        "mean_reduction_fraction": -0.0017676867288529685
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 17.462244104,
+        "control": 17.5381177505,
+        "mean_reduction_fraction": 0.004326213769310416
+      },
+      "frontend_seconds": {
+        "candidate": 2.491585271,
+        "control": 2.534199229,
+        "mean_reduction_fraction": 0.01681555163948789
+      },
+      "instructions": {
+        "candidate": 256953544863,
+        "control": 257520077029,
+        "mean_reduction_fraction": 0.0021999533882408606
+      },
+      "whole_process_seconds": {
+        "candidate": 17.53419454151299,
+        "control": 17.593993375077844,
+        "mean_reduction_fraction": 0.0033988209663395885
+      }
+    }
+  ],
+  "base_commit": "4057eb4364d496c66bad911394249007b1426590",
+  "build": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "binary": "/private/tmp/mech-schema-cache-view-20261114/candidate",
+    "binary_sha256": "f4beb72a56fedcb860041b4e248b00590623acbe6570d10b0f0025c158bdeaef",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "head": "4057eb4364d496c66bad911394249007b1426590",
+    "patch_sha256": "282bd36259b23398d9ea3b55da24c8ed1a0f1dff384a22ecdfe5d84f263e48e4",
+    "seconds": 376.17744041699916
+  },
+  "compiler_binary_sha256": {
+    "candidate": "f4beb72a56fedcb860041b4e248b00590623acbe6570d10b0f0025c158bdeaef",
+    "control": "9550643da36c23bd025cf1aabf4fc04461adcaa1c73384fa2fae657af3dd433d"
+  },
+  "decision": "Retained targeted work reduction: preserve existing PendingSchema cache owners through assembly and nested visitors. Whole-compiler time effectively flat, with mixed blocks; complete program and executable bytes identical.",
+  "final_links": [
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.10193829191848636,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "control"
+    },
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.08598366705700755,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "candidate"
+    }
+  ],
+  "fixture_pairs": 14,
+  "flags_count": 61,
+  "focused_cache_tests": 5,
+  "full_native_build_observations": [
+    {
+      "cached_adapter_objects": true,
+      "compiler_exit_code": 0,
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_frozen_reference": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_frozen_reference": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_frozen_reference": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_frozen_reference": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "link_exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "compiler_spawn_through_native_link_process_wait_completion",
+      "native_link_seconds": 0.1402712920680642,
+      "object_handoff_seconds": 0.0008981251157820225,
+      "primary_cohort": false,
+      "source_to_executable_seconds": 17.526307667139918,
+      "source_to_object_process_seconds": 17.38513824995607,
+      "variant": "control"
+    },
+    {
+      "cached_adapter_objects": true,
+      "compiler_exit_code": 0,
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_frozen_reference": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_frozen_reference": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_frozen_reference": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_frozen_reference": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "link_exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "compiler_spawn_through_native_link_process_wait_completion",
+      "native_link_seconds": 0.1370043340139091,
+      "object_handoff_seconds": 0.0009197080507874489,
+      "primary_cohort": false,
+      "source_to_executable_seconds": 17.514492084039375,
+      "source_to_object_process_seconds": 17.37656804197468,
+      "variant": "candidate"
+    }
+  ],
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.025727708,
+        0.026257167,
+        0.026246083,
+        0.026569083
+      ],
+      "control": [
+        0.026559708,
+        0.026433,
+        0.027238458,
+        0.025853417
+      ],
+      "mean_reduction_fraction": 0.01210865861630439
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09774799994193017,
+        0.09791070804931223,
+        0.09801779105328023,
+        0.09871445805765688
+      ],
+      "control": [
+        0.09731704089790583,
+        0.0978796249255538,
+        0.0991891659796238,
+        0.09745087497867644
+      ],
+      "mean_reduction_fraction": -0.0014144931059978383
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.038340875,
+        0.038010417,
+        0.038076958,
+        0.037366667
+      ],
+      "control": [
+        0.035056958,
+        0.037616125,
+        0.037324125,
+        0.037578834
+      ],
+      "mean_reduction_fraction": -0.02858780424535312
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.4789732079952955,
+        3.3383433329872787,
+        3.47637820802629,
+        3.4118708330206573
+      ],
+      "control": [
+        3.403774834005162,
+        3.407792832935229,
+        3.4108020421117544,
+        3.424290790921077
+      ],
+      "mean_reduction_fraction": -0.0043164466542136015
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        3.3120042919181287,
+        3.1705795410089195,
+        3.3085057500284165,
+        3.245989124989137
+      ],
+      "control": [
+        3.229366041952744,
+        3.2408983749337494,
+        3.2439557500183582,
+        3.253661082824692
+      ],
+      "mean_reduction_fraction": -0.005336065073583418
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.1669689160771668,
+        0.16776379197835922,
+        0.16787245799787343,
+        0.16588170803152025
+      ],
+      "control": [
+        0.174408792052418,
+        0.1668944580014795,
+        0.1668462920933962,
+        0.170629708096385
+      ],
+      "mean_reduction_fraction": 0.01516306833932246
+    },
+    "compiler_seconds": {
+      "candidate": [
+        17.476168875,
+        17.281296291,
+        17.585529458,
+        17.33895875
+      ],
+      "control": [
+        17.341616166,
+        17.384103959,
+        17.601691334,
+        17.474544167
+      ],
+      "mean_reduction_fraction": 0.0017191818040597218
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009252666,
+        0.00927925,
+        0.009227541,
+        0.00946025
+      ],
+      "control": [
+        0.009343709,
+        0.009364959,
+        0.009601667,
+        0.009282041
+      ],
+      "mean_reduction_fraction": 0.00991341967850079
+    },
+    "frontend_seconds": {
+      "candidate": [
+        2.47581375,
+        2.472642417,
+        2.479917167,
+        2.503253375
+      ],
+      "control": [
+        2.527486334,
+        2.536179542,
+        2.548873916,
+        2.519524542
+      ],
+      "mean_reduction_fraction": 0.019782506150044288
+    },
+    "instructions": {
+      "candidate": [
+        256961134669,
+        256916641042,
+        256922262596,
+        256984827130
+      ],
+      "control": [
+        257477523966,
+        257609629993,
+        257499151958,
+        257541002100
+      ],
+      "mean_reduction_fraction": 0.00227393503867912
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        5912674304,
+        5912821760,
+        5912854528,
+        5914001408
+      ],
+      "control": [
+        5910167552,
+        5910478848,
+        5910151168,
+        5910691840
+      ],
+      "mean_reduction_fraction": -0.00045947155919567884
+    },
+    "native_seconds": {
+      "candidate": [
+        12.839420583,
+        12.658440583,
+        12.945562667,
+        12.65480625
+      ],
+      "control": [
+        12.655728792,
+        12.684973375,
+        12.902876584,
+        12.791443542
+      ],
+      "mean_reduction_fraction": -0.0012385179267115909
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.130743541987613,
+        2.1335940409917384,
+        2.1629741659853607,
+        2.14014570787549
+      ],
+      "control": [
+        2.126183249987662,
+        2.130531792063266,
+        2.1798513329122216,
+        2.1346445828676224
+      ],
+      "mean_reduction_fraction": 0.00043791956691252576
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.0869665,
+        2.076024458,
+        2.085848542,
+        2.106894666
+      ],
+      "control": [
+        2.086768959,
+        2.088886666,
+        2.075135791,
+        2.090240833
+      ],
+      "mean_reduction_fraction": -0.0017626016254475019
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        5882385640,
+        5882516688,
+        5882549456,
+        5883696336
+      ],
+      "control": [
+        5879862480,
+        5880173776,
+        5879846096,
+        5880386768
+      ],
+      "mean_reduction_fraction": -0.00046253722457412216
+    },
+    "preparation_seconds": {
+      "candidate": [
+        2.010429416084662,
+        2.0168589169625193,
+        2.0193708341103047,
+        1.9958082919474691
+      ],
+      "control": [
+        2.006068625021726,
+        2.004713166039437,
+        2.122690417105332,
+        2.0221389590296894
+      ],
+      "mean_reduction_fraction": 0.013873112115290631
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.4127936670556664,
+        2.329932334134355,
+        2.418977792141959,
+        2.332919541047886
+      ],
+      "control": [
+        2.3275867919437587,
+        2.3256890419870615,
+        2.3324110419489443,
+        2.3326337500475347
+      ],
+      "mean_reduction_fraction": -0.01892000882240752
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        17.562095750123262,
+        17.334438958903775,
+        17.64042408298701,
+        17.427965000038967
+      ],
+      "control": [
+        17.393742999993265,
+        17.441214417107403,
+        17.656432250048965,
+        17.531554500106722
+      ],
+      "mean_reduction_fraction": 0.000828590912497984
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292881,
+      "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1238656,
+      "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "parallel_boundary_probe": {
+    "build": {
+      "binary_sha256": "febff8e833e996eee71ff8d3a0ba28388a2cac130cf560aea09e0ec8ed227653",
+      "exit_code": 0,
+      "scope": "Standalone API-boundary probe; excluded from Deflate performance timings.",
+      "seconds": 19.95331725012511,
+      "source_sha256": "176dcda896f838638f4a84c509b4605755f49dc0765b38efdd5fd8bca9b18ef5"
+    },
+    "failed_link": {
+      "exit_code": 1,
+      "seconds": 0.8167670001275837,
+      "source_sha256": "176dcda896f838638f4a84c509b4605755f49dc0765b38efdd5fd8bca9b18ef5"
+    },
+    "run": {
+      "command": [
+        "/private/tmp/mech-parallel-object-boundary-20261114/probe",
+        "/private/tmp/mech-parallel-object-boundary-20261114/output"
+      ],
+      "exit_code": 0,
+      "objects": [
+        {
+          "bytes": 616,
+          "name": "serial.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-0.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-1.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-2.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-3.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-4.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-5.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-6.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-1-7.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-0.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-1.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-2.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-3.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-4.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-5.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-6.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-2-7.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-0.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-1.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-2.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-3.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-4.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-5.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-6.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        },
+        {
+          "bytes": 616,
+          "name": "workers-4-7.o",
+          "sha256": "b354dc4ca5b9c22c60cde266232fced7a17aea9c41225b7c1acb4ea06edf518e"
+        }
+      ],
+      "repeats_each": 8,
+      "scope": "Two synthetic native functions with data and function relocations; exact Object, optimized IR and compiled metrics against serial publication. No production scheduler or timing speedup.",
+      "source_sha256": "176dcda896f838638f4a84c509b4605755f49dc0765b38efdd5fd8bca9b18ef5",
+      "worker_counts": [
+        1,
+        2,
+        4
+      ]
+    }
+  },
+  "preliminary_screens": [
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.103780833,
+            "total_seconds": 2.103833375
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.039791666,
+            "total_seconds": 2.143670375
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.520017833,
+            "total_seconds": 4.663703709
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.025373083,
+            "total_seconds": 4.689091667
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009430333,
+            "total_seconds": 4.698534667
+          },
+          {
+            "phase": "native",
+            "seconds": 12.722099792,
+            "total_seconds": 17.421203542
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 17.421218834
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "control-screen",
+      "process": {
+        "binary": "/private/tmp/mech-schema-cache-view-20261114/control",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 18.64759900001809,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "control"
+    },
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.103957917,
+            "total_seconds": 2.104035083
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.040363417,
+            "total_seconds": 2.1444445
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.439496166,
+            "total_seconds": 4.583953917
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.025976292,
+            "total_seconds": 4.60994575
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009349791,
+            "total_seconds": 4.619306875
+          },
+          {
+            "phase": "native",
+            "seconds": 12.698331375,
+            "total_seconds": 17.318250917
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 17.318264583
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "candidate-screen",
+      "process": {
+        "binary": "/private/tmp/mech-schema-cache-view-20261114/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 18.152921499917284,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "candidate"
+    }
+  ],
+  "scope": [
+    "Eight serial primary compiles use ABBA/BAAB ordering and precise process completion. Screens, fixtures, tests, linking, builds and standalone probe work are excluded. Historical polling cohorts remain separate.",
+    "Only private borrowed schema views and their callers change, preserving visitation/insertion order and existing pure canonicalization, errors and mutation invalidation. Owner-backed requests use PendingSchema; raw drafts retain their original finalization. Fresh source, shape, factory, ownership and visit proofs remain.",
+    "Frontend and instruction means improve in both balanced blocks. Whole-compiler and process means are effectively flat and their block directions are mixed; no reliable overall compiler saving is established. Native/source-CFG, parsing, catalog and RSS adverse observations remain in full.",
+    "Five focused production cache tests include uniquely-owned cached-success mutation, shared ownership/error repair and concurrent readers. Fourteen paired fixtures and every full source/bytecode/Object/metadata/final executable byte match. No scalar retirement or fresh runtime campaign is claimed.",
+    "Two separate source-to-executable observations include fresh source analysis, program Object output, object handoff and final native linking. They reuse frozen adapter objects, exclude first-use adapter construction and are not a balanced improvement cohort.",
+    "The standalone Cranelift boundary probe uses two synthetic native functions, local/imported calls, data references and a data relocation. It compares complete Object bytes, optimized IR and compiled metrics against serial publication for 1/2/4 workers, eight repeats each. All 24 pass. It is not a production Mech scheduler, deterministic competing-error proof or a Deflate parallel speedup measurement.",
+    "The probe first fails direct linking because LLVM22 bitcode meets system LLVM15 LTO. Rebuilding the same probe with Rust ThinLTO succeeds; both setup observations remain. Compiler/probe/test executables are excluded and hash-pinned, all generated program/native-input bytes remain. Pure replay validates saved data without running compilers or timings.",
+    "Parallel Mech compilation and sub-ten-second compilation remain unachieved. The architectural design still requires a one-worker production split and explicit phase-variant dependencies before scheduling."
+  ],
+  "source_commit": "2822e6d8905f73873936a108b0d7c6b20231217d"
+}

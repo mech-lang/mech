@@ -45,6 +45,9 @@ fn arguments(values: &[NativeScalarValue]) -> Vec<String> {
         .iter()
         .map(|value| match value {
             NativeScalarValue::Bool(v) => v.to_string(),
+            NativeScalarValue::U8(v) => v.to_string(),
+            NativeScalarValue::U16(v) => v.to_string(),
+            NativeScalarValue::U32(v) => v.to_string(),
             NativeScalarValue::U64(v) => v.to_string(),
             NativeScalarValue::I64(v) => v.to_string(),
             NativeScalarValue::F64(v) => format!("f64:{:016x}", v.bits()),

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v7/compiler-decoded",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/after-8/build/source.mec",
+    "/private/tmp/mech-related-native-boolean-implication-freshness-runners-20261106-v4/after-8-decoded-bundle"
+  ],
+  "exit": 0,
+  "seconds": 5.464849125128239,
+  "stdout": "{\"code_bytes\":908468,\"inputs\":[\"offsets\",\"tags\"],\"outputs\":1,\"stack_bytes\":1520}\n",
+  "stderr": ""
+}

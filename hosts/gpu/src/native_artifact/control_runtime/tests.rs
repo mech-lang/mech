@@ -40,6 +40,9 @@ fn invalid_cfg_visit_is_rejected_without_publication() {
         .iter()
         .map(|ty| match ty.kind() {
             NativeScalarKind::Bool => NativeScalarValue::Bool(true),
+            NativeScalarKind::U8 => NativeScalarValue::U8(8),
+            NativeScalarKind::U16 => NativeScalarValue::U16(8),
+            NativeScalarKind::U32 => NativeScalarValue::U32(8),
             NativeScalarKind::U64 => NativeScalarValue::U64(8),
             NativeScalarKind::I64 => NativeScalarValue::I64(8),
             NativeScalarKind::F64 => {
@@ -98,6 +101,9 @@ fn setup_and_memory_denial_precede_injected_entry_and_preserve_outputs() {
         .iter()
         .map(|ty| match ty.kind() {
             NativeScalarKind::Bool => NativeScalarValue::Bool(true),
+            NativeScalarKind::U8 => NativeScalarValue::U8(8),
+            NativeScalarKind::U16 => NativeScalarValue::U16(8),
+            NativeScalarKind::U32 => NativeScalarValue::U32(8),
             NativeScalarKind::U64 => NativeScalarValue::U64(8),
             NativeScalarKind::I64 => NativeScalarValue::I64(8),
             NativeScalarKind::F64 => {

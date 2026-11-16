@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/qualify-loaders.py"
+  ],
+  "exit": 1,
+  "seconds": 23.472730458015576,
+  "stdout": "after-4 original and decoded all13 bundle files exact\nafter-8 original and decoded all13 bundle files exact\ncompact-4 original and decoded all13 bundle files exact\ncompact-8 original and decoded all13 bundle files exact\n",
+  "stderr": "Traceback (most recent call last):\n  File \"/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/qualify-loaders.py\", line 15, in <module>\n    p=OUT/name;p.mkdir();base=name.split('-')[0]+('-8' if name.split('-')[1]=='8' else '-4');(p/'build').symlink_to(OUT/base/'build',target_is_directory=True);s=(OUT/base/'runner.rs').read_text();oldname=name.replace('after-4','direct-four').replace('after-8','direct-eight').replace('compact-4','direct-four').replace('compact-8','direct-eight');old=(OLD/oldname/'runner.rs').read_text();start=s.index('    let catalog =');end=s.index('    let compile_seconds =',start);a=old.index('    let catalog =');z=old.index('    let compile_seconds =',a);s=s[:start]+old[a:z]+s[end:];(p/'runner.rs').write_text(s)\n               ~~~~~~~^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pathlib/__init__.py\", line 1011, in mkdir\n    os.mkdir(self, mode)\n    ~~~~~~~~^^^^^^^^^^^^\nFileExistsError: [Errno 17] File exists: '/private/tmp/mech-related-child-entry-facts-integration-runners-20261107-v1/after-4-independent'\n"
+}

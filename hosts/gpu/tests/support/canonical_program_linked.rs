@@ -84,6 +84,264 @@ fn import_inputs(
         .collect()
 }
 
+#[test]
+fn linked_assertion_rejection_preserves_publication_and_recovers() {
+    let source = "checked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  out := 12u64 / n.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_narrow_comparison_assertion_preserves_publication_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  positive! := n > 0u32\n  wide<u64> := n\n  out := 12u64 / wide.\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+#[test]
+fn linked_checked_u32_add_restores_its_operation_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  positive! := n > 0u32\n  incremented := n + 1u32\n  wide<u64> := incremented\n  out := 12u64 / (wide - 1u64).\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+#[test]
+fn linked_uniform_words_restore_the_same_plan_fact_and_recover() {
+    // The collection is used before the assertion on every visit. The linked
+    // Object's bulk helper therefore needs the fact restored from its image,
+    // including the rejected invocation between two successful invocations.
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  count := n + 2u64\n  words := [42u16 | i <- 0u64..=count, i < count]\n  size := sequence/length(words)\n  positive! := n > 0u64\n  out := 12u64 / (size - 2u64).\nchecked(input<u64>)\n";
+    for artifact in super::artifacts(source).0 {
+        let plan = mech_engine::native_artifact::lower_native_program_artifact(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+        )
+        .unwrap();
+        assert_eq!(plan.facts().uniform_unsigned_collections().len(), 1);
+    }
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_buffer_lifecycle_preserves_publication_and_recovers() {
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  words := sequence/append(sequence/clear(sequence/append(sequence/reserve(sequence/with-capacity(0u64, 32u64), 3u64), 17u64)), n)\n  positive! := n > 0u64\n  out := 12u64 / words[1u64].\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_recursive_buffer_frame_preserves_publication_and_recovers() {
+    let source = "+> sequence\ngrow(words<[u64]>, left<u64>) => <[u64]>\n  | (words, left) => ((left > 0u64)? | true => grow(sequence/append(words, left), left - 1u64) | false => words).\nchecked(n<u64>) => (out<u64>) :=\n  words := grow(sequence/with-capacity(0u64, 32u64), 3u64)\n  positive! := n > 0u64\n  out := 12u64 / n + words[1u64] - 3u64.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_record_buffer_return_preserves_publication_and_recovers() {
+    let source = "+> sequence\ngrow(words<[u64]>, left<u64>) => (out<{nodes<[u64]>}>) :=\n  out := ((left > 0u64)? | true => grow(sequence/append(words, left), left - 1u64) | false => {nodes: words}).\nchecked(n<u64>) => (out<u64>) :=\n  packet := grow(sequence/with-capacity(0u64, 32u64), 3u64)\n  positive! := n > 0u64\n  out := 12u64 / n + packet.nodes[1u64] - 3u64.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_record_matrix_constructor_and_update_restore_and_recover() {
+    let source = "+> sequence\n<entry> := <{length<u64> offset<u16> slot<u16>}>\nchecked(n<u64>) => (out<u64>) :=\n  ~entries := [{length: 0u64, offset: 3u16, slot: 5u16}]\n  entries[1u64] = {length: n, offset: 7u16, slot: 11u16}\n  count := sequence/length(entries)\n  positive! := n > 0u64\n  out := 12u64 / n + count - 1u64.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_writer_narrow_arithmetic_restores_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  positive! := n > 0u32\n  remaining := n - 1u32\n  width<u8> := n\n  extended := width + 1u8\n  wide<u64> := extended\n  left<u64> := remaining\n  nwide<u64> := n\n  out := 12u64 / (left + wide - nwide).\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+#[test]
+fn linked_single_word_update_preserves_publication_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  ~words := [1u32 2u32 3u32]\n  words[2u64] = n\n  positive! := n > 0u32\n  current<u64> := words[2u64]\n  out := 12u64 / current.\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+#[test]
+fn linked_bulk_byte_append_preserves_publication_and_recovers() {
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  bytes := sequence/append-le-bytes(sequence/with-capacity(0u8, 32u64), n, 2u8)\n  same := sequence/append-le-bytes(bytes, 0u64, 0u8)\n  positive! := n > 0u64\n  low<u64> := same[1u64]\n  out := 12u64 / low.\nchecked(input<u64>)\n";
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_record_matrix_scalar_read_preserves_publication_and_recovers() {
+    let source = "checked(n<u32>) => (out<u64>) :=\n  entries := [{length: n, offset: 1u16, slot: 0u16}, {length: 258u32, offset: 32768u16, slot: 29u16}]\n  positive! := n > 0u32\n  selected := entries[1u64]\n  length<u64> := selected.length\n  out := 12u64 / length.\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+#[test]
+fn linked_recursive_record_matrix_arguments_preserve_publication_and_recover() {
+    let source = "<entry> := <{length<u32> offset<u16>}>\nwalk(entries<[entry]>, left<u64>) => (out<u32>) :=\n  current := entries[1u64]\n  out := ((left > 0u64)? | true => walk(entries, left - 1u64) | false => current.length).\nchecked(n<u32>) => (out<u64>) :=\n  entries := [{length: n, offset: 32768u16}]\n  positive! := n > 0u32\n  length<u64> := walk(entries, 2u64)\n  out := 12u64 / length.\nchecked(input<u32>)\n";
+    linked_assertion_retry(source, |n| ValueDataDraft::U32(n.try_into().unwrap()));
+}
+
+#[test]
+fn linked_mixed_record_buffer_frames_preserve_publication_and_recover() {
+    let source = "+> sequence\n<entry> := <{length<u32> offset<u16>}>\nwalk(bytes<[u8]>, entries<[entry]>, left<u64>) => (out<{bytes<[u8]> length<u32>}>) :=\n  current := entries[1u64]\n  positive! := current.length > 0u32\n  next := ((left > 0u64)? | true => sequence/append(bytes, 17u8) | false => bytes)\n  out := ((left > 0u64)? | true => walk(next, entries, left - 1u64) | false => {bytes: next, length: current.length}).\nchecked(n<u32>) => (out<u64>) :=\n  entries := [{length: n, offset: 32768u16}]\n  written := walk(sequence/with-capacity(0u8, 6633832u64), entries, 2u64)\n  length<u64> := written.length\n  out := 12u64 / (length + sequence/length(written.bytes) - 2u64).\nchecked(input<u32>)\n";
+    // The linked executable keeps the real reservation. The resident oracle
+    // uses identical operations with a smaller reservation: reserving the real
+    // buffer exceeds its default work allowance before producing any value.
+    let oracle = source.replace("6633832u64", "512u64");
+    linked_assertion_retry_with_oracle(source, &oracle, |n| {
+        ValueDataDraft::U32(n.try_into().unwrap())
+    });
+}
+
+#[test]
+fn linked_sublist_append_preserves_publication_and_recovers() {
+    let source = "+> sequence\nchecked(n<u64>) => (out<u64>) :=\n  positive! := n > 0u64\n  bytes := sequence/append-sublist(sequence/with-capacity(0u8, 6633832u64), [1u8 2u8 3u8], 0u64, n)\n  out := 12u64 / sequence/length(bytes).\nchecked(input<u64>)\n";
+    let oracle = source.replace("6633832u64", "512u64");
+    linked_assertion_retry_with_oracle(source, &oracle, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_numeric_parent_child_preserves_current_results_and_recovers() {
+    let definitions = include_str!("../fixtures/native/numeric-parent-child.mec")
+        .split("\nhuff-assign-lengths(a<[u32]>, lens<[u8]>, counts<[u64]>, width<u64>, start<u64>)")
+        .next()
+        .unwrap();
+    let source = format!(
+        "{definitions}\nchecked(n<u64>) => (out<u64>) :=\n  lengths := huff-assign-lengths([2u32 0u32 3u32 1u32], [9u8 9u8 9u8 9u8], [0u64 1u64 1u64 2u64], 3u64, 0u64)\n  positive! := n > 0u64\n  first<u64> := lengths[1u64]\n  out := 12u64 / n + first - 3u64.\nchecked(input<u64>)\n"
+    );
+    let artifact = super::artifacts(&source).0.into_iter().next().unwrap();
+    assert!(
+        !mech_gpu::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata()["compiled_numeric_segments"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    linked_assertion_retry(&source, ValueDataDraft::U64);
+}
+
+fn linked_assertion_retry(source: &str, input_word: fn(u64) -> ValueDataDraft) {
+    linked_assertion_retry_with_oracle(source, source, input_word);
+}
+
+fn linked_assertion_retry_with_oracle(
+    source: &str,
+    oracle_source: &str,
+    input_word: fn(u64) -> ValueDataDraft,
+) {
+    let temporary = tempfile::tempdir().unwrap();
+    let directory = temporary.path();
+    let artifact = super::artifacts(source).0.into_iter().next().unwrap();
+    let generated = generate_linked_program_application(
+        &workspace(),
+        &directory.join("project"),
+        "checked-assertion",
+        &artifact,
+        &mech_stdlib::source_catalog(),
+        source.as_bytes(),
+    )
+    .unwrap();
+    // Keep every build-pinned generated input unchanged. This additional binary
+    // reuses the maintained shell and the SAME pinned Object/descriptor, with
+    // only the test driver's invocation sequence replaced. It contains no JIT.
+    let shell = fs::read_to_string(generated.root().join("src/main.rs")).unwrap();
+    // The maintained shell now delegates its invocation to the launcher. Keep
+    // its exact catalog and Object symbols, and supply only a qualification
+    // driver against the public same-image binding API.
+    let (prefix, _) = shell.split_once("fn main() {").unwrap();
+    let import = "use mech_gpu::native_artifact::{NATIVE_PROGRAM_LINK_IDENTITY_BYTES, launch::{BuildOwnedProgramBinding, run_program_application}};";
+    assert_eq!(prefix.matches(import).count(), 1);
+    let prefix = prefix.replace(
+        import,
+        "use mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTITY_BYTES;",
+    );
+    let driver = format!(
+        "#![deny(warnings)]\n{prefix}\n{}",
+        include_str!("linked_assertion_retry.rs.in")
+    );
+    fs::create_dir(generated.root().join("src/bin")).unwrap();
+    fs::write(generated.root().join("src/bin/lexical-retry.rs"), driver).unwrap();
+    fs::copy(
+        workspace().join("Cargo.lock"),
+        generated.root().join("Cargo.lock"),
+    )
+    .unwrap();
+    let isolated = generated.root().ancestors().last().unwrap();
+    let resolved = bounded(
+        &mut CargoInvocation::resolve_lockfile(generated.manifest_path(), true)
+            .with_current_dir(isolated)
+            .command(),
+        directory,
+        "metadata",
+        120,
+    );
+    assert!(
+        resolved.status.success(),
+        "{}",
+        String::from_utf8_lossy(&resolved.stderr)
+    );
+    let mut command = CargoInvocation::build(
+        generated.manifest_path(),
+        "lexical-retry",
+        None,
+        directory.join("cargo-target"),
+        false,
+        true,
+    )
+    .unwrap()
+    .with_current_dir(isolated)
+    .command();
+    command
+        .env("CARGO_INCREMENTAL", "0")
+        .env("CARGO_PROFILE_DEV_DEBUG", "0")
+        .env("RUSTFLAGS", "-D warnings")
+        .env("CARGO_BUILD_JOBS", "1");
+    let built = bounded(&mut command, directory, "build", 15 * 60);
+    assert!(
+        built.status.success(),
+        "{}",
+        String::from_utf8_lossy(&built.stderr)
+    );
+    let metadata: Value = serde_json::from_slice(&resolved.stdout).unwrap();
+    let units = closure(&metadata, &built.stdout);
+    assert!(units.iter().any(|unit| unit["root"] == true));
+    let messages = parse_cargo_build_messages(Cursor::new(&built.stdout)).unwrap();
+    assert_eq!(messages.build_finished, Some(true));
+    let binary = messages.select_binary("lexical-retry").unwrap().executable;
+    let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+    let args = inputs(&artifact, &[("input", input_word(3))], &memory);
+    let input = input_file(directory, "checked", &args);
+    let result = bounded(
+        Command::new(&binary)
+            .args(policy(
+                1_000_000_000,
+                256 * 1024 * 1024,
+                134_217_728,
+                128 * 1024 * 1024,
+            ))
+            .arg(input),
+        directory,
+        "retry",
+        30,
+    );
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(result.stderr.is_empty());
+    let oracle = super::artifacts(oracle_source)
+        .0
+        .into_iter()
+        .next()
+        .unwrap();
+    let recovery = inputs(&oracle, &[("input", input_word(2))], &memory);
+    assert_eq!(
+        result.stdout,
+        exported(&oracle, &reference_result(&oracle, &recovery).unwrap())
+    );
+    for (relative, expected) in generated.pins() {
+        assert_eq!(&pin(&generated.root().join(relative)), expected);
+    }
+    println!(
+        "{}",
+        json!({"qualification":"linked-assertion-retry", "source_sha256":hash(source.as_bytes()), "binary_sha256":pin(&binary), "generated":generated.metadata(), "compiled_units":units, "valid_invalid_valid":[3,0,2], "assertion_before_division":true, "prior_publication_preserved":true, "cleanup_and_recovery":true, "timing_samples":0})
+    );
+}
+
 fn collection_source() -> String {
     format!(
         "{ROOT}projection := text/join([number/format(sequence/length(word) / (sequence/length(word) - divisor<u64>), 0u64) | word <- words], \",\")\n"
@@ -781,4 +1039,74 @@ fn linked_managed_programs_preserve_canonical_outputs_errors_and_denials() {
     }
     clean(&evidence, &commit, "after");
     fs::write(evidence.join("qualification.json"), serde_json::to_vec_pretty(&json!({"schema":"mech.canonical-program-linked-qualification.v1","source_commit":commit,"programs":receipts,"scope":"managed root and lexical calls, scalar control and native String matrix comprehensions in real linked Objects; no resource-host/full-workload/performance claim","benchmark_measurements":0})).unwrap()).unwrap();
+}
+
+#[test]
+fn linked_readonly_numeric_child_restores_and_recovers() {
+    let source = "leaf(words<[u32]>, left<u64>, divisor<u64>) => (out<u64>) :=\n  positive! := divisor > 0u64\n  value<u64> := words[1u64]\n  out := ((left > 0u64)? | true => leaf(words, left - 1u64, divisor) | false => value / divisor).\nouter(words<[u32]>, left<u64>, divisor<u64>) => (out<u64>) :=\n  value := leaf(words, 2u64, divisor)\n  out := ((left > 0u64)? | true => outer(words, left - 1u64, divisor) | false => value).\nchecked(n<u64>) => (out<u64>) :=\n  out := outer([12u32], 1u64, n).\nchecked(input<u64>)\n";
+    let artifact = super::artifacts(source).0.into_iter().next().unwrap();
+    let object =
+        mech_gpu::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap();
+    let metadata = object.metadata();
+    assert!(
+        metadata["compiled_readonly_numeric_loops"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["parent"].is_number() && !r["typed_loads"].as_array().unwrap().is_empty())
+    );
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_private_numeric_child_freezes_recovers_and_preserves_error_order() {
+    let source = "leaf(words<[u32]>, left<u64>, divisor<u64>, next-divisor<u64>) => (out<u64>) :=\n  positive! := divisor > 0u64\n  checked := 1u64 / divisor\n  value := words[1u64] + 1u32\n  ~next := words\n  next[1u64] = value\n  widened<u64> := value\n  out := ((left > 0u64)? | true => leaf(next, left - 1u64, next-divisor, next-divisor) | false => widened / divisor).\nouter(words<[u32]>, left<u64>, divisor<u64>) => (out<u64>) :=\n  value := leaf(words, 2u64, 3u64, divisor)\n  out := ((left > 0u64)? | true => outer(words, left - 1u64, divisor) | false => value).\nouter([9u32], 1u64, input<u64>)\n";
+    let artifact = super::artifacts(source).0.into_iter().next().unwrap();
+    let metadata =
+        mech_gpu::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata();
+    assert!(
+        metadata["compiled_numeric_write_loops"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["parent"].is_number() && !r["typed_stores"].as_array().unwrap().is_empty())
+    );
+    linked_assertion_retry(source, ValueDataDraft::U64);
+}
+
+#[test]
+fn linked_private_mixed_numeric_result_recovers_and_preserves_error_order() {
+    let source = r#"+> sequence
+leaf(words<[u32]>, left<u64>, divisor<u64>, next-divisor<u64>) => (out<([u32],u64)>) :=
+  positive! := divisor > 0u64
+  checked := 1u64 / divisor
+  value := words[1u64] + 1u32
+  ~next := words
+  next[1u64] = value
+  widened<u64> := value
+  out := ((left > 0u64)? | true => leaf(next, left - 1u64, next-divisor, next-divisor) | false => (next, widened / divisor)).
+outer(words<[u32]>, left<u64>, divisor<u64>) => (out<u64>) :=
+  (updated, value) := leaf(words, 2u64, 3u64, divisor)
+  agrees := sequence/length(updated) == 1u64
+  result := (agrees? | true => value | false => 0u64)
+  out := ((left > 0u64)? | true => outer(words, left - 1u64, divisor) | false => result).
+outer([9u32], 1u64, input<u64>)
+"#;
+    let artifact = super::artifacts(source).0.into_iter().next().unwrap();
+    let metadata =
+        mech_gpu::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+            .unwrap()
+            .metadata();
+    assert!(
+        metadata["numeric_write_regions"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|r| r["parent"].is_number() && r["proof"]["result"]["Frame"].is_object()),
+        "{metadata}"
+    );
+    linked_assertion_retry(source, ValueDataDraft::U64);
 }

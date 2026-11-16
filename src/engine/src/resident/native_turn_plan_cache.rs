@@ -70,9 +70,52 @@ impl NativeTurnPlanCache {
     }
 
     pub(crate) fn construction_owner_bytes(call: &CallMemoryPlan) -> Option<u64> {
-        Self::owner_bytes().checked_add(snapshot_footprint::DataFootprints::bytes(
-            call.inputs.len(),
-        )?)
+        Self::construction_owner_bytes_for_inputs(call.inputs.len())
+    }
+
+    pub(crate) fn construction_owner_bytes_for_inputs(inputs: usize) -> Option<u64> {
+        Self::owner_bytes().checked_add(snapshot_footprint::DataFootprints::bytes(inputs)?)
+    }
+
+    // The exact maintained warm lookup price, without constructing a call,
+    // cache or plan. Selected replay previews use only immutable port counts
+    // and a separately proved descriptor envelope.
+    pub(crate) fn probe_work_for_ports(
+        inputs: usize,
+        outputs: usize,
+        descriptor_work: u64,
+    ) -> Option<u64> {
+        let ports = u64::try_from(inputs.checked_add(outputs)?).ok()?;
+        let keys = ports.checked_add(2)?;
+        let entry = (core::mem::size_of::<(mech_core::NodeId, mech_core::PortDirection, u16)>()
+            + 2 * core::mem::size_of::<CurrentMemoryFootprint>()
+            + 2 * core::mem::size_of::<mech_core::RegionAccessPlan>()) as u64;
+        let bytes = keys
+            .checked_mul(keys)?
+            .checked_mul(entry)?
+            .checked_add(ports.checked_mul(
+                (2 * core::mem::size_of::<mech_core::ResidentValueRef<'static>>()) as u64,
+            )?)?
+            .checked_add(payload::native_scope_metadata_bytes())?
+            .checked_add(Self::owner_bytes())?;
+        bytes
+            .checked_mul(8)?
+            .checked_add(256)?
+            .checked_add(descriptor_work)
+    }
+
+    fn refinement_probe_work() -> Option<u64> {
+        ((2 * core::mem::size_of::<Refined>() * REFINEMENTS) as u64)
+            .checked_mul(8)?
+            .checked_add(256)
+    }
+
+    pub(crate) fn refinement_work_bound(metadata: u64) -> Option<u64> {
+        Self::refinement_probe_work()?.checked_add(metadata)
+    }
+
+    pub(crate) fn selected_access_data_work_bound(inputs: usize) -> Option<u64> {
+        snapshot_footprint::DataFootprints::selected_access_metadata_work_bound(inputs)
     }
 
     pub(crate) fn new(
@@ -96,42 +139,11 @@ impl NativeTurnPlanCache {
         {
             return Err(ResidentKernelError::InvalidInput);
         }
-        let ports = u64::try_from(
-            call.inputs
-                .len()
-                .checked_add(call.outputs.len())
-                .ok_or(ResidentKernelError::InvalidShape)?,
-        )
-        .map_err(|_| ResidentKernelError::InvalidShape)?;
-        let keys = ports
-            .checked_add(2)
-            .ok_or(ResidentKernelError::InvalidShape)?;
-        // Warm facts overwrite existing keys only. A BTree lookup traverses
-        // at most all entries, so keys^2 bounds all update/equality key visits.
-        // Read/write both footprint and region payloads; these types own no
-        // variable-sized members. Argument Vec allocation+retirement is exact.
-        let entry = (core::mem::size_of::<(mech_core::NodeId, mech_core::PortDirection, u16)>()
-            + 2 * core::mem::size_of::<CurrentMemoryFootprint>()
-            + 2 * core::mem::size_of::<mech_core::RegionAccessPlan>()) as u64;
-        // Keep the complete unchanged descriptor/schema work component on
-        // every hit. Only the actually eliminated planner-entry construction
-        // component moves to misses; schema inspections are not discounted.
-        let probe_bytes = keys
-            .checked_mul(keys)
-            .and_then(|n| n.checked_mul(entry))
-            .and_then(|n| {
-                n.checked_add(ports.checked_mul(
-                    (2 * core::mem::size_of::<mech_core::ResidentValueRef<'static>>()) as u64,
-                )?)
-            })
-            .and_then(|n| n.checked_add(payload::native_scope_metadata_bytes()))
-            .and_then(|n| n.checked_add(Self::owner_bytes()))
-            .ok_or(ResidentKernelError::InvalidShape)?;
-        let probe_work = probe_bytes
-            .checked_mul(8)
-            .and_then(|n| n.checked_add(256))
-            .and_then(|n| n.checked_add(descriptor_work))
-            .ok_or(ResidentKernelError::InvalidShape)?;
+        // Keep descriptor/schema work on every hit. Only the actually
+        // eliminated planner-entry construction component moves to misses.
+        let probe_work =
+            Self::probe_work_for_ports(call.inputs.len(), call.outputs.len(), descriptor_work)
+                .ok_or(ResidentKernelError::InvalidShape)?;
         let data_nodes =
             Self::retained_data_nodes(call).ok_or(ResidentKernelError::InvalidShape)?;
         let data_footprints = snapshot_footprint::DataFootprints::new(call)?;
@@ -346,11 +358,8 @@ pub(super) fn refine(
         // Complete fixed-size key comparison is prepaid before reading it.
         // Two complete passes over the concrete fixed lanes cover all key
         // comparisons and bounded in-place LRU moves; no key is hashed.
-        let bytes = (2 * core::mem::size_of::<Refined>() * REFINEMENTS) as u64;
         cache.work.charge(
-            bytes
-                .checked_mul(8)
-                .and_then(|n| n.checked_add(256))
+            NativeTurnPlanCache::refinement_probe_work()
                 .ok_or(ResidentKernelError::InvalidShape)?,
             0,
         )?;
@@ -397,6 +406,16 @@ pub(super) fn refine(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn selected_replay_metadata_arithmetic_declines_overflow_without_authority() {
+        assert!(NativeTurnPlanCache::probe_work_for_ports(2, 1, 1024).is_some());
+        assert!(NativeTurnPlanCache::probe_work_for_ports(usize::MAX, 1, 0).is_none());
+        assert!(NativeTurnPlanCache::probe_work_for_ports(2, 1, u64::MAX).is_none());
+        assert!(NativeTurnPlanCache::construction_owner_bytes_for_inputs(usize::MAX).is_none());
+        assert!(NativeTurnPlanCache::refinement_work_bound(u64::MAX).is_none());
+        assert!(NativeTurnPlanCache::selected_access_data_work_bound(usize::MAX).is_none());
+    }
+
     #[test]
     fn cached_context_is_suspended_by_nested_ordinary_scope_and_unwind() {
         // Context isolation only: this detached test plan never executes a

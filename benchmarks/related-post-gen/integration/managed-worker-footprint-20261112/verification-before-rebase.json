@@ -1,0 +1,18 @@
+{
+  "verified_records": 5283,
+  "unique_blobs": 3142,
+  "compressed_bytes": 8176485,
+  "measured_source_commit": "55a47b080eba45e46596976279d196b9c97eba2e",
+  "published_source_equivalent_commit": "55a47b080eba45e46596976279d196b9c97eba2e",
+  "source_inventory_entries": 2814,
+  "literal_include_entries": 164,
+  "primary_exact_outputs": 868,
+  "independent_exact_outputs": 351,
+  "resource_exact_outputs": 196,
+  "qualification_edges": 31,
+  "selected": "IR334",
+  "incremental_latency_gain_confirmed": true,
+  "fastest_Rust_target_met": false,
+  "post_JSON_instructions": 29679792,
+  "allocation_bytes_and_requests_unchanged": true
+}

@@ -237,6 +237,20 @@ def frozen_rebind_returns_preserve_ownership(body: str, schema_owner: str) -> bo
         "root": "self.root.clone()",
         "schemas": compact(schema_owner.split(":", 1)[1]),
     }
+    # Equivalent primitive matrix geometry can share the data owner while
+    # retaining a different, independently admitted target shape. Accept that
+    # local shape only at this complete checked preparation, immediately
+    # before its return; a shape marker elsewhere is not authority.
+    matrix_shape_preparation = (
+        "ifequivalent_at_shape&&matches!(target_schema.body(),"
+        "SchemaBody::Matrix{element,..}ifmatches!(element.as_ref(),"
+        "SchemaBody::UnsignedInteger(_)|SchemaBody::SignedInteger(_)|"
+        "SchemaBody::FloatingPoint(_)|SchemaBody::Bool)){"
+        "letmutparameters=context.try_vec_with_capacity(shape.parameter_values().len())?;"
+        "parameters.extend_from_slice(shape.parameter_values());"
+        "letshape=context.try_arc("
+        "target_schema.instantiate_shape(parameters.into_boxed_slice())?)?;"
+    )
     clones = shared = 0
     for returned in re.finditer(r"\breturn\b", body):
         call = re.match(r"return\s+(Ok|Err)\s*\(", body[returned.start():])
@@ -268,7 +282,10 @@ def frozen_rebind_returns_preserve_ownership(body: str, schema_owner: str) -> bo
             if name in actual:
                 return False
             actual[name] = expression if separator else name
-        if actual != expected:
+        expected_return = expected
+        if compact(body[:returned.start()]).endswith(matrix_shape_preparation):
+            expected_return = {**expected, "shape": "shape"}
+        if actual != expected_return:
             return False
         shared += 1
     return clones > 0 and shared > 0
@@ -521,17 +538,27 @@ def failures(root: Path) -> list[str]:
     value_layout = balanced_body(snapshot, "Value")
     receipt_tokens = list(function_bodies(snapshot, "resident_token"))
     plain_finalizers = list(function_bodies(snapshot, "finalized_value"))
+    receipt_lookup = re.sub(r"\s+", "", receipt_tokens[0]) if len(receipt_tokens) == 1 else ""
     # The receipt cache moved inside the shared data owner. Rebinds must keep
     # that owner, not copy or manufacture an independent token. Retain the
     # closed return-field inventory above and check the new owner explicitly.
     shared_receipt_cache = (
         frozen_data is not None
-        and "resident_token:SharedOwnershipCell<u64>" in re.sub(r"\s+", "", frozen_data)
+        and "resident_token:SharedOwnershipCell<(u64,u64)>" in re.sub(r"\s+", "", frozen_data)
         and value_layout is not None
         and not re.search(r"\bresident_token\s*:", value_layout)
         and len(receipt_tokens) == 1
-        and re.sub(r"\s+", "", receipt_tokens[0]).startswith(
-            "*self.root.data.resident_token.get_or_init(||{"
+        and receipt_lookup.startswith(
+            "letmutprefix=token_bytes(RESIDENT_TOKEN_SEED,self.schema_key.as_bytes());"
+            "prefix=token_word(prefix,self.shape.parameter_values().len()asu64);"
+            "forvalueinself.shape.parameter_values(){prefix=token_word(prefix,*value);}"
+        )
+        and (
+            "let(cached_prefix,cached_token)=*self.root.data.resident_token.get_or_init("
+            "||(prefix,token_data(prefix,&self.root.data.data)));"
+        ) in receipt_lookup
+        and receipt_lookup.endswith(
+            "ifcached_prefix==prefix{cached_token}else{token_data(prefix,&self.root.data.data)}"
         )
         and len(plain_finalizers) == 1
         and len(finalized_values) == 1

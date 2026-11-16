@@ -146,6 +146,9 @@ fn map_owner_identity_covers_unused_candidates_words_and_site_inventories() {
                     &lines,
                     Some(&changed),
                     &descriptor.metadata().frozen_maps,
+                    &descriptor.metadata().borrowed_record_maps,
+                    &descriptor.metadata().utf8_reads,
+                    &descriptor.metadata().numeric_maps,
                     &(plan).string_map_regions()
                 ),
                 "a changed candidate/layout must change Object association",
@@ -283,6 +286,9 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                 &lines,
                 owners,
                 &descriptor.metadata().frozen_maps,
+                &descriptor.metadata().borrowed_record_maps,
+                &descriptor.metadata().utf8_reads,
+                &descriptor.metadata().numeric_maps,
                 &(plan).string_map_regions(),
             );
             assert_eq!(*descriptor.typed_ir_sha256(), fresh, "{name}");
@@ -311,6 +317,9 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &lines,
                         owners,
                         &descriptor.metadata().frozen_maps,
+                        &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
+                        &descriptor.metadata().numeric_maps,
                         &(plan).string_map_regions()
                     )
                 );
@@ -325,6 +334,9 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &lines,
                         owners,
                         &descriptor.metadata().frozen_maps,
+                        &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
+                        &descriptor.metadata().numeric_maps,
                         &(plan).string_map_regions()
                     )
                 );
@@ -339,6 +351,9 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &[],
                         owners,
                         &descriptor.metadata().frozen_maps,
+                        &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
+                        &descriptor.metadata().numeric_maps,
                         &(plan).string_map_regions()
                     )
                 );
@@ -353,6 +368,9 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &duplicated,
                         owners,
                         &descriptor.metadata().frozen_maps,
+                        &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
+                        &descriptor.metadata().numeric_maps,
                         &(plan).string_map_regions()
                     )
                 );
@@ -369,6 +387,9 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &lines,
                         owners,
                         &descriptor.metadata().frozen_maps,
+                        &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
+                        &descriptor.metadata().numeric_maps,
                         &(plan).string_map_regions()
                     )
                 );
@@ -385,10 +406,60 @@ fn shared_descriptor_proofs_preserve_fresh_identity_and_complete_inventory() {
                         &reversed,
                         owners,
                         &descriptor.metadata().frozen_maps,
+                        &descriptor.metadata().borrowed_record_maps,
+                        &descriptor.metadata().utf8_reads,
+                        &descriptor.metadata().numeric_maps,
                         &(plan).string_map_regions()
                     )
                 );
             }
+        }
+    }
+}
+
+#[test]
+fn numeric_shadow_image_rederives_offsets_and_rejects_aliased_flags() {
+    use crate::native_artifact::NativeProgramDescriptor;
+    let catalog = mech_stdlib::source_catalog();
+    for artifact in
+        artifacts(crate::native_artifact::program::runtime::numeric_shadow_tests::SOURCE)
+    {
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let bytes = jit.descriptor().encode_build_owned_image().unwrap();
+        let image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        let regions = image["descriptor"]["closed_tails"]["regions"]
+            .as_array()
+            .unwrap();
+        let ids = regions
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| !r["numeric"].is_null())
+            .map(|(i, _)| i)
+            .collect::<Vec<_>>();
+        assert!(ids.len() >= 2);
+        assert!(
+            regions[ids[0]]["shadow"].is_number(),
+            "shared scratch needs an explicit offset"
+        );
+        // SAFETY: unchanged same-build descriptor, confined to this JIT owner.
+        let restored =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(&bytes, &catalog) }.unwrap();
+        assert_eq!(
+            serde_json::to_value(&restored.metadata().closed_tails).unwrap(),
+            image["descriptor"]["closed_tails"]
+        );
+        for field in ["shadow", "words"] {
+            let mut changed = image.clone();
+            let old = changed["descriptor"]["closed_tails"]["regions"][ids[1]][field]
+                .as_u64()
+                .unwrap();
+            changed["descriptor"]["closed_tails"]["regions"][ids[1]][field] = (old + 1).into();
+            let changed = serde_json::to_vec(&changed).unwrap();
+            // SAFETY: wire-only diagnostic; no malformed result executes.
+            assert!(
+                unsafe { NativeProgramDescriptor::decode_build_owned_image(&changed, &catalog) }
+                    .is_err()
+            );
         }
     }
 }

@@ -1,0 +1,313 @@
+{
+  "schema": "mech.related-post-gen.selected-speed-checkpoint.v1",
+  "identity": "IR242/work115/ABI41/image9",
+  "compiler": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "source_commit_with_helper_fix": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+  "source": "/private/tmp/mech-related-conjoined-window-integration-compiler-20261107",
+  "build": "/private/tmp/mech-related-conjoined-window-integration-opt-20261107-v1/build.json",
+  "runner": "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/reuse-4/runner-aot",
+  "benchmark_source": "/private/tmp/mech-related-conjoined-window-integration-runners-20261107-v1/reuse-4/build/source.mec",
+  "workers": 4,
+  "source_variant": "ordered-combinadic-mask-reuse",
+  "timing": {
+    "median_seconds": 0.002677917,
+    "samples": 31,
+    "all_exact_rust": true,
+    "category": "IR242_reuse_4",
+    "median_processing_plus_admission_seconds": 0.002830208,
+    "median_whole_process_seconds": 0.03466066694818437,
+    "calculation_boundary": "post_json_including_setup",
+    "median_post_json_seconds": 0.002839,
+    "over_fastest": 1.6690467004766092,
+    "over_rust": 0.30755467505060513,
+    "whole_process_over_fastest": 1.501667140654225,
+    "processing_plus_admission_over_fastest": 1.7639640526806852,
+    "processing_plus_admission_over_rust": 0.32504506366912156,
+    "post_json_over_fastest_matched_native": 1.7694437813618171
+  },
+  "resources": {
+    "median_seconds": 0.002607042,
+    "samples": 7,
+    "all_exact_rust": true,
+    "category": "IR242_reuse_4_instrumented",
+    "median_processing_plus_admission_seconds": 0.002760167,
+    "process_resources_median": {
+      "average_shared_memory_size": 0,
+      "average_unshared_data_size": 0,
+      "average_unshared_stack_size": 0,
+      "block_input_operations": 0,
+      "block_output_operations": 0,
+      "cycles": 79035350,
+      "instructions_retired": 312890949,
+      "involuntary_context_switches": 15,
+      "messages_received": 0,
+      "messages_sent": 0,
+      "page_faults": 0,
+      "page_reclaims": 1786,
+      "peak_physical_footprint_bytes": 16007528,
+      "peak_resident_bytes": 26558464,
+      "signals_received": 0,
+      "swaps": 0,
+      "system_cpu_seconds": 0.0,
+      "user_cpu_seconds": 0.01,
+      "voluntary_context_switches": 0,
+      "wall_seconds": 0.02
+    },
+    "measurement_boundary": "post_json_including_setup",
+    "post_json_measurement_median": {
+      "allocation_requests": 3758,
+      "allocator_accounting_underflows": 0,
+      "allocator_lifetime_accounting_underflows": 0,
+      "freed_allocation_bytes": 7290514,
+      "hardware": {
+        "cycles": 14939198,
+        "instructions_per_cycle": 3.6740592768099063,
+        "instructions_retired": 54878870,
+        "lifetime_peak_physical_footprint_bytes_after": 16007528,
+        "pageins": 0,
+        "physical_footprint_bytes_after": 15925584,
+        "physical_footprint_bytes_before": 11927888,
+        "resident_bytes_after": 26460160,
+        "resident_bytes_before": 21069824,
+        "system_cpu_seconds": 0.00037312500000000003,
+        "user_cpu_seconds": 0.0035532500000000004
+      },
+      "live_requested_heap_bytes_after": 8498742,
+      "live_requested_heap_bytes_before": 7776900,
+      "peak_additional_live_requested_heap_bytes": 5567167,
+      "peak_live_requested_heap_bytes": 13344067,
+      "requested_allocation_bytes": 8012356
+    },
+    "stage_measurements_median": {
+      "restore": {
+        "allocation_requests": 26837,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 6485384,
+        "hardware": {
+          "cycles": 30323292,
+          "instructions_per_cycle": 4.153141650979056,
+          "instructions_retired": 125878851,
+          "lifetime_peak_physical_footprint_bytes_after": 9535848,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 9535848,
+          "physical_footprint_bytes_before": 1163600,
+          "resident_bytes_after": 18628608,
+          "resident_bytes_before": 2031616,
+          "system_cpu_seconds": 0.0005945416666666667,
+          "user_cpu_seconds": 0.007471125
+        },
+        "live_requested_heap_bytes_after": 6351965,
+        "live_requested_heap_bytes_before": 6350,
+        "peak_additional_live_requested_heap_bytes": 7003853,
+        "peak_live_requested_heap_bytes": 7010203,
+        "requested_allocation_bytes": 12830999
+      },
+      "json": {
+        "allocation_requests": 40089,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 1865257,
+        "hardware": {
+          "cycles": 6477967,
+          "instructions_per_cycle": 4.856353066002361,
+          "instructions_retired": 31427500,
+          "lifetime_peak_physical_footprint_bytes_after": 11927888,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 11927888,
+          "physical_footprint_bytes_before": 9535848,
+          "resident_bytes_after": 21069824,
+          "resident_bytes_before": 18644992,
+          "system_cpu_seconds": 0.00018170833333333334,
+          "user_cpu_seconds": 0.0014612916666666667
+        },
+        "live_requested_heap_bytes_after": 7776900,
+        "live_requested_heap_bytes_before": 6351965,
+        "peak_additional_live_requested_heap_bytes": 2538224,
+        "peak_live_requested_heap_bytes": 8890189,
+        "requested_allocation_bytes": 3290192
+      }
+    },
+    "median_whole_process_seconds": 0.04418612504377961,
+    "calculation_boundary": "post_json_including_setup",
+    "median_post_json_seconds": 0.00276775,
+    "over_fastest": 1.5766018397625035,
+    "over_rust": 0.2997748792468286,
+    "whole_process_over_fastest": 1.411806310562263,
+    "processing_plus_admission_over_fastest": 1.6692037835415579,
+    "processing_plus_admission_over_rust": 0.3173822014091377,
+    "post_json_over_fastest_matched_native": 1.6737895829843434,
+    "resource_ratios_to_fastest_rust": {
+      "whole_process": {
+        "peak_physical_footprint_bytes": 2.933819238562753,
+        "instructions_retired": 2.232883250546917,
+        "page_reclaims": 3.4612403100775193,
+        "peak_resident_bytes": 4.404891304347826,
+        "involuntary_context_switches": 3.0,
+        "wall_seconds": 2.0,
+        "cycles": 2.2444967616884344
+      },
+      "post_json": {
+        "live_requested_heap_bytes_before": 3.784223037003336,
+        "peak_additional_live_requested_heap_bytes": 0.9926968447915916,
+        "freed_allocation_bytes": 1.2846526026213523,
+        "peak_live_requested_heap_bytes": 1.7413158116919427,
+        "allocation_requests": 64.79310344827586,
+        "hardware": {
+          "instructions_per_cycle": 1.2075469636181386,
+          "resident_bytes_before": 6.123809523809523,
+          "user_cpu_seconds": 2.2771769606665067,
+          "lifetime_peak_physical_footprint_bytes_after": 2.925035887930253,
+          "physical_footprint_bytes_before": 4.089598990619343,
+          "instructions_retired": 2.855200380090769,
+          "physical_footprint_bytes_after": 2.910062361674322,
+          "system_cpu_seconds": 3.7096106048053024,
+          "cycles": 2.36872650173272,
+          "resident_bytes_after": 4.412568306010929
+        },
+        "live_requested_heap_bytes_after": 2.6511246175576595,
+        "requested_allocation_bytes": 1.173848944425293
+      }
+    },
+    "post_json_instructions_per_post": 10975.774,
+    "post_json_cycles_per_post": 2987.8396
+  },
+  "matched_reference": {
+    "variant": "rust-mech-control-u8-ids-u32",
+    "median_seconds": 0.0016044590000000001,
+    "scope": "Fastest explicitly documented post-JSON timer including input preparation and worker creation/run/join. Artifact restoration and JSON IO are tracked in whole-process time.",
+    "eligible_variants": [
+      "rust",
+      "rust-mech-control-streaming",
+      "rust-mech-control-u32-casts",
+      "rust-mech-control-u8-ids-u32"
+    ]
+  },
+  "whole_process_reference": {
+    "variant": "rust-mech-control-u32-casts",
+    "median_seconds": 0.023081457940861583,
+    "scope": "Fastest external fresh process, launch through exit, including all setup, JSON IO, computation and teardown."
+  },
+  "promotion_gate": "At least21/31 paired wins at both processing and whole-process boundaries plus complete selected-source qualification.",
+  "paired_vs_previous": {
+    "post_json_seconds": {
+      "rounds": 31,
+      "wins": 29,
+      "median_paired_delta_seconds": -7.445900000000024e-05
+    },
+    "wall_seconds": {
+      "rounds": 31,
+      "wins": 24,
+      "median_paired_delta_seconds": -0.001993624959141016
+    }
+  },
+  "previous_selected": "IR238 original/four",
+  "qualification": {
+    "status": "passed",
+    "loader_fixtures_exact": 558,
+    "fixtures": {
+      "edges-after-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "c0532784cc6cbedcdb96ce8fc498bc6d04167421736b306db6253a22600b0dae"
+      },
+      "edges-after-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "f0d33637676f13fe7cdbd916effff1cddce631a52c30ab3c55e2e5caef2ddb46"
+      },
+      "edges-after-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "78c8c9eec5fc348c73a10309d67abb2616c0987a4a69c12a289f77a24f994d12"
+      },
+      "edges-after-8-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "276f0b4581fc04d4c6f571b9f489eaec1984ff1520a7bda416b52246349e0347"
+      },
+      "edges-after-8-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "211d575496b7133caed9bb63cbf41e2636f172da2c71a97210678f59dd72b82b"
+      },
+      "edges-compact-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "93dd0142521dd100c7e9cb69d4ce99c634d6134abed28ae8d7d042bbbe0d96be"
+      },
+      "edges-compact-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "ac3a15f31f73fc15f2d36def9754eb926fe047952b460e540e4dfcf2cec32f9e"
+      },
+      "edges-compact-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "7119bf562862cf54ea5ef23533a818aedfb38ecb5714ebe7b4b6b916a3406bd9"
+      },
+      "edges-compact-8-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "53693dd0048a62e68a4cf860e347a9c3abed9e81d81a822bb737db4568f86ea7"
+      },
+      "edges-compact-8-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "b3ecc3d409fd13f6ed1eeea4073e511464b89540b8794c54aab042ddf07e6e1a"
+      },
+      "edges-reuse-4-full-catalog/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "428f84f7f16bb8806bab3edfb8c0a2ea779575673af4534f7e13987c08402ea1"
+      },
+      "edges-reuse-4-independent/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "9daa9eb88de68123717e72b29dda07821d39a035e862146b3b4bcc9676e9c184"
+      },
+      "edges-reuse-4-json/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "a727c24056ec696f0557beaff6ee16249440c72fa2105c6f13bc463e9d446ca7"
+      },
+      "after-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "6324e5b54b9e77846dd132085533f5af2b1f86aba58fe70662433f5fd582c72b"
+      },
+      "after-8/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "7f2403565f600adef21bd577e1ef134c827a97bee16e97006233cc15d1f62eff"
+      },
+      "compact-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "f4dbb9995b95298c1916695aa65f120bd2a4963687e75103cbbe1fb4397129c6"
+      },
+      "compact-8/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "766be8ae01ec07e449273117fd34c843979479c03b8c4683df7b760c4c9d2fd5"
+      },
+      "reuse-4/edges/edge-fixtures.json": {
+        "cases": 31,
+        "sha256": "a047b2e79eec9234456998a01fc1a2c946b4d22bb6daf5dcb11848be4d62b6ac"
+      }
+    },
+    "decoded_bundle_files_exact": 65,
+    "finite_denials_exact": 48,
+    "finite_small_full_successes_exact": 12,
+    "forged_frontier_rejections": 16,
+    "gpu_passed": 863,
+    "inherited_failures": [
+      "batched::axis_tests::legacy_matrix_multiply_artifacts_remain_gpu_lowerable",
+      "native_artifact::program::runtime::collections::text_join::compiled_map::owned_tests::complete_unchanged_knucleotide_body_uses_the_owned_emitted_map"
+    ],
+    "ci_selected_names_passed": 368,
+    "core_passed": 393,
+    "relevant_engine_passed": 289,
+    "source_layers_reused_only_with_identical_source_and_flags": true,
+    "scalar_semantic_control_rows_exact": 128,
+    "compression_all_nontiming_rows_exact": 5,
+    "selected_source_additional_finite_denials_exact": 24,
+    "total_finite_denials_exact": 72,
+    "selected_source_additional_finite_successes_exact": 6,
+    "total_finite_successes_exact": 18,
+    "selected_source_additional_forged_frontier_rejections": 16,
+    "total_forged_frontier_rejections": 32,
+    "runtime_only_selected_source_full5000_exact": true,
+    "unmodified_generated_app_passed": true,
+    "scalar_only_passed": true,
+    "genuine_old_objects_rejected": 2
+  },
+  "report": "compiler-native-conjoined-windows-and-shared-call-certificates-20261107.json",
+  "current_public_compiler": "IR240 until qualifiedIR242 publication",
+  "goal_complete": false,
+  "updated_utc": "2026-11-07T05:32:52.496362+00:00",
+  "source_tradeoff": "Ordering eligibility sends unordered unique rows to the exact original CSR fallback. This may be slower than the previous fast path on unordered input."
+}

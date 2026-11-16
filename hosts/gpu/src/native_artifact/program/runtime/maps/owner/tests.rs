@@ -49,6 +49,15 @@ pub(in crate::native_artifact::program::runtime::maps::owner) fn observe_geometr
         }
     });
 }
+pub(in crate::native_artifact::program::runtime) fn take_geometry_counts() -> (u64, u64) {
+    REPORT.with(|report| {
+        let mut report = report.borrow_mut();
+        let counts = (report.cached_geometry, report.full_geometry);
+        report.cached_geometry = 0;
+        report.full_geometry = 0;
+        counts
+    })
+}
 fn rejected(result: Result<impl Sized, NativeProgramExecutionError>) {
     if result.is_err() {
         record(|r| r.rejected += 1);

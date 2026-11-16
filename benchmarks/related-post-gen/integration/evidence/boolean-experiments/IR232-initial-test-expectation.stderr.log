@@ -1,0 +1,4 @@
+
+thread 'native_artifact::program::runtime::composition_tests::canonical_boolean_proofs::canonical_boolean_literal_proofs_cover_copies_joins_and_refuse_raw_or_mixed_inputs' (19992961) panicked at /private/tmp/mech-related-native-boolean-literal-branches-compiler-20261106/hosts/gpu/src/native_artifact/program/runtime/composition_tests/canonical_boolean_proofs.rs:83:17:
+canonical copies must survive: mixed=true
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

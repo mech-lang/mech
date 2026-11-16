@@ -1564,6 +1564,7 @@ fn fold_block(
             crate::ControlOperationBody::Iteration(_)
             | crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
+            | crate::ControlOperationBody::Assert
             | crate::ControlOperationBody::Publish => None,
         };
         let Some(result) = result else {

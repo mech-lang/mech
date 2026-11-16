@@ -1,0 +1,47 @@
+// Compressed-block prefix emission from BlockOut.flush_block lines 627–698,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include deflate-header.mec and deflate-path-writer.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+block-write-static-header(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, final<u64>) => (out<path-written>) :=
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(final, bits/and(bitcount, 255u64)))
+  count0 := bitcount + 1u64
+  buf1 := bits/or(buf0, bits/shift-left-wrap(1u64, bits/and(count0, 255u64)))
+  out := path-write-flush(bytes, buf1, count0 + 2u64).
+block-write-precode-lens(lens<[u8]>, permutation<[u8]>, number<u64>, i<u64>, bitbuf<u64>, bitcount<u64>) => (out<(u64,u64)>) :=
+  more := i < number
+  perm<u64> := (more? | true => huff-get8(permutation, i) | false => 0u8)
+  width<u64> := (more? | true => huff-get8(lens, perm) | false => 0u8)
+  buf := bits/or(bitbuf, bits/shift-left-wrap(width, bits/and(bitcount, 255u64)))
+  out := (more? | true => block-write-precode-lens(lens, permutation, number, i + 1u64, buf, bitcount + 3u64) | false => (bitbuf, bitcount)).
+block-write-precode-item(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, item<u32>, words<[u32]>, lens<[u8]>, extra-bits<[u8]>) => (out<path-written>) :=
+  wide<u64> := item
+  symbol := bits/and(wide, 31u64)
+  word<u64> := huff-get32(words, symbol)
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(word, bits/and(bitcount, 255u64)))
+  width<u64> := huff-get8(lens, symbol)
+  count0 := bitcount + width
+  buf1 := bits/or(buf0, bits/shift-left-wrap(bits/shift-right-wrap(wide, 5u64), bits/and(count0, 255u64)))
+  extra<u64> := huff-get8(extra-bits, symbol)
+  out := path-write-flush(bytes, buf1, count0 + extra).
+block-write-precode-items(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, items<[u32]>, number<u64>, words<[u32]>, lens<[u8]>, extra-bits<[u8]>, i<u64>) => (out<path-written>) :=
+  more := i < number
+  step := (more? | true => block-write-precode-item(bytes, bitbuf, bitcount, huff-get32(items, i), words, lens, extra-bits) | false => {bytes: bytes, bitbuf: bitbuf, bitcount: bitcount})
+  out := (more? | true => block-write-precode-items(step.bytes, step.bitbuf, step.bitcount, items, number, words, lens, extra-bits, i + 1u64) | false => step).
+block-write-dynamic-header(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, final<u64>, precode<block-precode>, permutation<[u8]>, extra-bits<[u8]>) => (out<path-written>) :=
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(final, bits/and(bitcount, 255u64)))
+  count0 := bitcount + 1u64
+  buf1 := bits/or(buf0, bits/shift-left-wrap(2u64, bits/and(count0, 255u64)))
+  count1 := count0 + 2u64
+  buf2 := bits/or(buf1, bits/shift-left-wrap(precode.num-litlen-syms - 257u64, bits/and(count1, 255u64)))
+  count2 := count1 + 5u64
+  buf3 := bits/or(buf2, bits/shift-left-wrap(precode.num-offset-syms - 1u64, bits/and(count2, 255u64)))
+  count3 := count2 + 5u64
+  buf4 := bits/or(buf3, bits/shift-left-wrap(precode.num-explicit-lens - 4u64, bits/and(count3, 255u64)))
+  count4 := count3 + 4u64
+  perm<u64> := huff-get8(permutation, 0u64)
+  width<u64> := huff-get8(precode.lens, perm)
+  buf5 := bits/or(buf4, bits/shift-left-wrap(width, bits/and(count4, 255u64)))
+  first := path-write-flush(bytes, buf5, count4 + 3u64)
+  (buf6, count6) := block-write-precode-lens(precode.lens, permutation, precode.num-explicit-lens, 1u64, first.bitbuf, first.bitcount)
+  rest := path-write-flush(first.bytes, buf6, count6)
+  out := block-write-precode-items(rest.bytes, rest.bitbuf, rest.bitcount, precode.items, precode.num-items, precode.codewords, precode.lens, extra-bits, 0u64).

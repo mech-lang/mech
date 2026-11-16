@@ -1,0 +1,21 @@
++> sequence
++> bits
+// Return the already checked masks with eligibility. For interned IDs<64,
+// bit>mask proves strict ordering and uniqueness in the same per-tag scan.
+<subset-row-mask> := <(u64,bool)>
+<subset-prepared> := <([u64],bool)>
+subset-row-mask(ids<[u64]>, at<u64>, end<u64>, mask<u64>) => (out<subset-row-mask>) :=
+  more := at < end
+  bit := (more? | true => bits/shift-left-wrap(1u64, ids[at + 1u64]) | false => 0u64)
+  increasing := bit > mask
+  next := bits/or(mask, bit)
+  out := (more? | true => (increasing? | true => subset-row-mask(ids, at + 1u64, end, next) | false => (mask,false)) | false => (mask,true)).
+subset-prepare(offsets<[u64]>, ids<[u64]>, post<u64>, posts<u64>, output<[u64]>) => (out<subset-prepared>) :=
+  more := post < posts
+  valid := (more? | true => (offsets[post + 2u64] - offsets[post + 1u64]) <= 8u64 | false => true)
+  row := ((more && valid)? | true => subset-row-mask(ids, offsets[post + 1u64], offsets[post + 2u64], 0u64) | false => (0u64,valid))
+  next := ((more && row.2)? | true => sequence/append(output, row.1) | false => output)
+  out := (more? | true => (row.2? | true => subset-prepare(offsets, ids, post + 1u64, posts, next) | false => (output,false)) | false => (output,true)).
+
+prepared := subset-prepare(offsets<[u64]>, ids<[u64]>, start<u64>, posts<u64>, sequence/with-capacity(0u64,capacity<u64>))
+(prepared.1, prepared.2, offsets, ids)

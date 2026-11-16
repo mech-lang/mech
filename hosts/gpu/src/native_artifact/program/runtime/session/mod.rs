@@ -1,6 +1,7 @@
 //! Owning two-phase state for ONE generated CFG invocation. Raw frame pointers
 //! are reconstructed from admitted owned backing for each synchronous entry;
 //! neither caller pointers nor self-referential borrowed state are retained.
+use crate::native_artifact::abi::STATUS_INTEGRITY;
 use crate::native_artifact::program::protocol::abi::{
     PHASE_ACTIVATION, PHASE_CAPTURE_TAIL, PHASE_PREFIX, PHASE_TURN, PHASE_WORKER, STATUS_ACTIVATED,
     STATUS_INPUT_PENDING, STATUS_INPUT_SCANNED, STATUS_WORKER_RESULT,
@@ -8,6 +9,9 @@ use crate::native_artifact::program::protocol::abi::{
 use crate::native_artifact::program::runtime::*;
 
 mod call_cache_allocation;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod argument_bank_tests;
 
 mod capture;
 #[cfg(feature = "canonical-native-program-host-runtime")]
@@ -25,12 +29,20 @@ mod capture_host_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod capture_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
+mod dead_constant_owners;
+#[cfg(all(test, feature = "canonical-native-program"))]
 mod identity_inventory_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod matrix_length_lowering_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod prefix_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod prefix_window_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod worker_constant_owners;
 
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod immutable_retirement_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod output_retirement_tests;
 
@@ -189,18 +201,30 @@ pub(in crate::native_artifact::program::runtime) enum CallCacheEntry {
     Repeated(NativePreparedLibraryCallCache, u64),
 }
 
-/// Empty per-site slots are native invocation metadata, not prebound calls.
+/// Empty prepared-call slots are invocation metadata, not prebound calls.
 /// Their complete concrete backing is admitted during setup. Once slots have
 /// no cache owner; repeated slots separately admit lazy bound metadata.
-pub(in crate::native_artifact::program::runtime) struct CallCacheLane {
-    pub(in crate::native_artifact::program::runtime) entries: Box<[CallCacheEntry]>,
+pub(in crate::native_artifact::program::runtime) struct CallCacheLane<'plan> {
+    layout: &'plan crate::native_artifact::program::prepare::call_cache::Layout,
+    entries: Box<[CallCacheEntry]>,
     metadata_nodes: u64,
     metadata_valid: bool,
     library: Option<NativeLibraryWorkBudget>,
     _reservation: mech_core::ManagedMemoryReservation,
     _nodes: mech_core::ManagedNodeReservation,
 }
-impl CallCacheLane {
+impl<'plan> CallCacheLane<'plan> {
+    #[inline]
+    pub(in crate::native_artifact::program::runtime) fn entry(
+        &self,
+        site: usize,
+    ) -> Option<&CallCacheEntry> {
+        self.entries.get(self.layout.slot(site)?)
+    }
+    #[cfg(all(test, feature = "canonical-native-program"))]
+    pub(in crate::native_artifact::program::runtime) fn test_entries(&self) -> &[CallCacheEntry] {
+        &self.entries
+    }
     /// Reconcile only the cache that can change at this boundary. A failed
     /// reconciliation leaves the lane unusable, never a stale lower bound.
     pub(in crate::native_artifact::program::runtime) fn with_repeated<T>(
@@ -213,9 +237,13 @@ impl CallCacheLane {
     ) -> Result<T, NativeCollectionInvocationError> {
         self.check_account(work)?;
         work.charge(256, 0)?;
+        let slot = self
+            .layout
+            .slot(site)
+            .ok_or(NativeCollectionInvocationError::InvalidInput)?;
         let CallCacheEntry::Repeated(cache, nodes) = self
             .entries
-            .get_mut(site)
+            .get_mut(slot)
             .ok_or(NativeCollectionInvocationError::InvalidInput)?
         else {
             return Err(NativeCollectionInvocationError::InvalidInput);
@@ -247,7 +275,7 @@ impl CallCacheLane {
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
     ) -> Result<bool, NativeCollectionInvocationError> {
-        match self.entries.get(site) {
+        match self.entry(site) {
             Some(CallCacheEntry::Once) => call.invoke_current(inputs, output, limits, work),
             Some(CallCacheEntry::Repeated(..)) => self.with_repeated(site, work, |cache| {
                 call.invoke_current_cached(cache, inputs, output, limits, work)
@@ -294,13 +322,13 @@ impl CallCacheLane {
         )
     }
     fn new(
-        descriptor: &NativeProgramDescriptor,
+        descriptor: &'plan NativeProgramDescriptor,
         limit: u64,
         memory: &ManagedMemoryBudget,
         work: &mut NativeWorkMeter,
     ) -> Result<Self, NativeProgramExecutionError> {
-        let blocks = descriptor.metadata().plan.blocks();
-        let count = blocks.len();
+        let layout = &descriptor.metadata().call_cache;
+        let count = layout.len();
         let bytes = Self::metadata_bytes(count)?;
         if bytes > limit {
             return Err(NativeExecutionError::TransportLimit {
@@ -326,14 +354,14 @@ impl CallCacheLane {
         // Phase resume retains the same previous/current/progress state and
         // cannot replay a root block. No new execution authority is created.
         let entries = call_cache_allocation::allocate(count, bytes, |ordinal| {
-            let block = &blocks[ordinal];
-            if block.iteration().is_none() {
+            if !layout.repeated()[ordinal] {
                 CallCacheEntry::Once
             } else {
                 CallCacheEntry::Repeated(NativePreparedLibraryCallCache::default(), 0)
             }
         })?;
         Ok(Self {
+            layout,
             entries: entries.into_boxed_slice(),
             metadata_nodes: 0,
             metadata_valid: true,
@@ -358,7 +386,7 @@ pub(in crate::native_artifact::program::runtime) struct Prepared<'a> {
     paused: Option<u32>,
     retention: Option<crate::native_artifact::program::runtime::invocation::prefix::Retention>,
     window_work_seen: u64,
-    worker: Option<crate::native_artifact::program::runtime::invocation::parallel::Worker>,
+    worker: Option<Box<crate::native_artifact::program::runtime::invocation::parallel::Worker>>,
     // Invocation/frame roots outlive every synchronous Invocation and worker.
     // Payload Values and private owners hold their separate shared claims.
     _fixed_nodes: mech_core::ManagedNodeReservation,
@@ -368,6 +396,7 @@ struct SetupGeometry {
     locals: usize,
     progress: usize,
     words: usize,
+    logical_words: usize,
     bytes: u64,
 }
 
@@ -385,9 +414,14 @@ impl<'a> Prepared<'a> {
             crate::native_artifact::program::runtime::collections::State::metadata_bytes(
                 descriptor,
             )?;
-        let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().plan.blocks().len())?;
+        let call_caches = CallCacheLane::metadata_bytes(descriptor.metadata().call_cache.len())?;
         let line_matrices = u64::from(!descriptor.metadata().line_matrices.regions.is_empty());
+        let frames = super::buffer_frames::BufferFrames::metadata_nodes(
+            &descriptor.metadata().buffer_frames,
+        )?;
         let total = fixed
+            .checked_add(frames)
+            .ok_or_else(|| invalid("worker frame node count overflow"))?
             .checked_add(collections)
             .and_then(|n| n.checked_add(call_caches))
             .and_then(|n| n.checked_add(line_matrices))
@@ -438,6 +472,15 @@ impl<'a> Prepared<'a> {
                 .and_then(|bytes| bytes.checked_add(admitted))
                 .ok_or_else(|| invalid("worker fixed backing admission overflow"))?;
         }
+        let frames = &descriptor.metadata().buffer_frames;
+        if frames.elements() != 0 {
+            bytes = bytes
+                .checked_sub(super::buffer_frames::BufferFrames::raw_bytes(frames)?)
+                .and_then(|n| {
+                    n.checked_add(super::buffer_frames::BufferFrames::admission_bytes(frames).ok()?)
+                })
+                .ok_or_else(|| invalid("private frame admission overflow"))?;
+        }
         // This immutable sum is established at prepare/decode time, so a
         // repeated dispatch never performs an unfunded constants-table scan.
         bytes
@@ -464,7 +507,27 @@ impl<'a> Prepared<'a> {
             .and_then(|n| n.checked_add(descriptor.metadata().max_library_inputs.max(1)))
             .and_then(|n| n.checked_add(descriptor.metadata().retirements.words().len()))
             .ok_or_else(|| invalid("transport count overflow"))?;
-        let bytes = transport_bytes(words)?
+        let tails = &descriptor.metadata().closed_tails;
+        let saved = tails
+            .logical_words
+            .checked_sub(tails.words)
+            .ok_or_else(|| invalid("numeric physical words exceed logical envelope"))?;
+        let logical_words = words
+            .checked_add(saved)
+            .ok_or_else(|| invalid("logical transport count overflow"))?;
+        // Keep the original combined transport threshold and setup price;
+        // physical planned storage below allocates only the compact bank.
+        let word_and_frame_bytes = transport_bytes(logical_words)?
+            .checked_add(super::buffer_frames::BufferFrames::raw_bytes(
+                &descriptor.metadata().buffer_frames,
+            )?)
+            .ok_or_else(|| invalid("private frame transport overflow"))?;
+        let word_and_frame_bytes = word_and_frame_bytes
+            .checked_add(super::buffer_frames::BufferFrames::metadata_bytes(
+                &descriptor.metadata().buffer_frames,
+            ))
+            .ok_or_else(|| invalid("private frame metadata overflow"))?;
+        let bytes = word_and_frame_bytes
             .checked_add(amount(
                 descriptor.metadata().types.len(),
                 (core::mem::size_of::<Option<Value>>() + 8) as u64,
@@ -488,7 +551,11 @@ impl<'a> Prepared<'a> {
                     .ok()?,
                 )
             })
-            .and_then(|n| n.checked_add(CallCacheLane::metadata_bytes(plan.blocks().len()).ok()?))
+            .and_then(|n| {
+                n.checked_add(
+                    CallCacheLane::metadata_bytes(descriptor.metadata().call_cache.len()).ok()?,
+                )
+            })
             .and_then(|n| {
                 n.checked_add(
                     crate::native_artifact::program::runtime::lines::State::metadata_bytes(
@@ -502,6 +569,7 @@ impl<'a> Prepared<'a> {
             locals,
             progress,
             words,
+            logical_words,
             bytes,
         })
     }
@@ -511,7 +579,7 @@ impl<'a> Prepared<'a> {
         limits: NativeProgramExecutionLimits,
         memory: &ManagedMemoryBudget,
     ) -> Result<Self, NativeProgramExecutionError> {
-        Self::new_with_budget(descriptor, limits, memory, None)
+        Self::new_with_budget(descriptor, limits, memory, None, None)
     }
 
     fn new_with_budget(
@@ -519,7 +587,19 @@ impl<'a> Prepared<'a> {
         limits: NativeProgramExecutionLimits,
         memory: &ManagedMemoryBudget,
         worker_budget: Option<NativeLibraryWorkBudget>,
+        worker_region: Option<usize>,
     ) -> Result<Self, NativeProgramExecutionError> {
+        let worker_constants = worker_region
+            .map(|region| {
+                descriptor
+                    .metadata()
+                    .parallel
+                    .regions
+                    .get(region)
+                    .map(|region| region.owned_constants.as_ref())
+                    .ok_or_else(|| invalid("worker setup region outside descriptor"))
+            })
+            .transpose()?;
         let plan = &descriptor.metadata().plan;
         if plan.activation_boundary().is_none() {
             return Err(invalid(
@@ -554,6 +634,7 @@ impl<'a> Prepared<'a> {
             locals,
             progress,
             words,
+            logical_words,
             bytes,
         } = Self::setup_geometry(descriptor)?;
         if bytes > limits.execution.max_transport_bytes {
@@ -568,7 +649,7 @@ impl<'a> Prepared<'a> {
         } else {
             NativeWorkMeter::new(limits.execution.max_work)?
         };
-        work.charge(NativeExecutionPhase::Setup, amount(words, 4, 256)?)?;
+        work.charge(NativeExecutionPhase::Setup, amount(logical_words, 4, 256)?)?;
         work.charge(
             NativeExecutionPhase::Setup,
             amount(
@@ -589,35 +670,70 @@ impl<'a> Prepared<'a> {
         let fixed_nodes = memory.reserve_nodes(
             crate::native_artifact::program::runtime::invocation::caller_geometry::fixed_nodes()?,
         )?;
-        let mut storage =
-            NativeWordStorage::new(words, limits.execution.max_transport_bytes, Some(memory))?;
-        // The exact table occupies the disjoint final lane of this SAME
-        // admitted typed arena; no new runtime plan or unowned metadata pool.
-        // Initialization was prepaid above; fund its copy before touching it.
+        let retirement_words = descriptor.metadata().retirements.words().len();
+        let physical_words = words
+            .checked_sub(retirement_words)
+            .ok_or_else(|| invalid("retirement suffix exceeds transport"))?;
+        let storage = NativeWordStorage::new_compact(
+            words,
+            physical_words,
+            limits.execution.max_transport_bytes,
+            memory,
+        )?;
+        // The descriptor owns this exact immutable table for every entry.
+        // Omit only its physical copy; retain the complete transport claim,
+        // logical initialization price and original table-copy work floor.
         work.charge(
             NativeExecutionPhase::Setup,
             amount(descriptor.metadata().retirements.words().len(), 16, 128)?,
         )?;
-        storage.values_mut()[words - descriptor.metadata().retirements.words().len()..]
-            .copy_from_slice(descriptor.metadata().retirements.words());
-        let mut arena = NativeValueArena::new(
+        let slots = worker_region
+            .map(|region| {
+                descriptor
+                    .metadata()
+                    .worker_value_slots
+                    .get(region)
+                    .map(Option::as_ref)
+                    .ok_or_else(|| invalid("worker arena slot inventory absent"))
+            })
+            .transpose()?
+            .flatten();
+        let mut arena = NativeValueArena::new_with_worker_slots(
             &descriptor.metadata().types,
+            slots,
             limits.execution.max_transport_bytes,
             memory,
             &mut work,
         )?;
-        let call_inputs = NativeTypedStorage::new_values(
+        let buffer_frames = super::buffer_frames::BufferFrames::new(
+            &descriptor.metadata().buffer_frames,
+            limits.execution.max_transport_bytes,
+            memory,
+            &mut work,
+        )?;
+        let call_inputs = super::call_inputs::CallInputs::new(
             descriptor.metadata().max_library_inputs,
+            descriptor.metadata().max_call_values,
             limits.execution.max_transport_bytes,
             memory,
         )?;
         // Constants and their retirement are funded only once, before any
         // generated activation. No fresh Values or observations are touched.
-        for (constant, &bound) in plan
-            .constants()
-            .iter()
-            .zip(&descriptor.metadata().constant_bytes)
-        {
+        // Worker entries execute only their outlined CFG, with immutable root
+        // values supplied by its checked capture plan. The compiler's ordered
+        // import recipe excludes both unread globals and those captured owners.
+        // Parent activation retains the complete existing constant inventory.
+        let constant_count = worker_constants.map_or(plan.constants().len(), <[u32]>::len);
+        for ordinal in 0..constant_count {
+            let index = worker_constants.map_or(ordinal, |indices| indices[ordinal] as usize);
+            let constant = plan
+                .constants()
+                .get(index)
+                .ok_or_else(|| invalid("worker constant recipe outside plan"))?;
+            let bound = descriptor.metadata().constant_bytes[index];
+            if bound == 0 {
+                continue;
+            }
             work.charge(
                 NativeExecutionPhase::Setup,
                 bound
@@ -670,11 +786,13 @@ impl<'a> Prepared<'a> {
                 line_matrices,
                 arena,
                 call_inputs,
+                buffer_frames,
                 call_caches,
                 library,
                 control: ControlState::new(work),
                 stats: RuntimeStats::default(),
                 consumed: false,
+                scalar_path: None,
                 output_cursor: 0,
             }),
         })
@@ -713,13 +831,20 @@ impl<'a> Prepared<'a> {
         {
             return Err(invalid("worker constructor capture/count mismatch"));
         }
-        let mut prepared = Self::new_with_budget(descriptor, limits, memory, Some(library))?;
+        let mut prepared = Self::new_with_budget(
+            descriptor,
+            limits,
+            memory,
+            Some(library),
+            Some(worker.region),
+        )?;
         let locals_start = descriptor.metadata().plan.transport_input_count();
         let state = prepared.state.as_mut().unwrap();
-        // A worker skips whole-program activation, but retains the SAME
-        // immutable constants. Its private local lanes receive their original
-        // words; no source computation or observation is rerun here.
-        for constant in descriptor.metadata().plan.constants() {
+        // Captured scalar words are installed below from their current parent
+        // homes. Only a constant not covered by those captures needs an initial
+        // word here; no full-plan scan or temporary owner is necessary.
+        for &index in &region.owned_constants {
+            let constant = &descriptor.metadata().plan.constants()[index as usize];
             if let Some(kind) =
                 descriptor.metadata().plan.values()[constant.value().get() as usize].scalar_kind()
             {
@@ -748,8 +873,8 @@ impl<'a> Prepared<'a> {
                     let kind = descriptor.metadata().plan.values()[slot as usize]
                         .scalar_kind()
                         .ok_or_else(|| invalid("worker scalar capture type"))?;
-                    if kind == NativeScalarKind::Bool && word > 1 {
-                        return Err(invalid("worker Bool capture"));
+                    if !kind.accepts_bits(word) {
+                        return Err(invalid("worker scalar capture exceeds its type"));
                     }
                     prepared.storage.values_mut()[locals_start + slot as usize] = word;
                 }
@@ -763,12 +888,27 @@ impl<'a> Prepared<'a> {
                     {
                         return Err(invalid("worker managed capture type"));
                     }
-                    state.arena.put(slot, &value, &mut state.control.work)?;
+                    state
+                        .arena
+                        .put_owned_worker_capture(slot, value, &mut state.control.work)?;
+                }
+                crate::native_artifact::program::runtime::invocation::parallel::Capture::Frame(
+                    slot,
+                    capture,
+                ) if slot == expected => {
+                    state.buffer_frames.import_frame(
+                        &descriptor.metadata().buffer_frames,
+                        slot,
+                        &capture,
+                        &mut state.control.work,
+                    )?;
                 }
                 _ => return Err(invalid("worker capture inventory differs")),
             }
         }
-        prepared.worker = Some(worker);
+        // The scoped scheduler holds an explicit byte/node claim for this
+        // worker-only box until every thread joins. Scalar callers allocate none.
+        prepared.worker = Some(Box::new(worker));
         prepared.activated = true;
         prepared.run(
             &mut |frame| {
@@ -937,6 +1077,8 @@ impl<'a> Prepared<'a> {
             parallel_batches: state.stats.parallel_batches,
             parallel_tasks: state.stats.parallel_tasks,
             parallel_peak_workers: state.stats.parallel_peak_workers,
+            parallel_numeric_regions: state.stats.parallel_numeric_regions,
+            parallel_numeric_work: state.stats.parallel_numeric_work,
         })
     }
 
@@ -1164,17 +1306,22 @@ impl<'a> Prepared<'a> {
         let (progress_words, rest) = rest.split_at_mut(self.progress);
         let (output_words, rest) = rest.split_at_mut(plan.transport_output_count());
         let (result, rest) = rest.split_at_mut(1);
-        let (arguments, retirements) =
+        let (arguments, omitted) =
             rest.split_at_mut(descriptor.metadata().max_library_inputs.max(1));
+        debug_assert!(
+            omitted.is_empty(),
+            "mutable transport has no metadata suffix"
+        );
         let input_pointer = input_words.as_ptr();
         let local_pointer = values.as_mut_ptr();
         let output_pointer = output_words.as_mut_ptr();
         let result_pointer = result.as_mut_ptr();
         let argument_pointer = arguments.as_mut_ptr();
         let mut context = Invocation {
-            // Native frame pointers/capacities name only the earlier lanes.
-            // This immutable final lane is private to the checked callback.
-            retirements,
+            // The descriptor outlives this synchronous entry and its scoped
+            // workers. Native frame pointers/capacities name only mutable lanes;
+            // retirement consumers borrow the exact immutable descriptor table.
+            retirements: descriptor.metadata().retirements.words(),
             descriptor,
             progress: progress_words,
             state: &mut state,
@@ -1189,9 +1336,12 @@ impl<'a> Prepared<'a> {
             worker: self.worker.take(),
             parallel_batch: None,
             window_region: None,
+            histogram: None,
             window_hashes: None,
             borrowed_strings: None,
             closed_tail: None,
+            numeric_prepaid: None,
+            parent_continuation: Default::default(),
             selected_join: None,
             prefix: prefix_input.map(|input| {
                 crate::native_artifact::program::runtime::invocation::prefix::State::new(
@@ -1238,7 +1388,8 @@ impl<'a> Prepared<'a> {
         if let Some(error) = context.error.take() {
             return Err(error);
         }
-        if context.window_hashes.is_some()
+        if context.histogram.is_some()
+            || context.window_hashes.is_some()
             || context.window_region.is_some()
             || context.borrowed_strings.is_some()
             || context.closed_tail.is_some()
@@ -1266,6 +1417,7 @@ impl<'a> Prepared<'a> {
             return Err(invalid("program entry changed immutable frame"));
         }
         if phase == PHASE_ACTIVATION && status == STATUS_ACTIVATED {
+            let previous = context.admission_predecessor(u64::from(boundary))?;
             if f.error_node != u64::from(boundary)
                 || context.state.control.completed
                 || context.state.control.current.is_some()
@@ -1276,7 +1428,7 @@ impl<'a> Prepared<'a> {
                     .collections
                     .as_ref()
                     .is_some_and(|state| !state.is_complete())
-                || context.state.control.previous.is_none_or(|previous| {
+                || previous.is_none_or(|previous| {
                     !descriptor.metadata().visits[previous as usize]
                         .successors()
                         .contains(&Some(boundary))
@@ -1356,11 +1508,16 @@ impl<'a> Prepared<'a> {
                     )?;
                     self.paused = Some(site);
                 }
-                STATUS_ARITHMETIC | STATUS_REJECT => {
+                STATUS_ARITHMETIC | STATUS_REJECT | STATUS_INTEGRITY => {
                     let id = context.failure_site(f.error_node)?;
                     let site = &descriptor.metadata().visits[id as usize];
                     return Err(if status == STATUS_ARITHMETIC && site.arithmetic {
                         NativeIterationExecutionError::Arithmetic {
+                            origin: site.origin,
+                        }
+                        .into()
+                    } else if status == STATUS_INTEGRITY && site.integrity {
+                        NativeIterationExecutionError::Integrity {
                             origin: site.origin,
                         }
                         .into()

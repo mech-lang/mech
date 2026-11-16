@@ -1,0 +1,523 @@
+{
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.677881499985233,
+      "control": 15.897830792004243,
+      "mean_reduction_fraction": 0.013835176314093922
+    },
+    {
+      "candidate": 15.702053770422935,
+      "control": 16.16660054132808,
+      "mean_reduction_fraction": 0.028734969341116745
+    }
+  ],
+  "base_commit": "08019220f0235db8424d1644dbd729ce2f2b6e7b",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "08019220f0235db8424d1644dbd729ce2f2b6e7b",
+      "binary": "/private/tmp/mech-action-output-inventory-20261115/candidate",
+      "binary_sha256": "95765da02083977c08a4cbe9368e841ef7922006a0a02f0e70b9cd2d5e1aea79",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "d5d27665d67a1ef63856d7672c32170fc7187e712642751bf9204f1cf165dc4d",
+      "seconds": 379.4990660829935
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "08019220f0235db8424d1644dbd729ce2f2b6e7b",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "d5d27665d67a1ef63856d7672c32170fc7187e712642751bf9204f1cf165dc4d",
+      "seconds": 20.38385233283043
+    },
+    "candidate-cli-check": {
+      "base_commit": "08019220f0235db8424d1644dbd729ce2f2b6e7b",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "d5d27665d67a1ef63856d7672c32170fc7187e712642751bf9204f1cf165dc4d",
+      "seconds": 22.975925375008956
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66939952,
+      "path": "/private/tmp/mech-action-output-inventory-20261115/candidate",
+      "sha256": "95765da02083977c08a4cbe9368e841ef7922006a0a02f0e70b9cd2d5e1aea79"
+    },
+    "control": {
+      "bytes": 66939152,
+      "path": "/private/tmp/mech-action-output-inventory-20261115/control",
+      "sha256": "c5b0b57e2cc870d3e024d2d2c38c9a478122da5f72faf3bbaa3a868cb494a56f"
+    },
+    "focused-link-setup-failure/tests.action_output_inventory_tests.535c99e14102fa36-cgu.0.rcgu.o": {
+      "bytes": 648448,
+      "path": "/private/tmp/mech-action-output-inventory-20261115/focused-link-setup-failure/tests.action_output_inventory_tests.535c99e14102fa36-cgu.0.rcgu.o",
+      "sha256": "6302ec83421da3701e1a2cd7f8e5d41f9eef6f3ff476a27896623292600a79e3"
+    },
+    "focused-link-setup-failure/tests.aqeyet7xa4vca9sxkhycb4s5x.rcgu.o": {
+      "bytes": 1280,
+      "path": "/private/tmp/mech-action-output-inventory-20261115/focused-link-setup-failure/tests.aqeyet7xa4vca9sxkhycb4s5x.rcgu.o",
+      "sha256": "43b47cc677402fec4c5f85ac5b29528dfd910b137f0d50460c4307fed1f2eef6"
+    },
+    "focused/tests": {
+      "bytes": 60123720,
+      "path": "/private/tmp/mech-action-output-inventory-20261115/focused/tests",
+      "sha256": "9e2d8262ed2fc48b5e6bb7173f5308bd63a76f0e26d1ba4efe263444c01c4fb6"
+    }
+  },
+  "decision": {
+    "adverse": "All timings retained. Fullnative link+4.12%,handoff+3.86%. Objectparse+0.617%,catalog+1.752%,canonicalLowering+0.625%,sourceCFG+1.047%,cleanupinclcompaction+1.348%,compaction+3.598%,numericgeneration+0.036%,artifact+0.418%,encode+0.213%,RSS+0.0042%,footprint+0.0061%. Firstcomplete pair candidate0.0046s slower. These unchanged-stage movements are observational, not independent code changes.",
+    "blocks": [
+      {
+        "candidate": 15.677881499985233,
+        "control": 15.897830792004243,
+        "mean_reduction_fraction": 0.013835176314093922
+      },
+      {
+        "candidate": 15.702053770422935,
+        "control": 16.16660054132808,
+        "mean_reduction_fraction": 0.028734969341116745
+      }
+    ],
+    "decision": "retain",
+    "default_serial_byte_gate_passed": true,
+    "goal_complete": false,
+    "instruction_reduction": 0.0202724997310898,
+    "preparation_reduction": 0.20482414299420637,
+    "reason": "Full source-to-executable mean improves2.13475% with both blocks favorable; preparation20.4824% and instructions2.02725% lower. Original all4outputs/complete metadata/wholeexe and14fixturepairs identical;7focused tests,compilercheck/build and explicitnativeCLIcheck pass. Separate default0gate also reproduces all4outputs and entireexecutable.",
+    "setup_failure": "First focused test harness link lacked matching ThinLTO; Apple libLTO15 could not parse Rust LLVM22 bitcode. No tests executed. Original driver/logs preserved; retry adds -Clto=thin and7tests pass with frozen production patch unchanged.",
+    "source_to_executable_candidate_seconds": 15.689967635204084,
+    "source_to_executable_control_seconds": 16.03221566666616,
+    "source_to_executable_reduction": 0.021347519181248997
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "focused_tests": 7,
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.1390484170988202,
+        0.1312571249436587,
+        0.12808379204943776,
+        0.13715004082769156
+      ],
+      "control": [
+        0.1280035839881748,
+        0.13130537513643503,
+        0.12556099984794855,
+        0.12947137490846217
+      ],
+      "mean_reduction_fraction": -0.04121395587369081
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0010168750304728746,
+        0.0009673750028014183,
+        0.0010532909072935581,
+        0.00098025007173419
+      ],
+      "control": [
+        0.0009505411144345999,
+        0.0010048749390989542,
+        0.0009595409501343966,
+        0.0009533748961985111
+      ],
+      "mean_reduction_fraction": -0.03863657935885456
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.737795416964218,
+        15.617967583006248,
+        15.688547082943842,
+        15.71556045790203
+      ],
+      "control": [
+        15.733239833964035,
+        16.06242175004445,
+        16.307465749792755,
+        16.025735332863405
+      ],
+      "mean_reduction_fraction": 0.021347519181248997
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        15.597730124834925,
+        15.485743083059788,
+        15.55940999998711,
+        15.577430167002603
+      ],
+      "control": [
+        15.604285708861426,
+        15.930111499968916,
+        16.18094520899467,
+        15.895310583058745
+      ],
+      "mean_reduction_fraction": 0.021857024891412724
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.02321725,
+        0.023204958,
+        0.023121542,
+        0.023262167
+      ],
+      "control": [
+        0.023135791,
+        0.023323709,
+        0.023031417,
+        0.022928458
+      ],
+      "mean_reduction_fraction": -0.004182477970663623
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09461479098536074,
+        0.09481483302079141,
+        0.09343683300539851,
+        0.09439187496900558
+      ],
+      "control": [
+        0.09403408295474946,
+        0.094532165909186,
+        0.09301545890048146,
+        0.09333499986678362
+      ],
+      "mean_reduction_fraction": -0.006245718853530313
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.035491083,
+        0.037636209,
+        0.037801208,
+        0.035525208
+      ],
+      "control": [
+        0.035374667,
+        0.037749583,
+        0.035326208,
+        0.035482125
+      ],
+      "mean_reduction_fraction": -0.017516013035074884
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.1838705418631434,
+        3.1767478338442743,
+        3.0966729160863906,
+        3.093929042108357
+      ],
+      "control": [
+        3.09955450007692,
+        3.0922299169469625,
+        3.0948390827979892,
+        3.097611667122692
+      ],
+      "mean_reduction_fraction": -0.013483688310709008
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        3.036173874977976,
+        3.0288429998327047,
+        2.9490404999814928,
+        2.94647941715084
+      ],
+      "control": [
+        2.9568217920605093,
+        2.9498269171454012,
+        2.9526122498791665,
+        2.9548072500620037
+      ],
+      "mean_reduction_fraction": -0.012397810830525602
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.14769666688516736,
+        0.14790483401156962,
+        0.14763241610489786,
+        0.1474496249575168
+      ],
+      "control": [
+        0.14273270801641047,
+        0.14240299980156124,
+        0.14222683291882277,
+        0.14280441706068814
+      ],
+      "mean_reduction_fraction": -0.03598346744070047
+    },
+    "compiler_seconds": {
+      "candidate": [
+        15.660447084,
+        15.672022,
+        15.425226125,
+        15.426319584
+      ],
+      "control": [
+        15.811429666,
+        15.914977666,
+        15.810170708,
+        15.874281125
+      ],
+      "mean_reduction_fraction": 0.019347543751262686
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.00918375,
+        0.009163541,
+        0.0092145,
+        0.009148875
+      ],
+      "control": [
+        0.009138459,
+        0.009174625,
+        0.009117875,
+        0.009201583
+      ],
+      "mean_reduction_fraction": -0.002132639334720743
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.6329267920000001,
+        1.630004958,
+        1.6349,
+        1.6288555
+      ],
+      "control": [
+        1.628460833,
+        1.658930667,
+        1.636201125,
+        1.629753833
+      ],
+      "mean_reduction_fraction": 0.004068029696103648
+    },
+    "instructions": {
+      "candidate": [
+        222913585482,
+        222901748577,
+        222919331987,
+        222896548038
+      ],
+      "control": [
+        227514503237,
+        227541775404,
+        227509111874,
+        227515436898
+      ],
+      "mean_reduction_fraction": 0.0202724997310898
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4489740288,
+        4490248192,
+        4489740288,
+        4490248192
+      ],
+      "control": [
+        4489805824,
+        4489805824,
+        4489805824,
+        4489805824
+      ],
+      "mean_reduction_fraction": -4.196528923205989e-05
+    },
+    "native_seconds": {
+      "candidate": [
+        12.093167208,
+        12.093038417,
+        11.841715417,
+        11.861656417
+      ],
+      "control": [
+        12.257406375,
+        12.316897042,
+        12.245339125,
+        12.3189895
+      ],
+      "mean_reduction_fraction": 0.02541899379560253
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.057278708089143,
+        2.0708572501316667,
+        2.0475031251553446,
+        2.056860625045374
+      ],
+      "control": [
+        2.048751916969195,
+        2.067638625157997,
+        2.0503514998126775,
+        2.062766833929345
+      ],
+      "mean_reduction_fraction": -0.0003634278299502469
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.8656655,
+        1.8782185839999999,
+        1.877690958,
+        1.867121875
+      ],
+      "control": [
+        1.85716175,
+        1.868111917,
+        1.860353542,
+        1.857141292
+      ],
+      "mean_reduction_fraction": -0.0061708779459994645
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4467052216,
+        4467560120,
+        4467052216,
+        4467576528
+      ],
+      "control": [
+        4467035832,
+        4467052240,
+        4467035832,
+        4467035832
+      ],
+      "mean_reduction_fraction": -6.0517927753966916e-05
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.6033954590093344,
+        1.6027196669019759,
+        1.6003458329942077,
+        1.601278540911153
+      ],
+      "control": [
+        2.0069617920089513,
+        2.041905791964382,
+        2.0038099160883576,
+        2.005589666077867
+      ],
+      "mean_reduction_fraction": 0.20482414299420637
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.4002054159063846,
+        2.407605124870315,
+        2.31779770902358,
+        2.3185856249183416
+      ],
+      "control": [
+        2.3309540839400142,
+        2.3398034169804305,
+        2.325731457909569,
+        2.3498584998305887
+      ],
+      "mean_reduction_fraction": -0.010468946986060379
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        15.72541620908305,
+        15.740363917080685,
+        15.491477875038981,
+        15.49376824987121
+      ],
+      "control": [
+        15.876650541089475,
+        15.983445208054036,
+        15.876183041837066,
+        15.939895250136033
+      ],
+      "mean_reduction_fraction": 0.019240285844617344
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "patch_sha256": "d5d27665d67a1ef63856d7672c32170fc7187e712642751bf9204f1cf165dc4d",
+  "scope": "Once-per-immutable-plan descriptive output inventory. Full per-phase eligibility/read/definition validation order retained; same61flags/twoworkers/pinnedmimalloc. Eight uncontended Object and eight complete source-to-executable ABBA/BAAB observations, separate excluded screens and cached exe gates. All4outputs/complete metadata/full exe exact. No runtime changes or sub-ten-second claim.",
+  "source_commit": "f077bec331089ff1dfc2eb28d876ccaa17dec92b",
+  "source_state": {
+    "base_commit": "08019220f0235db8424d1644dbd729ce2f2b6e7b",
+    "files": [
+      {
+        "candidate_sha256": "db1f7bd1bc986f21cdf60c71403db93cb394afc6a0b22db5e17f9aa044daacb0",
+        "path": "src/engine/src/native_artifact/program_facts.rs",
+        "sha256": "a34dd3f7a6ee742a74fedb361d3ad7b108b7295e6854c1058248a1c8e513e356"
+      },
+      {
+        "candidate_sha256": "e9e5d08b3ab5d9052517d9268e5b6c31817e6b746ee9fb335741b5cb32e19688",
+        "path": "hosts/gpu/src/native_artifact/program/prepare/numeric_exits.rs",
+        "sha256": "94d45a77ba326b1f83ab81d343f37e83b858df0d48a9700e10ad71854d632e92"
+      },
+      {
+        "candidate_sha256": "be19a9cb8887518b94319535d3374cd09c715535c23c423ad22787501e1d1245",
+        "path": "benchmarks/mech-deflate/native-profile/exit_definitions_tests.rs",
+        "sha256": "2b95a22098078a3afdf1fce165fd349f49f2f96e2e9ac5979d56a57e4acc3d8b"
+      }
+    ],
+    "patch_sha256": "d5d27665d67a1ef63856d7672c32170fc7187e712642751bf9204f1cf165dc4d",
+    "scope": "Lazy once-per-exact-immutable-plan direct action output inventory. Build same complete sorted BTreeMap once; original per-phase live/scope/type/definition/read eligibility and whole-inventory validation order unchanged. No authority/proof cached. Existing focused tests extended with original/decoded cache identity, sparse/duplicate descriptive IDs, unchanged whole-inventory errors and owner isolation. Three-file entire measured patch."
+  }
+}

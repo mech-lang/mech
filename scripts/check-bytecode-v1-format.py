@@ -14,34 +14,35 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "tests/architecture/bytecode-v1"
 MANIFEST = CORPUS / "manifest.json"
+EXPECTED_GRAPH_REVISION = 14
 # This manual seal covers only durable bytecode wire and semantic evidence.
 # Native-build plans have their own content-addressed contract and are excluded.
 # Source fixture seals cover the canonical artifact-only payload after canonical native compilation
 # retired the parallel compiled-program authority. The structural-match fixture
 # also retains canonical pattern metadata.
-EXPECTED_MANIFEST_SHA256 = "9341fe9e39746bfdc255fdb7d2173dc45d53bd15df5e78f220855468c16d586b"
+EXPECTED_MANIFEST_SHA256 = "fedc28adf00c1017437f144ef1d1321f6518baa666544cf043fe62779f1ddb3e"
 EXPECTED_FIXTURE_SHA256 = {
     "canonical-scalars.mecb": "09f26317e73f9d8a6840cbb95de195b34fb0b77fdcfef18488490b51e130c551",
     "canonical-matrices.mecb": "1c73f8203dbe66f535b30b4e5ff80d0d6a1d7800b2e660a737caefdaffb7db90",
     "canonical-composites.mecb": "fc1aa5f79f3f4ad48de5ac73faa5e73564e0e231cbb83300461a8262bfcb8071",
-    "literal-f64.mecb": "2f48e8625c61e340d2c799223e9e73f6942a2a7da1ddcd36a2aa3b1e06095beb",
-    "scalar-add-f64.mecb": "df8995213e9bd1017130ba84af93a417477b8e91defeacc136c25f281278fe2c",
-    "structural-match.mecb": "e06f056d4a9d4b7b4643c0b8f4e7650f888a34499b53e6dfe64736fd698b3c88",
-    "fixed-matrix-add-f64.mecb": "038cfbac51b1e7b1f6e0aca4a92d7d01a08a072da394d5e1caefd494107a95be",
-    "dynamic-matrix-add-f64.mecb": "6c4f51f133801d3b7f2a0d2a1ce4a005a1b53d5ea37b52aca4ccfa59020d4865",
-    "variadic-horzcat-f64.mecb": "709c4d8c6c7c908fb451c7f66373f12b4586c55e4041f5cc4754f59c78624eb5",
-    "string.mecb": "7e35ecabd69db204d61e090a1d9d2e5faf2eb144d4aec556ca90605a4a0d9f6f",
-    "unary.mecb": "32c487a06018af669d1de163f2d5f37f3a42654991d000247e496ef109a85549",
-    "ternary.mecb": "8c769dd5460cc9cb9a84e6175fd4ba9f381cae85e49856783938e9599703c42e",
-    "quaternary.mecb": "e7766cea3412e06d925bb91024f004bd00bff37c0980c5bb11b548e7eae92e42",
-    "named-module-operation.mecb": "494d1e933124cab8eb64a0345c57113b48f00eb0298401cb76e290ed19f00fa4",
-    "cli-stdout.mecb": "8dd6bf520b4cc9bb5dac0b55f2c9299961ceab977051b3850643cf618ddb1100",
-    "console.mecb": "c22e97dd9d317a957fab7ff19cc97b3d3272fbf8226759eb26b91404f6c5128b",
-    "time.mecb": "177e865d965aa06d23d076cb01fd6ced8d652544a87afc0d880a3dbab16b6e57",
-    "timer.mecb": "c99991cc994d18f9ef89e1afae1dd6401ae5b174df51ad917a512fa91dfe0831",
-    "scene.mecb": "bee9ce3aa56a83a2fbd1133d9641d9fdf0a1bc25d92dabef512d363dc0ea01a5",
-    "robot-arm.mecb": "b8b9fd61c83db7e62149a512382803a41b7c69e93dbb5188828e87a3ec4897e9",
-    "synthetic-live-read.mecb": "d6aa82c891cd8471c4f1fcb748c75509b8e700331d6c73885d5b74ae77fe2108",
+    "literal-f64.mecb": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+    "scalar-add-f64.mecb": "8365f40db18b4aa9de3c940a6a70b3012affd7921ff6bb3b7ef4f4c70c94a2ba",
+    "structural-match.mecb": "8fb86cbd1bfcfb71f7777c3d2f9cd06161fb0c018209114e2bd00f95e2c64063",
+    "fixed-matrix-add-f64.mecb": "1ed732381c296f4976910279ee2ab1669242df03a82c8379f3738c552a3b289f",
+    "dynamic-matrix-add-f64.mecb": "71a1615e89fb99ee3bd75f67403b2efa343490c0ab103e9910c918958643ea10",
+    "variadic-horzcat-f64.mecb": "eda339f98f7a133fdb2d8049d74d5e81d494d8a85209a43a8db02f39aef1485a",
+    "string.mecb": "da2a2857ce811ed6cb2775e314fbc9dbd3815266b47d5fc09c80e364eca3d050",
+    "unary.mecb": "aa114a2c3d4b47242dc8859be9cd8d3ad8b92f272be30a9c960642ee983aef23",
+    "ternary.mecb": "e26845e0f0f452b9ab323b013a7af3c4ba2c54e979ec7420c8dffc96b352e001",
+    "quaternary.mecb": "42d67c147771a84043fe8042c3774003ea6af2ba9c5df50a9c5945ee04f95343",
+    "named-module-operation.mecb": "5c3479f03426abfdde3da24fbc3a30930b6bf2fbe7831958a8c89d12190d9e5c",
+    "cli-stdout.mecb": "ae2c45dbf3909a19a32104461189b0473ce8e086b4ada415a53d72b37c55ef63",
+    "console.mecb": "d98e975ec157e86d4864cc4c1438d8f3a1a308373f99c5e7cbbb15a23fc1135e",
+    "time.mecb": "6147e49b16e2a582dc52e9323580d3487af9284943f490c289fff36dd2172c98",
+    "timer.mecb": "300dd1be8aca6fbea087329cf073b8b70ebb6954e8eef7ef3ec6c72e2e629d20",
+    "scene.mecb": "3d45533ad0c3d20edbacf8df2063fd6a2a9047096935cfd710b9633a5ee93bc2",
+    "robot-arm.mecb": "720259f477d3013a9e91d4b38894155afa81fbf70c6fedfceb516aa589f2b1f1",
+    "synthetic-live-read.mecb": "a3e43cd42f1671d8d59eb66e8718819481d65f2e62dc684eb84b775649cc95cd",
 }
 EXPECTED_FILES = [
     "canonical-scalars.mecb",
@@ -893,6 +894,12 @@ def validate_fixture(entry: dict[str, object]) -> None:
         all(artifact_present) or not any(artifact_present),
         f"{name}: ProgramArtifact sections are only partially present",
     )
+    if all(artifact_present):
+        graph = json.loads(section_payloads[SECTION_NAMES.index("ArtifactNodes")])
+        require(
+            isinstance(graph, dict) and graph.get("revision") == EXPECTED_GRAPH_REVISION,
+            f"{name}: frozen artifact graph revision is stale; regenerate with the maintained producer",
+        )
     for section, present in zip(sections[7:], artifact_present):
         require(
             section["item_count"] == int(present),

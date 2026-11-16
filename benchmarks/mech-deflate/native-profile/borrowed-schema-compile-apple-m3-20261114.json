@@ -1,0 +1,2135 @@
+{
+  "backend_duplicate_census": {
+    "duplicate_functions_beyond_first": 124,
+    "duplicate_groups": [
+      [
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_12419"
+        },
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_12419_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_15296"
+        },
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_15296_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_26895"
+        },
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_26895_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_31086"
+        },
+        {
+          "bytes_with_alignment": 1664,
+          "name": "_mech_compact_numeric_31086_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_6482"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_6482_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_8209"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_8209_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_10661"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_10661_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_16812"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_16812_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_18539"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_18539_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_20991"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_20991_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_23717"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_23717_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_25444"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_25444_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_28411"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_28411_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_30138"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_30138_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_32602"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_32602_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_34329"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_34329_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_37055"
+        },
+        {
+          "bytes_with_alignment": 1280,
+          "name": "_mech_compact_numeric_37055_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 896,
+          "name": "_mech_compact_numeric_15737_grouped"
+        },
+        {
+          "bytes_with_alignment": 896,
+          "name": "_mech_compact_numeric_15737_vector_grouped"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 896,
+          "name": "_mech_compact_numeric_27336_grouped"
+        },
+        {
+          "bytes_with_alignment": 896,
+          "name": "_mech_compact_numeric_27336_vector_grouped"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 896,
+          "name": "_mech_compact_numeric_31527_grouped"
+        },
+        {
+          "bytes_with_alignment": 896,
+          "name": "_mech_compact_numeric_31527_vector_grouped"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_39196"
+        },
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_39196_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_13796"
+        },
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_13796_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_14161"
+        },
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_14161_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_14525"
+        },
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_14525_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_14883"
+        },
+        {
+          "bytes_with_alignment": 768,
+          "name": "_mech_compact_numeric_14883_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_184"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_184_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_13937"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_13937_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14302"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14302_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14666"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14666_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_15024"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_15024_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_5822"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_5822_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_7549"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_7549_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_10001"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_10001_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_16152"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_16152_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_17879"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_17879_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_20331"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_20331_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_23057"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_23057_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_24784"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_24784_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_27751"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_27751_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_29478"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_29478_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_31942"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_31942_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_33669"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_33669_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_36395"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_36395_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_13701"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_13701_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14066"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14066_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14430"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14430_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14788"
+        },
+        {
+          "bytes_with_alignment": 640,
+          "name": "_mech_compact_numeric_14788_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_7226"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_7226_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_8953"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_8953_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_11405"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_11405_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_17556"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_17556_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_19283"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_19283_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_21735"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_21735_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_24461"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_24461_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_26188"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_26188_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_29155"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_29155_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_30882"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_30882_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_33346"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_33346_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_35073"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_35073_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_37799"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_37799_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_12189"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_12189_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_22501"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_22501_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_26398"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_26398_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_26665"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_26665_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_35283"
+        },
+        {
+          "bytes_with_alignment": 512,
+          "name": "_mech_compact_numeric_35283_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_12294"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_12294_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_22606"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_22606_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_26503"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_26503_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_26770"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_26770_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_35388"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_35388_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_7146"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_7146_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_8873"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_8873_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_11325"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_11325_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_17476"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_17476_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_19203"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_19203_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_21655"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_21655_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_24381"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_24381_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_26108"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_26108_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_29075"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_29075_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_30802"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_30802_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_33266"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_33266_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_34993"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_34993_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_37719"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_37719_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_5680"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_5680_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_7407"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_7407_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_9859"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_9859_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_16010"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_16010_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_17737"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_17737_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_20189"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_20189_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_22915"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_22915_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_24642"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_24642_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_27609"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_27609_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_29336"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_29336_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_31800"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_31800_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_33527"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_33527_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_36253"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_36253_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13312"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13312_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13565"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13565_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13386"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13386_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13639"
+        },
+        {
+          "bytes_with_alignment": 384,
+          "name": "_mech_compact_numeric_13639_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_350"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_350_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_5759"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_5759_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_7486"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_7486_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_9938"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_9938_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_16089"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_16089_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_17816"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_17816_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_20268"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_20268_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_22994"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_22994_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_24721"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_24721_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_27688"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_27688_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_29415"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_29415_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_31879"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_31879_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_33606"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_33606_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_36332"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_36332_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_12130"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_12130_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_22442"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_22442_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_26339"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_26339_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_26606"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_26606_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_35224"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_35224_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_40825"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_40825_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_119"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_119_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_13284"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_13284_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_13537"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_numeric_13537_vector"
+        }
+      ],
+      [
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_word_collection_18"
+        },
+        {
+          "bytes_with_alignment": 256,
+          "name": "_mech_compact_word_collection_19"
+        }
+      ]
+    ],
+    "functions": 358,
+    "object_sha256": "8f33516fb93e1614a02f64d6dec1bd92f68abc6c4824b468c71840da494141a7",
+    "scope": "Object-level byte/relocation census including inter-function alignment, not an IR equivalence proof or a validated compilation-cache key.",
+    "unique_code_and_raw_relocation_groups": 234
+  },
+  "base_commit": "0096434d1a487c73aa879a29ffc5b94cc56e1fd3",
+  "candidate_bootstrap_seconds": 454.04113133298233,
+  "candidate_patch_sha256": "200bef8da0b8fdea90a33bae3ce5e02c1440ffd8860346f2602fac43b8b27d03",
+  "compiler_binary_sha256": {
+    "candidate": "77fc1fa9d8b2c07204ab09f76b0980a0d1925d5f6c5387d0a236e1f5cc93dd33",
+    "control": "355f6c9a44444be3a1db893d7b2298a415bc84675d88eaf896bad95d57011376"
+  },
+  "decision": "Retain borrowed schema-environment finalization with all validation and generated bytes unchanged",
+  "fixture_output_comparisons": [
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-nested-phase.mec",
+      "source_sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "assembled:numeric-nested-phase-states",
+      "source_sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-private-fixed-nested.mec",
+      "source_sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-changing-capture-tree.mec",
+      "source_sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-array-windows.mec",
+      "source_sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-multiple-children.mec",
+      "source_sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-bool-equal",
+      "source_sha256": "ed35e11836e7eafd1cb388079a9bed6efb738a997a1f2d9dcfbf1b8146e44740",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2389,
+              "sha256": "81d9fe8d69a5db677583333eaba12e303dd38b4a7a138b48bfce28e345258869"
+            },
+            "program.mecb": {
+              "bytes": 1717,
+              "sha256": "abce07a2299622b93471a882d0ca3e0577fc76ea7549d0228ff7726178f0830f"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "3c0c285c712702bdd575b9bb454a397f941c64387bcd135f1bc99eaec7bb5353"
+            },
+            "source.mec": {
+              "bytes": 26,
+              "sha256": "ed35e11836e7eafd1cb388079a9bed6efb738a997a1f2d9dcfbf1b8146e44740"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2389,
+              "sha256": "81d9fe8d69a5db677583333eaba12e303dd38b4a7a138b48bfce28e345258869"
+            },
+            "program.mecb": {
+              "bytes": 1717,
+              "sha256": "abce07a2299622b93471a882d0ca3e0577fc76ea7549d0228ff7726178f0830f"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "3c0c285c712702bdd575b9bb454a397f941c64387bcd135f1bc99eaec7bb5353"
+            },
+            "source.mec": {
+              "bytes": 26,
+              "sha256": "ed35e11836e7eafd1cb388079a9bed6efb738a997a1f2d9dcfbf1b8146e44740"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-u64-add",
+      "source_sha256": "6f1d1e0e8a0bd15469096d19d3665387590517e70e6f8210f6cb878cce16e399",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "b3c4af6f86b8597d72bc1c2b74b3e32c279360e9e02d0ac9c0a84388f23ac299"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6"
+            },
+            "program.o": {
+              "bytes": 408,
+              "sha256": "f1a15d9c181ee498a414bd78f889cafaf198c5408bd4043577b460bf737efa6a"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "6f1d1e0e8a0bd15469096d19d3665387590517e70e6f8210f6cb878cce16e399"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "b3c4af6f86b8597d72bc1c2b74b3e32c279360e9e02d0ac9c0a84388f23ac299"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "e957d0be84fbd483aec89c5ce989a9d647cb525840c8f3076782d5cf7202a4d6"
+            },
+            "program.o": {
+              "bytes": 408,
+              "sha256": "f1a15d9c181ee498a414bd78f889cafaf198c5408bd4043577b460bf737efa6a"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "6f1d1e0e8a0bd15469096d19d3665387590517e70e6f8210f6cb878cce16e399"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-u64-divide",
+      "source_sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2390,
+              "sha256": "cd233bbdf67acf9581584e2b4138676d0ebabbdafea7d0d6b356cd5b258e8fb7"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "a9b516db83632822e16f7a30447efe003e8d6fde488b1b6b6f6165ff35930fe2"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "70acdb49d07ba24ef8d453f30a403720af032ef0d7002f3f7b9a6da7afe30f66"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "5fb9a48ecb9601cb17efd45f0fcce75d9334174c9c15dcb913da53601f523f86"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-i64-add",
+      "source_sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "6f2450fc832443287cf56f03447ea392a71a39a7f856491ae06c833b95235d6d"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "9e4edd32b460ac7064831048422ff418c8774ec3d4a749a286a450732f5ac80c"
+            },
+            "program.o": {
+              "bytes": 416,
+              "sha256": "37503828d9d301e4bac84be4b76bc42a9147a49e2947e5f19c1eca9a3d6702cb"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "a1051b9bde4bcdbc2f3762b069b4f93ab73c55327f499124f96ccf36e7bc06bd"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-i64-multiply",
+      "source_sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2387,
+              "sha256": "d38c7e773f466a28190b3a4a32bb44007dbb88cf4a24d9dfd1fd5d172d609f3f"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "80f3b069b2ae7651ca00aeb0d42d3cc2c7ef3fc06d454b2a6a000eda22fbf766"
+            },
+            "program.o": {
+              "bytes": 424,
+              "sha256": "f650139b047a0f555059a23c7a3e47dde4d56291043eeb7cd3d591deba9c6988"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "dd5850cef1ff96f257afb055f76e2e6e28c1e03b56266b987730f28f8b3f6752"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-i64-divide",
+      "source_sha256": "d805731f4ce8eb57e098c8a6600a163a35aa8208cb3093914da3be07ddc04243",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2388,
+              "sha256": "93f3ba69b320de4045a445c568209b40bd64fdff0d87ff58aa9cb922942b10d9"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "1ef7eea6ed269c58e5f2a0a2a329c42694662673761b97098c28e477b4ffeb6b"
+            },
+            "program.o": {
+              "bytes": 448,
+              "sha256": "0881b61e1717e6a89711f3bcf6b380bafc6786a5d8d2ea666d5e98945a2094c7"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "d805731f4ce8eb57e098c8a6600a163a35aa8208cb3093914da3be07ddc04243"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2388,
+              "sha256": "93f3ba69b320de4045a445c568209b40bd64fdff0d87ff58aa9cb922942b10d9"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "1ef7eea6ed269c58e5f2a0a2a329c42694662673761b97098c28e477b4ffeb6b"
+            },
+            "program.o": {
+              "bytes": 448,
+              "sha256": "0881b61e1717e6a89711f3bcf6b380bafc6786a5d8d2ea666d5e98945a2094c7"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "d805731f4ce8eb57e098c8a6600a163a35aa8208cb3093914da3be07ddc04243"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-f64-add",
+      "source_sha256": "3cb481a21c920b5276a476e6c980202db9046adaaad8874fcf01ae4ba2983a14",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "d490149aa7c3e31990e0da65973e1a76fa4f13cb7d443382afe2494a2f724b75"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3cb481a21c920b5276a476e6c980202db9046adaaad8874fcf01ae4ba2983a14"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "4b797e1f9b1168d6736401c190f8b9861fe354e82c9f66b9d0c6a06b270989b7"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "d490149aa7c3e31990e0da65973e1a76fa4f13cb7d443382afe2494a2f724b75"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3cb481a21c920b5276a476e6c980202db9046adaaad8874fcf01ae4ba2983a14"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "generated:scalar-f64-divide",
+      "source_sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 2386,
+              "sha256": "769921b7b2855254a0afe8c8bbbc64283e27745951f2c1eb49210b42adc09636"
+            },
+            "program.mecb": {
+              "bytes": 1733,
+              "sha256": "71836e9daeb4af292bb7e48ac680807d36186bb1055211efc8a45e0bfef6c9c9"
+            },
+            "program.o": {
+              "bytes": 392,
+              "sha256": "da7f1033edce5945337c7aa2a9ac9e5503976c799883d79627fe8ab94afa5a60"
+            },
+            "source.mec": {
+              "bytes": 23,
+              "sha256": "3ed9b3e70b1587ea6285314de3ba7848e4e4b8227795666a54d9906f4369bd2f"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "flags_count": 54,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "759807181a96a242c61fc4ad27f76f94369287b3c8debc7429a5027cf57d9c86"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "8f33516fb93e1614a02f64d6dec1bd92f68abc6c4824b468c71840da494141a7"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "qualified": {
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.21000808291137218,
+        0.213489499874413
+      ],
+      "control": [
+        0.20037829200737178,
+        0.20909945806488395
+      ],
+      "mean_reduction_fraction": -0.03423832604104993
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        4.128801041981205,
+        4.086459917016327
+      ],
+      "control": [
+        4.089106958126649,
+        4.121340374927968
+      ],
+      "mean_reduction_fraction": -0.0005862805944245597
+    },
+    "compiler_seconds": {
+      "candidate": [
+        28.665703666,
+        28.541093458
+      ],
+      "control": [
+        29.670581,
+        29.969206834
+      ],
+      "mean_reduction_fraction": 0.04079475796882337
+    },
+    "frontend_seconds": {
+      "candidate": [
+        5.021387791,
+        5.048327625
+      ],
+      "control": [
+        6.78666025,
+        6.51988275
+      ],
+      "mean_reduction_fraction": 0.24325082660462594
+    },
+    "instructions": {
+      "candidate": [
+        431166012041,
+        431147493558
+      ],
+      "control": [
+        453644318267,
+        453082372065
+      ],
+      "mean_reduction_fraction": 0.04898188749328425
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        7002439680,
+        7001931776
+      ],
+      "control": [
+        7446577152,
+        7712800768
+      ],
+      "mean_reduction_fraction": 0.07619088791738493
+    },
+    "native_seconds": {
+      "candidate": [
+        21.114857959,
+        20.961077625
+      ],
+      "control": [
+        20.509873417,
+        20.90844475
+      ],
+      "mean_reduction_fraction": -0.015877453409587128
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        4.767887416994199,
+        4.7375812500249594
+      ],
+      "control": [
+        4.613689583959058,
+        4.685130000114441
+      ],
+      "mean_reduction_fraction": -0.02222315220521076
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.449439,
+        2.440572291
+      ],
+      "control": [
+        2.301293791,
+        2.465160583
+      ],
+      "mean_reduction_fraction": -0.02592218603286689
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        6971299792,
+        6970791888
+      ],
+      "control": [
+        7758371320,
+        7730158048
+      ],
+      "mean_reduction_fraction": 0.09984406209636731
+    },
+    "preparation_seconds": {
+      "candidate": [
+        6.522572375135496,
+        6.568366582971066
+      ],
+      "control": [
+        6.295394583139569,
+        6.495128624839708
+      ],
+      "mean_reduction_fraction": -0.02348736992556133
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.536120207980275,
+        2.4620641248766333
+      ],
+      "control": [
+        2.4447350001428276,
+        2.528688000049442
+      ],
+      "mean_reduction_fraction": -0.0049787304767121565
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        28.769484583986923,
+        28.764217416988686
+      ],
+      "control": [
+        29.821624875068665,
+        30.22790729207918
+      ],
+      "mean_reduction_fraction": 0.04189591617748867
+    }
+  },
+  "scope": [
+    "Four serial ABBA fresh full source-to-Object observations with identical 54 existing runtime flags and host statistics. Compiler bootstrap, screen, tests, fixtures, diagnostic census and archiving are excluded. No competing work from this campaign overlaps primary timing.",
+    "The owned finalizer and new finalize_ref/finalize_body methods use the same canonicalizer and ordered validation. The complete dimension environment is borrowed instead of cloned; the body is still owned. No semantic proof, catalog or factory-selection result is cached.",
+    "Every declaration is still validated, including unused malformed declarations. Contract tests preserve component axis relationships, renumbering, bounds, original error precedence and visibility of draft mutation.",
+    "All source, MBC, Object and complete metadata bytes match the current qualified reduction-rotation control in every primary observation and separate screen. All four outputs also match between subjects in six complete array/enum and eight checked scalar programs.",
+    "All 357 Core, contract, serde-vector, frontend and codec tests pass, along with Core no_std checking. The initial no-default-feature canonical-vector target runs zero tests because of its serde gate; only the explicit two-test serde run counts as vector coverage.",
+    "Compiler time, frontend time, retired instructions and peak RSS improve in this matched cohort. All unchanged-stage variation, including adverse native-stage observations, remains without causal attribution to this frontend change. Four compiles are descriptive, not a population estimate.",
+    "A separate frozen-Object census observes 358 functions, 234 distinct byte/raw-relocation groups and 124 duplicate functions beyond the first. It includes inter-function alignment and is not an IR-equivalence proof or a validated backend cache key. No cached compilation is used.",
+    "No new runtime-latency campaign is claimed; main/helper machine code and complete metadata remain byte-identical. State-fixture assembly provenance includes earlier attempts, not a new fragment-only launch.",
+    "Grammar, language, current-visit/ownership checks, finite admission and backend optimization level are unchanged. Full fresh compilation remains above ten seconds."
+  ],
+  "source_commit": "2f4134024e19ed316437334331a837874b1701b5",
+  "tests": {
+    "codec-tests": 2,
+    "complete_array_enum_fixtures": 6,
+    "core-contract-test": 105,
+    "core-serde-vectors": 2,
+    "core-test": 188,
+    "frontend-tests": 60,
+    "no_std_check": true,
+    "scalar_fixtures": 8,
+    "total": 357
+  }
+}

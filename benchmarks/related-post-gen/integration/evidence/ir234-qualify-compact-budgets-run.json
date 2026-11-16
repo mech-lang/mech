@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "/private/tmp/mech-related-deflate-exhaustion-proof-integration-runners-20261106-v1/qualify-compact-budgets.py"
+  ],
+  "exit": 0,
+  "seconds": 15.250321083003655,
+  "stdout": "eight denials exact across three loaders\nfinite first10/full5000 outputs exact across three loaders\n",
+  "stderr": ""
+}

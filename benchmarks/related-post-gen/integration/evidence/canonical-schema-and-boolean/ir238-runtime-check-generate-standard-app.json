@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/generate-standard-app",
+    "/private/tmp/mech-related-canonical-schema-sinks-compiler-20261107",
+    "/private/tmp/mech-related-canonical-schema-sinks-runtime-check-20261107-v1/managed-app"
+  ],
+  "exit": 0,
+  "seconds": 1.0780698750168085,
+  "stdout": "generated\n",
+  "stderr": "",
+  "compiler_source_sha256": "34fab362ddaa5301a1932109ccdfac14ae71668a49347e85f82c3a52b3c4f413"
+}

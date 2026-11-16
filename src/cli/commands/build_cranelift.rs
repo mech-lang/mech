@@ -3,7 +3,8 @@ use super::*;
 use mech_build::{CargoProjectPaths, build_linked_native_host, generate_cargo_project_lockfile};
 use mech_engine::{ProgramArtifact, decode_program_artifact_bytecode_v1};
 use mech_gpu::native_artifact::{
-    GeneratedLinkedApplication, generate_linked_hosted_program_application,
+    GeneratedLinkedApplication, NativeCompileLimits,
+    generate_linked_hosted_program_application_with_limits,
     validate_linked_application_binary_name,
 };
 use serde_json::{Value as Json, json};
@@ -82,11 +83,18 @@ fn provenance(
     }))
     .map_err(native_error)
 }
+fn compile_limits(path: Option<&Path>) -> MResult<NativeCompileLimits> {
+    match path {
+        None => Ok(NativeCompileLimits::default()),
+        Some(path) => serde_json::from_slice(&fs::read(path)?).map_err(native_error),
+    }
+}
 fn generate(
     prepared: &PreparedBuildInput,
     workspace: &Path,
     directory: &Path,
     name: &str,
+    limits: NativeCompileLimits,
 ) -> MResult<GeneratedLinkedApplication> {
     match &prepared.origin {
         PreparedBuildOrigin::CanonicalSource {
@@ -95,13 +103,14 @@ fn generate(
             ..
         } => {
             let provenance = provenance(artifact, Some(sources))?;
-            generate_linked_hosted_program_application(
+            generate_linked_hosted_program_application_with_limits(
                 workspace,
                 directory,
                 name,
                 artifact,
                 sources.function_catalog(),
                 &provenance,
+                limits,
             )
             .map_err(native_error)
         }
@@ -112,13 +121,14 @@ fn generate(
                 decode_program_artifact_bytecode_v1(&prepared.bytecode).map_err(native_error)?;
             let catalog = mech_stdlib::source_catalog();
             let provenance = provenance(&artifact, None)?;
-            generate_linked_hosted_program_application(
+            generate_linked_hosted_program_application_with_limits(
                 workspace,
                 directory,
                 name,
                 &artifact,
                 &catalog,
                 &provenance,
+                limits,
             )
             .map_err(native_error)
         }
@@ -166,11 +176,18 @@ pub(super) fn run(options: BuildOptions) -> MResult<CliOutcome> {
         None
     };
     // Preserve collision rejection before compilation, Object emission or writes.
+    let limits = compile_limits(options.native_compile_limits.as_deref())?;
     let (prepared, _) = prepare_build_input(&options, &name, bytecode_count, true)?;
     let temporary = tempfile::Builder::new()
         .prefix("mech-canonical-aot-")
         .tempdir()?;
-    let project = generate(&prepared, &workspace, &temporary.path().join("app"), &name)?;
+    let project = generate(
+        &prepared,
+        &workspace,
+        &temporary.path().join("app"),
+        &name,
+        limits,
+    )?;
     // This is only a path view: Object/source pin authority stays in SAME
     // generated build.rs; the shared Cargo helpers own frozen/isolated building.
     let paths = CargoProjectPaths::new(project.root());

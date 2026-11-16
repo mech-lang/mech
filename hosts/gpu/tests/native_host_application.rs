@@ -12,6 +12,173 @@ fn digest(path: &Path) -> String {
         .collect()
 }
 
+fn assert_standalone_resolution(
+    name: &str,
+    text: &str,
+    kind: native_build::ApplicationKind,
+    expected_feature: &str,
+) {
+    let workspace = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .unwrap();
+    let root = tempfile::tempdir().unwrap();
+    let root_path = root.path().canonicalize().unwrap();
+    assert!(!root_path.starts_with(&workspace), "{root_path:?}");
+    let source = root_path.join("input.mec");
+    let application = root_path.join("generated");
+    fs::write(&source, text).unwrap();
+    assert_eq!(
+        native_build::emit_application(&source, &application, &workspace, name, false, false)
+            .unwrap(),
+        kind
+    );
+
+    // Run from the generated workspace so Cargo uses its root configuration.
+    let host = cranelift_native::builder().unwrap().triple().to_string();
+    let output = Command::new(env!("CARGO"))
+        .current_dir(&application)
+        .args([
+            "metadata",
+            "--format-version",
+            "1",
+            "--offline",
+            "--filter-platform",
+            &host,
+        ])
+        .env_remove("CARGO_BUILD_TARGET")
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "{name}: Cargo metadata failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let metadata: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(
+        Path::new(metadata["workspace_root"].as_str().unwrap())
+            .canonicalize()
+            .unwrap(),
+        application
+    );
+
+    let source_manifest = fs::read_to_string(workspace.join("Cargo.toml"))
+        .unwrap()
+        .parse::<toml_edit::DocumentMut>()
+        .unwrap();
+    let generated_manifest = fs::read_to_string(application.join("Cargo.toml"))
+        .unwrap()
+        .parse::<toml_edit::DocumentMut>()
+        .unwrap();
+    let source_patches = source_manifest["patch"]["crates-io"]
+        .as_table_like()
+        .unwrap();
+    let generated_patches = generated_manifest["patch"]["crates-io"]
+        .as_table_like()
+        .unwrap();
+    for (name, entry) in source_patches.iter() {
+        let relative = entry["path"].as_str().unwrap();
+        let generated = generated_patches.get(name).unwrap()["path"]
+            .as_str()
+            .unwrap();
+        assert_eq!(
+            Path::new(generated),
+            workspace.join(relative).canonicalize().unwrap(),
+            "{name}"
+        );
+    }
+    for name in ["mech-core", "mech-engine", "mech-syntax", "mech-stdlib"] {
+        assert!(generated_patches.get(name).is_some(), "{name}");
+    }
+    if kind == native_build::ApplicationKind::Sequence {
+        for name in ["mech-runtime", "mech-terminal"] {
+            assert!(generated_patches.get(name).is_some(), "{name}");
+        }
+    }
+
+    let packages = metadata["packages"].as_array().unwrap();
+    let nodes = metadata["resolve"]["nodes"].as_array().unwrap();
+    for (name, path, feature) in [
+        (
+            "cranelift-codegen",
+            "vendor/cranelift-codegen",
+            Some("experimental-cmp-reuse"),
+        ),
+        (
+            "cranelift-codegen-meta",
+            "vendor/cranelift-codegen-meta",
+            None,
+        ),
+        ("cranelift-frontend", "vendor/cranelift-frontend", None),
+        ("regalloc2", "vendor/regalloc2", None),
+        ("mech-gpu", "hosts/gpu", Some(expected_feature)),
+    ] {
+        let matches = packages
+            .iter()
+            .filter(|package| package["name"] == name)
+            .collect::<Vec<_>>();
+        let [package] = matches.as_slice() else {
+            panic!("{name}: expected one resolved package, got {matches:?}");
+        };
+        assert!(package["source"].is_null(), "{name}");
+        assert_eq!(
+            Path::new(package["manifest_path"].as_str().unwrap())
+                .canonicalize()
+                .unwrap(),
+            workspace
+                .join(path)
+                .join("Cargo.toml")
+                .canonicalize()
+                .unwrap(),
+            "{name}"
+        );
+        let node = nodes
+            .iter()
+            .find(|node| node["id"] == package["id"])
+            .unwrap();
+        if let Some(feature) = feature {
+            assert!(
+                node["features"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|selected| selected == feature),
+                "{name}: {feature} was not selected"
+            );
+        }
+    }
+}
+
+#[test]
+fn generated_sequence_resolves_workspace_backends() {
+    assert_standalone_resolution(
+        "native_sequence_resolution",
+        "io/write(\"ok\")\n",
+        native_build::ApplicationKind::Sequence,
+        "sequence-cli",
+    );
+}
+
+#[test]
+fn generated_activated_sequence_resolves_workspace_backends() {
+    assert_standalone_resolution(
+        "native_activated_resolution",
+        "+> @out := cli/stdout\n@out/line <- \"ok\"\n",
+        native_build::ApplicationKind::Sequence,
+        "native-io",
+    );
+}
+
+#[test]
+fn generated_control_resolves_workspace_backends() {
+    assert_standalone_resolution(
+        "native_control_resolution",
+        include_str!("fixtures/native/fannkuch-idiomatic.mec"),
+        native_build::ApplicationKind::Control,
+        "sequence-cli",
+    );
+}
+
 #[test]
 fn rejected_declarations_cannot_select_legacy_application_frontends() {
     let root = std::env::temp_dir().join(format!(

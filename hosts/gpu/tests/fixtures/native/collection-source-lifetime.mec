@@ -1,0 +1,11 @@
++> sequence
+shift-node(node<u16>) => (out<u16>) :=
+  wide<u64> := node
+  out<u16> := ((wide < 32768u64)? | true => 0u64 | false => wide - 32768u64).
+update-tree(tree<[u16]>, slide<bool>, allowed<bool>) => (out<[u16]>) :=
+  ready! := allowed
+  prior := (slide? | true => shift-node(tree) | false => tree)
+  ~changed := prior
+  changed[1u64] = 9u16
+  out := changed.
+update-tree(words<[u16]>, slide<bool>, allowed<bool>)

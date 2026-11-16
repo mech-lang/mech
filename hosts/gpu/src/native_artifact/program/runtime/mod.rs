@@ -1,4 +1,4 @@
-//! Managed ABI16 invocation. This boundary never evaluates a graph: generated
+//! Managed mixed-value invocation. This boundary never evaluates a graph: generated
 //! blocks choose every successor and run every scalar/counter instruction.
 use crate::native_artifact::abi::{
     NO_NODE, NativeEntryFrame, STATUS_ABI, STATUS_ADMISSION, STATUS_ARITHMETIC, STATUS_OK,
@@ -30,10 +30,16 @@ use mech_engine::native_artifact::{
 };
 use std::ffi::c_void;
 
+mod call_inputs;
 mod collections;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) use collections::numeric_map::Frame as NativeNumericMapFrame;
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) use collections::uniform_words::Frame as NativeUniformFillFrame;
 
 mod lines;
 
+mod retirement;
 mod session;
 #[cfg(feature = "canonical-native-program-host-runtime")]
 pub(in crate::native_artifact) use crate::native_artifact::program::runtime::session::CheckedEntry;
@@ -135,6 +141,10 @@ pub struct NativeProgramExecutionReport {
     pub parallel_tasks: u64,
     /// Observed peak simultaneously executing workers, not admitted capacity.
     pub parallel_peak_workers: u64,
+    /// Generated numeric loans actually reconciled by worker entries.
+    pub parallel_numeric_regions: u64,
+    /// Exact generated compute debits committed by those worker loans.
+    pub parallel_numeric_work: u64,
 }
 fn invalid(reason: &'static str) -> NativeProgramExecutionError {
     NativeExecutionError::Descriptor { reason }.into()
@@ -148,6 +158,9 @@ fn amount(count: usize, scale: u64, base: u64) -> Result<u64, NativeProgramExecu
 fn bits(value: &Value, kind: NativeScalarKind) -> Result<u64, NativeProgramExecutionError> {
     match (kind, value.data()) {
         (NativeScalarKind::Bool, ValueData::Bool(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U8, ValueData::U8(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U16, ValueData::U16(v)) => Ok(u64::from(*v)),
+        (NativeScalarKind::U32, ValueData::U32(v)) => Ok(u64::from(*v)),
         (NativeScalarKind::U64, ValueData::U64(v)) => Ok(*v),
         (NativeScalarKind::I64, ValueData::I64(v)) => Ok(*v as u64),
         (NativeScalarKind::F64, ValueData::F64(v)) => Ok(v.bits()),
@@ -284,6 +297,9 @@ mod histogram_query_observation_tests;
 mod histogram_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
+mod compiled_histogram_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
 mod text_join_observation_tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
@@ -291,6 +307,14 @@ mod tests;
 
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod structural_projection_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod composition_tests;
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod matrix_map_keys_actual_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+mod numeric_shadow_tests;
 
 #[test]
 fn native_runtime_consolidation_preserves_the_charged_layout_envelope() {
@@ -313,3 +337,5 @@ mod state;
 use self::hooks::{admit, helper};
 use self::invocation::Invocation;
 use self::state::{ExecutionState, RuntimeStats};
+
+mod buffer_frames;

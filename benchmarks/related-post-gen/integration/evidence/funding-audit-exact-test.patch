@@ -1,0 +1,85 @@
+diff --git a/hosts/gpu/src/native_artifact/program/compiler.rs b/hosts/gpu/src/native_artifact/program/compiler.rs
+index 3939a70df8..2a995c4ea1 100644
+--- a/hosts/gpu/src/native_artifact/program/compiler.rs
++++ b/hosts/gpu/src/native_artifact/program/compiler.rs
+@@ -130,11 +130,20 @@ impl JitProgramArtifact {
+         artifact: &ProgramArtifact,
+         catalog: &FunctionCatalog,
+         pass: crate::native_artifact::codegen::options::OptimizationPass,
++    ) -> Result<Self, NativeCompileError> {
++        Self::compile_for_test_with_limits(artifact, catalog, NativeCompileLimits::default(), pass)
++    }
++    #[cfg(test)]
++    pub(in crate::native_artifact) fn compile_for_test_with_limits(
++        artifact: &ProgramArtifact,
++        catalog: &FunctionCatalog,
++        limits: NativeCompileLimits,
++        pass: crate::native_artifact::codegen::options::OptimizationPass,
+     ) -> Result<Self, NativeCompileError> {
+         Self::compile_with_options(
+             artifact,
+             catalog,
+-            NativeCompileLimits::default(),
++            limits,
+             &crate::native_artifact::codegen::options::OptimizationOptions::without(pass),
+         )
+     }
+diff --git a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding.rs b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding.rs
+index a0578d35b9..8b0b8adf3a 100644
+--- a/hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding.rs
++++ b/hosts/gpu/src/native_artifact/program/runtime/composition_tests/child_funding.rs
+@@ -368,3 +368,54 @@ fn bounded_child_funding_keeps_a_fallible_operation_inside_the_funded_visit() {
+         }
+     }
+ }
++
++
++// Temporary exact-control diagnostic; replace with a portable regression after audit.
++#[test]
++#[ignore]
++fn exact_compressor_child_funding_audit() {
++    let _observation = begin_test_observation();
++    let artifact = mech_engine::decode_program_artifact_bytecode_v1(
++        &std::fs::read(std::env::var("MECH_FUNDING_AUDIT_ARTIFACT").unwrap()).unwrap()
++    ).unwrap();
++    let input: Vec<u8>=(0..1024).map(|i| b"related-post compiler regression: alpha beta gamma. \n"[(i*7+i/97)%51]).collect();
++    let catalog = mech_stdlib::source_catalog();
++    let mode = NativeProgramLimitMode::NoLimits;
++    let mut expected = None;
++    for disabled in [true, false] {
++        let native = if disabled {
++            JitProgramArtifact::compile_for_test_with_limits(
++                &artifact, &catalog, mode.compilation(), OptimizationPass::ChildFunding
++            ).unwrap()
++        } else {
++            JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation()).unwrap()
++        };
++        let memory=mode.memory_budget();
++        let args = artifact.inputs().iter().map(|port| {
++            let name=mech_engine::decode_source_input_name(&port.name).unwrap();
++            let bytes=match name.as_str() {"input"=>input.as_slice(), "prefix"=>&[], _=>panic!("{name}")};
++            let shape_values=if artifact.schemas().get(port.schema).unwrap().dimension_parameters().is_empty() {
++                Box::new([]) as Box<[u64]>
++            } else {
++                mech_core::shape_for_resolved_extents(artifact.schemas().get(port.schema).unwrap(), &[1,bytes.len() as u64]).unwrap().parameter_values().into()
++            };
++            let value=ValueDraft{schema:port.schema,shape_values,data:Data::Matrix(bytes.iter().copied().map(Data::U8).collect())}.finalize(&SnapshotValidationContext::new(artifact.schemas())).unwrap();
++            let mut reservation=memory.reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap()).unwrap();
++            value.into_memory_budget(&mut reservation).unwrap()
++        }).collect::<Vec<_>>();
++        let before=contents(&args);
++        let aliases=args.clone();
++        let mut output=vec![None;artifact.outputs().len()];
++        take_test_entries();
++        let (result, counts)=observe::run(&native,&args,&mut output,mode.execution(),&memory);
++        let report=result.unwrap();
++        let entered=take_test_entries();
++        let outputs=contents(&output.iter().map(|x|x.as_ref().unwrap().clone()).collect::<Vec<_>>());
++        eprintln!("funding-audit disabled={disabled} entered={entered} report={report:?} phase_sites={:?} entries={} child_exits={} admits={}", counts.phase_sites,counts.tail_entries.len(),counts.child_fuel_exits.len(),counts.admits.len());
++        if let Some((ref value, ref price))=expected {assert_eq!(&outputs,value);assert_eq!(format!("{report:?}"),*price);} else {expected=Some((outputs,format!("{report:?}")));}
++        assert_eq!(contents(&args),before);
++        assert_eq!(contents(&aliases),before);
++        drop((args,aliases,output));
++        assert_eq!((memory.used_bytes(),memory.retained_snapshot_nodes()),(0,0));
++    }
++}

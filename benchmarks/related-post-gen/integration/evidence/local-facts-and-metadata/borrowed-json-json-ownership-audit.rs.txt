@@ -1,0 +1,38 @@
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
+#[derive(Deserialize, Serialize)]
+struct Post<'input> {
+    #[serde(rename = "_id")]
+    #[serde(borrow)]
+    id: Cow<'input, str>,
+    #[serde(borrow)]
+    title: Cow<'input, str>,
+    tags: Vec<Box<str>>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct OwnedPost { #[serde(rename="_id")] id: String, title: String, tags: Vec<Box<str>> }
+fn main() {
+ let cases = [
+  ("plain",r#"[{"_id":"id","title":"Title","tags":["a"]}]"#,Some((2,0))),
+  ("escaped",r#"[{"_id":"i\u0064","title":"T\u0069tle","tags":["a"]}]"#,Some((0,2))),
+  ("mixed",r#"[{"_id":"id","title":"Line\nTitle","tags":["a"]}]"#,Some((1,1))),
+  ("surrogate",r#"[{"_id":"\ud83d\ude80","title":"é界","tags":["a"]}]"#,Some((1,1))),
+  ("bad_escape",r#"[{"_id":"\q","title":"x","tags":[]}]"#,None),
+  ("unpaired_surrogate",r#"[{"_id":"\ud83d","title":"x","tags":[]}]"#,None),
+ ];
+ for (name,text,counts) in cases {
+  let borrowed=serde_json::from_str::<Vec<Post<'_>>>(text);
+  let owned=serde_json::from_str::<Vec<OwnedPost>>(text);
+  match (borrowed,owned,counts) {
+   (Ok(b),Ok(o),Some((nb,no)))=>{
+    assert_eq!(serde_json::to_value(&b).unwrap(),serde_json::to_value(&o).unwrap());
+    let count=b.iter().flat_map(|p|[&p.id,&p.title]).filter(|x|matches!(x,Cow::Borrowed(_))).count();
+    assert_eq!((count,b.len()*2-count),(nb,no));
+    println!("{}",serde_json::json!({"case":name,"owned_value_equal":true,"borrowed":count,"owned":b.len()*2-count}));
+   },
+   (Err(b),Err(o),None)=>{assert_eq!(b.to_string(),o.to_string());println!("{}",serde_json::json!({"case":name,"same_error":b.to_string()}));},
+   _=>panic!("unexpected result for {name}"),
+  }
+ }
+}

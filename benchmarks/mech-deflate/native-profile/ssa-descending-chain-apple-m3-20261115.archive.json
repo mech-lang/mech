@@ -1,0 +1,23 @@
+{
+  "archive_name": "mech-ssa-descending-chain-20261115.tar.gz",
+  "bytes": 46339367,
+  "evidence_files": 833,
+  "files": 833,
+  "format": 1,
+  "manifest_sha256": "c910ca709be9cdf704ccc578d15b5aa7b6c4c08ce9c72fbb501802f2dab78edf",
+  "publication": "repository",
+  "replay_byte_identical": true,
+  "replay_sha256": "0238f1079732cc7100d223e6c6031ba2ac9dd1fc94ab30d61fce5042ecbae063",
+  "repository": "mech-lang/mech",
+  "repository_path": "benchmarks/mech-deflate/evidence/compiler-profile-20261114/mech-ssa-descending-chain-20261115.tar.gz",
+  "sha256": "49d34cba959ef6dd3b17e1783c47c226c85aa4a4a6d46e26adeaba7f94279c7a",
+  "source_revision": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
+  "uncompressed_bytes": 268653226,
+  "verification": {
+    "all_git_blobs_match": true,
+    "archive_sha256": "49d34cba959ef6dd3b17e1783c47c226c85aa4a4a6d46e26adeaba7f94279c7a",
+    "source_revision": "db1498fe94873117fd5b9e5e8b4a7864efe0aa2d",
+    "verified_bytes": 268653226,
+    "verified_files": 833
+  }
+}

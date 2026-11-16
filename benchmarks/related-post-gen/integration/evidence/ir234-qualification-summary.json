@@ -1,0 +1,70 @@
+{
+  "status": "passed_with_completed_disk_full_repair",
+  "loader_fixtures_exact": 434,
+  "fixtures": {
+    "edges-after-4-full-catalog/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "1acc2869de1b5664017ef6e561063ce06b425378cf814abb5200722353479b9a"
+    },
+    "edges-after-4-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "066e2b1f85b756798870151518574c28d7661adea2768181668dd8fe93b2d60e"
+    },
+    "edges-after-4-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "14069a46eef3ca6ef6c79c36b7a093b0ed1186b7d7cdd6649b9b70fb05c410ee"
+    },
+    "edges-after-8-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "12ea795845bc53ca468b77302ddff53ed883dee3e5147c1d632e0fbbc0607f2f"
+    },
+    "edges-after-8-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "b5ffc27afed73712fc9f5fd4ffe6f0f681585afd36d967e75e7f583fbc3c9851"
+    },
+    "edges-compact-4-full-catalog/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "4625de38f3b6ded6e835dbb8afc8e40798f19810e5890486d6f3456fd8abc3fb"
+    },
+    "edges-compact-4-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "d5502f2966c3fb7d2540938faf195c16063c91ecfb340612278d4ccdba29e229"
+    },
+    "edges-compact-4-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "2d46ba46b3976e0d025d647ad6e815e18b71764af99cd0d6fb61051cda74205c"
+    },
+    "edges-compact-8-independent/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "78c8c33f8b680de5b44e3f175bf0df897a01aee2d64efcdc016e67e5e2e8cac3"
+    },
+    "edges-compact-8-json/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "88481cbb9f63f43dee4899e03761026e28e32002c649c3cc49c573418cdb1cae"
+    },
+    "after-4/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "dff051ca2cbd5eb823e87499d7727dd8ff90ce7f7b7db17466793dccc3b2f81a"
+    },
+    "after-8/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "c9adf4c3993fcb546ddafe351c34d579d23aa6fd0b5bd252d61cdc7eb0536b03"
+    },
+    "compact-4/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "fc22883e7d29a127b30b180b298b1eab3beda27410af4d45c72f7b30b0936507"
+    },
+    "compact-8/edges/edge-fixtures.json": {
+      "cases": 31,
+      "sha256": "6a7c38956dacb69da0dd8561ffd780883939f81e24e2641c2e781fb75f8bf89c"
+    }
+  },
+  "decoded_bundle_files_exact": 52,
+  "finite_denials_exact": 48,
+  "finite_small_full_successes_exact": 12,
+  "forged_frontier_rejections": 16,
+  "initial_driver_exit": 1,
+  "initial_failure": "Last full-catalog host link exhausted disk; original driver and failed receipts remain unchanged.",
+  "repair": "compact-4-full-catalog/host-build-retry-run.json",
+  "all_completed_checks_asserted": true
+}

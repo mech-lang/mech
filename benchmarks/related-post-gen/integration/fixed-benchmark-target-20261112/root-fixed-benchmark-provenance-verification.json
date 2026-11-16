@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "utc": "2026-11-12T11:27:27.375804+00:00",
+  "provenance_manifest_sha256": "228d61cbb4bbadb132cf093bdd8a4d64ffef5a50741221f798bcd27097083933",
+  "all_manifest_members": 33,
+  "all24source_executable_pins_verified": 24,
+  "unchanged_source_git_blob_pins_verified": 4,
+  "measured_u16_source_sha256": "6a3022a0385efd1bf3dcdc9a76409607d20237260b21bf6745416d84da3d027a",
+  "scope": "Independent offline validation only; no native timing rerun or timer eligibility changes."
+}

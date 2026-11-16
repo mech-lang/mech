@@ -1,0 +1,910 @@
+{
+  "algorithm_audit": {
+    "all_other_production_tokens_identical": true,
+    "element_helper_body_identical_after_field_borrow_split": true,
+    "event_lookup_only_borrowed_iter_range": true,
+    "lazy_cursor_init_and_cached_jump_reset": true,
+    "no_persistent_state_layout_arc_allocation_or_grammar_change": true,
+    "optional_trailing_argument_commas_ignored": true,
+    "patch_sha256": "3e4049488ae14f04a6fdbebef4d6f8264cfec9596b9d277d81dfe7b477daaaf2"
+  },
+  "balanced_native_blocks": [
+    {
+      "candidate": 15.30368470796384,
+      "control": 15.26795633288566,
+      "mean_reduction_fraction": -0.00234008889593329
+    },
+    {
+      "candidate": 15.156031229533255,
+      "control": 15.16359802056104,
+      "mean_reduction_fraction": 0.0004990102624405912
+    }
+  ],
+  "base_commit": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+  "checks": {
+    "candidate-build": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+      "binary": "/private/tmp/mech-parser-event-cursor-20261115/candidate",
+      "binary_sha256": "5399819ceb3b6d49747d4d82b8cae156187fc240b9cf06fbe0448928de310fee",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "build",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "3e4049488ae14f04a6fdbebef4d6f8264cfec9596b9d277d81dfe7b477daaaf2",
+      "seconds": 378.5383154160809
+    },
+    "candidate-check": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+      "base_commit": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "benchmarks/mech-deflate/native-profile/Cargo.toml",
+        "--bin",
+        "compile_profile",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "3e4049488ae14f04a6fdbebef4d6f8264cfec9596b9d277d81dfe7b477daaaf2",
+      "seconds": 21.049957416951656
+    },
+    "candidate-cli-check": {
+      "base_commit": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+      "command": [
+        "cargo",
+        "+nightly-2026-03-03",
+        "check",
+        "--locked",
+        "--offline",
+        "--profile",
+        "compiler",
+        "-j4",
+        "--manifest-path",
+        "Cargo.toml",
+        "--bin",
+        "mech",
+        "--features",
+        "cranelift_build",
+        "--message-format=json"
+      ],
+      "exit_code": 0,
+      "patch_sha256": "3e4049488ae14f04a6fdbebef4d6f8264cfec9596b9d277d81dfe7b477daaaf2",
+      "seconds": 24.559112458955497
+    }
+  },
+  "compiler": {
+    "candidate": {
+      "bytes": 66984576,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/candidate",
+      "sha256": "5399819ceb3b6d49747d4d82b8cae156187fc240b9cf06fbe0448928de310fee"
+    },
+    "control": {
+      "bytes": 66983520,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/control",
+      "sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae"
+    },
+    "parser-tests-initial-link-failure/bin/unit.9ut2gjtlp87ro93ynog8h3fgk.rcgu.o": {
+      "bytes": 568,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.9ut2gjtlp87ro93ynog8h3fgk.rcgu.o",
+      "sha256": "46f2369e237d21eb54df0a3a896df9e85f058d9995832ca2c4fa3fd744ff836f"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.00.rcgu.o": {
+      "bytes": 560712,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.00.rcgu.o",
+      "sha256": "7c3a08e28aec7fed4d3ea5d8fbf0e413bbf56e0fcd7bfc160af80a74edf1a4e4"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.01.rcgu.o": {
+      "bytes": 150568,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.01.rcgu.o",
+      "sha256": "12259a4988c024790f4ebec199f9dcb1229f00bb26809bec25294ba9e9482346"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.02.rcgu.o": {
+      "bytes": 584288,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.02.rcgu.o",
+      "sha256": "581884797a1de8ef780c4ee39ac3b07459007ad12ac57c635ae49c8239a8c0f9"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.03.rcgu.o": {
+      "bytes": 451744,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.03.rcgu.o",
+      "sha256": "b31aa242dc2565e5ab89fe529ff71417c43913dce3ba0199d2c7337f89fd9e34"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.04.rcgu.o": {
+      "bytes": 567256,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.04.rcgu.o",
+      "sha256": "d17bd520822f6bbfa791fa237ff820d155fe38672a41bb7c8d345021cbb04863"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.05.rcgu.o": {
+      "bytes": 515296,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.05.rcgu.o",
+      "sha256": "8030ab88f2b9857bdaf7332b35141ee9480ce8b88e021bddbb81c9f23eb61088"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.06.rcgu.o": {
+      "bytes": 628944,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.06.rcgu.o",
+      "sha256": "0820fc65d70d506c4552dbf7c591d0e8668a5be271ca711aa3d96c65c855ffb6"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.07.rcgu.o": {
+      "bytes": 568592,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.07.rcgu.o",
+      "sha256": "8467c111b6ebd2e9c5a3e4b6cc9e307dd8d277f29a97c1361dc90d50a48b76db"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.08.rcgu.o": {
+      "bytes": 673952,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.08.rcgu.o",
+      "sha256": "42b5553ca0a08110f284d93e30d60ba53da5ebec80371d22f6ee92501e0fc411"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.09.rcgu.o": {
+      "bytes": 944456,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.09.rcgu.o",
+      "sha256": "e02c64b6c4a3649dcd3333dcbe460bb9d2116ebe54a64888ff2195e770dd6357"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.10.rcgu.o": {
+      "bytes": 735320,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.10.rcgu.o",
+      "sha256": "7e990e614fca833e60fb5f93c999398183567c2eb3f9f62c495117277f853930"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.11.rcgu.o": {
+      "bytes": 684056,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.11.rcgu.o",
+      "sha256": "7cacc6c090b4805381e9174eb67510bc290ab27e5414b0496fc96f1e7b0a1725"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.12.rcgu.o": {
+      "bytes": 393168,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.12.rcgu.o",
+      "sha256": "529366f80918e29ab68bca345b2cc6bff2b49ee65c4c520738e5a96113f59cc0"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.13.rcgu.o": {
+      "bytes": 560928,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.13.rcgu.o",
+      "sha256": "d0ca10185b758bd5d93bd74a8b748e5e0a37f29792f7d7dfa724aff33a585ac2"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.14.rcgu.o": {
+      "bytes": 663944,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.14.rcgu.o",
+      "sha256": "418198e55efacdfb708e50b5baa40065d34d960f0d4cd4c09d3a9e52fad2e86c"
+    },
+    "parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.15.rcgu.o": {
+      "bytes": 722496,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests-initial-link-failure/bin/unit.parser_event_cursor_unit.3e3bc5eb88411501-cgu.15.rcgu.o",
+      "sha256": "b3d3dc3ee76b4eae3fa317d43ed690ee3e590c1204550e94e9aa9cb88479347f"
+    },
+    "parser-tests/bin/candidate": {
+      "bytes": 1600136,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests/bin/candidate",
+      "sha256": "efc93f7029a6ced0c218a4e09fb018ef49740ae6ce974ce53b9eddc8e9b78604"
+    },
+    "parser-tests/bin/reference": {
+      "bytes": 1597592,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests/bin/reference",
+      "sha256": "f04146959835ec1bd23d5bed9352a335c7b1f8143f43d9ed09dcecffd721ffb5"
+    },
+    "parser-tests/bin/unit": {
+      "bytes": 7800072,
+      "path": "/private/tmp/mech-parser-event-cursor-20261115/parser-tests/bin/unit",
+      "sha256": "4a349b10f86b222cbae73577cafa5841a611bc3164a3db69353be780c152c615"
+    }
+  },
+  "decision": {
+    "best_qualified_pgo_seconds": 13.596783062268514,
+    "candidate_complete_seconds": 15.229857968748547,
+    "control_complete_seconds": 15.21577717672335,
+    "decision": "reject",
+    "description": "Rejected borrowed parser event iterator: parser1.869500->1.842458s(-1.45%), both parser blocks faster, but complete build15.215777->15.229858s(+0.09%) with mixed blocks. Object compiler-0.052%, instructions-0.0318%; source CFG+0.84%, frontend+0.29%, compaction+2.80%. Exact outputs/full metadata/whole executable,526document units and1780complete parse/identity/accounting pairs pass. Setup failures retained/excluded. Previous source and standard6CE restored; selected6fc PGO13.596783 unchanged. No useful full-build gain or subten claim.",
+    "goal_sub10_achieved": false,
+    "native_adverse_fields": {
+      "source_to_executable_seconds": {
+        "candidate": [
+          15.239414082840085,
+          15.367955333087593,
+          15.10905516706407,
+          15.20300729200244
+        ],
+        "control": [
+          15.406276082852855,
+          15.129636582918465,
+          15.127166958060116,
+          15.200029083061963
+        ],
+        "mean_reduction_fraction": -0.0009254073493358828
+      },
+      "source_to_object_process_seconds": {
+        "candidate": [
+          15.112821457907557,
+          15.231508750002831,
+          14.976730458904058,
+          15.0737926249858
+        ],
+        "control": [
+          15.269882624968886,
+          14.989119125064462,
+          14.986985208000988,
+          15.070673458045349
+        ],
+        "mean_reduction_fraction": -0.0012963727630337374
+      }
+    },
+    "native_blocks": [
+      {
+        "candidate": 15.30368470796384,
+        "control": 15.26795633288566,
+        "mean_reduction_fraction": -0.00234008889593329
+      },
+      {
+        "candidate": 15.156031229533255,
+        "control": 15.16359802056104,
+        "mean_reduction_fraction": 0.0004990102624405912
+      }
+    ],
+    "native_reduction": -0.0009254073493358828,
+    "object_adverse_fields": {
+      "artifact_seconds": {
+        "candidate": [
+          0.023203458,
+          0.023133459,
+          0.0232055,
+          0.022907459
+        ],
+        "control": [
+          0.023113958,
+          0.022939334,
+          0.023016459,
+          0.023173875
+        ],
+        "mean_reduction_fraction": -0.0022359268487559536
+      },
+      "canonical_lowering_seconds": {
+        "candidate": [
+          0.09518104186281562,
+          0.09382349997758865,
+          0.09409995889291167,
+          0.09390150010585785
+        ],
+        "control": [
+          0.09394733305089176,
+          0.09314024983905256,
+          0.09442712482996285,
+          0.09375108405947685
+        ],
+        "mean_reduction_fraction": -0.004637270696959295
+      },
+      "compaction_seconds": {
+        "candidate": [
+          0.15237937518395483,
+          0.15272454195655882,
+          0.15238500013947487,
+          0.15276304190047085
+        ],
+        "control": [
+          0.14834454096853733,
+          0.1482620001770556,
+          0.1485803339164704,
+          0.14843599987216294
+        ],
+        "mean_reduction_fraction": -0.02801287643788264
+      },
+      "frontend_seconds": {
+        "candidate": [
+          1.647595209,
+          1.63992775,
+          1.6428906250000002,
+          1.633930625
+        ],
+        "control": [
+          1.637220125,
+          1.6234135840000001,
+          1.64281875,
+          1.641712
+        ],
+        "mean_reduction_fraction": -0.0029303694536850777
+      },
+      "native_seconds": {
+        "candidate": [
+          11.5673315,
+          11.569559833,
+          11.360791625,
+          11.560060583
+        ],
+        "control": [
+          11.432432708,
+          11.447831625,
+          11.598487375,
+          11.517308
+        ],
+        "mean_reduction_fraction": -0.001341067765186832
+      },
+      "source_cfg_seconds": {
+        "candidate": [
+          2.318184999981895,
+          2.294829040998593,
+          2.208723583025858,
+          2.2988027918618172
+        ],
+        "control": [
+          2.225779040949419,
+          2.2177537500392646,
+          2.3051134578417987,
+          2.2960546670947224
+        ],
+        "mean_reduction_fraction": -0.008384964925642446
+      }
+    },
+    "restoration": {
+      "canonical_binary": "/private/tmp/mech-level12-compile-target/compiler/compile_profile",
+      "canonical_sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae",
+      "cargo_cache_note": "Canonical standard6CE matching source0c949 is restored. Cargo compiler-profile rlibs remain parser-candidate539 until the next genuine Cargo rebuild; restored tree_cache.rs has a fresh mtime and forces affected crate rebuilds. Do not use cached candidate libraries as a restored baseline.",
+      "selected_pgo_binary": "/private/tmp/mech-parallel-native-pgo-20261115/use",
+      "selected_pgo_sha256": "6fc6db8164c3f0a66fc5d968fd42f72fe5daf11ca8e89dea00b430530989a797",
+      "source_path": "src/syntax/src/document/parser/tree_cache.rs",
+      "source_restored": true,
+      "source_sha256": "475c8037ac2726b3d8301dcdaae1c829f581cfd0d396e359a4485f3be4f6b9c5",
+      "workspace_clean": true
+    },
+    "retained_source_commit": "0c949505cc708c233e27c094aa67e105068d6823"
+  },
+  "document_unit_tests": {
+    "actual_complete_document_module": true,
+    "failed": 0,
+    "passed": 526
+  },
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "fixture_pairs": 14,
+  "jobs_diagnostic": {
+    "all_outputs_and_complete_executable_identical": true,
+    "excluded_from_primary": true,
+    "rows": [
+      {
+        "cleanup": 48,
+        "submitted": 344,
+        "workers": 2
+      }
+    ]
+  },
+  "native_numerical_summary": {
+    "native_link_seconds": {
+      "candidate": [
+        0.1250576248858124,
+        0.13546741707250476,
+        0.13135158317163587,
+        0.1280190001707524
+      ],
+      "control": [
+        0.13491533300839365,
+        0.1391597909387201,
+        0.13923629187047482,
+        0.1277770409360528
+      ],
+      "mean_reduction_fraction": 0.03916703671722399
+    },
+    "object_handoff_seconds": {
+      "candidate": [
+        0.0015350000467151403,
+        0.0009791660122573376,
+        0.0009731249883770943,
+        0.0011956668458878994
+      ],
+      "control": [
+        0.001478124875575304,
+        0.001357666915282607,
+        0.0009454581886529922,
+        0.0015785840805619955
+      ],
+      "mean_reduction_fraction": 0.12628677665185428
+    },
+    "source_to_executable_seconds": {
+      "candidate": [
+        15.239414082840085,
+        15.367955333087593,
+        15.10905516706407,
+        15.20300729200244
+      ],
+      "control": [
+        15.406276082852855,
+        15.129636582918465,
+        15.127166958060116,
+        15.200029083061963
+      ],
+      "mean_reduction_fraction": -0.0009254073493358828
+    },
+    "source_to_object_process_seconds": {
+      "candidate": [
+        15.112821457907557,
+        15.231508750002831,
+        14.976730458904058,
+        15.0737926249858
+      ],
+      "control": [
+        15.269882624968886,
+        14.989119125064462,
+        14.986985208000988,
+        15.070673458045349
+      ],
+      "mean_reduction_fraction": -0.0012963727630337374
+    }
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.023203458,
+        0.023133459,
+        0.0232055,
+        0.022907459
+      ],
+      "control": [
+        0.023113958,
+        0.022939334,
+        0.023016459,
+        0.023173875
+      ],
+      "mean_reduction_fraction": -0.0022359268487559536
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.09518104186281562,
+        0.09382349997758865,
+        0.09409995889291167,
+        0.09390150010585785
+      ],
+      "control": [
+        0.09394733305089176,
+        0.09314024983905256,
+        0.09442712482996285,
+        0.09375108405947685
+      ],
+      "mean_reduction_fraction": -0.004637270696959295
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.038495541,
+        0.035821166,
+        0.036062666,
+        0.035880625
+      ],
+      "control": [
+        0.037007083,
+        0.037111334,
+        0.037278959,
+        0.037133125
+      ],
+      "mean_reduction_fraction": 0.01528644274888702
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        2.997044667135924,
+        3.044549166923389,
+        2.9741144999861717,
+        3.0404956249985844
+      ],
+      "control": [
+        3.033196457894519,
+        3.0189168751239777,
+        3.0288410841021687,
+        3.0420414998661727
+      ],
+      "mean_reduction_fraction": 0.005509525731109077
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        2.8446652919519693,
+        2.89182462496683,
+        2.821729499846697,
+        2.8877325830981135
+      ],
+      "control": [
+        2.8848519169259816,
+        2.870654874946922,
+        2.8802607501856983,
+        2.8936054999940097
+      ],
+      "mean_reduction_fraction": 0.00723552285841822
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.15237937518395483,
+        0.15272454195655882,
+        0.15238500013947487,
+        0.15276304190047085
+      ],
+      "control": [
+        0.14834454096853733,
+        0.1482620001770556,
+        0.1485803339164704,
+        0.14843599987216294
+      ],
+      "mean_reduction_fraction": -0.02801287643788264
+    },
+    "compiler_seconds": {
+      "candidate": [
+        15.145421084,
+        15.115224542,
+        14.90859775,
+        15.100901292
+      ],
+      "control": [
+        15.009858709,
+        15.013520083,
+        15.179022792,
+        15.099203042
+      ],
+      "mean_reduction_fraction": 0.0005217101301884242
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009175125,
+        0.009071208,
+        0.009111333,
+        0.009166291
+      ],
+      "control": [
+        0.009203958,
+        0.009353,
+        0.0092205,
+        0.009062917
+      ],
+      "mean_reduction_fraction": 0.008588891942603927
+    },
+    "frontend_seconds": {
+      "candidate": [
+        1.647595209,
+        1.63992775,
+        1.6428906250000002,
+        1.633930625
+      ],
+      "control": [
+        1.637220125,
+        1.6234135840000001,
+        1.64281875,
+        1.641712
+      ],
+      "mean_reduction_fraction": -0.0029303694536850777
+    },
+    "instructions": {
+      "candidate": [
+        220903983468,
+        220993059817,
+        220918463744,
+        220955955142
+      ],
+      "control": [
+        221033558388,
+        221010476579,
+        221028876516,
+        220979498710
+      ],
+      "mean_reduction_fraction": 0.0003177956631990053
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        4487741440,
+        4489953280,
+        4487741440,
+        4489953280
+      ],
+      "control": [
+        4487790592,
+        4490002432,
+        4490002432,
+        4487790592
+      ],
+      "mean_reduction_fraction": 1.0949684375316515e-05
+    },
+    "native_seconds": {
+      "candidate": [
+        11.5673315,
+        11.569559833,
+        11.360791625,
+        11.560060583
+      ],
+      "control": [
+        11.432432708,
+        11.447831625,
+        11.598487375,
+        11.517308
+      ],
+      "mean_reduction_fraction": -0.001341067765186832
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        1.7816224580164999,
+        1.7820004581008106,
+        1.797719791997224,
+        1.7863608750049025
+      ],
+      "control": [
+        1.7881888749543577,
+        1.7828185411635786,
+        1.7942987501155585,
+        1.7945824582129717
+      ],
+      "mean_reduction_fraction": 0.0017018478870503007
+    },
+    "parse_seconds": {
+      "candidate": [
+        1.858872625,
+        1.836937625,
+        1.835785792,
+        1.838236458
+      ],
+      "control": [
+        1.870147084,
+        1.871122417,
+        1.866667625,
+        1.870062417
+      ],
+      "mean_reduction_fraction": 0.01446470307707537
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        4465037008,
+        4467232440,
+        4465020600,
+        4467232440
+      ],
+      "control": [
+        4465037008,
+        4467232440,
+        4467232440,
+        4465037008
+      ],
+      "mean_reduction_fraction": 9.184675907603079e-07
+    },
+    "preparation_seconds": {
+      "candidate": [
+        1.6326873749494553,
+        1.5971436670515686,
+        1.5993411659728736,
+        1.5975604578852654
+      ],
+      "control": [
+        1.6119860829785466,
+        1.5985675000119954,
+        1.632370667066425,
+        1.600487999850884
+      ],
+      "mean_reduction_fraction": 0.0025886259332431605
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.318184999981895,
+        2.294829040998593,
+        2.208723583025858,
+        2.2988027918618172
+      ],
+      "control": [
+        2.225779040949419,
+        2.2177537500392646,
+        2.3051134578417987,
+        2.2960546670947224
+      ],
+      "mean_reduction_fraction": -0.008384964925642446
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        15.21076662489213,
+        15.184219125192612,
+        14.976624749833718,
+        15.170762167079374
+      ],
+      "control": [
+        15.079755540937185,
+        15.086010416038334,
+        15.246450416976586,
+        15.166404833085835
+      ],
+      "mean_reduction_fraction": 0.0005983718235550439
+    }
+  },
+  "object_balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 15.130322813,
+        "control": 15.011689396,
+        "mean_reduction_fraction": -0.007902735919357085
+      },
+      "instructions": {
+        "candidate": 220948521642.5,
+        "control": 221022017483.5,
+        "mean_reduction_fraction": 0.0003325272379502975
+      },
+      "parse_seconds": {
+        "candidate": 1.847905125,
+        "control": 1.8706347505,
+        "mean_reduction_fraction": 0.012150755509018896
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.306507020490244,
+        "control": 2.221766395494342,
+        "mean_reduction_fraction": -0.03814110482891131
+      },
+      "whole_process_seconds": {
+        "candidate": 15.197492875042371,
+        "control": 15.08288297848776,
+        "mean_reduction_fraction": -0.007598673059923344
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 15.004749521,
+        "control": 15.139112916999999,
+        "mean_reduction_fraction": 0.008875248948643333
+      },
+      "instructions": {
+        "candidate": 220937209443,
+        "control": 221004187613,
+        "mean_reduction_fraction": 0.0003030628999540763
+      },
+      "parse_seconds": {
+        "candidate": 1.837011125,
+        "control": 1.868365021,
+        "mean_reduction_fraction": 0.01678146167777128
+      },
+      "source_cfg_seconds": {
+        "candidate": 2.2537631874438375,
+        "control": 2.3005840624682605,
+        "mean_reduction_fraction": 0.02035173406104085
+      },
+      "whole_process_seconds": {
+        "candidate": 15.073693458456546,
+        "control": 15.20642762503121,
+        "mean_reduction_fraction": 0.008728819802237497
+      }
+    }
+  ],
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "parser_differential": {
+    "byte_identical": true,
+    "bytes": 18799506,
+    "candidate_sha256": "e22c4441eb3d586214a424e8a36ef174f3402d88c14be7d08c97f1d5134f3dd4",
+    "cases": 1780,
+    "complete_tree_ids_tokens_diagnostics_stats_restarts_and_stream_work": true,
+    "original_cases": 1667,
+    "reference_sha256": "e22c4441eb3d586214a424e8a36ef174f3402d88c14be7d08c97f1d5134f3dd4",
+    "streaming_cases": 112,
+    "whole_benchmark_case": true
+  },
+  "patch_sha256": "3e4049488ae14f04a6fdbebef4d6f8264cfec9596b9d277d81dfe7b477daaaf2",
+  "qualification_pipeline": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-parser-event-cursor-20261115/qualification-scripts/mech-screen-parser-event-cursor-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 30.919986916938797,
+      "stage": "screens",
+      "started_utc": "2026-11-15T19:54:18.711241+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-parser-event-cursor-20261115/qualification-scripts/mech-cached-native-link-parser-event-cursor-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.30813470808789134,
+      "stage": "executable-gates",
+      "started_utc": "2026-11-15T19:54:49.630463+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-parser-event-cursor-20261115/qualification-scripts/mech-qualify-parser-event-cursor-serial-stage-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.881445167120546,
+      "stage": "default-serial-byte-gate",
+      "started_utc": "2026-11-15T19:54:49.938984+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-parser-event-cursor-20261115/qualification-scripts/mech-qualify-parser-event-cursor-jobs-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 15.307297625113279,
+      "stage": "jobs-diagnostic",
+      "started_utc": "2026-11-15T19:55:05.820652+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-parser-event-cursor-20261115/qualification-scripts/mech-qualify-parser-event-cursor-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 125.09023720794357,
+      "stage": "fixtures-object-cohort",
+      "started_utc": "2026-11-15T19:55:21.128322+00:00",
+      "state": "complete"
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "/private/tmp/mech-parser-event-cursor-20261115/qualification-scripts/mech-native-cohort-parser-event-cursor-current-20261115.py"
+      ],
+      "exit_code": 0,
+      "seconds": 122.54294745787047,
+      "stage": "native-cohort",
+      "started_utc": "2026-11-15T19:57:26.218808+00:00",
+      "state": "complete"
+    }
+  ],
+  "restoration": {
+    "canonical_binary": "/private/tmp/mech-level12-compile-target/compiler/compile_profile",
+    "canonical_sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae",
+    "cargo_cache_note": "Canonical standard6CE matching source0c949 is restored. Cargo compiler-profile rlibs remain parser-candidate539 until the next genuine Cargo rebuild; restored tree_cache.rs has a fresh mtime and forces affected crate rebuilds. Do not use cached candidate libraries as a restored baseline.",
+    "selected_pgo_binary": "/private/tmp/mech-parallel-native-pgo-20261115/use",
+    "selected_pgo_sha256": "6fc6db8164c3f0a66fc5d968fd42f72fe5daf11ca8e89dea00b430530989a797",
+    "source_path": "src/syntax/src/document/parser/tree_cache.rs",
+    "source_restored": true,
+    "source_sha256": "475c8037ac2726b3d8301dcdaae1c829f581cfd0d396e359a4485f3be4f6b9c5",
+    "workspace_clean": true
+  },
+  "scope": "Borrowed sequential event iterator within each Sink.advance allowance slice; lazy initial seek/reseek on cached subtree jumps. No persistent state/Arc clone/allocation, storage layout, event/node/token identity, grammar, permission, finite accounting or emitted-program change. Standard control/candidate, same61flags/twoworkers, no PGO/nativeCPU overrides. Coherent pinned release dependency set only for standalone parser tests; primary full compiler uses current locked dependencies. Complete source/bytecode/Object/fullmetadata/wholeexe gates, including default0 and344/48 realjobs. All setup failures retained and excluded; no subten claim.",
+  "source_commit": null,
+  "source_state": {
+    "base_commit": "9c8bab9389fc3650a7058cb2764a73b615d6d6a3",
+    "control": {
+      "bytes": 66983520,
+      "sha256": "6ce7a53b36d3677cf3b20d919657d2824b7d8561ef5eeaf254377626f27980ae"
+    },
+    "files": [
+      {
+        "candidate": {
+          "bytes": 11689,
+          "sha256": "cd71400d467fff7b625e533044f98740794657ff2c765b1017743889b865c680"
+        },
+        "path": "src/syntax/src/document/parser/tree_cache.rs",
+        "reference": {
+          "bytes": 10589,
+          "sha256": "475c8037ac2726b3d8301dcdaae1c829f581cfd0d396e359a4485f3be4f6b9c5"
+        }
+      }
+    ],
+    "patch_sha256": "3e4049488ae14f04a6fdbebef4d6f8264cfec9596b9d277d81dfe7b477daaaf2",
+    "scope": "Borrowed sequential event iterator per Sink.advance allowance slice, lazy initialization and lazy reseek after cached subtree jump. Element helper splits field borrows with unchanged body. No new owned cursor, Arc clone, persistent state, allocation, event ordering, IDs, cache publication, finite allowance/work, grammar/language, proof or program-runtime change. Standard compiler, same61flags and two workers; PGO6fc remains separate; all4outputs/fullmetadata/wholeD6exe gates required."
+  }
+}

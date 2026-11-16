@@ -1,0 +1,1228 @@
+{
+  "current_code_size": {
+    "checked_utc": "2026-11-16T02:08:39.480419+00:00",
+    "current973": {
+      "compiler_sha256": "8043d93d27b948371aee38027df898a9024e47a1ffa112b47a1913f8329e40ad",
+      "object_bytes": 1419832,
+      "object_path": "/private/tmp/mech-compiler-fat-lto-pgo-20261115/reference/program.o",
+      "object_sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f",
+      "program_flags": 61,
+      "ratio_to_roc": 22.136508596783138,
+      "source_commit": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+      "text_bytes": 1277188
+    },
+    "measurement": "Mach-O Object __TEXT,__text bytes; contains native definitions before final link dead stripping, excludes constant data and runtime adapter text.",
+    "roc_reference": "Pinned reference in docs/design/native-compressor-size-compile-comparison.md:63 and PR992 body.",
+    "roc_reference_text_bytes": 57696,
+    "scope": "Fresh size measurement of the exact selected qualification Object; no compile/runtime speed inference and no compressed-payload size claim.",
+    "separate992": {
+      "head": "39cd147bb53e622121c1bb0e50f4c59fb72d1aae",
+      "integrated": false,
+      "pr": "https://github.com/mech-lang/mech/pull/992",
+      "ratio_to_roc": 15.394412090959513,
+      "text_bytes": 888196
+    },
+    "size_command": [
+      "/usr/bin/size",
+      "-m",
+      "/private/tmp/mech-compiler-fat-lto-pgo-20261115/reference/program.o"
+    ],
+    "size_stdout": "Segment : 1344700\n\tSection (__TEXT, __text): 1277188\n\tSection (__TEXT, __const): 67500\n\ttotal 1344688\ntotal 1344700\n"
+  },
+  "decision": {
+    "decision": "promote_formatted_candidate_to_fresh_whole_compiler_qualification",
+    "description": "Three initial lexical memo screens change -0.418%, +0.188% and -6.929%; none meets10% threshold. Combining compact/batched memo with completed cache-owner release changes -11.862%; formatted frozen version changes -11.795%, both blocks faster and529 units/fullparse exact. Fresh own-PGO complete-build qualification is separate and pending. Production source/selected8043 remain unchanged; no complete-build speedup or sub-ten claim."
+  },
+  "exact_context_recognition": [
+    {
+      "distinct_source_view_bounds": [
+        [
+          164243,
+          164243
+        ]
+      ],
+      "lru_simulations": {
+        "128": {
+          "hit_fraction": 0.8556933620402098,
+          "hits": 141091
+        },
+        "2048": {
+          "hit_fraction": 0.9034842465961125,
+          "hits": 148971
+        },
+        "32768": {
+          "hit_fraction": 0.9034842465961125,
+          "hits": 148971
+        },
+        "512": {
+          "hit_fraction": 0.9034842465961125,
+          "hits": 148971
+        },
+        "8192": {
+          "hit_fraction": 0.9034842465961125,
+          "hits": 148971
+        }
+      },
+      "rule": "identifier",
+      "same_key_endpoints_stable": true,
+      "successes": 164885,
+      "successes_per_exact_context": 10.361002890536634,
+      "unique_exact_contexts": 15914,
+      "unique_source_starts": 15914
+    },
+    {
+      "distinct_source_view_bounds": [
+        [
+          164243,
+          164243
+        ]
+      ],
+      "lru_simulations": {
+        "128": {
+          "hit_fraction": 0.9386711549250621,
+          "hits": 117118
+        },
+        "2048": {
+          "hit_fraction": 0.9757473751703134,
+          "hits": 121744
+        },
+        "32768": {
+          "hit_fraction": 0.9757473751703134,
+          "hits": 121744
+        },
+        "512": {
+          "hit_fraction": 0.9757473751703134,
+          "hits": 121744
+        },
+        "8192": {
+          "hit_fraction": 0.9757473751703134,
+          "hits": 121744
+        }
+      },
+      "rule": "digit-sequence",
+      "same_key_endpoints_stable": true,
+      "successes": 124770,
+      "successes_per_exact_context": 41.23265036351619,
+      "unique_exact_contexts": 3026,
+      "unique_source_starts": 3026
+    },
+    {
+      "distinct_source_view_bounds": [
+        [
+          164243,
+          164243
+        ]
+      ],
+      "lru_simulations": {
+        "128": {
+          "hit_fraction": 0.8333333333333334,
+          "hits": 30
+        },
+        "2048": {
+          "hit_fraction": 0.8333333333333334,
+          "hits": 30
+        },
+        "32768": {
+          "hit_fraction": 0.8333333333333334,
+          "hits": 30
+        },
+        "512": {
+          "hit_fraction": 0.8333333333333334,
+          "hits": 30
+        },
+        "8192": {
+          "hit_fraction": 0.8333333333333334,
+          "hits": 30
+        }
+      },
+      "rule": "identifier-path-segment",
+      "same_key_endpoints_stable": true,
+      "successes": 36,
+      "successes_per_exact_context": 6.0,
+      "unique_exact_contexts": 6,
+      "unique_source_starts": 6
+    }
+  ],
+  "failures": {
+    "batched_first_build": {
+      "failure": "New sibling-module tests accessed the private prediction storage field.",
+      "initial_tests_or_timings_ran": false,
+      "initial_unit_build_exit_code": 1,
+      "repair": "Make the existing field visible to the containing base module only; unchanged layout and no public API change."
+    },
+    "profile_helper": {
+      "completed_observations_repeated": false,
+      "correct_path": "/private/tmp/mech-control-owner-current-profile-20261115/demangle",
+      "failure": "Wrong demangler binary path; helper source existed but binary was in control-owner profile directory.",
+      "helper_sha256": "faa83f6c6622302f1f765f1ae06da11d42184ae4a0474a4652dcac44014e9e4d",
+      "incorrect_path": "/private/tmp/mech-parser-current-8043-profile-20261115/demangle",
+      "reference_build_sample_and_loop_preserved": true,
+      "scope": "Diagnostic setup failure only; no production/benchmark qualification failure."
+    }
+  },
+  "lexical_memo_actual_counts": {
+    "capture_bounds_changed": 0,
+    "capture_depth_changed": 0,
+    "capture_diagnostic_changed": 0,
+    "capture_diagnostic_id_delta": 0,
+    "capture_event_count": 0,
+    "capture_event_shape": 0,
+    "capture_failed_rule": 205,
+    "capture_first_raw_not_fresh": 62385,
+    "capture_halted": 0,
+    "capture_length_refusal": 0,
+    "capture_no_tail": 0,
+    "capture_node_id_delta": 0,
+    "capture_raw_range_refusal": 0,
+    "capture_replay_bytes_changed": 0,
+    "capture_resource_finalizing": 0,
+    "capture_started": 100212,
+    "capture_stats_changed": 0,
+    "capture_token_count": 0,
+    "capture_token_id_delta": 0,
+    "empty_slot": 2950,
+    "entry_stored": 37622,
+    "event_peak_unknown": 8036,
+    "first_raw_would_resume": 0,
+    "halted": 0,
+    "insufficient_allowance": 0,
+    "insufficient_fuel": 0,
+    "key_mismatch": 77991,
+    "marker_peak_unknown": 11217,
+    "replay_attempt": 289896,
+    "replay_hit": 189684,
+    "reserve_refusal": 0,
+    "rule_peak_unknown": 18
+  },
+  "lexical_memo_hit_fraction": 0.6543174103816541,
+  "parse_output_storage": {
+    "bytes": 925564,
+    "codec": "xz",
+    "members": {
+      "batched/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "batched/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "batched/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "batched/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "batched/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "batched/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "batched/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "batched/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "combined/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "direct/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "exact-context/run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "formatted/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "initial/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "memo-census/run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "profile/candidate/run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "profile/reference/run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      }
+    },
+    "path": "parse-outputs.tar.xz",
+    "preset": 9,
+    "scope": "Every full original parse output retained losslessly with logical path and byte/hash pins. No output whitelists.",
+    "sha256": "a82bc08932015f02b37b228b768df58e11707af50e1bf5e7dd7781b2d04f9044"
+  },
+  "production_edits": false,
+  "profiles": {
+    "candidate": {
+      "scope": "Sequential10s/1ms System/opt3 diagnostic of reference versus dispatch-only memo. Elapsed unqualified; samples are not exact exclusive time or additive savings.",
+      "top_named_leaves": [
+        [
+          "<parser_lexical_reuse_candidate_profile::document::retained_sequence::RetainedSequence<_>>::get_mut::descend::<parser_lexical_reuse_candidate_profile::document::parser::journal::Chunk<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>",
+          873
+        ],
+        [
+          "_platform_memmove",
+          778
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::tree_cache::Sink>::advance",
+          482
+        ],
+        [
+          "_xzm_free",
+          474
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::base::continuation::Continuation>::advance",
+          437
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::literals::continuation::Continuation>::advance",
+          257
+        ],
+        [
+          "_platform_memset",
+          221
+        ],
+        [
+          "_xzm_xzone_malloc",
+          218
+        ],
+        [
+          "<unicode_segmentation::grapheme::GraphemeCursor>::next_boundary",
+          207
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::source::TextSnapshot>::byte_at",
+          179
+        ],
+        [
+          "<deduplicated_symbol>",
+          170
+        ],
+        [
+          "_malloc_zone_malloc",
+          150
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::advance",
+          136
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::retained_sequence::Node<parser_lexical_reuse_candidate_profile::document::parser::journal::Chunk<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>>::truncate_in_place",
+          128
+        ],
+        [
+          "_free",
+          126
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::retained_sequence::RetainedSequence<parser_lexical_reuse_candidate_profile::document::parser::journal::Chunk<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>>::push",
+          112
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::operators::continuation::Continuation>::advance",
+          102
+        ],
+        [
+          "<alloc::sync::Arc<parser_lexical_reuse_candidate_profile::document::retained_sequence::Node<parser_lexical_reuse_candidate_profile::document::parser::journal::Chunk<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>>>::drop_slow",
+          101
+        ],
+        [
+          "<smallvec::SmallVec<[parser_lexical_reuse_candidate_profile::document::parser::event::Event; 4]> as core::iter::traits::collect::Extend<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>::extend::<core::iter::adapters::cloned::Cloned<core::slice::iter::Iter<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>>",
+          78
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::literal_scan::LiteralCache>::replay",
+          76
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::journal::Journal<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>::chunk_mut",
+          74
+        ],
+        [
+          "mach_absolute_time",
+          74
+        ],
+        [
+          "parser_lexical_reuse_candidate_profile::document::parser::canonical::prediction::predict_base",
+          69
+        ],
+        [
+          "parser_lexical_reuse_candidate_profile::document::parser::canonical::terminal_spec::fixed_terminal_spec",
+          68
+        ],
+        [
+          "__rustc::__rdl_alloc",
+          66
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::literal_scan::LiteralScan>::advance_cached::<parser_lexical_reuse_candidate_profile::document::source::TextSnapshot>",
+          66
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::journal::Journal<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>::push",
+          65
+        ],
+        [
+          "<smallvec::SmallVec<[parser_lexical_reuse_candidate_profile::document::parser::event::Event; 4]> as core::ops::drop::Drop>::drop",
+          61
+        ],
+        [
+          "_platform_memcmp",
+          61
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::journal::Journal<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>::truncate",
+          58
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::source::TextSnapshot as parser_lexical_reuse_candidate_profile::document::parser::grapheme_scan::ScanSource>::scalar_before",
+          55
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::structure_shell::continuation::Continuation>::advance",
+          55
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::Parser>::rewind",
+          51
+        ],
+        [
+          "core::ptr::drop_in_place::<parser_lexical_reuse_candidate_profile::document::parser::canonical::base::continuation::FrameStorage>",
+          50
+        ],
+        [
+          "DYLD-STUB$$memcpy",
+          48
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::journal::Journal<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>::pop",
+          48
+        ],
+        [
+          "__rustc::__rust_no_alloc_shim_is_unstable_v2",
+          43
+        ],
+        [
+          "DYLD-STUB$$free",
+          42
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::journal::Journal<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>::get",
+          41
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::tree_cache::TreeCache>::advance",
+          41
+        ],
+        [
+          "<alloc::sync::Arc<parser_lexical_reuse_candidate_profile::document::retained_sequence::Node<parser_lexical_reuse_candidate_profile::document::green::GreenElement>>>::drop_slow",
+          39
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::literal_scan::LiteralScan>::advance::<parser_lexical_reuse_candidate_profile::document::source::TextSnapshot>",
+          36
+        ],
+        [
+          "core::str::converts::from_utf8",
+          35
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::grapheme_scan::GraphemeScan>::advance::<str>",
+          35
+        ],
+        [
+          "_xzm_xzone_malloc_tiny",
+          35
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::source::TextSnapshot as parser_lexical_reuse_candidate_profile::document::parser::grapheme_scan::ScanSource>::scalar_at",
+          30
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::grapheme_scan::GraphemeScan>::advance::<parser_lexical_reuse_candidate_profile::document::source::TextSnapshot>",
+          30
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::literals::continuation::Continuation>::push",
+          28
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::document::continuation::Continuation>::advance",
+          28
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::index::NodeIndex>::index_node",
+          28
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::structure_shell::continuation::Continuation>::child",
+          27
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::recursive_core::structures::continuation::StructureContinuation>::advance",
+          27
+        ],
+        [
+          "parser_lexical_reuse_candidate_profile::document::parser::canonical::base::spec::specification",
+          26
+        ],
+        [
+          "alloc::sync::arcinner_layout_for_value_layout",
+          25
+        ],
+        [
+          "<unicode_segmentation::grapheme::GraphemeCursor>::grapheme_category",
+          25
+        ],
+        [
+          "__bzero",
+          24
+        ],
+        [
+          "DYLD-STUB$$_platform_bzero",
+          23
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::operators::continuation::Continuation>::push",
+          22
+        ],
+        [
+          "DYLD-STUB$$memmove",
+          21
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::retained_sequence::Node<parser_lexical_reuse_candidate_profile::document::green::GreenElement>>::append",
+          20
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::literals::continuation::Continuation>::sequence",
+          19
+        ],
+        [
+          "xzm_malloc_zone_size",
+          19
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::literals::continuation::Continuation>::base",
+          19
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::postfix_frame",
+          19
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::retained_sequence::Node<parser_lexical_reuse_candidate_profile::document::green::GreenElement>>::branch",
+          18
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::journal::Journal<parser_lexical_reuse_candidate_profile::document::parser::PendingDiagnostic>>::truncate",
+          18
+        ],
+        [
+          "xzm_realloc",
+          18
+        ],
+        [
+          "core::ptr::drop_in_place::<parser_lexical_reuse_candidate_profile::document::parser::canonical::base::continuation::Continuation>",
+          18
+        ],
+        [
+          "parser_lexical_reuse_candidate_profile::document::green::child_hash_append",
+          17
+        ],
+        [
+          "DYLD-STUB$$malloc",
+          17
+        ],
+        [
+          "<alloc::collections::btree::map::entry::VacantEntry<usize, parser_lexical_reuse_candidate_profile::document::ids::NodeId>>::insert_entry",
+          16
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::recursive_core::kinds::continuation::KindContinuation>::advance",
+          16
+        ],
+        [
+          "parser_lexical_reuse_candidate_profile::document::parser::canonical::operators::supports",
+          15
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::green::children::GreenChildren>::append",
+          14
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::retained_sequence::Node<parser_lexical_reuse_candidate_profile::document::parser::journal::Chunk<parser_lexical_reuse_candidate_profile::document::parser::event::Event>>>::branch",
+          14
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::base::recognition::Cache>::replay",
+          14
+        ],
+        [
+          "parser_lexical_reuse_candidate_profile::document::parser::canonical::operators::spec::specification",
+          14
+        ],
+        [
+          "parser_lexical_reuse_candidate_profile::document::parser::canonical::prediction::predict_operator",
+          13
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::prose::Continuation>::probe",
+          13
+        ],
+        [
+          "<parser_lexical_reuse_candidate_profile::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::expression_frame",
+          12
+        ]
+      ],
+      "total_leaf_samples": 7738
+    },
+    "reference": {
+      "scope": "Sequential10s/1ms System/opt3 diagnostic of reference versus dispatch-only memo. Elapsed unqualified; samples are not exact exclusive time or additive savings.",
+      "top_named_leaves": [
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::RetainedSequence<_>>::get_mut::descend::<parser_lexical_reuse_reference_profile::document::parser::journal::Chunk<parser_lexical_reuse_reference_profile::document::parser::event::Event>>",
+          864
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::base::continuation::Continuation>::advance",
+          680
+        ],
+        [
+          "_platform_memmove",
+          515
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::tree_cache::Sink>::advance",
+          446
+        ],
+        [
+          "_xzm_free",
+          414
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::literals::continuation::Continuation>::advance",
+          266
+        ],
+        [
+          "<unicode_segmentation::grapheme::GraphemeCursor>::next_boundary",
+          221
+        ],
+        [
+          "_xzm_xzone_malloc",
+          216
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::source::TextSnapshot>::byte_at",
+          211
+        ],
+        [
+          "_platform_memset",
+          201
+        ],
+        [
+          "<deduplicated_symbol>",
+          187
+        ],
+        [
+          "_malloc_zone_malloc",
+          164
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::Node<parser_lexical_reuse_reference_profile::document::parser::journal::Chunk<parser_lexical_reuse_reference_profile::document::parser::event::Event>>>::truncate_in_place",
+          161
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::advance",
+          158
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::journal::Journal<parser_lexical_reuse_reference_profile::document::parser::event::Event>>::chunk_mut",
+          141
+        ],
+        [
+          "<alloc::sync::Arc<parser_lexical_reuse_reference_profile::document::retained_sequence::Node<parser_lexical_reuse_reference_profile::document::parser::journal::Chunk<parser_lexical_reuse_reference_profile::document::parser::event::Event>>>>::drop_slow",
+          138
+        ],
+        [
+          "_free",
+          136
+        ],
+        [
+          "parser_lexical_reuse_reference_profile::document::parser::canonical::prediction::predict_base",
+          113
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::RetainedSequence<parser_lexical_reuse_reference_profile::document::parser::journal::Chunk<parser_lexical_reuse_reference_profile::document::parser::event::Event>>>::push",
+          104
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::operators::continuation::Continuation>::advance",
+          84
+        ],
+        [
+          "parser_lexical_reuse_reference_profile::document::parser::canonical::terminal_spec::fixed_terminal_spec",
+          80
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::source::TextSnapshot as parser_lexical_reuse_reference_profile::document::parser::grapheme_scan::ScanSource>::scalar_before",
+          76
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::journal::Journal<parser_lexical_reuse_reference_profile::document::parser::event::Event>>::push",
+          68
+        ],
+        [
+          "_platform_memcmp",
+          68
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::structure_shell::continuation::Continuation>::advance",
+          62
+        ],
+        [
+          "DYLD-STUB$$free",
+          61
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::journal::Journal<parser_lexical_reuse_reference_profile::document::parser::event::Event>>::truncate",
+          59
+        ],
+        [
+          "mach_absolute_time",
+          57
+        ],
+        [
+          "core::ptr::drop_in_place::<smallvec::SmallVec<[parser_lexical_reuse_reference_profile::document::parser::event::Event; 4]>>",
+          57
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::literal_scan::LiteralScan>::advance_cached::<parser_lexical_reuse_reference_profile::document::source::TextSnapshot>",
+          56
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::journal::Journal<parser_lexical_reuse_reference_profile::document::parser::event::Event>>::pop",
+          54
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::Parser>::rewind",
+          53
+        ],
+        [
+          "core::str::converts::from_utf8",
+          51
+        ],
+        [
+          "__rustc::__rdl_alloc",
+          50
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::tree_cache::TreeCache>::advance",
+          48
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::literal_scan::LiteralScan>::advance::<parser_lexical_reuse_reference_profile::document::source::TextSnapshot>",
+          47
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::grapheme_scan::GraphemeScan>::advance::<parser_lexical_reuse_reference_profile::document::source::TextSnapshot>",
+          45
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::source::TextSnapshot as parser_lexical_reuse_reference_profile::document::parser::grapheme_scan::ScanSource>::scalar_at",
+          43
+        ],
+        [
+          "<alloc::sync::Arc<parser_lexical_reuse_reference_profile::document::retained_sequence::Node<parser_lexical_reuse_reference_profile::document::green::GreenElement>>>::drop_slow",
+          43
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::journal::Journal<parser_lexical_reuse_reference_profile::document::parser::event::Event>>::get",
+          42
+        ],
+        [
+          "DYLD-STUB$$memcpy",
+          41
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::document::continuation::Continuation>::advance",
+          40
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::literals::continuation::Continuation>::push",
+          38
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::index::NodeIndex>::index_node",
+          34
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::journal::Journal<parser_lexical_reuse_reference_profile::document::parser::PendingDiagnostic>>::truncate",
+          32
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::recursive_core::structures::continuation::StructureContinuation>::advance",
+          32
+        ],
+        [
+          "__rustc::__rust_no_alloc_shim_is_unstable_v2",
+          29
+        ],
+        [
+          "alloc::sync::arcinner_layout_for_value_layout",
+          26
+        ],
+        [
+          "__bzero",
+          25
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::recursive_core::kinds::continuation::KindContinuation>::advance",
+          25
+        ],
+        [
+          "<unicode_segmentation::grapheme::GraphemeCursor>::grapheme_category",
+          24
+        ],
+        [
+          "_xzm_xzone_malloc_tiny",
+          24
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::grapheme_scan::GraphemeScan>::advance::<str>",
+          23
+        ],
+        [
+          "parser_lexical_reuse_reference_profile::document::parser::canonical::base::spec::specification",
+          23
+        ],
+        [
+          "xzm_realloc",
+          22
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::Node<parser_lexical_reuse_reference_profile::document::green::GreenElement>>::append",
+          22
+        ],
+        [
+          "parser_lexical_reuse_reference_profile::document::parser::canonical::operators::supports",
+          22
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::prose::Continuation>::advance",
+          21
+        ],
+        [
+          "DYLD-STUB$$malloc",
+          20
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::literals::continuation::Continuation>::sequence",
+          20
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::prose::Continuation>::probe",
+          20
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::green::children::GreenChildren>::append",
+          19
+        ],
+        [
+          "DYLD-STUB$$_platform_bzero",
+          18
+        ],
+        [
+          "parser_lexical_reuse_reference_profile::document::green::child_hash_append",
+          18
+        ],
+        [
+          "<alloc::raw_vec::RawVecInner>::finish_grow",
+          17
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::structure_shell::continuation::Continuation>::child",
+          17
+        ],
+        [
+          "parser_lexical_reuse_reference_profile::document::parser::canonical::prediction::predict_operator",
+          17
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::Node<parser_lexical_reuse_reference_profile::document::green::GreenElement>>::branch",
+          16
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::postfix_frame",
+          16
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::Node<parser_lexical_reuse_reference_profile::document::parser::journal::Chunk<parser_lexical_reuse_reference_profile::document::parser::event::Event>>>::branch",
+          15
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::base::continuation::Continuation>::literal",
+          15
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::literals::continuation::Continuation>::base",
+          15
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::base::continuation::Continuation>::repeat",
+          14
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::RetainedSequence<parser_lexical_reuse_reference_profile::document::green::GreenElement>>::appended",
+          14
+        ],
+        [
+          "parser_lexical_reuse_reference_profile::document::parser::canonical::operators::spec::specification",
+          14
+        ],
+        [
+          "xzm_malloc_zone_size",
+          13
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::primitives::Continuation>::advance",
+          13
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::retained_sequence::Node<parser_lexical_reuse_reference_profile::document::parser::journal::Chunk<parser_lexical_reuse_reference_profile::document::parser::event::Event>>>::truncate",
+          11
+        ],
+        [
+          "<alloc::collections::btree::map::BTreeMap<usize, parser_lexical_reuse_reference_profile::document::ids::NodeId> as core::ops::drop::Drop>::drop",
+          11
+        ],
+        [
+          "<parser_lexical_reuse_reference_profile::document::parser::canonical::statements::Continuation>::advance",
+          11
+        ]
+      ],
+      "total_leaf_samples": 7712
+    }
+  },
+  "scope": "All observations/failed setups/source snapshots retained. System/opt3 standalone parse screens, actual cache-hit counters, per-rule successful-event LRU upper bounds and sequential CPU sample counts remain distinct from each other and from current PGO/native timing. Grammar/language unchanged.",
+  "selected_compiler_sha256": "8043d93d27b948371aee38027df898a9024e47a1ffa112b47a1913f8329e40ad",
+  "selected_complete_build_primary_seconds": 13.414824520470574,
+  "source_bytes": 164243,
+  "source_commit": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+  "source_lines": 1981,
+  "trials": {
+    "batched": {
+      "balanced_blocks": [
+        {
+          "candidate": 1.9405300209999998,
+          "mean_reduction_fraction": 0.06666367596442435,
+          "reference": 2.079132646
+        },
+        {
+          "candidate": 1.942327854,
+          "mean_reduction_fraction": 0.07189104709331406,
+          "reference": 2.0927799995000003
+        }
+      ],
+      "changed_source_files": [
+        "parser/canonical/base/continuation.rs",
+        "parser/canonical/base/mod.rs",
+        "parser/canonical/base/recognition.rs",
+        "parser/canonical/prediction.rs",
+        "parser/journal.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": 0.06928591153790975,
+      "means": {
+        "candidate": 1.9414289375,
+        "reference": 2.08595632275
+      },
+      "patch_sha256": "6f3543fafc3e928e9d60190022dd364dfd8b83f27eae1154f81f5cf9a1a961be",
+      "production_retained": false,
+      "promotion_criterion_met": false,
+      "scope": "Standalone bounded repeated-node recognition cache with compact state and batched journal writes screening only. Prior three parser prototypes excluded. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 529
+    },
+    "combined": {
+      "balanced_blocks": [
+        {
+          "candidate": 1.8541311040000001,
+          "mean_reduction_fraction": 0.1165482083831515,
+          "reference": 2.098734896
+        },
+        {
+          "candidate": 1.850976667,
+          "mean_reduction_fraction": 0.12068333005397747,
+          "reference": 2.105017146
+        }
+      ],
+      "changed_source_files": [
+        "parser/canonical/base/continuation.rs",
+        "parser/canonical/base/mod.rs",
+        "parser/canonical/base/recognition.rs",
+        "parser/canonical/prediction.rs",
+        "parser/journal.rs",
+        "parser/tree_cache.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": 0.11861885906162095,
+      "means": {
+        "candidate": 1.8525538855,
+        "reference": 2.101876021
+      },
+      "patch_sha256": "b6493a4311bd686b2fa885cabb2265da089dc030f923d316451e498e7b1994ac",
+      "production_retained": false,
+      "promotion_criterion_met": true,
+      "scope": "Standalone combined compact/batched repeated-node recognition memo and completed cache-owner release screening only. No historical percentage addition. Other parser prototypes excluded. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 529
+    },
+    "direct": {
+      "balanced_blocks": [
+        {
+          "candidate": 2.1004050835,
+          "mean_reduction_fraction": -0.0009666500834111247,
+          "reference": 2.0983766875
+        },
+        {
+          "candidate": 2.090925146,
+          "mean_reduction_fraction": -0.002805814671457796,
+          "reference": 2.0850748125000003
+        }
+      ],
+      "changed_source_files": [
+        "parser/canonical/base/continuation.rs",
+        "parser/canonical/base/mod.rs",
+        "parser/canonical/base/recognition.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": -0.0018833084356302265,
+      "means": {
+        "candidate": 2.09566511475,
+        "reference": 2.09172575
+      },
+      "patch_sha256": "ec308de85762bb09555fe9bf387dfcb4f0c85542eb0bfe422833b4516e466742",
+      "production_retained": false,
+      "promotion_criterion_met": false,
+      "scope": "Standalone bounded repeated-node recognition cache at existing dispatch screening only. Prior three parser prototypes excluded. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 528
+    },
+    "formatted": {
+      "balanced_blocks": [
+        {
+          "candidate": 1.814471188,
+          "mean_reduction_fraction": 0.1140768380267988,
+          "reference": 2.0481135
+        },
+        {
+          "candidate": 1.8444895209999999,
+          "mean_reduction_fraction": 0.1217368729316084,
+          "reference": 2.1001559375000003
+        }
+      ],
+      "changed_source_files": [
+        "parser/canonical/base/continuation.rs",
+        "parser/canonical/base/mod.rs",
+        "parser/canonical/base/recognition.rs",
+        "parser/canonical/prediction.rs",
+        "parser/journal.rs",
+        "parser/tree_cache.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": 0.11795490526162322,
+      "means": {
+        "candidate": 1.8294803545,
+        "reference": 2.07413471875
+      },
+      "patch_sha256": "d1ea12dc33ec16ed12dc20d5b3bf8caa6dec629150ae549cabf37201d5fae476",
+      "production_retained": false,
+      "promotion_criterion_met": true,
+      "scope": "Formatted exact candidate: standalone combined compact/batched repeated-node recognition memo and completed cache-owner release screening only. No historical percentage addition. Other parser prototypes excluded. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 529
+    },
+    "initial": {
+      "balanced_blocks": [
+        {
+          "candidate": 2.1148156250000003,
+          "mean_reduction_fraction": -0.00040739194425132297,
+          "reference": 2.113954417
+        },
+        {
+          "candidate": 2.09033175,
+          "mean_reduction_fraction": 0.008781805172641821,
+          "reference": 2.108851271
+        }
+      ],
+      "changed_source_files": [
+        "parser/canonical/base/continuation.rs",
+        "parser/canonical/base/mod.rs",
+        "parser/canonical/base/recognition.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": 0.004181654166607762,
+      "means": {
+        "candidate": 2.1025736875,
+        "reference": 2.111402844
+      },
+      "patch_sha256": "ea05bd3dddaa7368828017bcbf04343f270de8a7463987aba31586fab594da64",
+      "production_retained": false,
+      "promotion_criterion_met": false,
+      "scope": "Standalone bounded repeated-node recognition-cache screening only. Prior three parser prototypes excluded. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 528
+    }
+  },
+  "type_layout": [
+    {
+      "sizes": {
+        "continuation": 72,
+        "frame_storage": 40
+      },
+      "variant": "reference"
+    },
+    {
+      "sizes": {
+        "continuation": 360,
+        "frame_storage": 88
+      },
+      "variant": "initial"
+    },
+    {
+      "sizes": {
+        "continuation": 72,
+        "frame_storage": 40
+      },
+      "variant": "batched"
+    }
+  ]
+}

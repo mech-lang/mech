@@ -936,6 +936,8 @@ fn define_version<M: Module>(
                                 &mut b,
                                 &words,
                                 code,
+                                node.site,
+                                controls.options(),
                                 code.blocks()[node.site].terminator(),
                                 failed,
                                 |source| {

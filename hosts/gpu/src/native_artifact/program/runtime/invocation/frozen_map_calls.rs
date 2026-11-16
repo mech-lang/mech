@@ -50,22 +50,27 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         iteration: u32,
     ) -> Result<(), Error> {
+        let work = self.frozen_retirement_work()?;
         let Some(state) = self.state.map_owners.state.as_mut() else {
             return Ok(());
         };
-        self.state.control.work.charge(
-            Phase::Setup,
-            amount(
-                state.descriptor.metadata().frozen_maps.regions.len(),
-                64,
-                64,
-            )?,
-        )?;
+        self.state.control.work.charge(Phase::Setup, work)?;
         for proof in &state.descriptor.metadata().frozen_maps.regions {
             if proof.parent == Some(iteration) {
                 state.slots[proof.owner].retire_frozen();
             }
         }
         Ok(())
+    }
+    pub(in crate::native_artifact::program::runtime) fn frozen_retirement_work(
+        &self,
+    ) -> Result<u64, Error> {
+        self.state.map_owners.state.as_ref().map_or(Ok(0), |state| {
+            amount(
+                state.descriptor.metadata().frozen_maps.regions.len(),
+                64,
+                64,
+            )
+        })
     }
 }

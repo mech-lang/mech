@@ -1,0 +1,25 @@
+<record-result> := <{third<[u8]> position<u64> first<[u16]> second<[u32]>}>
+put16(xs<[u16]>, at<u64>, word<u16>) => (out<[u16]>) :=
+  ~next := xs
+  next[at] = word
+  out := next.
+put32(xs<[u32]>, at<u64>, word<u32>) => (out<[u32]>) :=
+  ~next := xs
+  next[at] = word
+  out := next.
+put8(xs<[u8]>, at<u64>, word<u8>) => (out<[u8]>) :=
+  ~next := xs
+  next[at] = word
+  out := next.
+quotient(xs<[u32]>, at<u64>, divisor<u64>) => (out<u32>) :=
+  wide<u64> := xs[at]
+  out<u32> := (wide + 1u64) / divisor.
+walk(a<[u16]>, b<[u32]>, c<[u8]>, i<u64>, left<u64>, permit<bool>, divisor<u64>) => (out<record-result>) :=
+  more := left > 0u64
+  next-a := (more? | true => put16(a, i + 1u64, 8u16) | false => a)
+  allowed! := permit == true
+  next-b := (more? | true => put32(b, i + 1u64, quotient(b, i + 1u64, divisor)) | false => b)
+  next-c := (more? | true => put8(c, i + 1u64, 18u8) | false => c)
+  out := (more? | true => walk(next-a, next-b, next-c, i + 1u64, left - 1u64, permit, divisor) | false => {third: c, position: i + 17u64, first: a, second: b}).
+r := walk(first<[u16]>, second<[u32]>, third<[u8]>, 0u64, steps<u64>, permit<bool>, divisor<u64>)
+(r.first, r.position + 0u64, r.second, r.third)

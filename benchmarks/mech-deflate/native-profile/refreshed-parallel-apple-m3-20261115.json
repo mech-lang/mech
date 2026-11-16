@@ -1,0 +1,436 @@
+{
+  "adapter_build": {
+    "exit_code": 0,
+    "seconds": 11.882560207974166
+  },
+  "balanced_blocks": [
+    {
+      "mean_reduction_fraction": -0.010560502496836044,
+      "parallel": 19.296646457980387,
+      "serial": 19.09499372902792
+    },
+    {
+      "mean_reduction_fraction": 0.007338322878360892,
+      "parallel": 19.096029333071783,
+      "serial": 19.237198104034178
+    }
+  ],
+  "cached_relinks": [
+    {
+      "executable": {
+        "bytes": 2060440,
+        "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+      },
+      "exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "run": 0,
+      "seconds": 0.080131416907534
+    },
+    {
+      "executable": {
+        "bytes": 2060440,
+        "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+      },
+      "exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "run": 1,
+      "seconds": 0.08231041603721678
+    }
+  ],
+  "compiler": {
+    "bytes": 66765712,
+    "sha256": "62d4c538752bfe12bc787baea855e1a93c88495c4ef22afe4175235c1eca9647"
+  },
+  "compiler_build": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "binary": "/private/tmp/mech-pr973-refresh-20261115/control",
+    "bytes": 66765712,
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "build",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "seconds": 253.45897358306684,
+    "sha256": "62d4c538752bfe12bc787baea855e1a93c88495c4ef22afe4175235c1eca9647",
+    "source_commit": "934bde961d47555db3fa45bc5c28d36ad1c0930a"
+  },
+  "compiler_check": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "check",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "seconds": 6.804319208022207,
+    "source_commit": "934bde961d47555db3fa45bc5c28d36ad1c0930a"
+  },
+  "configuration": {
+    "compiler": {
+      "bytes": 66765712,
+      "sha256": "62d4c538752bfe12bc787baea855e1a93c88495c4ef22afe4175235c1eca9647"
+    },
+    "native": {
+      "executable": {
+        "bytes": 2060440,
+        "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+      },
+      "measurement_boundary": "Fresh adapter construction separate; later complete source-to-executable cohorts reuse these exact fixed inputs and native link command.",
+      "program_object": {
+        "bytes": 1419832,
+        "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+      },
+      "runtime_source_commit": "934bde961d47555db3fa45bc5c28d36ad1c0930a"
+    },
+    "order": [
+      [
+        "serial",
+        1
+      ],
+      [
+        "parallel",
+        1
+      ],
+      [
+        "parallel",
+        2
+      ],
+      [
+        "serial",
+        2
+      ],
+      [
+        "parallel",
+        3
+      ],
+      [
+        "serial",
+        3
+      ],
+      [
+        "serial",
+        4
+      ],
+      [
+        "parallel",
+        4
+      ]
+    ],
+    "program_flags": {
+      "MECH_ADJACENT_ADDRESSES": "1",
+      "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+      "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+      "MECH_ARM64_SUBTRACT_BRANCH": "1",
+      "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+      "MECH_BORROW_COMPACT_READ_COPIES": "1",
+      "MECH_CARRY_REDUCTION_BOUND": "1",
+      "MECH_CHECKED_APPEND_RUN": "1",
+      "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+      "MECH_COMPACT_REUSE_OVERWRITTEN_RESULT": "1",
+      "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+      "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+      "MECH_CURRENT_PREDICATES": "1",
+      "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+      "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+      "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+      "MECH_FIRST_PACKED_REVERSE_READ": "1",
+      "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+      "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+      "MECH_GROUP_PACKED_HISTOGRAM": "1",
+      "MECH_NARROW_MASKED_ARITHMETIC": "1",
+      "MECH_NARROW_ORDERED_ITEM": "1",
+      "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+      "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+      "MECH_ORDERED_CAPTURE_SPANS": "1",
+      "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+      "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+      "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+      "MECH_PAIR_CHECKED_APPENDS": "1",
+      "MECH_PHASE_ASSERTION_FLOORS": "1",
+      "MECH_PHASE_INVARIANT_VIEWS": "1",
+      "MECH_PHASE_OWNER_TRANSFER": "1",
+      "MECH_PHASE_VECTOR_FAST": "1",
+      "MECH_PREFETCH_PRIVATE_WRITES": "1",
+      "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+      "MECH_PRIVATE_INDEXED_CHAINS": "1",
+      "MECH_PRIVATE_NESTED_PHASES": "1",
+      "MECH_PRIVATE_READ_INTERVALS": "1",
+      "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+      "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+      "MECH_PROVE_PACKED_BASE_SPANS": "1",
+      "MECH_PROVE_SCALAR_SPANS": "1",
+      "MECH_REDUCTION_COUNTDOWN": "1",
+      "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+      "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+      "MECH_REUSE_EQUALITY_PREFIX": "1",
+      "MECH_REUSE_SELECTED_READ_BOUND": "1",
+      "MECH_REUSE_SHIFTED_EQUALITY": "1",
+      "MECH_REVERSE_REDUCTION_CURSOR": "1",
+      "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+      "MECH_SHARE_CLAMP_DECISIONS": "1",
+      "MECH_SHARE_REPEATED_BOUNDS": "1",
+      "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+      "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+      "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+      "MECH_TERMINAL_BYTE_APPENDS": "1",
+      "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+      "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+      "MECH_WHOLE_PHASE_CAPACITY": "1",
+      "MECH_WIDENING_REDUCTION": "1",
+      "MECH_WIDE_ANY_BITS": "1"
+    },
+    "reference": {
+      "metadata.json": {
+        "bytes": 2519706,
+        "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+      },
+      "program.mecb": {
+        "bytes": 4733696,
+        "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+      },
+      "program.o": {
+        "bytes": 1419832,
+        "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+      },
+      "source.mec": {
+        "bytes": 164243,
+        "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+      }
+    },
+    "scope": "Eight serial ABBA/BAAB complete fresh source-to-executable compiles on updated PR973. One standard compiler binary; only scheduling0/2 differs. Fresh current runtime adapter is cached/pinned. No concurrent heavy build/test/sample/hash/archive work during primary runs. Post-run hashes are outside the recorded boundary. No source optimization applied.",
+    "source_commit": "934bde961d47555db3fa45bc5c28d36ad1c0930a",
+    "started_utc": "2026-11-15T06:44:45.837149+00:00",
+    "subjects": {
+      "parallel": 2,
+      "serial": 0
+    }
+  },
+  "decision": "No useful updated-workload parallel speedup established: complete build mean is0.16%slower with mixed blocks. Keep default serial; opt-in2workers remains output-correct. Earlier smaller-workload1.57%gain stays separate.",
+  "final_executable": {
+    "bytes": 2060440,
+    "sha256": "d6c65cc3fb18acc4be77dce329962105bf0f2b56dd2623a12f466256463eca61"
+  },
+  "internal_phase_summary": {
+    "artifact_seconds": {
+      "mean_reduction_fraction": -0.009506906733247167,
+      "parallel": [
+        0.029706291,
+        0.030224125,
+        0.029711708,
+        0.02993725
+      ],
+      "serial": [
+        0.029234833,
+        0.029793667,
+        0.02976825,
+        0.0296565
+      ]
+    },
+    "catalog_seconds": {
+      "mean_reduction_fraction": -0.0016821136822022797,
+      "parallel": [
+        0.034646708,
+        0.036865958,
+        0.039334959,
+        0.039488625
+      ],
+      "serial": [
+        0.036851042,
+        0.036909333,
+        0.039411833,
+        0.036911584
+      ]
+    },
+    "encode_seconds": {
+      "mean_reduction_fraction": -0.005151072677113122,
+      "parallel": [
+        0.010591125,
+        0.010769625,
+        0.010707708,
+        0.010552
+      ],
+      "serial": [
+        0.010398417,
+        0.010602959,
+        0.010749708,
+        0.010650958
+      ]
+    },
+    "frontend_seconds": {
+      "mean_reduction_fraction": -0.002030210866968307,
+      "parallel": [
+        2.563559083,
+        2.571323125,
+        2.5668506669999998,
+        2.585634042
+      ],
+      "serial": [
+        2.554008209,
+        2.567746542,
+        2.5752905,
+        2.569478458
+      ]
+    },
+    "native_seconds": {
+      "mean_reduction_fraction": -0.0006749878378862206,
+      "parallel": [
+        14.346541291,
+        14.350749334,
+        14.097468125,
+        14.135223
+      ],
+      "serial": [
+        14.0908245,
+        14.275887584,
+        14.274761833,
+        14.250106708
+      ]
+    },
+    "parse_seconds": {
+      "mean_reduction_fraction": -0.009444272800309461,
+      "parallel": [
+        2.126207875,
+        2.128255042,
+        2.139175333,
+        2.134880875
+      ],
+      "serial": [
+        2.049825875,
+        2.126452875,
+        2.157587875,
+        2.114860417
+      ]
+    },
+    "total_seconds": {
+      "mean_reduction_fraction": -0.0018521476453574603,
+      "parallel": [
+        19.112268417,
+        19.129170584,
+        18.884264292,
+        18.936710708
+      ],
+      "serial": [
+        18.772126417,
+        19.048395167,
+        19.088573583,
+        19.012700459
+      ]
+    }
+  },
+  "numerical_summary": {
+    "native_link_seconds": {
+      "mean_reduction_fraction": 0.021953526955717506,
+      "parallel": [
+        0.124345124932006,
+        0.13086870801635087,
+        0.13412920804694295,
+        0.1375755830667913
+      ],
+      "serial": [
+        0.13349695783108473,
+        0.13621612498536706,
+        0.1323872080538422,
+        0.1366457080002874
+      ]
+    },
+    "object_handoff_seconds": {
+      "mean_reduction_fraction": -0.14071354405995384,
+      "parallel": [
+        0.0013134160544723272,
+        0.0010913750156760216,
+        0.001024374971166253,
+        0.000961249927058816
+      ],
+      "serial": [
+        0.0009070420637726784,
+        0.0008829580619931221,
+        0.001005082856863737,
+        0.0010537500493228436
+      ]
+    },
+    "source_to_executable_seconds": {
+      "mean_reduction_fraction": -0.0015778893691622553,
+      "parallel": [
+        19.285418374929577,
+        19.307874541031197,
+        19.067786833038554,
+        19.124271833105013
+      ],
+      "serial": [
+        18.95682383305393,
+        19.233163625001907,
+        19.270539707969874,
+        19.20385650009848
+      ]
+    },
+    "source_to_object_process_seconds": {
+      "mean_reduction_fraction": -0.0017373962156910228,
+      "parallel": [
+        19.1597598339431,
+        19.17591445799917,
+        18.932633250020444,
+        18.985735000111163
+      ],
+      "serial": [
+        18.822419833159074,
+        19.096064541954547,
+        19.137147417059168,
+        19.06615704204887
+      ]
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2519706,
+      "sha256": "cce2c4b14837596fb9bbe0b84844a45655ce51aa1c1a1e7f2fb2032af25378c1"
+    },
+    "program.mecb": {
+      "bytes": 4733696,
+      "sha256": "00bba0ba762ad855af8123f223ee2ff9574473119f3293bf06f17cdfc80bcd79"
+    },
+    "program.o": {
+      "bytes": 1419832,
+      "sha256": "72926dc267c83fbfa729710fe0c51c360ae68e69a15a23858be3710627158c5f"
+    },
+    "source.mec": {
+      "bytes": 164243,
+      "sha256": "55cb2e698afb73da536164504b991dd514be855c9f4da9c3aadd046a55e1dba4"
+    }
+  },
+  "program_flags_count": 61,
+  "remote_source_commit": "9e34dc07e0bc9ab2a6314ed8c78979030ec49dbf",
+  "scope": [
+    "UpdatedPR934 includes9e34 Deflate and runtime allocation changes. Bytecode/Object/descriptor grow from the earlier workload; timings are not pooled with earlier source. All seven worker implementation files are unchanged since1090.",
+    "One standard compiler binary, same61programflags, only scheduling0/2 differs. Eight serial ABBA/BAAB complete fresh source-to-executable builds use freshly rebuilt/pinned current runtime/entry adapter objects. Adapter first-use construction is excluded and separately recorded. No concurrent heavy build/test/sample/hash/archive work during primary timing.",
+    "Every source/bytecode/Object/complete metadata and full executable byte matches in all8builds. No scalar retirement, new program runtime campaign, weakened proof check or grammar/language change is claimed. No new source-to-Object counter cohort or exclusive cleanup timing is claimed.",
+    "Both timing blocks and all adverse/phase observations remain. Raw commands/logs, source/runtime/worker snapshots, every output/executable, native inputs and pure replay are included. Compiler binary and rlibs/toolchain are excluded/hash-pinned. Pure replay checks saved data without rerunning compilation/timing. Complete compilation below ten seconds remains open."
+  ],
+  "source_commit": "934bde961d47555db3fa45bc5c28d36ad1c0930a",
+  "subjects": {
+    "parallel": 2,
+    "serial": 0
+  }
+}

@@ -82,9 +82,17 @@ fn linkage(entry: &ResidentKernelFactoryEntry) -> Option<&'static NativeLinkedFa
     if let Some(witness) = entry.lowering_witness::<RawFactoryWitness>() {
         return Some(witness.linkage);
     }
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     return super::native_collection_semantics::linkage(entry);
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     None
 }
 

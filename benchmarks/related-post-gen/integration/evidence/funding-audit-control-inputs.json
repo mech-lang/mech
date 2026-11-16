@@ -1,0 +1,6 @@
+{
+  "artifact": "/private/tmp/mech-related-deflate-regression/baseline-compressor.bc",
+  "artifact_sha256": "a2daaaf746d6bcc8668c5439f84a782ecea2aff376546566c01d4fc0f8c6f585",
+  "reference_sha256": "cc18621bae108dd1dec32cf45a8ae80e3b4c8453e7b7b4fa6cc76dc4f0acf4f5",
+  "prior_control": "/private/tmp/mech-related-latest-deflate-integration-regressions-20261106-v1/one-kib-run.json"
+}

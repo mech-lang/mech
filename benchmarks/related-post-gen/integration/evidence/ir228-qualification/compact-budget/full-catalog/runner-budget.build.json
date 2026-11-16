@@ -1,0 +1,263 @@
+{
+  "schema": "mech.related-post-gen.local-host-build.v1",
+  "compiler_build": "/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1/build.json",
+  "compiler_build_sha256": "e0e6c482e9c1e7e968a786cd4b9fa03368672305e2540699a6dd9dfa362d8e39",
+  "compiler_source_sha256": "ff786a9f9160b29ef24aba52ed08641d78daae1ad5af6c498e4e9430eef8fa8b",
+  "source_path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/runner.rs",
+  "source_sha256": "98969990dacf411ee6376fd652cd184709373f13a46eda21ac6049703bdefc03",
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "embed-bitcode=no",
+    "-C",
+    "debug-assertions=off",
+    "-C",
+    "overflow-checks=off",
+    "-C",
+    "strip=debuginfo",
+    "-L",
+    "dependency=/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v14",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v13",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v12",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v11",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v10",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v9",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v8",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v7",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fuel-derived-debits-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fuel-derived-debits-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-type-descriptors-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-type-descriptors-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-projected-debits-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-projected-debits-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-arithmetic-ranges-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-early-identities-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-constant-conditions-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-numeric-collections-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-u32-arithmetic-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-uniform-layouts-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-opt-20261105-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-prepaid-histogram-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-borrowed-planning-context-control-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-retained-deps",
+    "--extern",
+    "mech_core=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_core.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_engine.rlib",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_syntax.rlib",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1/libmech_gpu.rlib",
+    "--extern",
+    "mech_stdlib=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_stdlib.rlib",
+    "--extern",
+    "serde=/private/tmp/mech-related-retained-deps/libserde-53e30a58b8778b4f.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-related-retained-deps/libserde_json-e0f8af30c3327a5b.rlib",
+    "--cfg",
+    "linked",
+    "-C",
+    "link-arg=/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/object.o",
+    "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/runner.rs",
+    "-o",
+    "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/runner-budget"
+  ],
+  "libraries": {
+    "mech_core": {
+      "path": "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_core.rlib",
+      "sha256": "e52aae88094b6d343bb36c89904b67b9e10b5efc5d57b5ddad9265258e33fec8"
+    },
+    "mech_syntax": {
+      "path": "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_syntax.rlib",
+      "sha256": "f6841eb65ac92d8aba09b474b43e043ea89db7c2816d13dfc00f353ef33a8362"
+    },
+    "mech_bytecode": {
+      "path": "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_bytecode.rlib",
+      "sha256": "2e4ceb3fb6259ad721e7a335508886593823e1a787e924821a34427dfc00ff6d"
+    },
+    "mech_engine": {
+      "path": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_engine.rlib",
+      "sha256": "e09f2b7732c2326c3344ded175b9c1b796c3226ae16fd5e45d1fe509d916c589"
+    },
+    "mech_compute": {
+      "path": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_compute.rlib",
+      "sha256": "6ef948b023754708e48ac80d48d674178a311d34110125ea01fb2d0466762004"
+    },
+    "mech_math": {
+      "path": "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_math.rlib",
+      "sha256": "0f4546ea55292679f0cce1f8c2769f80c40b2c8ab19f820ade16718de47cbb04"
+    },
+    "mech_compare": {
+      "path": "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_compare.rlib",
+      "sha256": "b21b0bbd5d166367db6c2d4daa4132f83292fd6a6ca6adafb2fb3946abef210a"
+    },
+    "mech_logic": {
+      "path": "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_logic.rlib",
+      "sha256": "9deae7f40ff39f9e5dd84f061cd9661c06b6dfab5975761e61d87a197f036523"
+    },
+    "mech_range": {
+      "path": "/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1/libmech_range.rlib",
+      "sha256": "809a714dc568e00f8f89573c85f32137d10095bd08cc20d766c296e98c68de4a"
+    },
+    "mech_stdlib": {
+      "path": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_stdlib.rlib",
+      "sha256": "0d50e09555c0bff77287d640bba970a6e78e97d4161649f81da2c85fe8e8ff15"
+    },
+    "mech_runtime": {
+      "path": "/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1/libmech_runtime.rlib",
+      "sha256": "89d301d627734b2db11c75dbb8f82ae3562b98fda61eaf49080dbba47ddf8411"
+    },
+    "mech_gpu": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1/libmech_gpu.rlib",
+      "sha256": "9676e94619bcbd19d4b9afdce0502725712aac2573fd7e5dc5c57ce0164caa14"
+    },
+    "serde": {
+      "path": "/private/tmp/mech-related-retained-deps/libserde-53e30a58b8778b4f.rlib",
+      "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998"
+    },
+    "serde_json": {
+      "path": "/private/tmp/mech-related-retained-deps/libserde_json-e0f8af30c3327a5b.rlib",
+      "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b"
+    }
+  },
+  "bundle": {
+    "source.mec": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/source.mec",
+      "sha256": "86c064828f10fb9cf8ff2f1daf630a50eea98c646f87bab9041344cd988688b1"
+    },
+    "artifact.mecb": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/artifact.mecb",
+      "sha256": "f8a0467970f7f8a935cd6f11bf27f55b75d997dacdfcc5a119c12809acf55728"
+    },
+    "object.o": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/object.o",
+      "sha256": "5b337cdfa19aa7cd194930e20ad2dce6c01cae18bb71b1fba9e2cad0da7b9902"
+    },
+    "descriptor.json": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/descriptor.json",
+      "sha256": "850708b28aefdfa73dce00c4ed4d90d60c5890f6e7ab2d31052569d9a11b2341"
+    },
+    "linked.rs": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/linked.rs",
+      "sha256": "d252edacb4c66bf4444be676c3364c8a1408e511096e229c540a9a21d53091bf"
+    },
+    "metadata.json": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/metadata.json",
+      "sha256": "d7b8ff93809ad8c3b9b08c388581e4400e568dc9677f5ad6868dcff3524d42a5"
+    },
+    "frame-summary.json": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/frame-summary.json",
+      "sha256": "7b1e251c0bec64f2c3578a656a860ae3b75fffba8c973d6ed72853f87eacc5e2"
+    },
+    "image-binding.bin": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/image-binding.bin",
+      "sha256": "448fbfce621ebf17cfd0cec76db370119cd8a11b33d2477e0b1eb37d99fe201f"
+    },
+    "catalog.rs": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/catalog.rs",
+      "sha256": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a"
+    },
+    "catalog-profile.json": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/catalog-profile.json",
+      "sha256": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c"
+    },
+    "native-metadata.bin": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/native-metadata.bin",
+      "sha256": "03c250a79b483bcf8f8bb36c14b7b39b7821019e3a92c44cf50e01abd492a6d3"
+    },
+    "native-metadata-binding.bin": {
+      "path": "/private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-4/build/native-metadata-binding.bin",
+      "sha256": "74fd5379f9995a80fb3df7d333af9d687022ef3db04c1a897ec3f7c9d9ff22a0"
+    }
+  },
+  "seconds": 1.8932845829986036,
+  "exit": 0,
+  "stdout": "",
+  "stderr": "warning: function `linked_catalog` is never used\n --> /private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/build/catalog.rs:1:4\n  |\n1 | fn linked_catalog() -> Result<mech_core::FunctionCatalog,String> {\n  |    ^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IDENTITY` is never used\n --> /private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/build/linked.rs:2:124\n  |\n2 | ...13b5c8612dc5d880274a45eaf43236fc1f47f4028c985cc\"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTI...\n  |                                                             ^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/build/linked.rs:3:146\n  |\n3 | ...f43236fc1f47f4028c985cc_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA` is never used\n --> /private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/build/linked.rs:4:143\n  |\n4 | ...eaf43236fc1f47f4028c985cc_native_metadata_v1\"] static LINKED_NATIVE_METADATA:[u8;5057373];\n  |                                                          ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/build/linked.rs:5:151\n  |\n5 | ...47f4028c985cc_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: function `linked_entry` is never used\n --> /private/tmp/mech-related-deflate-reduction-integration-runners-20261106-v1/compact-budget/full-catalog/build/linked.rs:6:52\n  |\n6 |  #[link_name=\"mech_canonical_program_entry_v1\"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;\n  |                                                    ^^^^^^^^^^^^\n\nwarning: 6 warnings emitted\n\n",
+  "allocator": "Rust default system allocator",
+  "executable_sha256": "89b430f0c61edc6457245caf9cb5b79bfa27c452d9a209946170cf358c45b8a6"
+}

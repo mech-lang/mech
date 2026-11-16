@@ -1,0 +1,92 @@
+[
+  {
+    "path": "cpp/main.cpp",
+    "sha": "b24dbab9d11adef511d77576fa0e8349461069db",
+    "bytes": 5928,
+    "ends_newline": false
+  },
+  {
+    "path": "cpp/include/json.hpp",
+    "sha": "87475ab31e74c995bfd2e4fcf1cbb4d37a164e95",
+    "bytes": 982896,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_ho/src/main.rs",
+    "sha": "ce34ace811772be52aa355039af353003fa565c2",
+    "bytes": 11048,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_ho/Cargo.toml",
+    "sha": "8f11927037c6a9218dcb6cb30669cf353f805061",
+    "bytes": 273,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_ho/Cargo.lock",
+    "sha": "8482aef39867a95f2266c7b831e40e71a63d0277",
+    "bytes": 3984,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_ho/.cargo/config.toml",
+    "sha": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+    "bytes": 1,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_con/src/main.rs",
+    "sha": "a486e1482040618829cdccc78093845d66500b5d",
+    "bytes": 3492,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_con/Cargo.toml",
+    "sha": "db344f51b64b83a9580dead155f5cf487a1e0470",
+    "bytes": 344,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_con/Cargo.lock",
+    "sha": "8690f99aae93c3240d1f1d8d52c57e6b31d8cce4",
+    "bytes": 6702,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_con/.cargo/config.toml",
+    "sha": "8b137891791fe96927ad78e64b0aad7bded08bdc",
+    "bytes": 1,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_con/src/types.rs",
+    "sha": "a173f64fdc23626a72825a7df752f3b0f4ff5bc1",
+    "bytes": 454,
+    "ends_newline": true
+  },
+  {
+    "path": "rust_con/src/utils.rs",
+    "sha": "2db5ac8ea6dc78db69842284a0ae4305f31f77cb",
+    "bytes": 478,
+    "ends_newline": true
+  },
+  {
+    "path": "d_v2/source/app.d",
+    "sha": "b0a6a7c3e9ed7e4d657e842a850b5113628b550b",
+    "bytes": 4036,
+    "ends_newline": true
+  },
+  {
+    "path": "d_v2/dub.json",
+    "sha": "3d4d16dfe16338e6204bbcf871479fd3322bf951",
+    "bytes": 347,
+    "ends_newline": true
+  },
+  {
+    "path": "d_v2/dub.selections.json",
+    "sha": "b150cf875558e07b30206377cb46be9328fe851a",
+    "bytes": 132,
+    "ends_newline": true
+  }
+]

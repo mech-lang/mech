@@ -15,6 +15,7 @@ pub(crate) mod paths;
 pub(crate) mod pattern_primitives;
 #[cfg(test)]
 mod ports;
+mod prediction;
 mod primitives;
 pub(crate) mod prose;
 pub(crate) mod recursive_core;

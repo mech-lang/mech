@@ -1,0 +1,9 @@
+use serde::Deserialize;
+fn main() {
+ let args=std::env::args().skip(1).collect::<Vec<_>>();assert_eq!(args.len(),2);
+ let bytes=std::fs::read(&args[0]).unwrap();
+ let mut reader=mech_engine::native_artifact::BuildOwnedImageReader::from_image(&bytes).unwrap();
+ let image=serde_json::Value::deserialize(&mut reader).unwrap();reader.end().unwrap();
+ println!("{}",serde_json::json!({"top_keys":image.as_object().map(|m|m.keys().collect::<Vec<_>>())}));
+ std::fs::write(&args[1],serde_json::to_vec_pretty(&image).unwrap()).unwrap();
+}

@@ -1,0 +1,240 @@
+owners=Ok(
+    [
+        NativeMapOwnerRegion {
+            revision: ProgramRevision(
+                [
+                    253,
+                    239,
+                    52,
+                    59,
+                    70,
+                    96,
+                    198,
+                    75,
+                    200,
+                    4,
+                    237,
+                    111,
+                    68,
+                    10,
+                    170,
+                    181,
+                    220,
+                    5,
+                    10,
+                    51,
+                    168,
+                    213,
+                    192,
+                    221,
+                    41,
+                    113,
+                    160,
+                    210,
+                    93,
+                    72,
+                    130,
+                    253,
+                ],
+            ),
+            iteration: 1,
+            tail: NativeTailLoop {
+                origin: NativeMatchOrigin {
+                    node: NodeId(
+                        2,
+                    ),
+                    block: Some(
+                        4,
+                    ),
+                    local: Some(
+                        11,
+                    ),
+                },
+                parent: None,
+                seed: NativeMatchValue(
+                    73,
+                ),
+                carrier: NativeMatchValue(
+                    75,
+                ),
+                next: NativeMatchValue(
+                    76,
+                ),
+                returned: NativeMatchValue(
+                    77,
+                ),
+                result: NativeMatchValue(
+                    74,
+                ),
+                initialize: 46,
+                header: 47,
+                body: 49,
+                latch: 48,
+                finish: 50,
+                exit: 79,
+            },
+            values: [
+                NativeMatchValue(
+                    75,
+                ),
+                NativeMatchValue(
+                    76,
+                ),
+                NativeMatchValue(
+                    77,
+                ),
+                NativeMatchValue(
+                    80,
+                ),
+                NativeMatchValue(
+                    82,
+                ),
+                NativeMatchValue(
+                    85,
+                ),
+                NativeMatchValue(
+                    86,
+                ),
+                NativeMatchValue(
+                    88,
+                ),
+            ],
+            writes: [
+                63,
+            ],
+            reads: [],
+        },
+        NativeMapOwnerRegion {
+            revision: ProgramRevision(
+                [
+                    253,
+                    239,
+                    52,
+                    59,
+                    70,
+                    96,
+                    198,
+                    75,
+                    200,
+                    4,
+                    237,
+                    111,
+                    68,
+                    10,
+                    170,
+                    181,
+                    220,
+                    5,
+                    10,
+                    51,
+                    168,
+                    213,
+                    192,
+                    221,
+                    41,
+                    113,
+                    160,
+                    210,
+                    93,
+                    72,
+                    130,
+                    253,
+                ],
+            ),
+            iteration: 58,
+            tail: NativeTailLoop {
+                origin: NativeMatchOrigin {
+                    node: NodeId(
+                        2,
+                    ),
+                    block: Some(
+                        372,
+                    ),
+                    local: Some(
+                        11,
+                    ),
+                },
+                parent: None,
+                seed: NativeMatchValue(
+                    1848,
+                ),
+                carrier: NativeMatchValue(
+                    1850,
+                ),
+                next: NativeMatchValue(
+                    1851,
+                ),
+                returned: NativeMatchValue(
+                    1852,
+                ),
+                result: NativeMatchValue(
+                    1849,
+                ),
+                initialize: 3226,
+                header: 3227,
+                body: 3229,
+                latch: 3228,
+                finish: 3230,
+                exit: 3259,
+            },
+            values: [
+                NativeMatchValue(
+                    1850,
+                ),
+                NativeMatchValue(
+                    1851,
+                ),
+                NativeMatchValue(
+                    1852,
+                ),
+                NativeMatchValue(
+                    1855,
+                ),
+                NativeMatchValue(
+                    1857,
+                ),
+                NativeMatchValue(
+                    1860,
+                ),
+                NativeMatchValue(
+                    1861,
+                ),
+                NativeMatchValue(
+                    1863,
+                ),
+            ],
+            writes: [
+                3243,
+            ],
+            reads: [],
+        },
+    ],
+)
+writes=Ok(
+    [
+        NativeMapWriteUses {
+            site: 63,
+            iteration: 1,
+            base: NativeMatchValue(
+                80,
+            ),
+            output: NativeMatchValue(
+                85,
+            ),
+            carrier_derived: true,
+            late_reads: [],
+        },
+        NativeMapWriteUses {
+            site: 3243,
+            iteration: 58,
+            base: NativeMatchValue(
+                1855,
+            ),
+            output: NativeMatchValue(
+                1860,
+            ),
+            carrier_derived: true,
+            late_reads: [],
+        },
+    ],
+)

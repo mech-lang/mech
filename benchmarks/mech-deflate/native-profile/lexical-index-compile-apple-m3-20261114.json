@@ -1,0 +1,520 @@
+{
+  "base_commit": "60f25c091106a9372e5b43165a06ac3fbaf7a467",
+  "candidate_patch_sha256": "c8627ae2e42545cc5f35842bf34e447aa076c3fd55b758e7bc06350e23617c69",
+  "compiler_binary_sha256": {
+    "candidate": "f56537463758c6ab00403d7bdead4a1caba2c44342bb9abae9fccb58bd49c522",
+    "control": "a277c9906f4b3ba7bd9410bbf5b7a9e0d937b0451a9a4a5960f713755692a124"
+  },
+  "compiler_build_seconds": {
+    "candidate_final_test_source_confirmation": 0.1483833328820765,
+    "candidate_initial": 243.86993433302268,
+    "control": 81.174360957928
+  },
+  "decision": "retain artifact-owned descriptive lexical-site index",
+  "fixture_output_comparisons": [
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-nested-phase.mec",
+      "source_sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 12239,
+              "sha256": "de3367615afe1f1628deb13861c4f2a839ba992cf67bcc4ed386188c02b9a9db"
+            },
+            "program.mecb": {
+              "bytes": 20209,
+              "sha256": "9f0d395b534ddacbeddf6304cba7b3f902d358e2a1d02e4ab971e3d6615d6acf"
+            },
+            "program.o": {
+              "bytes": 6928,
+              "sha256": "4083bf1171587b7750702ffca2d9ab98d0215163ef1f7f5860fbc2a092e79bf9"
+            },
+            "source.mec": {
+              "bytes": 1640,
+              "sha256": "7abbba8dac68cb1f0c3bb95eb1769ec0155ef0f0c8f2a5092f5f4b4e2f65d627"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "assembled:numeric-nested-phase-states",
+      "source_sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 11864,
+              "sha256": "b15fd391d038e30897f05e1c5c62f346564aecb678b741ded785a1cc9d386722"
+            },
+            "program.mecb": {
+              "bytes": 19374,
+              "sha256": "8c5d6a013889335bd34a2285653103f63609a9f0b9936f48dab03112ce637577"
+            },
+            "program.o": {
+              "bytes": 7128,
+              "sha256": "feb7b12e3c9b5847f3aa0780d0de420b2fd8a3201a3403b31d5fe89cebffb3d1"
+            },
+            "source.mec": {
+              "bytes": 2905,
+              "sha256": "541ec270c88fdd50d9fd6e9e06df69f80840336c306ea67caffc40f18ab871a4"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-private-fixed-nested.mec",
+      "source_sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 13936,
+              "sha256": "0db041819b633babd9d5b50c24da671e94ac854363fa69e99e4f1c355acd1fee"
+            },
+            "program.mecb": {
+              "bytes": 24380,
+              "sha256": "40ff65bf738e3a3aac2bb1ef30a374060afe3197d61c3ac70e0f218025e0edf5"
+            },
+            "program.o": {
+              "bytes": 4912,
+              "sha256": "d925eeddf15896e39d11b64453d31bd8862d71a5e8d527319468072dc6dbca93"
+            },
+            "source.mec": {
+              "bytes": 2427,
+              "sha256": "acb062bfae27fe9926a6af37800b87b99ddf444cc70da02ce386140d7ec10f5a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-changing-capture-tree.mec",
+      "source_sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8978,
+              "sha256": "8109ffe0b19007245ffaa9c020dc0564c99c1ce51e624961ab446da03821f08f"
+            },
+            "program.mecb": {
+              "bytes": 21499,
+              "sha256": "a0f986218be1dbd1c7515a660236b1b65c63a81986211b47c43a6d2484b604b3"
+            },
+            "program.o": {
+              "bytes": 4216,
+              "sha256": "32cd8a6cad54f53da01e2e3abf69ec9f5db09b29b1ef626ed32acdb30aa6e456"
+            },
+            "source.mec": {
+              "bytes": 1258,
+              "sha256": "c57f4b38bfdf387df893b029df7e43ef80b65b9d0bdec43a1391341c63fb61a1"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-array-windows.mec",
+      "source_sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 8987,
+              "sha256": "d7592a4af624ad9bf46bd197633d6790d5dfadcb4e9e40c09924355a05609e91"
+            },
+            "program.mecb": {
+              "bytes": 21786,
+              "sha256": "c8010db0fa54e36cabeb5a1002c1a32ce33865e9aa0e36d22d9a03b8169c445a"
+            },
+            "program.o": {
+              "bytes": 872,
+              "sha256": "3e7c8a190924aba80c7e1e99595d51bef0fd4eedc2537b3887bc215985e81d59"
+            },
+            "source.mec": {
+              "bytes": 1842,
+              "sha256": "06d145b5a2a91d02b0b8d6027cfcf019790e1aafd5b9c5094e8d7d81d1f6e64a"
+            }
+          }
+        }
+      }
+    },
+    {
+      "all_outputs_match": true,
+      "fixture": "hosts/gpu/tests/fixtures/native/numeric-multiple-children.mec",
+      "source_sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f",
+      "variants": {
+        "candidate": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        },
+        "control": {
+          "exit_code": 0,
+          "files": {
+            "metadata.json": {
+              "bytes": 15973,
+              "sha256": "bd845ecf0e7ff1978c85488e21c17e45d138bdff16571e9ec35a110575601aa9"
+            },
+            "program.mecb": {
+              "bytes": 19050,
+              "sha256": "87cdcc02c426dc138a739ee9140fdab2b6829953ae7e01598517f3acfbc2f5eb"
+            },
+            "program.o": {
+              "bytes": 6544,
+              "sha256": "2d371c385c60d858c66f4f0c426adc2d00f52e4dc537d0a66c3cc1e7ddde2c70"
+            },
+            "source.mec": {
+              "bytes": 1633,
+              "sha256": "4f3901f162c0a7b0fbe11859934191a3eba60f4a5a03c06c8b50a979257e222f"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "flags_count": 53,
+  "hardware": "Apple M3 Air, 8 cores (4P+4E), 16 GB, macOS 26.2",
+  "native_text_bytes": 1101332,
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "9d7b3625d019ebc029a24b89b4ce7b2f7ac4606cd2b4ed153a5bdc5b0f01e4da"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "prior_52_flag_output_hashes": {
+    "metadata.json": {
+      "bytes": 2292463,
+      "sha256": "0813625d0178e329bfd780c8a0d5f714bbd15a23727d22505172d1136bd0b44d"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1237696,
+      "sha256": "4ddc16b053bda6256656e0d5cbf95ba60cab31b0911b9aadf526b66e1f3cab67"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "qualified": {
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.2100389578845352,
+        0.21119404211640358
+      ],
+      "control": [
+        3.691614208975807,
+        3.7324578328989446
+      ],
+      "mean_reduction_fraction": 0.9432611917523139
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        5.030900957994163,
+        4.999541209079325
+      ],
+      "control": [
+        4.958523040870205,
+        4.998855625046417
+      ],
+      "mean_reduction_fraction": -0.007337624048280755
+    },
+    "compiler_seconds": {
+      "candidate": [
+        31.487858042,
+        31.5285995
+      ],
+      "control": [
+        35.707066167,
+        36.360533667
+      ],
+      "mean_reduction_fraction": 0.12559239259873134
+    },
+    "frontend_seconds": {
+      "candidate": [
+        6.306578958,
+        6.375763041
+      ],
+      "control": [
+        6.234542417,
+        6.622103125
+      ],
+      "mean_reduction_fraction": 0.0135574666370466
+    },
+    "instructions": {
+      "candidate": [
+        474945572741,
+        474960784869
+      ],
+      "control": [
+        572732547658,
+        573459966289
+      ],
+      "mean_reduction_fraction": 0.1712506005305111
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        7737606144,
+        7740981248
+      ],
+      "control": [
+        7757922304,
+        7572865024
+      ],
+      "mean_reduction_fraction": -0.009640735393286581
+    },
+    "native_seconds": {
+      "candidate": [
+        22.628476083,
+        22.642933916
+      ],
+      "control": [
+        27.056786791,
+        27.206205792
+      ],
+      "mean_reduction_fraction": 0.16570377260794433
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        4.700220957864076,
+        4.704405915923417
+      ],
+      "control": [
+        4.638598167104647,
+        4.673946833005175
+      ],
+      "mean_reduction_fraction": -0.009887938654426387
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.468756459,
+        2.431382208
+      ],
+      "control": [
+        2.341435333,
+        2.446360792
+      ],
+      "mean_reduction_fraction": -0.023464353758379852
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        7728683488,
+        7727847856
+      ],
+      "control": [
+        7727274440,
+        7728388576
+      ],
+      "mean_reduction_fraction": -5.618186674372083e-05
+    },
+    "preparation_seconds": {
+      "candidate": [
+        7.342415834078565,
+        7.376788499997929
+      ],
+      "control": [
+        8.45434391591698,
+        8.51662970916368
+      ],
+      "mean_reduction_fraction": 0.13268356552486626
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.4508144159335643,
+        2.449847042094916
+      ],
+      "control": [
+        2.449603500077501,
+        2.4503365422133356
+      ],
+      "mean_reduction_fraction": -0.00014722950309953298
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        32.740224124863744,
+        31.712937917094678
+      ],
+      "control": [
+        35.89983883313835,
+        36.53935895883478
+      ],
+      "mean_reduction_fraction": 0.11024467406373772
+    }
+  },
+  "scope": [
+    "Four serial ABBA fresh full source-to-Object observations; no builds, tests, fixtures or CPU sampling overlap primary timing.",
+    "The updated control includes PR 973 commit 79e0649f; both subjects enable the same 53 flags including MECH_CARRY_REDUCTION_BOUND. Its preexisting runtime optimization is independent of this index.",
+    "A separate updated-control compile with the prior 52 flags reproduces all previous output bytes. The first wrapper attempt could not access macOS clockrate statistics; all four outputs were written and match, but that failed process is excluded. The identical integration retry uses host process statistics and succeeds.",
+    "The reduction-bound option changes helper code versus the earlier 52-flag profile. Only matched 53-flag control/candidate results qualify this index.",
+    "Every source, bytecode, native Object and complete metadata byte matches between control and candidate in all primary observations and six complete fixtures.",
+    "Only descriptive operation references, contracts, operand identities and schema IDs are indexed per immutable artifact owner. No selected factory, semantic witness, proof, current visit, or runtime admission is cached.",
+    "Factory selection, type/contract checks, ownership, current-visit validation and finite admission retain their original boundaries.",
+    "Index collection preserves original traversal order, first duplicate identity and first metadata failure. Earlier queried sites retain their original result before a later malformed declaration; current comprehension sites precede duplicate-local rejection.",
+    "Immutable clones share descriptive cache data; separately finalized/decoded artifacts start fresh. Cache state changes neither revision nor bytecode encoding. No unsafe pointers or global/revision-keyed cache is introduced.",
+    "All 30 focused tests pass, including 114688 differential descriptor queries against the original ordered walker, template and image checks, current-visit validation and bytecode.",
+    "The first test compile has an ambiguous integer loop type. The corrected cfg(test) annotation leaves every production patch chunk and the frozen release executable hash unchanged; both build records and failed test evidence remain.",
+    "Native intervals are nested within the native total. Numeric helper generation includes lowering, optimization and emission. Unchanged-stage variation is not attributed to indexing.",
+    "All adverse elapsed, instruction and resident-memory observations are retained; four observations do not establish a statistical population or causal whole-compiler memory saving.",
+    "The enum-state helper uses the maintained complete fixture assembly; copied historical fragment-only failure provenance is not a launch in this cohort.",
+    "Grammar, language semantics and emitted runtime program bytes are unchanged by indexing. No new runtime-speed campaign is claimed.",
+    "Compiler bootstrap is excluded from program compilation. Executables remain local, represented by exact commands, source patch and hashes. The full-compilation sub-ten-second goal remains open."
+  ],
+  "source_commit": "89f84855d203cd40a133b0c866b8c727fd0d9ffc",
+  "tests": {
+    "codec-tests": 2,
+    "differential_queries": 114688,
+    "identical_complete_fixture_programs": 6,
+    "iteration-tests": 14,
+    "lexical-tests": 14
+  }
+}

@@ -1,0 +1,291 @@
+{
+  "schema": "mech.related-post-gen.local-host-build.v1",
+  "compiler_build": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/build.json",
+  "compiler_build_sha256": "baa26b21392ecd83486daabd9e937e15ea0956190c5b5c2c416d89fd000313af",
+  "compiler_source_sha256": "ea8259fc34834c5ffa7c7be2d0ab8abcb488d7579ac67b3a39d523fc9d8bf30a",
+  "source_path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/runner.rs",
+  "source_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+  "command": [
+    "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "embed-bitcode=no",
+    "-C",
+    "debug-assertions=off",
+    "-C",
+    "overflow-checks=off",
+    "-C",
+    "strip=debuginfo",
+    "-L",
+    "dependency=/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-conjoined-window-integration-opt-20261107-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-child-entry-facts-integration-opt-20261107-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-canonical-schema-sinks-opt-20261107-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-local-facts-integration-opt-20261107-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v7",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-implication-freshness-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-deflate-exhaustion-proof-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-reduction-terminal-transition-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-deflate-affine-read-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-deflate-reduction-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v15",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v14",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v13",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v12",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v11",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v10",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v9",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v8",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v7",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-latest-deflate-integration-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fuel-derived-debits-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fuel-derived-debits-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-boolean-conditions-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-fixed-frame-arenas-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-type-descriptors-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-type-descriptors-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-frame-metadata-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-projected-debits-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-projected-debits-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-arithmetic-ranges-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-early-identities-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-constant-conditions-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-zero-append-frontiers-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-numeric-collections-opt-20261106-v6",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-u32-arithmetic-opt-20261106-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-frozen-uniform-layouts-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-shared-template-tables-opt-20261106-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-opt-20261105-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-histogram-schema-reuse-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-adaptive-prepaid-histogram-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v5",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v4",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v3",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v2",
+    "-L",
+    "dependency=/private/tmp/mech-related-native-borrowed-utf8-histogram-integration-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-borrowed-planning-context-control-opt-20261105-v1",
+    "-L",
+    "dependency=/private/tmp/mech-related-retained-deps",
+    "--extern",
+    "mech_core=/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_core.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_engine.rlib",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_syntax.rlib",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_gpu.rlib",
+    "--extern",
+    "mech_stdlib=/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_stdlib.rlib",
+    "--extern",
+    "serde=/private/tmp/mech-related-retained-deps/libserde-53e30a58b8778b4f.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-related-retained-deps/libserde_json-e0f8af30c3327a5b.rlib",
+    "--cfg",
+    "linked",
+    "-C",
+    "link-arg=/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/object.o",
+    "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/runner.rs",
+    "-o",
+    "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/runner-aot"
+  ],
+  "libraries": {
+    "mech_core": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_core.rlib",
+      "sha256": "6e13dcb46afef01bc7632cdfcec4a51384e7af2be1d8db1e1cd660fdaeec3519"
+    },
+    "mech_syntax": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_syntax.rlib",
+      "sha256": "00230105596bbb4967223a41d9e17aece9abb56757a9b22de74da374bdade45d"
+    },
+    "mech_bytecode": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_bytecode.rlib",
+      "sha256": "bbbe8bd4152746e6d3894a7f5a6e47a879f0ece6127614308e4dbe800492f1d8"
+    },
+    "mech_engine": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_engine.rlib",
+      "sha256": "04e11f25bce2932983530fd4eed0c13334e420013b621a9536ee7b9f9c196c76"
+    },
+    "mech_compute": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_compute.rlib",
+      "sha256": "49b384f4100b63d6d7572edd2aa7c9960490514d1499b8516542576ab0264a12"
+    },
+    "mech_math": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_math.rlib",
+      "sha256": "4be52e529f30fd265f9f72262e72dc6ad9f7b891920c1ec592fabb8757e2a953"
+    },
+    "mech_compare": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_compare.rlib",
+      "sha256": "a8d183c6c1385d3ce03934f0e1df027a22a981f15fe9bcdd1413cf9d51fe5aa1"
+    },
+    "mech_logic": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_logic.rlib",
+      "sha256": "7e05e0cdc5555ef013e352402f6afb35c21c236b678186bfe047d98a643d31f4"
+    },
+    "mech_range": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_range.rlib",
+      "sha256": "f08ac8d0821ec78489af83eecd8b2ccab87479e89b7b8183b9456dd3b4900201"
+    },
+    "mech_stdlib": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_stdlib.rlib",
+      "sha256": "7c8f7763059a530714a1aba23209840630f26341ab0efa9bb84e4018d6a74ca4"
+    },
+    "mech_runtime": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_runtime.rlib",
+      "sha256": "fb9c5c123949e71a002cddae8cf0396520065720f6bbd3ac64f372d21aafec62"
+    },
+    "mech_gpu": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-opt-20261107-v1/libmech_gpu.rlib",
+      "sha256": "6487031641429369109f2286db935ae227acd61e865d5029f16390635f033f1c"
+    },
+    "serde": {
+      "path": "/private/tmp/mech-related-retained-deps/libserde-53e30a58b8778b4f.rlib",
+      "sha256": "c92969536946485cace85c825d49406183f604d7279483af096a2d10d94e2998"
+    },
+    "serde_json": {
+      "path": "/private/tmp/mech-related-retained-deps/libserde_json-e0f8af30c3327a5b.rlib",
+      "sha256": "e887a7afbab6cadfb0337bc7bebfa21c68b83933509274961faefac4b412444b"
+    }
+  },
+  "bundle": {
+    "source.mec": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/source.mec",
+      "sha256": "3c9d6fce65742e15dec0718571ac1f76b4f41f384ea1964bcafe92844bb00d99"
+    },
+    "artifact.mecb": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/artifact.mecb",
+      "sha256": "49612ff092b1b4c8b7ec9ae91a18d812803f4a6dbde804406835bc81780a19b0"
+    },
+    "object.o": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/object.o",
+      "sha256": "9353fcfb737360539187bc8b4e8babea87cf7a0a97962c8c97d46b3b0ed48950"
+    },
+    "descriptor.json": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/descriptor.json",
+      "sha256": "4a95d5484cd2f133beca08fcc2bb3862454bbb04e6053d553a308d763313db6d"
+    },
+    "linked.rs": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/linked.rs",
+      "sha256": "823ef2e34b847c45aff7f2d9d16089cd2bc82ed175729d9eed6ad3e73084869b"
+    },
+    "metadata.json": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/metadata.json",
+      "sha256": "cfa0b2ab59fcce1a782ca91eb8a7c04a2f51814332aeacc93bca7e96925896e3"
+    },
+    "frame-summary.json": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/frame-summary.json",
+      "sha256": "f1472782f21c422fa4f593ee3daa84342a6df9e9dbfa01f4b7fdd7aeecb4e6b2"
+    },
+    "image-binding.bin": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/image-binding.bin",
+      "sha256": "34c1cf7fa3e0cf38a653da05685b4b2a1eafc10ad9c95609ea0963fdbbf4c4e4"
+    },
+    "catalog.rs": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/catalog.rs",
+      "sha256": "762a7ddf7487b22eaa61b52ee3085e2b7d591bd3989f7220b445ac97f352df1a"
+    },
+    "catalog-profile.json": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/catalog-profile.json",
+      "sha256": "873882086e32b81855cf6eda3d7430ccf96da684f455467b5c2d926b8fd5e09c"
+    },
+    "native-metadata.bin": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/native-metadata.bin",
+      "sha256": "0557813fa8b02288d6ac8e46c2cfb7ac4b142243cb95900bd9a4ead52a8413fd"
+    },
+    "native-metadata-binding.bin": {
+      "path": "/private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/native-metadata-binding.bin",
+      "sha256": "da02b9db7e5accfb3cf8d310165599c0269d86dd16e7b613abe98ffa62395bbb"
+    }
+  },
+  "seconds": 1.467731290962547,
+  "exit": 0,
+  "compiler_exit": 0,
+  "executable_validation_error": null,
+  "stdout": "",
+  "stderr": "warning: static `LINKED_IDENTITY` is never used\n --> /private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/linked.rs:2:124\n  |\n2 | ...e1d3e93730dbba879d8671a99b26b1a827b52fcb2cd3bb2\"] static LINKED_IDENTITY:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTI...\n  |                                                             ^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default\n\nwarning: static `LINKED_IMAGE_BINDING` is never used\n --> /private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/linked.rs:3:146\n  |\n3 | ...9b26b1a827b52fcb2cd3bb2_descriptor_binding_v1\"] static LINKED_IMAGE_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMAGE_BI...\n  |                                                           ^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA` is never used\n --> /private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/linked.rs:4:143\n  |\n4 | ...a99b26b1a827b52fcb2cd3bb2_native_metadata_v1\"] static LINKED_NATIVE_METADATA:[u8;4913076];\n  |                                                          ^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: static `LINKED_NATIVE_METADATA_BINDING` is never used\n --> /private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/linked.rs:5:151\n  |\n5 | ...b52fcb2cd3bb2_native_metadata_binding_v1\"] static LINKED_NATIVE_METADATA_BINDING:[u8;mech_gpu::native_artifact::NATIVE_PROGRAM_IMA...\n  |                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nwarning: function `linked_entry` is never used\n --> /private/tmp/mech-related-shared-call-certificates-runners-20261107-v1/reuse-4/build/linked.rs:6:52\n  |\n6 |  #[link_name=\"mech_canonical_program_entry_v1\"] fn linked_entry(frame:*mut std::ffi::c_void)->u64;\n  |                                                    ^^^^^^^^^^^^\n\nwarning: 5 warnings emitted\n\n",
+  "allocator": "Rust default system allocator",
+  "executable_sha256": "9c6109dc6149883967e34323430c008c8f71cd028faa3e761fd456ac1887a791"
+}

@@ -30,6 +30,13 @@ pub(in crate::native_artifact) fn object(
     name: &str,
     options: &[(&str, &str)],
 ) -> Result<ObjectModule, NativeCompileError> {
+    object_with_isa(name, options).map(|(module, _)| module)
+}
+
+pub(in crate::native_artifact) fn object_with_isa(
+    name: &str,
+    options: &[(&str, &str)],
+) -> Result<(ObjectModule, cranelift_codegen::isa::OwnedTargetIsa), NativeCompileError> {
     let mut flags = settings::builder();
     for &(key, value) in options {
         flags.set(key, value).map_err(backend)?;
@@ -38,7 +45,8 @@ pub(in crate::native_artifact) fn object(
         .map_err(backend)?
         .finish(settings::Flags::new(flags))
         .map_err(backend)?;
-    Ok(ObjectModule::new(
-        ObjectBuilder::new(isa, name, default_libcall_names()).map_err(backend)?,
-    ))
+    let module = ObjectModule::new(
+        ObjectBuilder::new(isa.clone(), name, default_libcall_names()).map_err(backend)?,
+    );
+    Ok((module, isa))
 }

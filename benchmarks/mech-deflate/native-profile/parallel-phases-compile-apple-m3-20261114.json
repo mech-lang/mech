@@ -1,0 +1,930 @@
+{
+  "balanced_blocks": [
+    {
+      "compiler_seconds": {
+        "candidate": 17.0722573125,
+        "control": 17.1681442505,
+        "mean_reduction_fraction": 0.00558516614264859
+      },
+      "instructions": {
+        "candidate": 255942532512.5,
+        "control": 255973252972.5,
+        "mean_reduction_fraction": 0.00012001433604202916
+      },
+      "numeric_generation_seconds": {
+        "candidate": 2.0088384586852044,
+        "control": 2.124675666447729,
+        "mean_reduction_fraction": 0.05451994842873786
+      },
+      "whole_process_seconds": {
+        "candidate": 17.12703206250444,
+        "control": 17.2196942709852,
+        "mean_reduction_fraction": 0.005381176170873969
+      }
+    },
+    {
+      "compiler_seconds": {
+        "candidate": 17.0698121875,
+        "control": 17.2969175625,
+        "mean_reduction_fraction": 0.013129817736564187
+      },
+      "instructions": {
+        "candidate": 255848560227.5,
+        "control": 255903324457.5,
+        "mean_reduction_fraction": 0.00021400358950429688
+      },
+      "numeric_generation_seconds": {
+        "candidate": 2.020786812528968,
+        "control": 2.149528249516152,
+        "mean_reduction_fraction": 0.05989287975915791
+      },
+      "whole_process_seconds": {
+        "candidate": 17.122939603519626,
+        "control": 17.36493097944185,
+        "mean_reduction_fraction": 0.013935637072713725
+      }
+    }
+  ],
+  "base_commit": "0195125f11747fb5dccdeb02c482d4a0c85ccb1f",
+  "build": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "binary": "/private/tmp/mech-parallel-phases-20261114/candidate",
+    "binary_sha256": "1d482447c6a395483a9c336820f23463c455e9f751ca1539d9371634464ac353",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "head": "0195125f11747fb5dccdeb02c482d4a0c85ccb1f",
+    "patch_sha256": "b3977d6962ac4300232cf6eaaa7fca7be0dd652859caf6148078b99caa0c7c8a",
+    "seconds": 259.23068816703744
+  },
+  "check": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_TARGET_DIR": "/private/tmp/mech-level12-compile-target",
+    "command": [
+      "cargo",
+      "check",
+      "--locked",
+      "--offline",
+      "--profile",
+      "compiler",
+      "-j4",
+      "--manifest-path",
+      "benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--bin",
+      "compile_profile",
+      "--message-format=json"
+    ],
+    "exit_code": 0,
+    "head": "0195125f11747fb5dccdeb02c482d4a0c85ccb1f",
+    "patch_sha256": "b3977d6962ac4300232cf6eaaa7fca7be0dd652859caf6148078b99caa0c7c8a",
+    "seconds": 33.06403808412142
+  },
+  "compiler_binary_sha256": {
+    "candidate": "1d482447c6a395483a9c336820f23463c455e9f751ca1539d9371634464ac353",
+    "control": "f4beb72a56fedcb860041b4e248b00590623acbe6570d10b0f0025c158bdeaef"
+  },
+  "decision": "Retain opt-in production phase workers with exact program/executable output and original ordered publication. Report complete native-build timing separately from source-to-Object timing.",
+  "default_compile_threads": 0,
+  "final_links": [
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.11790716717951,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "control"
+    },
+    {
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "exit_code": 0,
+      "fresh_runtime_campaign": false,
+      "link_seconds": 0.08659416693262756,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "cached_native_link_only",
+      "variant": "candidate"
+    }
+  ],
+  "fixture_pairs": 14,
+  "focused_object_comparisons": 24,
+  "focused_tests": 2,
+  "native_cohort": {
+    "balanced_blocks": [
+      {
+        "candidate": 17.25970449997112,
+        "control": 17.517539208522066,
+        "mean_reduction_fraction": 0.01471866027995028
+      },
+      {
+        "candidate": 17.49891831248533,
+        "control": 17.79605416650884,
+        "mean_reduction_fraction": 0.016696726771190717
+      }
+    ],
+    "numerical_summary": {
+      "native_link_seconds": {
+        "candidate": [
+          0.12098799995146692,
+          0.1309008749667555,
+          0.1113917080219835,
+          0.13704320811666548
+        ],
+        "control": [
+          0.14611779199913144,
+          0.13562729209661484,
+          0.13362445798702538,
+          0.13609454105608165
+        ],
+        "mean_reduction_fraction": 0.0927354902079911
+      },
+      "object_handoff_seconds": {
+        "candidate": [
+          0.0008923329878598452,
+          0.0009058329742401838,
+          0.0011662920005619526,
+          0.000925291795283556
+        ],
+        "control": [
+          0.0008554579690098763,
+          0.0009408330079168081,
+          0.0009017919655889273,
+          0.0009133338462561369
+        ],
+        "mean_reduction_fraction": -0.07707029829377587
+      },
+      "source_to_executable_seconds": {
+        "candidate": [
+          17.263120624935254,
+          17.25628837500699,
+          17.419770624954253,
+          17.578066000016406
+        ],
+        "control": [
+          17.47342437505722,
+          17.561654041986912,
+          17.819155999924988,
+          17.77295233309269
+        ],
+        "mean_reduction_fraction": 0.01571549393687177
+      },
+      "source_to_object_process_seconds": {
+        "candidate": [
+          17.141240291995928,
+          17.124481667065993,
+          17.307212624931708,
+          17.440097500104457
+        ],
+        "control": [
+          17.32645112508908,
+          17.42508591688238,
+          17.684629749972373,
+          17.63594445819035
+        ],
+        "mean_reduction_fraction": 0.015114132386500168
+      }
+    },
+    "order": [
+      [
+        "control",
+        "native-control-1"
+      ],
+      [
+        "candidate",
+        "native-candidate-1"
+      ],
+      [
+        "candidate",
+        "native-candidate-2"
+      ],
+      [
+        "control",
+        "native-control-2"
+      ],
+      [
+        "candidate",
+        "native-candidate-3"
+      ],
+      [
+        "control",
+        "native-control-3"
+      ],
+      [
+        "control",
+        "native-control-4"
+      ],
+      [
+        "candidate",
+        "native-candidate-4"
+      ]
+    ],
+    "scope": "Eight serial complete fresh source-to-executable compiles with the fixed adapter cached; code flags61, scheduling2 on candidate, serial control. Separate from the eight source-to-Object primary runs and preliminary pilots."
+  },
+  "numerical_summary": {
+    "artifact_seconds": {
+      "candidate": [
+        0.026203833,
+        0.025887625,
+        0.025900417,
+        0.025983083
+      ],
+      "control": [
+        0.025599292,
+        0.026578292,
+        0.025977208,
+        0.0258415
+      ],
+      "mean_reduction_fraction": 0.00020514192948339893
+    },
+    "canonical_lowering_seconds": {
+      "candidate": [
+        0.0997327920049429,
+        0.09855054202489555,
+        0.0983127080835402,
+        0.09834791696630418
+      ],
+      "control": [
+        0.09808433405123651,
+        0.09809549991041422,
+        0.09756291611120105,
+        0.09798083384521306
+      ],
+      "mean_reduction_fraction": -0.008221039768418814
+    },
+    "catalog_seconds": {
+      "candidate": [
+        0.037014208,
+        0.037238292,
+        0.039064292,
+        0.037094667
+      ],
+      "control": [
+        0.035525958,
+        0.038034334,
+        0.038076666,
+        0.03813825
+      ],
+      "mean_reduction_fraction": -0.004248039501971501
+    },
+    "cleanup_including_compaction_seconds": {
+      "candidate": [
+        3.3754497091285884,
+        3.3586209160275757,
+        3.3776633341331035,
+        3.3554211251903325
+      ],
+      "control": [
+        3.36933175008744,
+        3.408039583824575,
+        3.3863641251809895,
+        3.461430000141263
+      ],
+      "mean_reduction_fraction": 0.011596950894095626
+    },
+    "cleanup_seconds": {
+      "candidate": [
+        3.210844333982095,
+        3.1940113331656903,
+        3.2117782921995968,
+        3.190872000064701
+      ],
+      "control": [
+        3.208916083909571,
+        3.2455949168652296,
+        3.2247666670009494,
+        3.299833666998893
+      ],
+      "mean_reduction_fraction": 0.013221658319763518
+    },
+    "compaction_seconds": {
+      "candidate": [
+        0.16460537514649332,
+        0.16460958286188543,
+        0.16588504193350673,
+        0.1645491251256317
+      ],
+      "control": [
+        0.16041566617786884,
+        0.16244466695934534,
+        0.16159745818004012,
+        0.16159633314236999
+      ],
+      "mean_reduction_fraction": -0.021043129504457747
+    },
+    "compiler_seconds": {
+      "candidate": [
+        17.074182208,
+        17.070332417,
+        17.1095785,
+        17.030045875
+      ],
+      "control": [
+        17.116655417,
+        17.219633084,
+        17.1917515,
+        17.402083625
+      ],
+      "mean_reduction_fraction": 0.009371586644831398
+    },
+    "encode_seconds": {
+      "candidate": [
+        0.009280833,
+        0.009217,
+        0.009164792,
+        0.009278708
+      ],
+      "control": [
+        0.009166834,
+        0.009297625,
+        0.009229916,
+        0.009233125
+      ],
+      "mean_reduction_fraction": -0.00037459887617630194
+    },
+    "frontend_seconds": {
+      "candidate": [
+        2.391612459,
+        2.391195708,
+        2.386459375,
+        2.382705458
+      ],
+      "control": [
+        2.361950334,
+        2.39752775,
+        2.38085075,
+        2.381544708
+      ],
+      "mean_reduction_fraction": -0.0031610856694572753
+    },
+    "instructions": {
+      "candidate": [
+        255982823021,
+        255902242004,
+        255845335602,
+        255851784853
+      ],
+      "control": [
+        255935104286,
+        256011401659,
+        255882447473,
+        255924201442
+      ],
+      "mean_reduction_fraction": 0.00016700254274026882
+    },
+    "max_rss_bytes": {
+      "candidate": [
+        5912903680,
+        5911937024,
+        5916884992,
+        5926633472
+      ],
+      "control": [
+        5912674304,
+        5911838720,
+        5912592384,
+        5912690688
+      ],
+      "mean_reduction_fraction": -0.000784914674301973
+    },
+    "native_seconds": {
+      "candidate": [
+        12.519632166,
+        12.535320834,
+        12.56975225,
+        12.490729833
+      ],
+      "control": [
+        12.603441375,
+        12.66573025,
+        12.647720958,
+        12.870416083
+      ],
+      "mean_reduction_fraction": 0.013229162967042463
+    },
+    "numeric_generation_seconds": {
+      "candidate": [
+        2.013044583145529,
+        2.0046323342248797,
+        2.024241208098829,
+        2.017332416959107
+      ],
+      "control": [
+        2.1307349998969585,
+        2.1186163329984993,
+        2.141120540909469,
+        2.1579359581228346
+      ],
+      "mean_reduction_fraction": 0.05722203468959974
+    },
+    "parse_seconds": {
+      "candidate": [
+        2.089785416,
+        2.070799625,
+        2.077817916,
+        2.08362525
+      ],
+      "control": [
+        2.080321416,
+        2.081824625,
+        2.089211917,
+        2.076264375
+      ],
+      "mean_reduction_fraction": 0.0006717554874977605
+    },
+    "peak_footprint_bytes": {
+      "candidate": [
+        5882533048,
+        5881566392,
+        5886547176,
+        5896262840
+      ],
+      "control": [
+        5882352824,
+        5881550056,
+        5882270904,
+        5882385616
+      ],
+      "mean_reduction_fraction": -0.0007799056324715448
+    },
+    "preparation_seconds": {
+      "candidate": [
+        2.0202344998251647,
+        2.0071490409318358,
+        2.0011027499567717,
+        1.9995994579512626
+      ],
+      "control": [
+        2.0075775829609483,
+        2.0117765001486987,
+        2.0018549589440227,
+        2.033938125008717
+      ],
+      "mean_reduction_fraction": 0.0033595188065597137
+    },
+    "source_cfg_seconds": {
+      "candidate": [
+        2.3146044998429716,
+        2.3699336249846965,
+        2.3185727919917554,
+        2.3171554578002542
+      ],
+      "control": [
+        2.3133430830202997,
+        2.330692000221461,
+        2.313912915997207,
+        2.392218083841726
+      ],
+      "mean_reduction_fraction": 0.0031977729802169508
+    },
+    "whole_process_seconds": {
+      "candidate": [
+        17.129670082824305,
+        17.124394042184576,
+        17.16070241597481,
+        17.08517679106444
+      ],
+      "control": [
+        17.16746470797807,
+        17.271923833992332,
+        17.245685041882098,
+        17.484176917001605
+      ],
+      "mean_reduction_fraction": 0.009676368674801594
+    }
+  },
+  "output_hashes": {
+    "metadata.json": {
+      "bytes": 2292881,
+      "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+    },
+    "program.mecb": {
+      "bytes": 4138627,
+      "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+    },
+    "program.o": {
+      "bytes": 1238656,
+      "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+    },
+    "source.mec": {
+      "bytes": 160857,
+      "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+    }
+  },
+  "preliminary_native_builds": [
+    {
+      "cached_adapter_objects": true,
+      "compiler_exit_code": 0,
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_frozen_reference": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_frozen_reference": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_frozen_reference": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_frozen_reference": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "link_exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "compiler_spawn_through_native_link_process_wait_completion",
+      "native_link_seconds": 0.13135899999178946,
+      "object_handoff_seconds": 0.0008941669948399067,
+      "primary_cohort": false,
+      "source_to_executable_seconds": 17.19123529200442,
+      "source_to_object_process_seconds": 17.058982125017792,
+      "variant": "control"
+    },
+    {
+      "cached_adapter_objects": true,
+      "compiler_exit_code": 0,
+      "executable_bytes": 1878568,
+      "executable_sha256": "557d0f5ef2b979e01851ae23b5b3944453a0bd9e772d68161be198916ca06c2c",
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_frozen_reference": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_frozen_reference": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_frozen_reference": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_frozen_reference": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "link_exit_code": 0,
+      "matches_complete_baseline_executable": true,
+      "measurement_boundary": "compiler_spawn_through_native_link_process_wait_completion",
+      "native_link_seconds": 0.1396892499178648,
+      "object_handoff_seconds": 0.0012665421236306429,
+      "primary_cohort": false,
+      "source_to_executable_seconds": 17.29248766694218,
+      "source_to_object_process_seconds": 17.151531874900684,
+      "variant": "candidate"
+    }
+  ],
+  "preliminary_screens": [
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.117789541,
+            "total_seconds": 2.117848334
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.042887917,
+            "total_seconds": 2.160783584
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.383052542,
+            "total_seconds": 4.543849542
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.0258505,
+            "total_seconds": 4.569714542
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009561875,
+            "total_seconds": 4.579289334
+          },
+          {
+            "phase": "native",
+            "seconds": 12.614003334,
+            "total_seconds": 17.193913959
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 17.193926417
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "control-screen",
+      "process": {
+        "binary": "/private/tmp/mech-parallel-phases-20261114/control",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 17.97771995794028,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "control"
+    },
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.115910416,
+            "total_seconds": 2.115937667
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.042236042,
+            "total_seconds": 2.158221084
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.397263416,
+            "total_seconds": 4.555500542
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.02632475,
+            "total_seconds": 4.581842584
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.00948225,
+            "total_seconds": 4.591337834
+          },
+          {
+            "phase": "native",
+            "seconds": 12.711400958,
+            "total_seconds": 17.303364792
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 17.303378792
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "candidate-screen",
+      "process": {
+        "binary": "/private/tmp/mech-parallel-phases-20261114/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 18.592519166879356,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "candidate"
+    },
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.064502458,
+            "total_seconds": 2.0645122909999998
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.034536833,
+            "total_seconds": 2.099066791
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.348382291,
+            "total_seconds": 4.447462541
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.025721917,
+            "total_seconds": 4.473198541
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009216333,
+            "total_seconds": 4.482426916
+          },
+          {
+            "phase": "native",
+            "seconds": 12.4647505,
+            "total_seconds": 16.94776875
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 16.947780791
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "single-worker-screen",
+      "process": {
+        "binary": "/private/tmp/mech-parallel-phases-20261114/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 16.999959459062666,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "candidate"
+    },
+    {
+      "compile": {
+        "bytecode_bytes": 4138627,
+        "bytecode_sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7",
+        "mode": "compact",
+        "object_bytes": 1238656,
+        "object_sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38",
+        "phases": [
+          {
+            "phase": "parse",
+            "seconds": 2.04326225,
+            "total_seconds": 2.043270708
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.034727708,
+            "total_seconds": 2.078022333
+          },
+          {
+            "phase": "frontend",
+            "seconds": 2.351494125,
+            "total_seconds": 4.429529625
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.025577167,
+            "total_seconds": 4.455121708
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.009203167,
+            "total_seconds": 4.464336916
+          },
+          {
+            "phase": "native",
+            "seconds": 12.812986542,
+            "total_seconds": 17.27791625
+          }
+        ],
+        "source_bytes": 160857,
+        "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+        "total_seconds": 17.277929833
+      },
+      "files": {
+        "metadata.json": {
+          "bytes": 2292881,
+          "matches_current_control_output": true,
+          "sha256": "4a6e18df12a127eed6537a103bcd6f51a18027bd867efe709674d3645576aecb"
+        },
+        "program.mecb": {
+          "bytes": 4138627,
+          "matches_current_control_output": true,
+          "sha256": "a2a551911949f8c5fdc64273a43662c2a9c4953b853136c19d196692fdac45a7"
+        },
+        "program.o": {
+          "bytes": 1238656,
+          "matches_current_control_output": true,
+          "sha256": "afbb34f3e2a8b3ae21be659ee50f332c849fce4047d2a98e40f7a23fe187cd38"
+        },
+        "source.mec": {
+          "bytes": 160857,
+          "matches_current_control_output": true,
+          "sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9"
+        }
+      },
+      "name": "serial-path-screen",
+      "process": {
+        "binary": "/private/tmp/mech-parallel-phases-20261114/candidate",
+        "elapsed_boundary": "driver_start_to_process_wait_completion",
+        "elapsed_seconds": 17.328149042092264,
+        "exit_code": 0,
+        "mode": "compact",
+        "samples": 0,
+        "sampling_error": null,
+        "source": "benchmark"
+      },
+      "variant": "candidate"
+    }
+  ],
+  "program_flags_count": 61,
+  "qualified_compile_threads": 2,
+  "scope": [
+    "Real production Deflate codegen uses bounded persistent Context workers, with coordinator-owned declarations, data, choice dependencies, DenseTables and Object publication. Main checked IR construction/cleanup remains serial. The worker scheduling environment setting is separate from the same61 program flags; default0 remains serial.",
+    "Two workers queue340 real function jobs. Zero-worker and one-worker full benchmark outputs also match. Two focused tests exercise24 complete Object comparisons over1/2/4workers and both submission orders, including libcall symbol order, repeated and anonymous declarations, function-address data relocations and earlier publication error precedence.",
+    "Eight source-to-Object ABBA/BAAB runs and eight source-to-executable ABBA/BAAB runs are separate serial cohorts with no concurrent builds, tests, profiling or archival. Complete native builds include fresh source analysis, Object/metadata writes, handoff and final linking, reusing the frozen adapter. First-use adapter construction is excluded.",
+    "All screens,14paired fixtures, both timing cohorts and both preliminary complete native builds reproduce every source/bytecode/Object/metadata byte and the full executable. No scalar retirement, grammar or language change, weakened proof checks or fresh runtime campaign is claimed.",
+    "The original full-executable pilot pair is slower for the candidate and remains outside the balanced means. All adverse stages, memory and clock movement remain. Numeric helper time falls in both source-to-Object blocks; unrelated movement is observational. Per-build native receipts preserve the generic primary_cohort:false field while native-cohort.json records balanced membership explicitly.",
+    "Candidate check/build and focused-test builds are separate from program compilation. The first focused-test dependency-pinning attempt finds a baseline Cargo rlib removed during rebuild; it executes no tests. The successful focused harness uses the exact production module and real NativeCompileError type with equivalent backend error construction.",
+    "Compiler/test binaries are excluded and SHA-pinned. Source patches, every raw measurement, generated program/executable, frozen native linker input, fixture and test log remain. Pure replay validates saved observations without compiling or rerunning timings. The sub-ten-second complete-compilation goal remains open."
+  ],
+  "source_commit": "1090de011646c92e30c2d4b648ed0792c50f300d",
+  "worker_diagnostic_jobs": 340
+}
