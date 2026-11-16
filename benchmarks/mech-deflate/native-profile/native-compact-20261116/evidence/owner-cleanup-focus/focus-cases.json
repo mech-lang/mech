@@ -1,0 +1,14 @@
+[
+  "empty",
+  "one-stored",
+  "seven-stored-prefix",
+  "320-overlap",
+  "prefix-periodic-1024",
+  "prefix-random-1048576",
+  "prefix-natural-4096",
+  "prefix-natural-8192",
+  "prefix-random-1024",
+  "random-1024",
+  "repeated-1024",
+  "prefix-random-8192"
+]

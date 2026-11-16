@@ -1,0 +1,125 @@
+{
+  "source_review_commit": "1d1895cecfbaa2647841273950616963d9f31b48",
+  "production_compiler_source_changed": false,
+  "retained_recipe_changed": false,
+  "decision": "focused screen only; not promoted; full runtime and per-case qualification pending",
+  "accepted_full_runtime_floors": {
+    "roc": 81,
+    "libdeflate": 61
+  },
+  "size": {
+    "object_text_bytes": 72136,
+    "object_text_x_roc": 1.2502773155851359,
+    "object_text_x_libdeflate": 1.9454153182308522,
+    "root_code_bytes": 51620,
+    "root_frame_bytes": 3792,
+    "linked_text_bytes": 475060
+  },
+  "code_reduction_bytes": 384,
+  "root_frame_increase_bytes": 48,
+  "root_frame_is_not_complete_stack_high_water": true,
+  "static_reproduction_case": "combinations--owners-cleanup",
+  "identities": {
+    "object_sha256": "e87a38bed8ed0f033836b2dfc826cdd9dad4d105f1f4f511582a40f0253d0f2b",
+    "metadata_sha256": "013998f49b3f4a4e2d8cecafb66a99029ad0eb256e9fc39532050550f6a7f6cb",
+    "worker_sha256": "cf9d2f805d516921444cb1f4690b50a3217af0965660824014425a5d6a976afc",
+    "emitter_sha256": "b63eeb1fb8e4522a84b7016ec63ca8e0da2c92511be640f66f0ba9b98bc100b8",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "compiler_flag_overrides": {
+    "MECH_COMPACT_FINISH_CFG_CLEANUP": "1",
+    "MECH_COMPACT_PROVE_BACKING_OWNERS": "all"
+  },
+  "ordinary_correctness_calls": 162,
+  "focus_case_count": 12,
+  "focus_orders": [
+    {
+      "roc_wins": [
+        12,
+        12
+      ],
+      "libdeflate_wins": [
+        8,
+        8
+      ],
+      "candidate_over_control_geometric_mean": 0.9977493794410393,
+      "verified_full_calls": 714240,
+      "lost_cases_mech_over_roc": [],
+      "lost_cases_mech_over_libdeflate": []
+    },
+    {
+      "roc_wins": [
+        12,
+        12
+      ],
+      "libdeflate_wins": [
+        8,
+        8
+      ],
+      "candidate_over_control_geometric_mean": 0.9962775581115823,
+      "verified_full_calls": 714240,
+      "lost_cases_mech_over_roc": [],
+      "lost_cases_mech_over_libdeflate": []
+    }
+  ],
+  "verified_timed_calls": 1428480,
+  "per_case_candidate_over_control": {
+    "320-overlap": [
+      0.9998262000801447,
+      0.9969149723276427
+    ],
+    "empty": [
+      0.99959904714714,
+      0.9950431969868391
+    ],
+    "one-stored": [
+      1.006747681936276,
+      0.9801911553601107
+    ],
+    "prefix-natural-4096": [
+      1.001723201524995,
+      0.9980862441342195
+    ],
+    "prefix-natural-8192": [
+      1.0008016159947104,
+      1.0008352491240142
+    ],
+    "prefix-periodic-1024": [
+      0.9969900266150971,
+      0.9972867129663066
+    ],
+    "prefix-random-1024": [
+      0.996086271013521,
+      0.9945889043869264
+    ],
+    "prefix-random-1048576": [
+      0.9998622477371865,
+      1.0004178754947333
+    ],
+    "prefix-random-8192": [
+      0.992042184208832,
+      1.0001345651596503
+    ],
+    "random-1024": [
+      0.9930780834287511,
+      0.9957955312934211
+    ],
+    "repeated-1024": [
+      0.9986591733552735,
+      0.9976321398390371
+    ],
+    "seven-stored-prefix": [
+      0.987716044518534,
+      0.9985700772748356
+    ]
+  },
+  "point_regression_above_0_5_percent_in_both_orders": [],
+  "adverse_observation": "one-stored is 0.675% slower in the first order and 1.981% faster in the reverse order; both retained",
+  "qualification_limits": [
+    "only 12 of 81 cases have been timed for this candidate; no new full 81/61 result",
+    "absence of a persistent point regression is not a 0.5% per-case uncertainty bound",
+    "checked-failure, complete stack, shape controls and full peer orders remain pending",
+    "no complete source-to-executable comparison for this candidate; receipt emission time is a single observation",
+    "raw scripts and receipts retain original local paths as provenance; size_screens.py is the checkout-relative object reproduction command"
+  ]
+}
