@@ -1,0 +1,579 @@
+{
+  "decision": {
+    "decision": "no_production_change",
+    "description": "Diagnostic parser execution census and current-PGO-library CPU profile; three standalone candidates improve parsing 2.51%, 4.63% and 2.16%, each below the predeclared10% promotion threshold. Exact complete parses and526/526/527 units pass. None promoted or complete-build qualified. Recognition repeats at identifier/number starts identify the next architecture target. Selected8043 and original13.414825s primary remain unchanged."
+  },
+  "parse_output_storage": {
+    "bytes": 894236,
+    "codec": "xz",
+    "members": {
+      "ascii-window/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "ascii-window/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "ascii-window/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "ascii-window/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "ascii-window/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "ascii-window/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "ascii-window/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "ascii-window/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "census/instrumented-run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "census/reference-run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "classified/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "positions/run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "profile/run.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/candidate-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/candidate-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/candidate-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/candidate-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/reference-1.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/reference-2.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/reference-3.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      },
+      "publication/parse-screen/reference-4.stdout": {
+        "bytes": 12802946,
+        "sha256": "09fb23613e8ce330c3874ecea80ef464bad60a8f60c182a384cebf00366055ae"
+      }
+    },
+    "path": "parse-outputs.tar.xz",
+    "preset": 9,
+    "scope": "Lossless storage of every original byte-identical complete parse output. Logical paths and byte/hash pins retained; all raw originals remain unchanged.",
+    "sha256": "1dd2db8f6497f41f1c64fa66b96a6a58a78eaa1e8236b0cfa6eef73606f2e28d"
+  },
+  "parser_only_profile": {
+    "parser_leaf_samples": 7676,
+    "scope": "10s/1ms parser-only diagnostic, actual selected PGO libraries and allocator, twelve complete parses; all elapsed unqualified. Sampled stacks do not establish exclusive time or additive savings.",
+    "top_named_leaves": [
+      [
+        "<mech_syntax::document::parser::canonical::base::continuation::Continuation>::advance",
+        2011
+      ],
+      [
+        "<mech_syntax::document::parser::Parser>::advance_tree_cache",
+        1253
+      ],
+      [
+        "_platform_memmove",
+        498
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::literals::continuation::Continuation>::advance",
+        477
+      ],
+      [
+        "<mech_syntax::document::parser::marker::Marker>::complete_with_flags",
+        382
+      ],
+      [
+        "<mech_syntax::document::parser::Parser>::start",
+        310
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::advance",
+        294
+      ],
+      [
+        "mi_malloc_aligned",
+        278
+      ],
+      [
+        "<mech_syntax::document::parser::literal_scan::LiteralScan>::advance_cached::<mech_syntax::document::source::TextSnapshot>",
+        221
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::operators::continuation::Continuation>::advance",
+        220
+      ],
+      [
+        "mi_free",
+        181
+      ],
+      [
+        "<mech_syntax::document::parser::marker::Marker>::abandon",
+        169
+      ],
+      [
+        "<alloc::sync::Arc<mech_syntax::document::retained_sequence::Node<mech_syntax::document::parser::journal::Chunk<mech_syntax::document::parser::event::Event>>>>::drop_slow",
+        143
+      ],
+      [
+        "<mech_syntax::document::retained_sequence::Node<mech_syntax::document::parser::journal::Chunk<mech_syntax::document::parser::event::Event>>>::truncate_in_place",
+        134
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::literals::continuation::Continuation>::sequence",
+        108
+      ],
+      [
+        "<mech_syntax::document::index::NodeIndex>::index_node",
+        98
+      ],
+      [
+        "<alloc::sync::Arc<smallvec::SmallVec<[mech_syntax::document::parser::event::Event; 4]>>>::drop_slow",
+        75
+      ],
+      [
+        "core::str::converts::from_utf8",
+        67
+      ],
+      [
+        "<alloc::sync::Arc<mech_syntax::document::retained_sequence::Node<mech_syntax::document::green::GreenElement>>>::drop_slow",
+        67
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::document::continuation::Continuation>::advance",
+        66
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::structure_shell::continuation::Continuation>::advance",
+        65
+      ],
+      [
+        "<mech_syntax::document::parser::Parser>::rewind",
+        49
+      ],
+      [
+        "_tlv_get_addr",
+        47
+      ],
+      [
+        "mi_find_page",
+        38
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::expression_frame",
+        35
+      ],
+      [
+        "<mech_syntax::document::retained_sequence::Node<mech_syntax::document::green::GreenElement>>::append",
+        33
+      ],
+      [
+        "alloc::sync::arcinner_layout_for_value_layout",
+        32
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::kinds::continuation::KindContinuation>::advance",
+        32
+      ],
+      [
+        "_mi_heap_realloc_zero",
+        28
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::prose::Continuation>::advance",
+        27
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::postfix_frame",
+        21
+      ],
+      [
+        "<mech_syntax::document::retained_sequence::Node<mech_syntax::document::parser::journal::Chunk<mech_syntax::document::parser::event::Event>>>::truncate",
+        20
+      ],
+      [
+        "_mi_page_retire",
+        19
+      ],
+      [
+        "<mech_syntax::document::parser::Parser>::bump_bytes_token",
+        19
+      ],
+      [
+        "DYLD-STUB$$memcpy",
+        18
+      ],
+      [
+        "mi_heap_malloc_zero_aligned_at_fallback",
+        17
+      ],
+      [
+        "<alloc::sync::Arc<mech_syntax::document::green::GreenNode>>::drop_slow",
+        16
+      ],
+      [
+        "_mi_malloc_generic",
+        14
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::document::continuation::Continuation>::expression",
+        10
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::statements::Continuation>::advance",
+        9
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::strings::Continuation>::advance",
+        9
+      ],
+      [
+        "<mech_syntax::document::parser::cursor::Cursor>::starts_with",
+        9
+      ],
+      [
+        "mi_page_free_list_extend",
+        8
+      ],
+      [
+        "<alloc::raw_vec::RawVec<mech_syntax::document::parser::tree_cache::Frame>>::grow_one",
+        8
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::bracket_frame",
+        7
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::literal_choice",
+        7
+      ],
+      [
+        "mech_syntax::document::parser::build_restart_index",
+        6
+      ],
+      [
+        "<alloc::raw_vec::RawVec<mech_syntax::document::parser::canonical::strings::Frame>>::grow_one",
+        5
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::primitives::Continuation>::advance",
+        5
+      ],
+      [
+        "core::ptr::drop_in_place::<alloc::collections::btree::map::BTreeMap<mech_syntax::document::ids::TokenId, mech_syntax::document::index::TokenRecord>>",
+        5
+      ],
+      [
+        "<alloc::raw_vec::RawVec<mech_syntax::document::parser::canonical::structure_shell::continuation::Frame>>::grow_one",
+        4
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::document::continuation::Continuation>::sequence",
+        4
+      ],
+      [
+        "mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::supports",
+        4
+      ],
+      [
+        "mi_page_queue_enqueue_from",
+        3
+      ],
+      [
+        "madvise",
+        3
+      ],
+      [
+        "mi_realloc_aligned",
+        3
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::statements::Continuation>::probe",
+        3
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::paths::Continuation>::advance",
+        3
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::matrix_row_frame",
+        3
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::pattern_frame",
+        3
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::arm_frame",
+        3
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::source_imports::continuation::Continuation>::advance",
+        3
+      ],
+      [
+        "core::ptr::drop_in_place::<mech_syntax::document::index::NodeIndex>",
+        3
+      ],
+      [
+        "<mech_syntax::document::retained_sequence::Node<mech_syntax::document::parser::journal::Chunk<mech_syntax::document::parser::event::Event>>>::append",
+        2
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::entry_frame",
+        2
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::declarations::continuation::Continuation>::advance",
+        2
+      ],
+      [
+        "mi_segment_page_clear",
+        1
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::kinds::Continuation>::advance",
+        1
+      ],
+      [
+        "_mi_segment_page_alloc",
+        1
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::parenthesis_frame",
+        1
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::definition_frame",
+        1
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::recursive_core::precedence::continuation::Continuation>::brace_frame",
+        1
+      ],
+      [
+        "core::ptr::drop_in_place::<alloc::vec::Vec<mech_syntax::document::parser::canonical::recursive_core::structures::continuation::Frame>>",
+        1
+      ],
+      [
+        "_mi_heap_collect_retired",
+        1
+      ],
+      [
+        "DYLD-STUB$$mach_boottime_usec",
+        1
+      ],
+      [
+        "DYLD-STUB$$memmove",
+        1
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::document::continuation::Continuation>::enter_rule",
+        1
+      ],
+      [
+        "<mech_syntax::document::parser::canonical::imports::continuation::Continuation>::advance",
+        1
+      ],
+      [
+        "<alloc::sync::Arc<mech_syntax::document::retained_sequence::Node<mech_syntax::document::edit::TextSize>>>::drop_slow",
+        1
+      ],
+      [
+        "<mech_syntax::document::line_index::LineIndex>::from_str",
+        1
+      ]
+    ],
+    "total_leaf_samples": 7732
+  },
+  "parser_work": {
+    "base_frames": 29739969,
+    "checkpoints": 13617156,
+    "journal_mutable_page_accesses": 9250556,
+    "operator_frames": 5296706,
+    "rewinds": 9099515
+  },
+  "production_edits": false,
+  "scope": "Every observation, adverse field, failed setup/test assertion and source snapshot retained. Standalone System/opt3 screens remain separate from the selected PGO compiler and complete executable boundary. No grammar/language/emitted-program changes retained; no full-native candidate or sub-ten claim.",
+  "selected_compiler_sha256": "8043d93d27b948371aee38027df898a9024e47a1ffa112b47a1913f8329e40ad",
+  "selected_complete_build_primary_seconds": 13.414824520470574,
+  "source_bytes": 164243,
+  "source_commit": "ef5e255e817eb5bbc6df61b094a3741b31c49da2",
+  "source_lines": 1981,
+  "source_position_recognition": {
+    "digit-sequence": {
+      "attempted_calls": 614553,
+      "ordinary_exit_success_bytes": 270710,
+      "ordinary_exit_successes": 124770,
+      "successful_recognitions_per_start": 41.23265036351619,
+      "unique_ordinary_exit_success_positions": 3026,
+      "unique_positions": 12879
+    },
+    "identifier": {
+      "attempted_calls": 170542,
+      "ordinary_exit_success_bytes": 958359,
+      "ordinary_exit_successes": 164885,
+      "successful_recognitions_per_start": 10.361002890536634,
+      "unique_ordinary_exit_success_positions": 15914,
+      "unique_positions": 17067
+    },
+    "identifier-path-segment": {
+      "attempted_calls": 36,
+      "ordinary_exit_success_bytes": 216,
+      "ordinary_exit_successes": 36,
+      "successful_recognitions_per_start": 6.0,
+      "unique_ordinary_exit_success_positions": 6,
+      "unique_positions": 6
+    }
+  },
+  "trials": {
+    "ascii-window": {
+      "balanced_blocks": [
+        {
+          "candidate": 2.075179521,
+          "mean_reduction_fraction": 0.021040683918162495,
+          "reference": 2.1197811665
+        },
+        {
+          "candidate": 2.0595324584999997,
+          "mean_reduction_fraction": 0.022199236762450614,
+          "reference": 2.1062905
+        }
+      ],
+      "changed_source_files": [
+        "parser/grapheme_scan.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": 0.02161811114662504,
+      "means": {
+        "candidate": 2.0673559897500002,
+        "reference": 2.11303583325
+      },
+      "patch_sha256": "7a8b5d6fb0caeb8528f9addb82bc390a1931509075b863e29253055869d166e2",
+      "promoted": false,
+      "scope": "Standalone bounded ASCII Unicode-scan-window screening only. Prior prototypes excluded. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 527
+    },
+    "classified": {
+      "balanced_blocks": [
+        {
+          "candidate": 2.0158618125,
+          "mean_reduction_fraction": 0.030276560896949967,
+          "reference": 2.07880075
+        },
+        {
+          "candidate": 2.058225229,
+          "mean_reduction_fraction": 0.019921314355347608,
+          "reference": 2.1000612084999997
+        }
+      ],
+      "changed_source_files": [
+        "parser/canonical/base/continuation.rs",
+        "parser/canonical/prediction.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": 0.025072595850380353,
+      "means": {
+        "candidate": 2.03704352075,
+        "reference": 2.08943097925
+      },
+      "patch_sha256": "412da8561796cb83a90bcb8d670a7288992d4fa6e63385f2a8afa3e1c870b25b",
+      "promoted": false,
+      "scope": "Standalone parser screening only. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 526
+    },
+    "publication": {
+      "balanced_blocks": [
+        {
+          "candidate": 1.983307708,
+          "mean_reduction_fraction": 0.04217503714374071,
+          "reference": 2.070636896
+        },
+        {
+          "candidate": 2.0007260835,
+          "mean_reduction_fraction": 0.05042551347181157,
+          "reference": 2.1069711875
+        }
+      ],
+      "changed_source_files": [
+        "parser/tree_cache.rs"
+      ],
+      "complete_parse_exact": true,
+      "mean_reduction_fraction": 0.046336154117602946,
+      "means": {
+        "candidate": 1.99201689575,
+        "reference": 2.08880404175
+      },
+      "patch_sha256": "887db0c6f395d27387ae68b59a253a695f387f82198084ed29ed916e0d19a216",
+      "promoted": false,
+      "scope": "Standalone completed-cache-owner release screening only. Classified-action prototype excluded. Exact complete actual document module from same source/features/coherent dependencies; default allocator and opt-level3, no PGO. Fresh process and source read per observation. Timer wraps parse_canonical_document including tree construction, before JSON serialization. All tests/builds/hashing/publication finish before runs. No full-native or fastest-compiler gain inferred.",
+      "units_passed": 526
+    }
+  }
+}
