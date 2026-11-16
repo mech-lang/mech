@@ -25,6 +25,35 @@ The parser change passed 530 tests and preserved bytecode, object, complete
 metadata, and executable byte for byte. These are M1 measurements, separate from
 #973's M3/LLVM result.
 
+## Current complete build timing
+
+The standalone frontend now imports the same existing compiler allocator as
+`src/bin/mech.rs` and the compact native emitter. In a matched Apple M1 comparison,
+this reduces complete source-to-executable time from **6.84496 to 6.24081 seconds
+(8.83%)**, with identical compiler optimization settings and dependencies.
+Parsing falls from 4.06316 to 3.52152 seconds. There is no encoder size change.
+
+| Same-run complete build | Median seconds | Mech / peer |
+| --- | ---: | ---: |
+| Mech with the compiler allocator | 6.24081 | 1.00000 |
+| Roc | 2.97982 | 2.09436 |
+| libdeflate | 0.47988 | 13.00485 |
+
+All four actors include the final executable link, with their compilers, runtimes,
+and host adapters prebuilt. One warmup per actor is excluded; four balanced orders
+place every actor in every position once. All ten Mech invocations (including
+warmups) produce identical bytecode, encoder objects, complete metadata and linked
+executables. The worker passes 162 exact-output/alias/inflation checks. These
+checks establish unchanged output from the allocator correction, not newly
+measured peer runtime scores. The historical 81/61 evidence remains tied to its
+original benchmark worker.
+
+`evidence/compiler-allocator` contains every timed command, phase log, individual
+run receipt, source/worker hashes, and the as-run measurement scripts. Those
+scripts preserve original machine paths as provenance; `rebuild.py` remains the
+checkout-relative reproduction entry. The 5.67-second cached frontend rebuild
+in the build log is excluded and is not a cold full-compiler build measurement.
+
 ## What to review
 
 - Compiler changes under `hosts/gpu/src/native_artifact/program`: checked regions,
