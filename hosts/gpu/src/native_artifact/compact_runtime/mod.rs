@@ -1222,7 +1222,7 @@ mod parallel_tests {
         }
         #[cfg(not(target_os = "macos"))]
         {
-            mapped_words()
+            32768
         }
     }
 
