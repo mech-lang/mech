@@ -489,8 +489,8 @@ fn define_entry<M: Module>(
         worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
     context.func.forward_spill_reloads =
         outline_allowed && std::env::var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS").is_some();
-    context.func.aarch64_share_cold_tails = outline_allowed
-        && std::env::var_os("MECH_COMPACT_SHARE_COLD_TAILS").is_some();
+    context.func.aarch64_share_cold_tails =
+        outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_COLD_TAILS").is_some();
     let vector_facts = outline_allowed
         .then(|| std::env::var_os("MECH_COMPACT_VECTOR_FACTS"))
         .flatten();
@@ -516,23 +516,42 @@ fn define_entry<M: Module>(
         let arrays = if memory {
             let heap = b.block_params(entry)[0];
             let mut arrays = Arrays::new(module, &mut b, heap, observe)?;
-            if outline_allowed && let Some(strategy) = std::env::var_os("MECH_COMPACT_PACK_LE_SCALAR_STORES") {
+            if outline_allowed
+                && let Some(strategy) = std::env::var_os("MECH_COMPACT_PACK_LE_SCALAR_STORES")
+            {
                 use super::le_scalar_stores::Packing;
-                arrays.pack_le_stores = Some(if strategy == "ends" { Packing::Ends } else { Packing::Widths });
+                arrays.pack_le_stores = Some(if strategy == "ends" {
+                    Packing::Ends
+                } else {
+                    Packing::Widths
+                });
             }
-            if outline_allowed && let Some(mode) = std::env::var_os("MECH_COMPACT_SHARE_CAPACITY_GROWTH") {
+            if outline_allowed
+                && let Some(mode) = std::env::var_os("MECH_COMPACT_SHARE_CAPACITY_GROWTH")
+            {
                 use super::array_growth::BackingResults;
-                let combined = std::env::var("MECH_COMPACT_FUSE_WRITABLE_GROWTH").ok()
-                    .map(|mode| match mode.as_str() {
-                        "preserve" => BackingResults::Preserve,
-                        "registers" => BackingResults::Registers,
-                        "byte-registers" => BackingResults::ByteRegisters,
-                        _ => BackingResults::Packet,
-                    });
+                let combined =
+                    std::env::var("MECH_COMPACT_FUSE_WRITABLE_GROWTH")
+                        .ok()
+                        .map(|mode| match mode.as_str() {
+                            "preserve" => BackingResults::Preserve,
+                            "registers" => BackingResults::Registers,
+                            "byte-registers" => BackingResults::ByteRegisters,
+                            _ => BackingResults::Packet,
+                        });
                 arrays.share_capacity_growth(module, &mut b, mode == "preserve", combined)?;
             }
-            if outline_allowed && let Some(mode) = std::env::var_os("MECH_COMPACT_SHARE_INDEXED_STORES") {
-                arrays.share_indexed_stores(module, &mut b, layout, actions, &consuming, mode == "complete")?;
+            if outline_allowed
+                && let Some(mode) = std::env::var_os("MECH_COMPACT_SHARE_INDEXED_STORES")
+            {
+                arrays.share_indexed_stores(
+                    module,
+                    &mut b,
+                    layout,
+                    actions,
+                    &consuming,
+                    mode == "complete",
+                )?;
             }
             Some(arrays)
         } else {
@@ -1210,8 +1229,8 @@ fn define_entry<M: Module>(
                             .iter()
                             .find(|kernel| kernel.proof.iteration == iteration)
                             .is_some_and(|kernel| {
-                                let owner = layout.slot(kernel.proof.source)
-                                    + super::layout::ARRAY_OWNER;
+                                let owner =
+                                    layout.slot(kernel.proof.source) + super::layout::ARRAY_OWNER;
                                 // The checked collection header is also a
                                 // boundary in the existing read-borrow proof.
                                 // Any other current alias has a counted owner.
@@ -1351,7 +1370,9 @@ fn define_entry<M: Module>(
         let (standalone, combined) = growth.replace(&mut context.func);
         if standalone + combined != 0 {
             context.flowgraph();
-            context.eliminate_unreachable_code(module.isa()).map_err(backend)?;
+            context
+                .eliminate_unreachable_code(module.isa())
+                .map_err(backend)?;
         }
         eprintln!("compact scalar array growth sites shared: {standalone}, backing: {combined}");
     }
@@ -1488,9 +1509,8 @@ fn define_entry<M: Module>(
         None
     };
     if outline_allowed && std::env::var_os("MECH_COMPACT_ROOT_SELECTS").is_some() {
-        let selected = crate::native_artifact::codegen::common::scalar_selects::optimize(
-            &mut context.func,
-        );
+        let selected =
+            crate::native_artifact::codegen::common::scalar_selects::optimize(&mut context.func);
         if selected != 0 {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
@@ -1509,9 +1529,13 @@ fn define_entry<M: Module>(
         let isa = module.isa();
         if proofs == "ranges" || proofs == "all" {
             let extrema = std::env::var_os("MECH_COMPACT_PROVE_UNSIGNED_EXTREMA").is_some();
-            let unsigned = crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_ranges(
-                &mut context, &[], true, extrema,
-            );
+            let unsigned =
+                crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_ranges(
+                    &mut context,
+                    &[],
+                    true,
+                    extrema,
+                );
             if unsigned != 0 {
                 context.eliminate_unreachable_code(isa).map_err(backend)?;
                 context.remove_constant_phis(isa).map_err(backend)?;
@@ -1528,7 +1552,11 @@ fn define_entry<M: Module>(
         }
         if proofs == "joins" || proofs == "all" {
             let selected = std::env::var("MECH_COMPACT_ROOT_FLOW_PASSES").ok();
-            let enabled = |name| selected.as_deref().is_none_or(|set| set.split(',').any(|pass| pass == name));
+            let enabled = |name| {
+                selected
+                    .as_deref()
+                    .is_none_or(|set| set.split(',').any(|pass| pass == name))
+            };
             let equal = if enabled("equal") {
                 cfg_cleanup::coalesce_equal_join_arguments(&controls, &mut context, isa)?
             } else {
@@ -1545,7 +1573,8 @@ fn define_entry<M: Module>(
                 0
             };
             let predicates = if enabled("predicates") {
-                cfg_cleanup::refine_current_predicates(&controls, &mut context, isa)?.removed_branches
+                cfg_cleanup::refine_current_predicates(&controls, &mut context, isa)?
+                    .removed_branches
             } else {
                 0
             };
@@ -1582,9 +1611,13 @@ fn define_entry<M: Module>(
         if guards != 0 {
             let isa = module.isa();
             context.flowgraph();
-            context.eliminate_unreachable_code(isa).map_err(|error| backend(format!("{error:?}")))?;
+            context
+                .eliminate_unreachable_code(isa)
+                .map_err(|error| backend(format!("{error:?}")))?;
             context.flowgraph();
-            context.remove_constant_phis(isa).map_err(|error| backend(format!("{error:?}")))?;
+            context
+                .remove_constant_phis(isa)
+                .map_err(|error| backend(format!("{error:?}")))?;
             context.verify(isa).map_err(backend)?;
         }
         eprintln!("compact positive backings: {backings}, owner checks proved: {guards}");
@@ -1710,7 +1743,10 @@ fn define_entry<M: Module>(
             )
             .map_err(backend)?;
         }
-        (compiled.code_info().total_size, compiled_stack_bytes(&compiled.buffer)?)
+        (
+            compiled.code_info().total_size,
+            compiled_stack_bytes(&compiled.buffer)?,
+        )
     };
     eprintln!("compact-stage: machine code complete");
     if let Some(function) = reduction_function {

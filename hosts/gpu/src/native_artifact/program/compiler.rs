@@ -885,7 +885,9 @@ fn emit_compact_closed_object(
         && let Some(alignment) = alignment.as_deref()
     {
         if !matches!(alignment, "4" | "5" | "6" | "7") {
-            return Err(backend("compact function alignment must be 16, 32, 64 or 128 bytes"));
+            return Err(backend(
+                "compact function alignment must be 16, 32, 64 or 128 bytes",
+            ));
         }
         flags.push(("log2_min_function_alignment", alignment));
     }

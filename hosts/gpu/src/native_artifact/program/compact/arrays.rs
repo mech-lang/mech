@@ -138,7 +138,13 @@ impl Arrays {
             import(module, b, "mech_compact_allocate", 6, 1)?
         };
         let writable_scalar = if register_backing {
-            Some(import(module, b, "mech_compact_writable_scalar_backing", 7, 2)?)
+            Some(import(
+                module,
+                b,
+                "mech_compact_writable_scalar_backing",
+                7,
+                2,
+            )?)
         } else if forward_view_geometry
             && std::env::var_os("MECH_COMPACT_PACK_WRITABLE_STORAGE").is_some()
         {
@@ -146,14 +152,15 @@ impl Arrays {
         } else {
             None
         };
-        let release_groups = if !observe && std::env::var_os("MECH_COMPACT_GROUP_RETIREMENTS").is_some() {
-            Some([
-                import(module, b, "mech_compact_release_two", 3, 1)?,
-                import(module, b, "mech_compact_release_four", 5, 1)?,
-            ])
-        } else {
-            None
-        };
+        let release_groups =
+            if !observe && std::env::var_os("MECH_COMPACT_GROUP_RETIREMENTS").is_some() {
+                Some([
+                    import(module, b, "mech_compact_release_two", 3, 1)?,
+                    import(module, b, "mech_compact_release_four", 5, 1)?,
+                ])
+            } else {
+                None
+            };
         Ok(Self {
             allocate,
             writable: import(module, b, "mech_compact_writable", 7, 1)?,
@@ -214,7 +221,12 @@ impl Arrays {
     ) -> Result<(), NativeCompileError> {
         if self.register_backing {
             self.indexed_stores = Some(IndexedStores::declare(
-                module, b, layout, actions, consuming, outline_reuse,
+                module,
+                b,
+                layout,
+                actions,
+                consuming,
+                outline_reuse,
             )?);
         }
         Ok(())
@@ -357,11 +369,7 @@ impl Arrays {
             let one = b.ins().iconst(types::I64, 1);
             [zero, one, zero]
         });
-        Ok(self.result(
-            b,
-            geometry,
-            self.forward_view_geometry.then_some(capacity),
-        ))
+        Ok(self.result(b, geometry, self.forward_view_geometry.then_some(capacity)))
     }
 
     /// The source is dead on the collection's successful continuation, and
@@ -388,8 +396,13 @@ impl Arrays {
         b.switch_to_block(inspect);
         let references = b.ins().load(types::I64, MemFlags::new(), owner, 0);
         let exclusive = b.ins().icmp_imm(IntCC::Equal, references, 1);
-        b.ins()
-            .brif(exclusive, done, &[source[0].into(), owner.into()], allocate, &[]);
+        b.ins().brif(
+            exclusive,
+            done,
+            &[source[0].into(), owner.into()],
+            allocate,
+            &[],
+        );
         b.switch_to_block(allocate);
         let fresh = self.allocate(b, capacity, element, false, error)?;
         b.ins().jump(done, &[fresh[0].into(), fresh[5].into()]);
@@ -429,7 +442,9 @@ impl Arrays {
         }
         let fallback = b.create_block();
         let inspect = consume.then(|| b.create_block());
-        let fits = if let Some(inspect) = inspect.filter(|_| indexed.is_none_or(|site| !site.outline_reuse)) {
+        let fits = if let Some(inspect) =
+            inspect.filter(|_| indexed.is_none_or(|site| !site.outline_reuse))
+        {
             b.ins().brif(view[5], inspect, &[], fallback, &[]);
             b.switch_to_block(inspect);
             let references = b.ins().load(types::I64, MemFlags::new(), view[5], 0);
@@ -463,15 +478,28 @@ impl Arrays {
                 && matches!(stride, 1 | 2 | 4 | 8)
         });
         let call = if let Some(store) = indexed {
-            debug_assert!(consume && minimum == view[2] && self.register_backing && scalar.is_some());
-            b.ins().call(store.helper, &[
-                self.heap, view[0], view[1], view[2], view[5], store.offset, store.value,
-            ])
+            debug_assert!(
+                consume && minimum == view[2] && self.register_backing && scalar.is_some()
+            );
+            b.ins().call(
+                store.helper,
+                &[
+                    self.heap,
+                    view[0],
+                    view[1],
+                    view[2],
+                    view[5],
+                    store.offset,
+                    store.value,
+                ],
+            )
         } else if let Some(scalar) = scalar {
             let layout = b
                 .ins()
                 .iconst(types::I64, 2 * stride as i64 + i64::from(consume));
-            let mut arguments = vec![self.heap, view[0], view[1], view[2], view[5], minimum, layout];
+            let mut arguments = vec![
+                self.heap, view[0], view[1], view[2], view[5], minimum, layout,
+            ];
             if !self.register_backing {
                 arguments.push(b.ins().stack_addr(types::I64, self.result, 0));
             }
@@ -512,7 +540,13 @@ impl Arrays {
                     view[2],
                     stride,
                     error,
-                    BackingSite { call, fits, capacity, fallback, consume },
+                    BackingSite {
+                        call,
+                        fits,
+                        capacity,
+                        fallback,
+                        consume,
+                    },
                 );
             }
             vec![data, view[1], capacity, view[3], view[4], owner]
@@ -593,7 +627,11 @@ impl Arrays {
         let grown = b.create_block();
         b.append_block_param(grown, types::I64);
         let branch = b.ins().brif(capacity, nonzero, &[], initial, &[]);
-        if let Some(growth) = self.capacity_growth.as_ref().filter(|_| matches!(width, 1 | 2 | 4 | 8)) {
+        if let Some(growth) = self
+            .capacity_growth
+            .as_ref()
+            .filter(|_| matches!(width, 1 | 2 | 4 | 8))
+        {
             growth.record(GrowthSite {
                 choose_growth,
                 enough,
@@ -886,10 +924,13 @@ impl Arrays {
                     }
                     self.retire(b, words, &[slot], error);
                 }
-                let indexed = self.indexed_stores.as_ref()
+                let indexed = self
+                    .indexed_stores
+                    .as_ref()
                     .filter(|_| consume)
                     .and_then(|stores| stores.store(element, bytes, &values, done));
-                let out = self.writable_backing(b, &view, consume, view[2], element, error, indexed)?;
+                let out =
+                    self.writable_backing(b, &view, consume, view[2], element, error, indexed)?;
                 // A shared fallback stores after acquiring its backing and
                 // jumps to the original result. Only the inline reuse reaches
                 // this store when the fallback has been shared.

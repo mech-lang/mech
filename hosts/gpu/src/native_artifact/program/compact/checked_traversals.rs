@@ -258,8 +258,9 @@ impl RegionKind {
 
     fn direct_input_limit(self) -> usize {
         match self {
-            Self::Controller { direct_inputs }
-            | Self::Continuation { direct_inputs } => direct_inputs,
+            Self::Controller { direct_inputs } | Self::Continuation { direct_inputs } => {
+                direct_inputs
+            }
             Self::Refusal | Self::Phase => 0,
         }
     }
@@ -584,7 +585,11 @@ impl Traversal {
         if !self.register_outputs {
             result.params.push(AbiParam::new(types::I64));
         }
-        let output_words = if self.register_outputs { self.output_words() } else { 0 };
+        let output_words = if self.register_outputs {
+            self.output_words()
+        } else {
+            0
+        };
         result
             .returns
             .extend((0..2 + output_words).map(|_| AbiParam::new(types::I64)));
@@ -869,7 +874,8 @@ impl Traversal {
             pos.goto_bottom(stub);
             if let Some(packet) = packet {
                 for (index, &value) in words.iter().enumerate() {
-                    pos.ins().store(MemFlags::new(), value, packet, (index * 8) as i32);
+                    pos.ins()
+                        .store(MemFlags::new(), value, packet, (index * 8) as i32);
                 }
             }
             let tag = pos.ins().iconst(types::I64, tag as i64);
@@ -896,9 +902,9 @@ impl Traversal {
             self.register_inputs = register_inputs
                 && signature.call_conv == cranelift_codegen::isa::CallConv::AppleAarch64
                 && loads.len() + usize::from(packet.is_some()) <= APPLE_INTEGER_REGISTERS
-                && loads.iter().all(|&inst| {
-                    body.dfg.value_type(body.dfg.first_result(inst)) == types::I64
-                });
+                && loads
+                    .iter()
+                    .all(|&inst| body.dfg.value_type(body.dfg.first_result(inst)) == types::I64);
             if self.register_inputs {
                 // The input loads above are the only uses of the input packet
                 // address. The result pointer keeps its role as the last arg.
@@ -944,8 +950,7 @@ impl Traversal {
             *next += 1;
             index
         } else {
-            self
-                .aligned_outputs
+            self.aligned_outputs
                 .iter()
                 .position(|&value| value == original)
                 .expect("original result has a shared output word")
@@ -954,7 +959,8 @@ impl Traversal {
             register_words[index]
         } else {
             let ty = pos.func.dfg.value_type(original);
-            pos.ins().stack_load(ty, slot.expect("region result slot"), (index * 8) as i32)
+            pos.ins()
+                .stack_load(ty, slot.expect("region result slot"), (index * 8) as i32)
         }
     }
 
@@ -1041,7 +1047,11 @@ impl Traversal {
                 .map(|literal| pos.ins().iconst(literal.ty, literal.bits)),
         );
         if self.register_inputs {
-            args = self.live_captures.iter().map(|&source| args[source]).collect();
+            args = self
+                .live_captures
+                .iter()
+                .map(|&source| args[source])
+                .collect();
         } else if self.packed_inputs {
             let capture = packets.captures.expect("packed region input slot");
             for (index, &source) in self.live_captures.iter().enumerate() {
@@ -1073,7 +1083,8 @@ impl Traversal {
             pos.ins()
                 .iadd_imm(tag, candidate.origin_base() - FIRST_ERROR_TAG)
         } else if self.register_outputs {
-            pos.ins().iadd_imm(register_words[0], candidate.origin_base())
+            pos.ins()
+                .iadd_imm(register_words[0], candidate.origin_base())
         } else {
             let result = packets.result.expect("relative origin result slot");
             let relative = pos.ins().stack_load(types::I64, result, 0);
@@ -1103,7 +1114,11 @@ impl Traversal {
             if exit == candidate.exit {
                 for &value in &self.outputs {
                     let restored = self.restore_word(
-                        &mut pos, packets.result, register_words, value, &mut next,
+                        &mut pos,
+                        packets.result,
+                        register_words,
+                        value,
+                        &mut next,
                     );
                     if restored != value {
                         pos.func.dfg.change_to_alias(value, restored);
@@ -1284,7 +1299,8 @@ fn prepare_bodies<M: Module>(
     let mut groups: Vec<Prepared> = Vec::new();
     for mut traversal in traversals {
         traversal.live_captures.clear();
-        traversal.register_outputs = register_outputs && traversal.can_return_register_outputs(root);
+        traversal.register_outputs =
+            register_outputs && traversal.can_return_register_outputs(root);
         let candidate = traversal.candidate;
         let kind = if region_kind.is_continuation() {
             "layout_continuation"
@@ -1326,7 +1342,12 @@ fn prepare_bodies<M: Module>(
         if pair_words {
             let result = (!traversal.register_outputs).then(|| {
                 let entry = context.func.layout.entry_block().expect("region entry");
-                let packet = *context.func.dfg.block_params(entry).last().expect("result pointer");
+                let packet = *context
+                    .func
+                    .dfg
+                    .block_params(entry)
+                    .last()
+                    .expect("result pointer");
                 (packet, traversal.output_words())
             });
             super::word_pairs::fold(&mut context.func, result, false);
@@ -1568,9 +1589,13 @@ fn share_families<M: Module>(
             [finish, t.resume_output_words(root)]
         })
         .max()
-        .map(|words| root.create_sized_stack_slot(StackSlotData::new(
-            StackSlotKind::ExplicitSlot, (words.max(1) * 8) as u32, 3,
-        )));
+        .map(|words| {
+            root.create_sized_stack_slot(StackSlotData::new(
+                StackSlotKind::ExplicitSlot,
+                (words.max(1) * 8) as u32,
+                3,
+            ))
+        });
     let captures = groups
         .iter()
         .flat_map(|group| &group.traversals)

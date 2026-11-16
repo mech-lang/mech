@@ -414,9 +414,15 @@ impl From<Result<View, u64>> for BackingResult {
         match result {
             Ok(view) => {
                 debug_assert_ne!(view[0], 0);
-                Self { data: view[0], owner_or_status: view[5] }
+                Self {
+                    data: view[0],
+                    owner_or_status: view[5],
+                }
             }
-            Err(status) => Self { data: 0, owner_or_status: status },
+            Err(status) => Self {
+                data: 0,
+                owner_or_status: status,
+            },
         }
     }
 }
@@ -437,7 +443,12 @@ pub unsafe extern "C" fn mech_compact_allocate_backing(
         return Err(INVALID).into();
     }
     unsafe { &mut *context }
-        .allocate(capacity as usize, stride as usize, alignment as usize, zeroed != 0)
+        .allocate(
+            capacity as usize,
+            stride as usize,
+            alignment as usize,
+            zeroed != 0,
+        )
         .into()
 }
 /// A successful writable view keeps the source's length, rows, and columns,

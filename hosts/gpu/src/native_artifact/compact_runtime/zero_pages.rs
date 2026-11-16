@@ -31,7 +31,11 @@ mod platform {
             // SAFETY: the system query has no pointer arguments.
             usize::try_from(unsafe { getpagesize() }).unwrap()
         });
-        let minimum = if layout.align() == 4 { 16 } else { MINIMUM_MAPPING_PAGES };
+        let minimum = if layout.align() == 4 {
+            16
+        } else {
+            MINIMUM_MAPPING_PAGES
+        };
         if layout.size() < page_bytes * minimum || layout.align() > page_bytes {
             return Ok(None);
         }
