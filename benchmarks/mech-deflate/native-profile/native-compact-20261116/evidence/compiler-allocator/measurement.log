@@ -1,0 +1,85 @@
+mech warmup {'frontend': 6.275135583244264, 'native': 2.3601136249490082, 'link': 0.05157941672950983, 'total': 8.687473208177835}
+mech warmup {'frontend': 5.964310166891664, 'native': 2.2326356656849384, 'link': 0.039477374870330095, 'total': 8.237042458262295}
+roc warmup {'compile': 3.3060646248050034, 'link': 0.042354625184088945, 'total': 3.348739500157535}
+libdeflate warmup {'compile': 0.6060254159383476, 'link': 0.03388412483036518, 'total': 0.6401659580878913}
+mech order-1 {'frontend': 4.565264124888927, 'native': 2.260034583043307, 'link': 0.040461916010826826, 'total': 6.866458708886057}
+mech order-1 {'frontend': 3.9680354171432555, 'native': 2.2256457079201937, 'link': 0.04652262479066849, 'total': 6.240776667371392}
+libdeflate order-1 {'compile': 0.45461100013926625, 'link': 0.03382566571235657, 'total': 0.4886866672895849}
+roc order-1 {'compile': 3.096393874846399, 'link': 0.03427295805886388, 'total': 3.1309887086972594}
+mech order-2 {'frontend': 3.969127249903977, 'native': 2.2211902500130236, 'link': 0.039372541941702366, 'total': 6.230333208106458}
+roc order-2 {'compile': 2.9419441670179367, 'link': 0.03377520805224776, 'total': 2.9760290421545506}
+mech order-2 {'frontend': 4.56825058395043, 'native': 2.222274625208229, 'link': 0.03977370820939541, 'total': 6.830914041958749}
+libdeflate order-2 {'compile': 0.44576604198664427, 'link': 0.03349020890891552, 'total': 0.4795132502913475}
+roc order-3 {'compile': 2.9428893327713013, 'link': 0.033778166864067316, 'total': 2.976969250012189}
+libdeflate order-3 {'compile': 0.44619983388110995, 'link': 0.03380370885133743, 'total': 0.4802525001578033}
+mech order-3 {'frontend': 3.977173374965787, 'native': 2.2235460826195776, 'link': 0.0394983752630651, 'total': 6.240834875032306}
+mech order-3 {'frontend': 4.581035749986768, 'native': 2.2225914583541453, 'link': 0.04013300035148859, 'total': 6.8443248751573265}
+libdeflate order-4 {'compile': 0.44544045766815543, 'link': 0.033187832683324814, 'total': 0.4788842094130814}
+mech order-4 {'frontend': 4.581369750201702, 'native': 2.2241426249966025, 'link': 0.03945537516847253, 'total': 6.845587125048041}
+roc order-4 {'compile': 2.9489630828611553, 'link': 0.03337749978527427, 'total': 2.9826735840179026}
+mech order-4 {'frontend': 3.9724695831537247, 'native': 2.228719084057957, 'link': 0.04775524977594614, 'total': 6.249530749861151}
+matched-compiler-allocator-current 162 exact linked calls
+{
+  "medians": {
+    "mech-control": {
+      "frontend": 4.574643166968599,
+      "native": 2.223367041675374,
+      "link": 0.039953354280442,
+      "total": 6.844956000102684,
+      "parse": 4.063155625
+    },
+    "mech-compiler-allocator": {
+      "frontend": 3.970798416528851,
+      "native": 2.2245958952698857,
+      "link": 0.043010500026866794,
+      "total": 6.240805771201849,
+      "parse": 3.5215171455
+    },
+    "roc": {
+      "compile": 2.9459262078162283,
+      "link": 0.03377668745815754,
+      "total": 2.979821417015046
+    },
+    "libdeflate": {
+      "compile": 0.4459829379338771,
+      "link": 0.033646958880126476,
+      "total": 0.4798828752245754
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "mech-compiler-allocator": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "roc": {
+      "emitted_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+    },
+    "libdeflate": {
+      "emitted_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+    }
+  },
+  "byte_identical": [
+    "canonical bytecode",
+    "native object",
+    "complete native metadata",
+    "complete executable"
+  ]
+}
