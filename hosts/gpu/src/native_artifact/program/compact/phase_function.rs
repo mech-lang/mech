@@ -1437,7 +1437,9 @@ fn optimize_phase(
         let narrowed =
             crate::native_artifact::program::codegen::low_word::narrow(&mut context.func);
         let shifts = if narrow_fixed.is_some_and(|mode| mode == "shifts") {
-            crate::native_artifact::program::codegen::low_word::narrow_masked_shifts(&mut context.func)
+            crate::native_artifact::program::codegen::low_word::narrow_masked_shifts(
+                &mut context.func,
+            )
         } else {
             0
         };

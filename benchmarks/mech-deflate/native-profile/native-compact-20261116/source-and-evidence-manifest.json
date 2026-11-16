@@ -4,9 +4,14 @@
   "integration_status": "source merged onto #973; a complete build of the integrated tree is pending",
   "files": [
     {
+      "path": "benchmarks/mech-deflate/native-profile/Cargo.lock",
+      "sha256": "f96af17364c45ea9fc219a4b44d87b815e7ba67ef54fa82f2d292f548a65e2e3",
+      "bytes": 50064
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/Cargo.toml",
-      "sha256": "e954dc9f12b9e1df162d88f387388d03efb190ca8de8ce6412c1039bda055c6e",
-      "bytes": 4512
+      "sha256": "18518bb7ee1d8c2d559f6954b965029e3f0728f94408351c140e81caf07ae879",
+      "bytes": 4569
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/.gitattributes",
@@ -2015,8 +2020,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/arithmetic_tests.rs",
-      "sha256": "ce6a5f49411b0125c24caed9cb3a06372be5b70cfda9a1e5369dd8c9086297fe",
-      "bytes": 18183
+      "sha256": "1e8cf1085bda70bc079f4c4741436ac0bcead3ae1d28c2405adb2037132c037c",
+      "bytes": 18658
     },
     {
       "path": "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/intervals.rs",
@@ -2030,13 +2035,13 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/compact_runtime/mod.rs",
-      "sha256": "bd2897670e1f87fed07260a1b8b1ccac7461b48ae2787716352e4941bf2ef297",
-      "bytes": 50078
+      "sha256": "578d17e6154ed04a5c0af36bc11c87131148d8854f412446222bff3b06671fd7",
+      "bytes": 50239
     },
     {
       "path": "hosts/gpu/src/native_artifact/compact_runtime/zero_pages.rs",
-      "sha256": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80",
-      "bytes": 2994
+      "sha256": "84bda32633b7c048eb7d17dd6b1668c95b9fa9730da3d0b7458e4e64418c7848",
+      "bytes": 3034
     },
     {
       "path": "hosts/gpu/src/native_artifact/mod.rs",
@@ -2090,8 +2095,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs",
-      "sha256": "97177843ba33dd59fc03a02699429facb892739e8b2accf5bee8019f5ddd47bd",
-      "bytes": 34443
+      "sha256": "8b284929257a8bb11eaf63d2c5efb0e8bb7b0d79feacf9743200b4ccc7f88340",
+      "bytes": 34534
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/packed_halfword_reads/tests.rs",
@@ -2110,8 +2115,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_minimal.rs",
-      "sha256": "c158c0fbdd8db39d786816dd350a62f9586a694e2457257a325577c208b7f1bd",
-      "bytes": 17490
+      "sha256": "e9fdb3c64ea95939f993f31bfa7510fd58fff6f3be408c86f2a0a20ac54e0270",
+      "bytes": 17396
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs",
@@ -2135,8 +2140,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/arrays.rs",
-      "sha256": "42baa986158f2b42d656b14b51c78dc9c506ba64b0cd87eb0d91b32adfed0e76",
-      "bytes": 41238
+      "sha256": "ac40544f23645fac3e6dad3b0285826690dd1a9654eb5d2dc2f75f38f707e2cb",
+      "bytes": 41970
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/backing_owners/tests.rs",
@@ -2145,13 +2150,13 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/backing_owners.rs",
-      "sha256": "2c27bcc159d3e888e552a11ea43806c89d3bed5fef97838cc26fa819dd932a60",
-      "bytes": 7225
+      "sha256": "2e9b365032e718d1f94ed0ab5aefb08432622edd5176651d15112ec4d48a84e5",
+      "bytes": 7224
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/checked_refusal_bounds.rs",
-      "sha256": "9b3fca92d7b5c84b212b4d2dc3a9c97cf3dc93b0f9727e2ed032177d3fc2b635",
-      "bytes": 3492
+      "sha256": "fc6eaaa3d214167ceaa677f8b7ff3eb33bb622d940b77eade81327980b563615",
+      "bytes": 3575
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/checked_region_body.rs",
@@ -2165,8 +2170,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/checked_traversals.rs",
-      "sha256": "765b25158756889660315d40d360eaf08f4eb4e9c03a31fabd416706440d6331",
-      "bytes": 62931
+      "sha256": "c7d474d412e2b9140d33be0ddcc82856abf83b08e4b819e189ceeaed4434ed53",
+      "bytes": 63379
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/cold_status.rs",
@@ -2185,8 +2190,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
-      "sha256": "4893226e7ad0c6cf9c1d0ac3cdd5c0ab59d53bdf8dff867358bb60371ccc8afa",
-      "bytes": 79174
+      "sha256": "489082b1fea5ee8c564b0b4b8da8c44fa6e2f49f090d981df346cbbf212b9500",
+      "bytes": 79843
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/indexed_stores.rs",
@@ -2215,13 +2220,13 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/object.rs",
-      "sha256": "31d13d93cd0b4f76642b725f1232f2d36bf2a51d75f1af589e14fa1e90a49e1c",
-      "bytes": 32001
+      "sha256": "ca71b41d12435cf853f458ef0b76709b3229bb9705daf5a7e3e607fab459ee37",
+      "bytes": 32581
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/owner_retirement.rs",
-      "sha256": "de85a0c8b37c4f48c5f71d9667a50e946ae07fe88aac4d0368de45907f81048a",
-      "bytes": 14356
+      "sha256": "800a752d240262f639933829c5375225e2e9808fe4fc502d38aa6b4156a04573",
+      "bytes": 14678
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_bodies.rs",
@@ -2230,8 +2235,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
-      "sha256": "2be9e6633b0c24142efb64c557479eaa391323ea65254c94433f97988b5f14eb",
-      "bytes": 61350
+      "sha256": "c37df224f81d8b70e956e71f411f71f06219aad27099b502506f4ab434528f9a",
+      "bytes": 61381
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout_tests.rs",
@@ -2245,13 +2250,13 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_storage_tests.rs",
-      "sha256": "a48eda4c5dff49f883fc228b205017adb69dc3ae871c8512c1883740094b5af5",
-      "bytes": 6720
+      "sha256": "a44b5495e5f07df497e98e6aff783e9f298d565c46022119b66d6d527d703b24",
+      "bytes": 6767
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phases.rs",
-      "sha256": "6892fcd6292f58f77bf87a0ce2ab647d6c030adee6184f39a4f444fc33809754",
-      "bytes": 56283
+      "sha256": "7b9b2c5bab47cd975111328928498a32a68287a4179f0c88bed3f10a985775af",
+      "bytes": 56615
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/private_phase.rs",
@@ -2260,8 +2265,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/word_packs.rs",
-      "sha256": "4c46a2926fa97eca7d3297ddcab88000c031cfb2ee9d9b575bc1164418ca6d3b",
-      "bytes": 10580
+      "sha256": "24771de722853973f767008727606aebfc8f04a5a91c48b8856a32a8e3966a3c",
+      "bytes": 10829
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/word_pairs.rs",
@@ -2270,13 +2275,13 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compiler.rs",
-      "sha256": "7c86da653fe5c38545859bb64ebf5e06f82ae3ad1f9fff4a548274b7205fbaec",
-      "bytes": 48877
+      "sha256": "394550b7649a2c3d77eedfaef530f720dbad34b6e3d1967af078507969db49ae",
+      "bytes": 48908
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/llvm_backend/compact_body.rs",
-      "sha256": "4ec37f8b45cec41d9547e023ed3ca88f2a559f8cff78a9c75d0e6945c1ede78d",
-      "bytes": 6258
+      "sha256": "9e5d9aa9f249b8cf0e1773fb7182ac250b73f3b67438f48a7954f23c3cf59b8b",
+      "bytes": 6318
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/llvm_backend/lower.rs",
@@ -2292,6 +2297,16 @@
       "path": "hosts/gpu/src/native_artifact/program/llvm_backend/toolchain.rs",
       "sha256": "2d6b52b06165a563cad5adfd9ce8b1d0c1a0b794a59ab1a58376dd742b50c0b4",
       "bytes": 12922
+    },
+    {
+      "path": "src/engine/src/source_semantics/application.rs",
+      "sha256": "44d541e6be5d6cf1b5629c167195d060994ed2e613db7c79c008561e56c67ee6",
+      "bytes": 20127
+    },
+    {
+      "path": "src/engine/src/source_semantics/frontend.rs",
+      "sha256": "aceb0924a373e81eadd63fca6b6638bf41ff3b8b15f2340c34c7d7cd7a9a8d52",
+      "bytes": 470995
     },
     {
       "path": "src/syntax/src/document/parser/canonical/base/continuation.rs",

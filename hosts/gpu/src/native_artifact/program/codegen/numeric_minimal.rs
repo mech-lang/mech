@@ -455,12 +455,8 @@ impl<'a> Boundary<'a> {
                     {
                         continue;
                     }
-                    b.ins().store(
-                        MemFlags::new(),
-                        value,
-                        self.output,
-                        offset(first + lane)?,
-                    );
+                    b.ins()
+                        .store(MemFlags::new(), value, self.output, offset(first + lane)?);
                 }
             }
         }

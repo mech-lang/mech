@@ -46,8 +46,12 @@ pub(in crate::native_artifact::program) enum DirectRuntimeCalls {
 }
 
 impl DirectRuntimeCalls {
-    pub(super) fn declare_in(&self, declarations: &ModuleDeclarations,
-        id: FuncId, f: &mut ir::Function) -> ir::FuncRef {
+    pub(super) fn declare_in(
+        &self,
+        declarations: &ModuleDeclarations,
+        id: FuncId,
+        f: &mut ir::Function,
+    ) -> ir::FuncRef {
         let decl = declarations.get_function_decl(id);
         let signature = f.import_signature(decl.signature.clone());
         let name = f.declare_imported_user_function(ir::UserExternalName {
@@ -56,8 +60,7 @@ impl DirectRuntimeCalls {
         });
         // These providers are linked into the compact AArch64 Object's host.
         // Let the linker resolve a branch relocation to each provider.
-        let direct = decl.linkage == Linkage::Import
-            && self.includes(decl.name.as_deref());
+        let direct = decl.linkage == Linkage::Import && self.includes(decl.name.as_deref());
         f.import_function(ir::ExtFuncData {
             name: ir::ExternalName::user(name),
             signature,
@@ -166,8 +169,12 @@ impl PreparedObject {
         let mut outside = BTreeSet::new();
         for body in self.bodies.values() {
             match body {
-                Body::Text(text) => outside.extend(text.relocs.iter().filter_map(|r| symbol(&r.name))),
-                Body::Native(root) => outside.extend(root.relocations.iter().filter_map(|r| symbol(&r.name))),
+                Body::Text(text) => {
+                    outside.extend(text.relocs.iter().filter_map(|r| symbol(&r.name)))
+                }
+                Body::Native(root) => {
+                    outside.extend(root.relocations.iter().filter_map(|r| symbol(&r.name)))
+                }
                 Body::Data(data) => outside.extend(data.function_decls.values().filter_map(symbol)),
             }
         }
@@ -186,9 +193,14 @@ impl PreparedObject {
             .filter(|(target, _)| {
                 referenced.get(*target) == Some(&(1, true))
                     && !outside.contains(&FuncOrDataId::Func(**target))
-                    && outside_loops.as_ref().is_none_or(|callees| callees.contains(*target))
+                    && outside_loops
+                        .as_ref()
+                        .is_none_or(|callees| callees.contains(*target))
                     && names.as_deref().is_none_or(|selection| {
-                        self.declarations.get_function_decl(**target).name.as_deref()
+                        self.declarations
+                            .get_function_decl(**target)
+                            .name
+                            .as_deref()
                             .is_some_and(|name| selection.split(',').any(|symbol| symbol == name))
                     })
             })
@@ -551,7 +563,8 @@ impl Module for PreparedObject {
     }
 
     fn declare_func_in_func(&mut self, id: FuncId, f: &mut ir::Function) -> ir::FuncRef {
-        self.direct_runtime_calls.declare_in(&self.declarations, id, f)
+        self.direct_runtime_calls
+            .declare_in(&self.declarations, id, f)
     }
 
     fn declare_function(
@@ -628,11 +641,14 @@ impl Module for PreparedObject {
             && context.compiled_code().unwrap().buffer.data().len() <= MAX_INLINE_BYTES
             && context.func.dfg.num_values() <= MAX_INLINE_VALUES
             && let Some(bodies) = &mut self.inline_bodies
-            && std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok().is_none_or(|symbols| {
-                declaration.name.as_deref().is_some_and(|name| {
-                    symbols.split(',').any(|symbol| symbol == name)
+            && std::env::var("MECH_COMPACT_INLINE_SYMBOLS")
+                .ok()
+                .is_none_or(|symbols| {
+                    declaration
+                        .name
+                        .as_deref()
+                        .is_some_and(|name| symbols.split(',').any(|symbol| symbol == name))
                 })
-            })
             && bodies.len() < MAX_INLINE_BODIES
         {
             bodies.insert(id, context.func.clone());
