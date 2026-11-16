@@ -4,6 +4,11 @@ This PR contains compiler and parser source, a pinned Mech program, native build
 configuration, measured runtime source, and raw benchmark evidence. It is stacked
 on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
 
+For another agent, start with [the review and continuation handoff](REVIEW.md).
+It identifies the retained baseline, review priorities, unresolved CI, and all
+24 latest static size screens, with checkout-relative reproduction commands.
+Those screens are published for review and remain runtime-unqualified.
+
 The accepted runtime floors are **81/81 against Roc and 61/81 against libdeflate**.
 62 is an improvement target. The older raw reports retain the former 62 floor;
 that wording is historical. Historical evidence has not been edited.
