@@ -6,12 +6,18 @@ mod native_artifact {
         NativeProgramArtifactPlan,
     };
 }
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "the focused graph-query tests retain unused production adapter methods"
+)]
 struct NativeProgramFacts<'p> {
     inner: mech_engine::native_artifact::NativeProgramFacts<'p>,
     owner_reads: std::cell::RefCell<queries::ReadCache>,
 }
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "the focused graph-query tests retain unused production adapter methods"
+)]
 impl NativeProgramFacts<'_> {
     fn plan(&self) -> &native_artifact::NativeProgramArtifactPlan {
         self.inner.plan()
@@ -32,6 +38,9 @@ impl NativeProgramFacts<'_> {
         self.inner.predecessors(site)
     }
 }
-#[allow(dead_code)]
+#[allow(
+    dead_code,
+    reason = "the focused graph-query tests retain unused production adapter methods"
+)]
 #[path = "../../../src/engine/src/native_artifact/old_value_reads.rs"]
 mod queries;

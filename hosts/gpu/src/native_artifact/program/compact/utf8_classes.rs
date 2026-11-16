@@ -390,7 +390,7 @@ mod tests {
             );
             builder.symbol("mech_compact_free", runtime::mech_compact_free as *const u8);
             let mut module = cranelift_jit::JITModule::new(builder);
-            let metadata = super::super::define(&mut module, &prepared, false).unwrap();
+            let metadata = super::super::define(&mut module, &prepared, false, false).unwrap();
             assert_eq!(
                 metadata["native_string_classes"].as_array().unwrap().len(),
                 usize::from(classified)
