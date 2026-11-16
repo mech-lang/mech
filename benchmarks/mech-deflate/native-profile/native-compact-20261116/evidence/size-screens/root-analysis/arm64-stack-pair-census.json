@@ -1,0 +1,246 @@
+{
+  "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+  "potential_stack_pairs": 39,
+  "possible_bytes_removed": 156,
+  "pairs_by_symbol": {
+    "_mech_compact_numeric_475_vector": 24,
+    "_mech_compact_numeric_3009": 1,
+    "_mech_compact_closed_checked": 14
+  },
+  "pairs": [
+    {
+      "pc": 364,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldur x10, [sp, #0xf0]",
+      "second": "ldur x11, [sp, #0xe8]"
+    },
+    {
+      "pc": 380,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldr x14, [sp, #0x128]",
+      "second": "ldr x25, [sp, #0x130]"
+    },
+    {
+      "pc": 444,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x13, [sp, #0xc8]",
+      "second": "stur x7, [sp, #0xd0]"
+    },
+    {
+      "pc": 452,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x11, [sp, #0xe8]",
+      "second": "stur x10, [sp, #0xf0]"
+    },
+    {
+      "pc": 460,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "str x15, [sp, #0x108]",
+      "second": "str x1, [sp, #0x110]"
+    },
+    {
+      "pc": 468,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "str x14, [sp, #0x128]",
+      "second": "str x25, [sp, #0x130]"
+    },
+    {
+      "pc": 968,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldr x1, [sp, #0x110]",
+      "second": "ldr x15, [sp, #0x108]"
+    },
+    {
+      "pc": 2340,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x22, [sp, #0xc8]",
+      "second": "stur x7, [sp, #0xd0]"
+    },
+    {
+      "pc": 2348,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "str x15, [sp, #0x108]",
+      "second": "str x1, [sp, #0x110]"
+    },
+    {
+      "pc": 2492,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldr x14, [sp, #0x128]",
+      "second": "ldr x25, [sp, #0x130]"
+    },
+    {
+      "pc": 2524,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "str x14, [sp, #0x128]",
+      "second": "str x25, [sp, #0x130]"
+    },
+    {
+      "pc": 2560,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldr x14, [sp, #0x128]",
+      "second": "ldr x25, [sp, #0x130]"
+    },
+    {
+      "pc": 2800,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldur x7, [sp, #0xd0]",
+      "second": "ldur x22, [sp, #0xc8]"
+    },
+    {
+      "pc": 3168,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldr x14, [sp, #0x128]",
+      "second": "ldr x25, [sp, #0x130]"
+    },
+    {
+      "pc": 3184,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldur x10, [sp, #0xf0]",
+      "second": "ldur x11, [sp, #0xe8]"
+    },
+    {
+      "pc": 3256,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x10, [sp, #0xf0]",
+      "second": "stur x11, [sp, #0xe8]"
+    },
+    {
+      "pc": 4392,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x23, [sp, #0x90]",
+      "second": "stur x24, [sp, #0x98]"
+    },
+    {
+      "pc": 4400,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x3, [sp, #0xa8]",
+      "second": "stur x0, [sp, #0xb0]"
+    },
+    {
+      "pc": 4408,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x22, [sp, #0xc8]",
+      "second": "stur x7, [sp, #0xd0]"
+    },
+    {
+      "pc": 4416,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "stur x11, [sp, #0xe8]",
+      "second": "stur x10, [sp, #0xf0]"
+    },
+    {
+      "pc": 4424,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "str x15, [sp, #0x108]",
+      "second": "str x1, [sp, #0x110]"
+    },
+    {
+      "pc": 4432,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "str x14, [sp, #0x128]",
+      "second": "str x25, [sp, #0x130]"
+    },
+    {
+      "pc": 4784,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldur x10, [sp, #0xf0]",
+      "second": "ldur x11, [sp, #0xe8]"
+    },
+    {
+      "pc": 5640,
+      "symbol": "_mech_compact_numeric_475_vector",
+      "first": "ldr x14, [sp, #0x128]",
+      "second": "ldr x25, [sp, #0x130]"
+    },
+    {
+      "pc": 8108,
+      "symbol": "_mech_compact_numeric_3009",
+      "first": "stur x3, [sp, #0x88]",
+      "second": "stur x4, [sp, #0x90]"
+    },
+    {
+      "pc": 43460,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x7, [sp, #0x68]",
+      "second": "ldur x4, [sp, #0x70]"
+    },
+    {
+      "pc": 43468,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x5, [sp, #0x78]",
+      "second": "ldur x6, [sp, #0x80]"
+    },
+    {
+      "pc": 43480,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x0, [sp, #0x90]",
+      "second": "ldur x2, [sp, #0x98]"
+    },
+    {
+      "pc": 43488,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x3, [sp, #0xa0]",
+      "second": "ldur x0, [sp, #0xa8]"
+    },
+    {
+      "pc": 43496,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x1, [sp, #0xb0]",
+      "second": "ldur x8, [sp, #0xb8]"
+    },
+    {
+      "pc": 43504,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x9, [sp, #0xc0]",
+      "second": "ldur x10, [sp, #0xc8]"
+    },
+    {
+      "pc": 44692,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x12, [sp, #0xd8]",
+      "second": "ldur x11, [sp, #0xe0]"
+    },
+    {
+      "pc": 44700,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x14, [sp, #0xe8]",
+      "second": "ldur x13, [sp, #0xf0]"
+    },
+    {
+      "pc": 44708,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x8, [sp, #0x68]",
+      "second": "ldur x9, [sp, #0x70]"
+    },
+    {
+      "pc": 44716,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x6, [sp, #0x78]",
+      "second": "ldur x7, [sp, #0x80]"
+    },
+    {
+      "pc": 44724,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x4, [sp, #0x88]",
+      "second": "ldur x5, [sp, #0x90]"
+    },
+    {
+      "pc": 44732,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x2, [sp, #0x98]",
+      "second": "ldur x3, [sp, #0xa0]"
+    },
+    {
+      "pc": 44740,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x15, [sp, #0xa8]",
+      "second": "ldur x0, [sp, #0xb0]"
+    },
+    {
+      "pc": 44748,
+      "symbol": "_mech_compact_closed_checked",
+      "first": "ldur x10, [sp, #0xb8]",
+      "second": "ldur x19, [sp, #0xc0]"
+    }
+  ]
+}

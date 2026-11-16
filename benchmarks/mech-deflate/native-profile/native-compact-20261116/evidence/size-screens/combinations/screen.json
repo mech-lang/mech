@@ -1,0 +1,82 @@
+[
+  {
+    "variant": "owners-cleanup",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=all",
+      "MECH_COMPACT_FINISH_CFG_CLEANUP=1"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72136,
+    "root_code_bytes": 51620,
+    "root_frame_bytes": 3792,
+    "root_direct_calls": 371,
+    "emit_seconds": 2.4456743327900767
+  },
+  {
+    "variant": "ranges-cleanup",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=ranges",
+      "MECH_COMPACT_FINISH_CFG_CLEANUP=1"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72248,
+    "root_code_bytes": 51744,
+    "root_frame_bytes": 3760,
+    "root_direct_calls": 371,
+    "emit_seconds": 2.4388427077792585
+  },
+  {
+    "variant": "owners-inline-4879",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=all",
+      "MECH_COMPACT_INLINE_SYMBOLS=mech_compact_numeric_4879"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72168,
+    "root_code_bytes": 51312,
+    "root_frame_bytes": 3680,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.231549124699086
+  },
+  {
+    "variant": "owners-inline-4673",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=all",
+      "MECH_COMPACT_INLINE_SYMBOLS=mech_compact_numeric_4673_vector"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 72344,
+    "root_code_bytes": 50956,
+    "root_frame_bytes": 3568,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.2314765830524266
+  },
+  {
+    "variant": "owners-cleanup-cold",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=all",
+      "MECH_COMPACT_FINISH_CFG_CLEANUP=1",
+      "MECH_COMPACT_SHARE_COLD_TAILS=1"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 71768,
+    "root_code_bytes": 51264,
+    "root_frame_bytes": 3792,
+    "root_direct_calls": 371,
+    "emit_seconds": 2.4535470833070576
+  },
+  {
+    "variant": "ranges-cleanup-cold",
+    "flags": [
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=ranges",
+      "MECH_COMPACT_FINISH_CFG_CLEANUP=1",
+      "MECH_COMPACT_SHARE_COLD_TAILS=1"
+    ],
+    "exit_code": 0,
+    "object_text_bytes": 71816,
+    "root_code_bytes": 51304,
+    "root_frame_bytes": 3760,
+    "root_direct_calls": 371,
+    "emit_seconds": 2.438923000358045
+  }
+]
