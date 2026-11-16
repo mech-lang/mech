@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 72200,
+  "object_text_x_roc": 1.2513865779256794,
+  "object_text_x_libdeflate": 1.7561782447947072,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 41112,
+  "root_code_bytes": 51684,
+  "root_frame_bytes": 3744,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 3.712956584058702,
+  "peak_resident_bytes": 256262144,
+  "object_sha256": "f2ece3b24fce42f0f7b4dd97b37d55c68214b55979d3836f023d61cd894041d8",
+  "metadata_sha256": "a6c057d339ef1d7f88d84b7bd9fe6f08a536e91025dbca6ea353c08ff8f16e02",
+  "linked_text_bytes": 475124,
+  "worker_sha256": "068a1bb8304fa1fc8aed73dde267689aba16a80eecdec9e7956dd4b6985fc338",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-cold-machine-tails-traps-native-final-candidate-qualification.json"
+}

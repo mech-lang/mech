@@ -95,3 +95,46 @@ pub(in crate::native_artifact) fn narrow(function: &mut Function) -> usize {
     }
     arithmetic.len()
 }
+
+pub(in crate::native_artifact) fn narrow_masked_shifts(function: &mut Function) -> usize {
+    let shifts = function
+        .layout
+        .blocks()
+        .flat_map(|block| function.layout.block_insts(block))
+        .filter_map(|inst| {
+            let (word, count) = match function.dfg.insts[inst] {
+                Data::Binary {
+                    opcode: Opcode::Ushr,
+                    args: [word, count],
+                } => {
+                    let count = super::cfg_cleanup::constant_integer(function, count, 8, &mut 24)?;
+                    (word, count)
+                }
+                Data::BinaryImm64 {
+                    opcode: Opcode::UshrImm,
+                    arg,
+                    imm,
+                } => (arg, imm.bits() as u64),
+                _ => return None,
+            };
+            let ValueDef::Result(mask, 0) =
+                function.dfg.value_def(function.dfg.resolve_aliases(word))
+            else {
+                return None;
+            };
+            let input = masked_input(function, mask)?;
+            let count = count & 63;
+            (count < 32).then_some((inst, input, count))
+        })
+        .collect::<Vec<_>>();
+    let mut cursor = FuncCursor::new(function);
+    for &(inst, input, count) in &shifts {
+        cursor.goto_inst(inst);
+        // A logical shift below 32 produces the same word after masking the
+        // I64 input or reducing it to I32. Larger counts use I64 semantics.
+        let low = cursor.ins().ireduce(types::I32, input);
+        let shifted = cursor.ins().ushr_imm(low, count as i64);
+        cursor.func.dfg.replace(inst).uextend(types::I64, shifted);
+    }
+    shifts.len()
+}

@@ -279,15 +279,45 @@ impl Proof<'_> {
         false
     }
 
-    fn packed_base_fits(&self, base: Value, limit: Value, block: Block) -> bool {
+    fn packed_width_from(&self, start: Value, base: Value, width: u64) -> Option<u64> {
+        if start == base {
+            return Some(width);
+        }
+        let offset = match self.definition(start)?.1 {
+            Data::Binary {
+                opcode: Opcode::Iadd,
+                args,
+            } => {
+                let [a, b] = args.map(|word| self.current(word));
+                let offset = if a == base {
+                    b
+                } else if b == base {
+                    a
+                } else {
+                    return None;
+                };
+                literal(self.f, offset)?
+            }
+            Data::BinaryImm64 {
+                opcode: Opcode::IaddImm,
+                arg,
+                imm,
+            } if self.current(arg) == base => imm.bits() as u64,
+            _ => return None,
+        };
+        offset.checked_add(width)
+    }
+
+    fn packed_base_fits(&self, start: Value, limit: Value, block: Block, offsets: bool) -> bool {
         let Some((length, width)) = shared_limit(self.f, self.current(limit)) else {
             return false;
         };
         let length = self.current(length);
-        let base = self.current(base);
+        let start = self.current(start);
         let orders = self.selected_orders(block);
-        // A nonwrapping end at or below length and an extent at least
-        // as wide as the access imply base < length - (width - 1).
+        // If the checked end fits, covering offset + width within its extent
+        // proves both that the access start cannot wrap and that the full
+        // access fits in the length of the same view.
         for &Order {
             lower: end, upper, ..
         } in &orders
@@ -298,16 +328,22 @@ impl Proof<'_> {
             let Some([a, b]) = self.sum(end) else {
                 continue;
             };
-            for (checked_base, extent) in [(a, b), (b, a)] {
-                if checked_base != base || !contains(&orders, base, end, false) {
+            for (base, extent) in [(a, b), (b, a)] {
+                if !offsets && base != start {
                     continue;
                 }
-                let known_minimum = literal(self.f, extent).is_some_and(|n| n >= width);
+                let Some(required) = self.packed_width_from(start, base, width) else {
+                    continue;
+                };
+                if !contains(&orders, base, end, false) {
+                    continue;
+                }
+                let known_minimum = literal(self.f, extent).is_some_and(|n| n >= required);
                 if known_minimum
                     || orders.iter().any(|fact| {
                         fact.upper == extent
                             && literal(self.f, fact.lower)
-                                .is_some_and(|minimum| minimum >= width - u64::from(fact.strict))
+                                .is_some_and(|minimum| minimum >= required - u64::from(fact.strict))
                     })
                 {
                     return true;
@@ -346,8 +382,8 @@ pub(in super::super) fn fold(
                     proof.fits(test.lower, test.upper, block).then_some(inst)
                 }
                 ScalarSpanProof::SelectedRead => proof.selected_read_guard(test, block),
-                ScalarSpanProof::PackedBase => proof
-                    .packed_base_fits(test.lower, test.upper, block)
+                ScalarSpanProof::PackedBase { offsets } => proof
+                    .packed_base_fits(test.lower, test.upper, block, offsets)
                     .then_some(inst),
             };
             if let Some(guard) = guard {

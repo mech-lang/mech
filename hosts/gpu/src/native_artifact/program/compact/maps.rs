@@ -255,7 +255,7 @@ pub(super) fn emit(
             }
             let missing = b.ins().bxor_imm(present, 1);
             let length = add(b, source[1], missing, error);
-            let capacity = Arrays::grown_capacity(b, source[2], length, stride, error);
+            let capacity = arrays.grown_capacity(b, source[2], length, stride, error);
             let mut view =
                 super::map_index::writable(arrays, b, &source, consume, capacity, entry, error)?;
             insert_space(arrays, b, &view, at, present, stride);

@@ -1,0 +1,91 @@
+{
+  "source": "src/syntax/src/document/parser/journal.rs",
+  "source_sha256": "ec7454b7a998426e9dae45f1a66dfd46fe0c0f2467a70703f38e0a73ce31a6c1",
+  "isolated_patch": ".qualification/parser-tail-profile/journal.patch",
+  "parser_tests": {
+    "passed": 530,
+    "failed": 0,
+    "log": ".qualification/parser-tail-profile/tests.log"
+  },
+  "whole_build_evidence": ".qualification/matched-source-builds/apple-m1-parser-tail-current/timing.json",
+  "medians": {
+    "mech-control": {
+      "frontend": 5.042691291542724,
+      "native": 2.50734154204838,
+      "link": 0.04609081242233515,
+      "total": 7.598643083591014,
+      "parse": 4.438230271
+    },
+    "mech-parser-tail": {
+      "frontend": 4.6580591045785695,
+      "native": 2.5129670829046518,
+      "link": 0.039821500424295664,
+      "total": 7.212021520826966,
+      "parse": 4.053389645499999
+    },
+    "roc": {
+      "compile": 2.9511863954830915,
+      "link": 0.03410275047644973,
+      "total": 2.9858823125250638
+    },
+    "libdeflate": {
+      "compile": 0.44619797891937196,
+      "link": 0.03345112502574921,
+      "total": 0.48000643751583993
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "mech-parser-tail": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "roc": {
+      "emitted_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+    },
+    "libdeflate": {
+      "emitted_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+    }
+  },
+  "byte_identical": [
+    "canonical bytecode",
+    "native object",
+    "complete native metadata",
+    "complete executable"
+  ],
+  "exact_linked_calls": 162,
+  "retained_runtime_wins": {
+    "roc": [
+      81,
+      81
+    ],
+    "libdeflate": [
+      61,
+      61
+    ]
+  },
+  "runtime_suite_rerun": false,
+  "runtime_evidence": ".qualification/cranelift-continuation-registers-word-pages-native/full-timing.json",
+  "runtime_score_note": "The emitted object and linked executable are byte-identical; these are the retained full-suite scores, not a new timing pass. This candidate remains below the required libdeflate floor and has prior per-case regressions.",
+  "goal_floor_restored": false,
+  "published": false,
+  "full_pr973_source_integration_complete": false,
+  "scope": "Retain the parser-only source improvement. It improves current local source-to-executable builds without changing emitted code; it does not qualify or promote the native candidate."
+}

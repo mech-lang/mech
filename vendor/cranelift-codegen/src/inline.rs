@@ -332,6 +332,18 @@ impl InliningAllocs {
         let resolved_callee_val = callee.dfg.resolve_aliases(callee_val);
         self.values[resolved_callee_val].expand()
     }
+
+    fn inlined_external_name(&self, name: &ir::ExternalName) -> ir::ExternalName {
+        match name {
+            ir::ExternalName::User(name_ref) => ir::ExternalName::User(
+                self.user_external_name_refs[*name_ref]
+                    .expect("should have translated all user external names"),
+            ),
+            ir::ExternalName::TestCase(_)
+            | ir::ExternalName::LibCall(_)
+            | ir::ExternalName::KnownSymbol(_) => name.clone(),
+        }
+    }
 }
 
 /// Inline one particular function call.
@@ -1346,9 +1358,9 @@ fn create_entities(
     let mut entity_map = EntityMap::default();
 
     entity_map.block_offset = Some(create_blocks(allocs, func, callee));
-    entity_map.global_value_offset = Some(create_global_values(func, callee));
-    entity_map.sig_ref_offset = Some(create_sig_refs(func, callee));
     create_user_external_name_refs(allocs, func, callee);
+    entity_map.global_value_offset = Some(create_global_values(allocs, func, callee));
+    entity_map.sig_ref_offset = Some(create_sig_refs(func, callee));
     entity_map.func_ref_offset = Some(create_func_refs(allocs, func, callee, &entity_map));
     entity_map.stack_slot_offset = Some(create_stack_slots(func, callee));
     entity_map.dynamic_type_offset = Some(create_dynamic_types(func, callee, &entity_map));
@@ -1399,7 +1411,11 @@ fn create_blocks(
 }
 
 /// Copy and translate global values from the callee into the caller.
-fn create_global_values(func: &mut ir::Function, callee: &ir::Function) -> u32 {
+fn create_global_values(
+    allocs: &InliningAllocs,
+    func: &mut ir::Function,
+    callee: &ir::Function,
+) -> u32 {
     let gv_offset = func.global_values.len();
     let gv_offset = u32::try_from(gv_offset).unwrap();
 
@@ -1429,10 +1445,20 @@ fn create_global_values(func: &mut ir::Function, callee: &ir::Function) -> u32 {
                 global_type: *global_type,
             },
 
-            // These kinds of global values do not reference other global
-            // values, so we can just clone them.
+            // The symbol's name is indexed in the callee's function parameters.
+            ir::GlobalValueData::Symbol {
+                name,
+                offset,
+                colocated,
+                tls,
+            } => ir::GlobalValueData::Symbol {
+                name: allocs.inlined_external_name(name),
+                offset: *offset,
+                colocated: *colocated,
+                tls: *tls,
+            },
+
             ir::GlobalValueData::VMContext
-            | ir::GlobalValueData::Symbol { .. }
             | ir::GlobalValueData::DynScaleTargetConst { .. } => gv.clone(),
         });
     }
@@ -1483,17 +1509,7 @@ fn create_func_refs(
     } in callee.dfg.ext_funcs.values()
     {
         func.dfg.ext_funcs.push(ir::ExtFuncData {
-            name: match name {
-                ir::ExternalName::User(name_ref) => {
-                    ir::ExternalName::User(allocs.user_external_name_refs[*name_ref].expect(
-                        "should have translated all `ir::UserExternalNameRef`s before translating \
-                         `ir::FuncRef`s",
-                    ))
-                }
-                ir::ExternalName::TestCase(_)
-                | ir::ExternalName::LibCall(_)
-                | ir::ExternalName::KnownSymbol(_) => name.clone(),
-            },
+            name: allocs.inlined_external_name(name),
             signature: entity_map.inlined_sig_ref(*signature),
             colocated: *colocated,
             patchable: *patchable,

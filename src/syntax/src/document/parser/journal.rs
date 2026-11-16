@@ -499,4 +499,43 @@ mod tests {
         assert_eq!(journal.allocations, allocations);
         assert!(journal.is_empty());
     }
+    #[test]
+    fn retained_snapshots_survive_nonlocal_writes_after_tail_rotation() {
+        let mut journal = Journal::default();
+        let mut expected = (0..256).collect::<Vec<_>>();
+        journal.extend(expected.iter().copied());
+        let original = journal.clone();
+        for index in [0, 3, 4, 17, 127, 252, 255] {
+            journal[index] += 1000;
+            expected[index] += 1000;
+        }
+        let changed = journal.clone();
+        let changed_values = expected.clone();
+        journal.extend(256..300);
+        expected.extend(256..300);
+        same(&journal, &expected);
+        same(&original, &(0..256).collect::<Vec<_>>());
+        same(&changed, &changed_values);
+
+        // A full retained page becomes the new tail, then rotates back into
+        // the prefix. All three saved views must retain their own contents.
+        let extended = journal.clone();
+        let extended_values = expected.clone();
+        journal.truncate(PAGE);
+        expected.truncate(PAGE);
+        journal.extend(500..509);
+        expected.extend(500..509);
+        journal[1] = 77;
+        expected[1] = 77;
+        same(&journal, &expected);
+        same(&changed, &changed_values);
+        same(&extended, &extended_values);
+        journal.clear();
+        journal.extend([4, 8, 15, 16, 23, 42]);
+        same(&journal, &[4, 8, 15, 16, 23, 42]);
+        same(&original, &(0..256).collect::<Vec<_>>());
+        same(&changed, &changed_values);
+        same(&extended, &extended_values);
+    }
+
 }

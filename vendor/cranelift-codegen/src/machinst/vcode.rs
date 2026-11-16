@@ -213,6 +213,10 @@ pub struct EmitResult {
     /// The MachBuffer containing the machine code.
     pub buffer: MachBufferFinalized<Stencil>,
 
+    /// Conservative range containing only the trailing cold blocks, before
+    /// constant-pool finalization. Branch folding may remove its first words.
+    pub(crate) cold_code: Option<core::ops::Range<CodeOffset>>,
+
     /// Offset of each basic block, recorded during emission. Computed
     /// only if `machine_code_cfg_info` is enabled.
     pub bb_offsets: Vec<CodeOffset>,
@@ -951,9 +955,13 @@ impl<I: VCodeInst> VCode<I> {
             n => vec![0; 1 << (n - 1)],
         };
         let mut total_bb_padding = 0;
+        let mut cold_code_start = None;
 
         for (block_order_idx, &block) in final_order.iter().enumerate() {
             trace!("emitting block {:?}", block);
+            if self.block_order.is_cold(block) && cold_code_start.is_none() {
+                cold_code_start = Some(buffer.cur_offset());
+            }
 
             // Call the new block hook for state
             state.on_new_block();
@@ -1323,6 +1331,7 @@ impl<I: VCodeInst> VCode<I> {
 
         EmitResult {
             buffer: buffer.finish(&self.constants, ctrl_plane),
+            cold_code: cold_code_start.map(|start| start..func_body_len),
             bb_offsets,
             bb_edges,
             disasm: if want_disasm { Some(disasm) } else { None },
