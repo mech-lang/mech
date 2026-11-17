@@ -20,6 +20,12 @@ the exact timed worker and emits **71,768 B**, or **1.244× Roc** and
 and **61/81 libdeflate** wins.
 [Compiler comparison and reproduction](evidence/native-graph-work/README.md)
 
+Direct indexing of completed event pages brings the matched Apple M1
+source-through-link build to **3.81385 s**, a paired reduction of
+**1.23%**. The 71,768-byte worker reproduces exactly.
+[Parser source, finite-limit checks and matched builds](evidence/batch-page-index/README.md)
+· [Independent matcher source screens](evidence/mech-source-matcher/README.md)
+
 The opt-in frame-copy variant emits **71,192 B**, or **1.234× Roc** and
 **1.920× libdeflate**. Its two full orders preserve every individual
 control win. They record **81/81 Roc** in both orders and **57/81 and

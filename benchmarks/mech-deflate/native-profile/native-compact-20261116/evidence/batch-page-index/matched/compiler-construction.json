@@ -1,0 +1,29 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo",
+    "--bin",
+    "compile_profile",
+    "--message-format=json"
+  ],
+  "effective_profile": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "elapsed_seconds": 233.96620929194614,
+  "exit": 0,
+  "scope": "Incremental compiler rebuild in the existing locked opt-level-3 target directory."
+}

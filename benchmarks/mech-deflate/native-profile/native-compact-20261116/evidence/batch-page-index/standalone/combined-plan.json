@@ -1,0 +1,49 @@
+{
+  "scope": "Standalone canonical parser with fixed compiler, allocator and input",
+  "host": {
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "architecture": "arm64"
+  },
+  "baseline_syntax_revision": "b72b7419b39b22765fe1eed6b5c636e63964b905",
+  "source_file": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "probe_sha256": {
+    "before": "0eaa8b40bc7fb4f93c4cd857bf8b1c461108aa521f0e2a427435b0faad6bd014",
+    "candidate": "76253f23ae3ee9991536b3f415fd661d3b6e6adbf41e525fce7badeeb5fae5a0"
+  },
+  "paired_orders": [
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ]
+  ],
+  "warmups_excluded": 1
+}
