@@ -1,6 +1,6 @@
 # PR #993 current status
 
-Maintained compiler source 1426ea50ba887590c0696f9e3c767a41c5cd847f is on PR #993 stacked on #973.
+Maintained compiler source 4b154d273646256d52a3260c1b054f9a1cbd7ab8 is on PR #993 stacked on #973.
 These measurements use Apple M1, macOS 15.6.1 and arm64.
 [Machine-readable scorecard](scorecard.json)
 
@@ -8,19 +8,19 @@ These measurements use Apple M1, macOS 15.6.1 and arm64.
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.54442 s | 2.99543 s | 0.48343 s |
-| Source through strip | 2.55500 s | 3.00609 s | 0.49411 s |
+| Source through final link | 2.49536 s | 2.98725 s | 0.48262 s |
+| Source through strip | 2.50583 s | 2.99772 s | 0.49332 s |
 | Encoder text | 71,192 B | 57,696 B | 37,080 B |
 | Stripped executable | 292,568 B | 191,912 B | 155,752 B |
 
-Mech builds in **0.849× Roc** and
-**5.267× libdeflate** time. Its encoder text is
+Mech builds in **0.835× Roc** and
+**5.173× libdeflate** time. Its encoder text is
 **1.234× Roc** and **1.920× libdeflate**. Compilers, allocator and fixed
 deployment support are prebuilt. The exact worker carries 81/81 Roc and
 61/81 libdeflate in its current full qualification. Promotions of new
 runtime artifacts require the v3 floor of 62/81 in both orders, with
 63/81 as the next target.
-[Matched measurements](evidence/ssa-local-definitions/README.md) ·
+[Matched measurements](evidence/immutable-root-literals/README.md) ·
 [Runtime qualification](evidence/frame-copy-v2/README.md) ·
 [Policy v3](qualification-policy-v3.json)
 
@@ -32,14 +32,14 @@ and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
-| Parser | 0.786 s | 0.75 | 0.35 | 0.13 |
-| Native preparation through object | 1.386 s | 0.95 | 0.48 | 0.22 |
-| Source semantic frontend | 0.233 s | 0.18 | 0.09 | 0.04 |
-| Catalog initialization | 0.058 s | 0.05 | 0.02 | 0.01 |
-| Artifact, encoding, link and other work | 0.077 s | 0.07 | 0.06 | 0.05 |
-| **Total** | 2.544 s | 2.00 | 1.00 | 0.45 |
+| Parser | 0.784 s | 0.75 | 0.35 | 0.13 |
+| Native preparation through object | 1.349 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.231 s | 0.18 | 0.09 | 0.04 |
+| Catalog initialization | 0.061 s | 0.05 | 0.02 | 0.01 |
+| Artifact, encoding, link and other work | 0.070 s | 0.07 | 0.06 | 0.05 |
+| **Total** | 2.495 s | 2.00 | 1.00 | 0.45 |
 
-Mech needs **2.094 s** less elapsed time to reach the
+Mech needs **2.045 s** less elapsed time to reach the
 0.45 s working budget. The phase medians come from the same ten matched trials.
 
 ## Which build to use
@@ -200,11 +200,19 @@ preserve strict winner order. The linked validation covers the complete
 81-case fixture set and six checked exits. The 71,192 B frame-copy encoder remains the maintained build. The next runtime mechanism is the repeated bound reload.
 [Short-visit results](evidence/ordered-scorer-short-visits/README.md)
 
+## Scalar entry literals
+
+The checked root bypasses provisional SSA lookups for **1,389**
+immutable scalar literal lanes in the measured build.
+A paired **40.63 ms** saving brings the matched M1 build to **2.495 s** from source through final link.
+The 90% interval is **33.08 to 47.17 ms**.
+The frame-copy recipe uses this path.
+[Exact build and paired measurements](evidence/immutable-root-literals/README.md)
+
 ## Active work
 
-- **Native compiler.** Price one provisional SSA value family using the
-  root-lane census. Direct entry values require dominance and immutability
-  on all relevant paths, including ownership, synthetic and failure paths.
+- **Native compiler.** The scalar entry literal comparison is complete.
+  Price the remaining repeated SSA work with the root-lane census.
   The bounded freshly built and post-phi graph reuse is complete.
   [Current SSA census](evidence/source-and-ssa-attribution/README.md) ·
   [Verified graph reuse](evidence/verified-flowgraphs/README.md)
