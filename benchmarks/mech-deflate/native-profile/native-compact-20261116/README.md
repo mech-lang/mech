@@ -21,6 +21,7 @@ that wording is historical. Historical evidence has not been edited.
 | Fresh owner counts and cold-tail sharing | 71,960 B | 1.24723 | 1.94067 | 81/81 and 61/81, both full orders |
 | Fresh owner reference counts | 72,344 B | 1.25388 | 1.95102 | 81/81 and 61/81, both full orders |
 | Optional cold-tail sharing | 72,200 B | 1.25139 | 1.94714 | 162 exact encoder calls; 15-case screen only |
+| [Aligned register spill pairs](evidence/aligned-register-spills/README.md) | 71,896 B | 1.24612 | 1.93894 | 81/81 and 61/81 in both full orders, rejected on two cases |
 
 The code denominators are 57,696 B for Roc and **37,080 B for libdeflate**.
 Historical receipts used a 41,112-byte C object for their size ratios.

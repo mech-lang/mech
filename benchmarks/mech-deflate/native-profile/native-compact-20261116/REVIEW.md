@@ -261,6 +261,16 @@ modulo 64 for all 40 native function symbols. Both natural cases meet the
 The source patch, replay entry point, checked calls, raw full runs, and focused
 placement follow-ups are in the [experiment](evidence/register-spill-pairs/README.md).
 
+The compiler now reproduces that 71,896-byte object, its complete metadata
+and its linked benchmark worker byte for byte. The recipe exposes it as
+`fresh-owner-counts-cold-tails-paired-spills`. New full orders each preserve
+the same **81 Roc and 61 libdeflate wins**, including every individual win.
+The v1 replay rejects promotion because `empty` and `seven-stored-prefix`
+slow by **1.704%** and **1.085%**, with both lower bounds above 0.5%.
+The two previous large natural-input regressions are bounded. Keep the
+retained recipe. The [source-emitted variant and measurements](evidence/aligned-register-spills/README.md)
+include both full runs, the exact linked identities and complete build times.
+
 ## Earlier experiments
 
 `evidence/size-screens` contains all 24 static screens: ten additional shared-region
