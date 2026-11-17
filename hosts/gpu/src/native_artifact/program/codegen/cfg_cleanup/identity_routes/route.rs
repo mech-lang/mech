@@ -166,27 +166,36 @@ pub(super) fn find(
     let mut reach = BTreeMap::<Block, Arc<Vec<bool>>>::new();
     for value in definitions {
         let owner = values::owner(f, value)?;
-        // A fresh visit to the defining block ends this reachability query.
-        // Values used only there (or unused) cannot require a repair.
-        if uses.values[value.as_u32() as usize]
-            .iter()
-            .all(|&block| block == owner)
-        {
+        // A fresh visit to the defining block ends the query.
+        if owner == target {
             continue;
         }
-        let reachable = reach.entry(owner).or_insert_with(|| {
-            uses.reach
-                .reachable(target.as_u32() as usize, owner.as_u32() as usize)
-        });
+        let owner_dominates_target = dom.block_dominates(owner, target);
         let mut used = false;
         for &block in &uses.values[value.as_u32() as usize] {
-            if !reachable[block.as_u32() as usize] {
+            if block == owner || !dom.is_reachable(block) {
                 continue;
             }
-            if !dom.block_dominates(target, block) || !dom.block_dominates(owner, target) {
+            if owner_dominates_target && dom.block_dominates(target, block) {
+                // A simple entry-to-use path visits owner before target and
+                // cannot visit owner again. Its suffix proves the use is live.
+                used = true;
+                continue;
+            }
+            if !owner_dominates_target && dom.block_dominates(owner, block) {
+                // A target-to-use path avoiding owner could be joined to an
+                // entry-to-target path avoiding owner, contradicting dominance.
+                continue;
+            }
+            // A remaining reachable use would lie outside a required
+            // dominance region. Its stopped reachability must be checked.
+            let reachable = reach.entry(owner).or_insert_with(|| {
+                uses.reach
+                    .reachable(target.as_u32() as usize, owner.as_u32() as usize)
+            });
+            if reachable[block.as_u32() as usize] {
                 return None;
             }
-            used = true;
         }
         if used {
             repairs.insert(
