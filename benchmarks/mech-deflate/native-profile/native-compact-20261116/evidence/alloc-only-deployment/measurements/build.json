@@ -1,0 +1,58 @@
+{
+  "mode": "abort-core",
+  "commands": {
+    "compile-bridge": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "rustc",
+      "--offline",
+      "--release",
+      "--target",
+      "aarch64-apple-darwin",
+      "-Z",
+      "build-std=core,alloc,compiler_builtins",
+      "--manifest-path",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/Cargo.toml",
+      "--target-dir",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target",
+      "--",
+      "-D",
+      "warnings",
+      "--print",
+      "native-static-libs"
+    ],
+    "link": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-Wl,-dead_strip",
+      "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/mech.map",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-o",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/mech"
+    ],
+    "strip": [
+      "/usr/bin/strip",
+      "-S",
+      "-x",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/mech-stripped"
+    ]
+  },
+  "native_libraries": [],
+  "executable": {
+    "mech": {
+      "bytes": 301384,
+      "sha256": "b06a893cdd9c0bbc83692a03efd3789c9849c5afbb57c7aa6daae5311415c76a",
+      "sections": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 245760\n\tSection __text: 148456\n\tSection __stubs: 384\n\tSection __init_offsets: 4\n\tSection __cstring: 3824\n\tSection __const: 76384\n\tSection __unwind_info: 576\n\ttotal 229628\nSegment __DATA_CONST: 16384\n\tSection __got: 296\n\tSection __const: 5176\n\ttotal 5472\nSegment __DATA: 212992\n\tSection __data: 5696\n\tSection __thread_vars: 48\n\tSection __thread_data: 8\n\tSection __thread_bss: 1 (zerofill)\n\tSection __bss: 206464 (zerofill)\n\tSection __common: 704 (zerofill)\n\ttotal 212921\nSegment __LINKEDIT: 32768\ntotal 4295475200\n"
+    },
+    "mech-stripped": {
+      "bytes": 292576,
+      "sha256": "989221e22a05ae1151e137493d44bb3d060b288b7aa095b0da36179b327db8fa",
+      "sections": "Segment __PAGEZERO: 4294967296 (zero fill) \nSegment __TEXT: 245760\n\tSection __text: 148456\n\tSection __stubs: 384\n\tSection __init_offsets: 4\n\tSection __cstring: 3824\n\tSection __const: 76384\n\tSection __unwind_info: 576\n\ttotal 229628\nSegment __DATA_CONST: 16384\n\tSection __got: 296\n\tSection __const: 5176\n\ttotal 5472\nSegment __DATA: 212992\n\tSection __data: 5696\n\tSection __thread_vars: 48\n\tSection __thread_data: 8\n\tSection __thread_bss: 1 (zerofill)\n\tSection __bss: 206464 (zerofill)\n\tSection __common: 704 (zerofill)\n\ttotal 212921\nSegment __LINKEDIT: 16384\ntotal 4295458816\n"
+    }
+  }
+}

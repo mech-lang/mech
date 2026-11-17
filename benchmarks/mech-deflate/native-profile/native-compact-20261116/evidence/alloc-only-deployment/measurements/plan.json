@@ -1,0 +1,164 @@
+{
+  "scope": "Same frozen diagnostic native encoder and macOS 15 C deployment CLI",
+  "sources": {
+    "source/bridge.rs": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/bridge.rs",
+      "before_sha256": "5f9c3951b4e7834ae3e15c7585ac06cacacd712282dcd2bb389f7e7ef1208484",
+      "experiment_sha256": "ea008f7eefc6f7831c3fc4baba5504349bfaeb7123f15ae416f10b1db6980b64"
+    },
+    "source/native_abi.rs": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/native_abi.rs",
+      "before_sha256": "4326ba05ce274533f10551807668c8ecf4fd2e914bda0ce873e89519f6435f85",
+      "experiment_sha256": "4326ba05ce274533f10551807668c8ecf4fd2e914bda0ce873e89519f6435f85"
+    },
+    "source/main.c": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/main.c",
+      "before_sha256": "0b14928e98bb743f4cd2dd037fd56a22a7b65f682fe1ba54a9e5100effaac9d9",
+      "experiment_sha256": "0b14928e98bb743f4cd2dd037fd56a22a7b65f682fe1ba54a9e5100effaac9d9"
+    },
+    "source/deploy.h": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/deploy.h",
+      "before_sha256": "b7dffcb327b51e62b7199d5dfa0bc0523846606aada8d28cd465a6bac569d2f0",
+      "experiment_sha256": "b7dffcb327b51e62b7199d5dfa0bc0523846606aada8d28cd465a6bac569d2f0"
+    },
+    "source/pinned_allocator.rs": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/pinned_allocator.rs",
+      "before_sha256": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6",
+      "experiment_sha256": "94ca21ceb347ec1165ea933716ffb68bba302af963a202106478786ded16a4e2"
+    },
+    "runtime/lib.rs": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/runtime-lib.rs",
+      "before_sha256": "e4ca0feba6b779f788ab1b699057c7db466c2e6d453264ad21512c20cd1744c9",
+      "experiment_sha256": "4009871f7cf16f6ff2ce51129d8bd8c8e3a3daef579a09a20c4fa7b3642d0727"
+    },
+    "runtime/native_artifact/compact_runtime/mod.rs": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/compact_runtime/mod.rs",
+      "before_sha256": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
+      "experiment_sha256": "fa2dea1af44cf9b3829a5515abc3bdff1dac5c494427261be5093e2754875ddb"
+    },
+    "runtime/native_artifact/compact_runtime/zero_pages.rs": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/compact_runtime/zero_pages.rs",
+      "before_sha256": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80",
+      "experiment_sha256": "786f50b58314b9be445b83745433f6c175a533416a0b235d931d350b05ac374d"
+    },
+    "runtime/native_artifact/compact_runtime/terminal_appends.rs": {
+      "original": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/compact_runtime/terminal_appends.rs",
+      "before_sha256": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4",
+      "experiment_sha256": "8480c0e5b0678af3d8cfe23976edb556942be059912d080e797d0c231f969864"
+    }
+  },
+  "fixed_input_sha256": {
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/pinned_allocator.rs": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o": "0479f586428ec6a033e6d7916f308768a5b5c2359e2031cfd3d4a4a4272b7a95"
+  },
+  "required_encoder_imports": [
+    "_mech_compact_allocate_backing",
+    "_mech_compact_finish_byte_appends",
+    "_mech_compact_free",
+    "_mech_compact_release_four",
+    "_mech_compact_release_nullable",
+    "_mech_compact_release_owner",
+    "_mech_compact_release_three",
+    "_mech_compact_release_two",
+    "_mech_compact_writable",
+    "_mech_compact_writable_scalar_backing",
+    "_memmove"
+  ],
+  "runtime_rust_crate": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--target=aarch64-apple-darwin",
+    "--edition=2024",
+    "--crate-name=mech_gpu",
+    "--crate-type=rlib",
+    "-D",
+    "warnings",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "codegen-units=1",
+    "-C",
+    "panic=abort",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/runtime/lib.rs",
+    "-o",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/libmech_gpu_alloc_only.rlib"
+  ],
+  "bridge_rust_staticlib": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--target=aarch64-apple-darwin",
+    "--crate-name",
+    "mech_deploy",
+    "--crate-type=staticlib",
+    "-D",
+    "warnings",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "debuginfo=0",
+    "-C",
+    "codegen-units=1",
+    "-C",
+    "panic=abort",
+    "--print",
+    "native-static-libs",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/libmech_gpu_alloc_only.rlib",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/source/bridge.rs",
+    "-o",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/libmech_deploy.a"
+  ],
+  "clang_link_without_rust_native_libraries": [
+    "/usr/bin/clang",
+    "-arch",
+    "arm64",
+    "-mmacosx-version-min=15.0",
+    "-Wl,-dead_strip",
+    "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/mech.map",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/libmech_deploy.a",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "-o",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/mech"
+  ],
+  "link_note": "Append native-static-libs from the proposed bridge build. Clang supplies Darwin libSystem by default.",
+  "rust_src_fallback": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "rustc",
+    "--offline",
+    "--release",
+    "--target",
+    "aarch64-apple-darwin",
+    "-Z",
+    "build-std=core,alloc,compiler_builtins",
+    "--manifest-path",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target",
+    "--",
+    "-D",
+    "warnings",
+    "--print",
+    "native-static-libs"
+  ],
+  "fallback_bridge_archive": "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+  "stripping": [
+    "/usr/bin/strip",
+    "-S",
+    "-x",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/mech-stripped"
+  ],
+  "comparisons": {
+    "baseline": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/build.json",
+    "fixture_verifier": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/verify.py"
+  }
+}

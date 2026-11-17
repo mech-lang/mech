@@ -1,0 +1,96 @@
+{
+  "original_six_case_sha256": "00639ef4177596915e63efae5466a3898ca19494e04f1b45d51a4e8e5f13ccf7",
+  "runtime_archive_sha256": "12a8da4bfd670fabd18f7c04f96826ed43137726d716899a21fd5ee2b68747ef",
+  "runtime_archive": "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/deps/libmech_gpu-f6ecbc532e206ff4.rlib",
+  "runtime_object_member": "mech_gpu-f6ecbc532e206ff4.mech_gpu.442d7f9c7a260170-cgu.0.rcgu.o",
+  "runtime_object_member_sha256": "d3d8c58b91e73661c012237955272d3af77d2e3d2f14f7db4b1a49b97962d95d",
+  "dylib_sha256": "88cbb1b13f0e6db96b3db520a3f44ba7dc458e1c076764a8fb9d000eeef95950",
+  "compile": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--target=aarch64-apple-darwin",
+    "--edition=2024",
+    "--crate-name=mech_fault_probe",
+    "--crate-type=staticlib",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "panic=abort",
+    "-C",
+    "codegen-units=1",
+    "--sysroot",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/fault-exact-provider/sysroot",
+    "-L",
+    "dependency=/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/deps",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/deps/libmech_gpu-f6ecbc532e206ff4.rlib",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/fault-exact-provider/lib.rs",
+    "-o",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/fault-exact-provider/libmech_fault_probe.a"
+  ],
+  "link": [
+    "/usr/bin/clang",
+    "-arch",
+    "arm64",
+    "-mmacosx-version-min=15.0",
+    "-dynamiclib",
+    "-Wl,-dead_strip",
+    "-Wl,-u,_checked_failure_probe",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/fault-exact-provider/libmech_fault_probe.a",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "-o",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/fault-exact-provider/libfault.dylib"
+  ],
+  "verified": {
+    "empty": {
+      "case": "empty",
+      "status": 103426,
+      "origin": 23,
+      "requests": 0,
+      "bytes": 0,
+      "live_at_failure": 0
+    },
+    "one-stored": {
+      "case": "one-stored",
+      "status": 103426,
+      "origin": 69,
+      "requests": 0,
+      "bytes": 0,
+      "live_at_failure": 0
+    },
+    "seven-stored-prefix": {
+      "case": "seven-stored-prefix",
+      "status": 103426,
+      "origin": 69,
+      "requests": 0,
+      "bytes": 0,
+      "live_at_failure": 0
+    },
+    "prefix-periodic-4096": {
+      "case": "prefix-periodic-4096",
+      "status": 103426,
+      "origin": 7164,
+      "requests": 41,
+      "bytes": 4796076,
+      "live_at_failure": 4778960
+    },
+    "prefix-repeated-16384": {
+      "case": "prefix-repeated-16384",
+      "status": 103426,
+      "origin": 7164,
+      "requests": 41,
+      "bytes": 6685744,
+      "live_at_failure": 6668628
+    },
+    "heldout-mixed-131073": {
+      "case": "heldout-mixed-131073",
+      "status": 103426,
+      "origin": 7164,
+      "requests": 92,
+      "bytes": 7631132,
+      "live_at_failure": 7586140
+    }
+  },
+  "scope": "Prepared-capacity native entry with a one-shot allocator failure. Same alloc-only runtime; separate from deployment CLI."
+}

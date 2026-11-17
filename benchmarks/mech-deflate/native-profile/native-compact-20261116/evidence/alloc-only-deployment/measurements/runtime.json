@@ -1,0 +1,3162 @@
+{
+  "scope": "in-process raw no-prefix encode plus buffer cleanup, input preloaded",
+  "system": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "clang_version": "Apple clang version 17.0.0 (clang-1700.3.19.1)\nTarget: arm64-apple-darwin24.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+  "driver": {
+    "command": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-O2",
+      "-std=gnu11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source",
+      "-c",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/loop.c",
+      "-o",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/loop.o"
+    ],
+    "source_sha256": "1f3d3e1d9f0b11ede12e3947a4173165668ec391ca56f00942f99e1b47d88ac0",
+    "object_sha256": "5b9721c36e6bfee42271ca2ae0432559fde9a3f3c0f1a8ccfb56fb7c35440f93"
+  },
+  "links": {
+    "label": "compile driver",
+    "order": [
+      "mech-std",
+      "mech-alloc",
+      "roc",
+      "libdeflate"
+    ],
+    "samples": {
+      "mech-std": {
+        "elapsed_ns": 98253458,
+        "sha256": "16539f251c07c7613fa946093179c970df759d7acb71c400cf4dfe711fbebc18",
+        "file_bytes": 668664,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std.map",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/loop.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-lSystem",
+          "-lc",
+          "-lm",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std"
+        ],
+        "log": "mech-std.log"
+      },
+      "mech-alloc": {
+        "elapsed_ns": 36984542,
+        "sha256": "3feed209767e39b29bce5bf3fe3203e5bb0ec0cc2460b7c236d3cf23ca2000a8",
+        "file_bytes": 301688,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc.map",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/loop.o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc"
+        ],
+        "log": "mech-alloc.log"
+      },
+      "roc": {
+        "elapsed_ns": 34941208,
+        "sha256": "78ef9d8858dc1a4c0bf7e3453ca319d7758a63b5ad979a53a43c8e879d127bb5",
+        "file_bytes": 199952,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc.map",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/loop.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc"
+        ],
+        "log": "roc.log"
+      },
+      "libdeflate": {
+        "elapsed_ns": 34195833,
+        "sha256": "fa76c603511c54c8b37dd5294d2bb718fc8abe9a85bb0c4d2e24d9dfc719078d",
+        "file_bytes": 161656,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate.map",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/loop.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate"
+        ],
+        "log": "libdeflate.log"
+      }
+    }
+  },
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490",
+  "libdeflate_oracle_sha256": "ab77258e776c24641f0a6b09c3f485d54f9e951e4bb2ad29d70a5a61e7cc7c2c",
+  "cases": [
+    {
+      "case": "empty",
+      "input_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "input_bytes": 0,
+      "protocol_commands": {
+        "mech-std": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        ],
+        "mech-alloc": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        ],
+        "roc": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        ],
+        "libdeflate": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        ]
+      },
+      "iterations_per_batch": 32768,
+      "exact_output_checks": {
+        "mech-std": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "check"
+          ],
+          "raw_bytes": 5,
+          "raw_sha256": "f067985d352d2da6dfaef4844a66d06c5371ecbd9530a4d195ac599fef8b3427",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "mech-alloc": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "check"
+          ],
+          "raw_bytes": 5,
+          "raw_sha256": "f067985d352d2da6dfaef4844a66d06c5371ecbd9530a4d195ac599fef8b3427",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "roc": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "check"
+          ],
+          "raw_bytes": 5,
+          "raw_sha256": "f067985d352d2da6dfaef4844a66d06c5371ecbd9530a4d195ac599fef8b3427",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "libdeflate": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "check"
+          ],
+          "raw_bytes": 5,
+          "raw_sha256": "f067985d352d2da6dfaef4844a66d06c5371ecbd9530a4d195ac599fef8b3427",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        }
+      },
+      "timebase": {
+        "mech-std": {
+          "numer": 125,
+          "denom": 3
+        },
+        "mech-alloc": {
+          "numer": 125,
+          "denom": 3
+        },
+        "roc": {
+          "numer": 125,
+          "denom": 3
+        },
+        "libdeflate": {
+          "numer": 125,
+          "denom": 3
+        }
+      },
+      "warmups": [
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 84333,
+              "output_bytes": 163840,
+              "ns_per_call": 107.23495483398438
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 75355,
+              "output_bytes": 163840,
+              "ns_per_call": 95.81883748372395
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 39411,
+              "output_bytes": 163840,
+              "ns_per_call": 50.113677978515625
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3687749,
+              "output_bytes": 163840,
+              "ns_per_call": 4689.215342203776
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3235794,
+              "output_bytes": 163840,
+              "ns_per_call": 4114.524841308594
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15760,
+              "output_bytes": 163840,
+              "ns_per_call": 20.039876302083332
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27673,
+              "output_bytes": 163840,
+              "ns_per_call": 35.18803914388021
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27840,
+              "output_bytes": 163840,
+              "ns_per_call": 35.400390625
+            }
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27833,
+              "output_bytes": 163840,
+              "ns_per_call": 35.39148966471354
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27544,
+              "output_bytes": 163840,
+              "ns_per_call": 35.024007161458336
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15753,
+              "output_bytes": 163840,
+              "ns_per_call": 20.030975341796875
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3190984,
+              "output_bytes": 163840,
+              "ns_per_call": 4057.5459798177085
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "libdeflate",
+            "roc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27764,
+              "output_bytes": 163840,
+              "ns_per_call": 35.303751627604164
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27704,
+              "output_bytes": 163840,
+              "ns_per_call": 35.227457682291664
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3187497,
+              "output_bytes": 163840,
+              "ns_per_call": 4053.112030029297
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15756,
+              "output_bytes": 163840,
+              "ns_per_call": 20.0347900390625
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "roc",
+            "mech-alloc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27828,
+              "output_bytes": 163840,
+              "ns_per_call": 35.3851318359375
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15750,
+              "output_bytes": 163840,
+              "ns_per_call": 20.02716064453125
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27717,
+              "output_bytes": 163840,
+              "ns_per_call": 35.243988037109375
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3182353,
+              "output_bytes": 163840,
+              "ns_per_call": 4046.5710957845054
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "roc",
+            "libdeflate",
+            "mech-alloc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27813,
+              "output_bytes": 163840,
+              "ns_per_call": 35.366058349609375
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15757,
+              "output_bytes": 163840,
+              "ns_per_call": 20.036061604817707
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3227791,
+              "output_bytes": 163840,
+              "ns_per_call": 4104.348500569661
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27876,
+              "output_bytes": 163840,
+              "ns_per_call": 35.4461669921875
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "libdeflate",
+            "mech-alloc",
+            "roc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27868,
+              "output_bytes": 163840,
+              "ns_per_call": 35.435994466145836
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3222344,
+              "output_bytes": 163840,
+              "ns_per_call": 4097.422281901042
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27708,
+              "output_bytes": 163840,
+              "ns_per_call": 35.2325439453125
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15789,
+              "output_bytes": 163840,
+              "ns_per_call": 20.076751708984375
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "libdeflate",
+            "roc",
+            "mech-alloc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27897,
+              "output_bytes": 163840,
+              "ns_per_call": 35.472869873046875
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3208054,
+              "output_bytes": 163840,
+              "ns_per_call": 4079.2516072591147
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15729,
+              "output_bytes": 163840,
+              "ns_per_call": 20.000457763671875
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27871,
+              "output_bytes": 163840,
+              "ns_per_call": 35.43980916341146
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "mech-std",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27600,
+              "output_bytes": 163840,
+              "ns_per_call": 35.09521484375
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 28053,
+              "output_bytes": 163840,
+              "ns_per_call": 35.671234130859375
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 16034,
+              "output_bytes": 163840,
+              "ns_per_call": 20.388285319010418
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3202115,
+              "output_bytes": 163840,
+              "ns_per_call": 4071.699778238932
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "mech-std",
+            "libdeflate",
+            "roc"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27851,
+              "output_bytes": 163840,
+              "ns_per_call": 35.41437784830729
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27721,
+              "output_bytes": 163840,
+              "ns_per_call": 35.24907430013021
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3258867,
+              "output_bytes": 163840,
+              "ns_per_call": 4143.863677978516
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15755,
+              "output_bytes": 163840,
+              "ns_per_call": 20.033518473307293
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "roc",
+            "mech-std",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27600,
+              "output_bytes": 163840,
+              "ns_per_call": 35.09521484375
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15806,
+              "output_bytes": 163840,
+              "ns_per_call": 20.098368326822918
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27686,
+              "output_bytes": 163840,
+              "ns_per_call": 35.204569498697914
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3231261,
+              "output_bytes": 163840,
+              "ns_per_call": 4108.760833740234
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "roc",
+            "libdeflate",
+            "mech-std"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27611,
+              "output_bytes": 163840,
+              "ns_per_call": 35.10920206705729
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15813,
+              "output_bytes": 163840,
+              "ns_per_call": 20.107269287109375
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3245981,
+              "output_bytes": 163840,
+              "ns_per_call": 4127.478281656901
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27827,
+              "output_bytes": 163840,
+              "ns_per_call": 35.38386027018229
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "libdeflate",
+            "mech-std",
+            "roc"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27844,
+              "output_bytes": 163840,
+              "ns_per_call": 35.405476888020836
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3229959,
+              "output_bytes": 163840,
+              "ns_per_call": 4107.105255126953
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27827,
+              "output_bytes": 163840,
+              "ns_per_call": 35.38386027018229
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15753,
+              "output_bytes": 163840,
+              "ns_per_call": 20.030975341796875
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "libdeflate",
+            "roc",
+            "mech-std"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27521,
+              "output_bytes": 163840,
+              "ns_per_call": 34.99476114908854
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3227102,
+              "output_bytes": 163840,
+              "ns_per_call": 4103.472391764323
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15749,
+              "output_bytes": 163840,
+              "ns_per_call": 20.025889078776043
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27793,
+              "output_bytes": 163840,
+              "ns_per_call": 35.34062703450521
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-std",
+            "mech-alloc",
+            "libdeflate"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15928,
+              "output_bytes": 163840,
+              "ns_per_call": 20.253499348958332
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27856,
+              "output_bytes": 163840,
+              "ns_per_call": 35.420735677083336
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27662,
+              "output_bytes": 163840,
+              "ns_per_call": 35.174051920572914
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3169846,
+              "output_bytes": 163840,
+              "ns_per_call": 4030.6676228841147
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-std",
+            "libdeflate",
+            "mech-alloc"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 32768,
+              "ticks": 16713,
+              "output_bytes": 163840,
+              "ns_per_call": 21.251678466796875
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27892,
+              "output_bytes": 163840,
+              "ns_per_call": 35.466512044270836
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3228902,
+              "output_bytes": 163840,
+              "ns_per_call": 4105.761210123698
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27965,
+              "output_bytes": 163840,
+              "ns_per_call": 35.55933634440104
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-alloc",
+            "mech-std",
+            "libdeflate"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15749,
+              "output_bytes": 163840,
+              "ns_per_call": 20.025889078776043
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27488,
+              "output_bytes": 163840,
+              "ns_per_call": 34.952799479166664
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 28458,
+              "output_bytes": 163840,
+              "ns_per_call": 36.18621826171875
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3209157,
+              "output_bytes": 163840,
+              "ns_per_call": 4080.6541442871094
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-alloc",
+            "libdeflate",
+            "mech-std"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15752,
+              "output_bytes": 163840,
+              "ns_per_call": 20.029703776041668
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27746,
+              "output_bytes": 163840,
+              "ns_per_call": 35.280863444010414
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3207394,
+              "output_bytes": 163840,
+              "ns_per_call": 4078.4123738606772
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27746,
+              "output_bytes": 163840,
+              "ns_per_call": 35.280863444010414
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "libdeflate",
+            "mech-std",
+            "mech-alloc"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15771,
+              "output_bytes": 163840,
+              "ns_per_call": 20.053863525390625
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3214485,
+              "output_bytes": 163840,
+              "ns_per_call": 4087.4290466308594
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27808,
+              "output_bytes": 163840,
+              "ns_per_call": 35.359700520833336
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27612,
+              "output_bytes": 163840,
+              "ns_per_call": 35.1104736328125
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "libdeflate",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15743,
+              "output_bytes": 163840,
+              "ns_per_call": 20.018259684244793
+            },
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3180705,
+              "output_bytes": 163840,
+              "ns_per_call": 4044.475555419922
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27598,
+              "output_bytes": 163840,
+              "ns_per_call": 35.092671712239586
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27995,
+              "output_bytes": 163840,
+              "ns_per_call": 35.59748331705729
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-std",
+            "mech-alloc",
+            "roc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3218183,
+              "output_bytes": 163840,
+              "ns_per_call": 4092.1312967936196
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27776,
+              "output_bytes": 163840,
+              "ns_per_call": 35.319010416666664
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27781,
+              "output_bytes": 163840,
+              "ns_per_call": 35.32536824544271
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15781,
+              "output_bytes": 163840,
+              "ns_per_call": 20.066579182942707
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-std",
+            "roc",
+            "mech-alloc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3227589,
+              "output_bytes": 163840,
+              "ns_per_call": 4104.091644287109
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27626,
+              "output_bytes": 163840,
+              "ns_per_call": 35.128275553385414
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15752,
+              "output_bytes": 163840,
+              "ns_per_call": 20.029703776041668
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27647,
+              "output_bytes": 163840,
+              "ns_per_call": 35.15497843424479
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-alloc",
+            "mech-std",
+            "roc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3217714,
+              "output_bytes": 163840,
+              "ns_per_call": 4091.5349324544272
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27561,
+              "output_bytes": 163840,
+              "ns_per_call": 35.045623779296875
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27658,
+              "output_bytes": 163840,
+              "ns_per_call": 35.168965657552086
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15775,
+              "output_bytes": 163840,
+              "ns_per_call": 20.058949788411457
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-alloc",
+            "roc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3209442,
+              "output_bytes": 163840,
+              "ns_per_call": 4081.0165405273438
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27618,
+              "output_bytes": 163840,
+              "ns_per_call": 35.11810302734375
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15742,
+              "output_bytes": 163840,
+              "ns_per_call": 20.016988118489582
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27828,
+              "output_bytes": 163840,
+              "ns_per_call": 35.3851318359375
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-std",
+            "mech-alloc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3216143,
+              "output_bytes": 163840,
+              "ns_per_call": 4089.5373026529946
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15755,
+              "output_bytes": 163840,
+              "ns_per_call": 20.033518473307293
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27817,
+              "output_bytes": 163840,
+              "ns_per_call": 35.37114461263021
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27528,
+              "output_bytes": 163840,
+              "ns_per_call": 35.003662109375
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 32768,
+              "ticks": 3195083,
+              "output_bytes": 163840,
+              "ns_per_call": 4062.758127848307
+            },
+            "roc": {
+              "iterations": 32768,
+              "ticks": 15970,
+              "output_bytes": 163840,
+              "ns_per_call": 20.306905110677082
+            },
+            "mech-alloc": {
+              "iterations": 32768,
+              "ticks": 27627,
+              "output_bytes": 163840,
+              "ns_per_call": 35.129547119140625
+            },
+            "mech-std": {
+              "iterations": 32768,
+              "ticks": 27730,
+              "output_bytes": 163840,
+              "ns_per_call": 35.260518391927086
+            }
+          }
+        }
+      ],
+      "summary": {
+        "units": "ns/encode and release",
+        "median": {
+          "mech-std": 35.37750244140625,
+          "mech-alloc": 35.142262776692704,
+          "roc": 20.034154256184898,
+          "libdeflate": 4088.483174641927
+        },
+        "paired_ratios": {
+          "mech-alloc/mech-std": {
+            "median": 0.996148411490273,
+            "minimum": 0.9659146812847001,
+            "maximum": 1.004689585512788
+          },
+          "mech-std/roc": {
+            "median": 1.7626793429551468,
+            "minimum": 1.6688805121761505,
+            "maximum": 1.8069718712299192
+          },
+          "mech-alloc/roc": {
+            "median": 1.7519207699776191,
+            "minimum": 1.673248369532699,
+            "maximum": 1.7719499014559097
+          },
+          "mech-std/libdeflate": {
+            "median": 0.008649908356035858,
+            "minimum": 0.008506330574399017,
+            "maximum": 0.008867749380912183
+          },
+          "mech-alloc/libdeflate": {
+            "median": 0.008619923020342452,
+            "minimum": 0.008506211219350943,
+            "maximum": 0.008726606907717283
+          }
+        }
+      }
+    },
+    {
+      "case": "prefix-natural-4096",
+      "input_sha256": "849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba",
+      "input_bytes": 4096,
+      "protocol_commands": {
+        "mech-std": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba"
+        ],
+        "mech-alloc": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba"
+        ],
+        "roc": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba"
+        ],
+        "libdeflate": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba"
+        ]
+      },
+      "iterations_per_batch": 1024,
+      "exact_output_checks": {
+        "mech-std": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba",
+            "check"
+          ],
+          "raw_bytes": 983,
+          "raw_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "mech-alloc": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba",
+            "check"
+          ],
+          "raw_bytes": 983,
+          "raw_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "roc": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba",
+            "check"
+          ],
+          "raw_bytes": 983,
+          "raw_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "libdeflate": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba",
+            "check"
+          ],
+          "raw_bytes": 983,
+          "raw_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        }
+      },
+      "timebase": {
+        "mech-std": {
+          "numer": 125,
+          "denom": 3
+        },
+        "mech-alloc": {
+          "numer": 125,
+          "denom": 3
+        },
+        "roc": {
+          "numer": 125,
+          "denom": 3
+        },
+        "libdeflate": {
+          "numer": 125,
+          "denom": 3
+        }
+      },
+      "warmups": [
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9281339,
+              "output_bytes": 1006592,
+              "ns_per_call": 377658.6507161458
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9374097,
+              "output_bytes": 1006592,
+              "ns_per_call": 381432.9833984375
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14836415,
+              "output_bytes": 1006592,
+              "ns_per_call": 603695.2718098959
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7802401,
+              "output_bytes": 1006592,
+              "ns_per_call": 317480.5094401042
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7759265,
+              "output_bytes": 1006592,
+              "ns_per_call": 315725.3011067708
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14628629,
+              "output_bytes": 1006592,
+              "ns_per_call": 595240.4378255209
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9381507,
+              "output_bytes": 1006592,
+              "ns_per_call": 381734.4970703125
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9332590,
+              "output_bytes": 1006592,
+              "ns_per_call": 379744.0592447917
+            }
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "order": [
+            "mech-alloc",
+            "mech-std",
+            "libdeflate",
+            "roc"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9390195,
+              "output_bytes": 1006592,
+              "ns_per_call": 382088.0126953125
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9294320,
+              "output_bytes": 1006592,
+              "ns_per_call": 378186.8489583333
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7834224,
+              "output_bytes": 1006592,
+              "ns_per_call": 318775.390625
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14795481,
+              "output_bytes": 1006592,
+              "ns_per_call": 602029.6630859375
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "roc",
+            "mech-std",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9570315,
+              "output_bytes": 1006592,
+              "ns_per_call": 389417.1142578125
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14609586,
+              "output_bytes": 1006592,
+              "ns_per_call": 594465.576171875
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9331258,
+              "output_bytes": 1006592,
+              "ns_per_call": 379689.8600260417
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7785832,
+              "output_bytes": 1006592,
+              "ns_per_call": 316806.3151041667
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "roc",
+            "libdeflate",
+            "mech-std"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9392911,
+              "output_bytes": 1006592,
+              "ns_per_call": 382198.5270182292
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14621063,
+              "output_bytes": 1006592,
+              "ns_per_call": 594932.5764973959
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7932029,
+              "output_bytes": 1006592,
+              "ns_per_call": 322755.0862630208
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9298479,
+              "output_bytes": 1006592,
+              "ns_per_call": 378356.0791015625
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "libdeflate",
+            "mech-std",
+            "roc"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9641452,
+              "output_bytes": 1006592,
+              "ns_per_call": 392311.6861979167
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7764878,
+              "output_bytes": 1006592,
+              "ns_per_call": 315953.6946614583
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9303823,
+              "output_bytes": 1006592,
+              "ns_per_call": 378573.5270182292
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14648085,
+              "output_bytes": 1006592,
+              "ns_per_call": 596032.1044921875
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "libdeflate",
+            "roc",
+            "mech-std"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9373496,
+              "output_bytes": 1006592,
+              "ns_per_call": 381408.5286458333
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7789547,
+              "output_bytes": 1006592,
+              "ns_per_call": 316957.4788411458
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14637956,
+              "output_bytes": 1006592,
+              "ns_per_call": 595619.9544270834
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9333982,
+              "output_bytes": 1006592,
+              "ns_per_call": 379800.6998697917
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-std",
+            "mech-alloc",
+            "libdeflate"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14633814,
+              "output_bytes": 1006592,
+              "ns_per_call": 595451.416015625
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9326700,
+              "output_bytes": 1006592,
+              "ns_per_call": 379504.39453125
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9393748,
+              "output_bytes": 1006592,
+              "ns_per_call": 382232.5846354167
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7774073,
+              "output_bytes": 1006592,
+              "ns_per_call": 316327.8401692708
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-std",
+            "libdeflate",
+            "mech-alloc"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14622634,
+              "output_bytes": 1006592,
+              "ns_per_call": 594996.5006510416
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9310393,
+              "output_bytes": 1006592,
+              "ns_per_call": 378840.8610026042
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7812667,
+              "output_bytes": 1006592,
+              "ns_per_call": 317898.2340494792
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9366229,
+              "output_bytes": 1006592,
+              "ns_per_call": 381112.8336588542
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-alloc",
+            "mech-std",
+            "libdeflate"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14641672,
+              "output_bytes": 1006592,
+              "ns_per_call": 595771.1588541666
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9356547,
+              "output_bytes": 1006592,
+              "ns_per_call": 380718.8720703125
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9289069,
+              "output_bytes": 1006592,
+              "ns_per_call": 377973.1852213542
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7794979,
+              "output_bytes": 1006592,
+              "ns_per_call": 317178.5074869792
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-alloc",
+            "libdeflate",
+            "mech-std"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14629758,
+              "output_bytes": 1006592,
+              "ns_per_call": 595286.376953125
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9400277,
+              "output_bytes": 1006592,
+              "ns_per_call": 382498.2503255208
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7790287,
+              "output_bytes": 1006592,
+              "ns_per_call": 316987.5895182292
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9306431,
+              "output_bytes": 1006592,
+              "ns_per_call": 378679.6468098958
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "libdeflate",
+            "mech-std",
+            "mech-alloc"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14889358,
+              "output_bytes": 1006592,
+              "ns_per_call": 605849.5279947916
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7793170,
+              "output_bytes": 1006592,
+              "ns_per_call": 317104.8990885417
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9305550,
+              "output_bytes": 1006592,
+              "ns_per_call": 378643.798828125
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9383642,
+              "output_bytes": 1006592,
+              "ns_per_call": 381821.3704427083
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "libdeflate",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14723691,
+              "output_bytes": 1006592,
+              "ns_per_call": 599108.5205078125
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7823734,
+              "output_bytes": 1006592,
+              "ns_per_call": 318348.5514322917
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9370834,
+              "output_bytes": 1006592,
+              "ns_per_call": 381300.2115885417
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9310917,
+              "output_bytes": 1006592,
+              "ns_per_call": 378862.1826171875
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-std",
+            "mech-alloc",
+            "roc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7777759,
+              "output_bytes": 1006592,
+              "ns_per_call": 316477.8238932292
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9299910,
+              "output_bytes": 1006592,
+              "ns_per_call": 378414.306640625
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9374134,
+              "output_bytes": 1006592,
+              "ns_per_call": 381434.4889322917
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14618546,
+              "output_bytes": 1006592,
+              "ns_per_call": 594830.1595052084
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-std",
+            "roc",
+            "mech-alloc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7790063,
+              "output_bytes": 1006592,
+              "ns_per_call": 316978.4749348958
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9319743,
+              "output_bytes": 1006592,
+              "ns_per_call": 379221.3134765625
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14666646,
+              "output_bytes": 1006592,
+              "ns_per_call": 596787.353515625
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9391818,
+              "output_bytes": 1006592,
+              "ns_per_call": 382154.052734375
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-alloc",
+            "mech-std",
+            "roc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7789804,
+              "output_bytes": 1006592,
+              "ns_per_call": 316967.9361979167
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9397544,
+              "output_bytes": 1006592,
+              "ns_per_call": 382387.0442708333
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9309269,
+              "output_bytes": 1006592,
+              "ns_per_call": 378795.1253255208
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14618397,
+              "output_bytes": 1006592,
+              "ns_per_call": 594824.0966796875
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-alloc",
+            "roc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7806683,
+              "output_bytes": 1006592,
+              "ns_per_call": 317654.7444661458
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9398450,
+              "output_bytes": 1006592,
+              "ns_per_call": 382423.9095052083
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14645659,
+              "output_bytes": 1006592,
+              "ns_per_call": 595933.3902994791
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9308768,
+              "output_bytes": 1006592,
+              "ns_per_call": 378774.7395833333
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-std",
+            "mech-alloc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7785812,
+              "output_bytes": 1006592,
+              "ns_per_call": 316805.5013020833
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14634923,
+              "output_bytes": 1006592,
+              "ns_per_call": 595496.5413411459
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9338039,
+              "output_bytes": 1006592,
+              "ns_per_call": 379965.7796223958
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9369489,
+              "output_bytes": 1006592,
+              "ns_per_call": 381245.4833984375
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7787751,
+              "output_bytes": 1006592,
+              "ns_per_call": 316884.3994140625
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14645713,
+              "output_bytes": 1006592,
+              "ns_per_call": 595935.5875651041
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9379584,
+              "output_bytes": 1006592,
+              "ns_per_call": 381656.25
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9323419,
+              "output_bytes": 1006592,
+              "ns_per_call": 379370.8902994792
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9296581,
+              "output_bytes": 1006592,
+              "ns_per_call": 378278.8492838542
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9377014,
+              "output_bytes": 1006592,
+              "ns_per_call": 381551.6764322917
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14606599,
+              "output_bytes": 1006592,
+              "ns_per_call": 594344.0348307291
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7782927,
+              "output_bytes": 1006592,
+              "ns_per_call": 316688.1103515625
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "libdeflate",
+            "roc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9328815,
+              "output_bytes": 1006592,
+              "ns_per_call": 379590.4541015625
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9514056,
+              "output_bytes": 1006592,
+              "ns_per_call": 387127.9296875
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7800008,
+              "output_bytes": 1006592,
+              "ns_per_call": 317383.1380208333
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14591806,
+              "output_bytes": 1006592,
+              "ns_per_call": 593742.1061197916
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "roc",
+            "mech-alloc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9327396,
+              "output_bytes": 1006592,
+              "ns_per_call": 379532.71484375
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14571063,
+              "output_bytes": 1006592,
+              "ns_per_call": 592898.0712890625
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9392861,
+              "output_bytes": 1006592,
+              "ns_per_call": 382196.4925130208
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7800896,
+              "output_bytes": 1006592,
+              "ns_per_call": 317419.2708333333
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "roc",
+            "libdeflate",
+            "mech-alloc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9329857,
+              "output_bytes": 1006592,
+              "ns_per_call": 379632.8531901042
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14740821,
+              "output_bytes": 1006592,
+              "ns_per_call": 599805.5419921875
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7798748,
+              "output_bytes": 1006592,
+              "ns_per_call": 317331.8684895833
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9528844,
+              "output_bytes": 1006592,
+              "ns_per_call": 387729.6549479167
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "libdeflate",
+            "mech-alloc",
+            "roc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9507334,
+              "output_bytes": 1006592,
+              "ns_per_call": 386854.4108072917
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7821725,
+              "output_bytes": 1006592,
+              "ns_per_call": 318266.8050130208
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9453693,
+              "output_bytes": 1006592,
+              "ns_per_call": 384671.7529296875
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 15507442,
+              "output_bytes": 1006592,
+              "ns_per_call": 630999.4303385416
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "libdeflate",
+            "roc",
+            "mech-alloc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 10280633,
+              "output_bytes": 1006592,
+              "ns_per_call": 418320.0276692708
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 8124348,
+              "output_bytes": 1006592,
+              "ns_per_call": 330580.56640625
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 15548542,
+              "output_bytes": 1006592,
+              "ns_per_call": 632671.7936197916
+            },
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9518947,
+              "output_bytes": 1006592,
+              "ns_per_call": 387326.9449869792
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "mech-std",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 1024,
+              "ticks": 9335168,
+              "output_bytes": 1006592,
+              "ns_per_call": 379848.9583333333
+            },
+            "mech-std": {
+              "iterations": 1024,
+              "ticks": 9303958,
+              "output_bytes": 1006592,
+              "ns_per_call": 378579.0201822917
+            },
+            "roc": {
+              "iterations": 1024,
+              "ticks": 14621534,
+              "output_bytes": 1006592,
+              "ns_per_call": 594951.7415364584
+            },
+            "libdeflate": {
+              "iterations": 1024,
+              "ticks": 7787996,
+              "output_bytes": 1006592,
+              "ns_per_call": 316894.3684895833
+            }
+          }
+        }
+      ],
+      "summary": {
+        "units": "ns/encode and release",
+        "median": {
+          "mech-std": 378851.5218098959,
+          "mech-alloc": 382175.2726236979,
+          "roc": 595558.2478841146,
+          "libdeflate": 317046.24430338544
+        },
+        "paired_ratios": {
+          "mech-alloc/mech-std": {
+            "median": 1.0078573674294262,
+            "minimum": 0.9259105932484898,
+            "maximum": 1.0362892759245312
+          },
+          "mech-std/roc": {
+            "median": 0.6362454473657954,
+            "minimum": 0.6130820286156802,
+            "maximum": 0.6611959500768625
+          },
+          "mech-alloc/roc": {
+            "median": 0.6408894740711134,
+            "minimum": 0.6096229797280558,
+            "maximum": 0.6582056289269212
+          },
+          "mech-std/libdeflate": {
+            "median": 1.1956941254242937,
+            "minimum": 1.1722699198401823,
+            "maximum": 1.2654102212263678
+          },
+          "mech-alloc/libdeflate": {
+            "median": 1.2042437580097318,
+            "minimum": 1.171656728638409,
+            "maximum": 1.2416746277275703
+          }
+        }
+      }
+    },
+    {
+      "case": "prefix-random-4096",
+      "input_sha256": "94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754",
+      "input_bytes": 4096,
+      "protocol_commands": {
+        "mech-std": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754"
+        ],
+        "mech-alloc": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754"
+        ],
+        "roc": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754"
+        ],
+        "libdeflate": [
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754"
+        ]
+      },
+      "iterations_per_batch": 512,
+      "exact_output_checks": {
+        "mech-std": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-std",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754",
+            "check"
+          ],
+          "raw_bytes": 4101,
+          "raw_sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "mech-alloc": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/mech-alloc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754",
+            "check"
+          ],
+          "raw_bytes": 4101,
+          "raw_sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "roc": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/roc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754",
+            "check"
+          ],
+          "raw_bytes": 4101,
+          "raw_sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        },
+        "libdeflate": {
+          "command": [
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/in-process/libdeflate",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754",
+            "check"
+          ],
+          "raw_bytes": 4101,
+          "raw_sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+          "raw_exact": true,
+          "independent_full_stream_inflate": true
+        }
+      },
+      "timebase": {
+        "mech-std": {
+          "numer": 125,
+          "denom": 3
+        },
+        "mech-alloc": {
+          "numer": 125,
+          "denom": 3
+        },
+        "roc": {
+          "numer": 125,
+          "denom": 3
+        },
+        "libdeflate": {
+          "numer": 125,
+          "denom": 3
+        }
+      },
+      "warmups": [
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1363070,
+              "output_bytes": 2099712,
+              "ns_per_call": 110926.92057291667
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1360141,
+              "output_bytes": 2099712,
+              "ns_per_call": 110688.55794270833
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4586797,
+              "output_bytes": 2099712,
+              "ns_per_call": 373274.4954427083
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 911456,
+              "output_bytes": 2099712,
+              "ns_per_call": 74174.47916666667
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 914270,
+              "output_bytes": 2099712,
+              "ns_per_call": 74403.48307291667
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4738036,
+              "output_bytes": 2099712,
+              "ns_per_call": 385582.3567708333
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1364555,
+              "output_bytes": 2099712,
+              "ns_per_call": 111047.77018229167
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1364595,
+              "output_bytes": 2099712,
+              "ns_per_call": 111051.025390625
+            }
+          }
+        }
+      ],
+      "blocks": [
+        {
+          "order": [
+            "roc",
+            "mech-alloc",
+            "mech-std",
+            "libdeflate"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 512,
+              "ticks": 4498665,
+              "output_bytes": 2099712,
+              "ns_per_call": 366102.294921875
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1375833,
+              "output_bytes": 2099712,
+              "ns_per_call": 111965.576171875
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1361194,
+              "output_bytes": 2099712,
+              "ns_per_call": 110774.25130208333
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 853940,
+              "output_bytes": 2099712,
+              "ns_per_call": 69493.81510416667
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-alloc",
+            "libdeflate",
+            "mech-std"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 512,
+              "ticks": 4489244,
+              "output_bytes": 2099712,
+              "ns_per_call": 365335.6119791667
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1363735,
+              "output_bytes": 2099712,
+              "ns_per_call": 110981.03841145833
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 854835,
+              "output_bytes": 2099712,
+              "ns_per_call": 69566.650390625
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1362996,
+              "output_bytes": 2099712,
+              "ns_per_call": 110920.8984375
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "libdeflate",
+            "mech-std",
+            "mech-alloc"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 512,
+              "ticks": 4485692,
+              "output_bytes": 2099712,
+              "ns_per_call": 365046.5494791667
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 856282,
+              "output_bytes": 2099712,
+              "ns_per_call": 69684.40755208333
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1372555,
+              "output_bytes": 2099712,
+              "ns_per_call": 111698.81184895833
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1363608,
+              "output_bytes": 2099712,
+              "ns_per_call": 110970.703125
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "libdeflate",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 512,
+              "ticks": 4493330,
+              "output_bytes": 2099712,
+              "ns_per_call": 365668.1315104167
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855154,
+              "output_bytes": 2099712,
+              "ns_per_call": 69592.61067708333
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1359653,
+              "output_bytes": 2099712,
+              "ns_per_call": 110648.84440104167
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1366025,
+              "output_bytes": 2099712,
+              "ns_per_call": 111167.39908854167
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-std",
+            "mech-alloc",
+            "roc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855824,
+              "output_bytes": 2099712,
+              "ns_per_call": 69647.13541666667
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1365088,
+              "output_bytes": 2099712,
+              "ns_per_call": 111091.14583333333
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1367033,
+              "output_bytes": 2099712,
+              "ns_per_call": 111249.43033854167
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4631973,
+              "output_bytes": 2099712,
+              "ns_per_call": 376950.927734375
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-std",
+            "roc",
+            "mech-alloc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 858129,
+              "output_bytes": 2099712,
+              "ns_per_call": 69834.716796875
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1362905,
+              "output_bytes": 2099712,
+              "ns_per_call": 110913.49283854167
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4486641,
+              "output_bytes": 2099712,
+              "ns_per_call": 365123.779296875
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1368578,
+              "output_bytes": 2099712,
+              "ns_per_call": 111375.16276041667
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-alloc",
+            "mech-std",
+            "roc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 854187,
+              "output_bytes": 2099712,
+              "ns_per_call": 69513.916015625
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1354739,
+              "output_bytes": 2099712,
+              "ns_per_call": 110248.94205729167
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1362895,
+              "output_bytes": 2099712,
+              "ns_per_call": 110912.67903645833
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4480292,
+              "output_bytes": 2099712,
+              "ns_per_call": 364607.0963541667
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "mech-alloc",
+            "roc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855117,
+              "output_bytes": 2099712,
+              "ns_per_call": 69589.599609375
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1360207,
+              "output_bytes": 2099712,
+              "ns_per_call": 110693.92903645833
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4488528,
+              "output_bytes": 2099712,
+              "ns_per_call": 365277.34375
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1365792,
+              "output_bytes": 2099712,
+              "ns_per_call": 111148.4375
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-std",
+            "mech-alloc"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855138,
+              "output_bytes": 2099712,
+              "ns_per_call": 69591.30859375
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4494377,
+              "output_bytes": 2099712,
+              "ns_per_call": 365753.3365885417
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1364065,
+              "output_bytes": 2099712,
+              "ns_per_call": 111007.89388020833
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1367944,
+              "output_bytes": 2099712,
+              "ns_per_call": 111323.56770833333
+            }
+          }
+        },
+        {
+          "order": [
+            "libdeflate",
+            "roc",
+            "mech-alloc",
+            "mech-std"
+          ],
+          "samples": {
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 860141,
+              "output_bytes": 2099712,
+              "ns_per_call": 69998.45377604167
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4494702,
+              "output_bytes": 2099712,
+              "ns_per_call": 365779.78515625
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1360710,
+              "output_bytes": 2099712,
+              "ns_per_call": 110734.86328125
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1367910,
+              "output_bytes": 2099712,
+              "ns_per_call": 111320.80078125
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1363286,
+              "output_bytes": 2099712,
+              "ns_per_call": 110944.49869791667
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1362084,
+              "output_bytes": 2099712,
+              "ns_per_call": 110846.6796875
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4492306,
+              "output_bytes": 2099712,
+              "ns_per_call": 365584.7981770833
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 856271,
+              "output_bytes": 2099712,
+              "ns_per_call": 69683.51236979167
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "mech-alloc",
+            "libdeflate",
+            "roc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1366048,
+              "output_bytes": 2099712,
+              "ns_per_call": 111169.27083333333
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1361454,
+              "output_bytes": 2099712,
+              "ns_per_call": 110795.41015625
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 856987,
+              "output_bytes": 2099712,
+              "ns_per_call": 69741.78059895833
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4501743,
+              "output_bytes": 2099712,
+              "ns_per_call": 366352.783203125
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "roc",
+            "mech-alloc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1373698,
+              "output_bytes": 2099712,
+              "ns_per_call": 111791.82942708333
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4497475,
+              "output_bytes": 2099712,
+              "ns_per_call": 366005.4524739583
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1367470,
+              "output_bytes": 2099712,
+              "ns_per_call": 111284.99348958333
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 854513,
+              "output_bytes": 2099712,
+              "ns_per_call": 69540.44596354167
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "roc",
+            "libdeflate",
+            "mech-alloc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1364954,
+              "output_bytes": 2099712,
+              "ns_per_call": 111080.24088541667
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4496746,
+              "output_bytes": 2099712,
+              "ns_per_call": 365946.1263020833
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 854813,
+              "output_bytes": 2099712,
+              "ns_per_call": 69564.86002604167
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1370989,
+              "output_bytes": 2099712,
+              "ns_per_call": 111571.37044270833
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "libdeflate",
+            "mech-alloc",
+            "roc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1367540,
+              "output_bytes": 2099712,
+              "ns_per_call": 111290.69010416667
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855724,
+              "output_bytes": 2099712,
+              "ns_per_call": 69638.99739583333
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1360316,
+              "output_bytes": 2099712,
+              "ns_per_call": 110702.79947916667
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4496935,
+              "output_bytes": 2099712,
+              "ns_per_call": 365961.5071614583
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-std",
+            "libdeflate",
+            "roc",
+            "mech-alloc"
+          ],
+          "samples": {
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1366672,
+              "output_bytes": 2099712,
+              "ns_per_call": 111220.05208333333
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855570,
+              "output_bytes": 2099712,
+              "ns_per_call": 69626.46484375
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4488383,
+              "output_bytes": 2099712,
+              "ns_per_call": 365265.5436197917
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1367079,
+              "output_bytes": 2099712,
+              "ns_per_call": 111253.173828125
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "mech-std",
+            "roc",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1364035,
+              "output_bytes": 2099712,
+              "ns_per_call": 111005.45247395833
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1368329,
+              "output_bytes": 2099712,
+              "ns_per_call": 111354.89908854167
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4490534,
+              "output_bytes": 2099712,
+              "ns_per_call": 365440.5924479167
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 856201,
+              "output_bytes": 2099712,
+              "ns_per_call": 69677.81575520833
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "mech-std",
+            "libdeflate",
+            "roc"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1366306,
+              "output_bytes": 2099712,
+              "ns_per_call": 111190.26692708333
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1365053,
+              "output_bytes": 2099712,
+              "ns_per_call": 111088.29752604167
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855837,
+              "output_bytes": 2099712,
+              "ns_per_call": 69648.193359375
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4491569,
+              "output_bytes": 2099712,
+              "ns_per_call": 365524.8209635417
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "roc",
+            "mech-std",
+            "libdeflate"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1367304,
+              "output_bytes": 2099712,
+              "ns_per_call": 111271.484375
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4498818,
+              "output_bytes": 2099712,
+              "ns_per_call": 366114.74609375
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1365905,
+              "output_bytes": 2099712,
+              "ns_per_call": 111157.63346354167
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855902,
+              "output_bytes": 2099712,
+              "ns_per_call": 69653.48307291667
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "roc",
+            "libdeflate",
+            "mech-std"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1360226,
+              "output_bytes": 2099712,
+              "ns_per_call": 110695.47526041667
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4494623,
+              "output_bytes": 2099712,
+              "ns_per_call": 365773.3561197917
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 860933,
+              "output_bytes": 2099712,
+              "ns_per_call": 70062.90690104167
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1365291,
+              "output_bytes": 2099712,
+              "ns_per_call": 111107.666015625
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "libdeflate",
+            "mech-std",
+            "roc"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1361121,
+              "output_bytes": 2099712,
+              "ns_per_call": 110768.310546875
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 856524,
+              "output_bytes": 2099712,
+              "ns_per_call": 69704.1015625
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1365361,
+              "output_bytes": 2099712,
+              "ns_per_call": 111113.36263020833
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4499290,
+              "output_bytes": 2099712,
+              "ns_per_call": 366153.1575520833
+            }
+          }
+        },
+        {
+          "order": [
+            "mech-alloc",
+            "libdeflate",
+            "roc",
+            "mech-std"
+          ],
+          "samples": {
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1361946,
+              "output_bytes": 2099712,
+              "ns_per_call": 110835.44921875
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 855034,
+              "output_bytes": 2099712,
+              "ns_per_call": 69582.84505208333
+            },
+            "roc": {
+              "iterations": 512,
+              "ticks": 4492537,
+              "output_bytes": 2099712,
+              "ns_per_call": 365603.5970052083
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1370068,
+              "output_bytes": 2099712,
+              "ns_per_call": 111496.41927083333
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-std",
+            "mech-alloc",
+            "libdeflate"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 512,
+              "ticks": 4499934,
+              "output_bytes": 2099712,
+              "ns_per_call": 366205.56640625
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1366047,
+              "output_bytes": 2099712,
+              "ns_per_call": 111169.189453125
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1366351,
+              "output_bytes": 2099712,
+              "ns_per_call": 111193.92903645833
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 858784,
+              "output_bytes": 2099712,
+              "ns_per_call": 69888.02083333333
+            }
+          }
+        },
+        {
+          "order": [
+            "roc",
+            "mech-std",
+            "libdeflate",
+            "mech-alloc"
+          ],
+          "samples": {
+            "roc": {
+              "iterations": 512,
+              "ticks": 4493818,
+              "output_bytes": 2099712,
+              "ns_per_call": 365707.8450520833
+            },
+            "mech-std": {
+              "iterations": 512,
+              "ticks": 1373088,
+              "output_bytes": 2099712,
+              "ns_per_call": 111742.1875
+            },
+            "libdeflate": {
+              "iterations": 512,
+              "ticks": 854166,
+              "output_bytes": 2099712,
+              "ns_per_call": 69512.20703125
+            },
+            "mech-alloc": {
+              "iterations": 512,
+              "ticks": 1364579,
+              "output_bytes": 2099712,
+              "ns_per_call": 111049.72330729167
+            }
+          }
+        }
+      ],
+      "summary": {
+        "units": "ns/encode and release",
+        "median": {
+          "mech-std": 111153.03548177084,
+          "mech-alloc": 110993.24544270833,
+          "roc": 365730.5908203125,
+          "libdeflate": 69643.06640625
+        },
+        "paired_ratios": {
+          "mech-alloc/mech-std": {
+            "median": 0.9968782300000647,
+            "minimum": 0.993481499830608,
+            "maximum": 1.010754528744617
+          },
+          "mech-std/roc": {
+            "median": 0.30384204010145743,
+            "minimum": 0.2947098353120797,
+            "maximum": 0.3059851189069601
+          },
+          "mech-alloc/roc": {
+            "median": 0.30364747192003416,
+            "minimum": 0.29512974276836246,
+            "maximum": 0.3058313966476721
+          },
+          "mech-std/libdeflate": {
+            "median": 1.595343304024872,
+            "minimum": 1.585827236265772,
+            "maximum": 1.6075799900060033
+          },
+          "mech-alloc/libdeflate": {
+            "median": 1.5929903509230652,
+            "minimum": 1.5799440839182608,
+            "maximum": 1.6111588636203948
+          }
+        }
+      }
+    }
+  ]
+}
