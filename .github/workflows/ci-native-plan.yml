@@ -285,7 +285,7 @@ jobs:
     name: Same-binary native policy controls
     runs-on: ubuntu-latest
     # Serial Actions ceilings total 311 minutes, with orchestration headroom.
-    timeout-minutes: 320
+    timeout-minutes: 323
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
