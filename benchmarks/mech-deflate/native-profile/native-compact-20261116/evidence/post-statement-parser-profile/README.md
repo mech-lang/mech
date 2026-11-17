@@ -18,3 +18,20 @@ Four separate stack captures measure where the unmodified parser spends its time
 - grammar-journal accounts for 9.3% of canonical parser samples.
 
 [Stack sample attribution](stack-samples/report.json)
+
+## Fixed literal scans
+
+Separate counting shows **1,652,988** Unicode cursor calls on the expected
+side and **2,614,359** on the source side. Expected-side work accounts for
+**38.7%** of the counted Unicode calls and comes from **164** static
+literals. ASCII literals account for 1,360,746 of the expected-side calls.
+There are 166,988 cold scans for keys that completed earlier. Those repeated
+cold scans account for 538,049 Unicode calls across both sides.
+
+The count covers completed final-input scans of fixed literals. The
+instrumented parser reproduces the exact tree, event count and work
+accounting. The data quantify the opportunity to reuse expected-literal
+grapheme shapes. Any such reuse must reproduce the original logical
+allowance and keep the existing segmented and partial-grant behavior.
+[Counts and identity checks](literal-census/report.json)
+· [Per-literal observations](literal-census/counts.log.gz)
