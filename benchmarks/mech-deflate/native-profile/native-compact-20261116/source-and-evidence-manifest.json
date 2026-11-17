@@ -30500,13 +30500,13 @@
     },
     {
       "path": "src/syntax/src/document/parser/canonical/document/continuation.rs",
-      "sha256": "8e07d40cb49e627dc9e29969302a1851ba6cfdec2b84c9d2bd8fbf5294f6db07",
-      "bytes": 86005
+      "sha256": "73dfadaed918661732a9c245c7ec07bd2608fd0fd0a3e4507007703c5c3541cc",
+      "bytes": 86366
     },
     {
       "path": "src/syntax/src/document/parser/canonical/document/definition_replay.rs",
-      "sha256": "daae2f9aae533f4c42adee4d5e09fb5dbed607701cdbb062c5c2b8ce0fa6173c",
-      "bytes": 14885
+      "sha256": "4ba65ba479f1db0c14f6708be83777e676d96424658371bfda765637a2548a69",
+      "bytes": 15417
     },
     {
       "path": "src/syntax/src/document/parser/canonical/document/mod.rs",
