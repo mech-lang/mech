@@ -1,0 +1,623 @@
+{
+  "mech": {
+    "unstripped": {
+      "header and load commands": 2040,
+      "__TEXT,__text": 341012,
+      "__TEXT,__stubs": 948,
+      "__TEXT,__init_offsets": 4,
+      "__TEXT,__cstring": 8360,
+      "__TEXT,__const": 86432,
+      "__TEXT,__gcc_except_tab": 3832,
+      "__TEXT,__unwind_info": 5432,
+      "__TEXT,__eh_frame": 24796,
+      "__DATA_CONST,__got": 672,
+      "__DATA_CONST,__const": 11064,
+      "__DATA,__data": 8120,
+      "__DATA,__thread_vars": 192,
+      "__DATA,__thread_data": 40,
+      "chained fixups": 1640,
+      "exports trie": 23424,
+      "function starts": 1208,
+      "symbols": 47008,
+      "indirect symbols": 652,
+      "symbol names": 81248,
+      "signature": 5304,
+      "padding and other unassigned bytes": 14964
+    },
+    "stripped": {
+      "header and load commands": 2040,
+      "__TEXT,__text": 341012,
+      "__TEXT,__stubs": 948,
+      "__TEXT,__init_offsets": 4,
+      "__TEXT,__cstring": 8360,
+      "__TEXT,__const": 86432,
+      "__TEXT,__gcc_except_tab": 3832,
+      "__TEXT,__unwind_info": 5432,
+      "__TEXT,__eh_frame": 24796,
+      "__DATA_CONST,__got": 672,
+      "__DATA_CONST,__const": 11064,
+      "__DATA,__data": 8120,
+      "__DATA,__thread_vars": 192,
+      "__DATA,__thread_data": 40,
+      "chained fixups": 1640,
+      "exports trie": 23424,
+      "function starts": 1208,
+      "symbols": 6592,
+      "indirect symbols": 652,
+      "symbol names": 29592,
+      "signature": 4608,
+      "padding and other unassigned bytes": 14972
+    },
+    "linked_text_bytes": 341012,
+    "attributed_text": {
+      "by_family": {
+        "other Rust standard libraries": 167860,
+        "encoder": 71768,
+        "allocator": 64000,
+        "Rust backtrace and symbolization": 31364,
+        "fixed Mech runtime": 4508,
+        "Mech adapter": 1052,
+        "other fixed inputs": 452,
+        "text padding and unassigned bytes": 8
+      },
+      "by_object": {
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(std-243c6aee4b215ad3.std.bdd3e78e9dcdd1d8-cgu.0.rcgu.o)": 144708,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o": 71768,
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": 64000,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(rustc_demangle-b3e37f33a642b130.rustc_demangle.cf6becf3a37c342f-cgu.0.rcgu.o)": 23028,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(core-bde75c546807f175.core.c1d22ed8524e785f-cgu.0.rcgu.o)": 21360,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(gimli-703561917a398fbb.gimli.8118f64a56b11cfa-cgu.0.rcgu.o)": 5472,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(libmech_gpu_runtime.mech_gpu.5464a02af6bfaf00-cgu.0.rcgu.o)": 3212,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(object-5077a2fd15e33084.object.72e341835cb8c698-cgu.0.rcgu.o)": 1868,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(alloc-18dda72c6f7ec0d8.alloc.c316d1bac71f694f-cgu.0.rcgu.o)": 1780,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(libmech_deploy.mech_deploy.a721e2f8139acf51-cgu.0.rcgu.o)": 1048,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(addr2line-6108d313f559a356.addr2line.5891f518ac0130bb-cgu.0.rcgu.o)": 996,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(libmech_gpu_runtime.mech_gpu.5464a02af6bfaf00-cgu.1.rcgu.o)": 720,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(libmech_gpu_runtime.mech_gpu.5464a02af6bfaf00-cgu.2.rcgu.o)": 576,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o": 452,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(panic_abort-a93778b8c69fc466.panic_abort.8aceaac607cdebfc-cgu.0.rcgu.o)": 12,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a(libmech_deploy.04idgwmiblx91xc4r68saodio.rcgu.o)": 4
+      },
+      "largest_symbols_by_family": {
+        "other fixed inputs": [
+          [
+            452,
+            "_main"
+          ]
+        ],
+        "Mech adapter": [
+          [
+            448,
+            "_deploy_encode"
+          ],
+          [
+            408,
+            "__RNvMs4_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7take_u8"
+          ],
+          [
+            72,
+            "__RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtime4HeapECselDMCB8bNz9_11mech_deploy"
+          ],
+          [
+            44,
+            "_deploy_release"
+          ],
+          [
+            24,
+            "__RNvCsfBzVIH1HIC6_7___rustc19___rust_alloc_zeroed"
+          ],
+          [
+            24,
+            "__RNvCsfBzVIH1HIC6_7___rustc14___rust_realloc"
+          ],
+          [
+            24,
+            "__RNvCsfBzVIH1HIC6_7___rustc12___rust_alloc"
+          ],
+          [
+            4,
+            "__RNvCsfBzVIH1HIC6_7___rustc35___rust_no_alloc_shim_is_unstable_v2"
+          ]
+        ],
+        "other Rust standard libraries": [
+          [
+            9584,
+            "__RNvNtNtNtCsgirOGyZpP7g_3std12backtrace_rs9symbolize5gimli7resolve"
+          ],
+          [
+            7816,
+            "__RNvMs_NtNtNtCsgirOGyZpP7g_3std12backtrace_rs9symbolize5gimliNtB4_7Context3new"
+          ],
+          [
+            7048,
+            "__RNvMs4_NtNtCsb5bltwEJz6w_5gimli4read5dwarfINtB5_4UnitINtNtB7_12endian_slice11EndianSliceNtNtB9_9endianity12LittleEndianEjE3newCsgirOGyZpP7g_3std"
+          ],
+          [
+            6248,
+            "__RINvMNtNtCsgDHHaSskbIF_4core4cell4onceINtB3_8OnceCellINtNtB7_6result6ResultNtNtCs7BsjYuVGje9_9addr2line4line5LinesNtNtCsb5bltwEJz6w_5gimli4read5ErrorEE8try_initNCINvB2_11get_or_initNCINvMB1d_NtB1d_9LazyLines6borrowINtNtB1Q_12endian_slice11EndianSliceNtNtB1S_9endianity12LittleEndianEE0E0zECsgirOGyZpP7g_3std"
+          ],
+          [
+            3892,
+            "__RINvNtNtCsb5bltwEJz6w_5gimli4read4unit15parse_attributeINtNtB4_12endian_slice11EndianSliceNtNtB6_9endianity12LittleEndianEECsgirOGyZpP7g_3std"
+          ],
+          [
+            3752,
+            "__RNvMs1_NtCs7BsjYuVGje9_9addr2line8functionINtB5_8FunctionINtNtNtCsb5bltwEJz6w_5gimli4read12endian_slice11EndianSliceNtNtB10_9endianity12LittleEndianEE14parse_childrenCsgirOGyZpP7g_3std"
+          ],
+          [
+            3244,
+            "__RNvMsc_NtNtCsb5bltwEJz6w_5gimli4read8rnglistsINtB5_11RngListIterINtNtB7_12endian_slice11EndianSliceNtNtB9_9endianity12LittleEndianEE4nextCsgirOGyZpP7g_3std"
+          ],
+          [
+            3224,
+            "__RNvMs_NtNtNtNtCsgirOGyZpP7g_3std12backtrace_rs9symbolize5gimli5machoNtB4_6Object5parse"
+          ]
+        ],
+        "fixed Mech runtime": [
+          [
+            952,
+            "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate"
+          ],
+          [
+            576,
+            "_mech_compact_finish_byte_appends"
+          ],
+          [
+            532,
+            "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8writable"
+          ],
+          [
+            512,
+            "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release.llvm.2917503953146311762"
+          ],
+          [
+            280,
+            "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap15discard_private"
+          ],
+          [
+            212,
+            "_mech_compact_release_four"
+          ],
+          [
+            180,
+            "_mech_compact_release_three"
+          ],
+          [
+            168,
+            "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs7fdMCt8k5K6_8mech_gpu"
+          ]
+        ],
+        "Rust backtrace and symbolization": [
+          [
+            2968,
+            "__RNvXNtCshO6dgJRNZ6t_14rustc_demangle6legacyNtB2_8DemangleNtNtCsgDHHaSskbIF_4core3fmt7Display3fmt"
+          ],
+          [
+            2556,
+            "__RNvCshO6dgJRNZ6t_14rustc_demangle8demangle"
+          ],
+          [
+            1624,
+            "__RNvMs4_NtCshO6dgJRNZ6t_14rustc_demangle2v0NtB5_7Printer10print_path"
+          ],
+          [
+            1576,
+            "__RNvMs4_NtCshO6dgJRNZ6t_14rustc_demangle2v0NtB5_7Printer11print_const"
+          ],
+          [
+            1236,
+            "__RNvMs4_NtCshO6dgJRNZ6t_14rustc_demangle2v0NtB5_7Printer10print_type"
+          ],
+          [
+            1064,
+            "__RNvXs0_NtCshO6dgJRNZ6t_14rustc_demangle2v0NtB5_5IdentNtNtCsgDHHaSskbIF_4core3fmt7Display3fmt"
+          ],
+          [
+            852,
+            "__RNCNvMs4_NtCshO6dgJRNZ6t_14rustc_demangle2v0NtB7_7Printer10print_type0B9_"
+          ],
+          [
+            844,
+            "__RNvMs4_NtCshO6dgJRNZ6t_14rustc_demangle2v0NtB5_7Printer23print_const_str_literal"
+          ]
+        ],
+        "encoder": [
+          [
+            51264,
+            "_mech_compact_closed_checked"
+          ],
+          [
+            6768,
+            "_mech_compact_numeric_475_vector"
+          ],
+          [
+            1584,
+            "_mech_compact_numeric_3009"
+          ],
+          [
+            1376,
+            "_mech_compact_numeric_3009_no_growth"
+          ],
+          [
+            1152,
+            "_mech_compact_numeric_3009_no_growth_composed"
+          ],
+          [
+            960,
+            "_mech_compact_numeric_4173"
+          ],
+          [
+            720,
+            "_mech_compact_numeric_3447_grouped"
+          ],
+          [
+            648,
+            "_mech_compact_checked_layout_continuation_44070"
+          ]
+        ],
+        "allocator": [
+          [
+            2180,
+            "_mi_segments_page_alloc"
+          ],
+          [
+            2152,
+            "__mi_vsnprintf"
+          ],
+          [
+            1852,
+            "__mi_stats_print"
+          ],
+          [
+            1632,
+            "_mi_segment_reclaim"
+          ],
+          [
+            1544,
+            "_mi_segment_alloc"
+          ],
+          [
+            1396,
+            "_mi_segment_span_allocate"
+          ],
+          [
+            1232,
+            "__mi_os_alloc_huge_os_pages"
+          ],
+          [
+            1224,
+            "_mi_stats_merge_from"
+          ]
+        ]
+      }
+    }
+  },
+  "roc": {
+    "unstripped": {
+      "header and load commands": 1960,
+      "__TEXT,__text": 122416,
+      "__TEXT,__stubs": 384,
+      "__TEXT,__init_offsets": 4,
+      "__TEXT,__cstring": 3337,
+      "__TEXT,__const": 3104,
+      "__TEXT,__unwind_info": 736,
+      "__TEXT,__eh_frame": 912,
+      "__DATA_CONST,__got": 288,
+      "__DATA_CONST,__const": 9208,
+      "__DATA,__data": 5696,
+      "__DATA,__thread_vars": 48,
+      "__DATA,__thread_data": 8,
+      "chained fixups": 664,
+      "exports trie": 2608,
+      "function starts": 336,
+      "symbols": 6448,
+      "indirect symbols": 272,
+      "symbol names": 7440,
+      "signature": 1680,
+      "padding and other unassigned bytes": 32131
+    },
+    "stripped": {
+      "header and load commands": 1960,
+      "__TEXT,__text": 122416,
+      "__TEXT,__stubs": 384,
+      "__TEXT,__init_offsets": 4,
+      "__TEXT,__cstring": 3337,
+      "__TEXT,__const": 3104,
+      "__TEXT,__unwind_info": 736,
+      "__TEXT,__eh_frame": 912,
+      "__DATA_CONST,__got": 288,
+      "__DATA_CONST,__const": 9208,
+      "__DATA,__data": 5696,
+      "__DATA,__thread_vars": 48,
+      "__DATA,__thread_data": 8,
+      "chained fixups": 664,
+      "exports trie": 2608,
+      "function starts": 336,
+      "symbols": 3296,
+      "indirect symbols": 272,
+      "symbol names": 2888,
+      "signature": 1632,
+      "padding and other unassigned bytes": 32123
+    },
+    "linked_text_bytes": 122416,
+    "attributed_text": {
+      "by_family": {
+        "allocator": 63624,
+        "encoder": 57696,
+        "other fixed inputs": 1096,
+        "text padding and unassigned bytes": 0
+      },
+      "by_object": {
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": 63624,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a(roc_app_llvm_arm64mac_speed_17c7dfcc.o)": 57696,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o": 644,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o": 452
+      },
+      "largest_symbols_by_family": {
+        "other fixed inputs": [
+          [
+            452,
+            "_main"
+          ],
+          [
+            368,
+            "_deploy_encode"
+          ],
+          [
+            84,
+            "_deploy_release"
+          ],
+          [
+            52,
+            "_roc_realloc"
+          ],
+          [
+            52,
+            "_roc_alloc"
+          ],
+          [
+            40,
+            "_out_of_memory"
+          ],
+          [
+            24,
+            "_roc_dbg"
+          ],
+          [
+            20,
+            "_roc_crashed"
+          ]
+        ],
+        "encoder": [
+          [
+            21760,
+            "_roc__p521a903b6bff90295acf9c73701bc7b1.fast"
+          ],
+          [
+            16480,
+            "_roc__p81003bf97431a8821d5be871f2471565.fast"
+          ],
+          [
+            3536,
+            "_roc__p1a804bfda1f5e4235a696be5d06bcb43.fast"
+          ],
+          [
+            2528,
+            "_roc__pa6e6a0bf5ace6ced425a6feecccd5c1b.fast"
+          ],
+          [
+            2112,
+            "_roc__p9d8198fedbd801212718a09deebc5774.fast"
+          ],
+          [
+            1564,
+            "_roc__p7e55fe2bbd64ef5a07766497de391d37.fast"
+          ],
+          [
+            1360,
+            "_roc__p251d42c9b11261f4b6c38feff48bfd2d.fast"
+          ],
+          [
+            1336,
+            "_roc__p499ff7eb2f98e9031bc9d0002db086b6.fast"
+          ]
+        ],
+        "allocator": [
+          [
+            2180,
+            "_mi_segments_page_alloc"
+          ],
+          [
+            2152,
+            "__mi_vsnprintf"
+          ],
+          [
+            1852,
+            "__mi_stats_print"
+          ],
+          [
+            1632,
+            "_mi_segment_reclaim"
+          ],
+          [
+            1544,
+            "_mi_segment_alloc"
+          ],
+          [
+            1396,
+            "_mi_segment_span_allocate"
+          ],
+          [
+            1232,
+            "__mi_os_alloc_huge_os_pages"
+          ],
+          [
+            1224,
+            "_mi_stats_merge_from"
+          ]
+        ]
+      }
+    }
+  },
+  "libdeflate": {
+    "unstripped": {
+      "header and load commands": 1880,
+      "__TEXT,__text": 98848,
+      "__TEXT,__stubs": 396,
+      "__TEXT,__init_offsets": 4,
+      "__TEXT,__cstring": 3248,
+      "__TEXT,__const": 2656,
+      "__TEXT,__unwind_info": 616,
+      "__DATA_CONST,__got": 296,
+      "__DATA_CONST,__const": 4728,
+      "__DATA,__data": 5712,
+      "__DATA,__thread_vars": 48,
+      "__DATA,__thread_data": 8,
+      "chained fixups": 720,
+      "exports trie": 1688,
+      "function starts": 312,
+      "symbols": 4192,
+      "indirect symbols": 280,
+      "symbol names": 5344,
+      "signature": 1400,
+      "padding and other unassigned bytes": 29024
+    },
+    "stripped": {
+      "header and load commands": 1880,
+      "__TEXT,__text": 98848,
+      "__TEXT,__stubs": 396,
+      "__TEXT,__init_offsets": 4,
+      "__TEXT,__cstring": 3248,
+      "__TEXT,__const": 2656,
+      "__TEXT,__unwind_info": 616,
+      "__DATA_CONST,__got": 296,
+      "__DATA_CONST,__const": 4728,
+      "__DATA,__data": 5712,
+      "__DATA,__thread_vars": 48,
+      "__DATA,__thread_data": 8,
+      "chained fixups": 720,
+      "exports trie": 1688,
+      "function starts": 312,
+      "symbols": 1856,
+      "indirect symbols": 280,
+      "symbol names": 2104,
+      "signature": 1344,
+      "padding and other unassigned bytes": 29016
+    },
+    "linked_text_bytes": 98848,
+    "attributed_text": {
+      "by_family": {
+        "allocator": 60984,
+        "encoder": 37072,
+        "other fixed inputs": 692,
+        "fixed language or encoder runtime": 100,
+        "text padding and unassigned bytes": 0
+      },
+      "by_object": {
+        "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": 60984,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o": 37072,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o": 452,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o": 240,
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o": 100
+      },
+      "largest_symbols_by_family": {
+        "other fixed inputs": [
+          [
+            452,
+            "_main"
+          ],
+          [
+            196,
+            "_deploy_encode"
+          ],
+          [
+            44,
+            "_deploy_release"
+          ]
+        ],
+        "encoder": [
+          [
+            8008,
+            "_deflate_optimize_and_flush_block"
+          ],
+          [
+            5220,
+            "_deflate_compress_lazy2"
+          ],
+          [
+            4672,
+            "_deflate_flush_block"
+          ],
+          [
+            3996,
+            "_deflate_compress_lazy"
+          ],
+          [
+            2936,
+            "_deflate_compress_near_optimal"
+          ],
+          [
+            2304,
+            "_deflate_compress_greedy"
+          ],
+          [
+            1828,
+            "_deflate_compress_fastest"
+          ],
+          [
+            1780,
+            "_deflate_compute_true_cost"
+          ]
+        ],
+        "fixed language or encoder runtime": [
+          [
+            68,
+            "_libdeflate_aligned_malloc"
+          ],
+          [
+            20,
+            "_libdeflate_set_memory_allocator"
+          ],
+          [
+            12,
+            "_libdeflate_aligned_free"
+          ]
+        ],
+        "allocator": [
+          [
+            2180,
+            "_mi_segments_page_alloc"
+          ],
+          [
+            2152,
+            "__mi_vsnprintf"
+          ],
+          [
+            1852,
+            "__mi_stats_print"
+          ],
+          [
+            1632,
+            "_mi_segment_reclaim"
+          ],
+          [
+            1544,
+            "_mi_segment_alloc"
+          ],
+          [
+            1396,
+            "_mi_segment_span_allocate"
+          ],
+          [
+            1232,
+            "__mi_os_alloc_huge_os_pages"
+          ],
+          [
+            1224,
+            "_mi_stats_merge_from"
+          ]
+        ]
+      }
+    }
+  }
+}

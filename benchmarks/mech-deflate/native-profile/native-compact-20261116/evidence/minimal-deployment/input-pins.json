@@ -1,0 +1,56 @@
+{
+  "mech_encoder": {
+    "archive": "inputs/mech_encoder/program.o.gz",
+    "filename": "program.o",
+    "sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b"
+  },
+  "mech_metadata": {
+    "archive": "inputs/mech_metadata/metadata.json.gz",
+    "filename": "metadata.json",
+    "sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "mech_runtime": {
+    "archive": "inputs/mech_runtime/libmech_gpu_runtime.rlib.gz",
+    "filename": "libmech_gpu_runtime.rlib",
+    "sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673"
+  },
+  "roc_encoder": {
+    "archive": "inputs/roc_encoder/encoder.a.gz",
+    "filename": "encoder.a",
+    "sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+  },
+  "roc_header": {
+    "archive": "inputs/roc_header/roc_platform_abi.h.gz",
+    "filename": "roc_platform_abi.h",
+    "sha256": "29774c638bfd88af975ae8f13560c7c8529c78b3feb8308ffbadf21651e3e3db"
+  },
+  "c_encoder": {
+    "archive": "inputs/c_encoder/encoder.o.gz",
+    "filename": "encoder.o",
+    "sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+  },
+  "c_header": {
+    "archive": "inputs/c_header/libdeflate.h.gz",
+    "filename": "libdeflate.h",
+    "sha256": "1bb50a3ff8c6980c1031c0e9bb324cf99df51379fdca77a358644cca841765cc"
+  },
+  "c_alloc": {
+    "archive": "inputs/c_alloc/libdeflate-alloc.o.gz",
+    "filename": "libdeflate-alloc.o",
+    "sha256": "d54cc202e299bcd92c533638846c979348dc9a5b947c95f150d31434e9ba232d"
+  },
+  "c_arm": {
+    "archive": "inputs/c_arm/libdeflate-arm.o.gz",
+    "filename": "libdeflate-arm.o",
+    "sha256": "1294dffb8fc3dcde0298edcb15c2314e630c17cdb9f7f1b7de1790cb27aaa7ad"
+  },
+  "mimalloc": {
+    "archive": "inputs/mimalloc/mimalloc.o.gz",
+    "filename": "mimalloc.o",
+    "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+  },
+  "pinned_allocator": {
+    "source": "../../pinned_allocator.rs",
+    "sha256": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6"
+  }
+}
