@@ -13705,8 +13705,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "0111de5d2d465ce7b22dc1f7e2cd616fa8c8543f1128c551da8e633a1d811b8a",
-      "bytes": 7904
+      "sha256": "688bcd9cc9f42fd2986b388052d8f678f175a978023e8a66f109b51a7f1d8e79",
+      "bytes": 8158
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
@@ -14085,8 +14085,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/object.rs",
-      "sha256": "ca71b41d12435cf853f458ef0b76709b3229bb9705daf5a7e3e607fab459ee37",
-      "bytes": 32581
+      "sha256": "ae4db5e29d3cfd1e12c886b6bfee7a405e3794d7417425e0b5669ac32355eda7",
+      "bytes": 35999
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/overwrite_reuse.rs",

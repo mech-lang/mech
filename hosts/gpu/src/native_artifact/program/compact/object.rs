@@ -166,18 +166,6 @@ impl PreparedObject {
         let Some(compiled) = context.compiled_code() else {
             return Ok(());
         };
-        let mut outside = BTreeSet::new();
-        for body in self.bodies.values() {
-            match body {
-                Body::Text(text) => {
-                    outside.extend(text.relocs.iter().filter_map(|r| symbol(&r.name)))
-                }
-                Body::Native(root) => {
-                    outside.extend(root.relocations.iter().filter_map(|r| symbol(&r.name)))
-                }
-                Body::Data(data) => outside.extend(data.function_decls.values().filter_map(symbol)),
-            }
-        }
         let mut referenced = BTreeMap::<FuncId, (usize, bool)>::new();
         for reloc in compiled.buffer.relocs() {
             let reloc = ModuleReloc::from_mach_reloc(reloc, &context.func, id);
@@ -187,26 +175,7 @@ impl PreparedObject {
                 entry.1 |= reloc.kind == Reloc::Arm64Call;
             }
         }
-        let names = std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok();
-        let selected = bodies
-            .iter()
-            .filter(|(target, _)| {
-                referenced.get(*target) == Some(&(1, true))
-                    && !outside.contains(&FuncOrDataId::Func(**target))
-                    && outside_loops
-                        .as_ref()
-                        .is_none_or(|callees| callees.contains(*target))
-                    && names.as_deref().is_none_or(|selection| {
-                        self.declarations
-                            .get_function_decl(**target)
-                            .name
-                            .as_deref()
-                            .is_some_and(|name| selection.split(',').any(|symbol| symbol == name))
-                    })
-            })
-            .map(|(&id, function)| (id, function))
-            .take(8)
-            .collect::<BTreeMap<_, _>>();
+        let selected = self.once_called_helpers(bodies, &referenced, outside_loops.as_ref());
         if selected.is_empty() {
             return Ok(());
         }
@@ -245,6 +214,115 @@ impl PreparedObject {
             *context = candidate;
         }
         Ok(())
+    }
+
+    fn once_called_helpers<'a>(
+        &self,
+        bodies: &'a BTreeMap<FuncId, ir::Function>,
+        referenced: &BTreeMap<FuncId, (usize, bool)>,
+        outside_loops: Option<&BTreeSet<FuncId>>,
+    ) -> BTreeMap<FuncId, &'a ir::Function> {
+        let mut outside = BTreeSet::new();
+        for body in self.bodies.values() {
+            match body {
+                Body::Text(text) => {
+                    outside.extend(text.relocs.iter().filter_map(|r| symbol(&r.name)))
+                }
+                Body::Native(root) => {
+                    outside.extend(root.relocations.iter().filter_map(|r| symbol(&r.name)))
+                }
+                Body::Data(data) => outside.extend(data.function_decls.values().filter_map(symbol)),
+            }
+        }
+        let names = std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok();
+        bodies
+            .iter()
+            .filter(|(target, _)| {
+                referenced.get(*target) == Some(&(1, true))
+                    && !outside.contains(&FuncOrDataId::Func(**target))
+                    && outside_loops.is_none_or(|callees| callees.contains(*target))
+                    && names.as_deref().is_none_or(|selection| {
+                        self.declarations
+                            .get_function_decl(**target)
+                            .name
+                            .as_deref()
+                            .is_some_and(|name| selection.split(',').any(|symbol| symbol == name))
+                    })
+            })
+            .map(|(&id, function)| (id, function))
+            .take(8)
+            .collect()
+    }
+
+    fn compile_preselected_root(
+        &self,
+        context: &mut Context,
+        control: &mut ControlPlane,
+    ) -> ModuleResult<bool> {
+        let Some(bodies) = self
+            .inline_bodies
+            .as_ref()
+            .filter(|bodies| !bodies.is_empty())
+        else {
+            return Ok(false);
+        };
+        // Use the same optimized IR that the compile-and-compare policy would
+        // leave before inlining. Keep the original context for fallback.
+        let mut prepared = Context::for_function(context.func.clone());
+        let mut control_for_candidate = control.clone();
+        let isa = self.isa();
+        prepared
+            .verify_if(isa)
+            .and_then(|()| prepared.optimize(isa, &mut control_for_candidate))
+            .map_err(|error| ModuleError::Backend(error.into()))?;
+        let function = &prepared.func;
+        let mut referenced = BTreeMap::<FuncId, (usize, bool)>::new();
+        for inst in function
+            .layout
+            .blocks()
+            .flat_map(|block| function.layout.block_insts(block))
+        {
+            let (callee, call) = match function.dfg.insts[inst] {
+                ir::InstructionData::Call {
+                    opcode, func_ref, ..
+                } => (func_ref, opcode == ir::Opcode::Call),
+                ir::InstructionData::FuncAddr { func_ref, .. }
+                | ir::InstructionData::TryCall { func_ref, .. } => (func_ref, false),
+                _ => continue,
+            };
+            if let Some(target) = super::inlining::module_callee(function, callee) {
+                let external = &function.dfg.ext_funcs[callee];
+                let entry = referenced.entry(target).or_default();
+                entry.0 += 1;
+                entry.1 |= call && external.colocated && !external.patchable;
+            }
+        }
+        let selected = self.once_called_helpers(bodies, &referenced, None);
+        if selected.is_empty() {
+            return Ok(false);
+        }
+        let mut candidate = Context::for_function(prepared.func);
+        if !candidate
+            .inline(super::inlining::OnceCalled(&selected))
+            .map_err(|error| ModuleError::Backend(error.into()))?
+        {
+            return Ok(false);
+        }
+        candidate
+            .verify(isa)
+            .map_err(|error| ModuleError::Backend(error.into()))?;
+        let bytes = candidate
+            .compile(isa, &mut control_for_candidate)?
+            .buffer
+            .data()
+            .len();
+        eprintln!(
+            "compact native preselected inline: {} bodies, {bytes} bytes",
+            selected.len()
+        );
+        *context = candidate;
+        *control = control_for_candidate;
+        Ok(true)
     }
 
     pub(in crate::native_artifact::program) fn define_llvm_root(
@@ -634,9 +712,19 @@ impl Module for PreparedObject {
             std::fs::write(dump.directory.join(format!("{name}.ll")), ir)
                 .map_err(llvm_diagnostic_failure)?;
         }
-        context.compile(self.isa(), control)?;
-        if declaration.name.as_deref() == Some("mech_compact_closed_checked") {
-            self.inline_private_helpers(id, context, control)?;
+        let checked_root = declaration.name.as_deref() == Some("mech_compact_closed_checked");
+        let preselected = checked_root
+            && self.isa().name() == "aarch64"
+            && std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").as_deref()
+                == Some(std::ffi::OsStr::new("preselected"))
+            && self.compile_preselected_root(context, control)?;
+        if !preselected {
+            context.compile(self.isa(), control)?;
+        }
+        if checked_root {
+            if !preselected {
+                self.inline_private_helpers(id, context, control)?;
+            }
         } else if declaration.linkage == Linkage::Local
             && context.compiled_code().unwrap().buffer.data().len() <= MAX_INLINE_BYTES
             && context.func.dfg.num_values() <= MAX_INLINE_VALUES
