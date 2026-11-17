@@ -1,0 +1,44 @@
+{
+  "source_pin": "e8b2bb4f2d8c44390e9a67dfe054c6ff40341249",
+  "compiler_sha256": "1cd333565a790f38da39d6cb91b5f040011ec4de405e51c6fb2e0bc9397edfac",
+  "parent_plan_sha256": "3dae301504bc84144d2776753d5034b3467d901b15b2b22942b5a74dfd414256",
+  "ablation_flag": "MECH_COMPACT_SKIP_UNUSED_FAILURE_RETURNS",
+  "expected_artifacts": {
+    "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "actors": {
+    "materialize": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/unused-error-shells/candidate/compile_profile",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/unused-error-shells/capture/materialize/compiled",
+        "compact"
+      ],
+      "artifacts": {
+        "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "discarded_returns": 0,
+      "compiler_phases": null
+    },
+    "skip-unused": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/unused-error-shells/candidate/compile_profile",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/unused-error-shells/capture/skip-unused/compiled",
+        "compact"
+      ],
+      "artifacts": {
+        "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "discarded_returns": 5236,
+      "compiler_phases": null
+    }
+  },
+  "metadata_difference_fields": []
+}

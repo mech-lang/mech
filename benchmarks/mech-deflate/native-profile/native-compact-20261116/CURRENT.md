@@ -1,50 +1,36 @@
 # PR #993 current status
 
-The deployment comparison uses compiler source `ac485d5a93e632eeff8d5e32bdee3233189e12bb` on PR #993,
-stacked on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
-The host is Apple M1, macOS 15.6.1, arm64.
-[Machine-readable measurements and per-case changes](scorecard.json)
+The compiler source is `033d17ce9cfd66b185e8fc45655575a971a86af9` on PR #993, stacked on #973 at
+`9087b1f07727a9bfcb7c09059f48edaca6dc2301`. The comparison uses Apple M1, macOS 15.6.1, and arm64.
+[Machine-readable scorecard](scorecard.json)
 
 ## Current matched deployment build
 
-Eight balanced comparisons use prebuilt compilers and fixed host support.
-Peer executables use the same CLI, allocator, target and strip rules.
-
 | Measurement | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.70927 s | 2.98501 s | 0.47997 s |
-| Source through strip | 2.71974 s | 2.99558 s | 0.49037 s |
-| Generated encoder text | 71,768 B | 57,696 B | 37,080 B |
-| Stripped deployment file | 292,576 B | 191,920 B | 155,760 B |
-| Compiler peak RSS | 395,173,888 B | 392,847,360 B | 71,540,736 B |
+| Source through final link | 2.70063 s | 2.98958 s | 0.48058 s |
+| Source through strip | 2.71108 s | 3.00001 s | 0.49107 s |
+| Encoder text | 71,192 B | 57,696 B | 37,080 B |
+| Stripped executable used in timing | 292,568 B | 191,912 B | 155,752 B |
 
-Statement replay reduces matched source-through-link time by
-**3.67%**, to **0.906× Roc** and
-**5.644× libdeflate**. Encoder text is **1.244× Roc** and
-**1.935× libdeflate**. All build outputs and the existing timed worker are
-byte-exact. The normalized timing output name changes the signing record by
-eight bytes.
-[Current matched builds](evidence/scoped-statement-replay/README.md)
-· [Previous matched compiler build](evidence/phi-verifier-reuse/README.md)
+The current build through linking is **0.903× Roc** and
+**5.621× libdeflate**. Mech encoder text is
+**1.234× Roc** and **1.920× libdeflate**. Both fixed
+host support and the compilers are prebuilt.
+[Ablation, build times and exact outputs](evidence/unused-failure-returns/README.md)
 
-Four separate phase captures give **0.918 s for
-Mech** and **3 ms for Roc**, about
-**306×** across the reported intervals. Mech
-builds the lossless syntax tree and indexes. Roc sums tokenization and
-parsing with one compilation job and its cache disabled.
-[Parser phase captures](evidence/scoped-statement-replay/parser-phases/summary.json)
+The 71,192 B worker records forward 81/61, reverse 81/61 in the two full orders against Roc/libdeflate. Runtime policy v2 records **Retain** for the
+frame-copy candidate. The 71,420 B read outline still has corrected contract
+checks and pending runtime qualification.
+[Frame-copy evidence](evidence/frame-copy-v2/README.md)
+· [Corrected read-outline checks](evidence/checked-byte-read-regions/README.md)
 
-The byte-read outline emits **71,420 B**. Correctly linked workers match
-162 exact output and resource observations and six checked failures. The
-outline raises peak stack from **5,280 B to 5,328 B**. Its previously reported
-win counts are withdrawn because those runs linked the reference encoder
-into both workers.
-[Corrected evidence](evidence/checked-byte-read-regions/README.md)
-
-A separate fixed-encoder runtime screen lowers the large halfword mapping
-threshold. It increases the 1 KiB periodic call from 44 µs to 63 µs and
-loses four libdeflate wins in both focused orders.
-[Allocation profile and focused screen](evidence/halfword-zero-page-screen/README.md)
+The new phase profile attributes **883.5 ms**
+to grammar execution and **34.0 ms**
+to indexing the syntax tree. The earlier paired phase captures measured
+**918 ms Mech** and **3 ms Roc** under their respective parser boundaries.
+[Mech phase attribution](evidence/post-statement-parser-profile/README.md)
+· [Paired comparison with Roc](evidence/scoped-statement-replay/parser-phases/summary.json)
 
 ## Which build to use
 
@@ -54,15 +40,17 @@ loses four libdeflate wins in both focused orders.
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
-| Current compiler source | **71,768 B** | Guarded variable, function and statement replay, adjacent cleanup verification |
+| Current qualified size recipe | **71,192 B** | Frame copies with compiler source below |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
-  /tmp/mech-reference-71768 --variant fresh-owner-counts-cold-tails-zero-branches \
+  /tmp/mech-frame-copies-71192 --variant frame-copies \
   --compiler-opt-level 3 --direct-source --preselect-root-inlining --skip-refused-general-ssa
 ~~~
 
-The fixed object is `7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b`.
+The fixed reference object is `7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b`.
+The frame-copy object is `96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b`.
+[Frame-copy worker verification](evidence/frame-copy-v2/README.md)
 [Exact recipe and build receipts](evidence/refused-general-ssa/README.md)
 
 ## Earlier build with the benchmark host
@@ -89,6 +77,7 @@ explicitly in its plan. [Reference runtime receipts](evidence/bound-71768-runtim
 
 | Campaign | Forward Roc/C | Reverse Roc/C | Runtime gate |
 | --- | --- | --- | --- |
+| 71,192-byte frame-copy worker vs the fixed 71,768-byte worker | 81/61 | 81/61 | v2 Retain |
 | Exact 71,768-byte worker vs 71,960-byte immediate control | 81/61 | 81/61 | v2 runtime Retain on the archived orders. Historical v1 Unresolved |
 | Exact 71,768-byte worker as contemporaneous control in owner exchange | 81/61 | 81/60 | Absolute C floor missed in reverse |
 | 71,288-byte owner exchange vs the fixed 71,768-byte control | 81/61 | 81/60 | v2 Reject, with one C win lost in reverse |
@@ -112,10 +101,10 @@ both orders. The earlier transient's cause remains open.
 
 ## Active work
 
-- **Parser.** Measure the remaining work after admitting bounded statement
-  winners. The standalone parser takes 0.914 s. The differential checks
-  retain exact grammar events, identities and resource accounting.
-  [Replay receipts](evidence/scoped-statement-replay/README.md)
+- **Parser.** The current diagnostic samples put base-rule evaluation at
+  19.8% and literal scanning at 16.1%. Measure expected and source grapheme
+  work and repeated literal-cache misses before changing the scanner.
+  [Parser profile](evidence/post-statement-parser-profile/README.md)
 - **Native compiler.** Attribute plan/semantic preparation, lazy facts,
   SSA construction, cleanup, Cranelift and worker waits separately. Share
   one immutable facts owner across read packing and branch analysis. Keep

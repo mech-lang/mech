@@ -1,0 +1,72 @@
+{
+  "compiler_source": "033d17ce9cfd66b185e8fc45655575a971a86af9",
+  "source_through_deployment": {
+    "mech-control": {
+      "source": 2.669870833400637,
+      "link": 0.03479833318851888,
+      "source_through_link": 2.704963812837377,
+      "strip": 0.010542770847678185,
+      "source_through_strip": 2.7157064999919385
+    },
+    "mech-early-error-pruning": {
+      "source": 2.6648877498228103,
+      "link": 0.034515958512201905,
+      "source_through_link": 2.7006335835903883,
+      "strip": 0.010287311859428883,
+      "source_through_strip": 2.7110842703841627
+    },
+    "roc": {
+      "source": 2.9552139788866043,
+      "link": 0.033960979199036956,
+      "source_through_link": 2.9895756249316037,
+      "strip": 0.010290542151778936,
+      "source_through_strip": 3.000008874339983
+    },
+    "libdeflate": {
+      "source": 0.4463277084287256,
+      "link": 0.03386439546011388,
+      "source_through_link": 0.4805817077867687,
+      "strip": 0.010245145997032523,
+      "source_through_strip": 0.4910716249141842
+    }
+  },
+  "source_through_link_paired_ratio": {
+    "mech-control": 0.996645332981569,
+    "roc": 0.9032637526545151,
+    "libdeflate": 5.621233830177292
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 0.9158201665000001,
+      "catalog": 0.0627600625,
+      "frontend": 0.230074479,
+      "artifact": 0.0069814375,
+      "encode": 0.0025456045,
+      "native": 1.4250552295
+    },
+    "mech-early-error-pruning": {
+      "parse": 0.918928292,
+      "catalog": 0.058273854,
+      "frontend": 0.2298545415,
+      "artifact": 0.0069885,
+      "encode": 0.002549083,
+      "native": 1.4197117915000002
+    }
+  },
+  "peak_rss_bytes": {
+    "mech-control": 395124736.0,
+    "mech-early-error-pruning": 396353536.0,
+    "roc": 394608640.0,
+    "libdeflate": 71516160.0
+  },
+  "encoder_text_bytes": 71192,
+  "unused_failure_returns_omitted": 5236,
+  "six_order_ablation_source_to_link_change": 0.401121478304467,
+  "encoder_artifacts": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "reference_worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "evidence": "evidence/unused-failure-returns/README.md"
+}
