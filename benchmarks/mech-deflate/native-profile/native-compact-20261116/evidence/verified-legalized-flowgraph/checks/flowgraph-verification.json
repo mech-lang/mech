@@ -1,0 +1,43 @@
+{
+  "control": {
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+      "--extern",
+      "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/reuse-verified-legalized-flowgraph/libcontrol_cranelift_codegen.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/reuse-verified-legalized-flowgraph/flowgraph_probe.rs",
+      "--crate-name",
+      "flowgraph_control",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/reuse-verified-legalized-flowgraph/flowgraph-control"
+    ],
+    "library_sha256": "fa03701e952871ec3db18912a70529cd7f1a005ee510275aa8b74cb6e4012f00",
+    "binary_sha256": "cc2259bb6d5019ae1611eb967aecd1ecb915c8a71b2f5e6b01aebc9e200e72c5"
+  },
+  "candidate": {
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+      "--extern",
+      "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libcranelift_codegen-b991cc47e96c83d1.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/reuse-verified-legalized-flowgraph/flowgraph_probe.rs",
+      "--crate-name",
+      "flowgraph_candidate",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/reuse-verified-legalized-flowgraph/flowgraph-candidate"
+    ],
+    "library_sha256": "73adbdcc16cf862bdcdeeb237d9ff69ac01b37fa97c8a53657a368a2d510776a",
+    "binary_sha256": "df70d560ea6c27b626cb524c4815ba85c069272f44182a7f4aaffcaaa2849316"
+  },
+  "matching_output": true
+}
