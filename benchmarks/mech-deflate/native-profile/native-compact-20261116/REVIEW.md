@@ -56,6 +56,15 @@ reduces measured peak native stack to 5,280 bytes. Its matched Apple M1
 source-through-link build is **4.00611 s**. It stays opt-in for runtime
 review. [Rebuild, both full timing orders, and per-case bounds](evidence/branch-on-zero/README.md)
 
+## Ordered scoring address experiment
+
+Carrying the vector addresses through the ordered scoring loop cut 164,742
+instructions on 8 KiB natural text and added 43,020 stack reloads. The
+runtime was flat against the Mech control and about 1.04× libdeflate.
+The encoder grew by 64 bytes and the empty-input regression triggered the
+validator's Reject decision in the two focused orders.
+[Patch, replay, and exact object reproduction](evidence/ordered-vector-cursors/README.md)
+
 ## Single-process source compilation
 
 The maintained rebuild accepts `--direct-source`. The existing diagnostic

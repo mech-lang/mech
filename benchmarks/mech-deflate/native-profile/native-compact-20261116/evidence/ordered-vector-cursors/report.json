@@ -1,0 +1,435 @@
+{
+  "base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "patch_parent": "ea519762d503a7a3d95e33dd36838f04dae297e0",
+  "compiler_backend": "Cranelift",
+  "patch_sha256": "177a8b97611c601819bb8f8b89a8146098cb98a9a2ec1d6c3f45ad1937d3e80b",
+  "source_bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "host_compiler_profile": {
+    "release_opt_level": 3,
+    "debug": false,
+    "lto": false,
+    "codegen_units": 16,
+    "c_allocator_opt_level": 1,
+    "compiler_construction_seconds": 368,
+    "measured_complete_build_for_candidate": false
+  },
+  "comparison_encoder_bytes": {
+    "roc": 57696,
+    "libdeflate": 37080
+  },
+  "actors": {
+    "control": {
+      "identity": {
+        "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+        "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+      },
+      "encoder_text_bytes": 71768,
+      "encoder_text_x_roc": 1.2438990571270105,
+      "encoder_text_x_libdeflate": 1.9354908306364618,
+      "object_bytes": 159384,
+      "linked_text_bytes": 474692,
+      "linked_file_bytes": 956056,
+      "root_frame_bytes": 3728,
+      "peak_native_stack_bytes": 5280,
+      "counters": {
+        "prefix-natural-4096": {
+          "calls": 5,
+          "instructions": 3557035,
+          "pacibsp": 5,
+          "stp": 30,
+          "stack_stores": 2360,
+          "mov": 191665,
+          "sub": 268105,
+          "ldr": 442895,
+          "payload_loads": 526880,
+          "stur": 2330,
+          "cmp": 411080,
+          "b.ne": 38905,
+          "branches": 581115,
+          "str": 20535,
+          "payload_stores": 20535,
+          "ldur": 48435,
+          "stack_loads": 45,
+          "add": 600860,
+          "ldp": 30,
+          "retab": 5,
+          "b.hs": 109210,
+          "lsr": 56045,
+          "cbz": 17265,
+          "lsl": 41475,
+          "and": 78015,
+          "orr": 147005,
+          "adrp": 17265,
+          "b.eq": 159700,
+          "b": 128560,
+          "ldrb": 35565,
+          "b.hi": 35565,
+          "subs": 106045,
+          "b.ls": 36725,
+          "csel": 208540,
+          "dup.4s": 51970,
+          "movi.16b": 3550,
+          "mov.16b": 51970,
+          "b.lo": 30975,
+          "ext.16b": 7100,
+          "umin.4s": 38410,
+          "rev64.4s": 7100,
+          "mov.s": 7100,
+          "cmeq.4s": 3550,
+          "bsl.16b": 27760,
+          "add.4s": 72630,
+          "tbl.16b": 24210,
+          "cmhi.4s": 24210,
+          "neg": 1160,
+          "ccmp": 3480
+        },
+        "prefix-natural-8192": {
+          "calls": 6,
+          "instructions": 7752576,
+          "pacibsp": 6,
+          "stp": 36,
+          "stack_stores": 6984,
+          "mov": 447960,
+          "sub": 598470,
+          "ldr": 973506,
+          "payload_loads": 1141866,
+          "stur": 6948,
+          "cmp": 950004,
+          "b.ne": 95640,
+          "branches": 1296540,
+          "str": 49218,
+          "payload_stores": 49218,
+          "ldur": 81474,
+          "stack_loads": 54,
+          "add": 1306830,
+          "ldp": 36,
+          "retab": 6,
+          "b.hs": 265884,
+          "lsr": 136056,
+          "cbz": 43020,
+          "lsl": 83748,
+          "and": 188574,
+          "orr": 323124,
+          "adrp": 43020,
+          "b.eq": 358308,
+          "b": 262788,
+          "ldrb": 86904,
+          "b.hi": 86904,
+          "subs": 224820,
+          "b.ls": 90372,
+          "csel": 443604,
+          "dup.4s": 87492,
+          "movi.16b": 6036,
+          "mov.16b": 87492,
+          "b.lo": 52896,
+          "ext.16b": 12072,
+          "umin.4s": 64872,
+          "rev64.4s": 12072,
+          "mov.s": 12072,
+          "cmeq.4s": 6036,
+          "bsl.16b": 46764,
+          "add.4s": 122184,
+          "tbl.16b": 40728,
+          "cmhi.4s": 40728,
+          "neg": 3468,
+          "ccmp": 10404
+        },
+        "prefix-random-8192": {
+          "calls": 0
+        },
+        "prefix-random-1048576": {
+          "calls": 0
+        },
+        "empty": {
+          "calls": 0
+        }
+      }
+    },
+    "candidate": {
+      "identity": {
+        "program.o": "e43ea00603fa9908b8213692678f0689f8083db2489d122d4d199fd350b58396",
+        "metadata.json": "c3ee66b239ec6567957756ceed883b3c9126481489cced78e6b2de8d09570999",
+        "mech-worker": "8cee21af1c28fe6a5a360d15b5c1c123bad3088be5eb4597e2e3d347af0a955f"
+      },
+      "encoder_text_bytes": 71832,
+      "encoder_text_x_roc": 1.245008319467554,
+      "encoder_text_x_libdeflate": 1.9372168284789644,
+      "object_bytes": 159448,
+      "linked_text_bytes": 474756,
+      "linked_file_bytes": 956056,
+      "root_frame_bytes": 3728,
+      "peak_native_stack_bytes": 5280,
+      "counters": {
+        "prefix-natural-4096": {
+          "calls": 5,
+          "instructions": 3449625,
+          "pacibsp": 5,
+          "stp": 30,
+          "stack_stores": 3525,
+          "mov": 188115,
+          "sub": 279590,
+          "ldr": 470655,
+          "payload_loads": 506220,
+          "stur": 3495,
+          "cmp": 407530,
+          "b.ne": 38905,
+          "branches": 574015,
+          "str": 20535,
+          "payload_stores": 20535,
+          "ldur": 17280,
+          "stack_loads": 17310,
+          "add": 560375,
+          "ldp": 30,
+          "retab": 5,
+          "b.hs": 109210,
+          "lsr": 56045,
+          "cbz": 17265,
+          "lsl": 17265,
+          "and": 81565,
+          "orr": 147005,
+          "adrp": 17265,
+          "b.eq": 183910,
+          "b": 125010,
+          "ldrb": 35565,
+          "b.hi": 35565,
+          "subs": 106045,
+          "b.ls": 36725,
+          "csel": 208540,
+          "dup.4s": 10650,
+          "movi.16b": 3550,
+          "add.4s": 76180,
+          "movi.4s": 3550,
+          "mov.16b": 44870,
+          "tbl.16b": 24210,
+          "umin.4s": 38410,
+          "cmhi.4s": 24210,
+          "bsl.16b": 27760,
+          "ext.16b": 7100,
+          "rev64.4s": 7100,
+          "mov.s": 7100,
+          "cmeq.4s": 3550,
+          "neg": 1160,
+          "ccmp": 3480,
+          "b.lo": 3215
+        },
+        "prefix-natural-8192": {
+          "calls": 6,
+          "instructions": 7587834,
+          "pacibsp": 6,
+          "stp": 36,
+          "stack_stores": 10458,
+          "mov": 441924,
+          "sub": 618054,
+          "ldr": 1020270,
+          "payload_loads": 1107174,
+          "stur": 10422,
+          "cmp": 943968,
+          "b.ne": 95640,
+          "branches": 1284468,
+          "str": 49218,
+          "payload_stores": 49218,
+          "ldur": 43038,
+          "stack_loads": 43074,
+          "add": 1238922,
+          "ldp": 36,
+          "retab": 6,
+          "b.hs": 265884,
+          "lsr": 136056,
+          "cbz": 43020,
+          "lsl": 43020,
+          "and": 194610,
+          "orr": 323124,
+          "adrp": 43020,
+          "b.eq": 399036,
+          "b": 256752,
+          "ldrb": 86904,
+          "b.hi": 86904,
+          "subs": 224820,
+          "b.ls": 90372,
+          "csel": 443604,
+          "dup.4s": 18108,
+          "movi.16b": 6036,
+          "add.4s": 128220,
+          "movi.4s": 6036,
+          "mov.16b": 75420,
+          "tbl.16b": 40728,
+          "umin.4s": 64872,
+          "cmhi.4s": 40728,
+          "bsl.16b": 46764,
+          "ext.16b": 12072,
+          "rev64.4s": 12072,
+          "mov.s": 12072,
+          "cmeq.4s": 6036,
+          "neg": 3468,
+          "ccmp": 10404,
+          "b.lo": 6132
+        },
+        "prefix-random-8192": {
+          "calls": 0
+        },
+        "prefix-random-1048576": {
+          "calls": 0
+        },
+        "empty": {
+          "calls": 0
+        }
+      }
+    }
+  },
+  "scoped_peer_ratios": {
+    "forward": {
+      "prefix-natural-4096": {
+        "mech-control": 1.1245070536079922,
+        "mech-experiment": 1.1248917651635055,
+        "roc": 1.7083404007028924,
+        "libdeflate": 1.0
+      },
+      "prefix-natural-8192": {
+        "mech-control": 1.0337840313272548,
+        "mech-experiment": 1.034858211360524,
+        "roc": 1.2487183247311235,
+        "libdeflate": 1.0
+      },
+      "prefix-random-8192": {
+        "mech-control": 1.6298248050597772,
+        "mech-experiment": 1.6092107185629558,
+        "roc": 3.6392905931548825,
+        "libdeflate": 1.0
+      },
+      "prefix-random-1048576": {
+        "mech-control": 1.3891171998108554,
+        "mech-experiment": 1.3893977485819549,
+        "roc": 1.4162470415272872,
+        "libdeflate": 1.0
+      },
+      "empty": {
+        "mech-control": 0.006705655544808048,
+        "mech-experiment": 0.006891585546150692,
+        "roc": 0.007900478712910792,
+        "libdeflate": 1.0
+      }
+    },
+    "reverse": {
+      "prefix-natural-4096": {
+        "libdeflate": 1.0,
+        "roc": 1.6920607490745079,
+        "mech-experiment": 1.127131180740822,
+        "mech-control": 1.1304052545009358
+      },
+      "prefix-natural-8192": {
+        "libdeflate": 1.0,
+        "roc": 1.2471823433961737,
+        "mech-experiment": 1.0405288715606464,
+        "mech-control": 1.0407354993609839
+      },
+      "prefix-random-8192": {
+        "libdeflate": 1.0,
+        "roc": 3.618402848279239,
+        "mech-experiment": 1.610072528255566,
+        "mech-control": 1.6401654905005307
+      },
+      "prefix-random-1048576": {
+        "libdeflate": 1.0,
+        "roc": 1.4180246890346926,
+        "mech-experiment": 1.3903985517317488,
+        "mech-control": 1.390714199748261
+      },
+      "empty": {
+        "libdeflate": 1.0,
+        "roc": 0.007858618386128197,
+        "mech-experiment": 0.006861081790276969,
+        "mech-control": 0.006775523813704776
+      }
+    }
+  },
+  "decision": "Reject",
+  "established_regressions": [
+    "empty: established slowdown above the 0.5% resolution"
+  ],
+  "diagnostic_scope_limits": [
+    "both complete timing orders are required",
+    "one-stored: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "focus": [
+    {
+      "id": "ordered-cursors-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "ordered-cursors-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "published_control": {
+    "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "wins_per_full_order": {
+      "roc": 81,
+      "libdeflate": 61
+    },
+    "complete_build_m1_seconds": {
+      "mech": 4.006110729,
+      "roc": 2.978285229,
+      "libdeflate": 0.479374041
+    },
+    "published_validator_verdict": "Unresolved",
+    "reference": "../branch-on-zero/report.json"
+  }
+}
