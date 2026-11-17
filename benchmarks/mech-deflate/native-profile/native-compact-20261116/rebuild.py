@@ -24,6 +24,10 @@ parser.add_argument(
     '--reuse-equivalent-vector-ir', action='store_true',
     help='reuse machine code for vector alternatives with identical prepared IR',
 )
+parser.add_argument(
+    '--preselect-root-inlining', action='store_true',
+    help='choose single-call checked-root helpers before native code generation',
+)
 args=parser.parse_args()
 out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
 target=(args.target_dir or out/'compiler').resolve()
@@ -68,6 +72,8 @@ bytecode=out/'frontend/program.mecb'
 assert sha(bytecode)==recipe['bytecode_sha256'],'changed canonical bytecode; inspect before comparing native output'
 flags=dict(recipe['flags'])
 flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in recipe['profiles'])
+if args.preselect_root_inlining:
+    flags['MECH_COMPACT_INLINE_SINGLE_CALLS'] = 'preselected'
 if args.reuse_equivalent_vector_ir:
     flags['MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR'] = '1'
 if args.variant in ('cold-tails', 'fresh-owner-counts-cold-tails'):
