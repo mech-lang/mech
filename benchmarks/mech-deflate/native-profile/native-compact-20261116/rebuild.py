@@ -6,7 +6,7 @@ import argparse, json, os, struct, subprocess, time
 here=Path(__file__).resolve().parent
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('output',type=Path)
-parser.add_argument('--variant',choices=['baseline','cold-tails','owner-ranges'],default='baseline')
+parser.add_argument('--variant',choices=['baseline','cold-tails','owner-ranges','fresh-owner-counts','fresh-owner-counts-cleanup'],default='baseline')
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)
 args=parser.parse_args()
@@ -39,6 +39,8 @@ flags=dict(recipe['flags'])
 flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in recipe['profiles'])
 if args.variant=='cold-tails':flags['MECH_COMPACT_SHARE_COLD_TAILS']='1'
 if args.variant=='owner-ranges':flags['MECH_COMPACT_PROVE_BACKING_OWNERS']='ranges'
+if args.variant in ['fresh-owner-counts','fresh-owner-counts-cleanup']:flags['MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS']='1'
+if args.variant=='fresh-owner-counts-cleanup':flags.update(MECH_COMPACT_PROVE_BACKING_OWNERS='all',MECH_COMPACT_FINISH_CFG_CLEANUP='1')
 assert not any('LLVM' in key for key in flags)
 phases['native']=run([emitter,bytecode,out/'native'],out/'native.log',env|flags|{'PATH':'/usr/bin:/bin'})
 object_file=out/'native/program.o';data=object_file.read_bytes();assert struct.unpack_from('<I',data)[0]==0xfeedfacf

@@ -1599,6 +1599,11 @@ fn define_entry<M: Module>(
             cfg_cleanup::coalesce_parallel_join_arguments(&controls, &mut context, module.isa())?;
         eprintln!("compact parallel join arguments coalesced: {removed}");
     }
+    if outline_allowed && std::env::var_os("MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS").is_some() {
+        let (backings, loads) = super::owner_counts::fold(module, &mut context);
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("compact fresh owner counts: {backings} backings, {loads} loads folded");
+    }
     if outline_allowed && let Some(scope) = std::env::var_os("MECH_COMPACT_PROVE_BACKING_OWNERS") {
         use super::backing_owners::Scope;
         let scope = match scope.to_str() {
