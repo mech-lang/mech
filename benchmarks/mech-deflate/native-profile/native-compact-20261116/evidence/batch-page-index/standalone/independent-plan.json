@@ -1,0 +1,52 @@
+{
+  "scope": "Standalone canonical parser with fixed source, pinned Rust opt-level 3 and mimalloc.",
+  "host": {
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "architecture": "arm64"
+  },
+  "source_revision": "b72b7419b39b22765fe1eed6b5c636e63964b905",
+  "input": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+  "input_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "probe_sha256": {
+    "control": "0eaa8b40bc7fb4f93c4cd857bf8b1c461108aa521f0e2a427435b0faad6bd014",
+    "page_index": "547ba606b41f86bf8a931a92b1f20d36d6ee6075534aeb737add87bf587b44d5",
+    "stale_token": "96f8b6006a68e06839702af68358e4398234dd21662124de33af6b1fd2518488"
+  },
+  "candidate_source_patch_sha256": {
+    "page_index": "c6186d39490115ef9d45dbeaac8c4727017de8e0cc56275580592f9eaa5a14ed",
+    "stale_token": "a28848792d019ba933295d4042351836e281d7398d34ddd5624add6a849f4b34"
+  },
+  "orders": [
+    [
+      "control",
+      "page_index",
+      "stale_token"
+    ],
+    [
+      "page_index",
+      "stale_token",
+      "control"
+    ],
+    [
+      "stale_token",
+      "control",
+      "page_index"
+    ],
+    [
+      "control",
+      "stale_token",
+      "page_index"
+    ],
+    [
+      "stale_token",
+      "page_index",
+      "control"
+    ],
+    [
+      "page_index",
+      "control",
+      "stale_token"
+    ]
+  ],
+  "excluded_warmups": 1
+}

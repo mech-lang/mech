@@ -1,0 +1,135 @@
+{
+  "parser_source_commit": "df885d4b43180b5647816f03f42774e118013a41",
+  "prebuilt_rust_compiler_artifacts": {
+    "mech-control": "9b14820a391951f088e9832c2c2dced3fabb7b5a66272f1dbac0e7dd87408781",
+    "mech-experiment": "a095ada5329d0ed445dc4a3ffe9d2f7807ec91944eaae50d4e280246d9579a20"
+  },
+  "scope": "Apple M1 with prebuilt compilers, runtimes and final link adapters",
+  "paired_speedup": 0.012283285151684975,
+  "faster_complete_pairs": 7,
+  "complete_pairs": 8,
+  "medians": {
+    "mech-control": {
+      "source_to_native": 3.8285845215432346,
+      "stage_outputs": 0.00026620831340551376,
+      "link": 0.041169916512444615,
+      "total": 3.873349958099425,
+      "compiler_peak_rss_bytes": 401784832.0,
+      "compiler_phases_seconds": {
+        "parse": 1.9877334995,
+        "catalog": 0.059342854,
+        "frontend": 0.2373181455,
+        "artifact": 0.0071089165,
+        "encode": 0.0026072919999999998,
+        "native": 1.5085053335
+      }
+    },
+    "mech-experiment": {
+      "source_to_native": 3.7705183546058834,
+      "stage_outputs": 0.00027237506583333015,
+      "link": 0.04102308303117752,
+      "total": 3.8138532284647226,
+      "compiler_peak_rss_bytes": 401612800.0,
+      "compiler_phases_seconds": {
+        "parse": 1.920240917,
+        "catalog": 0.06298329150000001,
+        "frontend": 0.23764356250000002,
+        "artifact": 0.0069738335,
+        "encode": 0.002608312,
+        "native": 1.5199472285
+      }
+    },
+    "roc": {
+      "compile": 2.9815147288609296,
+      "link": 0.0347832499537617,
+      "total": 3.0160854579880834,
+      "compiler_peak_rss_bytes": 396582912.0
+    },
+    "libdeflate": {
+      "compile": 0.4489874376449734,
+      "link": 0.03396677109412849,
+      "total": 0.48388166655786335,
+      "compiler_peak_rss_bytes": 71958528.0
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "executable_text_bytes": 150416,
+      "executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_bytes": 210168
+    }
+  },
+  "build_x_roc": 1.2645043655390322,
+  "build_x_libdeflate": 7.881789065485613,
+  "encoder_x_roc": 1.2438990571270105,
+  "encoder_x_libdeflate": 1.9354908306364618,
+  "fixed_link_worker": {
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "-C",
+      "opt-level=3",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/mech-worker.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-page-index/matched/warmup/mech-experiment/mech-worker",
+      "-C",
+      "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-C",
+      "link-arg=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-page-index/matched/warmup/mech-experiment/native/program.o",
+      "--extern",
+      "mech_gpu=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+      "--extern",
+      "mech_engine=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+      "--extern",
+      "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+      "--extern",
+      "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+      "--extern",
+      "miniz_oxide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+      "-L",
+      "dependency=/private/tmp/mech-pr973-merged-compression-20261112/reduction-loop-registers-335e58a455/backend",
+      "--remap-path-prefix",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link=/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/terminal-final",
+      "--remap-path-prefix",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/pinned_allocator.rs=/private/tmp/mech-child-prepayment-round163-20261105/pinned_allocator.rs"
+    ],
+    "worker": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-page-index/matched/warmup/mech-experiment/mech-worker",
+    "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "correctness": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-page-index/matched/warmup/mech-experiment/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-page-index/matched/warmup/mech-experiment/native/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "complete_smokes": 162,
+      "verified": true,
+      "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    }
+  },
+  "reference_full_runtime": "bound-71768-runtime/full-replay.json"
+}

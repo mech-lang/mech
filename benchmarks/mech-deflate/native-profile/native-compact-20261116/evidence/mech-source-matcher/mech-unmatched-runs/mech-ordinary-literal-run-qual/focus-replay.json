@@ -1,0 +1,633 @@
+{
+  "runs": [
+    {
+      "id": "mech-ordinary-literal-run-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "lost_cases": [
+            "heldout-random-65537"
+          ],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "prefix-periodic-16384"
+          ],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "mech-ordinary-literal-run-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "lost_cases": [
+            "heldout-random-65537"
+          ],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "prefix-periodic-16384"
+          ],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": -0.017259530271173884,
+          "lower": -0.03088945280709654,
+          "upper": -0.0038355189690579827
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.009837651529958746,
+          "lower": -0.010301857146996496,
+          "upper": 0.029253822775215488
+        }
+      },
+      "combined": {
+        "estimate": -0.003803067654589598,
+        "lower": -0.015612952795526214,
+        "upper": 0.008131317291579787
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": -0.029913827424709605,
+          "lower": -0.04333006214460833,
+          "upper": -0.015128146314309032
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": -0.010892969776428063,
+          "lower": -0.02218271178836584,
+          "upper": 0.0003433595501884934
+        }
+      },
+      "combined": {
+        "estimate": -0.020449565761467836,
+        "lower": -0.0293967218434118,
+        "upper": -0.011051102250980271
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": -0.024705978087970926,
+          "lower": -0.027968583672421277,
+          "upper": -0.021478993404780322
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": -0.02211184048215331,
+          "lower": -0.02579244393771818,
+          "upper": -0.018540836891902557
+        }
+      },
+      "combined": {
+        "estimate": -0.023409770642613625,
+        "lower": -0.0257998904367982,
+        "upper": -0.021013509120617724
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": -0.045244636160273854,
+          "lower": -0.05584678109638752,
+          "upper": -0.03312101207943707
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": -0.041996112384295126,
+          "lower": -0.06067414592130449,
+          "upper": -0.021815715850544648
+        }
+      },
+      "combined": {
+        "estimate": -0.043621753551240317,
+        "lower": -0.05470874012169347,
+        "upper": -0.03173313035068037
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-random-65537": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.17230886047355876,
+          "lower": 0.16884358282355927,
+          "upper": 0.17554559717224705
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.1646992296214782,
+          "lower": 0.15843354261167653,
+          "upper": 0.17076535701085183
+        }
+      },
+      "combined": {
+        "estimate": 0.16849785052091004,
+        "lower": 0.16503485086265268,
+        "upper": 0.1719185208430769
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-forward",
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.007865266831742268,
+          "lower": 0.00028541421332994865,
+          "upper": 0.01519505834510837
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.013907257627479686,
+          "lower": 0.006153622368978873,
+          "upper": 0.02126974550938243
+        }
+      },
+      "combined": {
+        "estimate": 0.010881748154233817,
+        "lower": 0.005436542193100413,
+        "upper": 0.016020934820857313
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.02308674117496623,
+          "lower": 0.017534493128415818,
+          "upper": 0.029039960874071236
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.02173321660179761,
+          "lower": 0.0177568974739597,
+          "upper": 0.025704448628652843
+        }
+      },
+      "combined": {
+        "estimate": 0.022409754904240575,
+        "lower": 0.018849702109813737,
+        "upper": 0.025967536040878425
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-forward",
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": -0.025115030095318458,
+          "lower": -0.028995328075821503,
+          "upper": -0.021001651122698806
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": -0.018471420673909167,
+          "lower": -0.02329858071444879,
+          "upper": -0.013539241484715636
+        }
+      },
+      "combined": {
+        "estimate": -0.021798865510318066,
+        "lower": -0.024921153235167748,
+        "upper": -0.01862534901331281
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.007193003183577407,
+          "lower": -0.001678451065387998,
+          "upper": 0.01583309868243532
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.038195115803512536,
+          "lower": 0.021368547484645006,
+          "upper": 0.05641998311201646
+        }
+      },
+      "combined": {
+        "estimate": 0.02257657736555929,
+        "lower": 0.013148732021537324,
+        "upper": 0.03256534421158652
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.042533952842074285,
+          "lower": 0.02760013633749625,
+          "upper": 0.05733959324522231
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.0746878845656549,
+          "lower": 0.06419924517956854,
+          "upper": 0.0858474252947623
+        }
+      },
+      "combined": {
+        "estimate": 0.05848883242465952,
+        "lower": 0.04923128926409337,
+        "upper": 0.06799484148859558
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-forward",
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-32769": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.14999173692273238,
+          "lower": 0.1436958374975137,
+          "upper": 0.156576780594883
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.14433616386976733,
+          "lower": 0.1385137456002472,
+          "upper": 0.14985178066424454
+        }
+      },
+      "combined": {
+        "estimate": 0.14716046511030467,
+        "lower": 0.14282844103730552,
+        "upper": 0.15145473217047267
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-forward",
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.1713209588458806,
+          "lower": 0.14881505356639124,
+          "upper": 0.18459763200187473
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.17879053418881763,
+          "lower": 0.1763129204763405,
+          "upper": 0.1809143146696237
+        }
+      },
+      "combined": {
+        "estimate": 0.1750498111929102,
+        "lower": 0.163808227249028,
+        "upper": 0.18194846328288006
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-forward",
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-16384": {
+      "decision": "regression",
+      "runs": {
+        "mech-ordinary-literal-run-qual-forward": {
+          "estimate": 0.14169104799112842,
+          "lower": 0.1335117253376703,
+          "upper": 0.1494514317791018
+        },
+        "mech-ordinary-literal-run-qual-reverse": {
+          "estimate": 0.14683787814970972,
+          "lower": 0.13417605181026215,
+          "upper": 0.15906202583427453
+        }
+      },
+      "combined": {
+        "estimate": 0.14426156930164535,
+        "lower": 0.136622534915134,
+        "upper": 0.1515339096749202
+      },
+      "adverse_runs": [
+        "mech-ordinary-literal-run-qual-forward",
+        "mech-ordinary-literal-run-qual-reverse"
+      ],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Reject",
+  "rejected": [
+    "heldout-random-65537: repeated focused loss against roc",
+    "prefix-periodic-16384: repeated focused loss against libdeflate",
+    "heldout-random-65537: established slowdown above the 0.5% resolution",
+    "prefix-natural-4096: established slowdown above the 0.5% resolution",
+    "prefix-natural-8192: established slowdown above the 0.5% resolution",
+    "prefix-random-4096: established slowdown above the 0.5% resolution",
+    "prefix-random-8192: established slowdown above the 0.5% resolution",
+    "prefix-random-32769: established slowdown above the 0.5% resolution",
+    "prefix-random-1048576: established slowdown above the 0.5% resolution",
+    "prefix-periodic-16384: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "mech-ordinary-literal-run-qual-forward: focused losses against roc: heldout-random-65537",
+    "mech-ordinary-literal-run-qual-forward: focused losses against libdeflate: prefix-periodic-16384",
+    "mech-ordinary-literal-run-qual-reverse: focused losses against roc: heldout-random-65537",
+    "mech-ordinary-literal-run-qual-reverse: focused losses against libdeflate: prefix-periodic-16384",
+    "both complete timing orders are required",
+    "empty: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "plan": {
+    "path": "mech-unmatched-runs/mech-ordinary-literal-run-qual/plan.json",
+    "sha256": "6944e5d5f8b1c810f3e778fc215738af249d45571f5972df7747252e3510dc1d"
+  },
+  "receipts": {
+    "mech-ordinary-literal-run-qual-forward": {
+      "id": "mech-ordinary-literal-run-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 24,
+      "pins": {
+        "path": "mech-unmatched-runs/mech-ordinary-literal-run-qual/canonical-pins/mech-ordinary-literal-run-qual-forward.json",
+        "sha256": "25ac4e8d55f1825883c8501fe1d3752fbfd95b794463b3fdc5d33ae67d96ca20"
+      },
+      "original_pins": {
+        "path": "mech-ordinary-literal-run-qual-forward/pins.json",
+        "sha256": "aa48bd1efe638ba2958aaadbb7539ef62150ad9f24ca979b7587a42157489add"
+      },
+      "summary": {
+        "path": "mech-ordinary-literal-run-qual-forward/summary.json",
+        "sha256": "a65d49553a129aabe59c6b1bae268e3f9f6bda03738a002a5b965b3094bd6d48"
+      },
+      "complete": {
+        "path": "mech-ordinary-literal-run-qual-forward/complete.json",
+        "sha256": "fad0315b305aef0605a7606251ec812bb9c9fb0d320a69fb1951858398f75e41"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-ordinary-literal-run-qual-forward/320-overlap/observations.json.gz",
+          "sha256": "f943c06040c8bd5a1a97d1bea0646e48ecdfe1c21be03dcdfa37dcddc364e796"
+        },
+        "empty": {
+          "path": "mech-ordinary-literal-run-qual-forward/empty/observations.json.gz",
+          "sha256": "980689a15aa0e04d0bdbdd85eafbe7c6c2662dd343dd8ddf94d123169795bd41"
+        },
+        "heldout-random-65537": {
+          "path": "mech-ordinary-literal-run-qual-forward/heldout-random-65537/observations.json.gz",
+          "sha256": "6e40be4cfb8317e4f5639aeb2084dde198de2159d83ba212e6b1848a57db5fdf"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "f7435adcb937cbaa898f71b0cf2401a420d5cb2dfe911876477f3df2a2a81401"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "79e394e66b3c124101cd540f5d5f84bd43f9f0bf6f685bb5b882dcbf81589e4e"
+        },
+        "prefix-periodic-16384": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-periodic-16384/observations.json.gz",
+          "sha256": "77f8cc07614f25557c2a429930732365d0221693ffad79a789fc12c98a664d97"
+        },
+        "prefix-random-1024": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "8aee2480ab3564b8db2f083052aab0ba3769d8afb8ee0a18c7d2bf71b2c1cf47"
+        },
+        "prefix-random-1048576": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "6e849391be776004c1943c18bfa286b9d68336247ee6d49c123768ee824aea32"
+        },
+        "prefix-random-32769": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-random-32769/observations.json.gz",
+          "sha256": "a24ec4b76bf7e6b6a24c0ce55a613108791cab395a832c81397d3f0c3cc89147"
+        },
+        "prefix-random-4096": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "04aeb84ee04d599c360fdbb4424525ed65ebc19fc4be24b80ed23466954143d8"
+        },
+        "prefix-random-8192": {
+          "path": "mech-ordinary-literal-run-qual-forward/prefix-random-8192/observations.json.gz",
+          "sha256": "73ab4ab7aa51018295aba5c5a04e6c06f0bf79d49e520fadee0c72c713fa4895"
+        },
+        "random-64": {
+          "path": "mech-ordinary-literal-run-qual-forward/random-64/observations.json.gz",
+          "sha256": "8ea1e32c8b251da64a2077b83917b2fc03ecc1097225ddc4e5611d57529509bb"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-ordinary-literal-run-qual-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "dbadd9dd0a7d1ba6013697fb877f3b52145c169f06903e152efa82effd8c0885"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-ordinary-literal-run-qual-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-ordinary-literal-run-qual-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-ordinary-literal-run-qual-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-ordinary-literal-run-qual-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "mech-ordinary-literal-run-qual-reverse": {
+      "id": "mech-ordinary-literal-run-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 24,
+      "pins": {
+        "path": "mech-unmatched-runs/mech-ordinary-literal-run-qual/canonical-pins/mech-ordinary-literal-run-qual-reverse.json",
+        "sha256": "25ac4e8d55f1825883c8501fe1d3752fbfd95b794463b3fdc5d33ae67d96ca20"
+      },
+      "original_pins": {
+        "path": "mech-ordinary-literal-run-qual-reverse/pins.json",
+        "sha256": "aa48bd1efe638ba2958aaadbb7539ef62150ad9f24ca979b7587a42157489add"
+      },
+      "summary": {
+        "path": "mech-ordinary-literal-run-qual-reverse/summary.json",
+        "sha256": "ee293bba9df746d65cbda96ece2be3e0b70398b2fd20e302239a3b93425d3e57"
+      },
+      "complete": {
+        "path": "mech-ordinary-literal-run-qual-reverse/complete.json",
+        "sha256": "fad0315b305aef0605a7606251ec812bb9c9fb0d320a69fb1951858398f75e41"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-ordinary-literal-run-qual-reverse/320-overlap/observations.json.gz",
+          "sha256": "df05f440764a9431de91a27575606f264544e52be4beac8575df9fedc3b842a7"
+        },
+        "empty": {
+          "path": "mech-ordinary-literal-run-qual-reverse/empty/observations.json.gz",
+          "sha256": "f5f4abbfe035e60ae06e7618a2f1e689202fa4a87e3f2977eaf98b43f1dd1c42"
+        },
+        "heldout-random-65537": {
+          "path": "mech-ordinary-literal-run-qual-reverse/heldout-random-65537/observations.json.gz",
+          "sha256": "1f1c824a2ec033959f4557355d0ec0f104da9239cc71adeaf30842ceef5433b7"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "8db7ddc533e43ffaa72b4039c5df32c3e40978840d289ed974a2eaf5c075d305"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "49799465e5028e4c93f454af3352e4a9b49cb8490bd3ee2426c36f6e2cc10db7"
+        },
+        "prefix-periodic-16384": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-periodic-16384/observations.json.gz",
+          "sha256": "fa3384d27c90005747271b8addf69dbc7a9154d19b77a81f907f4fe02dbaa9eb"
+        },
+        "prefix-random-1024": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "49bb8e09f3038f3328c06c588dc0ad179e8a57ec1edd513d9c4cc993a2218308"
+        },
+        "prefix-random-1048576": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "ad0be3a1f327aca4419df0ebb463831de9c627fc6ede6d1e19416ec13afad4e1"
+        },
+        "prefix-random-32769": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-random-32769/observations.json.gz",
+          "sha256": "6e7df6d5f2200fe943ad4e026588b6469ddd5fd09d97c34c7f6a472582511f55"
+        },
+        "prefix-random-4096": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "8410cad45083bf9d055698022a0fc9b03f24e50b9349ad82606f4cc669f31ebe"
+        },
+        "prefix-random-8192": {
+          "path": "mech-ordinary-literal-run-qual-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "13f947a9c736d8bf512e360fc2ed6a80392ee616e7e733876b033ffbd6418412"
+        },
+        "random-64": {
+          "path": "mech-ordinary-literal-run-qual-reverse/random-64/observations.json.gz",
+          "sha256": "b94246ff7057330da1b43bf4fa109837aae3813080db219e71c4ac6c1f4a02d1"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-ordinary-literal-run-qual-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "3e556be1a0e3b4ffd9f691b1fbe2093c36640788297dd0d82b44de3b2f462ab4"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-ordinary-literal-run-qual-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-ordinary-literal-run-qual-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-ordinary-literal-run-qual-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-ordinary-literal-run-qual-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

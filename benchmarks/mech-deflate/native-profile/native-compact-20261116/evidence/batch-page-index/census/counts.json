@@ -1,0 +1,10 @@
+{
+  "scope": "Work census for stale one-shot cache requests passing the existing finite allowance proof.",
+  "gated_requests": 708002,
+  "events_visited": 5462516,
+  "tokens": 2633220,
+  "token_bytes": 2633220,
+  "nonempty_tokens": 2633220,
+  "logical_token_units": 5266440,
+  "removed_resumable_token_iterations": 5266440
+}

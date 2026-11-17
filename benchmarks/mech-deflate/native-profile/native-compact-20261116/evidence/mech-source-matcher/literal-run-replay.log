@@ -1,0 +1,97 @@
+{
+  "decision": "Reject",
+  "rejected": [
+    "heldout-random-65537: repeated focused loss against roc",
+    "prefix-periodic-16384: repeated focused loss against libdeflate",
+    "heldout-random-65537: established slowdown above the 0.5% resolution",
+    "prefix-natural-4096: established slowdown above the 0.5% resolution",
+    "prefix-natural-8192: established slowdown above the 0.5% resolution",
+    "prefix-random-4096: established slowdown above the 0.5% resolution",
+    "prefix-random-8192: established slowdown above the 0.5% resolution",
+    "prefix-random-32769: established slowdown above the 0.5% resolution",
+    "prefix-random-1048576: established slowdown above the 0.5% resolution",
+    "prefix-periodic-16384: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "mech-ordinary-literal-run-qual-forward: focused losses against roc: heldout-random-65537",
+    "mech-ordinary-literal-run-qual-forward: focused losses against libdeflate: prefix-periodic-16384",
+    "mech-ordinary-literal-run-qual-reverse: focused losses against roc: heldout-random-65537",
+    "mech-ordinary-literal-run-qual-reverse: focused losses against libdeflate: prefix-periodic-16384",
+    "both complete timing orders are required",
+    "empty: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "runs": [
+    {
+      "id": "mech-ordinary-literal-run-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "lost_cases": [
+            "heldout-random-65537"
+          ],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "prefix-periodic-16384"
+          ],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "mech-ordinary-literal-run-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "lost_cases": [
+            "heldout-random-65537"
+          ],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "prefix-periodic-16384"
+          ],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}
