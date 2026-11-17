@@ -37,10 +37,13 @@ For new runtime campaigns, **policy v2** reports slowdowns and bases the
 runtime gate on preserved individual peer wins and both absolute floors.
 [Qualification policy v2](QUALIFICATION.md#acceptance-policy-v2)
 
-The separate owner-exchange screen emits 71,288 bytes. Both focused orders
-preserve all peer wins and v1 rejects on the empty-input timing. An
-80-byte placement variant remains unresolved under v1.
-[Both owner artifacts and the original decisions](evidence/owner-exchange-71288/README.md)
+The 71,288-byte owner-exchange worker beats Roc on all 81 cases in both
+complete v2 orders. Both Mech workers score 61/81 against libdeflate in
+the forward order and 60/81 in reverse. In reverse, the candidate loses
+the control's random-1024 win and gains 320-overlap. The runtime gate
+rejects the candidate on the individual loss. The 71,768-byte worker remains
+the reference. [Complete v2 orders and replay](evidence/owner-exchange-71288-v2/README.md)
+· [Earlier v1 focused orders](evidence/owner-exchange-71288/README.md)
 · [Match-cache source sizes](evidence/match-cache-offset-slot/README.md)
 · [Cached terminal parser experiment](evidence/cached-terminal-failures/README.md)
 
@@ -203,8 +206,12 @@ alternatives, of which five are selected, before adding compilation concurrency.
 The raw marker spans cover groups of work. Instrument an individual compile or
 cleanup before assigning its cost to a specific rewrite.
 The [linked-size census](evidence/linked-size-census/report.json) attributes
-237,384 bytes of retained executable text to Rust standard libraries. Use a
-frozen deployment interface to measure how much support can be removed.
+237,384 bytes of retained executable text to Rust standard libraries. With
+the common deployment CLI and shared strip settings, Mech is **575,632 B**,
+Roc **191,920 B**, and libdeflate **155,760 B**. The same generated Mech
+encoder contributes 71,768 B, and Rust standard libraries still contribute
+199,224 B of the remaining linked machine code.
+[Deployment sources, section census and raw verification](evidence/minimal-deployment/README.md)
 
 The standalone fresh-owner diagnostic ran eight fresh-process epochs using
 one executable file and separate byte-identical copies, with two batch floors.
