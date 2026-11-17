@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/replay_runtime.py", line 46, in <module>
+    run = runtime_run(campaign["runs"][entry["id"]], fixtures, evidence, identities, policy, entry)
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_timings.py", line 217, in runtime_run
+    check_run_pins(pins, run, fixtures, evidence, identities, policy)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_timings.py", line 183, in check_run_pins
+    require([row["name"] for row in inventory] == list(fixtures)
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            and all(fixture_contract(row) == fixture_contract(fixtures[row["name"]])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                    for row in inventory), "timed fixture contract differs from the frozen inventory")
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_records.py", line 25, in require
+    raise InvalidEvidence(message)
+qualification_records.InvalidEvidence: timed fixture contract differs from the frozen inventory
