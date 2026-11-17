@@ -97,6 +97,7 @@ pub(in crate::native_artifact::program) fn define_with_root<M: Module>(
         share_phase_bodies,
         None,
         compile_root,
+        false,
     )
 }
 
@@ -109,23 +110,19 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     threads: usize,
     direct_runtime_calls: super::object::DirectRuntimeCalls,
     compile_root: Option<CompileRoot<'_, M>>,
+    direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
-    if threads == 0 {
-        return match compile_root {
-            Some(compile) => {
-                define_with_root(module, prepared, observe, share_phase_bodies, Some(compile))
-            }
-            None => define(module, prepared, observe, share_phase_bodies),
-        };
-    }
-    let pool = super::compile_jobs::Pool::new(isa, threads, direct_runtime_calls)?;
+    let pool = (threads != 0)
+        .then(|| super::compile_jobs::Pool::new(isa, threads, direct_runtime_calls))
+        .transpose()?;
     define_with_pool(
         module,
         prepared,
         observe,
         share_phase_bodies,
-        Some(&pool),
+        pool.as_ref(),
         compile_root,
+        direct_literals,
     )
 }
 
@@ -136,6 +133,7 @@ fn define_with_pool<M: Module>(
     share_phase_bodies: bool,
     pool: Option<&super::compile_jobs::Pool>,
     compile_root: Option<CompileRoot<'_, M>>,
+    direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
@@ -193,7 +191,16 @@ fn define_with_pool<M: Module>(
     let mut workers = Vec::new();
     for region in &prepared.metadata().parallel.regions {
         let entry = super::parallel::Entry::derive(plan, region)?;
-        let report = define_entry(module, prepared, observe, &shared, Some(&entry), &[], None)?;
+        let report = define_entry(
+            module,
+            prepared,
+            observe,
+            &shared,
+            Some(&entry),
+            &[],
+            None,
+            false,
+        )?;
         workers.push(super::parallel::Worker::new(
             module, plan, region, entry, report,
         )?);
@@ -206,10 +213,38 @@ fn define_with_pool<M: Module>(
         None,
         &workers,
         compile_root,
+        direct_literals,
     )?;
     report["native_worker_entries"] =
         serde_json::json!(workers.iter().map(|w| &w.report).collect::<Vec<_>>());
     Ok(report)
+}
+
+fn scalar_literal_slots(
+    plan: &mech_engine::native_artifact::NativeProgramArtifactPlan,
+    layout: &Layout,
+    flow: &Flow,
+    inputs: &BTreeMap<usize, usize>,
+    initial: &BTreeMap<usize, Initial>,
+) -> BTreeSet<usize> {
+    let mut written = vec![false; plan.values().len()];
+    for &value in flow.defs.iter().flatten() {
+        written[value as usize] = true;
+    }
+    plan.constants()
+        .iter()
+        .filter_map(|constant| {
+            let value = constant.value().get();
+            let ty = layout.ty(value);
+            let slot = layout.slot(value);
+            (!written[value as usize]
+                && matches!(ty.kind, super::layout::LayoutKind::Scalar { .. })
+                && ty.owners.is_empty()
+                && !inputs.contains_key(&slot)
+                && matches!(initial.get(&slot), Some(Initial::Bits(_))))
+            .then_some(slot)
+        })
+        .collect()
 }
 
 fn define_entry<M: Module>(
@@ -220,6 +255,7 @@ fn define_entry<M: Module>(
     worker: Option<&super::parallel::Entry>,
     workers: &[super::parallel::Worker],
     compile_root: Option<CompileRoot<'_, M>>,
+    direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let endian = module.isa().endianness();
@@ -589,32 +625,48 @@ fn define_entry<M: Module>(
         for (value, ty) in layout.types.iter().enumerate() {
             slots.extend(layout.base[value]..layout.base[value] + ty.words);
         }
-        let words = Words::new_with_regions_and_initial(
-            &mut b,
-            zero,
-            CodePlan::Program(prepared),
-            slots,
-            |b, slot| {
-                let value = if let Some(&at) = inputs.get(&slot) {
-                    b.ins()
-                        .load(types::I64, MemFlags::new(), input, offset(at)?)
-                } else if let Some(initial) = initial.get(&slot) {
-                    match initial {
-                        Initial::Bits(n) => b.ins().iconst(types::I64, *n as i64),
-                        Initial::Table(id) => {
-                            let global = module.declare_data_in_func(*id, b.func);
-                            b.ins().global_value(types::I64, global)
-                        }
+        let initialize = |b: &mut FunctionBuilder<'_>, slot| {
+            let value = if let Some(&at) = inputs.get(&slot) {
+                b.ins()
+                    .load(types::I64, MemFlags::new(), input, offset(at)?)
+            } else if let Some(initial) = initial.get(&slot) {
+                match initial {
+                    Initial::Bits(n) => b.ins().iconst(types::I64, *n as i64),
+                    Initial::Table(id) => {
+                        let global = module.declare_data_in_func(*id, b.func);
+                        b.ins().global_value(types::I64, global)
                     }
-                } else {
-                    zero
-                };
-                // Zero is only a backend SSA seed. Flow independently proves that
-                // every reached source read has an actual input/constant/definition.
-                Ok(Some(value))
-            },
-            |_| MemFlags::new(),
-        )?;
+                }
+            } else {
+                zero
+            };
+            // Zero is only a backend SSA seed. Flow independently proves that
+            // every reached source read has an actual input/constant/definition.
+            Ok(Some(value))
+        };
+        let literals = (direct_literals && outline_allowed)
+            .then(|| scalar_literal_slots(plan, layout, &flow, &inputs, initial))
+            .filter(|literals| !literals.is_empty());
+        let words = if let Some(literals) = &literals {
+            eprintln!("compact-stage: direct scalar literals={}", literals.len());
+            Words::new_with_entry_literals(
+                &mut b,
+                zero,
+                CodePlan::Program(prepared),
+                slots,
+                initialize,
+                literals,
+            )?
+        } else {
+            Words::new_with_regions_and_initial(
+                &mut b,
+                zero,
+                CodePlan::Program(prepared),
+                slots,
+                initialize,
+                |_| MemFlags::new(),
+            )?
+        };
         if let Some(arrays) = &arrays {
             for &value in &flow.inputs {
                 for &lane in &layout.ty(value).owners {
@@ -1383,6 +1435,9 @@ fn define_entry<M: Module>(
                 serde_json::to_vec_pretty(&data).map_err(backend)?,
             )
             .map_err(backend)?;
+        }
+        if words.attempted_literal_write() {
+            return Err(backend("native lowering wrote an admitted entry literal"));
         }
         eprintln!("compact-stage: finalize SSA");
         capacity_growth = arrays.and_then(|arrays| arrays.capacity_growth);
