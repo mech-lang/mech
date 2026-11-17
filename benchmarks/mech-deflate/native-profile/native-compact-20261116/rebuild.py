@@ -3,6 +3,35 @@ from pathlib import Path
 from hashlib import sha256
 import argparse, json, os, struct, subprocess, time
 
+
+def load_recorded_runtime(checkout, output, pin):
+    """Restore the three original source files from the benchmark's first commit."""
+    hashes = pin['source_sha256']
+    if set(hashes) != {'mod.rs', 'terminal_appends.rs', 'zero_pages.rs'}:
+        raise SystemExit("The recorded runtime recipe must pin all three source files.")
+    payload = {}
+    for name, expected in hashes.items():
+        revision = f"{pin['commit']}:{pin['directory']}/{name}"
+        try:
+            data = subprocess.check_output(
+                ['git', '--no-replace-objects', '-C', checkout, 'cat-file', 'blob', revision],
+                stderr=subprocess.PIPE,
+                env=os.environ | {"GIT_NO_LAZY_FETCH": "1"},
+            )
+        except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+            raise SystemExit(
+                f"Linking the recorded worker needs a Git checkout with PR #993 history. "
+                f"Could not read {revision}. Fetch the pinned commit before retrying."
+            ) from exc
+        if sha256(data).hexdigest() != expected:
+            raise SystemExit(f"The recorded runtime source hash differs for {revision}.")
+        payload[name] = data
+    output.mkdir()
+    for name, data in payload.items():
+        (output / name).write_bytes(data)
+    return output / 'mod.rs'
+
+
 here=Path(__file__).resolve().parent
 parser=argparse.ArgumentParser(description=__doc__)
 parser.add_argument('output',type=Path)
@@ -38,6 +67,9 @@ args=parser.parse_args()
 out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
 target=(args.target_dir or out/'compiler').resolve()
 recipe=json.loads((here/'recipe.json').read_text())
+if args.mimalloc_object:
+    allocator = args.mimalloc_object.resolve(strict=True)
+    recorded_runtime = load_recorded_runtime(here, out / 'recorded-runtime', recipe['recorded_runtime'])
 def sha(p):return sha256(Path(p).read_bytes()).hexdigest()
 def run(command,log,env):
     command=list(map(str,command));start=time.perf_counter()
@@ -147,11 +179,17 @@ record['compiler_pipeline'] = 'direct-source' if args.direct_source else 'split'
 (out/'rebuild.json').write_text(json.dumps(record,indent=2)+'\n')
 assert record['full_integrated_source_identity'],'integrated compiler changed the object; report this result, do not reuse the historical win count'
 if args.mimalloc_object:
-    allocator=args.mimalloc_object.resolve(strict=True)
     runtime_source=out/'runtime.rs'
-    runtime_source.write_text('pub mod native_artifact { #[path = '+json.dumps(str(here/'recorded-runtime/mod.rs'))+'] pub mod compact_runtime; }\n')
+    runtime_source.write_text('pub mod native_artifact { #[path = '+json.dumps(str(recorded_runtime))+'] pub mod compact_runtime; }\n')
     runtime=out/'libmech_gpu_runtime.rlib'
-    run(['rustc','+nightly-2026-03-03','--edition=2024','--crate-name','mech_gpu','--crate-type=rlib','-C','opt-level=3',runtime_source,'-o',runtime],out/'runtime-build.log',env)
+    record['recorded_runtime'] = recipe['recorded_runtime'] | {
+        'build': run(
+            ['rustc', '+nightly-2026-03-03', '--edition=2024', '--crate-name', 'mech_gpu',
+             '--crate-type=rlib', '-C', 'opt-level=3', runtime_source, '-o', runtime],
+            out / 'runtime-build.log', env,
+        ),
+        'rlib_sha256': sha(runtime),
+    }
     command=['rustc','+nightly-2026-03-03','--edition=2024','-C','opt-level=3','-D','warnings','-L','dependency='+str(target/'release/deps'),here/'worker.rs','-o',out/'mech-worker','--extern','mech_gpu='+str(runtime),'-C','link-arg='+str(object_file),'-C','link-arg='+str(allocator)]
     for name in ['mech_engine','serde','serde_json','miniz_oxide']:command+=['--extern',name+'='+libraries[name]]
     record['worker_link']=run(command,out/'worker-link.log',env)
