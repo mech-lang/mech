@@ -1,0 +1,12 @@
+{
+  "actor": "libdeflate",
+  "seconds": {
+    "compile": 0.44580495823174715,
+    "link": 0.03311012499034405,
+    "total": 0.47916737478226423
+  },
+  "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+  "encoder_bytes": 52128,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-2/libdeflate/compressor",
+  "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+}

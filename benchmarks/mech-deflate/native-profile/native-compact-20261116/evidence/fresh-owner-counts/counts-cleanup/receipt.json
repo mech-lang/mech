@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 72024,
+  "object_text_x_roc": 1.2483361064891847,
+  "object_text_x_libdeflate": 1.9423948220064724,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 51516,
+  "root_frame_bytes": 3808,
+  "source_blocks": 8223,
+  "root_direct_calls": 371,
+  "emit_seconds": 2.449782875366509,
+  "peak_resident_bytes": 226525184,
+  "object_sha256": "7f4eb5824b335f991d2a51be1d5277b9f04ac37992e679d42c413a5edeb24c02",
+  "metadata_sha256": "1246e2726abdd65eea62a9d02af8c2511f354b6b9e1436dc15ecc39f7f1eca78",
+  "linked_text_bytes": 474948,
+  "worker_sha256": "8819a7e0a414c0eb06d264d26ee41ec33b303600abd0b2d7a9ec3af72e841389",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-fresh-owner-counts-cleanup-native-final-candidate-qualification.json"
+}

@@ -1,0 +1,17 @@
+{
+  "decisions": {
+    "bounded at resolution in the two full orders": 77,
+    "inconclusive": 4
+  },
+  "followup_cases": [
+    "320-overlap",
+    "empty",
+    "heldout-window-32767",
+    "one-stored",
+    "prefix-natural-16384",
+    "prefix-periodic-1024",
+    "random-64",
+    "reymont-prefix-32769",
+    "seven-stored-prefix"
+  ]
+}

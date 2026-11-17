@@ -28,12 +28,33 @@ not received a new full peer timing qualification.
 
 The frontend allocator change is published in `21757538`. Its matched comparison
 improved complete build time by 8.83%, with all ten Mech outputs byte-identical.
-The latest owner-proof study remeasures the retained control at **6.24346 seconds**,
-or **12.73596× libdeflate**. All builds include final linking, with compilers, fixed
+The fresh owner study remeasures the retained control at **6.25214 seconds**,
+or **12.97226× libdeflate**. All builds include final linking, with compilers, fixed
 runtimes, and adapters prebuilt. See the main README for the phase timings and the
 distinction between these benchmarks and compiler construction.
 
-## Latest experiments, not promoted
+## Fresh owner reference counts
+
+The new pass folds 20 reference-count loads from direct, checked allocations
+that have known nonempty storage. It preserves the writes and checked paths.
+Review `hosts/gpu/src/native_artifact/program/compact/owner_counts.rs` and its
+tests. The five native test groups cover aliasing stores, unknown calls, reused
+backings, loop changes, allocation failures, and joins.
+
+Its encoder is **72,344 B (1.25388× Roc, 1.95102× libdeflate)** with unchanged
+5,296-byte peak stack. Both full peer orders record **81/81 Roc and 61/81
+libdeflate** for candidate and control. The full matched runs bound 77 cases at
+0.5% resolution. The [report and raw observations](evidence/fresh-owner-counts/report.json)
+include longer runs for the remaining four cases. The duplicate controls vary
+beyond 0.5% on three cases, leaving the pass opt-in. The matched build takes
+6.24649 seconds, effectively flat against 6.25214 seconds for the control and
+12.96053× libdeflate. Use `rebuild.py --variant fresh-owner-counts` to reproduce
+the candidate with exact object and metadata checks.
+
+The 72,024-byte cleanup combination still has two sustained slowdowns in the
+focused screen. Its exact rebuild variant is `fresh-owner-counts-cleanup`.
+
+## Earlier experiments
 
 `evidence/size-screens` contains all 24 static screens: ten additional shared-region
 families, eight individual compiler policies, and six combinations. These use
@@ -45,7 +66,7 @@ retained recipe was changed for this follow-up.
 | Retained baseline | 72,520 B | 1.95577 | 3,744 B | Historical full 81/61 |
 | Range-derived owner proofs | 72,392 B | 1.95232 | 3,744 B | Full 81 Roc; C 61/60; not promoted |
 | Owner proofs, inline only helper 4879 | 72,168 B | 1.94628 | 3,680 B | Rejected after two focused orders |
-| Owner proofs and final cleanup | 72,136 B | 1.94542 | 3,792 B | Two 12-case screens; full qualification pending |
+| Owner proofs and final cleanup | 72,136 B | 1.94542 | 3,792 B | Full 81/61 in both orders; rejected on five cases |
 | Owner proofs, final cleanup, cold tails | 71,768 B | 1.93549 | 3,792 B | Pending |
 
 The narrower proof removes 128 bytes, passes correctness and checked-failure
@@ -64,16 +85,13 @@ not complete stack high-water, and metadata calls are not final relocated calls.
 See [the complete follow-up](evidence/owner-proof-runtime/report.json) for raw
 paired data, repeated same-worker controls, and every adverse observation.
 
-The latest owner-proof/final-cleanup combination passes 162 correctness checks
-and keeps 12 Roc and eight C wins for both actors in both 12-case orders.
-Its candidate/control geometric means are 0.99775× and 0.99628×, but the first
-one-byte observation is 0.675% slower and its reverse is 1.981% faster. It
-remains an experiment: full peer orders, checked-failure and stack controls,
-and per-case uncertainty are still required. No 81/61 claim or complete-build
-time improvement is attached to it. See
-[the focused report](evidence/owner-cleanup-focus/report.json), which includes
-all raw observations and exact candidate identities. Its static reproduction
-case is `combinations--owners-cleanup`; `replay.py` recomputes the focused wins.
+The owner-proof and final cleanup combination keeps 81 Roc and 61 libdeflate
+wins in both full orders. Five cases show a slowdown above the 0.5% resolution
+and peak stack grows from 5,296 to 5,344 bytes, so the result is rejected. See
+[the full report](evidence/owner-cleanup-full/report.json) and
+[the earlier focused report](evidence/owner-cleanup-focus/report.json) for raw
+measurements and the exact candidate identity. Its static reproduction case is
+`combinations--owners-cleanup`. `replay.py` recomputes wins from both sets of runs.
 
 All ten additional shared-region screens were at least as large as the baseline.
 The stack-pair census found only 156 bytes potentially removable by pairing
