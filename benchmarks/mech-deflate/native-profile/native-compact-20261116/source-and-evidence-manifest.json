@@ -34125,8 +34125,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs",
-      "sha256": "d605f1a43029313fa078e7c71caec1bb09a0494947685fbf5aff39a7ab639868",
-      "bytes": 34390
+      "sha256": "c6575df45565e6cbacedd1b26d86d99ae9f8479440afdf0351f622ea40b1e117",
+      "bytes": 33742
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/packed_halfword_reads/mod.rs",
@@ -34665,8 +34665,8 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/context.rs",
-      "sha256": "4dc68d865d96fce76ab30b2acad6c64a6922de99445e8e1345d2e9fa999ae24b",
-      "bytes": 14362
+      "sha256": "91f9e3df44ed2fa4d8535781c27f4c4dbbb04a56e9c2324472fcea851d12bbff",
+      "bytes": 16203
     },
     {
       "path": "vendor/cranelift-codegen/src/dominator_tree/mod.rs",
@@ -34875,8 +34875,8 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/remove_constant_phis.rs",
-      "sha256": "3f2b66ede999aa7234147005e6d008082b34da4e95bb64ebb537b2771cc42428",
-      "bytes": 15338
+      "sha256": "7d98583183931b5481700caa4a53af6438ff426e2af6ad41701b96e7f7409592",
+      "bytes": 15433
     },
     {
       "path": "vendor/cranelift-codegen/src/settings.rs",
@@ -34884,9 +34884,14 @@
       "bytes": 18045
     },
     {
+      "path": "vendor/cranelift-codegen/src/unreachable_code.rs",
+      "sha256": "fb74796b11908cc02b348aa66a93448498807fc2f626d1e8e76cff0f9c75ad4b",
+      "bytes": 2748
+    },
+    {
       "path": "vendor/cranelift-codegen/src/verifier/mod.rs",
-      "sha256": "ef19d8094c03ec6e94efec63116dadf33ce372430caf7d4ea294cce6caa7d088",
-      "bytes": 83093
+      "sha256": "72fca18a42e87a8b11c091585c4c3a9d3093b5294a278cbc0412d49faf2cde61",
+      "bytes": 85070
     },
     {
       "path": "vendor/cranelift-codegen-meta/src/pulley.rs",

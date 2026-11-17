@@ -222,6 +222,7 @@ impl SolverState {
 
 /// Detect phis in `func` that will only ever produce one value, using a
 /// classic forward dataflow analysis. Then remove them and report whether the function changed.
+/// Block and instruction layout, branch instructions and ordered destinations stay unchanged.
 #[inline(never)]
 pub fn do_remove_constant_phis(func: &mut Function, domtree: &DominatorTree) -> bool {
     let _tt = timing::remove_constant_phis();
