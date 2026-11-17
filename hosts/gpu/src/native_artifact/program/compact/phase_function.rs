@@ -1,5 +1,6 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
 use super::super::{
+    arrays::ArrayImports,
     checked_region_discovery, checked_traversals,
     phase_bodies::{PhaseBodies, define_body, define_prepared_body, prepare_body},
     phase_layout,
@@ -7,7 +8,10 @@ use super::super::{
 use super::*;
 use crate::native_artifact::{
     codegen::{common::unsigned_guard_facts, control::CfgCleanup, options::OptimizationPass},
-    program::codegen::{numeric_compact, wide_equal},
+    program::{
+        codegen::{numeric_compact, wide_equal},
+        prepare::{readonly_numeric::Proof, tail::Region},
+    },
 };
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
 use cranelift_codegen::{
@@ -465,6 +469,78 @@ pub(super) fn prepare_general<M: Module>(
     )
 }
 
+fn general_ir_observed() -> bool {
+    [
+        "MECH_COMPACT_PHASE_CONTROLLER_WINDOWS",
+        "MECH_INSPECT_PHASE_CLIF",
+        "MECH_INSPECT_PHASE_VCODE",
+        "MECH_COMPACT_FAILURE_DIR",
+    ]
+    .iter()
+    .any(|name| std::env::var_os(name).is_some())
+}
+
+pub(super) fn refused_general_ssa_unobserved() -> bool {
+    !general_ir_observed()
+        && [
+            "MECH_COMPACT_DUMP_LLVM_DIRECTORY",
+            "MECH_TRAVERSAL_FLOOR_DIAGNOSTIC",
+            "MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS",
+        ]
+        .iter()
+        .all(|name| std::env::var_os(name).is_none())
+}
+
+fn phase_signature<M: Module>(module: &M) -> Signature {
+    let mut signature = module.make_signature();
+    signature.params = vec![AbiParam::new(types::I64); 3];
+    signature.returns = vec![AbiParam::new(types::I64); 2];
+    signature
+}
+
+fn declare_phase<M: Module>(
+    module: &mut M,
+    symbol: &str,
+    signature: &Signature,
+) -> Result<FuncId, NativeCompileError> {
+    let function = module
+        .declare_function(symbol, Linkage::Local, signature)
+        .map_err(backend)?;
+    eprintln!("compact-stage: numeric phase {symbol}");
+    Ok(function)
+}
+
+pub(super) fn declare_refused_general<M: Module>(
+    module: &mut M,
+    header: usize,
+) -> Result<FuncId, NativeCompileError> {
+    let signature = phase_signature(module);
+    // The retained vector and the root still use the original module IDs.
+    // Reserve the same imports and local declaration as phase_ir.
+    ArrayImports::declare(module, false)?;
+    let symbol = format!("mech_compact_numeric_{header}");
+    let function = declare_phase(module, &symbol, &signature)?;
+    eprintln!("compact-stage: skipped general numeric SSA {symbol}");
+    Ok(function)
+}
+
+fn entry_bounds(proof: &Proof, bounds: &[(usize, u64)]) -> Vec<(usize, u64, bool)> {
+    bounds
+        .iter()
+        .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
+        .collect()
+}
+
+pub(super) fn refused_general_bounds(
+    code: CodePlan<'_>,
+    region: &Region,
+    private: &PrivatePhase,
+) -> Option<Vec<(usize, u64, bool)>> {
+    let proof = region.numeric.as_ref()?;
+    let bounds = numeric_compact::private_checked_child_bounds(code, region, private)?;
+    Some(entry_bounds(proof, &bounds))
+}
+
 fn prepare_impl<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
@@ -494,9 +570,7 @@ fn prepare_impl<M: Module>(
         .ok_or_else(|| backend("phase lacks checked numeric proof"))?;
     let controls = CompilationControls::new(OptimizationOptions::default());
     let symbol = format!("mech_compact_numeric_{header}{suffix}");
-    let mut signature = module.make_signature();
-    signature.params = vec![AbiParam::new(types::I64); 3];
-    signature.returns = vec![AbiParam::new(types::I64); 2];
+    let signature = phase_signature(module);
     let error_origin_base = bodies.is_some().then_some(header);
     let (mut context, report) = phase_ir(
         module,
@@ -512,10 +586,7 @@ fn prepare_impl<M: Module>(
         false,
         error_origin_base,
     )?;
-    let function = module
-        .declare_function(&symbol, Linkage::Local, &signature)
-        .map_err(backend)?;
-    eprintln!("compact-stage: numeric phase {symbol}");
+    let function = declare_phase(module, &symbol, &signature)?;
     if let Err(error) = context.verify(module.isa()) {
         if let Some(path) = std::env::var_os("MECH_COMPACT_FAILURE_DIR") {
             let root = std::path::PathBuf::from(path);
@@ -540,26 +611,15 @@ fn prepare_impl<M: Module>(
     if defer_general
         && !pack_input
         && bodies.is_none()
-        && std::env::var_os("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS").is_none()
+        && !general_ir_observed()
         && vectors.is_none()
         && no_growth.is_none()
         && literal_views.is_empty()
         && !possible_histogram
-        && [
-            "MECH_INSPECT_PHASE_CLIF",
-            "MECH_INSPECT_PHASE_VCODE",
-            "MECH_COMPACT_FAILURE_DIR",
-        ]
-        .iter()
-        .all(|name| std::env::var_os(name).is_none())
     {
         let input = SummaryInput {
             function,
-            entry_bounds: report
-                .phase_entry_bounds
-                .iter()
-                .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
-                .collect(),
+            entry_bounds: entry_bounds(proof, &report.phase_entry_bounds),
             header,
             exit: region.tail.exit(),
             symbol,
@@ -1187,11 +1247,7 @@ fn prepare_impl<M: Module>(
         phase_layout::apply(&mut context, &symbol).map_err(backend)?;
     }
     prepare_body(module.isa(), &mut context)?;
-    let entry_bounds = report
-        .phase_entry_bounds
-        .iter()
-        .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
-        .collect::<Vec<_>>();
+    let entry_bounds = entry_bounds(proof, &report.phase_entry_bounds);
     Ok(General::Ready(finish_preparation(
         context,
         &report,

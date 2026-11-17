@@ -705,6 +705,10 @@ pub(super) fn define<M: Module>(
     let pool = pool.filter(|_| !share_phase_bodies && (!inlining || inline_symbols.is_some()));
     let compare_vector_ir =
         !observe && std::env::var_os("MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR").is_some();
+    let skip_refused_general_ssa = !observe
+        && !compare_vector_ir
+        && std::env::var_os("MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA").is_some()
+        && function::refused_general_ssa_unobserved();
     // Selected LLVM exports read the verified IR on the coordinator. Keep all
     // variants of those phases there while other phases can use the workers.
     let exported_phases = std::env::var_os("MECH_COMPACT_DUMP_LLVM_DIRECTORY")
@@ -985,38 +989,59 @@ pub(super) fn define<M: Module>(
         let omit_general = refuse_general.contains(&header)
             && !share_phase_bodies
             && std::env::var_os("MECH_COMPACT_KEEP_REFUSED_PHASE_CODE").is_none();
-        let ready = function::prepare_general(
-            module,
-            prepared,
-            id,
-            observe,
-            input_words,
-            output_words,
-            fixed_count,
-            selected_output.as_ref(),
-            false,
-            None,
-            private.as_ref(),
-            None,
-            &BTreeMap::new(),
-            &mut dense_tables,
-            bodies.as_deref_mut(),
-            "",
-            pool.is_some() || omit_general,
-        )?;
-        let general_declaration = ready.function();
-        let entry_bounds = ready.entry_bounds().to_vec();
-        let vector_contract = if std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some() {
-            VectorContract::additional(proof, &entry_bounds)
+        let vector_fast = std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some();
+        let source_admission = if skip_refused_general_ssa && omit_general && vector_fast {
+            private
+                .as_ref()
+                .and_then(|private| {
+                    function::refused_general_bounds(CodePlan::Program(prepared), region, private)
+                })
+                .and_then(|bounds| {
+                    VectorContract::additional(proof, &bounds).map(|contract| (bounds, contract))
+                })
         } else {
             None
         };
+        let (ready, general_declaration, entry_bounds, vector_contract) =
+            if let Some((bounds, contract)) = source_admission {
+                let declaration = function::declare_refused_general(module, header)?;
+                (None, declaration, bounds, Some(contract))
+            } else {
+                let ready = function::prepare_general(
+                    module,
+                    prepared,
+                    id,
+                    observe,
+                    input_words,
+                    output_words,
+                    fixed_count,
+                    selected_output.as_ref(),
+                    false,
+                    None,
+                    private.as_ref(),
+                    None,
+                    &BTreeMap::new(),
+                    &mut dense_tables,
+                    bodies.as_deref_mut(),
+                    "",
+                    pool.is_some() || omit_general,
+                )?;
+                let declaration = ready.function();
+                let bounds = ready.entry_bounds().to_vec();
+                let contract = if vector_fast {
+                    VectorContract::additional(proof, &bounds)
+                } else {
+                    None
+                };
+                (Some(ready), declaration, bounds, contract)
+            };
         let pack_input = compact_packet
             && refuse_general.contains(&header)
             && std::env::var_os("MECH_COMPACT_PACK_PHASE_INPUTS").is_some();
         let (general, fast) = if omit_general && let Some(contract) = vector_contract.as_ref() {
-            // The verified general IR supplied the unchanged entry bounds.
-            // No general code or cleanup result is needed for this admission.
+            let skipped_general_ssa = ready.is_none();
+            // The source proof or the verified general IR supplied the same
+            // bounds. No general code or cleanup result is needed here.
             drop(ready);
             let fast = function::prepare(
                 module,
@@ -1036,6 +1061,11 @@ pub(super) fn define<M: Module>(
                 None,
                 "_vector",
             )?;
+            if skipped_general_ssa && fast.entry_bounds() != entry_bounds.as_slice() {
+                return Err(backend(
+                    "refused phase source bounds differ from its vector body",
+                ));
+            }
             let fast = if let Some(pool) = pool {
                 fast.start(pool)?.finish(module)?
             } else {
@@ -1043,7 +1073,9 @@ pub(super) fn define<M: Module>(
             };
             (None, Some(fast))
         } else if let (Some(pool), Some(contract)) = (pool, vector_contract.as_ref()) {
-            let mut general = ready.start(pool, compare_vector_ir && !pack_input)?;
+            let mut general = ready
+                .expect("a compared phase needs its general body")
+                .start(pool, compare_vector_ir && !pack_input)?;
             let mut recorded = pool.record(module)?;
             let fast = function::prepare(
                 &mut recorded,
@@ -1071,7 +1103,9 @@ pub(super) fn define<M: Module>(
             let fast = fast?.finish(module, &context)?;
             (Some(general), Some(fast))
         } else {
-            let general = ready.define(module, bodies.as_deref_mut())?;
+            let general = ready
+                .expect("a retained phase needs its general body")
+                .define(module, bodies.as_deref_mut())?;
             let fast = if let Some(contract) = vector_contract.as_ref() {
                 Some(function::define(
                     module,
