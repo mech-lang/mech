@@ -9,7 +9,12 @@ use crate::native_artifact::{
     program::codegen::{numeric_compact, wide_equal},
 };
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
-use cranelift_codegen::{Context, ir::Signature, isa::TargetIsa};
+use cranelift_codegen::{
+    Context,
+    ir::{self, Signature},
+    isa::TargetIsa,
+};
+use std::sync::mpsc;
 
 pub(super) struct Composed {
     pub function: FuncId,
@@ -59,13 +64,21 @@ pub(super) struct DeferredGeneral {
     private: bool,
     input: SummaryInput,
 }
-pub(super) enum GeneralPending {
+pub(super) struct GeneralPending {
+    job: GeneralJob,
+    prepared_ir: Option<mpsc::Receiver<ir::Function>>,
+}
+enum GeneralJob {
     Ready(Pending),
     Deferred {
         ticket: super::super::compile_jobs::Ticket<(Context, PhaseCleanup)>,
         report: std::sync::Arc<numeric_compact::Report>,
         input: SummaryInput,
     },
+}
+pub(super) enum VectorCompilation {
+    Equivalent(Prepared),
+    Pending(Pending),
 }
 impl General {
     pub(super) fn function(&self) -> FuncId {
@@ -93,9 +106,23 @@ impl General {
     pub(super) fn start(
         self,
         pool: &super::super::compile_jobs::Pool,
+        compare_vector_ir: bool,
     ) -> Result<GeneralPending, NativeCompileError> {
-        match self {
-            Self::Ready(ready) => ready.start(pool).map(GeneralPending::Ready),
+        let (sender, prepared_ir) = if compare_vector_ir {
+            let (sender, receiver) = mpsc::channel();
+            (Some(sender), Some(receiver))
+        } else {
+            (None, None)
+        };
+        let job = match self {
+            Self::Ready(ready) => {
+                if let Some(sender) = sender
+                    && !ready.context.want_disasm
+                {
+                    let _ = sender.send(ready.context.func.clone());
+                }
+                GeneralJob::Ready(ready.start(pool)?)
+            }
             Self::Deferred(ready) => {
                 let DeferredGeneral {
                     mut context,
@@ -123,16 +150,22 @@ impl General {
                         true,
                     )?;
                     prepare_body(isa, &mut context)?;
+                    // Send the input before lowering so different vector bodies can still
+                    // start machine compilation while the general job is running.
+                    if let Some(sender) = sender {
+                        let _ = sender.send(context.func.clone());
+                    }
                     let context = super::super::compile_jobs::compile(context, isa)?;
                     Ok((context, cleanup))
                 })?;
-                Ok(GeneralPending::Deferred {
+                GeneralJob::Deferred {
                     ticket,
                     report,
                     input,
-                })
+                }
             }
-        }
+        };
+        Ok(GeneralPending { job, prepared_ir })
     }
 }
 impl DeferredGeneral {
@@ -164,10 +197,31 @@ impl DeferredGeneral {
     }
 }
 impl GeneralPending {
-    pub(super) fn finish<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
-        match self {
-            Self::Ready(pending) => pending.finish(module),
-            Self::Deferred {
+    pub(super) fn start_vector(
+        &mut self,
+        vector: Prepared,
+        pool: &super::super::compile_jobs::Pool,
+    ) -> Result<VectorCompilation, NativeCompileError> {
+        // Compare the whole function, including its signature, effects, source locations,
+        // external names, and target layout hints. Both jobs use the same ISA and control plane.
+        if !vector.context.want_disasm
+            && let Some(receiver) = self.prepared_ir.take()
+            && receiver
+                .recv()
+                .is_ok_and(|general| general == vector.context.func)
+        {
+            return Ok(VectorCompilation::Equivalent(vector));
+        }
+        vector.start(pool).map(VectorCompilation::Pending)
+    }
+
+    pub(super) fn finish<M: Module>(
+        self,
+        module: &mut M,
+    ) -> Result<(Compiled, Context), NativeCompileError> {
+        match self.job {
+            GeneralJob::Ready(pending) => pending.finish_with_context(module),
+            GeneralJob::Deferred {
                 ticket,
                 report,
                 input,
@@ -184,8 +238,27 @@ impl GeneralPending {
                     None,
                 );
                 super::super::compile_jobs::publish(module, details.function, &context)?;
-                details.finish(context)
+                Ok((details.finish(&context)?, context))
             }
+        }
+    }
+}
+
+impl VectorCompilation {
+    pub(super) fn finish<M: Module>(
+        self,
+        module: &mut M,
+        general: &Context,
+    ) -> Result<Compiled, NativeCompileError> {
+        match self {
+            Self::Equivalent(vector) => {
+                // Keep the vector's own guard and cleanup metadata. Its declaration was
+                // replayed for stable IDs, and the identical body will never be selected.
+                let compiled = vector.details.finish(general)?;
+                eprintln!("compact vector code reused: {}", compiled.summary["symbol"]);
+                Ok(compiled)
+            }
+            Self::Pending(pending) => pending.finish(module),
         }
     }
 }
@@ -213,7 +286,7 @@ impl Prepared {
             bodies,
         )?;
         self.details.function = function;
-        let mut compiled = self.details.finish(self.context)?;
+        let mut compiled = self.details.finish(&self.context)?;
         compiled.summary["symbol"] = serde_json::json!(target);
         Ok(compiled)
     }
@@ -229,13 +302,21 @@ impl Prepared {
 }
 impl Pending {
     pub(super) fn finish<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
+        self.finish_with_context(module)
+            .map(|(compiled, _)| compiled)
+    }
+
+    fn finish_with_context<M: Module>(
+        self,
+        module: &mut M,
+    ) -> Result<(Compiled, Context), NativeCompileError> {
         let context = self.ticket.wait()?;
         super::super::compile_jobs::publish(module, self.details.function, &context)?;
-        self.details.finish(context)
+        Ok((self.details.finish(&context)?, context))
     }
 }
 impl Details {
-    fn finish(self, context: Context) -> Result<Compiled, NativeCompileError> {
+    fn finish(self, context: &Context) -> Result<Compiled, NativeCompileError> {
         let compiled = context
             .compiled_code()
             .ok_or_else(|| backend("compact numeric phase lacks code"))?;

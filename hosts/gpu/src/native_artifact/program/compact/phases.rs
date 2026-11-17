@@ -703,6 +703,8 @@ pub(super) fn define<M: Module>(
     let inlining = std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").is_some();
     let inline_symbols = std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok();
     let pool = pool.filter(|_| !share_phase_bodies && (!inlining || inline_symbols.is_some()));
+    let compare_vector_ir =
+        !observe && std::env::var_os("MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR").is_some();
     // Selected LLVM exports read the verified IR on the coordinator. Keep all
     // variants of those phases there while other phases can use the workers.
     let exported_phases = std::env::var_os("MECH_COMPACT_DUMP_LLVM_DIRECTORY")
@@ -1041,7 +1043,7 @@ pub(super) fn define<M: Module>(
             };
             (None, Some(fast))
         } else if let (Some(pool), Some(contract)) = (pool, vector_contract.as_ref()) {
-            let general = ready.start(pool)?;
+            let mut general = ready.start(pool, compare_vector_ir && !pack_input)?;
             let mut recorded = pool.record(module)?;
             let fast = function::prepare(
                 &mut recorded,
@@ -1061,12 +1063,12 @@ pub(super) fn define<M: Module>(
                 bodies.as_deref_mut(),
                 "_vector",
             )
-            .and_then(|ready| ready.start(pool));
+            .and_then(|ready| general.start_vector(ready, pool));
             // Complete and publish the earlier function before replaying ANY
             // later declaration/data/function event, including an error.
-            let general = general.finish(module)?;
+            let (general, context) = general.finish(module)?;
             recorded.replay(module)?;
-            let fast = fast?.finish(module)?;
+            let fast = fast?.finish(module, &context)?;
             (Some(general), Some(fast))
         } else {
             let general = ready.define(module, bodies.as_deref_mut())?;
