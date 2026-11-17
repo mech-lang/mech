@@ -15,6 +15,8 @@ struct ObjectTail {
     code_bytes: usize,
     reference_code_bytes: usize,
     alignment: u8,
+    #[serde(default)]
+    nop_fill: bool,
 }
 
 pub(super) fn profiles() -> Option<String> {
@@ -81,10 +83,15 @@ pub(super) fn pad_checked_root_tail(
                 && alignment <= usize::from(tail.alignment)
         })
         .ok_or_else(|| io::Error::other("object tail profile does not match the checked root"))?;
-    // Preserve the object's normal zero fill to the next function boundary.
-    // Apply the measured padding after that fill, beyond the compiled buffer.
-    let extent = code.len().next_multiple_of(alignment);
-    append_padding(code, extent, padding);
+    // Round the compiled code to the function extent before adding the
+    // measured tail. A profile can fill the rounded suffix with NOPs too.
+    let bytes = code.len();
+    let extent = bytes.next_multiple_of(alignment);
+    if tail.nop_fill {
+        append_padding(code, bytes, padding + (extent - bytes));
+    } else {
+        append_padding(code, extent, padding);
+    }
     Ok(())
 }
 
@@ -123,6 +130,7 @@ mod tests {
             code_bytes: 496,
             reference_code_bytes: 592,
             alignment: 64,
+            nop_fill: false,
         };
         assert_eq!(tail.padding(496), Some(32));
         assert_eq!(tail.padding(512), None);

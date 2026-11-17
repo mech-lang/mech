@@ -1,11 +1,14 @@
 //! These tests inspect Apple ARM64 machine buffers without executing them, so
 //! the maintained Linux backend job exercises the pass as well as Apple hosts.
 
-use super::{B, Branch, apply};
+use super::{B, Branch, apply, share_frame_copies};
 use crate::binemit::Reloc;
 use crate::ir::{ExternalName, LibCall, TrapCode};
 use crate::isa::aarch64::inst::Inst;
-use crate::machinst::{MachBuffer, MachBufferFinalized, Stencil, VCodeConstants};
+use crate::isa::unwind::UnwindInst;
+use crate::machinst::{
+    MachBuffer, MachBufferFinalized, MachBufferFrameLayout, Stencil, VCodeConstants,
+};
 use alloc::vec::Vec;
 use cranelift_control::ControlPlane;
 
@@ -131,4 +134,59 @@ fn cold_tail_branches_retain_the_signed_arm64_limits() {
         assert_eq!(branch.encode(word, 0, limit), None);
         assert_eq!(branch.encode(word, limit + 1, 0), None);
     }
+}
+
+
+#[test]
+fn exact_frame_copies_share_a_fallthrough_with_recorded_control_flow() {
+    let mut buffer = MachBuffer::<Inst>::new();
+    buffer.set_frame_layout(MachBufferFrameLayout {
+        frame_to_fp_offset: 32,
+        stackslots: Default::default(),
+    });
+    buffer.put4(0xd503_201f); // Keep the prologue offset and its unwind information.
+    buffer.add_unwind(UnwindInst::StackAlloc { size: 32 });
+    buffer.put4(0xb400_00a0); // cbz x0, copy2
+    let copies = [0xf940_03e1, 0xf900_07e1, 0xf940_0be2];
+    for word in copies {
+        buffer.put4(word);
+    }
+    buffer.put4(0x1400_0004); // b continuation
+    for word in copies {
+        buffer.put4(word);
+    }
+    buffer.add_reloc(Reloc::Arm64Call, &ExternalName::LibCall(LibCall::Memset), 0);
+    buffer.put4(0x9400_0000);
+    buffer.add_try_call_site(Some(96), core::iter::empty());
+    buffer.put4(0xd65f_03c0);
+    let original = buffer.finish(&VCodeConstants::default(), &mut ControlPlane::default());
+
+    let mut out_of_frame = original.clone();
+    out_of_frame.frame_layout.as_mut().unwrap().frame_to_fp_offset = 16;
+    let before = out_of_frame.clone();
+    assert_eq!(share_frame_copies(&mut out_of_frame, 40..44), Some(0));
+    assert_eq!(out_of_frame, before);
+
+    let mut candidate = original.clone();
+    assert_eq!(share_frame_copies(&mut candidate, 40..44), Some(12));
+    let expected = [
+        0xd503_201f,
+        0xb400_0040,
+        0x1400_0001,
+        copies[0],
+        copies[1],
+        copies[2],
+        0x9400_0000,
+        0xd65f_03c0,
+    ];
+    let expected = expected
+        .into_iter()
+        .flat_map(u32::to_le_bytes)
+        .collect::<Vec<_>>();
+    assert_eq!(candidate.data(), expected);
+    let mut metadata = original;
+    metadata.data = candidate.data.clone();
+    metadata.relocs[0].offset = 24;
+    metadata.call_sites[0].ret_addr = 28;
+    assert_eq!(candidate, metadata);
 }

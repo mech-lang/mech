@@ -106,8 +106,8 @@ impl TargetIsa for AArch64Backend {
             ctrl_plane,
             cold_epilogue_branch_range,
         );
-        if func.aarch64_share_cold_tails
-            && cold_epilogue_branch_range.is_some()
+        if cold_epilogue_branch_range.is_some()
+            && (func.aarch64_share_cold_tails || func.aarch64_share_frame_copies)
             && !want_disasm
             && !self.flags.machine_code_cfg_info()
             && !self.isa_flags.use_bti()
@@ -116,7 +116,19 @@ impl TargetIsa for AArch64Backend {
             && let Some(cold) = emit_result.cold_code.clone()
         {
             // Unsupported metadata/layouts leave the emitted buffer unchanged.
-            cold_tails::apply(&mut emit_result.buffer, cold);
+            let cold_removed = if func.aarch64_share_cold_tails {
+                cold_tails::apply(&mut emit_result.buffer, cold.clone())
+            } else {
+                Some(0)
+            };
+            if func.aarch64_share_frame_copies
+                && func.dynamic_stack_slots.is_empty()
+                && let Some(cold_removed) = cold_removed
+                && let Ok(cold_removed) = u32::try_from(cold_removed)
+                && let Some(end) = cold.end.checked_sub(cold_removed)
+            {
+                cold_tails::share_frame_copies(&mut emit_result.buffer, cold.start..end);
+            }
         }
         if !func.aarch64_block_layout.is_empty() {
             if want_disasm

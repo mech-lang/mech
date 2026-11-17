@@ -42,6 +42,7 @@ parser.add_argument(
         'fresh-owner-counts-cleanup', 'fresh-owner-counts-cold-tails',
         'fresh-owner-counts-cold-tails-paired-spills',
         'fresh-owner-counts-cold-tails-zero-branches',
+        'frame-copies',
     ],
     default='baseline',
 )
@@ -109,7 +110,8 @@ assert sha(here/'program.mec')==recipe['source_sha256']
 flags=dict(recipe['flags'])
 variant_key=args.variant.replace('-','_')
 paired_spills=args.variant=='fresh-owner-counts-cold-tails-paired-spills'
-zero_branches=args.variant=='fresh-owner-counts-cold-tails-zero-branches'
+frame_copies = args.variant == 'frame-copies'
+zero_branches = args.variant == 'fresh-owner-counts-cold-tails-zero-branches' or frame_copies
 fresh_owner_cold_tails=args.variant=='fresh-owner-counts-cold-tails' or paired_spills or zero_branches
 profiles=recipe.get(variant_key+'_profiles',recipe['profiles'])
 flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in profiles)
@@ -127,7 +129,10 @@ if paired_spills:
     flags['MECH_COMPACT_PAIR_REGISTER_SPILLS'] = '1'
 if zero_branches:
     flags['MECH_COMPACT_BRANCH_ON_ZERO'] = '1'
-    flags['MECH_COMPACT_ROOT_TAIL_PROFILE'] = str(here / recipe['zero_branches_tail_profile'])
+    tail_profile = 'frame_copies_tail_profile' if frame_copies else 'zero_branches_tail_profile'
+    flags['MECH_COMPACT_ROOT_TAIL_PROFILE'] = str(here / recipe[tail_profile])
+if frame_copies:
+    flags['MECH_COMPACT_SHARE_FRAME_COPIES'] = '1'
 assert not any('LLVM' in key for key in flags)
 source = here / 'program.mec'
 frontend = out / 'frontend'

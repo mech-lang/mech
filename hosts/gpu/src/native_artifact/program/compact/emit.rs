@@ -491,6 +491,8 @@ fn define_entry<M: Module>(
         outline_allowed && std::env::var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS").is_some();
     context.func.aarch64_share_cold_tails =
         outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_COLD_TAILS").is_some();
+    context.func.aarch64_share_frame_copies =
+        outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_FRAME_COPIES").is_some();
     context.func.aarch64_branch_on_zero = outline_allowed
         && module.isa().name() == "aarch64"
         && std::env::var_os("MECH_COMPACT_BRANCH_ON_ZERO").is_some();

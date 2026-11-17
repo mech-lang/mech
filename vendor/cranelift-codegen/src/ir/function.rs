@@ -192,6 +192,10 @@ pub struct FunctionStencil {
     /// Normal-path instructions and the function's register allocation stay fixed.
     pub aarch64_share_cold_tails: bool,
 
+    /// Reuse identical sets of AArch64 frame copies with a common continuation.
+    #[cfg_attr(feature = "enable-serde", serde(skip))]
+    pub aarch64_share_frame_copies: bool,
+
     /// Allow AArch64 to forward known values held in private spill slots.
     pub forward_spill_reloads: bool,
 
@@ -246,6 +250,7 @@ impl FunctionStencil {
         self.preferred_fallthrough = None;
         self.share_cold_epilogues = false;
         self.aarch64_share_cold_tails = false;
+        self.aarch64_share_frame_copies = false;
         self.forward_spill_reloads = false;
         self.aarch64_branch_on_zero = false;
         self.aarch64_block_layout.clear();
@@ -445,6 +450,7 @@ impl Function {
                 preferred_fallthrough: None,
                 share_cold_epilogues: false,
                 aarch64_share_cold_tails: false,
+                aarch64_share_frame_copies: false,
                 forward_spill_reloads: false,
                 aarch64_branch_on_zero: false,
                 aarch64_block_layout: Vec::new(),

@@ -5,7 +5,7 @@
   "files": [
     {
       "path": ".github/workflows/ci-native-plan.yml",
-      "sha256": "cbcdcbf79138f983ebc489399fa4b68f7cd7258a8ab72d33eda66fb4978c7afc",
+      "sha256": "f1c98f8ceb9bd57d9e7743c60ea3f84f57627167254e705d95a9c4bbfd839a14",
       "bytes": 30431
     },
     {
@@ -23559,6 +23559,11 @@
       "bytes": 1768
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/checked-root-frame-copies.json",
+      "sha256": "6f171c8f976a228036e15c6190ed35c89b05de1895da7b91c184a3df580d16a2",
+      "bytes": 98
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/checked-root-zero-branches.json",
       "sha256": "0d3f42785243492316b5ae0cae6926f51f3df0274c996b4df45eb0a760069f92",
       "bytes": 78
@@ -23620,13 +23625,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "ea7ee105eec30c8b0e95d0720008c90296332399b77dac7bca20fbf58e23e9ae",
-      "bytes": 11325
+      "sha256": "b3f53823166fbc256fb78ef9da260e61e1519f37c6c35e116dcebc38ae04bbeb",
+      "bytes": 11564
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
-      "sha256": "b10f205b3c3438b195f7c34d1a6b29274e5d8832d8558aa0c236d261e0b52420",
-      "bytes": 8727
+      "sha256": "401d5b5c9bd32c858a56e82f7239b6e89bdc939d141d95382afbf0c295e30df3",
+      "bytes": 9003
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/replay.py",
@@ -23970,8 +23975,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
-      "sha256": "ceeaa218da9771ffe3975ec896444d3920197c34f7d90c9f677f88c0afb151ab",
-      "bytes": 80362
+      "sha256": "67a34efd8457be49e3423a6be537278dbc0227c5fd63456311787388937d328f",
+      "bytes": 80498
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs",
@@ -24060,8 +24065,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs",
-      "sha256": "a16795f0e55d3c6b41deff088420c581ff836ca9d1eb0f0be4e4c1fbfa466665",
-      "bytes": 4219
+      "sha256": "46971269b7835a2416811390dc1a11bbc98c262a2ebccc504c1baef4b67151e9",
+      "bytes": 4415
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout_tests.rs",
@@ -24335,8 +24340,8 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/ir/function.rs",
-      "sha256": "14131a6d5065ca66697a01797c112b136150280127eb3a375fe76590a3f59d16",
-      "bytes": 20201
+      "sha256": "84a7be36b7611b39aeb2d9236ce6787692b1885f1485172cdfbda981a42368dd",
+      "bytes": 20480
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/abi.rs",
@@ -24354,14 +24359,19 @@
       "bytes": 11157
     },
     {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/cold_tails/frame_copies.rs",
+      "sha256": "3676e99987cfc132f9c7959028b539cfc5b50df2bb6e2e36b0cbc7d7d13b25eb",
+      "bytes": 4433
+    },
+    {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/cold_tails/mod.rs",
-      "sha256": "2a03505969616526b9e8ef37d20d1e4cbe8f5b7078b7e22e1315267ff083a1a4",
-      "bytes": 9939
+      "sha256": "2c04beb6dc423ecd386a4373d683651deb522812258ceba250b6597dfd3de83b",
+      "bytes": 12087
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/cold_tails/tests.rs",
-      "sha256": "6f5a7d896fc9593ac5aea0e83ceab68203b785c34cb0a5eb650af59d1090b7e6",
-      "bytes": 5104
+      "sha256": "842136fc44caf988e2c777313622c19eff3a8c3e54d9bf0b6ec40e234d30cbc5",
+      "bytes": 7089
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/inst/mod.rs",
@@ -24400,8 +24410,8 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/mod.rs",
-      "sha256": "982a8c7f86338f41b15861d21c35c33b093dca6da24ed022048e6dbd7a8a7cce",
-      "bytes": 11553
+      "sha256": "94812b6b082fb015a34556710bcb15f27d2b02c041344adb9ec14a9b5aee5eed",
+      "bytes": 12144
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/spill_forwarding.rs",
