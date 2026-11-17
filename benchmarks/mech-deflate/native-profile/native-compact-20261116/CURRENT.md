@@ -1,46 +1,45 @@
 # PR #993 current status
 
-Maintained compiler source `204656da92013ce24dabb115685a75fc930c7c46` is on PR #993, stacked on #973 at
-`9087b1f07727a9bfcb7c09059f48edaca6dc2301`. These results use Apple M1, macOS 15.6.1 and arm64.
+Maintained compiler source 00bb25b9e936efeab666e1738007ff3707ae1050 is on PR #993 stacked on #973.
+These measurements use Apple M1, macOS 15.6.1 and arm64.
 [Machine-readable scorecard](scorecard.json)
 
 ## Current matched deployment build
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.57808 s | 2.99395 s | 0.48620 s |
-| Source through strip | 2.58878 s | 3.00439 s | 0.49685 s |
+| Source through final link | 2.54104 s | 2.98847 s | 0.48068 s |
+| Source through strip | 2.55172 s | 2.99894 s | 0.49114 s |
 | Encoder text | 71,192 B | 57,696 B | 37,080 B |
 | Stripped executable | 292,568 B | 191,912 B | 155,752 B |
 
-Mech saves a paired **33.8 ms** through final linking and builds
-in **0.861× Roc** and **5.297× libdeflate**
-time. Its encoder text is **1.234× Roc** and
-**1.920× libdeflate**. Compilers, allocator and fixed
-deployment support are prebuilt. The identical worker carries the existing
-**81/81 Roc** and **61/81 libdeflate** runtime results in both full orders.
-[Reused flow analyses and all matched builds](evidence/verified-flowgraphs/README.md) ·
+Mech saves a paired **29.3 ms** through final linking
+and builds in **0.850× Roc** and **5.290× libdeflate**
+time. Its encoder text is **1.234× Roc** and **1.920× libdeflate**.
+Compilers, allocator and fixed deployment support are prebuilt.
+The identical worker carries **81/81 Roc** and **61/81 libdeflate** in
+both full orders. The latest scorer high-water result is 62/81 in the
+forward order, with 62/81 in both orders required for its release.
+[Matched build observations](evidence/sealed-ascii-literal-miss/README.md) ·
 [Runtime qualification](evidence/frame-copy-v2/README.md)
 
-The preceding dedicated parser-phase comparison reports **813 ms Mech**
+An earlier dedicated parser-phase comparison reported **813 ms Mech**
 and **3 ms Roc**. Mech's interval includes indexing and its strict check.
-[Parser-phase plan and observations](evidence/sealed-ascii-graphemes/README.md)
+[Earlier Mech and Roc parser-phase observations](evidence/sealed-ascii-graphemes/README.md)
 
 ## Whole-build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
-| Parser | 0.815 s | 0.75 | 0.35 | 0.13 |
+| Parser | 0.786 s | 0.75 | 0.35 | 0.13 |
 | Native preparation through object | 1.386 s | 0.95 | 0.48 | 0.22 |
 | Source semantic frontend | 0.233 s | 0.18 | 0.09 | 0.04 |
-| Catalog initialization | 0.066 s | 0.05 | 0.02 | 0.01 |
-| Artifact, encoding, link and other work | 0.074 s | 0.07 | 0.06 | 0.05 |
-| **Total** | 2.578 s | 2.00 | 1.00 | 0.45 |
+| Catalog initialization | 0.064 s | 0.05 | 0.02 | 0.01 |
+| Artifact, encoding, link and other work | 0.073 s | 0.07 | 0.06 | 0.05 |
+| **Total** | 2.541 s | 2.00 | 1.00 | 0.45 |
 
-Mech needs **2.128 s**
-less elapsed time to reach the 0.45 s working budget. The measured compile
-change carries over the existing score. A runtime gain is needed to restore
-62/81 against libdeflate.
+Mech needs **2.091 s** less elapsed time to reach the
+0.45 s working budget. The phase medians come from the same eight trials.
 
 ## Which build to use
 
@@ -128,6 +127,19 @@ is 63/81 while holding 81/81 Roc.
 | Full | Reverse | 81/61 | 81/61 | 1.0418× | 1.0055× |
 
 [Raw runtime observations, checked stack and compiler patch](evidence/caller-address-scorer/README.md)
+
+## Scorer and parser experiments
+
+The direct scorer call arguments emit **71,000 B** and pass the linked
+checked-failure probes. Peak stack is **5,296 B**, 16 B above the earlier
+bound. Both conditional item-selection variants lost peer wins. The
+current deployment recipe uses the qualified 71,192 B worker.
+[Scorer timing, counter trace and checked stack](evidence/ordered-scorer-visit-costs/README.md)
+
+The parser shortcut preserves all three native artifact hashes and passes
+537 syntax tests. Its paired standalone parser saving is
+**28.5 ms**.
+[Parser shortcut and matched final-link results](evidence/sealed-ascii-literal-miss/README.md)
 
 ## Active work
 
