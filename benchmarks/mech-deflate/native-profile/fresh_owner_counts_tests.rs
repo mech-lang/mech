@@ -6,5 +6,5 @@
 
 #[path = "../../../hosts/gpu/src/native_artifact/program/compact/inlining.rs"]
 mod inlining;
-#[path = "../../../hosts/gpu/src/native_artifact/program/compact/owner_counts.rs"]
+#[path = "../../../hosts/gpu/src/native_artifact/program/compact/owner_counts/mod.rs"]
 mod owner_counts;
