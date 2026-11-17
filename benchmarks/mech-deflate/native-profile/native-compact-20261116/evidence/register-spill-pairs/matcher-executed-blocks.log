@@ -1,0 +1,6 @@
+cranelift-width-16-owners-cold prefix-random-1048576 calls 35 instructions 254842426 branches 42272123 stack loads 29824928 stack stores 17876626
+cranelift-width-16-owners-cold prefix-random-4096 calls 1 instructions 856997 branches 129735 stack loads 114268 stack stores 61769
+cranelift-width-16-owners-cold prefix-natural-8192 calls 1 instructions 3496564 branches 632095 stack loads 271712 stack stores 137184
+cranelift-width-16-owners-cold prefix-natural-1024 calls 1 instructions 311958 branches 53762 stack loads 30704 stack stores 16117
+cranelift-width-16-owners-cold 320-overlap calls 1 instructions 67615 branches 13463 stack loads 5509 stack stores 3245
+cranelift-width-16-owners-cold prefix-periodic-1024 calls 1 instructions 215667 branches 41958 stack loads 17899 stack stores 10494

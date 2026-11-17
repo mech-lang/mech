@@ -1,0 +1,196 @@
+{
+  "artifact": "runtime-matchfinder-20261117/pinned",
+  "profile_worker_sha256": "834e2753c60a4ad98fdec393ca5807cabbc26d495e29603febd611494f438f89",
+  "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+  "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+  "link": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/worker-pc-probe.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/runtime-matchfinder-20261117/pinned/pc-profile-worker-resolved",
+    "-C",
+    "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "-C",
+    "link-arg=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/runtime-matchfinder-20261117/pinned/program.o",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+    "--extern",
+    "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+    "--extern",
+    "miniz_oxide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+    "-L",
+    "dependency=/private/tmp/mech-pr973-merged-compression-20261112/reduction-loop-registers-335e58a455/backend",
+    "--remap-path-prefix",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link=/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/terminal-final",
+    "--remap-path-prefix",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/pinned_allocator.rs=/private/tmp/mech-child-prepayment-round163-20261105/pinned_allocator.rs"
+  ],
+  "timed_calls_per_case": 3072,
+  "intervals_us": [
+    277,
+    431
+  ],
+  "llvm_object_sha256": null,
+  "link_provenance": {
+    "cargo_lock_sha256": "5f459d7ee1c728711491a29fa99c60612f70caea56a3e65a86fcb61c8c191e89",
+    "source_names_sha256": "cad4275e3ab75be26a361c4344a15c82de26f4387d73bf6747cee7a695c6b59e",
+    "rebuilt_dependencies": {
+      "mech_engine": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+        "sha256": "cf7c761b1fbdb3d826b5d7567f19826bd0f2760702d8c339d41acc48a531fa72"
+      },
+      "miniz_oxide": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3"
+      },
+      "serde": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+        "sha256": "0fc5a0b797b01f523da9fd29f9184c5daee786ee94473382affda36988699e69"
+      },
+      "serde_json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+        "sha256": "018358533052906b7d779bab7102411044fd334bd97ffc1d53208e02b4f0f26b"
+      }
+    }
+  },
+  "cases": {
+    "prefix-natural-1024": {
+      "total": 6122,
+      "symbols": {
+        "_mech_compact_release_owner": 1,
+        "_mech_compact_writable_scalar_backing": 1,
+        "_mech_compact_numeric_475_vector": 32,
+        "_mech_compact_numeric_3009_no_growth": 41,
+        "_mech_compact_numeric_4173": 2,
+        "_mech_compact_numeric_3447_grouped": 4,
+        "_mech_compact_numeric_3956_vector": 3,
+        "_mech_compact_numeric_6633": 2,
+        "_mech_compact_numeric_5895": 6,
+        "_mech_compact_numeric_3872": 3,
+        "_mech_compact_closed_checked": 29,
+        "_mech_compact_unsigned_dot_product": 1,
+        "_mech_compact_checked_layout_continuation_44070": 6,
+        "libsystem_kernel.dylib __mmap": 147,
+        "libsystem_kernel.dylib __munmap": 5843,
+        "libsystem_platform.dylib _platform_memset": 1
+      },
+      "offsets": {
+        "_mech_compact_release_owner": {
+          "16": 1
+        },
+        "_mech_compact_writable_scalar_backing": {
+          "108": 1
+        },
+        "_mech_compact_numeric_475_vector": {
+          "1024": 31,
+          "2028": 1
+        },
+        "_mech_compact_numeric_3009_no_growth": {
+          "296": 1,
+          "380": 4,
+          "388": 1,
+          "396": 3,
+          "408": 1,
+          "504": 5,
+          "704": 2,
+          "728": 1,
+          "756": 1,
+          "760": 1,
+          "784": 1,
+          "900": 1,
+          "916": 2,
+          "964": 2,
+          "988": 1,
+          "1008": 4,
+          "1016": 1,
+          "1124": 1,
+          "1144": 1,
+          "1148": 2,
+          "1172": 2,
+          "1184": 2,
+          "1268": 1
+        },
+        "_mech_compact_numeric_4173": {
+          "576": 1,
+          "680": 1
+        },
+        "_mech_compact_numeric_3447_grouped": {
+          "116": 1,
+          "120": 1,
+          "280": 1,
+          "484": 1
+        },
+        "_mech_compact_numeric_3956_vector": {
+          "124": 1,
+          "160": 1,
+          "224": 1
+        },
+        "_mech_compact_numeric_6633": {
+          "80": 1,
+          "176": 1
+        },
+        "_mech_compact_numeric_5895": {
+          "96": 1,
+          "136": 1,
+          "156": 1,
+          "160": 1,
+          "188": 1,
+          "200": 1
+        },
+        "_mech_compact_numeric_3872": {
+          "92": 1,
+          "128": 1,
+          "160": 1
+        },
+        "_mech_compact_closed_checked": {
+          "22188": 1,
+          "24164": 1,
+          "24388": 1,
+          "24412": 1,
+          "24856": 1,
+          "26912": 2,
+          "27092": 1,
+          "28940": 1,
+          "29256": 2,
+          "30240": 1,
+          "31268": 1,
+          "37064": 1,
+          "38072": 1,
+          "38460": 1,
+          "38520": 1,
+          "39660": 1,
+          "39728": 2,
+          "39752": 2,
+          "40044": 1,
+          "40616": 2,
+          "40920": 1,
+          "40924": 1,
+          "40928": 2
+        },
+        "_mech_compact_unsigned_dot_product": {
+          "84": 1
+        },
+        "_mech_compact_checked_layout_continuation_44070": {
+          "96": 1,
+          "236": 1,
+          "256": 1,
+          "496": 1,
+          "528": 1,
+          "584": 1
+        }
+      }
+    }
+  }
+}

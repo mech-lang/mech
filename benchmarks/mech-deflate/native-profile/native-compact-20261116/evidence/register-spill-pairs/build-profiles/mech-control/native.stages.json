@@ -1,0 +1,178 @@
+[
+  [
+    0.07914954237639904,
+    "compact-stage: canonical lowering"
+  ],
+  [
+    0.09701908333227038,
+    "compact-stage: preparation blocks=8223 values=5690"
+  ],
+  [
+    0.23613979201763868,
+    "compact-stage: native module"
+  ],
+  [
+    0.2860557083040476,
+    "compact-stage: numeric phase mech_compact_numeric_475"
+  ],
+  [
+    0.31922970805317163,
+    "compact-stage: numeric phase mech_compact_numeric_475_vector"
+  ],
+  [
+    0.4225100423209369,
+    "compact-stage: numeric phase mech_compact_numeric_3009"
+  ],
+  [
+    0.4298324170522392,
+    "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+  ],
+  [
+    0.4457001253031194,
+    "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+  ],
+  [
+    0.4751449581235647,
+    "compact-stage: numeric phase mech_compact_numeric_4173"
+  ],
+  [
+    0.4803888751193881,
+    "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+  ],
+  [
+    0.48633891716599464,
+    "compact-stage: numeric phase mech_compact_numeric_3447"
+  ],
+  [
+    0.4909812081605196,
+    "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+  ],
+  [
+    0.4957712502218783,
+    "compact-stage: numeric phase mech_compact_numeric_3956"
+  ],
+  [
+    0.4970872923731804,
+    "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+  ],
+  [
+    0.5011045420542359,
+    "compact-stage: numeric phase mech_compact_numeric_4879"
+  ],
+  [
+    0.5047882082872093,
+    "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+  ],
+  [
+    0.5081409174017608,
+    "compact-stage: numeric phase mech_compact_numeric_4673"
+  ],
+  [
+    0.5105340420268476,
+    "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+  ],
+  [
+    0.5131236249580979,
+    "compact-stage: numeric phase mech_compact_numeric_6633"
+  ],
+  [
+    0.5156575422734022,
+    "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+  ],
+  [
+    0.5187187921255827,
+    "compact-stage: numeric phase mech_compact_numeric_5895"
+  ],
+  [
+    0.521052417345345,
+    "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+  ],
+  [
+    0.5239375000819564,
+    "compact-stage: numeric phase mech_compact_numeric_3872"
+  ],
+  [
+    0.5259377923794091,
+    "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+  ],
+  [
+    0.5281826253049076,
+    "compact-stage: numeric phase mech_compact_numeric_4799"
+  ],
+  [
+    0.5296275829896331,
+    "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+  ],
+  [
+    0.5314544583670795,
+    "compact-stage: numeric phase mech_compact_numeric_2821"
+  ],
+  [
+    0.5330549171194434,
+    "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+  ],
+  [
+    0.5348456250503659,
+    "compact-stage: numeric phase mech_compact_numeric_8026"
+  ],
+  [
+    0.5360414581373334,
+    "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+  ],
+  [
+    0.5375178749673069,
+    "compact-stage: numeric phase mech_compact_numeric_362"
+  ],
+  [
+    0.5387150831520557,
+    "compact-stage: numeric phase mech_compact_numeric_362_vector"
+  ],
+  [
+    0.540099167264998,
+    "compact-stage: typed layout"
+  ],
+  [
+    0.5401004580780864,
+    "compact-stage: flow proof"
+  ],
+  [
+    0.5424413331784308,
+    "compact-stage: operation recipes"
+  ],
+  [
+    0.7054622923023999,
+    "compact-stage: source CFG"
+  ],
+  [
+    0.7054657503031194,
+    "compact-stage: source site 0/8223"
+  ],
+  [
+    0.7553731249645352,
+    "compact-stage: source site 4096/8223"
+  ],
+  [
+    0.8696307921782136,
+    "compact-stage: source site 8192/8223"
+  ],
+  [
+    0.8932426669634879,
+    "compact-stage: finalize SSA"
+  ],
+  [
+    0.922189500182867,
+    "compact-stage: compact values before=1399985"
+  ],
+  [
+    0.9343145419843495,
+    "compact-stage: CFG cleanup"
+  ],
+  [
+    1.5707062920555472,
+    "compact-stage: machine code"
+  ],
+  [
+    1.6909242919646204,
+    "compact-stage: machine code complete"
+  ]
+]

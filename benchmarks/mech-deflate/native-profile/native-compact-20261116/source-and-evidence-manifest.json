@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "5886677ccd5b696d8b885e71c2acd7829e0933243a5823a3ca58455d231b6fb6",
-      "bytes": 18896
+      "sha256": "637370b18079c7f8e6929ee58df5699fefb697dedd0ccb0ab0a7d438f36e2a76",
+      "bytes": 19931
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/baseline/checked-failures.json",
@@ -12442,6 +12442,1976 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/qualification-v1/tests.log",
       "sha256": "9027727bd5caf3dfc53ba7707b128dd2e2c1c68195458214aa2fbd27de294273",
       "bytes": 119
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/README.md",
+      "sha256": "6d83493e00221a12c6380de5c3afe019a660c636836a37b7d3bd18a0418820c7",
+      "bytes": 2937
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/alignment_modulo_64/exact-calls.json.gz",
+      "sha256": "14aaac12631613c9c4f666b269df137f48a280b9c9f6d59274c4e714da2c94c9",
+      "bytes": 307
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/alignment_modulo_64/focused-policy.json",
+      "sha256": "f57b16ce8b577fe9efb8d3a278d1454e9d5827017aad7b1055beb2d4fa3ed484",
+      "bytes": 8816
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/alignment_modulo_64/plan.json",
+      "sha256": "8132a3bcbcabae7732ef624e318da9ac480974351a65f0503e9d1d7b2a8fa4bb",
+      "bytes": 831
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/alignment_modulo_64/receipt.json",
+      "sha256": "92a828d1091a6007cd00893756e5d39ab7ba5dbd67b223e64de2ff0075a69346",
+      "bytes": 1226
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/alignment_modulo_64/runtime.json",
+      "sha256": "475a64a4ba917394cecdfc2fb1f0736a33ec782a801f7ae527c988e7cbfee751",
+      "bytes": 9338
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/benchmark-matrix-size-variants.py",
+      "sha256": "6196caed870690822070c43f4315ccad5884fdbbef224e16707563bb0dff2e6c",
+      "bytes": 6145
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/compare-library.py",
+      "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+      "bytes": 8941
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/compare-regalloc-spill-pairs.py",
+      "sha256": "ba23976ea153feac4f79b334b117e408d089dbc869fc1757fa778e403b249ee7",
+      "bytes": 7462
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/count-matcher-instructions.py",
+      "sha256": "f4caf1a2fc33bab42261a9a77ae5312fc806760df474346c2087f6b05826d4c9",
+      "bytes": 15138
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/profile-compact-current-payload-time.py",
+      "sha256": "2526af0b8d4faeee884e9c86f403188a4ec492dafb1b6b02a4826acee2c9a6a0",
+      "bytes": 5695
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/profile-native-symbol-comparison.py",
+      "sha256": "527d9e12dfe15f873d82688d5b72586c13da5fff310dd94179b4edc2194598e1",
+      "bytes": 8730
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/record-spill-placement-diagnostics.py",
+      "sha256": "a957ed4dccdf6ab958e9e37fdf934a0d0be8a31264e48ce2df520fc7a38ee579",
+      "bytes": 4837
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/remap-register-spill-profiles.py",
+      "sha256": "422f132a525847c2187f654ddaca837c3dcd5292fbe8827cddb4adea47808a06",
+      "bytes": 4706
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/residue-64-spill-pair-placement.py",
+      "sha256": "e019205ade07e440361165b0bc28edaaf0f57baf10a1035ce051cef43b401639",
+      "bytes": 5009
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/restore-spill-pair-placement.py",
+      "sha256": "2d501aed5edd283214a1d3da5c2148e91d2a217225f692c2c75b2cbd9e7bb42f",
+      "bytes": 4746
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/summarize-spill-pair-timing.py",
+      "sha256": "f1810e828a4f8db71d6a9bc62ac1acd9d0ddd109c41ff7e0db7769073eb1c004",
+      "bytes": 4443
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/as-run/worker-pc-probe.c",
+      "sha256": "f3cee6ba563afaf42ac057f9f3f41da179b01fd325f0ee16a7e2da4cb0cc385a",
+      "bytes": 2324
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/libdeflate/clang-trace.json.gz",
+      "sha256": "2780048bf2b61335c392bf5a5da374029cf903bff4cd52f4b406b2d9b3221340",
+      "bytes": 41724
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/libdeflate/compiler.log.gz",
+      "sha256": "5a8a9c103d4e4e81a4316ce104f5016f13575c1c3cb1e0decb003085f59343d2",
+      "bytes": 7588
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/mech-control/exact-linked-calls.json.gz",
+      "sha256": "9ebebf9aabf0cb20d968e933b97b6c88224c6946cb8caa092aaa0eeef3f482e3",
+      "bytes": 319
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/mech-control/frontend.json",
+      "sha256": "23aaa080d24a536b954c590a240e1f028687db0b726dde9186c52f60e5b9a2e6",
+      "bytes": 1029
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/mech-control/native.stages.json",
+      "sha256": "0153592aa85fbb7116a9c60ffef436a15deb222c5e396cb833c6e34fe8f5a0b8",
+      "bytes": 3920
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/mech-paired/exact-linked-calls.json.gz",
+      "sha256": "95da46b5a90c9cdbf421d54de0cec46e0771cf262cffae0d5efd4b0935ab2e79",
+      "bytes": 320
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/mech-paired/frontend.json",
+      "sha256": "08c16b768a31c3d2b09844eb7c4c402b1e079cbc52140f65c31955c11197e43d",
+      "bytes": 1040
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/mech-paired/native.stages.json",
+      "sha256": "4759d8c199ba8bbac491ad9937d6f965627592c0e27c8aaf39d7ba766c6ec524",
+      "bytes": 3922
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/build-profiles/roc/compiler.log.gz",
+      "sha256": "2977d0464ceae3d88c7a04ea2c7d915593c98c01bea78f223fac3804aa7f8c44",
+      "bytes": 3130
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/candidate-matcher-executed-blocks.log",
+      "sha256": "10b4d30e575499c3b13aab0d8f70b61877e55ce65112cc745978e6587e26c8a1",
+      "bytes": 735
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/cargo.jsonl.gz",
+      "sha256": "665656821a013748403356a1e8b615e65d04b1a31bb2cb3b37502ae70d018167",
+      "bytes": 13055
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/compiler-as-run.patch.gz",
+      "sha256": "038ddebe670e59be7463e866108650a042bd623b14842941c0d7b937d8f43354",
+      "bytes": 2443
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/contiguous-mask-shift-census.json",
+      "sha256": "9f2288aefcb0acafe155d3d4b4fe5dbcf89416b192a3ae66dc9926a6fb943d21",
+      "bytes": 3707
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/control/emit.log.gz",
+      "sha256": "30e9edaec64d827f70c1e6881656cc8f035c97892e851914fe3ff25408d7545f",
+      "bytes": 1908
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/control/exact-calls.json.gz",
+      "sha256": "3193cb9d2c1cbe85a92ed4757c2da11c6e65a397fd5597882ddcf2c4425273dd",
+      "bytes": 301
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/control/receipt.json",
+      "sha256": "8616e3448fb9e886edfea3aeeb18f62dd1ac5b5f95ee8946982d512807350af6",
+      "bytes": 835
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/control/runtime.json",
+      "sha256": "4b2347d779d18e9493db3153edb0b824d85f571a7efb98b4dd62b26b50a42b91",
+      "bytes": 8979
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/direct-payload-timing.log",
+      "sha256": "86bb264cb757fef684dd45e686154cf77546af375dafa7d2036a91b1b61867df",
+      "bytes": 161726
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/focused-runtime-policy.json",
+      "sha256": "1f04475b2a4c17b86788fdf1cf0d4be32dc1f363f4a858ed624456879320a530",
+      "bytes": 14791
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/full-policy.log",
+      "sha256": "f924a08859ad9bd1f45998d7401fe642bf38505e50e2a8a61e73224259db7cdc",
+      "bytes": 1541
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/full-runtime-policy.json",
+      "sha256": "fb87899d6e078467d3a3b5421ce197a48738cc7dc7f55a91d2951fc03a34862b",
+      "bytes": 66977
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/matched-build-timing.json.gz",
+      "sha256": "62a04963966ebcdcd1acaf216b8c781e9f7e4ce56d7a1d9de168251178c2c07b",
+      "bytes": 18457
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/matcher-executed-blocks.log",
+      "sha256": "04a4502d6a0f94231fa9f8a7ff49340c10c584f6125a16cac0e31a672818d2f5",
+      "bytes": 796
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/matrix-candidate.stderr.gz",
+      "sha256": "bfead1b9ec54d89d9569a9f41a4d9362e01bc1e3c6b200496979504c05668be4",
+      "bytes": 72
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/matrix-control.stderr.gz",
+      "sha256": "bfead1b9ec54d89d9569a9f41a4d9362e01bc1e3c6b200496979504c05668be4",
+      "bytes": 72
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/matrix-fixtures.json.gz",
+      "sha256": "cfcbce1393f1297924ffcb1c89e2957a6e136dd706bcca526f276ba6e0fb3688",
+      "bytes": 2877
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/matrix-matrix-worker.rs.gz",
+      "sha256": "f33ea3ab721902f4709eb43b49ab2ecb502e9867c9fc9e81bf7bdca6cc7e9cab",
+      "bytes": 2908
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/matrix-report.json.gz",
+      "sha256": "db9dff77e0694923649fb9c8b4c182081f7b652f840924e0bcd0ccfc0b98757c",
+      "bytes": 11538
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/mech_compact_numeric_3956_vector-paired-block-layout.json",
+      "sha256": "b16c67903ae5fd0a16310aceeba556a60bf0430385367fdcb7cf6ac10fe02eea",
+      "bytes": 1630
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/mech_compact_numeric_475_vector-paired-block-layout.json",
+      "sha256": "0e2de54b30466c32a14cb6cb9a7470e408000e88b4b2cfd74324c1fc5b62a65e",
+      "bytes": 19429
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/old-layout-rejected-runtime.json",
+      "sha256": "f4438985697432054d0375499605b4cbc5f344297f7572805f5f62eef5991bbe",
+      "bytes": 9043
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/old-layout-rejected.log",
+      "sha256": "529f7658beab9152ab1817fc02719ab38d2892d6ff702d055447b1c1b6118003",
+      "bytes": 320
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/original_addresses/exact-calls.json.gz",
+      "sha256": "c2f31fa1c6f8ef9b72a4531b34b8ff0cc78ec35fad25b262b90cadfbdb2a7319",
+      "bytes": 312
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/original_addresses/focused-policy.json",
+      "sha256": "7ec01ac8ac25e75bc27d15f96dbf90275fe3234623a75064643ebd57a3f977e3",
+      "bytes": 8968
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/original_addresses/plan.json",
+      "sha256": "ea7cc43eae48f3cb647e41ab6c3533d46a967b8cf6b391fef14c3184d6b40ce1",
+      "bytes": 831
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/original_addresses/receipt.json",
+      "sha256": "ee52d1c755db42c38970b49b2086d8dceac95959fa5c501888b83b1343ccdf54",
+      "bytes": 1210
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/original_addresses/runtime.json",
+      "sha256": "16f16ac0b91d8ed6e21e34a3a096682085e2ace1bb93a26bfabf63c3ec360fd3",
+      "bytes": 9337
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired/emit.log.gz",
+      "sha256": "30e9edaec64d827f70c1e6881656cc8f035c97892e851914fe3ff25408d7545f",
+      "bytes": 1908
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired/exact-calls.json.gz",
+      "sha256": "d28b698737a87c4041a40261fccf34685d1be3c959f7ed13a810506c3f6c33e0",
+      "bytes": 305
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired/receipt.json",
+      "sha256": "e3e523f58a94c3017f92faa9bf81768800defc3ee69e9dd9bd66687005c13b0d",
+      "bytes": 842
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired/runtime.json",
+      "sha256": "30ffe5ae7583f8023c5d3e22bbeb4d059a69d67d265ec85f54c717ed59fd53d3",
+      "bytes": 9029
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired-checked/emit.log.gz",
+      "sha256": "30e9edaec64d827f70c1e6881656cc8f035c97892e851914fe3ff25408d7545f",
+      "bytes": 1908
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired-checked/exact-calls.json.gz",
+      "sha256": "bd6b01afdd0655665c2acba94061f38ad6b662641ef41cf3124f5780b87c3740",
+      "bytes": 307
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired-checked/receipt.json",
+      "sha256": "0862e9bb97b0b5e49df6262abbccc89c4f9139e53ef93edf92969bee88994460",
+      "bytes": 842
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/paired-checked/runtime.json",
+      "sha256": "6647cdd84cdc0dc2af898ce4bba4b939382c705fabed01b0d9f2dc36195b1663",
+      "bytes": 9038
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/parser-executed-blocks.log",
+      "sha256": "c23bfb607a8e76788c41487d350e77139a49df174b3030d425e4e6a02c3ee352",
+      "bytes": 604
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/prelayout-control/emit.log.gz",
+      "sha256": "30e9edaec64d827f70c1e6881656cc8f035c97892e851914fe3ff25408d7545f",
+      "bytes": 1908
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/prelayout-control/receipt.json",
+      "sha256": "e3ecdf567a64ba364149508957cf65ef017afb181ee085fa57c08fc848929a90",
+      "bytes": 560
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/prelayout-control/runtime.json",
+      "sha256": "6bfd193bd68d4c56cc2fab14d735aa55c6fdc0b2a3d0775521821776d791d806",
+      "bytes": 8591
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/prelayout-paired/emit.log.gz",
+      "sha256": "30e9edaec64d827f70c1e6881656cc8f035c97892e851914fe3ff25408d7545f",
+      "bytes": 1908
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/prelayout-paired/receipt.json",
+      "sha256": "31a9d5a10c709345030f00e115a371a288f8affb6864d090a4a5809b3c790b26",
+      "bytes": 557
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/prelayout-paired/runtime.json",
+      "sha256": "c31c7811feb6704698a95c52001e85f27d6ced6f6fec0db626ee4b056bbe597b",
+      "bytes": 8634
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/composed-path-control-counts.json.gz",
+      "sha256": "964e082190613cfc0c832a18d6ff93ce18eae245fc5192ede3fd1cc36d17cdd4",
+      "bytes": 4351
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/matcher-control-counts.json.gz",
+      "sha256": "515afcb1d42c06cd6be9a072e1855ba4e70a29f839e331f77d12c38dcb9bc1ba",
+      "bytes": 34973
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/matcher-paired-counts.json.gz",
+      "sha256": "8328952038cd6b05362c48066b0d5d0ea6a1c830caa2163a1e6f9f349064b106",
+      "bytes": 34937
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/payload-timing.json.gz",
+      "sha256": "4910c9eeaec62a85a80d6b816401b11d48736501dc08fd960279f3e4c8edc06f",
+      "bytes": 5267
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-1024-pcs-resolved-277.stderr.gz",
+      "sha256": "6829649bddd8d5a401fcca4752e71a388eb09897483c89ec916a769b2c28fe30",
+      "bytes": 1594
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-1024-pcs-resolved-277.stdout.gz",
+      "sha256": "ec3de66b40edf36b4a71ee0156478f8a74b67703250bd77abd3eafb6d39bba4f",
+      "bytes": 35692
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-1024-pcs-resolved-431.stderr.gz",
+      "sha256": "a1b7b8f58d48ead58c482bb75c43ea6811f09acae6cd1fc82d24a57b12e143ad",
+      "bytes": 803
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-1024-pcs-resolved-431.stdout.gz",
+      "sha256": "3427c1c1d6631ee04f464005c4f1785c39634ae201623320a023d6d0f8195b42",
+      "bytes": 33966
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-1024-pcs-resolved.json",
+      "sha256": "1402ee7cec22a1967708bee96a103a3292c5adc5e30cab3537df699e80e4ddac",
+      "bytes": 7201
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-8192-pcs-resolved-277.stderr.gz",
+      "sha256": "421d34a91ce6ad27481589ec420160defd0515baa5715240dcf45e98261f6243",
+      "bytes": 2301
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-8192-pcs-resolved-277.stdout.gz",
+      "sha256": "c571ffef47ae294fdcad5d5ad65caa235f87cff3e35f11447ba35901acf43037",
+      "bytes": 6900
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-8192-pcs-resolved-431.stderr.gz",
+      "sha256": "99923cfc1a7c408f6c5811ca046de1f6932de842c1fa606c1cd48fb7542ef0d7",
+      "bytes": 1631
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-8192-pcs-resolved-431.stdout.gz",
+      "sha256": "540fd03fa517a194d12a3e24ac910c74777925c6c502538a4354c9173ec5122c",
+      "bytes": 6802
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-natural-8192-pcs-resolved.json",
+      "sha256": "91fbf4d99dfc228d1e78dfd45861e55a18ede0d2a44c82bb114d1bbbfffa6e01",
+      "bytes": 8657
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-1048576-pcs-resolved-509.stderr.gz",
+      "sha256": "35513fc0667f659df035ff0483b59df5f247bff05ca26aee9835c338b314da26",
+      "bytes": 2212
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-1048576-pcs-resolved-509.stdout.gz",
+      "sha256": "4463ce0848b683a76c833d98f3fd18bb9c4ba0343ae41011936e3262dbcb7446",
+      "bytes": 1406
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-1048576-pcs-resolved-773.stderr.gz",
+      "sha256": "8fd605136bea15659e133ab5147acf8c24452b61653726e987335b15e949926d",
+      "bytes": 2038
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-1048576-pcs-resolved-773.stdout.gz",
+      "sha256": "9f9a9e084d2f56b6cca38a3da110ecb3086cf4b3159b02a0f273d6ce5e5cbff5",
+      "bytes": 1394
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-1048576-pcs-resolved.json",
+      "sha256": "189bd2646a9d70105a2b205e5ed9a4eb47ab667cd02afa52626cf06b795189cc",
+      "bytes": 7634
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-4096-pcs-resolved-277.stderr.gz",
+      "sha256": "ff478a0b2716d38c8ca0eb0d012625027ec2cebda7b144d70fe5e1a2ecd26500",
+      "bytes": 1901
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-4096-pcs-resolved-277.stdout.gz",
+      "sha256": "5992a783cb6483495f7ac895c3510774d19234e1c8bd72a97b66663425cb067e",
+      "bytes": 33201
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-4096-pcs-resolved-431.stderr.gz",
+      "sha256": "18e021591ea42d035090ee655b6deedd6c5007a23c5c2ce4605fbb6a54460e5a",
+      "bytes": 1157
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-4096-pcs-resolved-431.stdout.gz",
+      "sha256": "16db2dbd79fbcf9d9d9e3548f7ca8e703dd3506b8f184d028947972ba7baf484",
+      "bytes": 33415
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/profiles/pinned-prefix-random-4096-pcs-resolved.json",
+      "sha256": "8bd3aaa640b6d8fe0f76c46172eda802f62f4edf80f93704115341e2bba3c835",
+      "bytes": 7067
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/replay-receipt.json",
+      "sha256": "d39025aa9288fe3365d48ace3b76f0dd4a2723e4e6e18fe1124e6dd4a8f406c1",
+      "bytes": 6799
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/replay_paired_spills.py",
+      "sha256": "553464866aea1c8a2bad249b2073942bae8e8f4e150d5b7909d29f20482c4364",
+      "bytes": 2605
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/report.json",
+      "sha256": "f8bc0ff4d188e662c0637c209672074b1fd775934e2de01e0ffe6a62dde2abcc",
+      "bytes": 27335
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/320-overlap/observations.json.gz",
+      "sha256": "cba5d3d745d1b83b33bdc312d24adc0275252b815bb12dcf058bf1d57c1a021b",
+      "bytes": 301546
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/complete.json",
+      "sha256": "99f853d3840325c9c04561a514bc7ac5dd6ba90176ebeee2323bed3f796f08c5",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/empty/observations.json.gz",
+      "sha256": "516c40f025edc14a7c19267fad2427f701bf66f70d3d2bfd4cf86ec5d78c36ad",
+      "bytes": 1248963
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/heldout-mixed-131073/observations.json.gz",
+      "sha256": "13e4858b78601d66d9a19b40dcfb36760a261717257e2bdbded1e0312cef8a34",
+      "bytes": 8420
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/heldout-random-65537/observations.json.gz",
+      "sha256": "f80d2fc35111589f59df0f001f6a258dd244bd8f7ed2bc3450f360550588c9c5",
+      "bytes": 8267
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/one-stored/observations.json.gz",
+      "sha256": "a88e518d53fef51bf1b964e4206cc3d751b5387cdb4cfbb02b664564459df69b",
+      "bytes": 1245184
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/pins.json",
+      "sha256": "af60ddbc6d35728b7ae692cbd4b641ff982349ddbfe2fd7c147d6231c1185c72",
+      "bytes": 5273
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-natural-1024/observations.json.gz",
+      "sha256": "b8e89703eee7f406b0ce099f62897706e1f80376faee687b852bdf02b69a2043",
+      "bytes": 317010
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-natural-16384/observations.json.gz",
+      "sha256": "0c3aad0c1caa7699c946882b5f445de7039e4d72a2ba2323b9727a3c920e6526",
+      "bytes": 8179
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-natural-4096/observations.json.gz",
+      "sha256": "59f66e733326c2fb3a3191135064b0ef7b9e10a509ce953f55ab95a278e7faaa",
+      "bytes": 8229
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-natural-8192/observations.json.gz",
+      "sha256": "25d1f2dc19df9508fa810bec6464466e2734556ac6acb935cf41c3ad688eae9a",
+      "bytes": 8244
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-periodic-1024/observations.json.gz",
+      "sha256": "6f5dab87bf30d83f55b8c84076fa983209055e2a5e8578df60ba212073efb12f",
+      "bytes": 322647
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-random-1048576/observations.json.gz",
+      "sha256": "687c390016ef8fc8b563c54256f9c7f653d2e2fd75f949d980261488e37d9d7b",
+      "bytes": 8492
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-random-16384/observations.json.gz",
+      "sha256": "108f1d4aeeaf58d2371cb0260e0e01562d2fd0be06e4f49fe236b00903104393",
+      "bytes": 8183
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/prefix-random-4096/observations.json.gz",
+      "sha256": "3adab8987eeb2051b94d7210f6b7bb9cfe781eda375f9474a515205d2aa9e14e",
+      "bytes": 8111
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/random-1024/observations.json.gz",
+      "sha256": "fb56b2d1113b8a0c815cd3860470370d77120de1c96b7385ae42ffcd952b1e84",
+      "bytes": 311820
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/random-64/observations.json.gz",
+      "sha256": "274f08e78a26109433497d15c90814e3b894725b54838b0ecdfb81f49b8e8e5a",
+      "bytes": 299974
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/reymont-prefix-16384/observations.json.gz",
+      "sha256": "94c95b8f0045db19f01a0b431b060fbc5b336719d7bd93848111c33b5465e3c5",
+      "bytes": 8282
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/seven-stored-prefix/observations.json.gz",
+      "sha256": "fcc86a9da342329d4b0692ff76c6ab8a0336c0940aa6a074e4943968f77c320d",
+      "bytes": 1245493
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases/summary.json",
+      "sha256": "c89ddb59ef769e765dedbade19f9df166145b9e447faf210572cdb6637041124",
+      "bytes": 14775
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/320-overlap/observations.json.gz",
+      "sha256": "fa2e51c411aedc3e874daaf8654c6c0ef8cce81e0b02611976b9a858c519e4ee",
+      "bytes": 303889
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/complete.json",
+      "sha256": "99f853d3840325c9c04561a514bc7ac5dd6ba90176ebeee2323bed3f796f08c5",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/empty/observations.json.gz",
+      "sha256": "e1eb5eb1b225a292a0cb8b5db66d75b77002b008cc5707eec587ab952fd5c7b8",
+      "bytes": 1252141
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/heldout-mixed-131073/observations.json.gz",
+      "sha256": "54541a37ebfc41c0e251ca264d7781709b395a7e2f7075bbc11bf508cd0906e9",
+      "bytes": 8376
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/heldout-random-65537/observations.json.gz",
+      "sha256": "cae9038c3a42476f66f84856e78c136c1a38234940401867824ed12a2feb8a25",
+      "bytes": 8287
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/one-stored/observations.json.gz",
+      "sha256": "0bcfabf3f3dc234c09b08b2bf7c4efbddff2ad39c5988eed8edc244eccd0f3e5",
+      "bytes": 1247372
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/pins.json",
+      "sha256": "af60ddbc6d35728b7ae692cbd4b641ff982349ddbfe2fd7c147d6231c1185c72",
+      "bytes": 5273
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-natural-1024/observations.json.gz",
+      "sha256": "826cf1346fec7b2150dc45b6198ca78b20bdb1d4dc407380de8cffdf993962ea",
+      "bytes": 317683
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-natural-16384/observations.json.gz",
+      "sha256": "ec3675711c880b56d1645f2b4fe9430a49fb739a301c9fe9e48be42c1cb87aff",
+      "bytes": 8257
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-natural-4096/observations.json.gz",
+      "sha256": "d5b3e04459e192ea36709194e813d1fc63ea73144ff1e9201c71dd37532cae7a",
+      "bytes": 8190
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-natural-8192/observations.json.gz",
+      "sha256": "8e5ecedb5f0ed164edb9df08e37cc255a07c447454a02d7b8f44bd5357726290",
+      "bytes": 8268
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-periodic-1024/observations.json.gz",
+      "sha256": "aa00027f8d583f91806d38ebf21b9f964a22c7074b548bb6c68be72c40a8d0c3",
+      "bytes": 323453
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-random-1048576/observations.json.gz",
+      "sha256": "8836b77e5d3ac1d32ee3d6eb755f14a4b611ddf9168adf503850d121cfa2bbf4",
+      "bytes": 8554
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-random-16384/observations.json.gz",
+      "sha256": "e3d76c213e34801835155ca133c100b2cd46bdca11b9681aefceb145e7472ba9",
+      "bytes": 8181
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/prefix-random-4096/observations.json.gz",
+      "sha256": "1f8876e3688aee138723a9e3ffc0d520a68138606d06c24dd43d152939197a8c",
+      "bytes": 8109
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/random-1024/observations.json.gz",
+      "sha256": "1d398301bfb2b6fdffd314c5c741ee34a72b916e90f91a24ad8a2af53469dca4",
+      "bytes": 313112
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/random-64/observations.json.gz",
+      "sha256": "c9652fd6e96d74628db47df0d233c8ffbb28932eabd6cec2d44cd0cdc6ce2ce1",
+      "bytes": 301556
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/reymont-prefix-16384/observations.json.gz",
+      "sha256": "3f7ea7c873f6750bbdfc5fe196bfce1d67b1e9b71882d9eafc3071fcee687a4f",
+      "bytes": 8249
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/seven-stored-prefix/observations.json.gz",
+      "sha256": "8ea7a5fed80fc12eae034ed5ecfbcd2c7fb118274d5d4b50bfcb705aea268876",
+      "bytes": 1247280
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-focus-spill-pair-cases-reverse/summary.json",
+      "sha256": "7826ea4dabe736021bce2eaebf578ee557059458b0a331d5a9a62cc2ff87cc34",
+      "bytes": 14731
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/128-biased-dynamic/observations.json.gz",
+      "sha256": "d5ec0fbce6b232bc5dd546a570ddb2fbcd39b85f7d0309c5a733d95f7752387a",
+      "bytes": 307135
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/16384-distribution-change/observations.json.gz",
+      "sha256": "b68fff8dac31a2e28a681e4cf9bcf2d6b2cb824a9fa35fc50e2166c3b483e064",
+      "bytes": 8198
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/32-high-entropy-stored/observations.json.gz",
+      "sha256": "08921a79f887cb88da4a738f40919fe2a8031d61a53046fc6da12eabd61d6e76",
+      "bytes": 304975
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/320-overlap/observations.json.gz",
+      "sha256": "318c5acabc1dc4024524662806df284411e80a5cec30f9fde65a6d10a5a1a2a8",
+      "bytes": 302437
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/33027-periodic-window/observations.json.gz",
+      "sha256": "5e803eb509dc126392f33f0f31d0ea4b06cd2f78e741cda107f47cd88f5107eb",
+      "bytes": 8195
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/complete.json",
+      "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/eight-literals/observations.json.gz",
+      "sha256": "b5969eba3a0262a1bf8e5ff700c8ddd6401e380a1daf1fa27786b8ed1f4f7261",
+      "bytes": 302440
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/eight-literals-prefix/observations.json.gz",
+      "sha256": "d5b7f558db52aeb69b7ba6e0cc21e3a4a180d1706c93ae7200a1f7fa22aa37f3",
+      "bytes": 308791
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/eight-overlap/observations.json.gz",
+      "sha256": "8abd7b1478950f36dcd9d89dde68c5f70b48d9c39403fb769d3a51cfea27e6d7",
+      "bytes": 300093
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/empty/observations.json.gz",
+      "sha256": "c5d890eeab820b167784aa1c8239cac52c17f2e447fd04ab7a03f99ab1bc5e0e",
+      "bytes": 1252104
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/heldout-mixed-131073/observations.json.gz",
+      "sha256": "ccb90f4a259cbe16768f4c1a0df585efb30c6f153a77bd0bb9842d2327fdc37b",
+      "bytes": 8450
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/heldout-random-65537/observations.json.gz",
+      "sha256": "22e8a453ef865a59000f82b5adddc0aeaada01fcb6b71077472b1a8660c586ff",
+      "bytes": 8318
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/heldout-slides-65537/observations.json.gz",
+      "sha256": "88c501ac29c0670211a1862f5db7dd9dba23e872c2dc3975066c933872e1dc2e",
+      "bytes": 8473
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/heldout-window-32767/observations.json.gz",
+      "sha256": "0b61974062f47b49490ff2db1b733fc39d23e3adabad3d9704807e7b53e15ee7",
+      "bytes": 8302
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/heldout-window-32768/observations.json.gz",
+      "sha256": "cf92d6a44228fb2a67fa9b2bd8de10ac4fe916da2bdbc5c25502cd546fb03c84",
+      "bytes": 8326
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/one-stored/observations.json.gz",
+      "sha256": "65fe0d1c14a11941d43afde45861ded1aebf655037a01b05d7d05b6279770acc",
+      "bytes": 1246176
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/pins.json",
+      "sha256": "af60ddbc6d35728b7ae692cbd4b641ff982349ddbfe2fd7c147d6231c1185c72",
+      "bytes": 5273
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-1024/observations.json.gz",
+      "sha256": "1bd35d4de01e01721480de51e56bd12ac354b5767b13e154a84f4ff1e87fb6f8",
+      "bytes": 317926
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-1048576/observations.json.gz",
+      "sha256": "17162c866b9254364be9e349eaacdf1eca8ee5b95adac94dfcaa0c94e5d20cd3",
+      "bytes": 8790
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-131072/observations.json.gz",
+      "sha256": "e6aa1bc414261634cccbe4c362a258e2e85114b5279c22ee89d6e2f9f4685c02",
+      "bytes": 8627
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-16384/observations.json.gz",
+      "sha256": "95e697f2768729ab4e66214fa00d8c3a14681035f08ac7032e3d282f9c9fd940",
+      "bytes": 8194
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-262144/observations.json.gz",
+      "sha256": "7fcc09ace95a546e30869fd25677e828c4058b06ae0afe1ef63aa41d70937d5f",
+      "bytes": 8672
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-32767/observations.json.gz",
+      "sha256": "f9274fa47a24d409e72a51d2d81d5d0ffd0431f8ee221832dc27f6549b507561",
+      "bytes": 8355
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-32768/observations.json.gz",
+      "sha256": "38daa658469e2cf94e3772c045bca2dc151a35c42e81bb75b77361a2ab8a4bbb",
+      "bytes": 8375
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-32769/observations.json.gz",
+      "sha256": "28919d812dc8004c6e721d5574d869f8c237c8a8b8694458bcd91c673080cb07",
+      "bytes": 8403
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-33027/observations.json.gz",
+      "sha256": "8631ecb6d792c128c32e214ca098df9ebabd6a2254b2c55e1a8b2bed36b063a4",
+      "bytes": 8361
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-4096/observations.json.gz",
+      "sha256": "1f489b325b0c899befa38cc40eb288cb8149decdabc1797e57e4d23fa760671c",
+      "bytes": 8178
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-65535/observations.json.gz",
+      "sha256": "7c1069e2510d03c77bea89a1c7ef6a2755fa11f6c24b277820f51f342c640ee6",
+      "bytes": 8510
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-65536/observations.json.gz",
+      "sha256": "8070e0d64b886c9ce1e68237c4f9552ef679de4b5a21aea6853bfc81da834f1c",
+      "bytes": 8480
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-65537/observations.json.gz",
+      "sha256": "64d439cb238430f4dbe4c9800e0c7077ea4ddba7a11d2920fd813de924b2dc82",
+      "bytes": 8481
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-natural-8192/observations.json.gz",
+      "sha256": "c45a7807321e05c48a1283e7f52e661b5815d6b641e19eb0ccf629f378f5b74b",
+      "bytes": 8247
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-1024/observations.json.gz",
+      "sha256": "931dd86f3a7c69bf298e24f93ec64a16e0df31c4cc8a1801540daa1c961a89c9",
+      "bytes": 323108
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-1048576/observations.json.gz",
+      "sha256": "f3c6428d938cfd6179f0c62346f59a522a4677a5ad29654a00827b343fcc710c",
+      "bytes": 8480
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-131072/observations.json.gz",
+      "sha256": "c107be94288364d3e4acb0aab68619b62e8ee83e666d91e91fe1d792fce861b4",
+      "bytes": 8294
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-16384/observations.json.gz",
+      "sha256": "eec92d5b7a1e956fd5b5f273092c080abc0b0a1b1448d83832458f3c55332b5d",
+      "bytes": 8060
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-262144/observations.json.gz",
+      "sha256": "17abbe50eb23890e53601a5753a707af1c8375720d3d5a0d7d3d7a62875aab53",
+      "bytes": 8432
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-32767/observations.json.gz",
+      "sha256": "499d9a116aade0d04474501606f47c94f108180847c600979f62e74b8704a1fc",
+      "bytes": 8186
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-32768/observations.json.gz",
+      "sha256": "914f2f1daee853fd6de26142cc5d1da490be3fe8f9e95cc1f147486023a9d13d",
+      "bytes": 8104
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-32769/observations.json.gz",
+      "sha256": "c9dbe5da6cf275b1b447a6945f4c9ad67fe29e73b8ef21c9c7ace50bd1c3d0fd",
+      "bytes": 8245
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-33027/observations.json.gz",
+      "sha256": "3838640eee86532cfe50b245d4f2a775dfafb13ca083c33ead9e3704730d9c5d",
+      "bytes": 8193
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-4096/observations.json.gz",
+      "sha256": "4a6ff614292612af8686b15770dc1df6a5815ed2bcc3ba64616cdd22ef7a3167",
+      "bytes": 8041
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-65535/observations.json.gz",
+      "sha256": "c39bc9a11f8416945f8f367c8480e1e1b4f1e6b28c1b8dc68aebfb2fcca286bb",
+      "bytes": 8239
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-65536/observations.json.gz",
+      "sha256": "852466f5846388d6e30c71e025c2eb5c64ab63ec8d12d3f4fa74a46205a5f520",
+      "bytes": 8200
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-65537/observations.json.gz",
+      "sha256": "c16f11d428d30d35731d678c52ecc0e3b159a98e64329d374caf6095ff2427bd",
+      "bytes": 8226
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-periodic-8192/observations.json.gz",
+      "sha256": "75ea7f0aa8f0466eb0536c0e2e51fd3f08aea4c3132117a955668c7312b41346",
+      "bytes": 8059
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-1024/observations.json.gz",
+      "sha256": "a58ed8d70352c0780df042e68c995af095b362ba92e37bb7e5446a570d72bbda",
+      "bytes": 317152
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-1048576/observations.json.gz",
+      "sha256": "a77299697cdb7721a3fccf9c38c89bd43d1f1b0f535f6b53688093cb6cf29361",
+      "bytes": 8592
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-131072/observations.json.gz",
+      "sha256": "9c80dac91494f4783c6025007fea5967c9fd1e6e74ee7e4f4067e31259c4cedf",
+      "bytes": 8430
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-16384/observations.json.gz",
+      "sha256": "e43898a521651949c5ed23c0bff457faaf9f6a60c0d0f3fdac86f1ac26fc2bee",
+      "bytes": 8176
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-262144/observations.json.gz",
+      "sha256": "5048207cef5981c0308ecb87943b541f15088a616d856352ffd8ff210c9b2db7",
+      "bytes": 8418
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-32767/observations.json.gz",
+      "sha256": "b6512f2e37d5d5c1af4a1fd827350c0a96933208b34585c88cc5ed0ba38bf22a",
+      "bytes": 8324
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-32768/observations.json.gz",
+      "sha256": "4bd4ab17f83db908204fb0bf53eeaa2641d8967cb113588f6a8c3bbeae9b5b1b",
+      "bytes": 8274
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-32769/observations.json.gz",
+      "sha256": "2aa26ab9ec54a85aedd5724fe19ca2c2deff1bd166f2f1eae7443a495a8190c1",
+      "bytes": 8207
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-33027/observations.json.gz",
+      "sha256": "34187f5e3a364ab81466d9ef9fa3a2cb7cc3f9b6e4289f8ddb4cd586f56c8ddf",
+      "bytes": 8225
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-4096/observations.json.gz",
+      "sha256": "48c5901897ffce11d5211954a6cb711724e9628d81a0990ce88ad7a0779d8586",
+      "bytes": 8116
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-65535/observations.json.gz",
+      "sha256": "2c5c172f66f0b880b88c9c4a206421100388624caf720fcb8fdd318e099020c2",
+      "bytes": 8308
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-65536/observations.json.gz",
+      "sha256": "5e87493e85f66fea0e36a7dab48b8db784ad07bea2606bc0a133e6c790f66212",
+      "bytes": 8300
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-65537/observations.json.gz",
+      "sha256": "9217b17c854e9dbb6c796ea943a2f5fbf4bc4164a51af79311b60dc1ba0da11e",
+      "bytes": 8299
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-random-8192/observations.json.gz",
+      "sha256": "eff46c8b71cb1fef708e5101e1507cf9e5e9c1f8525fe29b1c7aadbb4043c732",
+      "bytes": 8173
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-1024/observations.json.gz",
+      "sha256": "f52d61df0c588b46e3cdf38e438d4a66d46145af424de70da9777f2c00c38558",
+      "bytes": 324367
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-1048576/observations.json.gz",
+      "sha256": "7d1abf4ad0d8e47f4a15b749f8208ef32f1bc1455ac6b8b7747e42bf4ba05f9e",
+      "bytes": 8576
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-131072/observations.json.gz",
+      "sha256": "1fe17da3bd5098ddfd3359937a409547fc18492c5ff1183f3d1036a1a0dec1ec",
+      "bytes": 8402
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-16384/observations.json.gz",
+      "sha256": "3d9a7bc426c416f5b2f6b19dc4b32c30f81cac1a0a5877f5fb3ef0c5c83d09e7",
+      "bytes": 8109
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-262144/observations.json.gz",
+      "sha256": "a4d1f96a89689059a668dc08433537cefc770810d1f2e76190834af8c2069d1b",
+      "bytes": 8344
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-32767/observations.json.gz",
+      "sha256": "1f98354fc2799a01f96e7c422d8ea96f81c10ff8bc4d318be31772e417e5c93d",
+      "bytes": 8165
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-32768/observations.json.gz",
+      "sha256": "26f65b3d9cc31708a4404b4a6072abe41f8e2c4a0292274383aa98e45fbe1062",
+      "bytes": 8178
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-32769/observations.json.gz",
+      "sha256": "4d3a2c60a3154610a3f891e0828db0fb0e48fac9f52cb8565eb45d68d012d661",
+      "bytes": 8136
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-33027/observations.json.gz",
+      "sha256": "f5c16497a79e7076720269273df8eec859b4779e91c5cdf6be9cee2bc66d1238",
+      "bytes": 8162
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-4096/observations.json.gz",
+      "sha256": "cecdb48b8a5298dae3475bf6f7bc02b4726a4c9b3a9346d14f0258eb2a3fc75b",
+      "bytes": 8005
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-65535/observations.json.gz",
+      "sha256": "8d2156bc07c18a56472ceb918dd43914ee21a2b29322e02f3496cca275c16d81",
+      "bytes": 8293
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-65536/observations.json.gz",
+      "sha256": "a524088940ec4eee36d8fa08bed53cf94703bcd91cfc0bf17b0bdb9fe764a62d",
+      "bytes": 8276
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-65537/observations.json.gz",
+      "sha256": "646dbd2dd14c035a26ff8b957cc23fb2c352cc1ee0239af64f18367035d7a74f",
+      "bytes": 8252
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/prefix-repeated-8192/observations.json.gz",
+      "sha256": "6c07484ba6e809d363ecbd6f131d510a82b9593f7bd77311f4883eedbbbdee7e",
+      "bytes": 7998
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/random-1024/observations.json.gz",
+      "sha256": "8c50a460c828c26ddf84c66ca92376b83df7c7bc0beb0a0f7a2d93425dfc06bc",
+      "bytes": 312691
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/random-256/observations.json.gz",
+      "sha256": "acfdbcb5b28c6511d797cc4f038f41f80358aa7b8b75424f53ee06bae2b46da7",
+      "bytes": 307477
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/random-32769/observations.json.gz",
+      "sha256": "518d0fe9e3461582bfa804bb5563054a370a1c61fdf044eabbc6387d46c16ddb",
+      "bytes": 8218
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/random-64/observations.json.gz",
+      "sha256": "6cae69dec9593f53894172f3d4d4bd1038d5d314703ddbf6524ca28f44f2359d",
+      "bytes": 300940
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/repeated-1024/observations.json.gz",
+      "sha256": "cd8d01f5ad2ec6741a351c0442d6d69d3a89dc86338ac900f272d3897c53e7a3",
+      "bytes": 321270
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/repeated-32769/observations.json.gz",
+      "sha256": "033318f097731b8e6e61d868bdae66d1df5f6c8a2f314808d5cb19786d705a75",
+      "bytes": 8183
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/reymont-prefix-1024/observations.json.gz",
+      "sha256": "60e31a21bf019fe25f9b0c4c7521dea2fa28a1d6e40f510f3b172d6d71e6313b",
+      "bytes": 317406
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/reymont-prefix-16384/observations.json.gz",
+      "sha256": "0bbb74014999f6065936d6653083ac175c0a5425a3477b2c67a8470ab1c7e70c",
+      "bytes": 8241
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/reymont-prefix-32769/observations.json.gz",
+      "sha256": "93eaa06e3c6ba9c458dc40bde05d619114fd03d0555e583c7f9dfd0d64053038",
+      "bytes": 8348
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/seven-stored-prefix/observations.json.gz",
+      "sha256": "ee6c777f974ebf84af90dbeb23cffb03ab2fc3090276de7df8c3ea99cedc70be",
+      "bytes": 1246382
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full/summary.json",
+      "sha256": "0a88b74d3661792b3e1d75150c3ec2e88a95a673b22457d305ac9ef026930e83",
+      "bytes": 70855
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/128-biased-dynamic/observations.json.gz",
+      "sha256": "186b8f278be537cfcb3611739d17453e222a8e219f538ca892250e4608c92b9c",
+      "bytes": 305684
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/16384-distribution-change/observations.json.gz",
+      "sha256": "5686ae654cb9fee5811f9e3c72b72171016ba264da7890a7e807851bcbb15905",
+      "bytes": 8231
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/32-high-entropy-stored/observations.json.gz",
+      "sha256": "07e2a04362b9adc7b64650b8d23d7042578cca29fd69968fc0973112f1bd147f",
+      "bytes": 304118
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/320-overlap/observations.json.gz",
+      "sha256": "f7461e12f863f2f567fc4e0d433a0adec5b879c05388deba1fcd1d6bce8455ee",
+      "bytes": 303100
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/33027-periodic-window/observations.json.gz",
+      "sha256": "bd30db198f42f2009d2270b3adefd5703814747b8d416ba0b245dbb55cadf093",
+      "bytes": 8161
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/complete.json",
+      "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/eight-literals/observations.json.gz",
+      "sha256": "0512c100bbf923bc6cae55e7a263dcfe795e013450adde0e278ad1497bb38aba",
+      "bytes": 299968
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/eight-literals-prefix/observations.json.gz",
+      "sha256": "0b2cde7dcbcbe701f055f62dcc9f2437dc74e041f0a8d5741f3becd5e9c9b968",
+      "bytes": 307502
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/eight-overlap/observations.json.gz",
+      "sha256": "335bc60ea2ac62345cd256918f9278a4635c4e96b83ae818f8de2939c91b71da",
+      "bytes": 299214
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/empty/observations.json.gz",
+      "sha256": "962be8c3472c91537c7f688be6262bc3999c157bbc0361877ff85c6628d7d07c",
+      "bytes": 1248637
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/heldout-mixed-131073/observations.json.gz",
+      "sha256": "17dd14d0799496a28e37a38640179a7e32c178315da86fcbe5113aa453820c4e",
+      "bytes": 8447
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/heldout-random-65537/observations.json.gz",
+      "sha256": "1b9883d61d91b44c13a21bcd807bedfcd450e151082dff90364d1699e07affa7",
+      "bytes": 8363
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/heldout-slides-65537/observations.json.gz",
+      "sha256": "b4961d93ad13cace2276cbc4dded9aaeb29767563d4cf5d6687a0ec617835f25",
+      "bytes": 8504
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/heldout-window-32767/observations.json.gz",
+      "sha256": "88f00177689425f339d520c013ae52e14acc355c8f852d7b8fdf631e48294090",
+      "bytes": 8380
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/heldout-window-32768/observations.json.gz",
+      "sha256": "f4f04e680eae90d3397b2b649ae319d34c8a668729a362c77ade998814452c11",
+      "bytes": 8382
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/one-stored/observations.json.gz",
+      "sha256": "c2146b122fab5104d7c45e11d5c89c3d1749959e07999aa133e1af0d14ff906d",
+      "bytes": 1246581
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/pins.json",
+      "sha256": "af60ddbc6d35728b7ae692cbd4b641ff982349ddbfe2fd7c147d6231c1185c72",
+      "bytes": 5273
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-1024/observations.json.gz",
+      "sha256": "d21ac54887bbd9ef72e6904ea58c84a16168cf2f5b45f229382aadfe20f4b615",
+      "bytes": 316698
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-1048576/observations.json.gz",
+      "sha256": "57b03d64a4dc1185990f5d66ca09410322ad5a6611e7423875357d52c3943e01",
+      "bytes": 8793
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-131072/observations.json.gz",
+      "sha256": "26b956b3449c9199d8357a3145d6f9efb702a44e25b8472cae5617a9067fd76a",
+      "bytes": 8661
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-16384/observations.json.gz",
+      "sha256": "2f239ee590c033d5017e84dbe16c0c767f5b1837da348a9f8bba386f17a251bd",
+      "bytes": 8290
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-262144/observations.json.gz",
+      "sha256": "2e2be6006fd4ddc9c144436d0bb43721c55672acc7c939d8dbfca3699e5b062c",
+      "bytes": 8646
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-32767/observations.json.gz",
+      "sha256": "3a9942cf03a32947d2ad9be0d8e0db551d9bcfee19787efbc62590f49133c3c1",
+      "bytes": 8354
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-32768/observations.json.gz",
+      "sha256": "efeb223412f493f7228dca2e1ad3a62b28b45cf947915d0967760c55223a3074",
+      "bytes": 8278
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-32769/observations.json.gz",
+      "sha256": "04a3a179706f1a8823c9696de1b669c4914e4f24e3baf2cf8e9bc861fcbd98ba",
+      "bytes": 8441
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-33027/observations.json.gz",
+      "sha256": "ea9a648964df6083acd8ce5489032535b6fdef9c6198e18e95008c2d210be527",
+      "bytes": 8359
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-4096/observations.json.gz",
+      "sha256": "6d351c4e04feeae0c793ecab7258e36b18cdf1a2c411187a869ba457a9014ef4",
+      "bytes": 8226
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-65535/observations.json.gz",
+      "sha256": "4c24433b5f73429df8bb80cf3b12c991b52ed055926967ea39e5e06ccce59c2a",
+      "bytes": 8516
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-65536/observations.json.gz",
+      "sha256": "50647186c657ed1c7d6ff0a51de4a8d3294a4c4c9a4a62459c089c714b1544da",
+      "bytes": 8474
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-65537/observations.json.gz",
+      "sha256": "ad151af2f5be4584770a12c80a3dd1dabd010cd6f0fbada21049d319f4947440",
+      "bytes": 8528
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-natural-8192/observations.json.gz",
+      "sha256": "76111598ec6eb0f066d07cc7706ae588f99d648ebb62b611e45e147c323f307a",
+      "bytes": 8233
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-1024/observations.json.gz",
+      "sha256": "5b76870936e340bbf32fa5c6647130c0ca1373ea774c30949da2ce5eed72d660",
+      "bytes": 321537
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-1048576/observations.json.gz",
+      "sha256": "9d3085f2e99a4413001cc11134c74b67f81a1ded54e67f1c335334bf51015d6d",
+      "bytes": 8493
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-131072/observations.json.gz",
+      "sha256": "a51f9d9ec2ab899763b0c480d6937657b86541cb295a6fef53d26058b7720295",
+      "bytes": 8274
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-16384/observations.json.gz",
+      "sha256": "5c8b8e29c61907aab3aea029e4c50e0fb758bdb4ff9e7f989ff06ba4b3db9a34",
+      "bytes": 8084
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-262144/observations.json.gz",
+      "sha256": "9cda428c9101280ae86a6baa3160f86b3f2c450029e8fbc399de498a6dbadafc",
+      "bytes": 8412
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-32767/observations.json.gz",
+      "sha256": "47853e262fc2e3fdb2690b170cd09fb3daa8bfa8fe378105edfab407ca1571fa",
+      "bytes": 8082
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-32768/observations.json.gz",
+      "sha256": "2283c993854f0c1e380706efd886dc89baf206754d2e4212026bc987c2d98940",
+      "bytes": 8127
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-32769/observations.json.gz",
+      "sha256": "0c04d511ce5a61740fd3689c93a5aee8fbb1a47d1b9fb05de9e925d7cd8bfd63",
+      "bytes": 8188
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-33027/observations.json.gz",
+      "sha256": "875b3e9cdc609463fdbb1ee1e3c4fb5d15f9518948fc3318e9763ebc95fb557f",
+      "bytes": 8237
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-4096/observations.json.gz",
+      "sha256": "1bb138ff12ee481de1833303b75eff10e798ca5a0c2eff0c266027efe6eed4f6",
+      "bytes": 8080
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-65535/observations.json.gz",
+      "sha256": "00cd9a2734162519c3306985ccb42705948c6e5da7f2b7396d6acdd3c0abf444",
+      "bytes": 8201
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-65536/observations.json.gz",
+      "sha256": "069e5b182df2e0b8826a82766869145146ca36d0e85927b22e42792f87267403",
+      "bytes": 8247
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-65537/observations.json.gz",
+      "sha256": "0899d95424acadfd5a67f7bbff7c9f0897bb2610486359f86df6d2bd93ff6cfa",
+      "bytes": 8194
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-periodic-8192/observations.json.gz",
+      "sha256": "ff16d6fe22b8a1713056c9bbc0c15f5dcb454e3542ec1f5279a95c13353b120c",
+      "bytes": 8016
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-1024/observations.json.gz",
+      "sha256": "11d552daf86af3639c20eeeb4c3f161d4dbdc43ce5e8f49ff55b1c96cad31e2d",
+      "bytes": 315611
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-1048576/observations.json.gz",
+      "sha256": "58a32c1f140d36db45e6aba217d1bc1e52df5ab5ab3e2f512635a54add60f13c",
+      "bytes": 8525
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-131072/observations.json.gz",
+      "sha256": "9c266006533e61a13e422d4a15a087e24c7378035a2bd0289224bbb439b9ecb8",
+      "bytes": 8348
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-16384/observations.json.gz",
+      "sha256": "2243eabff60d08c3e2a9982fef70fbb1c34317b59dedaaa77aa144922bd97279",
+      "bytes": 8245
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-262144/observations.json.gz",
+      "sha256": "6f25209087a292eba57f5fe5dc58d37ec60f8f5bb71ca2f25bc5fb9890951b96",
+      "bytes": 8412
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-32767/observations.json.gz",
+      "sha256": "b83e07aaf1dbcd9ce543ba3e530f153b26115180af095ff4ed48f52ada388b89",
+      "bytes": 8190
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-32768/observations.json.gz",
+      "sha256": "4a10d793b104f9a68ef25979d382af5f908c74cf3df68bcafeae0fb608c20913",
+      "bytes": 8268
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-32769/observations.json.gz",
+      "sha256": "3c2b69381bf3be9acadc0d3cf7c61337d1d3f8b3be7a2e4e4230bf3f4ba02f22",
+      "bytes": 8314
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-33027/observations.json.gz",
+      "sha256": "3aad3d4447d3771fb223067d64857c519a849a1e01aceb3e306057e5accec17a",
+      "bytes": 8292
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-4096/observations.json.gz",
+      "sha256": "8aa3f7719a0f0e7702b557385399444abbb385d899cb1653bb2460f5d0091efe",
+      "bytes": 8089
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-65535/observations.json.gz",
+      "sha256": "6653e89eefd913e51d493673f59989d773fab90feaa5ad7a51920d97b335df2a",
+      "bytes": 8287
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-65536/observations.json.gz",
+      "sha256": "a9e43ba8f6b1f973092aff398aef94fa9697df7fe4d147e0daccd347ecb0bb48",
+      "bytes": 8304
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-65537/observations.json.gz",
+      "sha256": "c7b2c9c6f218ee266ae9e54698b12e758514f173c30f89080b9f1f666a66d666",
+      "bytes": 8238
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-random-8192/observations.json.gz",
+      "sha256": "23013c6331e14c2c3b4e47cfd8db6567408bfb38072fa46e0c96ca61378b288e",
+      "bytes": 8140
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-1024/observations.json.gz",
+      "sha256": "5a87e83475c971ff4dad5ce6a08e0ce2a4a1bbbbe468694ba57caac220aac1ef",
+      "bytes": 324417
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-1048576/observations.json.gz",
+      "sha256": "32be4a8972e0e0a51efe35bcd01e975c701db21261c697fa9396d18a5b627352",
+      "bytes": 8526
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-131072/observations.json.gz",
+      "sha256": "230f7687fd954dd9bada988639acd4e2bf67e9af8a4352e9be5369025ded399d",
+      "bytes": 8289
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-16384/observations.json.gz",
+      "sha256": "416e765a7c71a81e796783e40087dbb96b9df0aed8c28215167aa522683c214f",
+      "bytes": 8106
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-262144/observations.json.gz",
+      "sha256": "7df890d4604bd31a455d16297211b7e244a518e1c1fc8e54a735d16c671a3ce1",
+      "bytes": 8426
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-32767/observations.json.gz",
+      "sha256": "9e102e76f9339676917f40babd37d6764387093333f2bd32c74abb487d081756",
+      "bytes": 8106
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-32768/observations.json.gz",
+      "sha256": "24a57011521e9c8e8c51f0e6b1278d86cf936b8881d9afa6333c775fbc411948",
+      "bytes": 8057
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-32769/observations.json.gz",
+      "sha256": "5332c7034f209af2f389810c5a784e64aa86e69840c0b86b2f797d55f2fc93e1",
+      "bytes": 8194
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-33027/observations.json.gz",
+      "sha256": "0bfa0a287b4f27489968a65d847ee63a1ae52e25479c4c98767b7a16bcfde28d",
+      "bytes": 8115
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-4096/observations.json.gz",
+      "sha256": "bc52e7dea88e86ecf8bec5d3414e57f8cb0c384a11b672cab1cbaa8deea05347",
+      "bytes": 8132
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-65535/observations.json.gz",
+      "sha256": "8bb2dfd21e74488efae722d4cca5d57d5692e09aaf5b1f896e04c159475ca5ee",
+      "bytes": 8250
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-65536/observations.json.gz",
+      "sha256": "bcfe269044987d89fb7118ee7baf23fcb79fb9e40884999078ff964f9e8fc020",
+      "bytes": 8239
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-65537/observations.json.gz",
+      "sha256": "4708d645a7bdaac3d2260d1112f303bfc360c37607c2d8795a2608c6b103102c",
+      "bytes": 8304
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/prefix-repeated-8192/observations.json.gz",
+      "sha256": "2236e4f361ee42fe07178890312a30679b0014618bb5cd97ce5b7e19c2fa33d0",
+      "bytes": 8122
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/random-1024/observations.json.gz",
+      "sha256": "e89ace9ebe5b69f27e35963e9f72a0f5ca4db9af0f5b20b2ccfcbf5fdf5fda42",
+      "bytes": 311618
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/random-256/observations.json.gz",
+      "sha256": "e97b0c324f3016d113a7cd891f6bb280071fc14200d60fc1350f49c9fd7b5ce8",
+      "bytes": 306123
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/random-32769/observations.json.gz",
+      "sha256": "c2683c45e2fd5165851028e4adaa5f675ef1941dfd77fa4e0e1f090173c8a129",
+      "bytes": 8268
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/random-64/observations.json.gz",
+      "sha256": "4290fadd97ff6d09cadc772f65775430a556289edae9f855cd6712a8e66b4308",
+      "bytes": 299691
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/repeated-1024/observations.json.gz",
+      "sha256": "18d8220b86c71b0c11fe5f001bd40ba81c17e8a3327fc849be89ba3721679fe2",
+      "bytes": 320218
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/repeated-32769/observations.json.gz",
+      "sha256": "d3c939fd68b67e226273d43cda8e4500d9724fa88b423594ab45c3efeaa23afb",
+      "bytes": 8178
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/reymont-prefix-1024/observations.json.gz",
+      "sha256": "f8b4e23516786afac2a039cf1bb599eaba8973d21f01dff278e005a4e3ec31bd",
+      "bytes": 317138
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/reymont-prefix-16384/observations.json.gz",
+      "sha256": "6ad88807f7ffce8bf5e2320f73121695fa5134f63f309c7932bc3fe1c2c7cc80",
+      "bytes": 8218
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/reymont-prefix-32769/observations.json.gz",
+      "sha256": "4dcbdd2722efcc7a4e825e6fc27fdba63bd285f6c5c1108735b9aae8c7046f9c",
+      "bytes": 8363
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/seven-stored-prefix/observations.json.gz",
+      "sha256": "37c7e56f0a420ec80abe33da4dfacd0948c09de68053da5eb31119514189d389",
+      "bytes": 1246584
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-20261117-full-reverse/summary.json",
+      "sha256": "b7e97faa5ff848daad70e87f117024347b2774d40370df54cc6f37b3c491fe06",
+      "bytes": 70785
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/complete.json",
+      "sha256": "dbada3097978c76e9d7be3940709516ab548a0946238e1e1bda5c3f7fcc7dd56",
+      "bytes": 283
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/pins.json",
+      "sha256": "f9f1f0a2c2f11b0c3ec4a01a880fc5315daf71419dfc438d1a39d3a63b7f114a",
+      "bytes": 5277
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/prefix-natural-262144/observations.json.gz",
+      "sha256": "eb944504a6578e653af469327087ccaa8a2df33207a5fc7863cc1640fa032800",
+      "bytes": 8617
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/prefix-natural-65535/observations.json.gz",
+      "sha256": "5e23960434a4a5b83faa754a50c3c4c37fcc79b16adcf1a968309ad38d1f6ab3",
+      "bytes": 8478
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/prefix-natural-65536/observations.json.gz",
+      "sha256": "ad60d8578728581ba40f02d5d559f7e26853ccbe22e44906e9fba19aecb2dfc3",
+      "bytes": 8533
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/prefix-natural-65537/observations.json.gz",
+      "sha256": "054d11e49198aff9feb2837ef84c4f85cdf3cc60c612609416491aed390af09b",
+      "bytes": 8479
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/prefix-natural-8192/observations.json.gz",
+      "sha256": "9845e4f9907128ded7ae3272974e957e7af1360f881fc0b7d959323df5f7e725",
+      "bytes": 8230
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/prefix-random-1048576/observations.json.gz",
+      "sha256": "880e8051a37f4ff329e51db9ccc854f85ef16d623baa794ea95d42d61d63769e",
+      "bytes": 8537
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/prefix-random-4096/observations.json.gz",
+      "sha256": "8da13ec713eceae4a36ba49ed99cdebf7be5a7b179e94a6289504610dea11251",
+      "bytes": 8130
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/random-64/observations.json.gz",
+      "sha256": "1a7176ef064f5decb31112ad145a62afca2222b16b252d085aa5c3d5d8d4e78a",
+      "bytes": 300303
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/seven-stored-prefix/observations.json.gz",
+      "sha256": "e37ea362b7ee8852c0654458e21521ca30e0b0ed31e90f824c375f4ab994400f",
+      "bytes": 1245704
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases/summary.json",
+      "sha256": "8f7ec213442c353a18a24983467c8bdd466dfe00196c90368739f2463d626f6c",
+      "bytes": 7846
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/complete.json",
+      "sha256": "dbada3097978c76e9d7be3940709516ab548a0946238e1e1bda5c3f7fcc7dd56",
+      "bytes": 283
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/pins.json",
+      "sha256": "f9f1f0a2c2f11b0c3ec4a01a880fc5315daf71419dfc438d1a39d3a63b7f114a",
+      "bytes": 5277
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/prefix-natural-262144/observations.json.gz",
+      "sha256": "a5810cf23b73121de45bf7bf80e8a50a656cdb063d62ef55f52bb2747cd2ee12",
+      "bytes": 8650
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/prefix-natural-65535/observations.json.gz",
+      "sha256": "deafe2093e3c92aa7b75dff5f6dd2ef7f86ae443ae1b1f60723841c087fc04ad",
+      "bytes": 8453
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/prefix-natural-65536/observations.json.gz",
+      "sha256": "58f1868d97e6b85c23e1fe8f0f04c042083853a0afa62114aee60056a4b7b380",
+      "bytes": 8468
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/prefix-natural-65537/observations.json.gz",
+      "sha256": "0d2033ebe41d054205f722071844013fac7131627ee11e1fec7d809caa05e37e",
+      "bytes": 8431
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/prefix-natural-8192/observations.json.gz",
+      "sha256": "088d9942d1d48281ec7b701e682629efb8cfc6168aaba9c5afbcc6f50db0e7b3",
+      "bytes": 8216
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/prefix-random-1048576/observations.json.gz",
+      "sha256": "70449a306a28bf30ae11c279bba02cbacec4b78419a0bd0d2134c068a6e686ce",
+      "bytes": 8583
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/prefix-random-4096/observations.json.gz",
+      "sha256": "732f397d3265395ca2046fcc9570828ff5ca1a9226cc8c10a6bb2ae46134c802",
+      "bytes": 8137
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/random-64/observations.json.gz",
+      "sha256": "846de134c9cfb133a7c6b928374b1c747510f2855ee7eb517ebccebff212209a",
+      "bytes": 301131
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/seven-stored-prefix/observations.json.gz",
+      "sha256": "1006a4a479d045acb533270fd876e2308c36c9536af7d08271d465a56d8d8db7",
+      "bytes": 1248187
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-residue-64-focus-residue-64-cases-reverse/summary.json",
+      "sha256": "6bcd44f4eafef30d72a31bdc8032ee2ee57962da3adfbbbf867da4361caa18f7",
+      "bytes": 7857
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/complete.json",
+      "sha256": "dbada3097978c76e9d7be3940709516ab548a0946238e1e1bda5c3f7fcc7dd56",
+      "bytes": 283
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/pins.json",
+      "sha256": "88600b2e3cd087b6bbdc35254f8f516b51c620609e9f807ee6123ceff6705a0b",
+      "bytes": 5293
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/prefix-natural-262144/observations.json.gz",
+      "sha256": "865e9f92d0409080b241fc1445b32dd8fb45090fe32afbd1fa4caac83d6a1a66",
+      "bytes": 8579
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/prefix-natural-65535/observations.json.gz",
+      "sha256": "b060d18bbf01c66947ec5f360b6b7a14f7b18e967107441cf23e8afd9fcc6f08",
+      "bytes": 8521
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/prefix-natural-65536/observations.json.gz",
+      "sha256": "22ad36f61b4d51308022edb91c731d22ef938534fec373c3d082472e489ccd8e",
+      "bytes": 8503
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/prefix-natural-65537/observations.json.gz",
+      "sha256": "e6fda2144f41e8dfd1551fc3305984ae2c0a8e2ec2cfb9e655147f9c3c4a7a46",
+      "bytes": 8448
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/prefix-natural-8192/observations.json.gz",
+      "sha256": "39e44542f3008cb810a187b826acb920e56f6707602bcb7c41e0e9a944b09149",
+      "bytes": 8216
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/prefix-random-1048576/observations.json.gz",
+      "sha256": "3cea12948932df8fe129abcdd4549ecfa5a3051b3a4bf1ccf6902bcd90d28376",
+      "bytes": 8521
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/prefix-random-4096/observations.json.gz",
+      "sha256": "7184b7b1a19ea13a36b323fd2b76080e42ce3e1b8e8aa92a1531ef4bc24d7f7c",
+      "bytes": 8069
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/random-64/observations.json.gz",
+      "sha256": "423e76c7591f03749cf78a8d4ec9fea073c201d47db90dc8f10edaca054a2a75",
+      "bytes": 300009
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/seven-stored-prefix/observations.json.gz",
+      "sha256": "b708f3632f1f037fcd16eb49ad45970331d1766042bad6774f509deb68da6e90",
+      "bytes": 1245455
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases/summary.json",
+      "sha256": "0d5f5de11b9de5a95c8919237ea54e03bf97b100ebe5b6bb6a165b4efb1afe72",
+      "bytes": 7889
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/complete.json",
+      "sha256": "dbada3097978c76e9d7be3940709516ab548a0946238e1e1bda5c3f7fcc7dd56",
+      "bytes": 283
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/pins.json",
+      "sha256": "88600b2e3cd087b6bbdc35254f8f516b51c620609e9f807ee6123ceff6705a0b",
+      "bytes": 5293
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/prefix-natural-262144/observations.json.gz",
+      "sha256": "e86affe400a79e1dc4f7e1d7d06ba4c62eaabc6c71bf9fa8efe6dd62ee823c0e",
+      "bytes": 8630
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/prefix-natural-65535/observations.json.gz",
+      "sha256": "4db6b8c140baf16c45a3453bb18acd1d1d49da3df0ccbd5b13e9175edb507c0d",
+      "bytes": 8429
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/prefix-natural-65536/observations.json.gz",
+      "sha256": "7e675fbcd1410485f8f66027f97916ae2321a8faef8a29a6bacc45471d8ab0ba",
+      "bytes": 8458
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/prefix-natural-65537/observations.json.gz",
+      "sha256": "5d0db538cf6fc7759bd16e33bd99f1885857d7e76ed5a0b386a65aae677fcaa9",
+      "bytes": 8486
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/prefix-natural-8192/observations.json.gz",
+      "sha256": "bf45c2855c2be3abffea829e6838967c71e77a98e81cba6c939d8550da8bfd01",
+      "bytes": 8239
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/prefix-random-1048576/observations.json.gz",
+      "sha256": "4b0acc494f17e3a6605db84da1fa0416870feeb55208d2e2c6256835d72a81d5",
+      "bytes": 8581
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/prefix-random-4096/observations.json.gz",
+      "sha256": "4c69dfc03592876c66fa3d4de90e5e98e7e547b486786e970c533bbc81462508",
+      "bytes": 8142
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/random-64/observations.json.gz",
+      "sha256": "207eef4a5c770bad0b274c07a6e455ad17e0630846d0f31d6f6bbcb5308cd2c8",
+      "bytes": 301503
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/seven-stored-prefix/observations.json.gz",
+      "sha256": "988309e5440890cce7b0e523d33ea088b2ff6044901cefab58c25bbc1e15d163",
+      "bytes": 1247769
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/runs/spill-pairs-restored-placement-focus-placement-cases-reverse/summary.json",
+      "sha256": "b18db1b4f3832697d11d3c328838e8e5d99f128698eed805c617d1886349f022",
+      "bytes": 7880
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pair-cases.json",
+      "sha256": "76eae595db43469db642d6b9f0c41ed1251767841b6bfcd37594d5ec473dd133",
+      "bytes": 385
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pair-focus.log",
+      "sha256": "469d4f19f86d1fdf0f245dd11bda85545e81ad215afad558887c9aca086f1f57",
+      "bytes": 5148
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pair-full-plan.json",
+      "sha256": "0143ede9489ff8f94334a9e84f671ad23222b8a73332bcc827f25daaa3125798",
+      "bytes": 2314
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pair-full.log",
+      "sha256": "d465173530ae409946b6f860f03da8d39fdd62bce4ceffbdcc8c47f85f8c2fd3",
+      "bytes": 27462
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pair-profile-proof.json",
+      "sha256": "a900553a484cc7b2f0024c23d00c0af98e51cd7e54f083e16b6f9be2757b5d81",
+      "bytes": 521
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pair-screen-plan.json",
+      "sha256": "fe3c327284de85bd07f52626ef182961c5d95ab195dc7f17d246b18da3ab2ac0",
+      "bytes": 993
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pairs-20261117-checked-failures.json.gz",
+      "sha256": "831999de4c0dce3bc2b377e354605a84fd7b17002a0636cfd12942efadbfffae",
+      "bytes": 5520
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/spill-pairs-20261117-stack.json.gz",
+      "sha256": "723f2034872bd4de54fc6e21a0dce7d3b74b875a515a18a67555e75331fcad5c",
+      "bytes": 571
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/symbol-atom-comparison.json",
+      "sha256": "d9ff9dcbd12bdc8477d410fddb90ddff15f5d80a65188553035032984a140c90",
+      "bytes": 351417
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/root-inlining-opt3/compare-root-inlining-opt3.py",

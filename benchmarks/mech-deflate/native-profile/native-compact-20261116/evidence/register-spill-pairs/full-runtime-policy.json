@@ -1,0 +1,2177 @@
+{
+  "runs": [
+    {
+      "id": "spill-pairs-20261117-focus-spill-pair-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 9,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "spill-pairs-20261117-focus-spill-pair-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "spill-pairs-20261117-full",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          }
+        }
+      }
+    },
+    {
+      "id": "spill-pairs-20261117-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 60,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 54,
+            "mech-experiment": 55
+          }
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.004792125270114078,
+          "lower": -0.01202542135870277,
+          "upper": 0.0023837038560801105
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.014574254250680041,
+          "lower": -0.025320644704628914,
+          "upper": -0.004774142736616582
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.007158099809017937,
+          "lower": -0.01565387259007578,
+          "upper": 0.001281401381790337
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.009296899492902133,
+          "lower": 0.0008607262236970392,
+          "upper": 0.017774342844865343
+        }
+      },
+      "combined": {
+        "estimate": 0.0010355895518399105,
+        "lower": -0.005015679972245168,
+        "upper": 0.0071717898719765305
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.02694459058460219,
+          "lower": -0.03587835441748333,
+          "upper": -0.017869860694583628
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.012700946279233016,
+          "lower": -0.020711217171354712,
+          "upper": -0.00478376050838869
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.029111686612445786,
+          "lower": -0.04189528772072415,
+          "upper": -0.01784547733040398
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.006674496540093111,
+          "lower": -0.02065117424292806,
+          "upper": 0.005543745431542346
+        }
+      },
+      "combined": {
+        "estimate": -0.017957168602594886,
+        "lower": -0.02709481519571344,
+        "upper": -0.009427826516555937
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": 0.012747394867774098,
+          "lower": -0.00020721384244648533,
+          "upper": 0.02804833298704179
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.007177305645009957,
+          "lower": -0.020957206170233222,
+          "upper": 0.008658943584397782
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003705103741443727,
+          "lower": -0.011752623631927417,
+          "upper": 0.004354287133983226
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.001994946792194696,
+          "lower": -0.006143926997305704,
+          "upper": 0.01032905049578492
+        }
+      },
+      "combined": {
+        "estimate": -0.0008591432806247523,
+        "lower": -0.006618115943084479,
+        "upper": 0.004873250001091511
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-literals": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.005147336233997213,
+          "lower": -0.007483917838882248,
+          "upper": -0.0028808170375025366
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.002529975981924504,
+          "lower": -0.005216871899922149,
+          "upper": 0.0003444941895593967
+        }
+      },
+      "combined": {
+        "estimate": -0.003839515729959664,
+        "lower": -0.005580744739141941,
+        "upper": -0.002013997720246241
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0007982643801329736,
+          "lower": -0.0032364784706666594,
+          "upper": 0.004783335710757619
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.000602897686267978,
+          "lower": -0.0038938105565538006,
+          "upper": 0.004940845269744587
+        }
+      },
+      "combined": {
+        "estimate": 0.0007005762655225567,
+        "lower": -0.002311076137901158,
+        "upper": 0.0037131919525810186
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.002962086113695528,
+          "lower": -0.005964896580706647,
+          "upper": -0.0003547492716601264
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.00027600339975375476,
+          "lower": -0.002309036177210788,
+          "upper": 0.001851452915234697
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0011563400451227723,
+          "lower": -0.002786958069076473,
+          "upper": 0.00043740981838968906
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0009297163865112923,
+          "lower": -0.00315557100625663,
+          "upper": 0.0012112092709488653
+        }
+      },
+      "combined": {
+        "estimate": -0.0010430346423053738,
+        "lower": -0.002405870896637685,
+        "upper": 0.0002800399669979914
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-literals-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0017434704284415847,
+          "lower": -0.004863006814211368,
+          "upper": 0.0018755706495210411
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0037505650761269216,
+          "lower": -0.007564049857016308,
+          "upper": 0.0006570781146428839
+        }
+      },
+      "combined": {
+        "estimate": -0.0027475226931087393,
+        "lower": -0.005234830778354516,
+        "upper": -6.211953164625417e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "128-biased-dynamic": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0004163455279186934,
+          "lower": -0.002287710528457776,
+          "upper": 0.001460359607007966
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.003236149948198652,
+          "lower": -0.00516705310415122,
+          "upper": -0.0012769381586120732
+        }
+      },
+      "combined": {
+        "estimate": -0.0018272434691271044,
+        "lower": -0.0031631163011943686,
+        "upper": -0.0004836339350937635
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "32-high-entropy-stored": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003036466262726467,
+          "lower": -0.006121081787300531,
+          "upper": 0.00042074897524124744
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.003512190856210462,
+          "lower": -0.005783582000283727,
+          "upper": -0.0011918528945596973
+        }
+      },
+      "combined": {
+        "estimate": -0.0032743569416374685,
+        "lower": -0.00515573827481508,
+        "upper": -0.0012195244780421888
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "16384-distribution-change": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003958644039831372,
+          "lower": -0.007374555214979206,
+          "upper": -0.0004982522630014863
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.00029491609592935397,
+          "lower": -0.002325417474653091,
+          "upper": 0.0017688593469169511
+        }
+      },
+      "combined": {
+        "estimate": -0.0021284615081534897,
+        "lower": -0.004127384941378431,
+        "upper": -0.00018878134848199224
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "33027-periodic-window": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.002278885625327076,
+          "lower": -0.0005901009587500061,
+          "upper": 0.005205004333453722
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.000499902542032693,
+          "lower": -0.0034890529098703382,
+          "upper": 0.0023664703184895775
+        }
+      },
+      "combined": {
+        "estimate": 0.0008885271910041848,
+        "lower": -0.0011459654859966584,
+        "upper": 0.0029591227564020883
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0017653216453208387,
+          "lower": -0.00823520268453437,
+          "upper": 0.004710615792647976
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.002314197299613574,
+          "lower": -0.007516196836763189,
+          "upper": 0.003207522287731912
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": 0.010661512904375448,
+          "lower": 0.004373572674388093,
+          "upper": 0.017086601797342782
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.002938652277713283,
+          "lower": -0.008049969832476855,
+          "upper": 0.0022134485221931843
+        }
+      },
+      "combined": {
+        "estimate": 0.0038383984225158763,
+        "lower": -0.00025877219618886116,
+        "upper": 0.007951453812772291
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-256": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.010719504800160817,
+          "lower": -0.013419503788658194,
+          "upper": -0.007892633369490198
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.005604639927547006,
+          "lower": -0.008885826441254796,
+          "upper": -0.0022961395369123228
+        }
+      },
+      "combined": {
+        "estimate": -0.008165369511177634,
+        "lower": -0.0102633193196624,
+        "upper": -0.0059756192976958555
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.004817383488732174,
+          "lower": -0.007344194131826187,
+          "upper": -0.002164932046926915
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.00816910917916347,
+          "lower": -0.00958996695107206,
+          "upper": -0.0067683400948721495
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.009373467512177713,
+          "lower": -0.01088238074640746,
+          "upper": -0.007814210150372869
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.00526753032024363,
+          "lower": -0.007139364579760499,
+          "upper": -0.00334260803745956
+        }
+      },
+      "combined": {
+        "estimate": -0.007322621799053519,
+        "lower": -0.008536730074381604,
+        "upper": -0.006108827201759537
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0011357802634606173,
+          "lower": -0.0024946572644424236,
+          "upper": 0.0002632381643159487
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0017589202871197696,
+          "lower": -0.0002933747181165236,
+          "upper": 0.003969443551328222
+        }
+      },
+      "combined": {
+        "estimate": 0.0003105229261122222,
+        "lower": -0.0009421189642904171,
+        "upper": 0.0016580242555450653
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.00887182419834287,
+          "lower": -0.01207553317634158,
+          "upper": -0.005683296831130669
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.005502522083671635,
+          "lower": -0.007957047578358134,
+          "upper": -0.002961418165161711
+        }
+      },
+      "combined": {
+        "estimate": -0.007188602439235026,
+        "lower": -0.009257386081036878,
+        "upper": -0.005228404612224069
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0058747090607284,
+          "lower": -0.008826955047361862,
+          "upper": -0.003205704945547172
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0017185131509572793,
+          "lower": -0.0038675042361413503,
+          "upper": 0.0006299244608218846
+        }
+      },
+      "combined": {
+        "estimate": -0.0037987785828139664,
+        "lower": -0.005639729026468809,
+        "upper": -0.002037680147101928
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-1024": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.007128748933188822,
+          "lower": -0.008483748161339566,
+          "upper": -0.005715841981938752
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0067182497382844986,
+          "lower": -0.00851875834444027,
+          "upper": -0.004798368741769643
+        }
+      },
+      "combined": {
+        "estimate": -0.006923520546286754,
+        "lower": -0.008072737893727977,
+        "upper": -0.005742679303180731
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-16384": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0013152522897856844,
+          "lower": -0.0033449122182205304,
+          "upper": 0.00036375720807102496
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.001451976882935302,
+          "lower": -0.0030184848565896205,
+          "upper": 2.3834258696675548e-05
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": 0.00045826785279889926,
+          "lower": -0.0005899701166495186,
+          "upper": 0.0014652710652602874
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.001371753025113831,
+          "lower": -0.000553461911057096,
+          "upper": 0.0032755097094439023
+        }
+      },
+      "combined": {
+        "estimate": 0.000914906227410528,
+        "lower": -0.0001959907614640377,
+        "upper": 0.0020120907575356117
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-32769": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.00026221758955158325,
+          "lower": -0.0018994779212999635,
+          "upper": 0.0011809873273875837
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0009983717011672333,
+          "lower": -0.00036558230708472195,
+          "upper": 0.0021975489410182014
+        }
+      },
+      "combined": {
+        "estimate": 0.0003678784932044099,
+        "lower": -0.0006686689590407191,
+        "upper": 0.001357480521099852
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32767": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.001279019645750834,
+          "lower": -0.0009244804748851365,
+          "upper": 0.0035561275044122542
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0010038540564436538,
+          "lower": -0.0007409325520637555,
+          "upper": 0.0024980210471676756
+        }
+      },
+      "combined": {
+        "estimate": 0.0011414273973753275,
+        "lower": -0.00029925431510335887,
+        "upper": 0.002529235727092294
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32768": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0006649911703728861,
+          "lower": -0.004999527018223482,
+          "upper": 0.0021432471935849406
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0013641090827469782,
+          "lower": 0.00044679606654773885,
+          "upper": 0.002361812141255193
+        }
+      },
+      "combined": {
+        "estimate": 0.00034904447991479515,
+        "lower": -0.0018268447042479874,
+        "upper": 0.0018935212519854971
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-slides-65537": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.004174308166766227,
+          "lower": 0.0030769560373147264,
+          "upper": 0.005307349242827941
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.004936186100166218,
+          "lower": 0.003985199134290296,
+          "upper": 0.005947777242985008
+        }
+      },
+      "combined": {
+        "estimate": 0.00455517490523305,
+        "lower": 0.003800415126442802,
+        "upper": 0.005309061233165879
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0034975467646952696,
+          "lower": -0.0056014594437773235,
+          "upper": -0.0013804365791207918
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.00412349364463882,
+          "lower": -0.006946265207406821,
+          "upper": -0.0015605226139646655
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.006740242317772149,
+          "lower": -0.00954480997756102,
+          "upper": -0.004382896867059616
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.004095322576699201,
+          "lower": -0.006112756710998979,
+          "upper": -0.0020411613605504364
+        }
+      },
+      "combined": {
+        "estimate": -0.005418661661066082,
+        "lower": -0.007124734726382087,
+        "upper": -0.0038422770649171323
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0021751426613154656,
+          "lower": -0.003873380064827847,
+          "upper": -0.0005012534237722743
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.0012118196058257258,
+          "lower": -0.001848307803045679,
+          "upper": -0.0005851383445072411
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": 0.00023767442959465868,
+          "lower": -0.0008688538141740088,
+          "upper": 0.0012633894483427
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.002101844072627257,
+          "lower": 0.0004979946044394445,
+          "upper": 0.003768134574118509
+        }
+      },
+      "combined": {
+        "estimate": 0.001169325367498919,
+        "lower": 0.00018964336613791488,
+        "upper": 0.0021270503694148513
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1024": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.008852648947140995,
+          "lower": -0.010421488962704784,
+          "upper": -0.007392195908749288
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.006824232902507221,
+          "lower": -0.008231526206670003,
+          "upper": -0.005473634295937058
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.006617080925038765,
+          "lower": -0.0078811325681305,
+          "upper": -0.005383739401349175
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.007727310542304577,
+          "lower": -0.009041810920993987,
+          "upper": -0.006424904920906527
+        }
+      },
+      "combined": {
+        "estimate": -0.007172350922957094,
+        "lower": -0.008094545830628741,
+        "upper": -0.006255600963516517
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0027546853092166312,
+          "lower": -0.008505532635936452,
+          "upper": 0.0027086715600699307
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": 0.00012073862340233887,
+          "lower": -0.003761079258571165,
+          "upper": 0.004060307092212279
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0005735039618481874,
+          "lower": -0.0040949167302989364,
+          "upper": 0.0049786468589392285
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.001591375820331753,
+          "lower": -0.006009357099232671,
+          "upper": 0.0020170762666886777
+        }
+      },
+      "combined": {
+        "estimate": -0.0005095220657784783,
+        "lower": -0.003519541467429055,
+        "upper": 0.002425911623559207
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0007058680577526344,
+          "lower": -0.00336213601201929,
+          "upper": 0.0016717393825835813
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": 0.0008256780491666671,
+          "lower": -0.001450986342249605,
+          "upper": 0.003158764780957668
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0004865016412300971,
+          "lower": -0.002968390222955808,
+          "upper": 0.001976288497741674
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0031312996308976437,
+          "lower": 0.0010007462664853861,
+          "upper": 0.005248702225481239
+        }
+      },
+      "combined": {
+        "estimate": 0.0013207650934130566,
+        "lower": -0.00029569240793192453,
+        "upper": 0.0029665994596663747
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0006465386111969007,
+          "lower": -0.0031102783630836406,
+          "upper": 0.0012907969215163462
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.003505061733828141,
+          "lower": -0.004796922503772727,
+          "upper": -0.002236674721004084
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0005748291494105384,
+          "lower": -0.0009375394762339839,
+          "upper": 0.0023734079126394025
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.00032711204513913295,
+          "lower": -0.0012953804206566888,
+          "upper": 0.0018631239072510741
+        }
+      },
+      "combined": {
+        "estimate": 0.0004509629302618112,
+        "lower": -0.0006558163103372872,
+        "upper": 0.0016536707624639213
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32767": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0015825251947365615,
+          "lower": 0.00033467350123572714,
+          "upper": 0.0029840495928639132
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0012893267463394142,
+          "lower": 0.00048527477217175097,
+          "upper": 0.002069639691568037
+        }
+      },
+      "combined": {
+        "estimate": 0.0014359152402796393,
+        "lower": 0.000681721270020752,
+        "upper": 0.0022404843613761383
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32768": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0027670133605988134,
+          "lower": 0.0008852273671096089,
+          "upper": 0.004972052554383044
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.00035840182743540616,
+          "lower": -0.0005356421781124165,
+          "upper": 0.0012595821917400496
+        }
+      },
+      "combined": {
+        "estimate": 0.0015619835490359169,
+        "lower": 0.0004995641714691246,
+        "upper": 0.0027377790721236916
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0023496589251417177,
+          "lower": 0.001159018145561408,
+          "upper": 0.0034477817996563243
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0022610231946129655,
+          "lower": 0.0006557106782523192,
+          "upper": 0.004168805636636241
+        }
+      },
+      "combined": {
+        "estimate": 0.002305340080099416,
+        "lower": 0.0012954363062778196,
+        "upper": 0.003443593308561921
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-33027": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.004672038643491971,
+          "lower": 0.003666547883136806,
+          "upper": 0.005632624004848097
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.002981361587353515,
+          "lower": 0.0019549986030484856,
+          "upper": 0.0040259488471017235
+        }
+      },
+      "combined": {
+        "estimate": 0.0038263441788086716,
+        "lower": 0.0031183809457437928,
+        "upper": 0.004518568221051789
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65535": {
+      "decision": "regression",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.005774380982599858,
+          "lower": 0.004592119288674201,
+          "upper": 0.007126125578876152
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.005749805785622231,
+          "lower": 0.0050060544211685265,
+          "upper": 0.006486366817719524
+        }
+      },
+      "combined": {
+        "estimate": 0.005762093309050975,
+        "lower": 0.005049035156316162,
+        "upper": 0.006546387261316733
+      },
+      "adverse_runs": [
+        "spill-pairs-20261117-full-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65536": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0047675964936533255,
+          "lower": 0.0041097716757436675,
+          "upper": 0.005376128442143413
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.005789111195043661,
+          "lower": 0.004880585061655562,
+          "upper": 0.006811776984753326
+        }
+      },
+      "combined": {
+        "estimate": 0.00527822409267964,
+        "lower": 0.004710934023022251,
+        "upper": 0.005856575410021048
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65537": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.004856773872385034,
+          "lower": 0.0039952376173062465,
+          "upper": 0.005743321746804364
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0053831196522500235,
+          "lower": 0.004650943970304633,
+          "upper": 0.006101571152519858
+        }
+      },
+      "combined": {
+        "estimate": 0.005119912308732433,
+        "lower": 0.004553486706071697,
+        "upper": 0.0056932273895162755
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-131072": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.005084356763213949,
+          "lower": 0.004334691532220658,
+          "upper": 0.005847175406787919
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0024390795485162986,
+          "lower": -0.0008923538521647956,
+          "upper": 0.004950730051534125
+        }
+      },
+      "combined": {
+        "estimate": 0.0037608467470371387,
+        "lower": 0.002047989617546042,
+        "upper": 0.005105386784894916
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-262144": {
+      "decision": "regression",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.005492005720036053,
+          "lower": 0.004784758678864742,
+          "upper": 0.0061807078957094586
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.006491231966878841,
+          "lower": 0.0057699102427126725,
+          "upper": 0.00738956648358724
+        }
+      },
+      "combined": {
+        "estimate": 0.0059914947801533724,
+        "lower": 0.005491734643007673,
+        "upper": 0.006545721529066961
+      },
+      "adverse_runs": [
+        "spill-pairs-20261117-full-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1048576": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.004671127015834831,
+          "lower": 0.003993899815590618,
+          "upper": 0.005150567086371849
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0049691213566149806,
+          "lower": 0.004282081742751798,
+          "upper": 0.005666030683486589
+        }
+      },
+      "combined": {
+        "estimate": 0.004820113139393678,
+        "lower": 0.004354052424796695,
+        "upper": 0.005253038332598159
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.00958530006467706,
+          "lower": -0.011114900364919023,
+          "upper": -0.008006441728469094
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.009058288683469362,
+          "lower": -0.012025570326663626,
+          "upper": -0.0064363079993591255
+        }
+      },
+      "combined": {
+        "estimate": -0.009321829418374117,
+        "lower": -0.010977317831332711,
+        "upper": -0.0078109715219017994
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": 0.003081033822931012,
+          "lower": -0.004660921846363464,
+          "upper": 0.011451634471484562
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.02149724746828008,
+          "lower": -0.027119602105904583,
+          "upper": -0.015342289688533017
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.024528409048022004,
+          "lower": -0.02972059480617062,
+          "upper": -0.01927314850407591
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.017679578857095923,
+          "lower": -0.025629515622842547,
+          "upper": -0.009497620166606935
+        }
+      },
+      "combined": {
+        "estimate": -0.021109983687193967,
+        "lower": -0.025895166631014654,
+        "upper": -0.0162514500577966
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.015550660997155519,
+          "lower": -0.02000117346982,
+          "upper": -0.011038459511217735
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.022969703521588336,
+          "lower": -0.027778897514527334,
+          "upper": -0.017904542503301757
+        }
+      },
+      "combined": {
+        "estimate": -0.01926719767618379,
+        "lower": -0.02254640226819793,
+        "upper": -0.015994703753010486
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-16384": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.002611075347300207,
+          "lower": -0.00686966687740842,
+          "upper": 0.0019929013116781746
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.014171086771746721,
+          "lower": -0.017369625791927135,
+          "upper": -0.010959733814042583
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.016208870298575206,
+          "lower": -0.019737001874182813,
+          "upper": -0.01269855812478049
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0015199109912590325,
+          "lower": -0.010483733007309093,
+          "upper": 0.009033673213658666
+        }
+      },
+      "combined": {
+        "estimate": -0.008891602926153985,
+        "lower": -0.013791584717173677,
+        "upper": -0.003362332789581979
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32767": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.004111320163238896,
+          "lower": -0.006990817407960925,
+          "upper": -0.0010922004223717918
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.004341952221907697,
+          "lower": -0.0069000845626290275,
+          "upper": -0.0016099076666803436
+        }
+      },
+      "combined": {
+        "estimate": -0.004226642869688435,
+        "lower": -0.006178362173334451,
+        "upper": -0.002222278962001445
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32768": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.007640692158812801,
+          "lower": -0.009878775392818007,
+          "upper": -0.005312024443240637
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.004873618125821322,
+          "lower": -0.007808119337683661,
+          "upper": -0.00197660404336375
+        }
+      },
+      "combined": {
+        "estimate": -0.006258118256473599,
+        "lower": -0.008098092037682747,
+        "upper": -0.004413584487606426
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003892131722299852,
+          "lower": -0.0066562554058224865,
+          "upper": -0.0011715155101680308
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0015841171096516726,
+          "lower": -0.004791563294934131,
+          "upper": 0.001666197601769781
+        }
+      },
+      "combined": {
+        "estimate": -0.0027387921108618096,
+        "lower": -0.004905315938223409,
+        "upper": -0.0006034278213827848
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-33027": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.005231957253370889,
+          "lower": -0.008103930357121869,
+          "upper": -0.0021891730997781744
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0038154423884334543,
+          "lower": -0.007067530877323591,
+          "upper": -0.0004173681278869523
+        }
+      },
+      "combined": {
+        "estimate": -0.004523951774993873,
+        "lower": -0.006746772659111611,
+        "upper": -0.0022748376818965133
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65535": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.004927331288799741,
+          "lower": -0.006446041000363056,
+          "upper": -0.0034681778082110704
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0053015729153867985,
+          "lower": -0.007427113161939114,
+          "upper": -0.003141963663435776
+        }
+      },
+      "combined": {
+        "estimate": -0.00511446969919227,
+        "lower": -0.006479366809728049,
+        "upper": -0.0038281334418770463
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65536": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003747564239642065,
+          "lower": -0.0053697428804155845,
+          "upper": -0.0020561438716831804
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.003772022262687802,
+          "lower": -0.005583373658413215,
+          "upper": -0.0019656777138832293
+        }
+      },
+      "combined": {
+        "estimate": -0.00375979332622145,
+        "lower": -0.005000831572824382,
+        "upper": -0.002525726909640813
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0048094678968580995,
+          "lower": -0.006857223877374863,
+          "upper": -0.002823984814335323
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.001967906606245018,
+          "lower": -0.003591883761738135,
+          "upper": -0.0003681241311735972
+        }
+      },
+      "combined": {
+        "estimate": -0.0033896999927486293,
+        "lower": -0.004707928203100953,
+        "upper": -0.002100888836345738
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-131072": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0028896555848197947,
+          "lower": -0.00484407909025264,
+          "upper": -0.00121439891853925
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.001843798322000434,
+          "lower": -0.003376313464255487,
+          "upper": -0.00013948092182836103
+        }
+      },
+      "combined": {
+        "estimate": -0.00236686400495989,
+        "lower": -0.0035409816508915615,
+        "upper": -0.001214415128309998
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-262144": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0017540223669114674,
+          "lower": -0.003097823005440259,
+          "upper": -0.0005416029585938453
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.001971917955837621,
+          "lower": -0.003060985466837862,
+          "upper": -0.0009339017878073896
+        }
+      },
+      "combined": {
+        "estimate": -0.0018629761072624929,
+        "lower": -0.0027153621117295135,
+        "upper": -0.0010385270258688184
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0011668711493085793,
+          "lower": -0.0016399144751976236,
+          "upper": -0.0006916517172371739
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.0012864110877541801,
+          "lower": -0.0017648500254864308,
+          "upper": -0.0007880536893222212
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0006121547592631282,
+          "lower": -0.001514837785054124,
+          "upper": 0.00044687479545446607
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0028893870163588797,
+          "lower": -0.005694226861614138,
+          "upper": -0.001159177117888377
+        }
+      },
+      "combined": {
+        "estimate": -0.0017514202482472596,
+        "lower": -0.0031175614833413023,
+        "upper": -0.00068123595855063
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.001059638197523971,
+          "lower": -0.002856287024366466,
+          "upper": 0.0008746977580968984
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.0016518176693519626,
+          "lower": -0.0031041045982366233,
+          "upper": -0.00013077373377479162
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0005033157108115249,
+          "lower": -0.002013846001060693,
+          "upper": 0.001122293018276821
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0003350558460921693,
+          "lower": -0.0015522923852260284,
+          "upper": 0.0022866341637437504
+        }
+      },
+      "combined": {
+        "estimate": -8.421779811407237e-05,
+        "lower": -0.0012913890335555234,
+        "upper": 0.0011556481750158998
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0036670828417264545,
+          "lower": -0.009657656607061527,
+          "upper": 0.0027541083155668833
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.00195666012520479,
+          "lower": -0.005716571896097866,
+          "upper": 0.01041399996591652
+        }
+      },
+      "combined": {
+        "estimate": -0.0008591680605251062,
+        "lower": -0.005783041268032529,
+        "upper": 0.004350585154447195
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-8192": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.001969445329587094,
+          "lower": -0.007335044509301114,
+          "upper": 0.003131972643970693
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.004038331298580222,
+          "lower": -0.008981418255413431,
+          "upper": 0.0006521970361426099
+        }
+      },
+      "combined": {
+        "estimate": -0.0030044249624033847,
+        "lower": -0.006627847117817942,
+        "upper": 0.0004524697336574235
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-16384": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003938880666947364,
+          "lower": -0.007949828704953088,
+          "upper": 0.0002598172586638636
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0009107769827481071,
+          "lower": -0.0026353399690500767,
+          "upper": 0.0046405865464327345
+        }
+      },
+      "combined": {
+        "estimate": -0.0015169962017623773,
+        "lower": -0.004211665801546527,
+        "upper": 0.001330391308620893
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32767": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.002529067871901214,
+          "lower": -0.0063130364471883915,
+          "upper": 0.000888258782846707
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.003645915535743005,
+          "lower": -0.006482912204160862,
+          "upper": -0.0009139309555917796
+        }
+      },
+      "combined": {
+        "estimate": -0.003087648105310592,
+        "lower": -0.005429482410336917,
+        "upper": -0.0008902752411301673
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32768": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.002001121504267789,
+          "lower": -0.004256092644738696,
+          "upper": 0.0001650062320808221
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.003561176543700806,
+          "lower": -0.006091107412152019,
+          "upper": -0.0010906857371230094
+        }
+      },
+      "combined": {
+        "estimate": -0.0027814540939415933,
+        "lower": -0.004497287252497317,
+        "upper": -0.0010921346460137649
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32769": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.00017392173676589184,
+          "lower": -0.002593919842310277,
+          "upper": 0.002403136512336035
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.005224332396672526,
+          "lower": -0.008113554376302567,
+          "upper": -0.002336886012072048
+        }
+      },
+      "combined": {
+        "estimate": -0.0027023240318237995,
+        "lower": -0.0045604447567088036,
+        "upper": -0.0007384092425632982
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-33027": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0002725310470499398,
+          "lower": -0.0028538846736124723,
+          "upper": 0.0034366669128351734
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0014034205248159015,
+          "lower": -0.004410759541304654,
+          "upper": 0.0016073979568773655
+        }
+      },
+      "combined": {
+        "estimate": -0.0005657960392946304,
+        "lower": -0.002751715631654439,
+        "upper": 0.0016208432712643273
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65535": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.001810454525953853,
+          "lower": -0.0005257312574535877,
+          "upper": 0.004152916017950314
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0011349407201936001,
+          "lower": -0.004328902108035493,
+          "upper": 0.001638274435818765
+        }
+      },
+      "combined": {
+        "estimate": 0.00033667284929461694,
+        "lower": -0.0016638165113029846,
+        "upper": 0.0021588847673410516
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65536": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.003456961241503631,
+          "lower": 0.0003826735291811989,
+          "upper": 0.006837098073861014
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -5.085275049498961e-05,
+          "lower": -0.0021757003009125198,
+          "upper": 0.0021632090336622944
+        }
+      },
+      "combined": {
+        "estimate": 0.0017015187644577878,
+        "lower": -0.00018612377192661622,
+        "upper": 0.0037104934813234625
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65537": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0015287915443599198,
+          "lower": -0.0036317641262114675,
+          "upper": 0.0005686868544536594
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0005162413738463156,
+          "lower": -0.0029606462846007986,
+          "upper": 0.001874579978783819
+        }
+      },
+      "combined": {
+        "estimate": -0.0010226447475193412,
+        "lower": -0.0026098948162170954,
+        "upper": 0.0005691007793593439
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-131072": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.001917287132847778,
+          "lower": -0.003313466488629513,
+          "upper": -0.0005354788567273339
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0002134477934034873,
+          "lower": -0.0015103661435222904,
+          "upper": 0.0019934888657415772
+        }
+      },
+      "combined": {
+        "estimate": -0.0008524876576793128,
+        "lower": -0.001969162496495702,
+        "upper": 0.0002952782504779261
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-262144": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0002613787643315213,
+          "lower": -0.001414390801071086,
+          "upper": 0.0009152116343531524
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0014260111050786728,
+          "lower": -0.0025082834700742573,
+          "upper": -0.0003642625133758459
+        }
+      },
+      "combined": {
+        "estimate": -0.0008438646239465886,
+        "lower": -0.0016342327631044817,
+        "upper": -3.8935226288172586e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.00125981412845233,
+          "lower": -0.0024111201432757134,
+          "upper": -0.00028712440546974083
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0006449248351625414,
+          "lower": -0.0014262901743978817,
+          "upper": 6.95136583974687e-05
+        }
+      },
+      "combined": {
+        "estimate": -0.0009524167879668699,
+        "lower": -0.0016338347967964628,
+        "upper": -0.00033844414915251697
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0013564539641277573,
+          "lower": 3.178869467435064e-05,
+          "upper": 0.002780038832215448
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0024295422040732095,
+          "lower": 0.0005827809879184187,
+          "upper": 0.004664362662653243
+        }
+      },
+      "combined": {
+        "estimate": 0.0018928544162568617,
+        "lower": 0.0007314504781528175,
+        "upper": 0.003195088866695839
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003179319280403714,
+          "lower": -0.009932622351979115,
+          "upper": 0.004099582504723864
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.007202119310863786,
+          "lower": -0.0003115946555116711,
+          "upper": 0.014836970249766157
+        }
+      },
+      "combined": {
+        "estimate": 0.001997955184378286,
+        "lower": -0.0030812237535270404,
+        "upper": 0.007265306063769739
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-8192": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0016451460829139952,
+          "lower": -0.005513985830015278,
+          "upper": 0.0022280797072111724
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.003212833497585832,
+          "lower": -0.001324258823164337,
+          "upper": 0.007715490444643924
+        }
+      },
+      "combined": {
+        "estimate": 0.0007808960178188329,
+        "lower": -0.002250855680018149,
+        "upper": 0.0037584730986204296
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-16384": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.002278511541165651,
+          "lower": -0.004992151876172857,
+          "upper": 0.0003893976466073923
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0015295436276960839,
+          "lower": -0.0012182198762792362,
+          "upper": 0.004292042346076164
+        }
+      },
+      "combined": {
+        "estimate": -0.0003762972979672874,
+        "lower": -0.002310975234092405,
+        "upper": 0.0015207338453153696
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32767": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0019001665540232526,
+          "lower": -0.00016612808893612385,
+          "upper": 0.003948243314064959
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0023065287599326467,
+          "lower": -0.0037932358660822674,
+          "upper": -0.0008331401089026746
+        }
+      },
+      "combined": {
+        "estimate": -0.00020539359062099471,
+        "lower": -0.001482396866286928,
+        "upper": 0.001070137248605274
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32768": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0010791478096607854,
+          "lower": -0.0029671380700986294,
+          "upper": 0.0007389053584365701
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0013833468718928987,
+          "lower": -0.0033651525241115143,
+          "upper": 0.0005984829187870577
+        }
+      },
+      "combined": {
+        "estimate": -0.0012312589221701309,
+        "lower": -0.002589803444449923,
+        "upper": 0.00010324281803719693
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0013068850825088685,
+          "lower": -0.0007281623392503267,
+          "upper": 0.003343676323925404
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0024463320106438147,
+          "lower": -0.005903717599587854,
+          "upper": 0.0010259019327030217
+        }
+      },
+      "combined": {
+        "estimate": -0.0005714852991969277,
+        "lower": -0.002592471029496224,
+        "upper": 0.0013862142456162463
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-33027": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0006528264542348117,
+          "lower": -0.003795171188988533,
+          "upper": 0.002582615681853806
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0006293767274815343,
+          "lower": -0.0030305743933994878,
+          "upper": 0.0017914683122357555
+        }
+      },
+      "combined": {
+        "estimate": -0.0006411016596384878,
+        "lower": -0.0026495598297953116,
+        "upper": 0.0013559360587613867
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65535": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0015933388108594349,
+          "lower": -0.0042893272005180005,
+          "upper": 0.0008511790441001477
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0003575150572292518,
+          "lower": -0.0014642492804497476,
+          "upper": 0.002158383437343536
+        }
+      },
+      "combined": {
+        "estimate": -0.000618387899920525,
+        "lower": -0.002263405284398612,
+        "upper": 0.0009344840620955086
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65536": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0019056722855423924,
+          "lower": -0.0003865524694769418,
+          "upper": 0.004375242788284384
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0031920210731353205,
+          "lower": 0.0010667556991856841,
+          "upper": 0.005486662123450836
+        }
+      },
+      "combined": {
+        "estimate": 0.0025486403685217596,
+        "lower": 0.0009654913626915285,
+        "upper": 0.00422212986965409
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65537": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0014471602107722914,
+          "lower": -0.0034998787247715324,
+          "upper": 0.0005649302090220409
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.001004446235029044,
+          "lower": -0.003259944746072496,
+          "upper": 0.001256321517878245
+        }
+      },
+      "combined": {
+        "estimate": -0.0012258277524272998,
+        "lower": -0.0027892136256629785,
+        "upper": 0.00031841230258300435
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-131072": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0008513614804943614,
+          "lower": -0.0028557806247575535,
+          "upper": 0.0012523224500085028
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0008718250311616771,
+          "lower": -0.0026051631763805982,
+          "upper": 0.0008051871933725252
+        }
+      },
+      "combined": {
+        "estimate": -0.0008615933082177785,
+        "lower": -0.002203573763257083,
+        "upper": 0.00046722304378143953
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-262144": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0011602416530356319,
+          "lower": -0.002310317911498716,
+          "upper": -5.893882204399681e-05
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0010993695336181109,
+          "lower": -0.0024375424257634393,
+          "upper": 0.0003151005134518492
+        }
+      },
+      "combined": {
+        "estimate": -0.0011298060570276158,
+        "lower": -0.0020182136344308876,
+        "upper": -0.00021890469849616956
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.0005664576287622847,
+          "lower": -0.0013151117198562101,
+          "upper": 0.0002086381213104449
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.0006760535472987161,
+          "lower": -0.0014877457376568648,
+          "upper": 0.00011357711175241647
+        }
+      },
+      "combined": {
+        "estimate": -0.0006212570903720849,
+        "lower": -0.0011835120173462332,
+        "upper": -6.907772337427787e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {
+    "mech-control": 10548878,
+    "mech-experiment": 10548878
+  },
+  "timing_only_findings": {
+    "rejected": [
+      "prefix-natural-65535: established slowdown above the 0.5% resolution",
+      "prefix-natural-262144: established slowdown above the 0.5% resolution"
+    ],
+    "unresolved": [
+      "empty: regression bound or duplicate-control repeatability unresolved",
+      "random-64: regression bound or duplicate-control repeatability unresolved",
+      "heldout-slides-65537: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-65536: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-65537: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-131072: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-1048576: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "qualification_scope": "Timing and per-case review. Promotion also requires a complete provenance manifest and linked contract checks.",
+  "paired_control_worker_sha256": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+  "candidate_worker_sha256": "2920b25d6874cb954f872d64c5ca1fd4a175d865f1347fb63ecd39b59562bf7b",
+  "plan_sha256": "fe3c327284de85bd07f52626ef182961c5d95ab195dc7f17d246b18da3ab2ac0"
+}
