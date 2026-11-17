@@ -1542,8 +1542,9 @@ fn define_entry<M: Module>(
                     extrema,
                 );
             if unsigned != 0 {
-                context.eliminate_unreachable_code(isa).map_err(backend)?;
-                context.remove_constant_phis(isa).map_err(backend)?;
+                context
+                    .prune_unreachable_and_remove_constant_phis(isa)
+                    .map_err(backend)?;
                 context.verify(isa).map_err(backend)?;
             }
             let repeated = cfg_cleanup::share_repeated_bounds(&controls, &mut context, isa)?;

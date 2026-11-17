@@ -1168,8 +1168,9 @@ fn prepare_impl<M: Module>(
         );
         if removed != 0 {
             let isa = module.isa();
-            context.eliminate_unreachable_code(isa).map_err(backend)?;
-            context.remove_constant_phis(isa).map_err(backend)?;
+            context
+                .prune_unreachable_and_remove_constant_phis(isa)
+                .map_err(backend)?;
             context.verify(isa).map_err(backend)?;
         }
         removed
