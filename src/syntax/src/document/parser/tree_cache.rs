@@ -16,7 +16,54 @@ struct Request {
     end: usize,
     offset: TextSize,
     identity: NodeId,
-    events: Journal<Event>,
+    retained: Option<Journal<Event>>,
+}
+
+const MAX_COPIED_EVENTS: usize = 16;
+
+enum EventWindow<'a> {
+    Journal(&'a Journal<Event>),
+    Copied {
+        start: usize,
+        first: &'a [Event],
+        second: &'a [Event],
+    },
+}
+
+impl<'a> EventWindow<'a> {
+    fn page_at(&self, index: usize) -> Option<(usize, &'a [Event])> {
+        match *self {
+            Self::Journal(events) => events.page_at(index),
+            Self::Copied {
+                start,
+                first,
+                second,
+            } => {
+                let split = start + first.len();
+                if index < split {
+                    Some((start, first))
+                } else {
+                    Some((split, second))
+                }
+            }
+        }
+    }
+}
+
+impl Request {
+    fn events<'a>(&'a self, copied_events: &'a VecDeque<Event>) -> EventWindow<'a> {
+        if let Some(retained) = &self.retained {
+            return EventWindow::Journal(retained);
+        }
+        let count = self.end - self.start;
+        let (first, second) = copied_events.as_slices();
+        let split = first.len().min(count);
+        EventWindow::Copied {
+            start: self.start,
+            first: &first[..split],
+            second: &second[..count - split],
+        }
+    }
 }
 struct Frame {
     kind: SyntaxKind,
@@ -105,17 +152,25 @@ impl Sink {
         ids: &mut IdGenerator,
         allowance: &mut u64,
     ) -> Result<bool, BuildError> {
-        self.advance_mode::<true>(source, events, current, ids, allowance)
+        self.advance_mode::<true>(
+            source,
+            EventWindow::Journal(events),
+            current,
+            ids,
+            allowance,
+        )
     }
 
     fn advance_mode<const MATERIALIZE: bool>(
         &mut self,
         source: &TextSnapshot,
-        events: &Journal<Event>,
+        events: EventWindow<'_>,
         current: &Journal<Event>,
         ids: &mut IdGenerator,
         allowance: &mut u64,
     ) -> Result<bool, BuildError> {
+        let refresh_child_cache =
+            !matches!(events, EventWindow::Journal(journal) if core::ptr::eq(journal, current));
         let (mut page_start, mut page): (usize, &[Event]) = (0, &[]);
         loop {
             if self.at >= self.end && self.token.is_none() {
@@ -198,7 +253,7 @@ impl Sink {
                     // Its immutable marker identity proves whether the current
                     // journal still describes that exact completed child.
                     let cached = cached.or_else(|| {
-                        if identity.is_none() || core::ptr::eq(events, current) {
+                        if identity.is_none() || !refresh_child_cache {
                             return None;
                         }
                         match current.get(index) {
@@ -301,9 +356,12 @@ impl Sink {
 pub(crate) struct TreeCache {
     queue: VecDeque<Request>,
     active: Option<(Request, Sink)>,
+    // Small one-shot requests own only their immutable event range. Share
+    // storage in request order so none of them forces journal page copies.
+    copied_events: VecDeque<Event>,
     pub work: CacheWork,
     pub peak_pending: usize,
-    pub discard_stale_requests: bool,
+    pub one_shot: bool,
     #[cfg(test)]
     pub preserve_stale_accounting_for_test: bool,
 }
@@ -315,12 +373,26 @@ impl TreeCache {
         offset: TextSize,
         identity: NodeId,
     ) {
+        let end = events.len();
+        let retained = if self.one_shot && end - start <= MAX_COPIED_EVENTS {
+            let mut cursor = start;
+            while cursor < end {
+                let (base, page) = events.page_at(cursor).expect("queued marker page");
+                let through = (base + page.len()).min(end);
+                self.copied_events
+                    .extend(page[cursor - base..through - base].iter().cloned());
+                cursor = through;
+            }
+            None
+        } else {
+            Some(events.clone())
+        };
         self.queue.push_back(Request {
             start,
-            end: events.len(),
+            end,
             offset,
             identity,
-            events: events.clone(),
+            retained,
         });
         self.peak_pending = self
             .peak_pending
@@ -336,6 +408,13 @@ impl TreeCache {
     pub fn pending(&self) -> bool {
         self.active.is_some() || !self.queue.is_empty()
     }
+
+    fn release(&mut self, request: Request) {
+        if request.retained.is_none() {
+            self.copied_events.drain(..request.end - request.start);
+        }
+    }
+
     pub fn advance(
         &mut self,
         source: &TextSnapshot,
@@ -359,7 +438,7 @@ impl TreeCache {
                 let preserve_stale_accounting = self.preserve_stale_accounting_for_test;
                 #[cfg(not(test))]
                 let preserve_stale_accounting = false;
-                if !self.discard_stale_requests
+                if !self.one_shot
                     && !preserve_stale_accounting
                     && (request.end > current.len()
                         || !matches!(current.get(request.start),
@@ -371,7 +450,7 @@ impl TreeCache {
                 // Cache publication needs the root, while the final sink
                 // collects the event map used to anchor diagnostics.
                 let mut sink = Sink::new(request.start, request.end, false);
-                if self.discard_stale_requests
+                if self.one_shot
                     && !matches!(current.get(request.start), Some(Event::Start { identity: Some(id), .. }) if *id == request.identity)
                     // Bound potential work before starting. Each event costs one unit.
                     // A token can add the byte length of the source and one finish unit.
@@ -382,17 +461,30 @@ impl TreeCache {
                     // The marker cannot receive the result. Visit the same events and
                     // consume the same work and IDs without allocating a discarded tree.
                     let complete = sink
-                        .advance_mode::<false>(source, &request.events, current, ids, allowance)
+                        .advance_mode::<false>(
+                            source,
+                            request.events(&self.copied_events),
+                            current,
+                            ids,
+                            allowance,
+                        )
                         .expect("completed canonical marker must materialize");
                     assert!(complete, "bounded cache accounting must complete");
                     self.work.accumulate(sink.work);
+                    self.release(request);
                     continue;
                 }
                 self.active = Some((request, sink));
             }
             let (request, sink) = self.active.as_mut().expect("active cache request");
             if !sink
-                .advance(source, &request.events, current, ids, allowance)
+                .advance_mode::<true>(
+                    source,
+                    request.events(&self.copied_events),
+                    current,
+                    ids,
+                    allowance,
+                )
                 .expect("completed canonical marker must materialize")
             {
                 return false;
@@ -408,7 +500,7 @@ impl TreeCache {
             let work = sink.work;
             // Release the request's snapshot before publishing the new cache
             // entry, so the completed request cannot force path copying.
-            drop(request);
+            self.release(request);
             drop(sink);
             if let Some(Event::Start {
                 identity: Some(identity),
@@ -426,10 +518,9 @@ impl TreeCache {
 }
 impl Parser<'_> {
     pub(crate) fn advance_tree_cache(&mut self, allowance: &mut u64) -> bool {
-        let mut cache = core::mem::take(&mut self.state.tree_cache);
-        let complete = cache.advance(self.source, &mut self.state.events, self.ids, allowance);
-        self.state.tree_cache = cache;
-        complete
+        self.state
+            .tree_cache
+            .advance(self.source, &mut self.state.events, self.ids, allowance)
     }
 }
 
@@ -471,11 +562,21 @@ mod tests {
 
     #[test]
     fn stale_requests_keep_later_identities_and_finite_work() {
+        for padding in [0, 65] {
+            assert_stale_requests_keep_grants(padding);
+        }
+    }
+
+    fn assert_stale_requests_keep_grants(padding: usize) {
         let source = TextSnapshot::new(DocumentId(2), Revision(1), "aé")
             .unwrap()
             .append("βz")
             .unwrap();
         let mut events = Journal::default();
+        // Start just before the 32-event page boundary. Both storage modes
+        // must keep their event ranges when the live page is rewritten.
+        let start = 31;
+        events.extend((0..start).map(|_| Event::Tombstone));
         for identity in [Some(NodeId(20)), None] {
             events.push(Event::Start {
                 kind: SyntaxKind::Document,
@@ -484,7 +585,7 @@ mod tests {
                 cached: None,
             });
         }
-        for _ in 0..65 {
+        for _ in 0..padding {
             events.push(Event::Tombstone);
         }
         events.push(Event::Token {
@@ -497,17 +598,17 @@ mod tests {
 
         let run = |discard, grant| {
             let mut cache = TreeCache {
-                discard_stale_requests: discard,
+                one_shot: discard,
                 preserve_stale_accounting_for_test: true,
                 ..TreeCache::default()
             };
             let mut current = events.clone();
-            cache.enqueue(&current, 0, TextSize(0), NodeId(20));
-            let Event::Start { identity, .. } = &mut current[0] else {
+            cache.enqueue(&current, start, TextSize(0), NodeId(20));
+            let Event::Start { identity, .. } = &mut current[start] else {
                 panic!("root marker")
             };
             *identity = Some(NodeId(21));
-            cache.enqueue(&current, 0, TextSize(0), NodeId(21));
+            cache.enqueue(&current, start, TextSize(0), NodeId(21));
             let mut ids = IdGenerator::with_next(40, 100, 1);
             let mut charges = Vec::new();
             loop {
@@ -521,7 +622,7 @@ mod tests {
             let Event::Start {
                 cached: Some(cached),
                 ..
-            } = &current[0]
+            } = &current[start]
             else {
                 panic!("published root")
             };
