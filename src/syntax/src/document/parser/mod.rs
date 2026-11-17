@@ -82,6 +82,19 @@ pub(crate) struct CursorScope {
     context_frontier: bool,
 }
 
+// The active definition trial only observes its first effective raw scan.
+#[derive(Clone, Copy, Default)]
+pub(crate) enum DefinitionRawOrigin {
+    #[default]
+    Off,
+    Waiting,
+    Fresh {
+        at: TextSize,
+        final_end: Option<TextSize>,
+    },
+    Inherited,
+}
+
 /// Input-independent ownership of a live parse. Moving this state never
 /// finalizes events, loses rule/marker context, or replenishes resource fuel.
 pub(crate) struct ParserState {
@@ -95,6 +108,7 @@ pub(crate) struct ParserState {
     events: Journal<Event>,
     tree_cache: tree_cache::TreeCache,
     grapheme_tail: Option<grapheme_scan::GraphemeScan>,
+    definition_raw: DefinitionRawOrigin,
     literal_cache: literal_scan::LiteralCache,
     base_storage: canonical::base::continuation::FrameStorage,
     literal_storage: canonical::literals::FrameStorage,
@@ -151,6 +165,7 @@ impl ParserState {
             events: Journal::default(),
             tree_cache: tree_cache::TreeCache::default(),
             grapheme_tail: None,
+            definition_raw: DefinitionRawOrigin::Off,
             literal_cache: literal_scan::LiteralCache::default(),
             base_storage: canonical::base::continuation::FrameStorage::default(),
             literal_storage: canonical::literals::FrameStorage::default(),
@@ -595,6 +610,22 @@ impl<'a> Parser<'a> {
     #[cfg(test)]
     pub(crate) fn rule_depth(&self) -> usize {
         self.state.rules.len()
+    }
+
+    pub(crate) fn observe_definition_raw_origin(&mut self, final_end: Option<TextSize>) {
+        if matches!(self.state.definition_raw, DefinitionRawOrigin::Waiting) {
+            let at = self.offset();
+            self.state.definition_raw = if self
+                .state
+                .grapheme_tail
+                .as_ref()
+                .is_some_and(|tail| tail.resumes_at(at, final_end))
+            {
+                DefinitionRawOrigin::Inherited
+            } else {
+                DefinitionRawOrigin::Fresh { at, final_end }
+            };
+        }
     }
 
     pub(crate) fn bump_char_raw(&mut self) -> Option<(char, TextRange)> {

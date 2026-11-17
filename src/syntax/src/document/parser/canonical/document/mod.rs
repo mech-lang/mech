@@ -1,6 +1,7 @@
 //! Canonical document grammar interpreter.
 
 pub(crate) mod continuation;
+mod definition_replay;
 
 use crate::document::{ExpectedSyntax, NodeFlags, RuleId, SyntaxKind};
 

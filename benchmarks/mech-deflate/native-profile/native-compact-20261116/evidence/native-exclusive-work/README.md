@@ -37,4 +37,5 @@ Apply the additional [shared-owner change](shared-facts-only.patch.gz)
 only on the shared side. The as-run compiler and link argv in each capture
 pin inputs and output identities. The executable paths identify the
 original environment. Fresh locally built copies of both compilers can
-run [capture.py](capture.py) and [replay.py](replay.py).
+run [capture.py](capture.py) and [replay.py](replay.py). The captured data can
+be checked offline with [replay-archive.py](replay-archive.py). [Scoped scalar demand pilot](SCALAR-DEMAND.md)

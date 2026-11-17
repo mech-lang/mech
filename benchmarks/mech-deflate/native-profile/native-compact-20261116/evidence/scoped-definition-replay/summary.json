@@ -1,0 +1,73 @@
+{
+  "parser_control_seconds": 1.876249,
+  "parser_candidate_seconds": 1.302888,
+  "parser_capture_only_seconds": 1.959348,
+  "source_through_deployment": {
+    "mech-control": {
+      "source": 3.6735094583127648,
+      "link": 0.034497166983783245,
+      "source_through_link": 3.7096053953282535,
+      "strip": 0.010386541951447725,
+      "source_through_strip": 3.720127979060635
+    },
+    "mech-definition-replay": {
+      "source": 3.101083895890042,
+      "link": 0.034130895510315895,
+      "source_through_link": 3.1356625000480562,
+      "strip": 0.010334562510251999,
+      "source_through_strip": 3.1462278747931123
+    },
+    "roc": {
+      "source": 2.9489516457542777,
+      "link": 0.03433162486180663,
+      "source_through_link": 2.9837997087743133,
+      "strip": 0.010282896226271987,
+      "source_through_strip": 2.9942606459371746
+    },
+    "libdeflate": {
+      "source": 0.44616579124704003,
+      "link": 0.03414477105252445,
+      "source_through_link": 0.4805423126090318,
+      "strip": 0.010283062001690269,
+      "source_through_strip": 0.4910970211494714
+    }
+  },
+  "source_through_link_paired_ratio": {
+    "mech-control": 0.8461284749178639,
+    "roc": 1.0521941961637122,
+    "libdeflate": 6.52971233302314
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 1.883460542,
+      "catalog": 0.0598015005,
+      "frontend": 0.22809031200000002,
+      "artifact": 0.006992042,
+      "encode": 0.0026054375,
+      "native": 1.46347975
+    },
+    "mech-definition-replay": {
+      "parse": 1.3152067915,
+      "catalog": 0.058934,
+      "frontend": 0.22740822900000002,
+      "artifact": 0.006978187,
+      "encode": 0.002627208,
+      "native": 1.4639181665
+    }
+  },
+  "peak_rss_bytes": {
+    "mech-control": 401391616.0,
+    "mech-definition-replay": 395493376.0,
+    "roc": 397230080.0,
+    "libdeflate": 71532544.0
+  },
+  "artifact_sha256": {
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "pinned_benchmark_worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "candidate_patch_sha256": "be517b280225cb081f3187e0244ea7b6c3a11eac045aa5f4ecb5bf350049dc49",
+  "candidate_source_set_sha256": "703c088fd5a1ec4d4aa925072e1110c3e72146e6bdcf9332c27d261718c13737",
+  "exact_linked_calls": 162,
+  "existing_syntax_tests_passed": 535
+}
