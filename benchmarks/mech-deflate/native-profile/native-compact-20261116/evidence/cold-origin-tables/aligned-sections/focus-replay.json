@@ -1,0 +1,681 @@
+{
+  "runs": [
+    {
+      "id": "cold-origin-page-candidate-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "cold-origin-page-candidate-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.006688983133560367,
+          "lower": -0.0025811409819852527,
+          "upper": 0.015805627627863972
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.011173602799703142,
+          "lower": 0.00257278068864486,
+          "upper": 0.01988718418296398
+        }
+      },
+      "combined": {
+        "estimate": 0.008928801241163686,
+        "lower": 0.002476029395042545,
+        "upper": 0.015157539491037708
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.00554365011411706,
+          "lower": -0.005554420578355979,
+          "upper": 0.015636457742706833
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.007836172778567851,
+          "lower": -0.00025995383180210663,
+          "upper": 0.016024413755328037
+        }
+      },
+      "combined": {
+        "estimate": 0.006689258854390978,
+        "lower": -0.0001155424594984078,
+        "upper": 0.01294459092551592
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.0018935945617502004,
+          "lower": -0.007642862143026785,
+          "upper": 0.011079750158359047
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.0035143541524791377,
+          "lower": -0.0042552102830411,
+          "upper": 0.011421117359887933
+        }
+      },
+      "combined": {
+        "estimate": 0.002703646884831379,
+        "lower": -0.0033929733832428477,
+        "upper": 0.008797340615193328
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": -0.0010291432149894808,
+          "lower": -0.0027106768231912604,
+          "upper": 0.0006790874664266422
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.0025154958562363383,
+          "lower": -0.0048168511178302564,
+          "upper": -0.00026024336841690143
+        }
+      },
+      "combined": {
+        "estimate": -0.001772596181477848,
+        "lower": -0.0032117035857249787,
+        "upper": -0.00036895042522644417
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": -0.0015752088145235543,
+          "lower": -0.006264691045063553,
+          "upper": 0.0034259780768917114
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.0013553009177110775,
+          "lower": -0.007537408396485867,
+          "upper": 0.0048465903042351766
+        }
+      },
+      "combined": {
+        "estimate": -0.0014652609199231614,
+        "lower": -0.005473692829171872,
+        "upper": 0.0024996580299401217
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": -0.002053887723574732,
+          "lower": -0.004645387942822654,
+          "upper": 0.0003933888066527391
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.0023491276879745726,
+          "lower": -0.0004848220128409464,
+          "upper": 0.00560095278545325
+        }
+      },
+      "combined": {
+        "estimate": 0.00014519701885307157,
+        "lower": -0.0017866448549558323,
+        "upper": 0.0021695164044539528
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32767": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": -0.0001550323670838072,
+          "lower": -0.0016917614765185052,
+          "upper": 0.0011963987228029715
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.001022837928575493,
+          "lower": 0.00013537974801547392,
+          "upper": 0.0018861993074132943
+        }
+      },
+      "combined": {
+        "estimate": 0.0004337294336425046,
+        "lower": -0.0004227161321125328,
+        "upper": 0.0012498188115961373
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": -0.001165586745720426,
+          "lower": -0.002066871284009175,
+          "upper": -0.00017471220743081606
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.0007309072227860147,
+          "lower": -0.0020218591589450385,
+          "upper": 0.0003897778559598386
+        }
+      },
+      "combined": {
+        "estimate": -0.0009482706249567263,
+        "lower": -0.0017222621134281857,
+        "upper": -0.000203963868555479
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.0023264383416243817,
+          "lower": -0.0013065450898653852,
+          "upper": 0.005909128180145773
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.0013243259987337774,
+          "lower": -0.004364031427944615,
+          "upper": 0.0016718981125720678
+        }
+      },
+      "combined": {
+        "estimate": 0.0004993909943726837,
+        "lower": -0.0018226036370722065,
+        "upper": 0.0028277541260441907
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.005353249345693145,
+          "lower": 0.0018689925276746955,
+          "upper": 0.009057166714546705
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.00048693928929721686,
+          "lower": -0.0025249839395460327,
+          "upper": 0.0015204841676927927
+        }
+      },
+      "combined": {
+        "estimate": 0.0024289018922809547,
+        "lower": 0.0004582799171497509,
+        "upper": 0.004459121920578957
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.0022658243829469793,
+          "lower": 0.0010348440184002605,
+          "upper": 0.0035014735138267916
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.0010059031386295825,
+          "lower": -0.00015298734375535084,
+          "upper": 0.002169442183538761
+        }
+      },
+      "combined": {
+        "estimate": 0.0016356656596423491,
+        "lower": 0.0007760131927303515,
+        "upper": 0.0024837725443054293
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.0025047909898270326,
+          "lower": 0.00035186930294583973,
+          "upper": 0.004753442682196907
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.000886333787915472,
+          "lower": -0.0021636822868497108,
+          "upper": 0.0044557792603605595
+        }
+      },
+      "combined": {
+        "estimate": 0.0016952355175841038,
+        "lower": -0.0001794035982510822,
+        "upper": 0.003798413832959424
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": -0.0014030738003354415,
+          "lower": -0.006802304345480348,
+          "upper": 0.003897619804835273
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": 0.004501187288144193,
+          "lower": -0.0048000902655028765,
+          "upper": 0.014133306084867403
+        }
+      },
+      "combined": {
+        "estimate": 0.0015447059367117433,
+        "lower": -0.0037991638939717243,
+        "upper": 0.007076272630406777
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.007611857419007606,
+          "lower": 0.0019519852480363031,
+          "upper": 0.013366230096376608
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.014710348981860188,
+          "lower": -0.0204382382524414,
+          "upper": -0.009244989067464626
+        }
+      },
+      "combined": {
+        "estimate": -0.0036117547069748346,
+        "lower": -0.007625236085019527,
+        "upper": 0.000438297500439333
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": 0.0015618094233131874,
+          "lower": 7.654998406025904e-05,
+          "upper": 0.0036421311763286113
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.0002605937937617542,
+          "lower": -0.0006099965485525383,
+          "upper": 8.759776654843066e-05
+        }
+      },
+      "combined": {
+        "estimate": 0.0006501929404243434,
+        "lower": -0.00011130076463394811,
+        "upper": 0.001699680259608316
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-page-candidate-focus-forward": {
+          "estimate": -0.0005939618859219786,
+          "lower": -0.0022816663838657325,
+          "upper": 0.0011828276473369037
+        },
+        "cold-origin-page-candidate-focus-reverse": {
+          "estimate": -0.00015357065194532282,
+          "lower": -0.003002864385905024,
+          "upper": 0.0022253902104105716
+        }
+      },
+      "combined": {
+        "estimate": -0.0003737905210533521,
+        "lower": -0.0020054669522702184,
+        "upper": 0.0011693246212352015
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required",
+    "empty: regression bound or duplicate-control repeatability unresolved",
+    "one-stored: regression bound or duplicate-control repeatability unresolved",
+    "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-4096: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "plan": {
+    "path": "cold-origin-packing/cold-origin-page-candidate/plan.json",
+    "sha256": "91408acd78a37279e2d80b126636c445a1b32920f0ce9a228dcf4b026d68ceeb"
+  },
+  "receipts": {
+    "cold-origin-page-candidate-focus-forward": {
+      "id": "cold-origin-page-candidate-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "cold-origin-packing/cold-origin-page-candidate/canonical-pins/cold-origin-page-candidate-focus-forward.json",
+        "sha256": "4503aac967e1c2451c401b7049666b4ded626be47359b68b35b7b932a2b059de"
+      },
+      "original_pins": {
+        "path": "cold-origin-page-candidate-focus-forward/pins.json",
+        "sha256": "815744b5515a2e46a084da2ae660dbeccf6d7d07c807ae0e8d211b4a86d1285a"
+      },
+      "summary": {
+        "path": "cold-origin-page-candidate-focus-forward/summary.json",
+        "sha256": "bf9a817297f7e624b257118d80b326bcaf9d4e0ba763f9b3acfc0e217c8d397a"
+      },
+      "complete": {
+        "path": "cold-origin-page-candidate-focus-forward/complete.json",
+        "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "cold-origin-page-candidate-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "d0f549fcd2193e9285f2ba2c028279e8b77dee2aff096904ea217c4e9e146245"
+        },
+        "empty": {
+          "path": "cold-origin-page-candidate-focus-forward/empty/observations.json.gz",
+          "sha256": "ef53ecaceba3f5e19fd5b9ad12bbab5301135917ba7aab67bc4251e3916eb299"
+        },
+        "heldout-mixed-131073": {
+          "path": "cold-origin-page-candidate-focus-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "368de3328bceed4e3e928e7a963ebf0fcc4aaa2715f9ca4556eb6b368542c7e2"
+        },
+        "heldout-window-32767": {
+          "path": "cold-origin-page-candidate-focus-forward/heldout-window-32767/observations.json.gz",
+          "sha256": "256ee1c726797fe03446e1b5ea3007c3f25f2c795563049e64c8c7cddcba2585"
+        },
+        "one-stored": {
+          "path": "cold-origin-page-candidate-focus-forward/one-stored/observations.json.gz",
+          "sha256": "7f631b7225faa9a00b2b9051f4032ee9bcc6264ad8f860709d398bc3c83b6760"
+        },
+        "prefix-natural-16384": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "514b50c1a6288fb4872f19465f4ca38b24b09af193c428c19afd19b9d35907b3"
+        },
+        "prefix-natural-4096": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "9e1aebe6a190ffc02c5a449de2ca6150aede6eb44bedb564adcd2ba41beb30ab"
+        },
+        "prefix-natural-8192": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "4c2b530e9525e9f3eb1319c615d11d291d2ac070dbb0901e912263a46933bcac"
+        },
+        "prefix-periodic-1024": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "bce49e66f648de1961c3e50db30bc1446f30fdf11f1533e2e3b5065a1ef9b9b9"
+        },
+        "prefix-random-1024": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "c20cf371b1cfac331b5488477eeec8b3732790d49beb0589851bbe38661e6fc6"
+        },
+        "prefix-random-1048576": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "ba65b6eaa7dac60ab3a58550a7c59de64b2c05c0655fef98acd5f5f9a26f887c"
+        },
+        "prefix-random-4096": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "5a23731b030367de47158dfab795bf6755615d433f8d009fa3088517d3617122"
+        },
+        "prefix-random-8192": {
+          "path": "cold-origin-page-candidate-focus-forward/prefix-random-8192/observations.json.gz",
+          "sha256": "b22dc3b735ba998ac17a5260a55b171ed4f3477af0fc76be3abbcbc6e9fe30b8"
+        },
+        "random-1024": {
+          "path": "cold-origin-page-candidate-focus-forward/random-1024/observations.json.gz",
+          "sha256": "2727a77b6fd11f195dced3c82b3ccbdb23f0c4f555ce26738eb08727227a1a95"
+        },
+        "random-64": {
+          "path": "cold-origin-page-candidate-focus-forward/random-64/observations.json.gz",
+          "sha256": "297f5abe5b3099885aa20e65546bc8f972b2f6da333ff77c507197800c0dcaef"
+        },
+        "seven-stored-prefix": {
+          "path": "cold-origin-page-candidate-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "9dbe60df54cbd9fb77aa443da00e8cabb6b4aaf6546c3d1fee8b67a5bdb23c5a"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "cold-origin-page-candidate-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "cold-origin-page-candidate-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "cold-origin-page-candidate-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "cold-origin-page-candidate-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "cold-origin-page-candidate-focus-reverse": {
+      "id": "cold-origin-page-candidate-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "cold-origin-packing/cold-origin-page-candidate/canonical-pins/cold-origin-page-candidate-focus-reverse.json",
+        "sha256": "4503aac967e1c2451c401b7049666b4ded626be47359b68b35b7b932a2b059de"
+      },
+      "original_pins": {
+        "path": "cold-origin-page-candidate-focus-reverse/pins.json",
+        "sha256": "815744b5515a2e46a084da2ae660dbeccf6d7d07c807ae0e8d211b4a86d1285a"
+      },
+      "summary": {
+        "path": "cold-origin-page-candidate-focus-reverse/summary.json",
+        "sha256": "f7ffe4b7b37e0de70276c04cc2cd148d2156ddcd64f02688e4ad3e49b192585d"
+      },
+      "complete": {
+        "path": "cold-origin-page-candidate-focus-reverse/complete.json",
+        "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "cold-origin-page-candidate-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "b38a122ef9b7d8005e9a684d0c7b4b114a6d54f50b52afc5f787e0e71ad27605"
+        },
+        "empty": {
+          "path": "cold-origin-page-candidate-focus-reverse/empty/observations.json.gz",
+          "sha256": "7baebcc4b81440cbdbfa5c828c6b8819b67cdf245a63ef1f379546ec05500862"
+        },
+        "heldout-mixed-131073": {
+          "path": "cold-origin-page-candidate-focus-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "fd59ba5c9481b3a3aaf5ab8bc24b0c63a5bc46497a7323484f99a9dfcd62723e"
+        },
+        "heldout-window-32767": {
+          "path": "cold-origin-page-candidate-focus-reverse/heldout-window-32767/observations.json.gz",
+          "sha256": "2b98c61535e6a2cbd11e4ea938decd87ebd94e55cf0269768f5c9fa9c02b7367"
+        },
+        "one-stored": {
+          "path": "cold-origin-page-candidate-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "1551796868dee2075c066d7271eb94ab63c43e1dc122bb5fb599c65ee89f9085"
+        },
+        "prefix-natural-16384": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "26193fadb9917cbb57dd275fb927c4e3b6a2b99e1163ed68f5a5104066f52a78"
+        },
+        "prefix-natural-4096": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "981ac9e029ac87e7bdc5bcc480ce2a721b90bc13a45c1781658e62fe7a8a5809"
+        },
+        "prefix-natural-8192": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "8ea4f410a7f8ec93109b21d8df73890218ca848079adb09a230cce4daa28d228"
+        },
+        "prefix-periodic-1024": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "2c3371c793bc4e63c4f9d8900c78e199f2943c6d93597d5a6529817d61816583"
+        },
+        "prefix-random-1024": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "f0ecb8e6db7fa92f2db96b944cc4f3ad1362418d8752b965425c9dd500620a5e"
+        },
+        "prefix-random-1048576": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "6e278858f5b6ed81b4415c9ca92b2a9b2c9f617bd416e50a6fb2b2855b7cfa5b"
+        },
+        "prefix-random-4096": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "9c3b4dc896ab69e40433b3645436466546f4ec8fd1aa41c8a008a0cfdff83c3d"
+        },
+        "prefix-random-8192": {
+          "path": "cold-origin-page-candidate-focus-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "61c7666f5b08a78d388dc9b62fb7685a5edc39455e36da2c82204f82ba93797f"
+        },
+        "random-1024": {
+          "path": "cold-origin-page-candidate-focus-reverse/random-1024/observations.json.gz",
+          "sha256": "16f23699e2211cc3c202ced37e35d97208d3ee987e16e681a33a2b41481bd111"
+        },
+        "random-64": {
+          "path": "cold-origin-page-candidate-focus-reverse/random-64/observations.json.gz",
+          "sha256": "37bdf5ba6050e33909d447361f29473ec35f568a1156b25d6aaa90e193d25d6e"
+        },
+        "seven-stored-prefix": {
+          "path": "cold-origin-page-candidate-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "c4ddfb1a5c2dee9c56e98090b357374ce9b3fc5535a8a330c4aa707b4e075ff6"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "cold-origin-page-candidate-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "cold-origin-page-candidate-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "cold-origin-page-candidate-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "cold-origin-page-candidate-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

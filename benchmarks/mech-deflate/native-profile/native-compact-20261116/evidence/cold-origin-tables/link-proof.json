@@ -1,0 +1,2341 @@
+{
+  "artifacts": {
+    "program.o": "66899f7928c031d7e9e882149f8d428c1b13ca22f1ca50ccdbefad8cb07d706a",
+    "metadata.json": "0aac5b222891e6ca9d4ed88e85597cdef1ef46d9f405648436a18f5d2820d37b",
+    "mech-worker": "ae786482e20040bcaa8f8d44d4f0e93263b9db8b9caf82c14d56a6b9e47ff8f0"
+  },
+  "image_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "stack_report": "cold-origin-packed-stack.json",
+  "cold_origin_map": [
+    {
+      "site": 64744,
+      "stub": 66736,
+      "decoder": 67268,
+      "table": 67292,
+      "origin": 176,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64764,
+      "stub": 66740,
+      "decoder": 67268,
+      "table": 67294,
+      "origin": 189,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64784,
+      "stub": 66744,
+      "decoder": 67268,
+      "table": 67296,
+      "origin": 202,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64804,
+      "stub": 66748,
+      "decoder": 67268,
+      "table": 67298,
+      "origin": 215,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64824,
+      "stub": 66752,
+      "decoder": 67268,
+      "table": 67300,
+      "origin": 228,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64844,
+      "stub": 66756,
+      "decoder": 67268,
+      "table": 67302,
+      "origin": 241,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64916,
+      "stub": 66760,
+      "decoder": 67268,
+      "table": 67304,
+      "origin": 399,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64924,
+      "stub": 66764,
+      "decoder": 67268,
+      "table": 67306,
+      "origin": 393,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64948,
+      "stub": 66768,
+      "decoder": 67268,
+      "table": 67308,
+      "origin": 423,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64956,
+      "stub": 66772,
+      "decoder": 67268,
+      "table": 67310,
+      "origin": 362,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 64992,
+      "stub": 66776,
+      "decoder": 67268,
+      "table": 67312,
+      "origin": 339,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65068,
+      "stub": 66780,
+      "decoder": 67268,
+      "table": 67314,
+      "origin": 582,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65092,
+      "stub": 66784,
+      "decoder": 67268,
+      "table": 67316,
+      "origin": 589,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65328,
+      "stub": 66788,
+      "decoder": 67268,
+      "table": 67318,
+      "origin": 1544,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65396,
+      "stub": 66792,
+      "decoder": 67268,
+      "table": 67320,
+      "origin": 1765,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65404,
+      "stub": 66796,
+      "decoder": 67268,
+      "table": 67322,
+      "origin": 1616,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65412,
+      "stub": 66800,
+      "decoder": 67268,
+      "table": 67324,
+      "origin": 1580,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65524,
+      "stub": 66804,
+      "decoder": 67268,
+      "table": 67326,
+      "origin": 1918,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65532,
+      "stub": 66808,
+      "decoder": 67268,
+      "table": 67328,
+      "origin": 1916,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65564,
+      "stub": 66812,
+      "decoder": 67268,
+      "table": 67330,
+      "origin": 996,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65632,
+      "stub": 66816,
+      "decoder": 67268,
+      "table": 67332,
+      "origin": 1217,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65640,
+      "stub": 66820,
+      "decoder": 67268,
+      "table": 67334,
+      "origin": 1068,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65648,
+      "stub": 66824,
+      "decoder": 67268,
+      "table": 67336,
+      "origin": 1032,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65772,
+      "stub": 66828,
+      "decoder": 67268,
+      "table": 67338,
+      "origin": 1405,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65780,
+      "stub": 66832,
+      "decoder": 67268,
+      "table": 67340,
+      "origin": 1403,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65820,
+      "stub": 66836,
+      "decoder": 67268,
+      "table": 67342,
+      "origin": 901,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66032,
+      "stub": 66840,
+      "decoder": 67268,
+      "table": 67344,
+      "origin": 2494,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66048,
+      "stub": 66844,
+      "decoder": 67268,
+      "table": 67346,
+      "origin": 2565,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66164,
+      "stub": 66848,
+      "decoder": 67268,
+      "table": 67348,
+      "origin": 2886,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66216,
+      "stub": 66852,
+      "decoder": 67268,
+      "table": 67350,
+      "origin": 3004,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66240,
+      "stub": 66856,
+      "decoder": 67268,
+      "table": 67352,
+      "origin": 3407,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66260,
+      "stub": 66860,
+      "decoder": 67268,
+      "table": 67354,
+      "origin": 3236,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66268,
+      "stub": 66864,
+      "decoder": 67268,
+      "table": 67356,
+      "origin": 3009,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66280,
+      "stub": 66868,
+      "decoder": 67268,
+      "table": 67358,
+      "origin": 3001,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66336,
+      "stub": 66872,
+      "decoder": 67268,
+      "table": 67360,
+      "origin": 3636,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66356,
+      "stub": 66876,
+      "decoder": 67268,
+      "table": 67362,
+      "origin": 3447,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66368,
+      "stub": 66880,
+      "decoder": 67268,
+      "table": 67364,
+      "origin": 3431,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66376,
+      "stub": 66884,
+      "decoder": 67268,
+      "table": 67366,
+      "origin": 3689,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66384,
+      "stub": 66888,
+      "decoder": 67268,
+      "table": 67368,
+      "origin": 3751,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66392,
+      "stub": 66892,
+      "decoder": 67268,
+      "table": 67370,
+      "origin": 3706,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66400,
+      "stub": 66896,
+      "decoder": 67268,
+      "table": 67372,
+      "origin": 3682,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66456,
+      "stub": 66900,
+      "decoder": 67268,
+      "table": 67374,
+      "origin": 3939,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66500,
+      "stub": 66904,
+      "decoder": 67268,
+      "table": 67376,
+      "origin": 3872,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66512,
+      "stub": 66908,
+      "decoder": 67268,
+      "table": 67378,
+      "origin": 3862,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66732,
+      "stub": 66912,
+      "decoder": 67268,
+      "table": 67380,
+      "origin": 4771,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66740,
+      "stub": 66916,
+      "decoder": 67268,
+      "table": 67382,
+      "origin": 4723,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66844,
+      "stub": 66920,
+      "decoder": 67268,
+      "table": 67384,
+      "origin": 4784,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66852,
+      "stub": 66924,
+      "decoder": 67268,
+      "table": 67386,
+      "origin": 4810,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 66888,
+      "stub": 66928,
+      "decoder": 67268,
+      "table": 67388,
+      "origin": 5018,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67008,
+      "stub": 66932,
+      "decoder": 67268,
+      "table": 67390,
+      "origin": 4879,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67040,
+      "stub": 66936,
+      "decoder": 67268,
+      "table": 67392,
+      "origin": 4799,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67068,
+      "stub": 66940,
+      "decoder": 67268,
+      "table": 67394,
+      "origin": 4673,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67100,
+      "stub": 66944,
+      "decoder": 67268,
+      "table": 67396,
+      "origin": 4654,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67108,
+      "stub": 66948,
+      "decoder": 67268,
+      "table": 67398,
+      "origin": 4580,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67116,
+      "stub": 66952,
+      "decoder": 67268,
+      "table": 67400,
+      "origin": 4430,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67152,
+      "stub": 66956,
+      "decoder": 67268,
+      "table": 67402,
+      "origin": 4124,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67160,
+      "stub": 66960,
+      "decoder": 67268,
+      "table": 67404,
+      "origin": 4137,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67168,
+      "stub": 66964,
+      "decoder": 67268,
+      "table": 67406,
+      "origin": 4142,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67212,
+      "stub": 66968,
+      "decoder": 67268,
+      "table": 67408,
+      "origin": 4164,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67260,
+      "stub": 66972,
+      "decoder": 67268,
+      "table": 67410,
+      "origin": 5099,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67268,
+      "stub": 66976,
+      "decoder": 67268,
+      "table": 67412,
+      "origin": 5156,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67316,
+      "stub": 66980,
+      "decoder": 67268,
+      "table": 67414,
+      "origin": 5318,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67408,
+      "stub": 66984,
+      "decoder": 67268,
+      "table": 67416,
+      "origin": 5610,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67480,
+      "stub": 66988,
+      "decoder": 67268,
+      "table": 67418,
+      "origin": 5846,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67488,
+      "stub": 66992,
+      "decoder": 67268,
+      "table": 67420,
+      "origin": 5729,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67512,
+      "stub": 66996,
+      "decoder": 67268,
+      "table": 67422,
+      "origin": 5890,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67548,
+      "stub": 67000,
+      "decoder": 67268,
+      "table": 67424,
+      "origin": 5981,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67564,
+      "stub": 67004,
+      "decoder": 67268,
+      "table": 67426,
+      "origin": 6010,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67572,
+      "stub": 67008,
+      "decoder": 67268,
+      "table": 67428,
+      "origin": 6027,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67596,
+      "stub": 67012,
+      "decoder": 67268,
+      "table": 67430,
+      "origin": 6148,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67604,
+      "stub": 67016,
+      "decoder": 67268,
+      "table": 67432,
+      "origin": 6204,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67628,
+      "stub": 67020,
+      "decoder": 67268,
+      "table": 67434,
+      "origin": 6386,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67692,
+      "stub": 67024,
+      "decoder": 67268,
+      "table": 67436,
+      "origin": 6570,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67768,
+      "stub": 67028,
+      "decoder": 67268,
+      "table": 67438,
+      "origin": 6724,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67800,
+      "stub": 67032,
+      "decoder": 67268,
+      "table": 67440,
+      "origin": 6804,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67832,
+      "stub": 67036,
+      "decoder": 67268,
+      "table": 67442,
+      "origin": 6922,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 67984,
+      "stub": 67040,
+      "decoder": 67268,
+      "table": 67444,
+      "origin": 7393,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68032,
+      "stub": 67044,
+      "decoder": 67268,
+      "table": 67446,
+      "origin": 7251,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68048,
+      "stub": 67048,
+      "decoder": 67268,
+      "table": 67448,
+      "origin": 7164,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68088,
+      "stub": 67052,
+      "decoder": 67268,
+      "table": 67450,
+      "origin": 7701,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68132,
+      "stub": 67056,
+      "decoder": 67268,
+      "table": 67452,
+      "origin": 7975,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68160,
+      "stub": 67060,
+      "decoder": 67268,
+      "table": 67454,
+      "origin": 7980,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68168,
+      "stub": 67064,
+      "decoder": 67268,
+      "table": 67456,
+      "origin": 7951,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68188,
+      "stub": 67068,
+      "decoder": 67268,
+      "table": 67458,
+      "origin": 7409,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68196,
+      "stub": 67072,
+      "decoder": 67268,
+      "table": 67460,
+      "origin": 7078,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68204,
+      "stub": 67076,
+      "decoder": 67268,
+      "table": 67462,
+      "origin": 7063,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68300,
+      "stub": 67080,
+      "decoder": 67268,
+      "table": 67464,
+      "origin": 7046,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68344,
+      "stub": 67084,
+      "decoder": 67268,
+      "table": 67466,
+      "origin": 8152,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68352,
+      "stub": 67088,
+      "decoder": 67268,
+      "table": 67468,
+      "origin": 8139,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68360,
+      "stub": 67092,
+      "decoder": 67268,
+      "table": 67470,
+      "origin": 8126,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68368,
+      "stub": 67096,
+      "decoder": 67268,
+      "table": 67472,
+      "origin": 8113,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68376,
+      "stub": 67100,
+      "decoder": 67268,
+      "table": 67474,
+      "origin": 8020,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68420,
+      "stub": 67104,
+      "decoder": 67268,
+      "table": 67476,
+      "origin": 8096,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68456,
+      "stub": 67108,
+      "decoder": 67268,
+      "table": 67478,
+      "origin": 8190,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68464,
+      "stub": 67112,
+      "decoder": 67268,
+      "table": 67480,
+      "origin": 8083,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68476,
+      "stub": 67116,
+      "decoder": 67268,
+      "table": 67482,
+      "origin": 7043,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68484,
+      "stub": 67120,
+      "decoder": 67268,
+      "table": 67484,
+      "origin": 7042,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68492,
+      "stub": 67124,
+      "decoder": 67268,
+      "table": 67486,
+      "origin": 7040,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68500,
+      "stub": 67128,
+      "decoder": 67268,
+      "table": 67488,
+      "origin": 7035,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68508,
+      "stub": 67132,
+      "decoder": 67268,
+      "table": 67490,
+      "origin": 7029,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68516,
+      "stub": 67136,
+      "decoder": 67268,
+      "table": 67492,
+      "origin": 6986,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68524,
+      "stub": 67140,
+      "decoder": 67268,
+      "table": 67494,
+      "origin": 6851,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68532,
+      "stub": 67144,
+      "decoder": 67268,
+      "table": 67496,
+      "origin": 6802,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68576,
+      "stub": 67148,
+      "decoder": 67268,
+      "table": 67498,
+      "origin": 6146,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68584,
+      "stub": 67152,
+      "decoder": 67268,
+      "table": 67500,
+      "origin": 6072,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68592,
+      "stub": 67156,
+      "decoder": 67268,
+      "table": 67502,
+      "origin": 5895,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68604,
+      "stub": 67160,
+      "decoder": 67268,
+      "table": 67504,
+      "origin": 5879,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68612,
+      "stub": 67164,
+      "decoder": 67268,
+      "table": 67506,
+      "origin": 5565,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68620,
+      "stub": 67168,
+      "decoder": 67268,
+      "table": 67508,
+      "origin": 5476,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68628,
+      "stub": 67172,
+      "decoder": 67268,
+      "table": 67510,
+      "origin": 5446,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68644,
+      "stub": 67176,
+      "decoder": 67268,
+      "table": 67512,
+      "origin": 5184,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68652,
+      "stub": 67180,
+      "decoder": 67268,
+      "table": 67514,
+      "origin": 5171,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68660,
+      "stub": 67184,
+      "decoder": 67268,
+      "table": 67516,
+      "origin": 3841,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68668,
+      "stub": 67188,
+      "decoder": 67268,
+      "table": 67518,
+      "origin": 3828,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68676,
+      "stub": 67192,
+      "decoder": 67268,
+      "table": 67520,
+      "origin": 3773,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68684,
+      "stub": 67196,
+      "decoder": 67268,
+      "table": 67522,
+      "origin": 3675,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68692,
+      "stub": 67200,
+      "decoder": 67268,
+      "table": 67524,
+      "origin": 2821,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68728,
+      "stub": 67204,
+      "decoder": 67268,
+      "table": 67526,
+      "origin": 2807,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68752,
+      "stub": 67208,
+      "decoder": 67268,
+      "table": 67528,
+      "origin": 2255,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68796,
+      "stub": 67212,
+      "decoder": 67268,
+      "table": 67530,
+      "origin": 511,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68804,
+      "stub": 67216,
+      "decoder": 67268,
+      "table": 67532,
+      "origin": 514,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68812,
+      "stub": 67220,
+      "decoder": 67268,
+      "table": 67534,
+      "origin": 475,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68820,
+      "stub": 67224,
+      "decoder": 67268,
+      "table": 67536,
+      "origin": 254,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68828,
+      "stub": 67228,
+      "decoder": 67268,
+      "table": 67538,
+      "origin": 152,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68836,
+      "stub": 67232,
+      "decoder": 67268,
+      "table": 67540,
+      "origin": 120,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68972,
+      "stub": 67236,
+      "decoder": 67268,
+      "table": 67542,
+      "origin": 86,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68980,
+      "stub": 67240,
+      "decoder": 67268,
+      "table": 67544,
+      "origin": 83,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68988,
+      "stub": 67244,
+      "decoder": 67268,
+      "table": 67546,
+      "origin": 82,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 68996,
+      "stub": 67248,
+      "decoder": 67268,
+      "table": 67548,
+      "origin": 80,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 69028,
+      "stub": 67252,
+      "decoder": 67268,
+      "table": 67550,
+      "origin": 8222,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 69036,
+      "stub": 67256,
+      "decoder": 67268,
+      "table": 67552,
+      "origin": 23,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 69044,
+      "stub": 67260,
+      "decoder": 67268,
+      "table": 67554,
+      "origin": 19,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 69052,
+      "stub": 67264,
+      "decoder": 67268,
+      "table": 67556,
+      "origin": 17,
+      "original_return_tail": 64656
+    },
+    {
+      "site": 65004,
+      "stub": 67560,
+      "decoder": 67636,
+      "table": 67660,
+      "origin": 515,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65136,
+      "stub": 67564,
+      "decoder": 67636,
+      "table": 67662,
+      "origin": 656,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65144,
+      "stub": 67568,
+      "decoder": 67636,
+      "table": 67664,
+      "origin": 658,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65180,
+      "stub": 67572,
+      "decoder": 67636,
+      "table": 67666,
+      "origin": 660,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65188,
+      "stub": 67576,
+      "decoder": 67636,
+      "table": 67668,
+      "origin": 662,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65296,
+      "stub": 67580,
+      "decoder": 67636,
+      "table": 67670,
+      "origin": 888,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65420,
+      "stub": 67584,
+      "decoder": 67636,
+      "table": 67672,
+      "origin": 1861,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65452,
+      "stub": 67588,
+      "decoder": 67636,
+      "table": 67674,
+      "origin": 1881,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65460,
+      "stub": 67592,
+      "decoder": 67636,
+      "table": 67676,
+      "origin": 1883,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65500,
+      "stub": 67596,
+      "decoder": 67636,
+      "table": 67678,
+      "origin": 1799,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65508,
+      "stub": 67600,
+      "decoder": 67636,
+      "table": 67680,
+      "origin": 1801,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65656,
+      "stub": 67604,
+      "decoder": 67636,
+      "table": 67682,
+      "origin": 1346,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65692,
+      "stub": 67608,
+      "decoder": 67636,
+      "table": 67684,
+      "origin": 1366,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65700,
+      "stub": 67612,
+      "decoder": 67636,
+      "table": 67686,
+      "origin": 1368,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65748,
+      "stub": 67616,
+      "decoder": 67636,
+      "table": 67688,
+      "origin": 1286,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65756,
+      "stub": 67620,
+      "decoder": 67636,
+      "table": 67690,
+      "origin": 1288,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 65828,
+      "stub": 67624,
+      "decoder": 67636,
+      "table": 67692,
+      "origin": 1948,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 67220,
+      "stub": 67628,
+      "decoder": 67636,
+      "table": 67694,
+      "origin": 4164,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 67228,
+      "stub": 67632,
+      "decoder": 67636,
+      "table": 67696,
+      "origin": 4166,
+      "original_return_tail": 67780
+    },
+    {
+      "site": 64624,
+      "stub": 67700,
+      "decoder": 68256,
+      "table": 68280,
+      "origin": 105,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64632,
+      "stub": 67704,
+      "decoder": 68256,
+      "table": 68282,
+      "origin": 116,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64640,
+      "stub": 67708,
+      "decoder": 68256,
+      "table": 68284,
+      "origin": 117,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64864,
+      "stub": 67712,
+      "decoder": 68256,
+      "table": 68286,
+      "origin": 319,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64872,
+      "stub": 67716,
+      "decoder": 68256,
+      "table": 68288,
+      "origin": 329,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64892,
+      "stub": 67720,
+      "decoder": 68256,
+      "table": 68290,
+      "origin": 378,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64900,
+      "stub": 67724,
+      "decoder": 68256,
+      "table": 68292,
+      "origin": 392,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64932,
+      "stub": 67728,
+      "decoder": 68256,
+      "table": 68294,
+      "origin": 427,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 64940,
+      "stub": 67732,
+      "decoder": 68256,
+      "table": 68296,
+      "origin": 441,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65076,
+      "stub": 67736,
+      "decoder": 68256,
+      "table": 68298,
+      "origin": 586,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65128,
+      "stub": 67740,
+      "decoder": 68256,
+      "table": 68300,
+      "origin": 626,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65224,
+      "stub": 67744,
+      "decoder": 68256,
+      "table": 68302,
+      "origin": 709,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65256,
+      "stub": 67748,
+      "decoder": 68256,
+      "table": 68304,
+      "origin": 756,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65288,
+      "stub": 67752,
+      "decoder": 68256,
+      "table": 68306,
+      "origin": 824,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65304,
+      "stub": 67756,
+      "decoder": 68256,
+      "table": 68308,
+      "origin": 1462,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65312,
+      "stub": 67760,
+      "decoder": 68256,
+      "table": 68310,
+      "origin": 1539,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65336,
+      "stub": 67764,
+      "decoder": 68256,
+      "table": 68312,
+      "origin": 1560,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65540,
+      "stub": 67768,
+      "decoder": 68256,
+      "table": 68314,
+      "origin": 955,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65548,
+      "stub": 67772,
+      "decoder": 68256,
+      "table": 68316,
+      "origin": 991,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65572,
+      "stub": 67776,
+      "decoder": 68256,
+      "table": 68318,
+      "origin": 1012,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65848,
+      "stub": 67780,
+      "decoder": 68256,
+      "table": 68320,
+      "origin": 1982,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65856,
+      "stub": 67784,
+      "decoder": 68256,
+      "table": 68322,
+      "origin": 1999,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65888,
+      "stub": 67788,
+      "decoder": 68256,
+      "table": 68324,
+      "origin": 2215,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65896,
+      "stub": 67792,
+      "decoder": 68256,
+      "table": 68326,
+      "origin": 2238,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65904,
+      "stub": 67796,
+      "decoder": 68256,
+      "table": 68328,
+      "origin": 2252,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65912,
+      "stub": 67800,
+      "decoder": 68256,
+      "table": 68330,
+      "origin": 2248,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65920,
+      "stub": 67804,
+      "decoder": 68256,
+      "table": 68332,
+      "origin": 2268,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65928,
+      "stub": 67808,
+      "decoder": 68256,
+      "table": 68334,
+      "origin": 2269,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65936,
+      "stub": 67812,
+      "decoder": 68256,
+      "table": 68336,
+      "origin": 2271,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65944,
+      "stub": 67816,
+      "decoder": 68256,
+      "table": 68338,
+      "origin": 2280,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65952,
+      "stub": 67820,
+      "decoder": 68256,
+      "table": 68340,
+      "origin": 2282,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65960,
+      "stub": 67824,
+      "decoder": 68256,
+      "table": 68342,
+      "origin": 2288,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65968,
+      "stub": 67828,
+      "decoder": 68256,
+      "table": 68344,
+      "origin": 2289,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65976,
+      "stub": 67832,
+      "decoder": 68256,
+      "table": 68346,
+      "origin": 2355,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65984,
+      "stub": 67836,
+      "decoder": 68256,
+      "table": 68348,
+      "origin": 2385,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 65992,
+      "stub": 67840,
+      "decoder": 68256,
+      "table": 68350,
+      "origin": 2432,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66040,
+      "stub": 67844,
+      "decoder": 68256,
+      "table": 68352,
+      "origin": 2518,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66056,
+      "stub": 67848,
+      "decoder": 68256,
+      "table": 68354,
+      "origin": 2585,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66064,
+      "stub": 67852,
+      "decoder": 68256,
+      "table": 68356,
+      "origin": 2643,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66072,
+      "stub": 67856,
+      "decoder": 68256,
+      "table": 68358,
+      "origin": 2726,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66080,
+      "stub": 67860,
+      "decoder": 68256,
+      "table": 68360,
+      "origin": 2756,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66120,
+      "stub": 67864,
+      "decoder": 68256,
+      "table": 68362,
+      "origin": 2782,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66136,
+      "stub": 67868,
+      "decoder": 68256,
+      "table": 68364,
+      "origin": 2837,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66144,
+      "stub": 67872,
+      "decoder": 68256,
+      "table": 68366,
+      "origin": 2879,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66448,
+      "stub": 67876,
+      "decoder": 68256,
+      "table": 68368,
+      "origin": 3934,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66472,
+      "stub": 67880,
+      "decoder": 68256,
+      "table": 68370,
+      "origin": 4027,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66480,
+      "stub": 67884,
+      "decoder": 68256,
+      "table": 68372,
+      "origin": 4090,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66520,
+      "stub": 67888,
+      "decoder": 68256,
+      "table": 68374,
+      "origin": 4211,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66528,
+      "stub": 67892,
+      "decoder": 68256,
+      "table": 68376,
+      "origin": 4255,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66536,
+      "stub": 67896,
+      "decoder": 68256,
+      "table": 68378,
+      "origin": 4286,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66556,
+      "stub": 67900,
+      "decoder": 68256,
+      "table": 68380,
+      "origin": 4334,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66588,
+      "stub": 67904,
+      "decoder": 68256,
+      "table": 68382,
+      "origin": 4428,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66656,
+      "stub": 67908,
+      "decoder": 68256,
+      "table": 68384,
+      "origin": 4532,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66680,
+      "stub": 67912,
+      "decoder": 68256,
+      "table": 68386,
+      "origin": 4558,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66688,
+      "stub": 67916,
+      "decoder": 68256,
+      "table": 68388,
+      "origin": 4617,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66704,
+      "stub": 67920,
+      "decoder": 68256,
+      "table": 68390,
+      "origin": 4641,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66748,
+      "stub": 67924,
+      "decoder": 68256,
+      "table": 68392,
+      "origin": 4775,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66756,
+      "stub": 67928,
+      "decoder": 68256,
+      "table": 68394,
+      "origin": 4754,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66860,
+      "stub": 67932,
+      "decoder": 68256,
+      "table": 68396,
+      "origin": 4814,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66868,
+      "stub": 67936,
+      "decoder": 68256,
+      "table": 68398,
+      "origin": 4869,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66896,
+      "stub": 67940,
+      "decoder": 68256,
+      "table": 68400,
+      "origin": 4950,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 66904,
+      "stub": 67944,
+      "decoder": 68256,
+      "table": 68402,
+      "origin": 5000,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67276,
+      "stub": 67948,
+      "decoder": 68256,
+      "table": 68404,
+      "origin": 5168,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67284,
+      "stub": 67952,
+      "decoder": 68256,
+      "table": 68406,
+      "origin": 5169,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67308,
+      "stub": 67956,
+      "decoder": 68256,
+      "table": 68408,
+      "origin": 5266,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67324,
+      "stub": 67960,
+      "decoder": 68256,
+      "table": 68410,
+      "origin": 5334,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67332,
+      "stub": 67964,
+      "decoder": 68256,
+      "table": 68412,
+      "origin": 5391,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67340,
+      "stub": 67968,
+      "decoder": 68256,
+      "table": 68414,
+      "origin": 5416,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67384,
+      "stub": 67972,
+      "decoder": 68256,
+      "table": 68416,
+      "origin": 5428,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67392,
+      "stub": 67976,
+      "decoder": 68256,
+      "table": 68418,
+      "origin": 5433,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67416,
+      "stub": 67980,
+      "decoder": 68256,
+      "table": 68420,
+      "origin": 5620,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67424,
+      "stub": 67984,
+      "decoder": 68256,
+      "table": 68422,
+      "origin": 5621,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67432,
+      "stub": 67988,
+      "decoder": 68256,
+      "table": 68424,
+      "origin": 5726,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67440,
+      "stub": 67992,
+      "decoder": 68256,
+      "table": 68426,
+      "origin": 5727,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67448,
+      "stub": 67996,
+      "decoder": 68256,
+      "table": 68428,
+      "origin": 5728,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67456,
+      "stub": 68000,
+      "decoder": 68256,
+      "table": 68430,
+      "origin": 5843,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67464,
+      "stub": 68004,
+      "decoder": 68256,
+      "table": 68432,
+      "origin": 5844,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67472,
+      "stub": 68008,
+      "decoder": 68256,
+      "table": 68434,
+      "origin": 5845,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67496,
+      "stub": 68012,
+      "decoder": 68256,
+      "table": 68436,
+      "origin": 5865,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67520,
+      "stub": 68016,
+      "decoder": 68256,
+      "table": 68438,
+      "origin": 5971,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67528,
+      "stub": 68020,
+      "decoder": 68256,
+      "table": 68440,
+      "origin": 5972,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67556,
+      "stub": 68024,
+      "decoder": 68256,
+      "table": 68442,
+      "origin": 6001,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67580,
+      "stub": 68028,
+      "decoder": 68256,
+      "table": 68444,
+      "origin": 6122,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67612,
+      "stub": 68032,
+      "decoder": 68256,
+      "table": 68446,
+      "origin": 6235,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67620,
+      "stub": 68036,
+      "decoder": 68256,
+      "table": 68448,
+      "origin": 6236,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67636,
+      "stub": 68040,
+      "decoder": 68256,
+      "table": 68450,
+      "origin": 6418,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67644,
+      "stub": 68044,
+      "decoder": 68256,
+      "table": 68452,
+      "origin": 6530,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67652,
+      "stub": 68048,
+      "decoder": 68256,
+      "table": 68454,
+      "origin": 6553,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67660,
+      "stub": 68052,
+      "decoder": 68256,
+      "table": 68456,
+      "origin": 6567,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67668,
+      "stub": 68056,
+      "decoder": 68256,
+      "table": 68458,
+      "origin": 6563,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67676,
+      "stub": 68060,
+      "decoder": 68256,
+      "table": 68460,
+      "origin": 6583,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67684,
+      "stub": 68064,
+      "decoder": 68256,
+      "table": 68462,
+      "origin": 6584,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67700,
+      "stub": 68068,
+      "decoder": 68256,
+      "table": 68464,
+      "origin": 6575,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67708,
+      "stub": 68072,
+      "decoder": 68256,
+      "table": 68466,
+      "origin": 6704,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67716,
+      "stub": 68076,
+      "decoder": 68256,
+      "table": 68468,
+      "origin": 6705,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67724,
+      "stub": 68080,
+      "decoder": 68256,
+      "table": 68470,
+      "origin": 6707,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67732,
+      "stub": 68084,
+      "decoder": 68256,
+      "table": 68472,
+      "origin": 6708,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67740,
+      "stub": 68088,
+      "decoder": 68256,
+      "table": 68474,
+      "origin": 6709,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67748,
+      "stub": 68092,
+      "decoder": 68256,
+      "table": 68476,
+      "origin": 6710,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67808,
+      "stub": 68096,
+      "decoder": 68256,
+      "table": 68478,
+      "origin": 6848,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67816,
+      "stub": 68100,
+      "decoder": 68256,
+      "table": 68480,
+      "origin": 6920,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67824,
+      "stub": 68104,
+      "decoder": 68256,
+      "table": 68482,
+      "origin": 6921,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67840,
+      "stub": 68108,
+      "decoder": 68256,
+      "table": 68484,
+      "origin": 6934,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67848,
+      "stub": 68112,
+      "decoder": 68256,
+      "table": 68486,
+      "origin": 6936,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67856,
+      "stub": 68116,
+      "decoder": 68256,
+      "table": 68488,
+      "origin": 6941,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67864,
+      "stub": 68120,
+      "decoder": 68256,
+      "table": 68490,
+      "origin": 6943,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67872,
+      "stub": 68124,
+      "decoder": 68256,
+      "table": 68492,
+      "origin": 6944,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67880,
+      "stub": 68128,
+      "decoder": 68256,
+      "table": 68494,
+      "origin": 6945,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67888,
+      "stub": 68132,
+      "decoder": 68256,
+      "table": 68496,
+      "origin": 6983,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67896,
+      "stub": 68136,
+      "decoder": 68256,
+      "table": 68498,
+      "origin": 7090,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67904,
+      "stub": 68140,
+      "decoder": 68256,
+      "table": 68500,
+      "origin": 7094,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67912,
+      "stub": 68144,
+      "decoder": 68256,
+      "table": 68502,
+      "origin": 7096,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67920,
+      "stub": 68148,
+      "decoder": 68256,
+      "table": 68504,
+      "origin": 7100,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67928,
+      "stub": 68152,
+      "decoder": 68256,
+      "table": 68506,
+      "origin": 7102,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67936,
+      "stub": 68156,
+      "decoder": 68256,
+      "table": 68508,
+      "origin": 7106,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67944,
+      "stub": 68160,
+      "decoder": 68256,
+      "table": 68510,
+      "origin": 7108,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67952,
+      "stub": 68164,
+      "decoder": 68256,
+      "table": 68512,
+      "origin": 7112,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67960,
+      "stub": 68168,
+      "decoder": 68256,
+      "table": 68514,
+      "origin": 7160,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 67992,
+      "stub": 68172,
+      "decoder": 68256,
+      "table": 68516,
+      "origin": 7352,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68000,
+      "stub": 68176,
+      "decoder": 68256,
+      "table": 68518,
+      "origin": 7378,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68040,
+      "stub": 68180,
+      "decoder": 68256,
+      "table": 68520,
+      "origin": 7256,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68056,
+      "stub": 68184,
+      "decoder": 68256,
+      "table": 68522,
+      "origin": 7070,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68064,
+      "stub": 68188,
+      "decoder": 68256,
+      "table": 68524,
+      "origin": 7074,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68124,
+      "stub": 68192,
+      "decoder": 68256,
+      "table": 68526,
+      "origin": 7493,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68140,
+      "stub": 68196,
+      "decoder": 68256,
+      "table": 68528,
+      "origin": 7996,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68212,
+      "stub": 68200,
+      "decoder": 68256,
+      "table": 68530,
+      "origin": 7005,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68292,
+      "stub": 68204,
+      "decoder": 68256,
+      "table": 68532,
+      "origin": 7044,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68384,
+      "stub": 68208,
+      "decoder": 68256,
+      "table": 68534,
+      "origin": 8041,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68428,
+      "stub": 68212,
+      "decoder": 68256,
+      "table": 68536,
+      "origin": 310,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68544,
+      "stub": 68216,
+      "decoder": 68256,
+      "table": 68538,
+      "origin": 6362,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68552,
+      "stub": 68220,
+      "decoder": 68256,
+      "table": 68540,
+      "origin": 6376,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68560,
+      "stub": 68224,
+      "decoder": 68256,
+      "table": 68542,
+      "origin": 6377,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68568,
+      "stub": 68228,
+      "decoder": 68256,
+      "table": 68544,
+      "origin": 6199,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68636,
+      "stub": 68232,
+      "decoder": 68256,
+      "table": 68546,
+      "origin": 5322,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68736,
+      "stub": 68236,
+      "decoder": 68256,
+      "table": 68548,
+      "origin": 2535,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68744,
+      "stub": 68240,
+      "decoder": 68256,
+      "table": 68550,
+      "origin": 2559,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68760,
+      "stub": 68244,
+      "decoder": 68256,
+      "table": 68552,
+      "origin": 2260,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68844,
+      "stub": 68248,
+      "decoder": 68256,
+      "table": 68554,
+      "origin": 16,
+      "original_return_tail": 68964
+    },
+    {
+      "site": 68952,
+      "stub": 68252,
+      "decoder": 68256,
+      "table": 68556,
+      "origin": 84,
+      "original_return_tail": 68964
+    }
+  ],
+  "checked_failure_report": "cold-origin-packed-checked-failures.json",
+  "linked_smoke_report": "cold-origin-packed-qualification.json"
+}

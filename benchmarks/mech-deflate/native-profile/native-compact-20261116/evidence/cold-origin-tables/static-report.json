@@ -1,0 +1,33 @@
+{
+  "reference": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117/source-aligned/program.o",
+  "reference_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "candidate_sha256": "66899f7928c031d7e9e882149f8d428c1b13ca22f1ca50ccdbefad8cb07d706a",
+  "reference_root_bytes": 51240,
+  "candidate_root_before_alignment_bytes": 50736,
+  "candidate_text_bytes": 71256,
+  "reference_text_bytes": 71768,
+  "groups": [
+    {
+      "return_tail": "0xfc90",
+      "sites": 133,
+      "first_stub": "0x104b0",
+      "decoder": "0x106c4",
+      "table": "0x106dc"
+    },
+    {
+      "return_tail": "0x108c4",
+      "sites": 19,
+      "first_stub": "0x107e8",
+      "decoder": "0x10834",
+      "table": "0x1084c"
+    },
+    {
+      "return_tail": "0x10d64",
+      "sites": 139,
+      "first_stub": "0x10874",
+      "decoder": "0x10aa0",
+      "table": "0x10ab8"
+    }
+  ],
+  "link_and_runtime": "not tested; static object prototype"
+}
