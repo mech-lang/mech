@@ -1,0 +1,78 @@
+{
+  "compiler_source": "fcb818e6420828a19cf019023f0f765a938c351e",
+  "previous_publication": "d1a9ae0c3f4f8945ddd11fd3903edd6aaab089e2",
+  "patch_sha256": "3dacd5688a56d3d76477da02850578843c4a099686e6152a9c5dd26e47a6c57a",
+  "source_through_deployment": {
+    "mech-control": {
+      "source": 2.8129170415923,
+      "link": 0.03522704169154167,
+      "source_through_link": 2.851402124390006,
+      "strip": 0.01035056239925325,
+      "source_through_strip": 2.8619661249686033
+    },
+    "mech-phi-verifier": {
+      "source": 2.7637938340194523,
+      "link": 0.03700485429726541,
+      "source_through_link": 2.8025129586458206,
+      "strip": 0.01040420844219625,
+      "source_through_strip": 2.813074750127271
+    },
+    "roc": {
+      "source": 2.9473367081955075,
+      "link": 0.03414806188084185,
+      "source_through_link": 2.9834651038981974,
+      "strip": 0.01024620863609016,
+      "source_through_strip": 2.9937080834060907
+    },
+    "libdeflate": {
+      "source": 0.4456945420242846,
+      "link": 0.033901645336300135,
+      "source_through_link": 0.47961341636255383,
+      "strip": 0.010289249941706657,
+      "source_through_strip": 0.4900455414317548
+    }
+  },
+  "source_through_link_paired_ratio": {
+    "mech-control": 0.986028896737632,
+    "roc": 0.9409299309988388,
+    "libdeflate": 5.842151504718386
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 1.017886417,
+      "catalog": 0.061966791,
+      "frontend": 0.2280927915,
+      "artifact": 0.006949292,
+      "encode": 0.0025613750000000003,
+      "native": 1.4644442505
+    },
+    "mech-phi-verifier": {
+      "parse": 1.0136691665000002,
+      "catalog": 0.063621771,
+      "frontend": 0.227189146,
+      "artifact": 0.006994625500000001,
+      "encode": 0.002568354,
+      "native": 1.424504791
+    }
+  },
+  "peak_rss_bytes": {
+    "mech-control": 394936320.0,
+    "mech-phi-verifier": 395051008.0,
+    "roc": 392110080.0,
+    "libdeflate": 71532544.0
+  },
+  "output_sha256": {
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "exact_linked_calls": 162,
+  "focused_verifier_tests": 2,
+  "reported_parser_comparison": {
+    "mech_seconds": 1.0202926665,
+    "roc_seconds": 0.003,
+    "mech_over_roc": 340.0975555,
+    "diagnostic_pairs": 4,
+    "scope": "Mech lossless parser and indexes. Roc summed tokenization and parsing with one job."
+  }
+}

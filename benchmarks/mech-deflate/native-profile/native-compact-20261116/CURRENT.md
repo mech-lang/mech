@@ -1,6 +1,6 @@
 # PR #993 current status
 
-The deployment comparison uses compiler source `e9538f71514225abf5ca57a9fc0acab358407167` on PR #993,
+The deployment comparison uses compiler source `fcb818e6420828a19cf019023f0f765a938c351e` on PR #993,
 stacked on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
 The host is Apple M1, macOS 15.6.1, arm64.
 [Machine-readable measurements and per-case changes](scorecard.json)
@@ -8,32 +8,40 @@ The host is Apple M1, macOS 15.6.1, arm64.
 ## Current matched deployment build
 
 The eight balanced comparisons use prebuilt compilers and fixed host support.
-Peer executables use the same CLI, allocator, target, and strip rules.
+Peer executables use the same CLI, allocator, target and strip rules.
 
 | Measurement | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.84147 s | 2.98471 s | 0.48041 s |
-| Source through strip | 2.85210 s | 2.99527 s | 0.49103 s |
+| Source through final link | 2.80251 s | 2.98347 s | 0.47961 s |
+| Source through strip | 2.81307 s | 2.99371 s | 0.49005 s |
 | Generated encoder text | 71,768 B | 57,696 B | 37,080 B |
 | Stripped deployment file | 292,576 B | 191,920 B | 155,760 B |
-| Compiler peak RSS | 395,378,688 B | 396,247,040 B | 71,540,736 B |
+| Compiler peak RSS | 395,051,008 B | 392,110,080 B | 71,532,544 B |
 
-Function replay reduces paired time **9.39%** from the
-variable-replay control. Median Mech link-inclusive time falls from
-**3.13523 s** to **2.84147 s**.
-The paired comparison is **0.951× Roc** and **5.912× libdeflate**.
-Encoder text is **1.244× Roc** and **1.935× libdeflate**.
-The checked root occupies **51,264 B** including its alignment, 71.4%
-of the Mech encoder text. [Encoder symbol extents](evidence/scoped-function-replay/root-census.json)
-The worker, bytecode, encoder object and complete metadata reproduce exactly.
-The normalized timing output name changes the signing record by eight bytes.
-[Matched compiler timings and identity checks](evidence/scoped-function-replay/README.md)
-· [Common deployment link](evidence/alloc-only-deployment/README.md)
+The adjacent cleanup verification change reduces paired source-through-link
+build time by **1.40%**. Native preparation through
+object generation falls from **1.464 s** to
+**1.425 s**. The matched time follows the same
+link boundary at **0.941× Roc** and **5.842× libdeflate**.
+Encoder text is **1.244× Roc** and **1.935× libdeflate**. Its checked-root
+symbol extent is **51,264 B**. The bytecode, encoder object, metadata and
+benchmark worker reproduce byte for byte. The normalized timing output name
+changes the signing record by eight bytes.
+[Matched compiler timings and identity checks](evidence/phi-verifier-reuse/README.md)
+· [Previous matched compiler build](evidence/scoped-function-replay/README.md)
+· [Checked-root symbol extents](evidence/scoped-function-replay/root-census.json)
 
-Parsing takes 1.018 s, source semantics 0.227 s,
-native preparation through object generation 1.462 s,
-and catalog initialization 0.062 s in those runs. The
-fixed deployment link takes 34.4 ms. Values are medians.
+Across four fresh compiler profiles, Mech reports
+**1.020 s** for its
+lossless parser and index construction. Roc reports **3 ms** for summed
+tokenization and parsing with one compilation job. The reported intervals
+are approximately **340×** apart.
+[Separate reported parser phase comparison](evidence/phi-verifier-reuse/parser-phases/README.md)
+
+The general-byte-read outline emits **71,420 B**. It keeps every peer win
+from the paired control in both complete orders. Both workers score 60/81
+against libdeflate in reverse when `prefix-periodic-1024` crosses parity.
+[Checked byte reads](evidence/checked-byte-read-regions/README.md)
 
 ## Which build to use
 
@@ -41,8 +49,9 @@ fixed deployment link takes 34.4 ms. Values are medians.
 | --- | ---: | --- |
 | Historical rebuild default | 72,520 B | `rebuild.py --variant baseline`, compiler opt level 1 |
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
-| Latest fully timed size candidate | 71,288 B | Shared owner exchange rejected by the v2 runtime gate |
-| Current compiler source | **71,768 B** | Guarded variable and function replay, shared native facts |
+| Latest fully timed size candidate | 71,420 B | Checked byte reads. Both reverse workers scored 60/81 libdeflate |
+| Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
+| Current compiler source | **71,768 B** | Guarded parser replay and adjacent cleanup verification |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
@@ -84,7 +93,7 @@ explicitly in its plan. [Reference runtime receipts](evidence/bound-71768-runtim
 [Exact reference v2 replay](evidence/reference-v2/README.md)
 
 The reference's historical case intervals and the candidate's slowdown
-diagnostics have separate entries in the scorecard. The latest candidate
+diagnostics have separate entries in the scorecard. The owner-exchange candidate
 loses `random-1024` and gains `320-overlap` in reverse.
 [Complete v2 candidate evidence](evidence/owner-exchange-71288-v2/README.md)
 
@@ -119,7 +128,8 @@ both orders. The earlier transient's cause remains open.
   chain exposes about 3.2 ms of CFG and dominator recomputation. Park both
   narrow changes and inspect the next exact-choice omitted-body case. [Scoped native diagnoses](evidence/checked-root-work/README.md)
   [Exclusive native cost and raw traces](evidence/native-exclusive-work/README.md)
-  The adjacent verifier census identifies when constant-phi removal leaves IR intact. [Native census](evidence/scoped-function-replay/native-verify/README.md)
+  The adjacent cleanup now reuses verification when the phi sweep edits
+  no formals. [Matched verifier change](evidence/phi-verifier-reuse/README.md)
 - **Integration and qualification.** Compile and test the checked Related
   Posts producer binding. The 24-block control-drift diagnostic recovers the
   four affected peer wins in both orders. The archived reference has a v2
