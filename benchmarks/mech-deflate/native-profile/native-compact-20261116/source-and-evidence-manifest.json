@@ -60,8 +60,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "5d0d2fc3e59b4f7a5f45c9b84cf5dfe5f55558aaeb8f99c5ae314b283e229e7c",
-      "bytes": 23962
+      "sha256": "5fd55c4495be3d524280589f5b0dae906eb9bdbafa1313f6f22a5bac955bc1c1",
+      "bytes": 24448
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/README.md",
@@ -4662,6 +4662,726 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ci-44018345099/static-ci-failure.log.gz",
       "sha256": "bb69d4d80dc325ea3908dae41993329bcc09546e5d795460d33149e7a31aa641",
       "bytes": 593
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/README.md",
+      "sha256": "6c791456d2134685aa95cbc239948c036bc21ada1291be974cd4337c0fd1daa4",
+      "bytes": 3028
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/SOURCE-PLAN.md",
+      "sha256": "8e1bb5d7546a150ab325d04cb00f95c5aa06cd3f4539ccc7279451d9913dd94a",
+      "bytes": 6953
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-link-placements.json",
+      "sha256": "5080e10b55477df0a8c0e0626859d938f7199411db10f520c82fcb1941135038",
+      "bytes": 1515
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/artifacts/mech-control-link.json",
+      "sha256": "89962f9487a196a30156824039c4c4ed396e312f4186b2123ef268e6c34f38b1",
+      "bytes": 9422
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/artifacts/mech-experiment-link.json",
+      "sha256": "5dbd8b05d2482ca4b91d5bf71c367b26a01d12bf5fa411c176027d694e1436d7",
+      "bytes": 9751
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/as-run-timer.py",
+      "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+      "bytes": 8941
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/as-run-timing.py",
+      "sha256": "9474c61cbeee235d90d03c55369cdc950de6a962f55f746e56d2319cee45f8db",
+      "bytes": 9373
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/canonical-pins/cold-origin-page-candidate-focus-forward.json",
+      "sha256": "4503aac967e1c2451c401b7049666b4ded626be47359b68b35b7b932a2b059de",
+      "bytes": 5454
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/canonical-pins/cold-origin-page-candidate-focus-reverse.json",
+      "sha256": "4503aac967e1c2451c401b7049666b4ded626be47359b68b35b7b932a2b059de",
+      "bytes": 5454
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/320-overlap/observations.json.gz",
+      "sha256": "d0f549fcd2193e9285f2ba2c028279e8b77dee2aff096904ea217c4e9e146245",
+      "bytes": 303450
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/complete.json",
+      "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/empty/observations.json.gz",
+      "sha256": "ef53ecaceba3f5e19fd5b9ad12bbab5301135917ba7aab67bc4251e3916eb299",
+      "bytes": 1251154
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/heldout-mixed-131073/observations.json.gz",
+      "sha256": "368de3328bceed4e3e928e7a963ebf0fcc4aaa2715f9ca4556eb6b368542c7e2",
+      "bytes": 8420
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/heldout-window-32767/observations.json.gz",
+      "sha256": "256ee1c726797fe03446e1b5ea3007c3f25f2c795563049e64c8c7cddcba2585",
+      "bytes": 8338
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/one-stored/observations.json.gz",
+      "sha256": "7f631b7225faa9a00b2b9051f4032ee9bcc6264ad8f860709d398bc3c83b6760",
+      "bytes": 1247953
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/pins.json",
+      "sha256": "815744b5515a2e46a084da2ae660dbeccf6d7d07c807ae0e8d211b4a86d1285a",
+      "bytes": 5454
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-natural-16384/observations.json.gz",
+      "sha256": "514b50c1a6288fb4872f19465f4ca38b24b09af193c428c19afd19b9d35907b3",
+      "bytes": 8244
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-natural-4096/observations.json.gz",
+      "sha256": "9e1aebe6a190ffc02c5a449de2ca6150aede6eb44bedb564adcd2ba41beb30ab",
+      "bytes": 8173
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-natural-8192/observations.json.gz",
+      "sha256": "4c2b530e9525e9f3eb1319c615d11d291d2ac070dbb0901e912263a46933bcac",
+      "bytes": 8197
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-periodic-1024/observations.json.gz",
+      "sha256": "bce49e66f648de1961c3e50db30bc1446f30fdf11f1533e2e3b5065a1ef9b9b9",
+      "bytes": 324122
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-random-1024/observations.json.gz",
+      "sha256": "c20cf371b1cfac331b5488477eeec8b3732790d49beb0589851bbe38661e6fc6",
+      "bytes": 317132
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-random-1048576/observations.json.gz",
+      "sha256": "ba65b6eaa7dac60ab3a58550a7c59de64b2c05c0655fef98acd5f5f9a26f887c",
+      "bytes": 8571
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-random-4096/observations.json.gz",
+      "sha256": "5a23731b030367de47158dfab795bf6755615d433f8d009fa3088517d3617122",
+      "bytes": 8063
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/prefix-random-8192/observations.json.gz",
+      "sha256": "b22dc3b735ba998ac17a5260a55b171ed4f3477af0fc76be3abbcbc6e9fe30b8",
+      "bytes": 8128
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/random-1024/observations.json.gz",
+      "sha256": "2727a77b6fd11f195dced3c82b3ccbdb23f0c4f555ce26738eb08727227a1a95",
+      "bytes": 312832
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/random-64/observations.json.gz",
+      "sha256": "297f5abe5b3099885aa20e65546bc8f972b2f6da333ff77c507197800c0dcaef",
+      "bytes": 301740
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/seven-stored-prefix/observations.json.gz",
+      "sha256": "9dbe60df54cbd9fb77aa443da00e8cabb6b4aaf6546c3d1fee8b67a5bdb23c5a",
+      "bytes": 1246972
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-forward/summary.json",
+      "sha256": "bf9a817297f7e624b257118d80b326bcaf9d4e0ba763f9b3acfc0e217c8d397a",
+      "bytes": 13845
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/320-overlap/observations.json.gz",
+      "sha256": "b38a122ef9b7d8005e9a684d0c7b4b114a6d54f50b52afc5f787e0e71ad27605",
+      "bytes": 301485
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/complete.json",
+      "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/empty/observations.json.gz",
+      "sha256": "7baebcc4b81440cbdbfa5c828c6b8819b67cdf245a63ef1f379546ec05500862",
+      "bytes": 1248635
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/heldout-mixed-131073/observations.json.gz",
+      "sha256": "fd59ba5c9481b3a3aaf5ab8bc24b0c63a5bc46497a7323484f99a9dfcd62723e",
+      "bytes": 8449
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/heldout-window-32767/observations.json.gz",
+      "sha256": "2b98c61535e6a2cbd11e4ea938decd87ebd94e55cf0269768f5c9fa9c02b7367",
+      "bytes": 8374
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/one-stored/observations.json.gz",
+      "sha256": "1551796868dee2075c066d7271eb94ab63c43e1dc122bb5fb599c65ee89f9085",
+      "bytes": 1246252
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/pins.json",
+      "sha256": "815744b5515a2e46a084da2ae660dbeccf6d7d07c807ae0e8d211b4a86d1285a",
+      "bytes": 5454
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-natural-16384/observations.json.gz",
+      "sha256": "26193fadb9917cbb57dd275fb927c4e3b6a2b99e1163ed68f5a5104066f52a78",
+      "bytes": 8260
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-natural-4096/observations.json.gz",
+      "sha256": "981ac9e029ac87e7bdc5bcc480ce2a721b90bc13a45c1781658e62fe7a8a5809",
+      "bytes": 8194
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-natural-8192/observations.json.gz",
+      "sha256": "8ea4f410a7f8ec93109b21d8df73890218ca848079adb09a230cce4daa28d228",
+      "bytes": 8179
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-periodic-1024/observations.json.gz",
+      "sha256": "2c3371c793bc4e63c4f9d8900c78e199f2943c6d93597d5a6529817d61816583",
+      "bytes": 322614
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-random-1024/observations.json.gz",
+      "sha256": "f0ecb8e6db7fa92f2db96b944cc4f3ad1362418d8752b965425c9dd500620a5e",
+      "bytes": 316190
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-random-1048576/observations.json.gz",
+      "sha256": "6e278858f5b6ed81b4415c9ca92b2a9b2c9f617bd416e50a6fb2b2855b7cfa5b",
+      "bytes": 8496
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-random-4096/observations.json.gz",
+      "sha256": "9c3b4dc896ab69e40433b3645436466546f4ec8fd1aa41c8a008a0cfdff83c3d",
+      "bytes": 8079
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/prefix-random-8192/observations.json.gz",
+      "sha256": "61c7666f5b08a78d388dc9b62fb7685a5edc39455e36da2c82204f82ba93797f",
+      "bytes": 8043
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/random-1024/observations.json.gz",
+      "sha256": "16f23699e2211cc3c202ced37e35d97208d3ee987e16e681a33a2b41481bd111",
+      "bytes": 311557
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/random-64/observations.json.gz",
+      "sha256": "37bdf5ba6050e33909d447361f29473ec35f568a1156b25d6aaa90e193d25d6e",
+      "bytes": 299690
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/seven-stored-prefix/observations.json.gz",
+      "sha256": "c4ddfb1a5c2dee9c56e98090b357374ce9b3fc5535a8a330c4aa707b4e075ff6",
+      "bytes": 1245787
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/cold-origin-page-candidate-focus-reverse/summary.json",
+      "sha256": "f7ffe4b7b37e0de70276c04cc2cd148d2156ddcd64f02688e4ad3e49b192585d",
+      "bytes": 13873
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/contract.json",
+      "sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7",
+      "bytes": 214
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/environment.json",
+      "sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+      "bytes": 427
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/focus-replay.json",
+      "sha256": "13e5727ec4e3ab4916837d35f671ea885bfcde5cc698dca6c0841f95529007e7",
+      "bytes": 24863
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/plan.json",
+      "sha256": "91408acd78a37279e2d80b126636c445a1b32920f0ce9a228dcf4b026d68ceeb",
+      "bytes": 4757
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/aligned-sections/plan.sha256",
+      "sha256": "be4db59568c06bf75a45544416cf165f1dbda53f105fa3a479ab1d08e1b1c816",
+      "bytes": 65
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/aligned-focus.log.gz",
+      "sha256": "96c73013f861c810a276e944bfa4e105d0085f842c8b8c35ff437c869316d33b",
+      "bytes": 956
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/aligned-link.log.gz",
+      "sha256": "dd225638de6ea636cefb2f211168001d34680b0adaede86aa96d79cd7cb0c0c2",
+      "bytes": 136
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/cold-only.log.gz",
+      "sha256": "df135932016b46293ab86443d485cc497b70c81e4c8b64cf29ea22f8fd2780c8",
+      "bytes": 71
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/focus.log.gz",
+      "sha256": "96b5085693c4d7b8e86ba98c4574e9d3d5773b0f9ff835c41984b65ac28df3e5",
+      "bytes": 947
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/place_linked_sections.py",
+      "sha256": "723aa495de3885c98db7bca8c23e1d6f618f8ce3e82de65773b661e229f0275e",
+      "bytes": 2551
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/prepare.py",
+      "sha256": "6eeb03733c434720bf199a49d098da41f875edd924f436cfe94715d181c3d82c",
+      "bytes": 3378
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/probe.py",
+      "sha256": "0f31157a036e173ccb28c8cab652fd8f9e8b4c7d5c31d75c91081c09bc9de607",
+      "bytes": 6280
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/proof.log.gz",
+      "sha256": "0e1dda781dccc090b5ea3e767c5694ae593bf75456867ca95e45f91670d589ff",
+      "bytes": 984
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/as-run/verify_cold_only.py",
+      "sha256": "206a9b1a7a0b6d0b32601cb447d4521e615b6b35d59ec58995dfeb763c9d0537",
+      "bytes": 2064
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/checks/checked-failures.json",
+      "sha256": "1575029b26f1820889fac9fa2f7933d48758a700ffc6ee285f8e725a9adb65b8",
+      "bytes": 387602
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/checks/qualification.json",
+      "sha256": "8467b7fb4377b41ec67bc8cd8302aa8e71c27d2445528d0c56ac834eb8ed9911",
+      "bytes": 575
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/checks/section-aligned-candidate.json",
+      "sha256": "5e20b4bb1aac38146565f08e55fb87d349caf0990a8ee96534a1674f2df15860",
+      "bytes": 591
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/checks/section-aligned-control.json",
+      "sha256": "520acf57cba0973a193d0e8c6156d1de7ce0da92f2f024aa1dd7ac498ede5d30",
+      "bytes": 587
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/checks/stack.json",
+      "sha256": "fdc55c79fcfea7d8d20f306823358ed63828bcedda28dc7de8e74cc9cf70974f",
+      "bytes": 5651
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/cold-entry-proof.json",
+      "sha256": "f9df840d1bdf5db9a997749247c231a971256f09588174eef55e19e945ddc755",
+      "bytes": 764
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/link-proof.json",
+      "sha256": "23c577dabac78437ec76143d68f2b550ab2faa158d6e8465ecd37c982395c52e",
+      "bytes": 46794
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/object-and-worker-comparison.json",
+      "sha256": "6a9023be7cc7300b8c6c59c5f2a75c1842cc8340772b98b022c6ba14c3ee5b06",
+      "bytes": 5489
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/prototype/compact_object.py",
+      "sha256": "0dce510cf4837aa0fc139a8d34e76f0150d9cdb62c4dd038bea4409c360162ea",
+      "bytes": 11643
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/prototype/mach_o.py",
+      "sha256": "93a2c03de1b8c9d07620a1e38a28c29264ba12a83d0bdac27fc0efc2e29158e5",
+      "bytes": 1682
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/prototype/outline-root.py",
+      "sha256": "76c5accbba50e82571c381d4240bb980b01fba541a71bdc45afd5c3a6a00cf2e",
+      "bytes": 13012
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/prototype/pack-origins.py",
+      "sha256": "906bdebe7edf59714c6fad3dc2f4f0b0ce698f91117e634859e586c0974bbedf",
+      "bytes": 6373
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/prototype/reproduction.log",
+      "sha256": "0dbfba7bcae484e5fb782f317bea61b1586ed0a40496062cae22c8535879f153",
+      "bytes": 982
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/replay.py",
+      "sha256": "2abab97d9c39833c03fda04181ad2bb33d73ee5eae1440b7ffebd1037bf80f22",
+      "bytes": 2811
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/report.json",
+      "sha256": "e5f6acdfa185cb8c02474292c9b4d7831e5fc94d8fe4719773c259daa1195073",
+      "bytes": 6508
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/artifacts/mech-control-link.json",
+      "sha256": "c610f88fe1d61546a7d8e74352f07a4ac175d571dc6816faff3a778f302b115a",
+      "bytes": 9252
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/artifacts/mech-experiment-link.json",
+      "sha256": "b22baead2a41d7870ae66e6a35c50f4cebb67f2232e57fde4e90e160c7532b47",
+      "bytes": 9589
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/as-run-timer.py",
+      "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+      "bytes": 8941
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/as-run-timing.py",
+      "sha256": "50f6be6edf9640c7f12bf772bb335fd8e500f5c213e17af3f2bdeb9a590d8e4f",
+      "bytes": 9331
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/canonical-pins/cold-origin-packed-focus-forward.json",
+      "sha256": "f95ebeb655b50bdd922f8559581b94d089ec24bdc11e3ce55beb009e2ae71cc4",
+      "bytes": 5414
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/canonical-pins/cold-origin-packed-focus-reverse.json",
+      "sha256": "f95ebeb655b50bdd922f8559581b94d089ec24bdc11e3ce55beb009e2ae71cc4",
+      "bytes": 5414
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/320-overlap/observations.json.gz",
+      "sha256": "41e30c78e96ea60a6371799794f2ab2cb5433fd849ff85604a57be3bf9e07865",
+      "bytes": 303062
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/complete.json",
+      "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/empty/observations.json.gz",
+      "sha256": "8999d5809b07cbfc6ed686f3353ce5fefb7d0b8a18996afedf0f9ea043b43a0a",
+      "bytes": 1250519
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/heldout-mixed-131073/observations.json.gz",
+      "sha256": "6bf24e0b2e4a11456a2752953d386ed10ec6702242c3640bb45a93bad35fe64e",
+      "bytes": 8472
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/heldout-window-32767/observations.json.gz",
+      "sha256": "cea6b5e701c60ea9865354adb7b02ddfc9d29483abc9e4ada51552f86f48ef5a",
+      "bytes": 8304
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/one-stored/observations.json.gz",
+      "sha256": "cc196ab0c355f84354ebbfa0b1eb346a3ab5440df1657a4e8b1539841704e94c",
+      "bytes": 1246635
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/pins.json",
+      "sha256": "6760f6e60219d3d9c9b73a20300494a09e97e96b6fd635c0119d63c7c4ef3c06",
+      "bytes": 5414
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-natural-16384/observations.json.gz",
+      "sha256": "cd00ae52dc0197991d3ac811ebaa3690afcf26799dfb9678002101c3d874edd1",
+      "bytes": 8260
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-natural-4096/observations.json.gz",
+      "sha256": "5c386bdce0e457f4d089253a219289e62d4179cda229220a8550af735bdd36de",
+      "bytes": 8172
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-natural-8192/observations.json.gz",
+      "sha256": "fba657fc51c2a6f0bd2413f6e4d83a0e1d479f7398a16cca84810171c99af334",
+      "bytes": 8249
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-periodic-1024/observations.json.gz",
+      "sha256": "c023d312ff1d2970a35217c3146d501fb583ab28add5c69bee178ff6c16e1da6",
+      "bytes": 323681
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-random-1024/observations.json.gz",
+      "sha256": "aae84cefa9107a98596eae93110e67c377a9d47bbdb99b845011410e57503022",
+      "bytes": 317656
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-random-1048576/observations.json.gz",
+      "sha256": "a1bf028dd0c1a8d19ddefe968a6b2498112c81f7d4cbcc0c1ae6f0f28812dc26",
+      "bytes": 8532
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-random-4096/observations.json.gz",
+      "sha256": "fa4449d2edb5e4530c22171943823672717f8ace9dcdfd71f3152b8505093553",
+      "bytes": 8183
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/prefix-random-8192/observations.json.gz",
+      "sha256": "e99609de7a755e5ec2bc7a2ddec05bb4aa776911460c0ecef650eb1de9a6f6f5",
+      "bytes": 8162
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/random-1024/observations.json.gz",
+      "sha256": "e2cb9a3d53cb81788fcd69edae1d984083c6f7ce7ab7e733ce500425bb928503",
+      "bytes": 313352
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/random-64/observations.json.gz",
+      "sha256": "f304fbeba55cab6d9318490828c5ffb86df2f2b6107b2b3582865a8f44fe6d94",
+      "bytes": 301529
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/seven-stored-prefix/observations.json.gz",
+      "sha256": "236967469fed72857ea144f12c3f352cbcca31ea4c078fbc36d00365d0a97798",
+      "bytes": 1246585
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-forward/summary.json",
+      "sha256": "50739bbebb61ff61e5e4446ed1fac48b4fd2a761a68e92e5cd1f79f3b5e7a53a",
+      "bytes": 13890
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/320-overlap/observations.json.gz",
+      "sha256": "ecc7223c9b047b4e82c35336b0d8559262c23ef40bbdbc679c4384458282344d",
+      "bytes": 301612
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/complete.json",
+      "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/empty/observations.json.gz",
+      "sha256": "1997f6d8f22dbc736b058dec4a96cba12903de5bf703f2f7682c7a829db009b9",
+      "bytes": 1248962
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/heldout-mixed-131073/observations.json.gz",
+      "sha256": "2f7dab42f84839cdeaef2fa629d00fca2fd41cef1a0f34536e6e2599adcd6432",
+      "bytes": 8409
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/heldout-window-32767/observations.json.gz",
+      "sha256": "c4955cf94e6cbc9530ddb8771f5104dd57ac23b736cdd8a146aae466c9e2a391",
+      "bytes": 8309
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/libdeflate.stderr",
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/mech-control.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/mech-experiment.stderr",
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2",
+      "bytes": 53
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/one-stored/observations.json.gz",
+      "sha256": "63539cd1196f0666d7e2d5217c7a54465781ba424c168cfb59e0da46a3b029da",
+      "bytes": 1245364
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/pins.json",
+      "sha256": "6760f6e60219d3d9c9b73a20300494a09e97e96b6fd635c0119d63c7c4ef3c06",
+      "bytes": 5414
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-natural-16384/observations.json.gz",
+      "sha256": "1860e4bd80f0451fb3e7a0419d3049ab01cdc83a1051407cbab4ebdf4cf82e2d",
+      "bytes": 8332
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-natural-4096/observations.json.gz",
+      "sha256": "a609fe50e33cb427de497e132d6d5eb79e0087f8ec1ad7d9ac758e5f271be09c",
+      "bytes": 8177
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-natural-8192/observations.json.gz",
+      "sha256": "82cc2cccc254051ab8cbd15ca89fe686ce89be1b6ac5bea0643853e0bb46f489",
+      "bytes": 8205
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-periodic-1024/observations.json.gz",
+      "sha256": "f349dd633606c75b2f809f4c4e2dcdb397ed87a73a6e4b74f3b17adadb60c544",
+      "bytes": 322133
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-random-1024/observations.json.gz",
+      "sha256": "5ca6be28ec53218c77d8953ea1ef91b512949934b9f8ef942b27bf2148707169",
+      "bytes": 316023
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-random-1048576/observations.json.gz",
+      "sha256": "7cb7758197430e7873ae59b45d9d22f2cc800a8401763577284f34b8768c4bdb",
+      "bytes": 8526
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-random-4096/observations.json.gz",
+      "sha256": "4106b2f7cf575a493583d53c06f8bfd5e7ea9987f73a94bae5ba74e590921bc1",
+      "bytes": 8078
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/prefix-random-8192/observations.json.gz",
+      "sha256": "5b996e654a33de5c09fbdc28000ace2cc9124a47585ec1dc5728bd02fa3aa350",
+      "bytes": 8082
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/random-1024/observations.json.gz",
+      "sha256": "146b48ba571ce54ba2cb7d6e7b15b6c2c8ba835c05de14eb7a89f2ba86b468ed",
+      "bytes": 311804
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/random-64/observations.json.gz",
+      "sha256": "1636f75ccad6a122c17ea3aaabf93f6d15507dbcbda8d0398dd69d39392e92ac",
+      "bytes": 299339
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/roc.stderr",
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91",
+      "bytes": 52
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/seven-stored-prefix/observations.json.gz",
+      "sha256": "1fdf13e98d3d1c21746d1e0ed2c6737740246a11a5ac2ed9756d323fa5d395b4",
+      "bytes": 1245466
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/cold-origin-packed-focus-reverse/summary.json",
+      "sha256": "3e7f38c62e09ffb26ac4a65434182f5901c098a701912e8d2cfa1b00248a4b70",
+      "bytes": 13808
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/contract.json",
+      "sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7",
+      "bytes": 214
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/environment.json",
+      "sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+      "bytes": 427
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/focus-replay.json",
+      "sha256": "b1335f9f42f15764f1a4b1b788c088522445d809711251cae839c79270df7f37",
+      "bytes": 24267
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/plan.json",
+      "sha256": "d028ccaf0a5e52eb2dda1776e6cdfdd984aee8b3aa22f03b8c31c77b1e534193",
+      "bytes": 4607
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/standard-link/plan.sha256",
+      "sha256": "f49771ffb54e26c2e598148a3dc495700461f06726ba9ac5bee0e99ad2291dd0",
+      "bytes": 65
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-origin-tables/static-report.json",
+      "sha256": "0dbfba7bcae484e5fb782f317bea61b1586ed0a40496062cae22c8535879f153",
+      "bytes": 982
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cold-tails/correctness.json",

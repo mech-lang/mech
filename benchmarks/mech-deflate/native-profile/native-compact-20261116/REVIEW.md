@@ -65,6 +65,15 @@ The encoder grew by 64 bytes and the empty-input regression triggered the
 validator's Reject decision in the two focused orders.
 [Patch, replay, and exact object reproduction](evidence/ordered-vector-cursors/README.md)
 
+## Cold error-origin tables
+
+An exact Mach-O prototype packs 291 cold origins and emits **71,256 bytes**
+of encoder text, or **1.92168× libdeflate**. Both focused links preserve
+all measured peer wins; empty input triggers rejection at the standard
+placement and remains unresolved at equal stub and constant section
+addresses. Exact reproduction, checked errors, and both timing receipts
+are recorded. [Prototype and intended backend boundary](evidence/cold-origin-tables/README.md)
+
 ## Single-process source compilation
 
 The maintained rebuild accepts `--direct-source`. The existing diagnostic
