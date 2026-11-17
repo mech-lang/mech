@@ -1,0 +1,28 @@
+{
+  "package": "registry+https://github.com/rust-lang/crates.io-index#libmimalloc-sys@0.1.35",
+  "features": [],
+  "effective_opt_level": 1,
+  "opt1_archive_sha256": "19b6c8cc8a3431c659e737b2848a966bae181e4c74932cd2a1c8770e0642a724",
+  "opt3_archive_sha256": "19b6c8cc8a3431c659e737b2848a966bae181e4c74932cd2a1c8770e0642a724",
+  "proof_archives": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/allocator-opt1-cargo/release/build/libmimalloc-sys-68c44b121d596369/out/libmimalloc.a",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/build/libmimalloc-sys-2b75cf156f3cf9a0/out/libmimalloc.a"
+  ],
+  "control_archive_proof": "Rebuilt with the package and profile from the control Cargo receipt.",
+  "effective_compiler_opt_levels": {
+    "opt1": {
+      "mech_syntax": "1",
+      "mech_engine": "1",
+      "mech_gpu": "1",
+      "emit_compact_size": "1",
+      "native_compact_frontend": "1"
+    },
+    "opt3": {
+      "mech_syntax": "3",
+      "mech_engine": "3",
+      "mech_gpu": "3",
+      "native_compact_frontend": "3",
+      "emit_compact_size": "3"
+    }
+  }
+}

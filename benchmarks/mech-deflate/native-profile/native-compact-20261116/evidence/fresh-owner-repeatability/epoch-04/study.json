@@ -1,0 +1,18 @@
+{
+  "acceptance_resolution": 0.005,
+  "seed": 31416201,
+  "order": [
+    "prefix-natural-16384",
+    "random-64",
+    "reymont-prefix-32769"
+  ],
+  "repetitions_per_order": 8,
+  "timer": "worker complete-call elapsed durations",
+  "worker_sha256": {
+    "control": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "duplicate-control": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "candidate": "4374799309e26e3b85b84e8ac9dc796eac15621a52b1851c6cdb61c3126c4db7"
+  },
+  "distinct_worker_files": 2,
+  "batch_floor": 64
+}

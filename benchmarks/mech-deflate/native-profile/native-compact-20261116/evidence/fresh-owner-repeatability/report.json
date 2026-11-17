@@ -1,0 +1,293 @@
+{
+  "decision": "Diagnostic only. Promotion remains unresolved pending the maintained qualification policy.",
+  "prior_study_retained": "../fresh-owner-counts/counts/repeatability/run-1/results.json",
+  "resolution": 0.005,
+  "results": {
+    "prefix-natural-16384": {
+      "epochs": 8,
+      "duplicate_controls_within_resolution": 7,
+      "candidate_within_resolution": 8
+    },
+    "random-64": {
+      "epochs": 8,
+      "candidate_within_resolution": 8
+    },
+    "reymont-prefix-32769": {
+      "epochs": 8,
+      "duplicate_controls_within_resolution": 8,
+      "candidate_within_resolution": 7
+    }
+  },
+  "order_results": {
+    "prefix-natural-16384": [
+      {
+        "epoch": "epoch-01",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.007009923830660236,
+          "candidate, duplicate-control, control": -0.0022169449591833423,
+          "control, candidate, duplicate-control": 0.0007631992038066304,
+          "control, duplicate-control, candidate": 0.003835657424809291,
+          "duplicate-control, candidate, control": 0.0006617575261456121,
+          "duplicate-control, control, candidate": -0.0009830163911866974
+        }
+      },
+      {
+        "epoch": "epoch-02",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.004884654903034247,
+          "candidate, duplicate-control, control": 0.00046181020991120647,
+          "control, candidate, duplicate-control": -9.131896274350293e-05,
+          "control, duplicate-control, candidate": 0.0011612899364248364,
+          "duplicate-control, candidate, control": 0.0002383540768713388,
+          "duplicate-control, control, candidate": 0.0006332629667040734
+        }
+      },
+      {
+        "epoch": "epoch-03",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.004111300661605588,
+          "candidate, duplicate-control, control": 0.00041259209605470915,
+          "control, candidate, duplicate-control": 0.00038142634093429884,
+          "control, duplicate-control, candidate": 0.0014645980547260962,
+          "duplicate-control, candidate, control": -0.0019257637596294952,
+          "duplicate-control, control, candidate": 2.4934539922361054e-05
+        }
+      },
+      {
+        "epoch": "epoch-04",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.0002006881498695101,
+          "candidate, duplicate-control, control": -0.0005556704345653918,
+          "control, candidate, duplicate-control": -0.0001382693006337643,
+          "control, duplicate-control, candidate": 0.0003775523860007901,
+          "duplicate-control, candidate, control": -0.00016861429840486775,
+          "duplicate-control, control, candidate": 0.0002812772901101823
+        }
+      },
+      {
+        "epoch": "epoch-05",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.001814619413642804,
+          "candidate, duplicate-control, control": -0.0012698841675464756,
+          "control, candidate, duplicate-control": -0.006791942249920635,
+          "control, duplicate-control, candidate": -0.001956287212684482,
+          "duplicate-control, candidate, control": -0.0069008071461311715,
+          "duplicate-control, control, candidate": -0.0037033240319263028
+        }
+      },
+      {
+        "epoch": "epoch-06",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.0017269656455050075,
+          "candidate, duplicate-control, control": 0.00018602472644424495,
+          "control, candidate, duplicate-control": -0.0008471902696991496,
+          "control, duplicate-control, candidate": 0.0010331076463105937,
+          "duplicate-control, candidate, control": -0.0007245727655641465,
+          "duplicate-control, control, candidate": 0.0016700341147881659
+        }
+      },
+      {
+        "epoch": "epoch-07",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.0009468161934969022,
+          "candidate, duplicate-control, control": -0.0004468524693048703,
+          "control, candidate, duplicate-control": -0.0002343585509991808,
+          "control, duplicate-control, candidate": -0.0037218970445478394,
+          "duplicate-control, candidate, control": -0.0010239323006092649,
+          "duplicate-control, control, candidate": -0.00175874189044678
+        }
+      },
+      {
+        "epoch": "epoch-08",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.0003022112856250203,
+          "candidate, duplicate-control, control": 0.000359389063844473,
+          "control, candidate, duplicate-control": 0.001392132109136801,
+          "control, duplicate-control, candidate": 0.00022740829090861503,
+          "duplicate-control, candidate, control": -0.0016393122432006857,
+          "duplicate-control, control, candidate": -0.0005940570341683715
+        }
+      }
+    ],
+    "random-64": [
+      {
+        "epoch": "epoch-01",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.022549516562319294,
+          "candidate, duplicate-control, control": -0.02110060128230873,
+          "control, candidate, duplicate-control": -0.005278032117624121,
+          "control, duplicate-control, candidate": -0.00640575821759104,
+          "duplicate-control, candidate, control": -0.018222221085957058,
+          "duplicate-control, control, candidate": -0.02107625993125728
+        }
+      },
+      {
+        "epoch": "epoch-02",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.006697927808538617,
+          "candidate, duplicate-control, control": 0.0025517268067691834,
+          "control, candidate, duplicate-control": 0.03390820998938704,
+          "control, duplicate-control, candidate": -0.005274389188733686,
+          "duplicate-control, candidate, control": 0.00967158435682669,
+          "duplicate-control, control, candidate": -0.0002766929754715042
+        }
+      },
+      {
+        "epoch": "epoch-03",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.001277404124893522,
+          "candidate, duplicate-control, control": 0.008971903464646935,
+          "control, candidate, duplicate-control": 0.005306655384395009,
+          "control, duplicate-control, candidate": -0.014730667410616682,
+          "duplicate-control, candidate, control": 0.007053573890486886,
+          "duplicate-control, control, candidate": -0.0050108974280077545
+        }
+      },
+      {
+        "epoch": "epoch-04",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.013217457300239266,
+          "candidate, duplicate-control, control": -0.002603361653156222,
+          "control, candidate, duplicate-control": -0.0061220623082837156,
+          "control, duplicate-control, candidate": 0.005912275573094261,
+          "duplicate-control, candidate, control": -0.029231963621801693,
+          "duplicate-control, control, candidate": -0.004567519384793051
+        }
+      },
+      {
+        "epoch": "epoch-05",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.006909404533883778,
+          "candidate, duplicate-control, control": -0.008326688366619428,
+          "control, candidate, duplicate-control": 0.009294531748637258,
+          "control, duplicate-control, candidate": 0.00848393400582359,
+          "duplicate-control, candidate, control": 0.007892638925109052,
+          "duplicate-control, control, candidate": -0.018051027135108533
+        }
+      },
+      {
+        "epoch": "epoch-06",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.05104433551402032,
+          "candidate, duplicate-control, control": -0.04898580404662234,
+          "control, candidate, duplicate-control": -0.026384602145562264,
+          "control, duplicate-control, candidate": -0.043636719618903475,
+          "duplicate-control, candidate, control": -0.05101511692119731,
+          "duplicate-control, control, candidate": -0.04974169776111159
+        }
+      },
+      {
+        "epoch": "epoch-07",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.007045979102355604,
+          "candidate, duplicate-control, control": -0.03594328324351448,
+          "control, candidate, duplicate-control": 0.0018946276997835465,
+          "control, duplicate-control, candidate": 0.017748471334477545,
+          "duplicate-control, candidate, control": -0.0074935206719506375,
+          "duplicate-control, control, candidate": -0.008037581817634809
+        }
+      },
+      {
+        "epoch": "epoch-08",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.009182788746050385,
+          "candidate, duplicate-control, control": -0.016442572270054856,
+          "control, candidate, duplicate-control": -0.029820543767811958,
+          "control, duplicate-control, candidate": -0.012371729548580235,
+          "duplicate-control, candidate, control": -0.015085893267588912,
+          "duplicate-control, control, candidate": -0.009779723899714265
+        }
+      }
+    ],
+    "reymont-prefix-32769": [
+      {
+        "epoch": "epoch-01",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.001318759621826926,
+          "candidate, duplicate-control, control": -0.0004942405623876711,
+          "control, candidate, duplicate-control": 0.006287956188988142,
+          "control, duplicate-control, candidate": -0.00022660594445622628,
+          "duplicate-control, candidate, control": -0.0012863250450894093,
+          "duplicate-control, control, candidate": -0.00011681907377258938
+        }
+      },
+      {
+        "epoch": "epoch-02",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.0008192255757532019,
+          "candidate, duplicate-control, control": -0.0009791980607164463,
+          "control, candidate, duplicate-control": 0.003787881510091573,
+          "control, duplicate-control, candidate": -0.0008436909355022948,
+          "duplicate-control, candidate, control": -0.0010545778212076584,
+          "duplicate-control, control, candidate": -0.0028805616228796405
+        }
+      },
+      {
+        "epoch": "epoch-03",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.002378247745797424,
+          "candidate, duplicate-control, control": 0.0016657742304755363,
+          "control, candidate, duplicate-control": 0.0029775150280482165,
+          "control, duplicate-control, candidate": 0.0017149318951177328,
+          "duplicate-control, candidate, control": 0.0013520337508152735,
+          "duplicate-control, control, candidate": 0.00046237007553218135
+        }
+      },
+      {
+        "epoch": "epoch-04",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.005415282256622245,
+          "candidate, duplicate-control, control": 0.005919630295463163,
+          "control, candidate, duplicate-control": 0.0006932502702463594,
+          "control, duplicate-control, candidate": -0.0010824277704343244,
+          "duplicate-control, candidate, control": -0.0014936333481813113,
+          "duplicate-control, control, candidate": 0.000676730999248143
+        }
+      },
+      {
+        "epoch": "epoch-05",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 5.348278893713143e-05,
+          "candidate, duplicate-control, control": 0.0006064419163189783,
+          "control, candidate, duplicate-control": 0.0014066320411272315,
+          "control, duplicate-control, candidate": -0.000520694204312333,
+          "duplicate-control, candidate, control": 0.0034109277315688136,
+          "duplicate-control, control, candidate": 0.0028343041954743686
+        }
+      },
+      {
+        "epoch": "epoch-06",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.0042706269113395035,
+          "candidate, duplicate-control, control": 0.0011778179644112985,
+          "control, candidate, duplicate-control": 0.001974399025757023,
+          "control, duplicate-control, candidate": 0.0010515534536568172,
+          "duplicate-control, candidate, control": -0.005508793787198041,
+          "duplicate-control, control, candidate": 0.005460705714926961
+        }
+      },
+      {
+        "epoch": "epoch-07",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": 0.0004263032198668082,
+          "candidate, duplicate-control, control": -0.0004860148387237917,
+          "control, candidate, duplicate-control": 0.0004709193325060923,
+          "control, duplicate-control, candidate": 0.00207868037149872,
+          "duplicate-control, candidate, control": 0.002202327830469253,
+          "duplicate-control, control, candidate": 0.005994754414693437
+        }
+      },
+      {
+        "epoch": "epoch-08",
+        "control_fractional_change_by_order": {
+          "candidate, control, duplicate-control": -0.0013569844578357193,
+          "candidate, duplicate-control, control": -0.0004544711454798067,
+          "control, candidate, duplicate-control": 0.00026386959782831454,
+          "control, duplicate-control, candidate": 4.584064891455242e-05,
+          "duplicate-control, candidate, control": -0.0019046512969702611,
+          "duplicate-control, control, candidate": -0.0004446917835786435
+        }
+      }
+    ]
+  }
+}

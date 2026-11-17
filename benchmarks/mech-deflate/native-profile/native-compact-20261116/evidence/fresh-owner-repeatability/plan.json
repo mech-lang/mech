@@ -1,0 +1,68 @@
+{
+  "scope": "Control repeatability diagnostic. All the prior outcomes remain in the promotion review.",
+  "declared_unix_ns": 1794884459693162000,
+  "single_measurement_host": true,
+  "cases": [
+    "random-64",
+    "reymont-prefix-32769",
+    "prefix-natural-16384"
+  ],
+  "design": [
+    "Launch three fresh processes per epoch and balance all six actor orders within each case.",
+    "Hold worker contents constant across both control file arrangements.",
+    "Run both batch floors at each file arrangement, then repeat the four conditions in reverse with a second seed.",
+    "The prior half-millisecond target sets a lower bound on the realized batch. Record realized lengths.",
+    "Keep all raw draws. Compare every predeclared epoch using the historical within-order resampling rule."
+  ],
+  "resolution": 0.005,
+  "confidence": 0.9,
+  "resamples": 8000,
+  "repetitions_per_order": 8,
+  "worker_sha256": {
+    "control": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "duplicate-control": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "candidate": "4374799309e26e3b85b84e8ac9dc796eac15621a52b1851c6cdb61c3126c4db7"
+  },
+  "epochs": [
+    {
+      "seed": 31416201,
+      "control_files": "same",
+      "batch_floor": 8
+    },
+    {
+      "seed": 31416201,
+      "control_files": "copied",
+      "batch_floor": 64
+    },
+    {
+      "seed": 31416201,
+      "control_files": "copied",
+      "batch_floor": 8
+    },
+    {
+      "seed": 31416201,
+      "control_files": "same",
+      "batch_floor": 64
+    },
+    {
+      "seed": 31416202,
+      "control_files": "same",
+      "batch_floor": 64
+    },
+    {
+      "seed": 31416202,
+      "control_files": "copied",
+      "batch_floor": 8
+    },
+    {
+      "seed": 31416202,
+      "control_files": "copied",
+      "batch_floor": 64
+    },
+    {
+      "seed": 31416202,
+      "control_files": "same",
+      "batch_floor": 8
+    }
+  ]
+}

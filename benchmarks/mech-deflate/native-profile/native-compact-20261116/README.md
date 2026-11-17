@@ -25,6 +25,54 @@ that wording is historical. Historical evidence has not been edited.
 The code denominators are 57,696 B for Roc and **37,080 B for libdeflate**.
 Historical receipts used a 41,112-byte C object for their size ratios.
 
+## Compiler optimization profile
+
+Rebuild either encoder with `rebuild.py --compiler-opt-level 3 --target-dir PATH`
+in a separate Cargo directory. Level 1 remains the pinned default. Both host
+profiles use the same mimalloc C archive. The Cranelift backend, native flags,
+benchmark allocator, fixed runtime, adapters, and final link are held constant.
+
+| Apple M1 build | Source to executable | × Roc time | × libdeflate time | Encoder text |
+| --- | ---: | ---: | ---: | ---: |
+| Retained Mech, level 1 | 5.64000 s | 1.88910 | 11.71036 | 72,520 B |
+| Retained Mech, level 3 | 4.75709 s | 1.59337 | 9.87717 | 72,520 B |
+| 71,960-byte Mech, level 1 | 5.64395 s | 1.89042 | 11.71857 | 71,960 B |
+| 71,960-byte Mech, level 3 | 4.76479 s | 1.59595 | 9.89315 | 71,960 B |
+| Roc | 2.98555 s | 1.00000 | 6.19891 | 57,696 B |
+| libdeflate | 0.48162 s | 0.16132 | 1.00000 | 37,080 B |
+
+The smaller encoder builds **15.58% faster** at level 3. Six balanced
+orders include fresh source parsing, code generation, and final linking.
+The medians exclude warmups and separate profiled trials. Bytecode, encoder
+objects, complete metadata, and linked executables are byte-identical within
+each encoder configuration. Both historical benchmark workers also reproduce
+exactly, carrying their measured **81/81 Roc and 61/81 libdeflate** scores in
+both orders. Both configurations pass 162 exact checks at each compiler level.
+
+At level 3 the retained frontend takes **2.950 s** including
+**2.618 s parsing**. Native emission takes **1.765 s**
+and the final link takes **0.042 s**. The profiled frontend and
+emitter peak RSS are **382,222,336 B**
+and **217,825,280 B**.
+The compiler built 14 vector alternatives and selected five. The native marker
+spans include all intervening work and can guide narrower pass measurements.
+
+Compiler construction is separate. The clean level-3 trial initially optimized
+the allocator too and took 1300.53 seconds.
+The allocator-pinned correction rebuilt affected units in
+5.98 seconds from that cache.
+The level-1 control reused its existing compiler cache. A matched cold
+construction measurement remains open.
+[Build timings, full sizes, profiles, and identity proofs](evidence/host-opt-levels/report.json)
+
+The link maps reproduce all four current timed executables byte for byte.
+Mech's retained linked text includes **237,384 B** from Rust standard libraries,
+**52,156 B** from the benchmark adapter objects, **29,928 B** from JSON and
+serialization libraries, and **14,044 B** from inflation support. The maps
+attribute input symbols and include compiler-generated instances in the object
+that publishes them. A minimal deployment interface still needs a separate
+measurement. [Link maps and file-byte census](evidence/linked-size-census/report.json)
+
 ## Batched block parameter cleanup
 
 Constant-phi, local-phi, and dead-value cleanup now reindex surviving block
