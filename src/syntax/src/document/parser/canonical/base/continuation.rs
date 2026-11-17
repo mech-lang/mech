@@ -163,13 +163,21 @@ impl Continuation {
         if final_input
             && let Some(spec) = fixed
             && spec.spacing == TerminalSpacing::Exact
-            && let Some((end, work)) = parser.state.literal_cache.replay(
-                spec.literal,
-                parser.offset(),
-                parser.cursor().end(),
-                parser.cursor().context_end(),
-                *allowance,
-            )
+            && let Some((end, work)) = {
+                let start = parser.offset();
+                let consume = parser.cursor().end();
+                let context = parser.cursor().context_end();
+                parser.state.literal_cache
+                    .replay(spec.literal, start, consume, context, *allowance)
+                    .or_else(|| {
+                        if parser.is_halted() || parser.state.resource_finalizing {
+                            return None;
+                        }
+                        parser.state.literal_cache.sealed_ascii_miss(
+                            parser.source, spec.literal, start, consume, context, *allowance,
+                        )
+                    })
+            }
         {
             *allowance -= work + 2;
             self.work += work + 2;
