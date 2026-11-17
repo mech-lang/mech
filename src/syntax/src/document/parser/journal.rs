@@ -1,4 +1,6 @@
-//! Persistent parser events and diagnostics, grouped into bounded storage pages.
+//! Parser events and diagnostics, grouped into bounded storage pages.
+mod batch;
+
 use crate::document::retained_sequence::{Measured, RetainedSequence, UnitMeasured};
 use alloc::sync::Arc;
 use core::fmt;
@@ -17,11 +19,73 @@ impl<T> Measured for Chunk<T> {
     }
 }
 impl<T> UnitMeasured for Chunk<T> {}
+
+enum CompletedPages<T> {
+    Retained(RetainedSequence<Chunk<T>>),
+    Batch(batch::BatchPages<T>),
+}
+
+impl<T> Clone for CompletedPages<T> {
+    fn clone(&self) -> Self {
+        match self {
+            Self::Retained(pages) => Self::Retained(pages.clone()),
+            Self::Batch(pages) => Self::Batch(pages.clone()),
+        }
+    }
+}
+
+impl<T> CompletedPages<T> {
+    #[inline]
+    fn get(&self, index: usize) -> Option<&Chunk<T>> {
+        match self {
+            Self::Retained(pages) => pages.get(index),
+            Self::Batch(pages) => pages.get(index),
+        }
+    }
+
+    #[inline]
+    fn get_mut(&mut self, index: usize, allocations: &mut u64) -> Option<&mut Chunk<T>> {
+        match self {
+            Self::Retained(pages) => pages.get_mut(index, allocations),
+            Self::Batch(pages) => pages.get_mut(index, allocations),
+        }
+    }
+
+    fn push(&mut self, page: Chunk<T>, allocations: &mut u64) {
+        match self {
+            Self::Retained(pages) => *allocations += pages.push(page),
+            Self::Batch(pages) => pages.push(page, allocations),
+        }
+    }
+
+    fn truncate(&mut self, len: usize, allocations: &mut u64) {
+        match self {
+            Self::Retained(pages) => *allocations += pages.truncate(len),
+            Self::Batch(pages) => pages.truncate(len, allocations),
+        }
+    }
+
+    fn iter_from(&self, index: usize) -> impl Iterator<Item = &Chunk<T>> {
+        let retained = match self {
+            Self::Retained(pages) => Some(pages.iter_from(index)),
+            Self::Batch(_) => None,
+        };
+        let batch = match self {
+            Self::Retained(_) => None,
+            Self::Batch(pages) => Some(pages.iter_from(index)),
+        };
+        retained
+            .into_iter()
+            .flatten()
+            .chain(batch.into_iter().flatten())
+    }
+}
+
 pub struct Journal<T> {
     // Completed pages retain the persistent snapshot structure. Keep the
     // current page separate so ordinary appends and small rewinds do not
     // repeatedly walk and copy a path through that structure.
-    items: RetainedSequence<Chunk<T>>,
+    items: CompletedPages<T>,
     tail: Option<Chunk<T>>,
     len: usize,
     pub(crate) allocations: u64,
@@ -45,7 +109,7 @@ impl<T> Clone for Journal<T> {
 impl<T> Default for Journal<T> {
     fn default() -> Self {
         Self {
-            items: RetainedSequence::default(),
+            items: CompletedPages::Retained(RetainedSequence::default()),
             tail: None,
             len: 0,
             allocations: 0,
@@ -61,26 +125,38 @@ impl<T: fmt::Debug> fmt::Debug for Journal<T> {
     }
 }
 impl<T> Journal<T> {
+    pub(super) fn batch() -> Self {
+        Self {
+            items: CompletedPages::Batch(batch::BatchPages::new()),
+            ..Self::default()
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.len
     }
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
-    #[inline]
-    fn page(&self, page: usize) -> Option<&[T]> {
-        let chunk = if page == self.items.len() {
-            self.tail.as_ref()?
-        } else {
-            self.items.get(page)?
-        };
-        Some(chunk.0.as_slice())
+
+    fn completed_pages(&self) -> usize {
+        self.len.saturating_sub(1) / PAGE
     }
+
+    #[inline]
+    fn chunk(&self, page: usize) -> Option<&Chunk<T>> {
+        if page == self.completed_pages() {
+            self.tail.as_ref()
+        } else {
+            self.items.get(page)
+        }
+    }
+
     pub fn get(&self, index: usize) -> Option<&T> {
         if index >= self.len {
             return None;
         }
-        self.page(index / PAGE)?.get(index % PAGE)
+        self.chunk(index / PAGE)?.0.get(index % PAGE)
     }
     /// Borrow a page containing this item, with its absolute starting index.
     pub(crate) fn page_at(&self, index: usize) -> Option<(usize, &[T])> {
@@ -88,10 +164,11 @@ impl<T> Journal<T> {
             return None;
         }
         let page = index / PAGE;
-        Some((page * PAGE, self.page(page)?))
+        Some((page * PAGE, self.chunk(page)?.0.as_slice()))
     }
     pub(crate) fn get_with_work(&self, index: usize) -> (Option<&T>, u64) {
-        if index / PAGE == self.items.len() {
+        let page = index / PAGE;
+        if page == self.completed_pages() {
             return (
                 self.tail
                     .as_ref()
@@ -99,15 +176,18 @@ impl<T> Journal<T> {
                 1,
             );
         }
-        let (chunk, work) = self.items.at_measure_with_work(index / PAGE);
-        let value = chunk.and_then(|(_, chunk)| chunk.0.get(index % PAGE));
+        let (chunk, work) = match &self.items {
+            CompletedPages::Retained(pages) => {
+                let (chunk, work) = pages.at_measure_with_work(page);
+                (chunk.map(|(_, chunk)| chunk), work)
+            }
+            CompletedPages::Batch(pages) => pages.get_with_work(page),
+        };
+        let value = chunk.and_then(|chunk| chunk.0.get(index % PAGE));
         (value, work + 1)
     }
     pub fn iter(&self) -> impl Iterator<Item = &T> {
-        self.items
-            .iter()
-            .chain(self.tail.iter())
-            .flat_map(|chunk| chunk.0.iter())
+        self.iter_range(0..self.len)
     }
     pub(crate) fn iter_range(&self, range: core::ops::Range<usize>) -> impl Iterator<Item = &T> {
         self.items
@@ -115,7 +195,7 @@ impl<T> Journal<T> {
             .chain(
                 self.tail
                     .iter()
-                    .filter(move |_| range.start / PAGE <= self.items.len()),
+                    .filter(move |_| range.start / PAGE <= self.completed_pages()),
             )
             .flat_map(|chunk| chunk.0.iter())
             .skip(range.start % PAGE)
@@ -124,7 +204,7 @@ impl<T> Journal<T> {
 }
 impl<T: Clone> Journal<T> {
     fn chunk_mut(&mut self, index: usize) -> Option<&mut SmallVec<[T; PAGE]>> {
-        let chunk = if index == self.items.len() {
+        let chunk = if index == self.completed_pages() {
             self.tail.as_mut()?
         } else {
             self.items.get_mut(index, &mut self.allocations)?
@@ -138,7 +218,7 @@ impl<T: Clone> Journal<T> {
         self.changed_from = self.changed_from.min(self.len);
         if self.len % PAGE == 0 {
             if let Some(full) = self.tail.take() {
-                self.allocations += self.items.push(full);
+                self.items.push(full, &mut self.allocations);
             }
             let mut values = SmallVec::new();
             values.push(value);
@@ -172,7 +252,7 @@ impl<T: Clone> Journal<T> {
             self.changed_from = self.changed_from.min(self.len);
             if self.len % PAGE == 0 {
                 if let Some(full) = self.tail.take() {
-                    self.allocations += self.items.push(full);
+                    self.items.push(full, &mut self.allocations);
                 }
                 self.allocations += 1;
                 self.tail = Some(Chunk(Arc::new(batch)));
@@ -192,16 +272,18 @@ impl<T: Clone> Journal<T> {
         }
         self.changed_from = self.changed_from.min(len);
         self.discarded += (self.len - len) as u64;
+        let completed_pages = self.completed_pages();
+        self.len = len;
         if len == 0 {
             self.tail = None;
-            self.allocations += self.items.truncate(0);
+            self.items.truncate(0, &mut self.allocations);
         } else {
             let page = (len - 1) / PAGE;
-            if page < self.items.len() {
+            if page < completed_pages {
                 // Move the retained final page out of the completed prefix.
                 // Older snapshots still own their original page and tree.
                 self.tail = self.items.get(page).cloned();
-                self.allocations += self.items.truncate(page);
+                self.items.truncate(page, &mut self.allocations);
             }
             let retained = (len - 1) % PAGE + 1;
             if self.tail.as_ref().expect("retained journal page").0.len() != retained {
@@ -210,7 +292,6 @@ impl<T: Clone> Journal<T> {
                     .truncate(retained);
             }
         }
-        self.len = len;
         self.mutations += 1;
     }
     pub(crate) fn clear(&mut self) {
@@ -252,6 +333,29 @@ impl<T: Clone> core::ops::IndexMut<usize> for Journal<T> {
 mod tests {
     use super::*;
     use alloc::vec::Vec;
+
+    #[test]
+    fn batch_page_groups_survive_mutation_and_rewind() {
+        let mut journal = Journal::batch();
+        let group_edge = 32 * PAGE;
+        let count = 3 * group_edge + 5;
+        journal.extend(0..count);
+        let original = journal.clone();
+        let start = group_edge - 1;
+
+        journal[start] = usize::MAX;
+        journal.truncate(group_edge + 1);
+        journal.extend(0..2 * group_edge);
+        assert_eq!(journal.get(start), Some(&usize::MAX));
+        assert_eq!(journal.get(group_edge), Some(&group_edge));
+        assert!(
+            journal
+                .iter_range(group_edge + 1..journal.len())
+                .copied()
+                .eq(0..2 * group_edge)
+        );
+        assert!(original.iter().copied().eq(0..count));
+    }
 
     fn same(journal: &Journal<usize>, values: &[usize]) {
         assert_eq!(journal.len(), values.len());

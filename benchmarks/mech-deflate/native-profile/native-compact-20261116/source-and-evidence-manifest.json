@@ -26369,14 +26369,19 @@
       "bytes": 12909
     },
     {
+      "path": "src/syntax/src/document/parser/journal/batch.rs",
+      "sha256": "9a8e4cea4e4cd22c2bf3dbb93cc3774fb36bb90617db00dca72f2dd783c6c70a",
+      "bytes": 4129
+    },
+    {
       "path": "src/syntax/src/document/parser/journal.rs",
-      "sha256": "1c0dc8c04dfb92dca443248f6642caa6e5011d9e2458296f787686d98f7c921c",
-      "bytes": 13324
+      "sha256": "625288f4c648d82fc8a52e8f97c7200f67be11480f363eba96fdf6bcb20c703f",
+      "bytes": 16464
     },
     {
       "path": "src/syntax/src/document/parser/mod.rs",
-      "sha256": "7817740c9230ec0e05cf44b65e1b0eb180b08ce52835957e6a8fbcf87b0809f0",
-      "bytes": 56956
+      "sha256": "3f71f4b4f3ae6b38d8cbf85872975504a24d542a0cc944f19eb1ec4dddaf3d84",
+      "bytes": 57095
     },
     {
       "path": "src/syntax/src/document/parser/tree_cache.rs",
