@@ -1,0 +1,46 @@
+{
+  "inspected_head": "2e0af88b7d979dc3bd905858089127cd0415ed96",
+  "tested_ci_merge": "421f578729c5457ec4983edfb38523231e721541",
+  "paths": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "before_sha256": "13caa8301e69a00780be72c7c22dc62fb1943b0d65fa961c9a455db6e0f9e144",
+      "after_sha256": "0139c1e38a253e7420f6a3a2853d338739afb9158c018edbcd388949328ac6e7"
+    },
+    {
+      "path": "Cargo.lock",
+      "before_sha256": "f8424fc6a26f3bf745f6d2652d1379d1c202403ec101fa0c0dbfa7d208d4d2a5",
+      "after_sha256": "47d838f0e05be758fa8f91eb31e4f2fcbdb0367e04846c78b1f4490602b7410f"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs",
+      "before_sha256": "763e0c58d48ad34fb17a9dfcc1acbcda8a3ab004aded4f199cb81fbae2de1be6",
+      "after_sha256": "eae1e66a35e4f9fe1e1c99dcea97b33b24250063eb93a1c1b7a48f41577fa935"
+    },
+    {
+      "path": "scripts/build-wasm.py",
+      "before_sha256": "cedf2095a17cba8ad4b8ab807fb79aaa29f7f52c4a1fda420acbe2bb9442ddc2",
+      "after_sha256": "73d0fe3cdf63040bdac108385a71e582a20498d86be6e55af7bb068fb937d059"
+    },
+    {
+      "path": "scripts/tests/test_build_wasm.py",
+      "before_sha256": null,
+      "after_sha256": "8e71bf7a8c38ca6d2435810e7260b1d3a1c152af164c2af4392ad75999e77f60"
+    }
+  ],
+  "checks": [
+    "Failed before and passed after x86_64-unknown-linux-gnu Cargo check with -D warnings on actual compiled launcher-owner source and recreated hosted-runtime contract manifest.",
+    "Passed equivalent locked benchmark-policy-runtime Cargo check with warnings denied.",
+    "Four build-wasm.py behavior tests passed.",
+    "Pinned Cargo unlocked metadata read reproduced the prior lock serialization difference; it leaves the canonical lock byte-identical.",
+    "All 583 package records and dependency references matched after parsing and sorting the old and new locks.",
+    "Locked browser_compute_canary optimized WASM unit graph resolved 206 units without changing the canonical lock.",
+    "Producer command passed Bash syntax check, and the three consumer workflow job definitions matched the inspected baseline."
+  ],
+  "logs": {
+    "launcher_before": "launcher-before.log",
+    "launcher_after": "launcher-after.log",
+    "benchmark_after": "launcher-benchmark-after.log",
+    "wasm_graph": "wasm-locked-unit-graph.json"
+  }
+}

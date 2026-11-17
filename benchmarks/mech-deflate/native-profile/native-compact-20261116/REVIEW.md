@@ -11,8 +11,9 @@ git fetch origin codex/native-compact-source-handoff
 git switch -c codex/review-native-compact origin/codex/native-compact-source-handoff
 ```
 
-The retained runtime floors are **81/81 Roc and 61/81 libdeflate**, with 62 an
-improvement target. Continue reducing emitted code and complete build time toward
+The retained runtime floors are **81/81 Roc and 61/81 libdeflate**. The next
+milestones are 62, 71, and 81 libdeflate wins with repeatable qualification.
+Continue reducing emitted code and complete build time toward
 1× libdeflate. Preserve checked errors, origins, ownership, and finite admission;
 keep the ordinary resource-accounting limitations explicit. The rebuild recipe
 uses no external LLVM executable. Do not substitute old M3/LLVM measurements for
@@ -145,20 +146,27 @@ source-to-executable benchmarks.
 
 ## Review priorities
 
-1. Review the native compiler changes against #973, particularly checked-region
+1. Start with the [maintained qualification entry point](QUALIFICATION.md).
+   Replay the published experiments, then pin a complete campaign plan before
+   starting a new comparison. Promotion requires exact artifact and worker
+   identities, both complete orders, individual wins, and per-case bounds.
+2. Review the native compiler changes against #973, particularly checked-region
    boundaries, live arguments, owner proofs, direct runtime declarations in
    compilation workers, and the deferred publication order. Start in
    `hosts/gpu/src/native_artifact/program/compact`, including `compile_jobs.rs`.
-2. Review the vendored ARM64 backend's branch, relocation, call, trap, and unwind
+3. Review the vendored ARM64 backend's branch, relocation, call, trap, and unwind
    updates for cold-tail sharing. The pass remains opt-in. Its existing 15-case
    results include adverse tiny-input estimates; it is not a new full 81/61 result.
-3. Inspect `evidence/integration` and `evidence/compiler-allocator` before reusing
+4. Inspect `evidence/integration` and `evidence/compiler-allocator` before reusing
    performance claims. Keep object identity, linked-worker identity, correctness,
    and runtime qualification distinct.
-4. Resolve the remaining CI failures and finish native-policy qualification.
-   The PR remains a draft; whole-stack green CI is not claimed. The latest
-   pre-publication CI snapshot is included with the size-screen evidence.
-5. Before promoting a smaller candidate, run correctness and checked-error
+5. Review the [integration repairs and open gates](evidence/integration-repairs/report.json).
+   The warning scanner passes locally. The distribution snapshots reflect two
+   intended compiler allocator packages, public CLI selection includes the sixth
+   unit, and both generated Linux launcher feature sets pass with warnings denied.
+   Browser execution and the full unsafe-boundary and retired-value gates
+   remain open. The PR is a draft.
+6. Before promoting a smaller candidate, run correctness and checked-error
    controls, both complete peer timing orders, and per-case uncertainty checks
    with sufficient measurement duration for tiny inputs. Preserve the 81/61
    floors and investigate individual regressions, even if total wins hold.
