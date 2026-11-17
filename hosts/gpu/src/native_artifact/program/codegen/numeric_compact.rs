@@ -177,7 +177,13 @@ pub(in crate::native_artifact) fn emit(
             blocks[&site]
         }
     };
-    let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
+    let (read_packs, boolean_successors) = {
+        let facts = program.metadata().plan.facts();
+        (
+            super::numeric_read_packs::derive(&facts, proof),
+            super::numeric_branches::derive(&facts, proof),
+        )
+    };
     // Packing can bypass every original scalar definition in these regions.
     // Source confinement does not account for uses introduced by read/operand
     // reuse. Do not publish fallback-only CLIF values into the snapshot cache:
@@ -187,8 +193,6 @@ pub(in crate::native_artifact) fn emit(
         .iter()
         .flat_map(|pack| pack.sites())
         .collect::<BTreeSet<_>>();
-    let boolean_successors =
-        super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let versions = super::numeric_loop_windows::derive(
         code,
         proof,
