@@ -1,0 +1,12 @@
+{
+  "base": "b05241855264df7df861994ef125e5dfb678bc81",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": "da80b85aafc6dcf3d2cf5fee02ad807cdd5d61a4a782ef6eab52217e63cf0bb0",
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": "3727410536a8b440186f0ea9b4642896a1c57bf271cc75dceb428e18e3eee04d"
+  },
+  "flag": "MECH_ORDERED_VECTOR_WINDOW_CURSORS",
+  "census_sha256": "ad538af1b5b225016f3abb89b9a584e8d71503044b847af7c3b2cb54d41900ac",
+  "validated": false,
+  "compiler_control": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-literal-miss/production/compile_profile",
+  "compiler_control_sha256": "9b3dd2ebae981a27c4890484a1e203b19633313920e628db83240fe1da04c77d"
+}

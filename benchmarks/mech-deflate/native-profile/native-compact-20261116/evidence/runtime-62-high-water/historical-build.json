@@ -1,0 +1,17 @@
+{
+  "object_text_bytes": 55700,
+  "object_text_x_roc": 0.9654048807542984,
+  "object_text_x_libdeflate": 1.3548355711227866,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 41112,
+  "root_code_bytes": 46972,
+  "root_frame_bytes": 2368,
+  "source_blocks": 8223,
+  "root_direct_calls": 100,
+  "object_sha256": "c1e45f69790722db38ec923e00b0497525a8e290eb0acd46225c9294f895118b",
+  "metadata_sha256": "7f1e6e2badac9965df9fcbd33b779111d0b92d47a5a780df9b6a3f84552ddaa5",
+  "linked_text_bytes": 457984,
+  "worker_sha256": "1e06450a484acc42cc2a22c854dbf5d02393a4666ea94a0ad93aced7d84b479d",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/register-remat-and-compact-native-final-candidate-qualification.json"
+}
