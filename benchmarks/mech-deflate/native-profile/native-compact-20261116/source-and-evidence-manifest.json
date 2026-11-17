@@ -30170,8 +30170,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs",
-      "sha256": "8b284929257a8bb11eaf63d2c5efb0e8bb7b0d79feacf9743200b4ccc7f88340",
-      "bytes": 34534
+      "sha256": "d605f1a43029313fa078e7c71caec1bb09a0494947685fbf5aff39a7ab639868",
+      "bytes": 34390
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/packed_halfword_reads/mod.rs",
@@ -30345,8 +30345,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
-      "sha256": "67a34efd8457be49e3423a6be537278dbc0227c5fd63456311787388937d328f",
-      "bytes": 80498
+      "sha256": "9d4e8deea8729a2f23414ba6b6ca53f12289e89b2ce67f47fd9d68a9d1558ae0",
+      "bytes": 80487
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs",
@@ -30430,8 +30430,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
-      "sha256": "bbe80f667f7ccc84b31a144ff9e5844d59d441ca47fe79c6245a593b44992bad",
-      "bytes": 64715
+      "sha256": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
+      "bytes": 64700
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs",
@@ -30710,8 +30710,8 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/context.rs",
-      "sha256": "c3f1fe21857f226b70fd35b990139356a5020fe5dc688d6ac87942c7334479a5",
-      "bytes": 13775
+      "sha256": "4dc68d865d96fce76ab30b2acad6c64a6922de99445e8e1345d2e9fa999ae24b",
+      "bytes": 14362
     },
     {
       "path": "vendor/cranelift-codegen/src/dominator_tree/mod.rs",
@@ -30920,8 +30920,8 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/remove_constant_phis.rs",
-      "sha256": "5eef7f548e4335eb601ecaa9a3411cc54e753ff68b4272b506ccaeca435aaae6",
-      "bytes": 15266
+      "sha256": "3f2b66ede999aa7234147005e6d008082b34da4e95bb64ebb537b2771cc42428",
+      "bytes": 15338
     },
     {
       "path": "vendor/cranelift-codegen/src/settings.rs",
