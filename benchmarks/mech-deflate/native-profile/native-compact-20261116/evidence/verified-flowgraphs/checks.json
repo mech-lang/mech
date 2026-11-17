@@ -1,0 +1,29 @@
+{
+  "command": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--test",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_codegen-b991cc47e96c83d1.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_frontend-446b2e0bf0cefebc.rlib",
+    "--extern",
+    "cranelift_native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_native-36b0d4da98fc8cb6.rlib",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/flowgraph-verification/check.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/flowgraph-verification/check-verifier"
+  ],
+  "source_sha256": "17aa0cf7acab56ced30d6b047b197ec12403543a21a99bfb9c8438961b2d86d7",
+  "binary_sha256": "41c73fae3ff80093515aa4f288c0bd5de86539b4af25c6e8710c7a9af78dabb1",
+  "libraries": {
+    "cranelift_codegen": "2d3978ecb050f06f59025e3912f38c9493d6fb64db34605ad0c90aa70ad4324f",
+    "cranelift_native": "73267f63aaf82bf14e6987b4dd41ae3860e645e2d667ad7155cf44b5e4ad3b2a",
+    "cranelift_frontend": "97f7b6ce350eac8884ebecc4ae7d870766662cab63a434a9d558320177d21a76"
+  },
+  "output": "\nrunning 4 tests\ntest fresh_and_precomputed_cleanup_match_separate_passes ... ok\ntest initial_verification_catches_malformed_returns_before_phi_edits ... ok\ntest precomputed_cleanup_still_rejects_stale_successor_order ... ok\ntest standalone_phi_pass_still_verifies ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+}

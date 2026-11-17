@@ -1,0 +1,217 @@
+{
+  "compiler_source": "204656da92013ce24dabb115685a75fc930c7c46",
+  "previous_revision": "f96c1d4fdbc2db1f98c84b561a37132d0a7b5961",
+  "source_through_deployment": {
+    "mech-control": {
+      "source": 2.5708822500891984,
+      "link": 0.03998618735931814,
+      "source_through_link": 2.6114268547389656,
+      "strip": 0.010588499950245023,
+      "source_through_strip": 2.6221432499587536
+    },
+    "mech-verified-flowgraph": {
+      "source": 2.538402396021411,
+      "link": 0.03507360420189798,
+      "source_through_link": 2.5780801663640887,
+      "strip": 0.010544166201725602,
+      "source_through_strip": 2.5887774585280567
+    },
+    "roc": {
+      "source": 2.9590942084323615,
+      "link": 0.03474429156631231,
+      "source_through_link": 2.993947458220646,
+      "strip": 0.010275395587086678,
+      "source_through_strip": 3.0043880417943
+    },
+    "libdeflate": {
+      "source": 0.4515180417802185,
+      "link": 0.03420075005851686,
+      "source_through_link": 0.48620383301749825,
+      "strip": 0.010314478538930416,
+      "source_through_strip": 0.49684908310882747
+    }
+  },
+  "source_through_link_paired_ratio": {
+    "mech-control": 0.9870528822268874,
+    "roc": 0.8611431543045793,
+    "libdeflate": 5.297046930501304
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 0.8146294375,
+      "catalog": 0.061749521,
+      "frontend": 0.2323976875,
+      "artifact": 0.0069909585,
+      "encode": 0.0025327500000000003,
+      "native": 1.4196860835
+    },
+    "mech-verified-flowgraph": {
+      "parse": 0.8145261880000001,
+      "catalog": 0.06575924999999999,
+      "frontend": 0.232827875,
+      "artifact": 0.006986833,
+      "encode": 0.0025544585,
+      "native": 1.385906979
+    }
+  },
+  "within_trial_residual_medians_seconds": {
+    "mech-control": 0.08021674966945835,
+    "mech-verified-flowgraph": 0.07410304181593452
+  },
+  "gain_ms": {
+    "initial": {
+      "native": {
+        "paired_saved_ms": 28.91306249999992,
+        "faster_pairs": 6,
+        "paired_deltas_ms": [
+          -282.07229200000006,
+          -66.87650000000001,
+          33.124417000000015,
+          4.196290999999963,
+          33.09320800000015,
+          30.934833000000104,
+          30.913666000000006,
+          26.912458999999835
+        ]
+      },
+      "source_through_link": {
+        "paired_saved_ms": 13.559083919972181,
+        "faster_pairs": 5,
+        "paired_deltas_ms": [
+          -528.5972077399492,
+          -631.7307921126485,
+          28.86658301576972,
+          -7.975665852427483,
+          30.07120918482542,
+          11.543458793312311,
+          19.477959256619215,
+          15.574709046632051
+        ]
+      }
+    },
+    "confirmation": {
+      "native": {
+        "paired_saved_ms": 34.33447900000009,
+        "faster_pairs": 8,
+        "paired_deltas_ms": [
+          34.68329100000012,
+          36.42483399999996,
+          31.793959000000036,
+          33.867791999999895,
+          37.29095800000004,
+          33.98566700000005,
+          33.52074999999988,
+          34.90250000000006
+        ]
+      },
+      "source_through_link": {
+        "paired_saved_ms": 33.82456209510565,
+        "faster_pairs": 8,
+        "paired_deltas_ms": [
+          36.18816565722227,
+          26.200042571872473,
+          42.26866690441966,
+          35.114416386932135,
+          32.53470780327916,
+          27.92720915749669,
+          30.015876051038504,
+          46.4386660605669
+        ]
+      }
+    }
+  },
+  "encoder_text_bytes": 71192,
+  "encoder_artifacts": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "reference_worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+  "runtime_orders": {
+    "forward": {
+      "pins_sha256": "a0c4f3a2c213fb72909b8fcccd9540ce525c1ba0e5561b089925244d74191797",
+      "summary_sha256": "20c8a5907e2c1e6e153f925dc46183f4942ebb161ed18b0ed385ed730e0d7c88",
+      "roc_wins": 81,
+      "libdeflate_wins": 61
+    },
+    "reverse": {
+      "pins_sha256": "a0c4f3a2c213fb72909b8fcccd9540ce525c1ba0e5561b089925244d74191797",
+      "summary_sha256": "381cee5f53e109567963fc099f7b89dcf7880c121f97dad84c300511b2834fdd",
+      "roc_wins": 81,
+      "libdeflate_wins": 61
+    }
+  },
+  "runtime_floor": 62,
+  "graph_census": {
+    "root_cleanup": {
+      "cleanup_calls": 62,
+      "prune_sweep_block_visits": 256180,
+      "blocks_removed": 6355,
+      "instructions_pruned": 12667,
+      "phi_sweep_instruction_visits": 503331,
+      "phi_parameters_removed": 41669,
+      "first_verifications_reusing_fresh_graphs": 48,
+      "post_phi_verifications_reusing_graphs": 21,
+      "full_verifier_instruction_visits": 791287
+    },
+    "all_functions": {
+      "cleanup_calls": 252,
+      "prune_sweep_block_visits": 352749,
+      "blocks_removed": 14587,
+      "instructions_pruned": 36476,
+      "phi_sweep_instruction_visits": 658463,
+      "phi_parameters_removed": 49865,
+      "first_verifications_reusing_fresh_graphs": 104,
+      "post_phi_verifications_reusing_graphs": 91,
+      "full_verifier_instruction_visits": 1026748
+    }
+  },
+  "parser_choice_census": {
+    "attempts": 2161528,
+    "failures": 1370012,
+    "failed_work": 50235725,
+    "batches": 21543,
+    "eligible_arms": 138884,
+    "eligible_work": 1388840
+  },
+  "parser_identifier_symbols": {
+    "rules": [
+      3954272004,
+      4083465535,
+      1979316826,
+      3413371114,
+      1477225639,
+      1863842679,
+      4279247785,
+      3299722869,
+      24764149,
+      4018823297,
+      2062489256
+    ],
+    "attempts": 185626,
+    "failures": 165105,
+    "failed_work": 1651050,
+    "batches": 20521,
+    "eligible_arms": 134387,
+    "eligible_work": 1343870
+  },
+  "nearest_runtime_losses": [
+    {
+      "case": "prefix-natural-8192",
+      "paired_x_libdeflate": {
+        "forward": 1.0351993696568855,
+        "reverse": 1.0409987447315738
+      },
+      "worst_reduction_required": 0.039384048193204624
+    },
+    {
+      "case": "prefix-natural-4096",
+      "paired_x_libdeflate": {
+        "forward": 1.1188066486249286,
+        "reverse": 1.132445383257909
+      },
+      "worst_reduction_required": 0.1169552061547372
+    }
+  ],
+  "evidence": "evidence/verified-flowgraphs/README.md"
+}
