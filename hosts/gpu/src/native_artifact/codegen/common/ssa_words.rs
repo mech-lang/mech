@@ -5,11 +5,18 @@ use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::offset;
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, Variable};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[derive(Clone, Copy)]
+enum Home {
+    Variable(Variable),
+    Literal(Value),
+}
+
 pub(in crate::native_artifact) struct Words {
-    variables: BTreeMap<usize, (Variable, MemFlags)>,
+    variables: BTreeMap<usize, (Home, MemFlags)>,
+    literal_write: Cell<bool>,
     native_extent_slots: BTreeMap<usize, u64>,
     native_extent_values: RefCell<BTreeMap<Value, u64>>,
 }
@@ -38,7 +45,7 @@ impl Words {
             usize,
         ) -> Result<Option<Value>, NativeCompileError>,
     ) -> Result<Self, NativeCompileError> {
-        Self::build(b, locals, code, slots, initial, |_| MemFlags::new())
+        Self::build(b, locals, code, slots, initial, |_| MemFlags::new(), None)
     }
     /// A physical home keeps one alias region across entry, spills, and reloads.
     /// Tail/borrowed synchronization accesses these same private homes directly.
@@ -49,7 +56,7 @@ impl Words {
         slots: BTreeSet<usize>,
         flags: impl FnMut(usize) -> MemFlags,
     ) -> Result<Self, NativeCompileError> {
-        Self::build(b, locals, code, slots, |_, _| Ok(None), flags)
+        Self::build(b, locals, code, slots, |_, _| Ok(None), flags, None)
     }
     pub(in crate::native_artifact) fn new_with_initial_regions(
         b: &mut FunctionBuilder<'_>,
@@ -62,7 +69,7 @@ impl Words {
         ) -> Result<Option<Value>, NativeCompileError>,
         flags: impl FnMut(usize) -> MemFlags,
     ) -> Result<Self, NativeCompileError> {
-        Self::build(b, locals, code, slots, initial, flags)
+        Self::build(b, locals, code, slots, initial, flags, None)
     }
     /// Current DEFLATE entries and selected related entries share one builder.
     #[cfg(feature = "canonical-native-program")]
@@ -77,8 +84,38 @@ impl Words {
         ) -> Result<Option<Value>, NativeCompileError>,
         flags: impl FnMut(usize) -> MemFlags,
     ) -> Result<Self, NativeCompileError> {
-        Self::build(b, locals, code, slots, initial, flags)
+        Self::build(b, locals, code, slots, initial, flags, None)
     }
+    /// Seed selected immutable literal lanes in the dominating entry block.
+    /// The enclosing compiler discards this attempt if lowering writes any
+    /// selected lane, or if the usual IR checks reject the result.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn new_with_entry_literals(
+        b: &mut FunctionBuilder<'_>,
+        locals: Value,
+        code: CodePlan<'_>,
+        slots: BTreeSet<usize>,
+        initial: impl FnMut(
+            &mut FunctionBuilder<'_>,
+            usize,
+        ) -> Result<Option<Value>, NativeCompileError>,
+        literals: &BTreeSet<usize>,
+    ) -> Result<Self, NativeCompileError> {
+        Self::build(
+            b,
+            locals,
+            code,
+            slots,
+            initial,
+            |_| MemFlags::new(),
+            Some(literals),
+        )
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn attempted_literal_write(&self) -> bool {
+        self.literal_write.get()
+    }
+
     fn build(
         b: &mut FunctionBuilder<'_>,
         locals: Value,
@@ -89,6 +126,7 @@ impl Words {
             usize,
         ) -> Result<Option<Value>, NativeCompileError>,
         mut flags: impl FnMut(usize) -> MemFlags,
+        literals: Option<&BTreeSet<usize>>,
     ) -> Result<Self, NativeCompileError> {
         let constants = (0..code.constant_count())
             .map(|index| code.constant(index))
@@ -98,7 +136,8 @@ impl Words {
             .collect::<BTreeMap<_, _>>();
         let mut variables = BTreeMap::new();
         for slot in slots {
-            let variable = b.declare_var(types::I64);
+            let is_literal = literals.is_some_and(|literals| literals.contains(&slot));
+            let variable = (!is_literal).then(|| b.declare_var(types::I64));
             let flags = flags(slot);
             let value = if let Some(value) = initial(b, slot)? {
                 value
@@ -107,11 +146,17 @@ impl Words {
             } else {
                 b.ins().load(types::I64, flags, locals, offset(slot)?)
             };
-            b.def_var(variable, value);
-            variables.insert(slot, (variable, flags));
+            let home = if let Some(variable) = variable {
+                b.def_var(variable, value);
+                Home::Variable(variable)
+            } else {
+                Home::Literal(value)
+            };
+            variables.insert(slot, (home, flags));
         }
         Ok(Self {
             variables,
+            literal_write: Cell::new(false),
             native_extent_slots: BTreeMap::new(),
             native_extent_values: RefCell::new(BTreeMap::new()),
         })
@@ -121,7 +166,10 @@ impl Words {
         b: &mut FunctionBuilder<'_>,
         slot: usize,
     ) -> Value {
-        let value = b.use_var(self.variables[&slot].0);
+        let value = match self.variables[&slot].0 {
+            Home::Variable(variable) => b.use_var(variable),
+            Home::Literal(value) => value,
+        };
         if let Some(&upper) = self.native_extent_slots.get(&slot) {
             self.native_extent_values
                 .borrow_mut()
@@ -152,7 +200,10 @@ impl Words {
         slot: usize,
         value: Value,
     ) {
-        b.def_var(self.variables[&slot].0, value);
+        match self.variables[&slot].0 {
+            Home::Variable(variable) => b.def_var(variable, value),
+            Home::Literal(_) => self.literal_write.set(true),
+        }
     }
     pub(in crate::native_artifact) fn spill_all(
         &self,

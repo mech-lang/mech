@@ -901,7 +901,27 @@ fn emit_compact_closed_object(
         }
         flags.push(("log2_min_function_alignment", alignment));
     }
-    let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", &flags)?;
+    let direct_literals = !observe
+        && llvm_root.is_none()
+        && std::env::var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS").is_some();
+    let emit = |direct| emit_prepared_compact_object(&prepared, observe, llvm_root, &flags, direct);
+    match emit(direct_literals) {
+        Err(error) if direct_literals => {
+            eprintln!("compact-stage: direct literal attempt withdrew: {error}");
+            emit(false)
+        }
+        result => result,
+    }
+}
+
+fn emit_prepared_compact_object(
+    prepared: &PreparedNativeProgram,
+    observe: bool,
+    llvm_root: Option<&super::llvm_backend::NativeLlvmToolchain>,
+    flags: &[(&str, &str)],
+    direct_literals: bool,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags)?;
     let mut module = super::compact::PreparedObject::new(object);
     if !observe && let Ok(mode) = std::env::var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
@@ -921,26 +941,28 @@ fn emit_compact_closed_object(
         };
         super::compact::define_with_isa(
             &mut module,
-            &prepared,
+            prepared,
             observe,
             share_phase_bodies,
             isa,
             threads,
             direct_runtime_calls,
             Some(&compile),
+            false,
         )?
-    } else if threads == 0 {
-        super::compact::define(&mut module, &prepared, observe, share_phase_bodies)?
+    } else if threads == 0 && !direct_literals {
+        super::compact::define(&mut module, prepared, observe, share_phase_bodies)?
     } else {
         super::compact::define_with_isa(
             &mut module,
-            &prepared,
+            prepared,
             observe,
             share_phase_bodies,
             isa,
             threads,
             direct_runtime_calls,
             None,
+            direct_literals,
         )?
     };
     if !observe && std::env::var_os("MECH_COMPACT_EXPORTS_FIRST").is_some() {
