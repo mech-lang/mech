@@ -1,0 +1,90 @@
+{
+  "kind": "full",
+  "policy_decision": "Retain",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.0336089101211874,
+          "mech-experiment": 0.9975787609315162
+        },
+        "320-overlap": {
+          "mech-control": 0.9921794055778024,
+          "mech-experiment": 0.9923082521867149
+        },
+        "random-1024": {
+          "mech-control": 0.9590106550548715,
+          "mech-experiment": 0.9595424074818745
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9797436878142943,
+          "mech-experiment": 0.9801130010790274
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": [
+          "prefix-natural-8192"
+        ]
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 81,
+          "mech-experiment": 81
+        },
+        "libdeflate": {
+          "mech-control": 61,
+          "mech-experiment": 62
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.0418035666650298,
+          "mech-experiment": 1.0055485593999691
+        },
+        "320-overlap": {
+          "mech-control": 0.990645081389213,
+          "mech-experiment": 0.9967725393582779
+        },
+        "random-1024": {
+          "mech-control": 0.9547600056984126,
+          "mech-experiment": 0.9563448914112748
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9780869148246633,
+          "mech-experiment": 0.9809531982685206
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 81,
+          "mech-experiment": 81
+        },
+        "libdeflate": {
+          "mech-control": 61,
+          "mech-experiment": 61
+        }
+      }
+    }
+  ],
+  "rejected": [],
+  "unresolved": [],
+  "achieves_target": false,
+  "preserves_peer_wins": true
+}

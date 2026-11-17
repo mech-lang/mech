@@ -1,0 +1,31 @@
+{
+  "source_pin": "176a80bde45bdc0c137ddd797e5961c42f23d56c",
+  "compiler_sha256": "bb04791a66faf707210968f83da28e2b4c17d52887b893b78d59110f4333b39d",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs": "38f6981a1338646b110d608b869d75a7abad18a55fd963da96ea35d59a5aa7ac",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "0caf44c6dc567a34e707ec25aef2795f8d7e03d2efb46b7d71e5763c7f7d184e",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "e0dbe5b5703637e00dc573ea3985be7fe33a40629822cadc3118c4f8eac6294d",
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": "c42025274910c4ff23c6bbb148a0190c167c44f068c31eb996e73820c34e9840"
+  },
+  "build_command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-runtime/address-compiler/rebuild",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "disabled_artifacts": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "patch_sha256": "22108df11b92a78e85c90797bf82230ebc5f97af4d25e24d44646e93474f28a4"
+}

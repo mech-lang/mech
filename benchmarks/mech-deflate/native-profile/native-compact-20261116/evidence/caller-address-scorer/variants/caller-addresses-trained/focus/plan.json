@@ -1,0 +1,124 @@
+{
+  "objective": "Recover the 8 KiB natural-text libdeflate win and shrink encoder text.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "reymont-prefix-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "scorer-20261117-caller-addresses-trained-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "scorer-20261117-caller-addresses-trained-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v2.json",
+    "sha256": "c20bf6a87dd4da719f81200f9259945848d65c1f805e96e44aea3a7aa7b0cd2b"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "current-roadmap/scorer-runtime/timing.py",
+    "sha256": "527c9842c6d24effb615695e38a545d0eae1ac20aad94862cea1c643bc4a0bd0"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/program.o",
+        "sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/metadata.json",
+        "sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/runtime.json",
+        "sha256": "00a8c16cb7c49fe4c9e4a4b12784e79cc02f6c0c8e57b1f1fbe928bd906f868c"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/mech-worker",
+        "sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "current-roadmap/scorer-runtime/caller-addresses-trained/bound/program.o",
+        "sha256": "736b1e4ed1315561a0ce2e977bf454135e33d460a1a5b279e1c52128adeec969"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/scorer-runtime/caller-addresses-trained/bound/metadata.json",
+        "sha256": "d591c39bde5b0857a85ec08df1622cf7b6478b08c8daf5ea9f54bf9caa352e55"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/scorer-runtime/caller-addresses-trained/bound/runtime.json",
+        "sha256": "4351cbe0c3e4367d912fa4f82835a05a2ce3719941bdcd0219a144d1b4ad03fd"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/scorer-runtime/caller-addresses-trained/bound/mech-worker",
+        "sha256": "e1b5dfe6962e72baa3012e1e1fce2c2754ca9080285767c06bc0ac6dc1edb629"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+    },
+    "mech-experiment": {
+      "worker": "e1b5dfe6962e72baa3012e1e1fce2c2754ca9080285767c06bc0ac6dc1edb629",
+      "metadata": "d591c39bde5b0857a85ec08df1622cf7b6478b08c8daf5ea9f54bf9caa352e55"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "3e925e22a29a46755b981e9134c0c3982518bf66a71187fe2735a9fc34084783"
+  },
+  "policy_version": 2,
+  "source_pin": "176a80bde45bdc0c137ddd797e5961c42f23d56c",
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "max_peak_stack_bytes": 5280,
+  "candidate_source_build": {
+    "path": "current-roadmap/scorer-runtime/caller-addresses-trained/receipt.json",
+    "sha256": "1b0fb66a2a2213e40539d19e8a3109b632c2c27e333ad6b0408dbc8b72df6612"
+  }
+}
