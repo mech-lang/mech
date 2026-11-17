@@ -1,0 +1,27 @@
+{
+  "base": "3cde720cdf8b24d6bc4f1818988479d8eb5ae960",
+  "formatter": "rustfmt 1.9.0-nightly (ec818fda36 2026-03-02)",
+  "files": {
+    "src/syntax/src/document/parser/canonical/base/continuation.rs": {
+      "before": "38a4b129096aae568f8e20a332f5928d02181c3f3a5730f014ca53f2237fec80",
+      "after": "01224aeb0957c4e264eff51e3c4e1ec470432d618b53395cb5dbac25d49055c0"
+    },
+    "src/syntax/src/document/parser/literal_scan.rs": {
+      "before": "6a5b37ece69129088a36022544b38448a96c4d4e5e1fc1ba41d34b04e78c0e14",
+      "after": "6cda383b65b8017db324629b37235ccb5d364de185daf1aa76a974143ea4cca1"
+    }
+  },
+  "workspace_format_exit": 0,
+  "workspace_format_command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "workspace_format_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "workspace_existing_git_blobs": 2871,
+  "workspace_added_git_blobs": 315,
+  "workspace_added_bytes": 3493647
+}

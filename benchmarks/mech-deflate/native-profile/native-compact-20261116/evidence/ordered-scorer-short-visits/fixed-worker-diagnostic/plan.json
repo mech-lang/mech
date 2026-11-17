@@ -1,0 +1,47 @@
+{
+  "base": "3cde720cdf8b24d6bc4f1818988479d8eb5ae960",
+  "cases": [
+    "320-overlap",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-periodic-1024",
+    "prefix-random-1024",
+    "random-1024"
+  ],
+  "workers": {
+    "frame-copy": {
+      "worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+      "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies"
+    },
+    "bottom-tested": {
+      "worker_sha256": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c",
+      "metadata_sha256": "4a3cb290174ac28a110cd376527912f26b83f0457e1d3c4b3b00dd9fac466044",
+      "object_sha256": "d0f6f40124bb9dcd17db355630f70d9c9605c58cc71f3bc2464642c6cae00049",
+      "path": "current-roadmap/scorer-vector-latch/latch-kept-root-layout/bound"
+    }
+  },
+  "raw_timer_sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+  "scoped_timer_sha256": "4ff1d12c8cd859c5fcb3a2f8e662b100a615ff2ae77b700d53a0c939a40b227a",
+  "inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+  "peer_pins_sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d",
+  "orders": [
+    "a-a-forward",
+    "a-b-forward",
+    "a-b-reverse",
+    "a-a-reverse"
+  ],
+  "blocks_per_case": 24,
+  "slots": {
+    "a-a": [
+      "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies",
+      "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies"
+    ],
+    "a-b": [
+      "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies",
+      "current-roadmap/scorer-vector-latch/latch-kept-root-layout/bound"
+    ]
+  },
+  "interpretation": "The duplicate frame-copy worker establishes slot drift. A/B repeats the exact prior scorer."
+}

@@ -1,0 +1,129 @@
+{
+  "objective": "Measure shorter vector entry or paired scalar continuation for the exact compressor.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "short-visit-paired-scalar-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "short-visit-paired-scalar-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "current-roadmap/scorer-short-visits/evaluate.py",
+    "sha256": "1c53fe5020751963633c767e335be35ac337271e2d960c1440b9547d8306aa63"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "current-roadmap/scorer-short-visits/short-visit-latch-control/bound/program.o",
+        "sha256": "d0f6f40124bb9dcd17db355630f70d9c9605c58cc71f3bc2464642c6cae00049"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/scorer-short-visits/short-visit-latch-control/bound/metadata.json",
+        "sha256": "4a3cb290174ac28a110cd376527912f26b83f0457e1d3c4b3b00dd9fac466044"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/scorer-short-visits/short-visit-latch-control/bound/runtime.json",
+        "sha256": "55ee998adf2c3a9bdb49c4597b5cec2780bbc0dd7fba672ccef35d15bd5f9e09"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/scorer-short-visits/short-visit-latch-control/bound/mech-worker",
+        "sha256": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "current-roadmap/scorer-short-visits/paired-scalar-layout/bound/program.o",
+        "sha256": "8289796c2e01a91cb36a5d608b70b71e2e6bfb57cdbda8336824c390e5c4c318"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/scorer-short-visits/paired-scalar-layout/bound/metadata.json",
+        "sha256": "720009a8b4ecc14539b5d2d3cbfd0f7ba33a080ab14c3e09ad2c28fae4e8dd55"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/scorer-short-visits/paired-scalar-layout/bound/runtime.json",
+        "sha256": "3cfbd67e467463d213187129d80ebbb7425785bfa0ac1bd04d45c587dc4dc356"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/scorer-short-visits/paired-scalar-layout/bound/mech-worker",
+        "sha256": "29a28923858fa2f2e555a83bbe176e1bdf8c69d4907f2719cf1a811bcaa180bf"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c",
+      "metadata": "4a3cb290174ac28a110cd376527912f26b83f0457e1d3c4b3b00dd9fac466044"
+    },
+    "mech-experiment": {
+      "worker": "29a28923858fa2f2e555a83bbe176e1bdf8c69d4907f2719cf1a811bcaa180bf",
+      "metadata": "720009a8b4ecc14539b5d2d3cbfd0f7ba33a080ab14c3e09ad2c28fae4e8dd55"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "341552d9dac5ee46aa0bb7cc0ca4d688b7740d069fd7cdcd718a8c6ab33440a9"
+  },
+  "source_pin": "3cde720cdf8b24d6bc4f1818988479d8eb5ae960",
+  "policy_version": 3,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "linked_contract": {
+    "path": "current-roadmap/scorer-short-visits/linked/linked-proofs/result.json",
+    "sha256": "a486e48765deac7cb510fa48ed89f4a2fae920df6f2d4518a95694df0a325fc8"
+  },
+  "max_peak_stack_bytes": 5280,
+  "load_average_before": [
+    2.19921875,
+    2.09130859375,
+    2.07080078125
+  ]
+}
