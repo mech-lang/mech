@@ -276,5 +276,5 @@ pub(super) fn fold<M: Module>(module: &M, context: &mut Context) -> (usize, usiz
     target_family = "unix",
     any(target_arch = "aarch64", target_arch = "x86_64")
 ))]
-#[path = "owner_counts/tests.rs"]
+#[path = "tests.rs"]
 mod tests;
