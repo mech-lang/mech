@@ -1,0 +1,364 @@
+{
+  "warmups": [
+    {
+      "actor": "before",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/warmup-before.json"
+      ],
+      "wall_time_seconds": 2.1652388330549,
+      "peak_rss_bytes": 115802112,
+      "events": 718353,
+      "parse_seconds": 2.093399042,
+      "parser_steps": 3967302,
+      "source_bytes": 243209,
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+    },
+    {
+      "actor": "candidate",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/warmup-candidate.json"
+      ],
+      "wall_time_seconds": 2.162831542082131,
+      "peak_rss_bytes": 115818496,
+      "events": 718353,
+      "parse_seconds": 2.09933625,
+      "parser_steps": 3967302,
+      "source_bytes": 243209,
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+    }
+  ],
+  "orders": [
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ]
+  ],
+  "trials": [
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-1-before.json"
+        ],
+        "wall_time_seconds": 2.155149833764881,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.091580791,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-1-candidate.json"
+        ],
+        "wall_time_seconds": 2.167097833007574,
+        "peak_rss_bytes": 115834880,
+        "events": 718353,
+        "parse_seconds": 2.103683708,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-2-candidate.json"
+        ],
+        "wall_time_seconds": 2.167460083961487,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.103853834,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-2-before.json"
+        ],
+        "wall_time_seconds": 2.155542875174433,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.091844459,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-3-before.json"
+        ],
+        "wall_time_seconds": 2.1525162919424474,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.088670375,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-3-candidate.json"
+        ],
+        "wall_time_seconds": 2.1645048749633133,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.101064,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-4-candidate.json"
+        ],
+        "wall_time_seconds": 2.172235291916877,
+        "peak_rss_bytes": 115834880,
+        "events": 718353,
+        "parse_seconds": 2.108929875,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-4-before.json"
+        ],
+        "wall_time_seconds": 2.1511562918312848,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 2.087663792,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-5-before.json"
+        ],
+        "wall_time_seconds": 2.1804297091439366,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 2.1162303749999998,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-5-candidate.json"
+        ],
+        "wall_time_seconds": 2.1704027503728867,
+        "peak_rss_bytes": 115834880,
+        "events": 718353,
+        "parse_seconds": 2.10650975,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-6-candidate.json"
+        ],
+        "wall_time_seconds": 2.1673798342235386,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.10399025,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-6-before.json"
+        ],
+        "wall_time_seconds": 2.1542024589143693,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 2.09055025,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-7-before.json"
+        ],
+        "wall_time_seconds": 2.154000499751419,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.090622084,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-7-candidate.json"
+        ],
+        "wall_time_seconds": 2.1643044999800622,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.1004,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-8-candidate.json"
+        ],
+        "wall_time_seconds": 2.1643557497300208,
+        "peak_rss_bytes": 115834880,
+        "events": 718353,
+        "parse_seconds": 2.100195667,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/probe-timings/order-8-before.json"
+        ],
+        "wall_time_seconds": 2.159814083017409,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.095496833,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    }
+  ],
+  "median_parse_seconds": {
+    "before": 2.0911014375,
+    "candidate": 2.1037687710000004
+  },
+  "median_peak_rss_bytes": {
+    "before": 115818496.0,
+    "candidate": 115826688.0
+  },
+  "paired_parse_ratio": {
+    "candidate": [
+      1.0057864927102402,
+      1.005741045873813,
+      1.0059337390659358,
+      1.0101865458803723,
+      0.9954066319457304,
+      1.0064289294170277,
+      1.0046770365982607,
+      1.0022423484139906
+    ]
+  }
+}

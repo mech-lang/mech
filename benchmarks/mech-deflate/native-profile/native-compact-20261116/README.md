@@ -11,6 +11,13 @@ checkout-relative reproduction commands. No smaller candidate has been promoted.
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 
+Reusing the parser's subtree frame allocation cuts the matched Apple M1
+source-through-link build from **4.01608 to 3.95160 seconds**. The exact
+71,768-byte object, complete metadata, and linked benchmark worker reproduce
+with the recorded 81/81 Roc and 61/81 libdeflate results. The complete build
+is **1.323× Roc** and **8.223× libdeflate**.
+[Parser checks and matched builds](evidence/parser-cache-frames/README.md)
+
 The AArch64 checked-root branch recipe emits **71,768 B** of encoder text,
 **1.24390× Roc** and **1.93549× libdeflate**. It saves 192 bytes and
 reduces measured peak native stack to 5,280 bytes. Its matched Apple M1

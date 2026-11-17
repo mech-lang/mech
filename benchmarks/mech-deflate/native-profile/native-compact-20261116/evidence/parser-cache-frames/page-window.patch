@@ -1,0 +1,203 @@
+--- a/src/syntax/src/document/parser/journal.rs
++++ b/src/syntax/src/document/parser/journal.rs
+@@ -5,6 +5,7 @@
+ use smallvec::SmallVec;
+ // Larger bounded pages amortize persistent tree traversal and allocation.
+ const PAGE: usize = 32;
++const WINDOW_PAGES: usize = 3;
+ struct Chunk<T>(Arc<SmallVec<[T; PAGE]>>);
+ impl<T> Clone for Chunk<T> {
+     fn clone(&self) -> Self {
+@@ -17,6 +18,22 @@
+     }
+ }
+ impl<T> UnitMeasured for Chunk<T> {}
++
++/// An immutable range of pages from a journal version. A short cache
++/// request can own just these pages and leave the journal's tree unshared.
++pub(super) struct RetainedPages<T> {
++    first: usize,
++    pages: SmallVec<[Chunk<T>; WINDOW_PAGES]>,
++}
++
++impl<T> RetainedPages<T> {
++    pub(super) fn page_at(&self, index: usize) -> Option<(usize, &[T])> {
++        let page = index / PAGE;
++        let chunk = self.pages.get(page.checked_sub(self.first)?)?;
++        Some((page * PAGE, chunk.0.as_slice()))
++    }
++}
++
+ pub struct Journal<T> {
+     // Completed pages retain the persistent snapshot structure. Keep the
+     // current page separate so ordinary appends and small rewinds do not
+@@ -68,13 +85,31 @@
+         self.len == 0
+     }
+     #[inline]
++    fn chunk(&self, page: usize) -> Option<&Chunk<T>> {
++        if page == self.items.len() {
++            self.tail.as_ref()
++        } else {
++            self.items.get(page)
++        }
++    }
++    #[inline]
+     fn page(&self, page: usize) -> Option<&[T]> {
+-        let chunk = if page == self.items.len() {
+-            self.tail.as_ref()?
+-        } else {
+-            self.items.get(page)?
+-        };
+-        Some(chunk.0.as_slice())
++        Some(self.chunk(page)?.0.as_slice())
++    }
++    pub(super) fn retain_pages(&self, start: usize, end: usize) -> Option<RetainedPages<T>> {
++        if start >= end || end > self.len {
++            return None;
++        }
++        let first = start / PAGE;
++        let last = (end - 1) / PAGE;
++        if last - first >= WINDOW_PAGES {
++            return None;
++        }
++        let mut pages = SmallVec::new();
++        for page in first..=last {
++            pages.push(self.chunk(page)?.clone());
++        }
++        Some(RetainedPages { first, pages })
+     }
+     pub fn get(&self, index: usize) -> Option<&T> {
+         if index >= self.len {
+@@ -252,6 +287,26 @@
+ mod tests {
+     use super::*;
+     use alloc::vec::Vec;
++
++    #[test]
++    fn retained_window_survives_rewrite_and_rewind_across_pages() {
++        let mut journal = Journal::default();
++        journal.extend(0..4 * PAGE);
++        let start = PAGE - 1;
++        let end = 3 * PAGE;
++        assert!(journal.retain_pages(start, end + 1).is_none());
++        let window = journal.retain_pages(start, end).unwrap();
++        journal[start] = usize::MAX;
++        journal.truncate(PAGE + 1);
++        journal.extend(10 * PAGE..13 * PAGE);
++        for index in start..end {
++            let (base, values) = window.page_at(index).unwrap();
++            assert_eq!(values[index - base], index);
++        }
++        assert!(window.page_at(end).is_none());
++        assert_eq!(journal[start], usize::MAX);
++        assert_ne!(journal[end - 1], end - 1);
++    }
+ 
+     fn same(journal: &Journal<usize>, values: &[usize]) {
+         assert_eq!(journal.len(), values.len());
+--- a/src/syntax/src/document/parser/tree_cache.rs
++++ b/src/syntax/src/document/parser/tree_cache.rs
+@@ -1,5 +1,6 @@
+ //! Retained canonical subtree materialization. A completed grammar marker owns
+ //! one immutable green node; ancestors reuse it instead of rebuilding children.
++use super::journal::RetainedPages;
+ use super::*;
+ use crate::document::green::FNV_OFFSET;
+ use crate::document::{BuildError, GreenChildren, GreenElement, GreenToken, NodeId};
+@@ -16,13 +17,20 @@
+     end: usize,
+     offset: TextSize,
+     identity: NodeId,
+-    retained: Option<Journal<Event>>,
++    window: RequestWindow,
+ }
+ 
+ const MAX_COPIED_EVENTS: usize = 16;
++
++enum RequestWindow {
++    Journal(Journal<Event>),
++    Pages(RetainedPages<Event>),
++    Copied,
++}
+ 
+ enum EventWindow<'a> {
+     Journal(&'a Journal<Event>),
++    Pages(&'a RetainedPages<Event>),
+     Copied {
+         start: usize,
+         first: &'a [Event],
+@@ -34,6 +42,7 @@
+     fn page_at(&self, index: usize) -> Option<(usize, &'a [Event])> {
+         match *self {
+             Self::Journal(events) => events.page_at(index),
++            Self::Pages(pages) => pages.page_at(index),
+             Self::Copied {
+                 start,
+                 first,
+@@ -52,8 +61,10 @@
+ 
+ impl Request {
+     fn events<'a>(&'a self, copied_events: &'a VecDeque<Event>) -> EventWindow<'a> {
+-        if let Some(retained) = &self.retained {
+-            return EventWindow::Journal(retained);
++        match &self.window {
++            RequestWindow::Journal(events) => return EventWindow::Journal(events),
++            RequestWindow::Pages(pages) => return EventWindow::Pages(pages),
++            RequestWindow::Copied => {}
+         }
+         let count = self.end - self.start;
+         let (first, second) = copied_events.as_slices();
+@@ -372,25 +383,31 @@
+         identity: NodeId,
+     ) {
+         let end = events.len();
+-        let retained = if self.one_shot && end - start <= MAX_COPIED_EVENTS {
+-            let mut cursor = start;
+-            while cursor < end {
+-                let (base, page) = events.page_at(cursor).expect("queued marker page");
+-                let through = (base + page.len()).min(end);
+-                self.copied_events
+-                    .extend(page[cursor - base..through - base].iter().cloned());
+-                cursor = through;
+-            }
+-            None
++        let window = if self.one_shot {
++            if end - start <= MAX_COPIED_EVENTS {
++                let mut cursor = start;
++                while cursor < end {
++                    let (base, page) = events.page_at(cursor).expect("queued marker page");
++                    let through = (base + page.len()).min(end);
++                    self.copied_events
++                        .extend(page[cursor - base..through - base].iter().cloned());
++                    cursor = through;
++                }
++                RequestWindow::Copied
++            } else if let Some(pages) = events.retain_pages(start, end) {
++                RequestWindow::Pages(pages)
++            } else {
++                RequestWindow::Journal(events.clone())
++            }
+         } else {
+-            Some(events.clone())
++            RequestWindow::Journal(events.clone())
+         };
+         self.queue.push_back(Request {
+             start,
+             end,
+             offset,
+             identity,
+-            retained,
++            window,
+         });
+         self.peak_pending = self
+             .peak_pending
+@@ -408,7 +425,7 @@
+     }
+ 
+     fn release(&mut self, request: Request) {
+-        if request.retained.is_none() {
++        if matches!(request.window, RequestWindow::Copied) {
+             self.copied_events.drain(..request.end - request.start);
+         }
+     }
