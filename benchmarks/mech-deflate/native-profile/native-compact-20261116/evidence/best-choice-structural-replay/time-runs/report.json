@@ -1,0 +1,437 @@
+{
+  "pin": "dae46c686703560230150a93f36c44c4978ffdc7",
+  "rounds": [
+    [
+      "control",
+      "time"
+    ],
+    [
+      "time",
+      "control"
+    ],
+    [
+      "time",
+      "control"
+    ],
+    [
+      "control",
+      "time"
+    ]
+  ],
+  "control": [
+    {
+      "probe": [
+        "/private/tmp/mech-dense-index.5noolrp2/candidate/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/1-control.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.8810384999999998,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "probe": [
+        "/private/tmp/mech-dense-index.5noolrp2/candidate/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/2-control.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.880028083,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "probe": [
+        "/private/tmp/mech-dense-index.5noolrp2/candidate/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/3-control.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.880559584,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "probe": [
+        "/private/tmp/mech-dense-index.5noolrp2/candidate/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/4-control.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.87620175,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    }
+  ],
+  "time": [
+    {
+      "probe": [
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/1-time.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.927072917,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "grammar": {
+        "window_ns": 1883724334,
+        "outside_ns": 726280536,
+        "covered_ns": 1883306468,
+        "replay_ns": 1157025932
+      },
+      "timed_replays": {
+        "mech-code-alt/fsm-specification": {
+          "exclusive_ns": 388333,
+          "outermost_ns": 388333,
+          "inclusive_union_ns": 388333
+        },
+        "mech-code-alt/fsm-implementation": {
+          "exclusive_ns": 6261411,
+          "outermost_ns": 13896449,
+          "inclusive_union_ns": 13896449
+        },
+        "mech-code-alt/comment": {
+          "exclusive_ns": 25672038,
+          "outermost_ns": 25672038,
+          "inclusive_union_ns": 25672038
+        },
+        "mech-code-alt/function-define": {
+          "exclusive_ns": 289211426,
+          "outermost_ns": 476971485,
+          "inclusive_union_ns": 476971485
+        },
+        "mech-code-alt/module-import": {
+          "exclusive_ns": 119625,
+          "outermost_ns": 119625,
+          "inclusive_union_ns": 119625
+        },
+        "mech-code-alt/expression": {
+          "exclusive_ns": 71083,
+          "outermost_ns": 71083,
+          "inclusive_union_ns": 71083
+        },
+        "mech-code-alt/statement": {
+          "exclusive_ns": 154870370,
+          "outermost_ns": 300510663,
+          "inclusive_union_ns": 305743202
+        },
+        "statement/import-declaration": {
+          "exclusive_ns": 147500,
+          "outermost_ns": 147500,
+          "inclusive_union_ns": 147500
+        },
+        "statement/kind-define": {
+          "exclusive_ns": 3699005,
+          "outermost_ns": 1910254,
+          "inclusive_union_ns": 3699005
+        },
+        "statement/variable-define": {
+          "exclusive_ns": 648337057,
+          "outermost_ns": 323118123,
+          "inclusive_union_ns": 648337057
+        },
+        "statement/variable-assign": {
+          "exclusive_ns": 6415205,
+          "outermost_ns": 3226582,
+          "inclusive_union_ns": 6415205
+        },
+        "statement/tuple-destructure": {
+          "exclusive_ns": 19711877,
+          "outermost_ns": 9929880,
+          "inclusive_union_ns": 19711877
+        },
+        "statement/invariant-define": {
+          "exclusive_ns": 2121002,
+          "outermost_ns": 1063917,
+          "inclusive_union_ns": 2121002
+        }
+      }
+    },
+    {
+      "probe": [
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/2-time.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.881421584,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "grammar": {
+        "window_ns": 1840594709,
+        "outside_ns": 699871550,
+        "covered_ns": 1840210676,
+        "replay_ns": 1140339126
+      },
+      "timed_replays": {
+        "mech-code-alt/fsm-specification": {
+          "exclusive_ns": 391668,
+          "outermost_ns": 391668,
+          "inclusive_union_ns": 391668
+        },
+        "mech-code-alt/fsm-implementation": {
+          "exclusive_ns": 6293668,
+          "outermost_ns": 13934496,
+          "inclusive_union_ns": 13934496
+        },
+        "mech-code-alt/comment": {
+          "exclusive_ns": 21167334,
+          "outermost_ns": 21167334,
+          "inclusive_union_ns": 21167334
+        },
+        "mech-code-alt/function-define": {
+          "exclusive_ns": 283269312,
+          "outermost_ns": 467360356,
+          "inclusive_union_ns": 467360356
+        },
+        "mech-code-alt/module-import": {
+          "exclusive_ns": 50208,
+          "outermost_ns": 50208,
+          "inclusive_union_ns": 50208
+        },
+        "mech-code-alt/expression": {
+          "exclusive_ns": 71375,
+          "outermost_ns": 71375,
+          "inclusive_union_ns": 71375
+        },
+        "mech-code-alt/statement": {
+          "exclusive_ns": 155370621,
+          "outermost_ns": 301325044,
+          "inclusive_union_ns": 306560123
+        },
+        "statement/import-declaration": {
+          "exclusive_ns": 65708,
+          "outermost_ns": 65708,
+          "inclusive_union_ns": 65708
+        },
+        "statement/kind-define": {
+          "exclusive_ns": 3629207,
+          "outermost_ns": 1874998,
+          "inclusive_union_ns": 3629207
+        },
+        "statement/variable-define": {
+          "exclusive_ns": 641977905,
+          "outermost_ns": 319973028,
+          "inclusive_union_ns": 641977905
+        },
+        "statement/variable-assign": {
+          "exclusive_ns": 6293917,
+          "outermost_ns": 3168792,
+          "inclusive_union_ns": 6293917
+        },
+        "statement/tuple-destructure": {
+          "exclusive_ns": 19743328,
+          "outermost_ns": 9940244,
+          "inclusive_union_ns": 19743328
+        },
+        "statement/invariant-define": {
+          "exclusive_ns": 2014875,
+          "outermost_ns": 1015875,
+          "inclusive_union_ns": 2014875
+        }
+      }
+    },
+    {
+      "probe": [
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/3-time.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.886508708,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "grammar": {
+        "window_ns": 1845687125,
+        "outside_ns": 702448048,
+        "covered_ns": 1845311932,
+        "replay_ns": 1142863884
+      },
+      "timed_replays": {
+        "mech-code-alt/fsm-specification": {
+          "exclusive_ns": 387917,
+          "outermost_ns": 387917,
+          "inclusive_union_ns": 387917
+        },
+        "mech-code-alt/fsm-implementation": {
+          "exclusive_ns": 6285791,
+          "outermost_ns": 13919629,
+          "inclusive_union_ns": 13919629
+        },
+        "mech-code-alt/comment": {
+          "exclusive_ns": 21268375,
+          "outermost_ns": 21268375,
+          "inclusive_union_ns": 21268375
+        },
+        "mech-code-alt/function-define": {
+          "exclusive_ns": 283293624,
+          "outermost_ns": 467337901,
+          "inclusive_union_ns": 467337901
+        },
+        "mech-code-alt/module-import": {
+          "exclusive_ns": 49082,
+          "outermost_ns": 49082,
+          "inclusive_union_ns": 49082
+        },
+        "mech-code-alt/expression": {
+          "exclusive_ns": 71291,
+          "outermost_ns": 71291,
+          "inclusive_union_ns": 71291
+        },
+        "mech-code-alt/statement": {
+          "exclusive_ns": 155622509,
+          "outermost_ns": 302238510,
+          "inclusive_union_ns": 307471265
+        },
+        "statement/import-declaration": {
+          "exclusive_ns": 65291,
+          "outermost_ns": 65291,
+          "inclusive_union_ns": 65291
+        },
+        "statement/kind-define": {
+          "exclusive_ns": 3619545,
+          "outermost_ns": 1866754,
+          "inclusive_union_ns": 3619545
+        },
+        "statement/variable-define": {
+          "exclusive_ns": 644214242,
+          "outermost_ns": 321599544,
+          "inclusive_union_ns": 644214242
+        },
+        "statement/variable-assign": {
+          "exclusive_ns": 6263163,
+          "outermost_ns": 3125249,
+          "inclusive_union_ns": 6263163
+        },
+        "statement/tuple-destructure": {
+          "exclusive_ns": 19709093,
+          "outermost_ns": 9920548,
+          "inclusive_union_ns": 19709093
+        },
+        "statement/invariant-define": {
+          "exclusive_ns": 2013961,
+          "outermost_ns": 1013793,
+          "inclusive_union_ns": 2013961
+        }
+      }
+    },
+    {
+      "probe": [
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-best-choice-profile.Y0SGCETr/time-runs/4-time.json"
+      ],
+      "observable": {
+        "events": 718353,
+        "parse_seconds": 1.882518166,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "grammar": {
+        "window_ns": 1841053917,
+        "outside_ns": 700431139,
+        "covered_ns": 1840663730,
+        "replay_ns": 1140232591
+      },
+      "timed_replays": {
+        "mech-code-alt/fsm-specification": {
+          "exclusive_ns": 387959,
+          "outermost_ns": 387959,
+          "inclusive_union_ns": 387959
+        },
+        "mech-code-alt/fsm-implementation": {
+          "exclusive_ns": 6276169,
+          "outermost_ns": 13933134,
+          "inclusive_union_ns": 13933134
+        },
+        "mech-code-alt/comment": {
+          "exclusive_ns": 21254084,
+          "outermost_ns": 21254084,
+          "inclusive_union_ns": 21254084
+        },
+        "mech-code-alt/function-define": {
+          "exclusive_ns": 282935941,
+          "outermost_ns": 466808941,
+          "inclusive_union_ns": 466808941
+        },
+        "mech-code-alt/module-import": {
+          "exclusive_ns": 49541,
+          "outermost_ns": 49541,
+          "inclusive_union_ns": 49541
+        },
+        "mech-code-alt/expression": {
+          "exclusive_ns": 71459,
+          "outermost_ns": 71459,
+          "inclusive_union_ns": 71459
+        },
+        "mech-code-alt/statement": {
+          "exclusive_ns": 155950407,
+          "outermost_ns": 301750488,
+          "inclusive_union_ns": 306994117
+        },
+        "statement/import-declaration": {
+          "exclusive_ns": 65790,
+          "outermost_ns": 65790,
+          "inclusive_union_ns": 65790
+        },
+        "statement/kind-define": {
+          "exclusive_ns": 3624249,
+          "outermost_ns": 1859917,
+          "inclusive_union_ns": 3624249
+        },
+        "statement/variable-define": {
+          "exclusive_ns": 641677249,
+          "outermost_ns": 319995993,
+          "inclusive_union_ns": 641677249
+        },
+        "statement/variable-assign": {
+          "exclusive_ns": 6240204,
+          "outermost_ns": 3127081,
+          "inclusive_union_ns": 6240204
+        },
+        "statement/tuple-destructure": {
+          "exclusive_ns": 19690165,
+          "outermost_ns": 9917164,
+          "inclusive_union_ns": 19690165
+        },
+        "statement/invariant-define": {
+          "exclusive_ns": 2009374,
+          "outermost_ns": 1011040,
+          "inclusive_union_ns": 2009374
+        }
+      }
+    }
+  ]
+}
