@@ -183,8 +183,7 @@ impl Context {
         } else {
             self.flowgraph();
         }
-        self.eliminate_unreachable_code(isa)?;
-        self.remove_constant_phis(isa)?;
+        self.prune_unreachable_and_remove_constant_phis(isa)?;
 
         self.func.dfg.resolve_all_aliases();
 
@@ -280,7 +279,7 @@ impl Context {
         &mut self,
         fisa: FOI,
     ) -> CodegenResult<()> {
-        do_remove_constant_phis(&mut self.func, &mut self.domtree);
+        do_remove_constant_phis(&mut self.func, &self.domtree);
         self.verify_if(fisa)?;
         Ok(())
     }
@@ -345,6 +344,22 @@ impl Context {
     {
         eliminate_unreachable_code(&mut self.func, &mut self.cfg, &self.domtree);
         self.verify_if(fisa)
+    }
+
+    /// Prune unreachable blocks and then remove constant phis.
+    ///
+    /// Verification of the pruned function also covers the final state when
+    /// the phi pass leaves the function intact. The standalone pass still
+    /// verifies its result, since its caller may pass an unverified function.
+    pub fn prune_unreachable_and_remove_constant_phis(
+        &mut self,
+        isa: &dyn TargetIsa,
+    ) -> CodegenResult<()> {
+        self.eliminate_unreachable_code(isa)?;
+        if do_remove_constant_phis(&mut self.func, &self.domtree) {
+            self.verify_if(isa)?;
+        }
+        Ok(())
     }
 
     /// Replace all redundant loads with the known values in

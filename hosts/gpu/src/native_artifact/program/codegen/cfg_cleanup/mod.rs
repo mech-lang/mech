@@ -372,8 +372,9 @@ fn optimize_ordered(
         }
         context.compute_cfg();
         context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .prune_unreachable_and_remove_constant_phis(isa)
+            .map_err(backend)?;
         if early_boolean_conditions {
             finish_boolean_conditions(controls, context, &mut report);
         }
@@ -391,8 +392,9 @@ fn optimize_ordered(
     if !report.fixed_point {
         context.compute_cfg();
         context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .prune_unreachable_and_remove_constant_phis(isa)
+            .map_err(backend)?;
     }
     report.local_phi_preheaders =
         preheaders::normalize(&mut context.func, &context.cfg, &context.domtree);
@@ -410,8 +412,9 @@ fn optimize_ordered(
     if report.selected_range_branches_removed != 0 {
         context.compute_cfg();
         context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .prune_unreachable_and_remove_constant_phis(isa)
+            .map_err(backend)?;
     }
     if controls.enabled(OptimizationPass::ProvedWordWidths) {
         report.known_width_branches_removed =
@@ -419,8 +422,9 @@ fn optimize_ordered(
         if report.known_width_branches_removed != 0 {
             context.compute_cfg();
             context.compute_domtree();
-            context.eliminate_unreachable_code(isa).map_err(backend)?;
-            context.remove_constant_phis(isa).map_err(backend)?;
+            context
+                .prune_unreachable_and_remove_constant_phis(isa)
+                .map_err(backend)?;
         }
     }
     if controls.enabled(OptimizationPass::DemandLiveness) {
@@ -508,8 +512,9 @@ pub(in crate::native_artifact) fn reuse_dominating_window_facts(
     if replaced != 0 {
         context.compute_cfg();
         context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .prune_unreachable_and_remove_constant_phis(isa)
+            .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
     Ok(replaced)
@@ -560,8 +565,9 @@ pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
         if branches != 0 {
             context.compute_cfg();
             context.compute_domtree();
-            context.eliminate_unreachable_code(isa).map_err(backend)?;
-            context.remove_constant_phis(isa).map_err(backend)?;
+            context
+                .prune_unreachable_and_remove_constant_phis(isa)
+                .map_err(backend)?;
             if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("constant branches after equal argument coalescing: {branches}");
             }
@@ -668,8 +674,9 @@ fn fold_scalar_span_guards(
     if replaced != 0 {
         context.compute_cfg();
         context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .prune_unreachable_and_remove_constant_phis(isa)
+            .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
     Ok(replaced)
@@ -925,8 +932,9 @@ pub(in crate::native_artifact) fn share_repeated_bounds(
     if changed != 0 {
         context.compute_cfg();
         context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .prune_unreachable_and_remove_constant_phis(isa)
+            .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
     Ok(changed)
