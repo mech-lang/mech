@@ -1,0 +1,4 @@
+cranelift-width-16-owners-cold-3009-no-growth-composed prefix-natural-8192 calls 6 instructions 7752576 branches 1296540 stack loads 54 stack stores 6984
+cranelift-width-16-owners-cold-3009-no-growth-composed prefix-natural-4096 calls 5 instructions 3557035 branches 581115 stack loads 45 stack stores 2360
+cranelift-width-16-owners-cold-3009-no-growth-composed prefix-natural-1024 calls 0 instructions 0 branches 0 stack loads 0 stack stores 0
+cranelift-width-16-owners-cold-3009-no-growth-composed heldout-mixed-131073 calls 14 instructions 35101772 branches 6090021 stack loads 126 stack stores 14300

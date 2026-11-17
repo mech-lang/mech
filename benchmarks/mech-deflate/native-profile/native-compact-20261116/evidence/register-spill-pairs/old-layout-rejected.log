@@ -1,0 +1,6 @@
+compact-stage: canonical lowering
+compact-stage: preparation blocks=8223 values=5690
+compact-stage: native module
+compact-stage: numeric phase mech_compact_numeric_475
+compact-stage: numeric phase mech_compact_numeric_475_vector
+Error: "Backend(\"Compilation error: Unsupported feature: AArch64 block layout profile\")"

@@ -1,0 +1,6 @@
+spill-pairs-20261117 prefix-random-1048576 calls 35 instructions 246428466 branches 42272123 stack loads 26146008 stack stores 13141586
+spill-pairs-20261117 prefix-random-4096 calls 1 instructions 828331 branches 129735 stack loads 101982 stack stores 45389
+spill-pairs-20261117 prefix-natural-8192 calls 1 instructions 3445433 branches 632095 stack loads 253337 stack stores 104428
+spill-pairs-20261117 prefix-natural-1024 calls 1 instructions 305378 branches 53762 stack loads 28192 stack stores 12049
+spill-pairs-20261117 320-overlap calls 1 instructions 66959 branches 13463 stack loads 5497 stack stores 2601
+spill-pairs-20261117 prefix-periodic-1024 calls 1 instructions 213398 branches 41958 stack loads 17764 stack stores 8360

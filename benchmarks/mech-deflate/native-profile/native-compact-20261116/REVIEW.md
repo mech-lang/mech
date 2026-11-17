@@ -242,6 +242,25 @@ and Cranelift's register allocation check. The 16-byte saving did not justify
 keeping the pass. The pinned workers and their original runtime receipts remain
 the basis for comparison. [Source patch and raw checks](evidence/dead-spill-stores/report.json)
 
+## Register spill pairs and function placement
+
+Consecutive ARM64 integer spills and reloads can share one instruction.
+This experiment preserves the pinned matcher block order and removes
+24 instructions from its leaf, reducing encoder text to **71,864 B**.
+The 1 MiB random matcher executes **8.41 million fewer instructions**.
+The source-through-link median is 4.52721 s, with a 4.52776 s control.
+
+Both complete timing orders record **81/81 Roc and 61/81 libdeflate** for
+candidate and control. The per-case decision is Reject. The two established
+slowdowns are 0.576% on `prefix-natural-65535` and 0.599% on
+`prefix-natural-262144`.
+
+The 71,896-byte placement diagnostic retains the control's address alignment
+modulo 64 for all 40 native function symbols. Both natural cases meet the
+0.5% resolution in its two focused orders. One short case remains uncertain.
+The source patch, replay entry point, checked calls, raw full runs, and focused
+placement follow-ups are in the [experiment](evidence/register-spill-pairs/README.md).
+
 ## Earlier experiments
 
 `evidence/size-screens` contains all 24 static screens: ten additional shared-region

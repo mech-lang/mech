@@ -1,0 +1,30 @@
+{
+  "baseline": "cf0984ac50e7a1d7e4da47380f42e582d15f1fb0",
+  "baseline_worker_sha256": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+  "hypothesis": "Adjacent integer spill moves fuse without affecting values or frames. Smaller code may also improve runtime on stack-heavy executions.",
+  "cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "random-64",
+    "320-overlap",
+    "random-1024",
+    "prefix-periodic-1024",
+    "prefix-natural-1024",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-random-4096",
+    "prefix-random-16384",
+    "heldout-random-65537",
+    "prefix-random-1048576",
+    "reymont-prefix-16384",
+    "prefix-natural-16384",
+    "heldout-mixed-131073"
+  ],
+  "orders": [
+    "forward",
+    "reverse"
+  ],
+  "balanced_blocks_per_case": 96,
+  "promotion": "Focused observations do not qualify the complete suite. Preserve the fixed floors, individual gains, and 0.5% per-case policy from QUALIFICATION.md."
+}
