@@ -116,6 +116,38 @@ reduction in backend work with essentially flat complete compilation time.
 Use `rebuild.py --compiler-opt-level 3 --reuse-equivalent-vector-ir` to reproduce
 the opt-in path. [Raw trials, controls, and rebuild receipts](evidence/equivalent-vector-ir/report.json)
 
+## Cache accounting for one-shot parsing
+
+The baseline parser's cache handles **1,414,476** requests for the pinned
+source. By the time **708,002** are processed, their markers can no longer
+receive a tree. The one-shot compiler counts the original work and reserves
+the original IDs for these requests without constructing their trees. The
+existing grant must cover the entire accounting pass. Both modes traverse the
+same event tape and use the same cache lookups. Streaming retains its original
+materialization and allocation accounting.
+
+In six balanced parser-only pairs, parsing takes **2.59947 →
+2.44044 s**, a **6.12%** reduction.
+The full tree and token identities, 3,967,302 parser steps, and 718,353 events
+match exactly. Three smaller source fixtures also match for tree, event, and ID
+counts. All **533** syntax unit tests pass, including finite grants, rewinds,
+multiple UTF-8 source pieces, and exact diagnostics for malformed input.
+
+| Matched Apple M1 build | Source through executable link | Encoder text |
+| --- | ---: | ---: |
+| Retained Mech before | 4.76028 s | 72,520 B |
+| Retained Mech with cache accounting | 4.59466 s | 72,520 B |
+| Smaller Mech before | 4.76323 s | 71,960 B |
+| Smaller Mech with cache accounting | 4.60240 s | 71,960 B |
+| Roc | 2.99970 s | 57,696 B |
+| libdeflate | 0.48119 s | 37,080 B |
+
+The smaller build takes **1.534× Roc** and
+**9.565× libdeflate**. Both historical
+benchmark workers reproduce byte for byte and carry **81/81 Roc and 61/81
+libdeflate** receipts from both full orders. The existing rebuild command uses
+the one-shot parser for the exact source. [Census, build trials, and controls](evidence/stale-cache-accounting/report.json)
+
 ## Parser stage profile
 
 In six balanced Apple M1 parser-only pairs, the coarse instrumented run
