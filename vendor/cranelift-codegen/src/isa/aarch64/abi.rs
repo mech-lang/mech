@@ -15,7 +15,7 @@ use crate::settings;
 use alloc::borrow::ToOwned;
 use alloc::boxed::Box;
 use alloc::vec::Vec;
-use regalloc2::{MachineEnv, PReg, PRegSet};
+use regalloc2::{Edit, MachineEnv, PReg, PRegSet};
 use smallvec::{SmallVec, smallvec};
 
 // We use a generic implementation that factors out AArch64 and x64 ABI commonalities, because
@@ -412,6 +412,59 @@ impl ABIMachineSpec for AArch64MachineDeps {
 
     fn gen_store_stack(mem: StackAMode, from_reg: Reg, ty: Type) -> Inst {
         Inst::gen_store(mem.into(), from_reg, ty, MemFlags::trusted())
+    }
+
+    fn gen_spill_pair(frame: &FrameLayout, first: &Edit, second: &Edit) -> Option<Inst> {
+        let Edit::Move { from, to } = *first;
+        let Edit::Move {
+            from: next_from,
+            to: next_to,
+        } = *second;
+        let (load, a, a_slot, b, b_slot) = match (
+            from.as_reg(),
+            to.as_reg(),
+            next_from.as_reg(),
+            next_to.as_reg(),
+        ) {
+            (Some(a), None, Some(b), None) => (false, a, to.as_stack()?, b, next_to.as_stack()?),
+            (None, Some(a), None, Some(b)) => (true, a, from.as_stack()?, b, next_from.as_stack()?),
+            _ => return None,
+        };
+        // Allocator spills for integer registers have one eight-byte slot.
+        // LDP requires distinct destination registers.
+        if a.class() != RegClass::Int || b.class() != RegClass::Int || (load && a == b) {
+            return None;
+        }
+        let a_offset = frame.spillslot_offset(a_slot);
+        let b_offset = frame.spillslot_offset(b_slot);
+        let (low, high, offset) = if a_offset + 8 == b_offset {
+            (a, b, a_offset)
+        } else if b_offset + 8 == a_offset {
+            (b, a, b_offset)
+        } else {
+            return None;
+        };
+        let offset = offset + i64::from(frame.sp_to_sized_stack_slots());
+        let mem = PairAMode::SignedOffset {
+            reg: stack_reg(),
+            simm7: SImm7Scaled::maybe_from_i64(offset, I64)?,
+        };
+        let flags = MemFlags::trusted();
+        Some(if load {
+            Inst::LoadP64 {
+                rt: Writable::from_reg(Reg::from(low)),
+                rt2: Writable::from_reg(Reg::from(high)),
+                mem,
+                flags,
+            }
+        } else {
+            Inst::StoreP64 {
+                rt: Reg::from(low),
+                rt2: Reg::from(high),
+                mem,
+                flags,
+            }
+        })
     }
 
     fn gen_move(to_reg: Writable<Reg>, from_reg: Reg, ty: Type) -> Inst {
