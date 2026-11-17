@@ -456,6 +456,510 @@
       "path": "benchmarks/mech-deflate/native-profile/ssa_builder_tests.rs",
       "production_or_test": "test",
       "reason": "the focused SSA tests include production builder paths outside their selected cases"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::clone_on_copy",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "irrefutable_let_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "missing_docs",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_variables",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::all",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "irrefutable_let_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_variables",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::clone_on_copy",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "irrefutable_let_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_variables",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::clone_on_copy",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "irrefutable_let_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_variables",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::clone_on_copy",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "missing_docs",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_variables",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/lib.rs",
+      "production_or_test": "production",
+      "reason": "target-specific helpers are unused in single-target builds"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::clone_on_copy",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "irrefutable_let_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "non_camel_case_types",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unreachable_patterns",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_imports",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "expect",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "unused_variables",
+      "occurrences": 1,
+      "owner": "Vendored Cranelift",
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "production_or_test": "production",
+      "reason": "generated code"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored regalloc2",
+      "path": "vendor/regalloc2/src/checker.rs",
+      "production_or_test": "production",
+      "reason": "keep checker diagnostic state available to optional tracing and verification"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::all",
+      "occurrences": 1,
+      "owner": "Vendored regalloc2",
+      "path": "vendor/regalloc2/src/lib.rs",
+      "production_or_test": "production",
+      "reason": "preserve the upstream Clippy settings for the vendored allocator"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Re-audit this lint scope when updating the vendored source.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Vendored regalloc2",
+      "path": "vendor/regalloc2/src/lib.rs",
+      "production_or_test": "production",
+      "reason": "keep the vendored allocator helpers used across feature selections and diagnostics"
     }
   ],
   "policy_release": "0.4.0",
@@ -499,28 +1003,12 @@
     },
     {
       "attributes": [
-        "#![expect( missing_docs, dead_code, unreachable_patterns, unused_imports, unused_variables, irrefutable_let_patterns, clippy::clone_on_copy, reason = \"generated code\" )]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
-      "sha256": "1867dc9a0d4727936b0e663b45cced4a5d4e2aaefecdee4ef69f6c291dd8fad9"
-    },
-    {
-      "attributes": [
         "#[allow(dead_code, reason = \"generated code\")]",
         "#[allow(dead_code, reason = \"generated code\")]"
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
       "path": "vendor/cranelift-codegen/src/isa/pulley_shared/inst/regs.rs",
       "sha256": "a89c40acdcf0ea757f9a0536eae2aa7bba17e3085846a0159ac4d5288d240611"
-    },
-    {
-      "attributes": [
-        "#![expect( dead_code, unreachable_patterns, unused_imports, unused_variables, irrefutable_let_patterns, clippy::all, reason = \"generated code\" )]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
-      "sha256": "2d76f49bcdc1b5eb120889000f919909c810a2bf52318bcc13a1a77f3546d26a"
     },
     {
       "attributes": [
@@ -579,27 +1067,11 @@
     },
     {
       "attributes": [
-        "#![expect( dead_code, unreachable_patterns, unused_imports, unused_variables, irrefutable_let_patterns, clippy::clone_on_copy, reason = \"generated code\" )]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
-      "sha256": "9675ad06d78bc3ae56ad7947cde12b2875a608fc20dfb15e48c8372adf5034be"
-    },
-    {
-      "attributes": [
         "#[expect(non_camel_case_types, reason = \"matching native names\")]"
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
       "path": "vendor/cranelift-codegen/src/isa/s390x/inst/mod.rs",
       "sha256": "0fd5ca83ccf2e53d4b67a51e742a7eef9c2e62af6d035a1ab766146221e32606"
-    },
-    {
-      "attributes": [
-        "#![expect( dead_code, unreachable_patterns, unused_imports, unused_variables, irrefutable_let_patterns, clippy::clone_on_copy, reason = \"generated code\" )]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
-      "sha256": "e0cc4853225a9cea66fd9b590177a4c31c76f6b33096357004d3b9575740519c"
     },
     {
       "attributes": [
@@ -635,30 +1107,6 @@
     },
     {
       "attributes": [
-        "#![expect( dead_code, unreachable_patterns, unused_imports, unused_variables, missing_docs, clippy::clone_on_copy, reason = \"generated code\" )]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
-      "sha256": "f5c5067c43c155b8e1ea2445e1262c4861a45c6b232423467bb61c1006bbb508"
-    },
-    {
-      "attributes": [
-        "#![cfg_attr( not(feature = \"all-arch\"), allow(dead_code, reason = \"see comment above\") )]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/lib.rs",
-      "sha256": "7f2d9b51c208a516a4299cca614fd8ad8fbfa2b05f718e96e1f1ddfcebdbe94b"
-    },
-    {
-      "attributes": [
-        "#![expect( dead_code, unreachable_patterns, unused_imports, unused_variables, irrefutable_let_patterns, non_camel_case_types, clippy::clone_on_copy, reason = \"generated code\" )]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
-      "sha256": "b939a0ba7d8988a78cc2c12a19fca5c1540a999d5736b4ccef441d92be78ae51"
-    },
-    {
-      "attributes": [
         "#[allow(dead_code, reason = \"dead code, only on nightly rust at this time\")]"
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
@@ -675,36 +1123,11 @@
     },
     {
       "attributes": [
-        "#[$attr:meta]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen-meta/src/pulley.rs",
-      "sha256": "ed4f05b896660a4976044e6aa8f1f02637dbb56911daab7b213fae8218810ad5"
-    },
-    {
-      "attributes": [
         "#![expect(non_snake_case, reason = \"DSL style here\")]"
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
       "path": "vendor/cranelift-codegen-meta/src/shared/instructions.rs",
       "sha256": "f175a549ef5e3a4c30c07c9aa23f7092f5313573ea067eaf9300bede316b23a3"
-    },
-    {
-      "attributes": [
-        "#![allow(dead_code)]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/regalloc2/src/checker.rs",
-      "sha256": "b12693909108cce3d47efd416e32a564a4b9dcb7e34ffa2514123c704d44d01f"
-    },
-    {
-      "attributes": [
-        "#![allow(dead_code)]",
-        "#![allow(clippy::all)]"
-      ],
-      "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/regalloc2/src/lib.rs",
-      "sha256": "6a05f29d796ad35bfe95a9f0b5839d37f75842d7399f51b59628b99e36a550e1"
     }
   ]
 }
