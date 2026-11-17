@@ -6,6 +6,7 @@ use crate::document::parser::{
     literal_scan::{LiteralProgress, LiteralScan},
     marker::Marker,
 };
+use alloc::boxed::Box;
 use alloc::vec::Vec;
 
 pub(crate) enum Progress {
@@ -71,13 +72,29 @@ enum Frame {
     BasedPrefix(Based),
     BasedPayload(Based),
     HexElement(Based, TextSize, bool),
-    Base(base::continuation::Continuation),
+    Base,
     TagExit(ParserCheckpoint),
-    Literal(LiteralScan<'static>),
+    Literal,
     LiteralResult(Option<TextSize>),
 }
-pub(crate) struct Continuation {
+
+// A suspended scan owns one child. Keeping it outside the frame stack
+// makes every ordinary grammar transition move only its own frame.
+enum Scanner {
+    Base(base::continuation::Continuation),
+    Literal(LiteralScan<'static>),
+}
+
+#[derive(Default)]
+pub(crate) struct FrameStorage {
     frames: Vec<Frame>,
+    scanner: Option<Box<Scanner>>,
+}
+
+pub(crate) struct Continuation {
+    initial: Option<RuleId>,
+    storage: FrameStorage,
+    active: bool,
     result: Attempt,
     matched: bool,
     pub work: u64,
@@ -86,17 +103,27 @@ impl Continuation {
     pub fn new(rule: RuleId) -> Self {
         assert!(supports(rule), "canonical literal owner");
         Self {
-            frames: alloc::vec![Frame::Enter(rule, true)],
+            initial: Some(rule),
+            storage: FrameStorage::default(),
+            active: false,
             result: Attempt::NoMatch,
             matched: false,
             work: 0,
         }
     }
+    fn scanner(&mut self, scanner: Scanner) {
+        if let Some(slot) = &mut self.storage.scanner {
+            **slot = scanner;
+        } else {
+            self.storage.scanner = Some(Box::new(scanner));
+        }
+    }
     fn push(&mut self, frame: Frame) {
-        self.frames.push(frame);
+        self.storage.frames.push(frame);
     }
     fn base(&mut self, rule: RuleId) {
-        self.push(Frame::Base(base::continuation::Continuation::new(rule)));
+        self.scanner(Scanner::Base(base::continuation::Continuation::new(rule)));
+        self.push(Frame::Base);
     }
     fn call(&mut self, rule: RuleId, recover: bool) {
         self.push(Frame::Enter(rule, recover));
@@ -201,15 +228,21 @@ impl Continuation {
         final_input: bool,
         allowance: &mut u64,
     ) -> Progress {
-        while !self.frames.is_empty() {
+        if let Some(rule) = self.initial.take() {
+            self.storage = core::mem::take(&mut parser.state.literal_storage);
+            self.active = true;
+            debug_assert!(self.storage.frames.is_empty());
+            self.push(Frame::Enter(rule, true));
+        }
+        while !self.storage.frames.is_empty() {
             if !final_input && parser.is_halted() {
                 return Progress::Limited;
             }
             if *allowance == 0 {
                 return Progress::NeedsProcessing;
             }
-            let frame = self.frames.pop().expect("retained literal phase");
-            if !matches!(frame, Frame::Base(_) | Frame::Literal(_)) {
+            let frame = self.storage.frames.pop().expect("retained literal phase");
+            if !matches!(frame, Frame::Base | Frame::Literal) {
                 *allowance -= 1;
                 self.work += 1;
             }
@@ -385,7 +418,7 @@ impl Continuation {
                         if parser.offset() > parser.cursor().end() {
                             self.matched = false;
                         } else {
-                            self.push(Frame::Literal(
+                            self.scanner(Scanner::Literal(
                                 LiteralScan::new(
                                     literal,
                                     parser.offset(),
@@ -393,6 +426,7 @@ impl Continuation {
                                 )
                                 .expect("nonempty literal atom"),
                             ));
+                            self.push(Frame::Literal);
                         }
                     }
                 },
@@ -554,7 +588,10 @@ impl Continuation {
                         parser.rewind(checkpoint);
                     }
                 }
-                Frame::Literal(mut scan) => {
+                Frame::Literal => {
+                    let Some(Scanner::Literal(scan)) = self.storage.scanner.as_deref_mut() else {
+                        unreachable!("literal phase owns a literal scanner");
+                    };
                     let before = *allowance;
                     let progress = scan.advance_cached(
                         parser.source,
@@ -568,11 +605,11 @@ impl Continuation {
                     match progress {
                         LiteralProgress::Complete(end) => self.push(Frame::LiteralResult(end)),
                         LiteralProgress::NeedsProcessing => {
-                            self.push(Frame::Literal(scan));
+                            self.push(Frame::Literal);
                             return Progress::NeedsProcessing;
                         }
                         LiteralProgress::NeedInput => {
-                            self.push(Frame::Literal(scan));
+                            self.push(Frame::Literal);
                             return Progress::NeedInput;
                         }
                         LiteralProgress::InvalidSource => {
@@ -587,27 +624,35 @@ impl Continuation {
                         })
                         .is_some();
                 }
-                Frame::Base(mut continuation) => {
+                Frame::Base => {
+                    let Some(Scanner::Base(continuation)) = self.storage.scanner.as_deref_mut()
+                    else {
+                        unreachable!("base phase owns a base continuation");
+                    };
                     let before = *allowance;
                     let progress = continuation.advance(parser, final_input, allowance);
                     self.work += before - *allowance;
                     match progress {
                         base::continuation::Progress::Complete(matched) => self.matched = matched,
                         base::continuation::Progress::NeedsProcessing => {
-                            self.push(Frame::Base(continuation));
+                            self.push(Frame::Base);
                             return Progress::NeedsProcessing;
                         }
                         base::continuation::Progress::NeedInput => {
-                            self.push(Frame::Base(continuation));
+                            self.push(Frame::Base);
                             return Progress::NeedInput;
                         }
                         base::continuation::Progress::Limited => {
-                            self.push(Frame::Base(continuation));
+                            self.push(Frame::Base);
                             return Progress::Limited;
                         }
                     }
                 }
             }
+        }
+        if self.active {
+            parser.state.literal_storage = core::mem::take(&mut self.storage);
+            self.active = false;
         }
         Progress::Complete(self.result)
     }
