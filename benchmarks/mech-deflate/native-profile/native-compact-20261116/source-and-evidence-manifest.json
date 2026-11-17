@@ -35480,8 +35480,8 @@
     },
     {
       "path": "src/syntax/src/document/parser/canonical/base/continuation.rs",
-      "sha256": "f5ba78aabedfd806029cbc710122013ff1263bf24bdfc979a5cde5946e7c5f19",
-      "bytes": 39878
+      "sha256": "38a4b129096aae568f8e20a332f5928d02181c3f3a5730f014ca53f2237fec80",
+      "bytes": 40347
     },
     {
       "path": "src/syntax/src/document/parser/canonical/base/mod.rs",
@@ -35542,6 +35542,11 @@
       "path": "src/syntax/src/document/parser/journal/mod.rs",
       "bytes": 16464,
       "sha256": "625288f4c648d82fc8a52e8f97c7200f67be11480f363eba96fdf6bcb20c703f"
+    },
+    {
+      "path": "src/syntax/src/document/parser/literal_scan.rs",
+      "sha256": "6a5b37ece69129088a36022544b38448a96c4d4e5e1fc1ba41d34b04e78c0e14",
+      "bytes": 25146
     },
     {
       "path": "src/syntax/src/document/parser/mod.rs",
