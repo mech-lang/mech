@@ -28,6 +28,22 @@ the exact timed worker and emits **71,768 B**, or **1.244× Roc** and
 and **61/81 libdeflate** wins.
 [Compiler comparison and reproduction](evidence/native-graph-work/README.md)
 
+The compiler now skips unused general SSA for eligible refused private
+numeric phases. Its measured source-through-link build is **3.73777 s**,
+a **0.87%** paired reduction with the identical 71,768-byte worker.
+[Compiler source, checked cases and raw timings](evidence/refused-general-ssa/README.md)
+
+For new runtime campaigns, **policy v2** reports slowdowns and bases the
+runtime gate on preserved individual peer wins and both absolute floors.
+[Qualification policy v2](QUALIFICATION.md#acceptance-policy-v2)
+
+The separate owner-exchange screen emits 71,288 bytes. Both focused orders
+preserve all peer wins and v1 rejects on the empty-input timing. An
+80-byte placement variant remains unresolved under v1.
+[Both owner artifacts and the original decisions](evidence/owner-exchange-71288/README.md)
+· [Match-cache source sizes](evidence/match-cache-offset-slot/README.md)
+· [Cached terminal parser experiment](evidence/cached-terminal-failures/README.md)
+
 Direct indexing of completed event pages brings the matched Apple M1
 source-through-link build to **3.81385 s**, a paired reduction of
 **1.23%**. The 71,768-byte worker reproduces exactly.
