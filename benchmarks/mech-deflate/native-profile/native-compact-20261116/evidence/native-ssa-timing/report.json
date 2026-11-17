@@ -1,0 +1,43 @@
+{
+  "source_base": "ddc26e24222f14229f4787f55d1d659a4482cddd",
+  "host": "Apple M1, Rust opt-level 3, AArch64 Cranelift",
+  "hypothesis": "Resolve a sealed two-way join from equal cached input definitions and avoid creating the temporary parameter.",
+  "assembled_values": {
+    "control": 1399985,
+    "candidate": 1382715
+  },
+  "assembled_values_removed": 17270,
+  "values_after_compaction": 165899,
+  "native_medians": {
+    "control": {
+      "seconds": 1.7684601661749184,
+      "peak_rss_bytes": 218005504.0
+    },
+    "candidate": {
+      "seconds": 1.7706579370424151,
+      "peak_rss_bytes": 217858048.0
+    }
+  },
+  "paired_median_ratio": 1.0014466668533295,
+  "native_timed_pairs": 12,
+  "pinned_workers": {
+    "retained": {
+      "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+      "worker_sha256": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+      "verified_calls": 162,
+      "object_text_bytes": 72520,
+      "encoder_text_x_libdeflate": 1.9557713052858683
+    },
+    "smaller": {
+      "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "worker_sha256": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+      "verified_calls": 162,
+      "object_text_bytes": 71960,
+      "encoder_text_x_libdeflate": 1.9406688241639698
+    }
+  },
+  "qualification": "Both byte-identical workers carry the existing 81/81 Roc and 61/81 libdeflate runtime receipts in both orders.",
+  "decision": "The native-only comparison showed no speed improvement. Keep the existing builder. Source and raw trials remain available for review."
+}

@@ -1,0 +1,163 @@
+{
+  "parent_source": "696b7d5654fa4f97dd5f568a57ccc42616e35de9",
+  "host": "Apple M1, Rust opt-level 3, AArch64 Cranelift",
+  "scope": "Pinned level-12 diagnostic source through final executable link. Compilers, fixed runtimes, and adapters prebuilt.",
+  "selection": "Optimize checked-root CLIF using the existing pipeline, inventory direct and other function references, select local verified helpers with one eligible call and no references from another definition, and compile the inlined root once. Fall back to the existing path when selection cannot be applied.",
+  "default": "The compile-and-measure projection remains the default diagnostic policy.",
+  "finite_resources": "The preselection option applies to the diagnostic compact Object. Both measured root frames and all exact linked-worker code are identical. The ordinary managed admission and recovery contract remains an independent qualification requirement.",
+  "compared_plan": "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected",
+  "raw_trials": "timing.json.gz",
+  "method": "Eight orders balance starting position and predecessor across four actors. One warmup per actor and dedicated profiles are excluded from build medians.",
+  "root_machine_compilations": {
+    "projection": 2,
+    "preselected": 1
+  },
+  "complete_medians_seconds": {
+    "mech-projection": {
+      "frontend": 2.7834838959388435,
+      "native": 1.7641413751989603,
+      "link": 0.04061322892084718,
+      "total": 4.589584874687716,
+      "parse": 2.458009792
+    },
+    "mech-preselected": {
+      "frontend": 2.7846865623723716,
+      "native": 1.6978681043256074,
+      "link": 0.040181166492402554,
+      "total": 4.527278250316158,
+      "parse": 2.4588737085
+    },
+    "roc": {
+      "compile": 2.9477034164592624,
+      "link": 0.03470877115614712,
+      "total": 2.9817209164611995
+    },
+    "libdeflate": {
+      "compile": 0.4455502084456384,
+      "link": 0.03428570809774101,
+      "total": 0.48024006257764995
+    }
+  },
+  "source_to_link_reduction_fraction": 0.013575655766862371,
+  "native_emission_reduction_fraction": 0.03756687066300368,
+  "preselected_total_x": {
+    "roc": 1.5183440627599964,
+    "libdeflate": 9.427114901693864
+  },
+  "preselected_encoder_text_x": {
+    "roc": 1.2472268441486412,
+    "libdeflate": 1.9406688241639698
+  },
+  "root_stage_profile_seconds": {
+    "mech-projection": 0.18682979186996818,
+    "mech-preselected": 0.12078370805829763
+  },
+  "median_compiler_process_rss_bytes": {
+    "mech-projection": {
+      "frontend": 382377984.0,
+      "native": 217980928.0,
+      "link": 59473920.0
+    },
+    "mech-preselected": {
+      "frontend": 382337024.0,
+      "native": 217767936.0,
+      "link": 59301888.0
+    },
+    "roc": {
+      "compile": 395034624.0,
+      "link": 38739968.0
+    },
+    "libdeflate": {
+      "compile": 71507968.0,
+      "link": 38813696.0
+    }
+  },
+  "max_observed_process_rss_bytes": {
+    "mech-projection": {
+      "frontend": 382468096,
+      "native": 218021888,
+      "link": 59834368
+    },
+    "mech-preselected": {
+      "frontend": 382435328,
+      "native": 217858048,
+      "link": 59736064
+    },
+    "roc": {
+      "compile": 405553152,
+      "link": 38895616
+    },
+    "libdeflate": {
+      "compile": 78086144,
+      "link": 38895616
+    }
+  },
+  "sizes_bytes": {
+    "mech-projection": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "executable_text_bytes": 474884,
+      "executable_file_bytes": 956056,
+      "encoder_file_kind": "Mach-O object"
+    },
+    "mech-preselected": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "executable_text_bytes": 474884,
+      "executable_file_bytes": 956056,
+      "encoder_file_kind": "Mach-O object"
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_file_bytes": 88808,
+      "executable_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_file_kind": "static archive"
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_file_kind": "Mach-O object"
+    }
+  },
+  "diagnostic_root_frame_bytes": 3744,
+  "historical_measured_peak_stack_bytes": 5296,
+  "untimed_rebuild_exact_call_peak_private_payload_bytes": 10548878,
+  "historical_pins": {
+    "smaller": {
+      "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+    },
+    "retained": {
+      "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+      "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+    },
+    "fallback": {
+      "program.o": "993eb19d294678a6d35cd301ae55766b9e0911b271d6c724dc16537395586e45",
+      "metadata.json": "c53ba44e028ce70d65392e3e27fe9487634f225ef3d7ad36972ff6c32b6c6008",
+      "mech-worker": "41bb9398a705cfc4a9ca8ca90c1b966d8e36088a2d03d3f86aed9701ffa04dbe"
+    }
+  },
+  "historical_win_counts": {
+    "roc": [
+      81,
+      81
+    ],
+    "libdeflate": [
+      61,
+      61
+    ]
+  },
+  "recipe_linked_worker": {
+    "sha256": "e527d47b287f1002e29b9670cbe2a6eeff5edc6601bf75bf74a5c686ecae3ab7",
+    "same_across_rebuild_modes": true,
+    "exact_linked_calls_per_mode": 162,
+    "historical_receipt_transfer": "applies to the separate fixed-runtime reproduction with the exact archived worker hash"
+  },
+  "qualification": "Keep the opt-in build-time option on the byte-identical reference outputs. Preserve the historical qualification decisions and unresolved repeatability intervals.",
+  "source_commit": "951f6bcd91ee5fb032193485a1259d1957779937"
+}
