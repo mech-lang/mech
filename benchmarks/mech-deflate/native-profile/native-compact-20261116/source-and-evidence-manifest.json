@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "7f1e764a0c5ca83e720992ad4e8637ea064638c22d0f8921ac9ae96f644e61c4",
-      "bytes": 14084
+      "sha256": "ffdd64dedd3837a5806b6398e32dd3cbca125f26149485d163fd3f7b8ae4c5c1",
+      "bytes": 14916
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/baseline/checked-failures.json",
@@ -11917,6 +11917,41 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-journal-pages/workflow/workflow-contract-tests.log",
       "sha256": "24cefc2bc38a1c71e18591075993695fc72546b32ff6b5baab3d98032ce96fb5",
       "bytes": 98
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-stage-profile/parser-cache-stages.json",
+      "sha256": "82a2e1f8635e4b8aa363142df281db078a5492b155f066060ad46c1910c6d999",
+      "bytes": 22431
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-stage-profile/parser-cache-stages.patch",
+      "sha256": "0ac88d5ad3b591857e9329d779090b7da68f65c67a22ce143213765b1c368d70",
+      "bytes": 2187
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-stage-profile/parser-stages.json",
+      "sha256": "886f837a060ddeceaacdb730ef9b7f4f1741d423749e6ea8f301456a20476c71",
+      "bytes": 20412
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-stage-profile/parser-stages.patch",
+      "sha256": "9f39f8b196aad2cb31883468eed0d081d113613a868b3a2c08d5e792296e8595",
+      "bytes": 995
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-stage-profile/probe.rs.txt",
+      "sha256": "5df87baf212bcea53758dca615a3c097e0567c114ac38fede9bf766f3472b49c",
+      "bytes": 2096
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-stage-profile/profile-parser-stages.py",
+      "sha256": "e14712151caed3d8a20922462fa0eabc67c14746a4bcabe8e17358b6005282db",
+      "bytes": 9765
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/parser-stage-profile/report.json",
+      "sha256": "9b918a738d89533561956366aa2d82f8d8826ef0be77cb8550f73166c41cdac3",
+      "bytes": 1683
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/qualification-v1/archived-decisions.json",
