@@ -186,14 +186,21 @@ impl Continuation {
                 let start = parser.offset();
                 let consume = parser.cursor().end();
                 let context = parser.cursor().context_end();
-                parser.state.literal_cache
+                parser
+                    .state
+                    .literal_cache
                     .replay(spec.literal, start, consume, context, *allowance)
                     .or_else(|| {
                         if parser.is_halted() || parser.state.resource_finalizing {
                             return None;
                         }
                         parser.state.literal_cache.sealed_ascii_miss(
-                            parser.source, spec.literal, start, consume, context, *allowance,
+                            parser.source,
+                            spec.literal,
+                            start,
+                            consume,
+                            context,
+                            *allowance,
                         )
                     })
             }
