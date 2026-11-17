@@ -116,6 +116,24 @@ reduction in backend work with essentially flat complete compilation time.
 Use `rebuild.py --compiler-opt-level 3 --reuse-equivalent-vector-ir` to reproduce
 the opt-in path. [Raw trials, controls, and rebuild receipts](evidence/equivalent-vector-ir/report.json)
 
+## Parser stage profile
+
+In six balanced Apple M1 parser-only pairs, the coarse instrumented run
+spends **2.565 s** inside canonical grammar processing,
+including in-parse cache materialization. Syntax indexing takes
+**35.3 ms**, and restart indexing takes
+**2.22 ms**. All trials reproduce the same
+tree and identities, 3,967,302 parser steps, and 718,353 events.
+
+The separate nested profile observes **499,404**
+cache advances in **0.507 s** and
+**1,414,476** cache requests queued in
+**37.2 ms** during grammar processing.
+The nested instrumentation adds wall time. These measurements guide work on
+cache scheduling and materialization. Measure which requests publish and
+reuse their completed nodes before changing event or finite-work accounting.
+[Raw profiles and instrumentation](evidence/parser-stage-profile/report.json)
+
 ## Smaller reviewed configuration
 
 Use `rebuild.py --variant fresh-owner-counts-cold-tails` to review the
