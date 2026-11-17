@@ -1,0 +1,149 @@
+{
+  "parent_source": "f2eb85ae053a28ee88efeae87a55dc164c83f71c",
+  "machine": "Apple M1",
+  "compiler_opt_level": 3,
+  "mechanism": "Compare the complete prepared Cranelift functions in the same target context. Carry each vector candidate's own preparation report. Omit machine-code compilation only when the figures can be derived from the identical general body. Replay the declarations in their original order.",
+  "boundary": "The experimental path is enabled only for unobserved parallel compact emission with disassembly off for the relevant functions. It leaves ordinary compile admission untouched.",
+  "compiled_worker_jobs": {
+    "historical": 23,
+    "with_reuse": 16,
+    "cleanup_jobs_in_each": 2
+  },
+  "discarded_vector_alternatives_by_historical_selector": 9,
+  "equivalent_vectors_skipping_backend_work": 7,
+  "matched_compile_seconds": {
+    "mech-retained-control": {
+      "frontend": 2.9514243544545025,
+      "native": 1.7618291664402932,
+      "link": 0.04119902057573199,
+      "total": 4.760214541573077,
+      "parse": 2.6173256040000004
+    },
+    "mech-retained-reuse": {
+      "frontend": 2.949853250058368,
+      "native": 1.7576463541481644,
+      "link": 0.04115214664489031,
+      "total": 4.752867395989597,
+      "parse": 2.615359375
+    },
+    "mech-smaller-control": {
+      "frontend": 2.9563098959624767,
+      "native": 1.7695304586086422,
+      "link": 0.04013293795287609,
+      "total": 4.765126938000321,
+      "parse": 2.6205195005000004
+    },
+    "mech-smaller-reuse": {
+      "frontend": 2.9537461041472852,
+      "native": 1.7640708540566266,
+      "link": 0.046108562499284744,
+      "total": 4.764687062473968,
+      "parse": 2.6194810630000003
+    },
+    "roc": {
+      "compile": 2.9581091043073684,
+      "link": 0.03413122962228954,
+      "total": 2.993496812414378
+    },
+    "libdeflate": {
+      "compile": 0.44643260445445776,
+      "link": 0.033869937527924776,
+      "total": 0.4808375625871122
+    }
+  },
+  "native_only_seconds": {
+    "mech-smaller-control": 1.7634090830106288,
+    "mech-smaller-reuse": 1.7605717284604907
+  },
+  "native_only_paired_ratios": [
+    0.9997128671566268,
+    1.001976082873885,
+    0.9970684056895738,
+    0.9984952253573689,
+    0.9926440463237463,
+    0.9983446977526184,
+    0.9996050055353833,
+    0.9945893102685256
+  ],
+  "median_native_only_paired_ratio": 0.9984199615549936,
+  "diagnostic_span_native_module_to_typed_layout_seconds": {
+    "mech-retained-control": 0.301919249817729,
+    "mech-retained-reuse": 0.2977247089147568,
+    "mech-smaller-control": 0.3033919590525329,
+    "mech-smaller-reuse": 0.29781979182735085
+  },
+  "smaller_build_time_x_roc": 1.5916793506224087,
+  "smaller_build_time_x_libdeflate": 9.909140701982409,
+  "pinned_worker_proofs": {
+    "retained-control": {
+      "sha256": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+      },
+      "encoder_text_bytes": 72520,
+      "encoder_text_x_roc": 1.256932889628397,
+      "encoder_text_x_libdeflate": 1.9557713052858683,
+      "verified_calls": 162,
+      "recorded_runtime_wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      },
+      "historical_peak_stack_bytes": 5296,
+      "root_frame_bytes": 3744
+    },
+    "retained-reuse": {
+      "sha256": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+      },
+      "encoder_text_bytes": 72520,
+      "encoder_text_x_roc": 1.256932889628397,
+      "encoder_text_x_libdeflate": 1.9557713052858683,
+      "verified_calls": 162,
+      "recorded_runtime_wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      },
+      "historical_peak_stack_bytes": 5296,
+      "root_frame_bytes": 3744
+    },
+    "smaller-reuse": {
+      "sha256": {
+        "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+        "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+        "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+      },
+      "encoder_text_bytes": 71960,
+      "encoder_text_x_roc": 1.2472268441486412,
+      "encoder_text_x_libdeflate": 1.9406688241639698,
+      "verified_calls": 162,
+      "recorded_runtime_wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      },
+      "historical_peak_stack_bytes": 5296,
+      "root_frame_bytes": 3744
+    }
+  },
+  "decision": "Backend work reduction demonstrated on both encoders. End-to-end timing was essentially flat. The option remains experimental."
+}
