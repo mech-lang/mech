@@ -37815,8 +37815,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "edd41ceb36ff37234ac1d0783e4b9e243034b56f914fb3f90def8fe19efea6a2",
-      "bytes": 11837
+      "sha256": "173417a8daa418f019b428322e9f0fa111834736b0f1c60f13b60f50c1484508",
+      "bytes": 11891
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
@@ -37882,6 +37882,16 @@
       "path": "hosts/gpu/examples/native_tagged_map_allocations.rs",
       "sha256": "3893030a1e2d24c360906ecee6c2336f775a12f71d8fb4af5cb650098ebf2d1b",
       "bytes": 7835
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs",
+      "sha256": "b0390c9d11b53018e9f3bb211cc513b87a461218c5fd4db967fdc97e2759b3ac",
+      "bytes": 8978
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/ssa_words_tests.rs",
+      "sha256": "ecebe83ed3107ce216a688b9dfda1763ac7c72018821811a07ace9b7ec154280",
+      "bytes": 4005
     },
     {
       "path": "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/arithmetic_tests.rs",
@@ -38180,8 +38190,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
-      "sha256": "7ff97d65d2aa1791a618a52e427b3e77dbc02b72e492a14bbbfba819ef28494a",
-      "bytes": 81084
+      "sha256": "355ac4c2ed7ff252937504cde18125d91787b32b8fd9732df70525cbb4ce9a93",
+      "bytes": 82768
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs",
@@ -38335,8 +38345,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compiler.rs",
-      "sha256": "c3543861e845b7a685f8385c65d9f6a2a853f442a5143a4c7e6bc8621ec20861",
-      "bytes": 49246
+      "sha256": "ef9a678dad7007846b5aa592c0eac9832d5aceaa2acde45a794005e67d6da6e2",
+      "bytes": 50057
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/llvm_backend/compact_body.rs",

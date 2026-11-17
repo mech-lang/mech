@@ -139,6 +139,7 @@ if zero_branches:
     flags['MECH_COMPACT_ROOT_TAIL_PROFILE'] = str(here / recipe[tail_profile])
 if frame_copies:
     flags['MECH_COMPACT_SHARE_FRAME_COPIES'] = '1'
+    flags['MECH_COMPACT_DIRECT_ENTRY_LITERALS'] = '1'
 assert not any('LLVM' in key for key in flags)
 source = here / 'program.mec'
 frontend = out / 'frontend'
