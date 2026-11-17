@@ -1,0 +1,2546 @@
+{
+  "control": {
+    "flags": {
+      "MECH_PRIVATE_INDEXED_CHAINS": "1",
+      "MECH_PHASE_OWNER_TRANSFER": "1",
+      "MECH_PHASE_VECTOR_FAST": "1",
+      "MECH_PRIVATE_READ_INTERVALS": "1",
+      "MECH_PHASE_INVARIANT_VIEWS": "1",
+      "MECH_CURRENT_PREDICATES": "1",
+      "MECH_PRIVATE_NESTED_PHASES": "1",
+      "MECH_PHASE_ASSERTION_FLOORS": "1",
+      "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+      "MECH_WIDE_ANY_BITS": "1",
+      "MECH_WHOLE_PHASE_CAPACITY": "1",
+      "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+      "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+      "MECH_REUSE_SHIFTED_EQUALITY": "1",
+      "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+      "MECH_CHECKED_APPEND_RUN": "1",
+      "MECH_NARROW_MASKED_ARITHMETIC": "1",
+      "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+      "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+      "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+      "MECH_ORDERED_CAPTURE_SPANS": "1",
+      "MECH_REUSE_EQUALITY_PREFIX": "1",
+      "MECH_ADJACENT_ADDRESSES": "1",
+      "MECH_WIDENING_REDUCTION": "1",
+      "MECH_SHARE_REPEATED_BOUNDS": "1",
+      "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+      "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+      "MECH_PROVE_SCALAR_SPANS": "1",
+      "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+      "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+      "MECH_NARROW_ORDERED_ITEM": "1",
+      "MECH_REUSE_SELECTED_READ_BOUND": "1",
+      "MECH_REVERSE_REDUCTION_CURSOR": "1",
+      "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+      "MECH_GROUP_PACKED_HISTOGRAM": "1",
+      "MECH_REDUCTION_COUNTDOWN": "1",
+      "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+      "MECH_FIRST_PACKED_REVERSE_READ": "1",
+      "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+      "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+      "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+      "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+      "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+      "MECH_SHARE_CLAMP_DECISIONS": "1",
+      "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+      "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+      "MECH_PREFETCH_PRIVATE_WRITES": "1",
+      "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+      "MECH_BORROW_COMPACT_READ_COPIES": "1",
+      "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+      "MECH_PROVE_PACKED_BASE_SPANS": "1",
+      "MECH_PAIR_CHECKED_APPENDS": "1",
+      "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+      "MECH_CARRY_REDUCTION_BOUND": "1",
+      "MECH_TERMINAL_BYTE_APPENDS": "1",
+      "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+      "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+      "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+      "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+      "MECH_ARM64_SUBTRACT_BRANCH": "1",
+      "MECH_COMPACT_REUSE_OVERWRITTEN_RESULT": "1",
+      "MECH_COMPACT_DIRECT_RUNTIME_CALLS": "allocation-and-byte-appends",
+      "MECH_COMPACT_PACK_LARGE_REFUSALS": "1",
+      "MECH_COMPACT_LAYOUT_REGIONS_LAST": "1",
+      "MECH_COMPACT_PREPARE_LAYOUT_REGION_IR": "1",
+      "MECH_COMPACT_ORDER_REGION_CAPTURES": "1",
+      "MECH_COMPACT_BIND_REGION_LITERALS": "1",
+      "MECH_COMPACT_SHARE_PHASE_RELOCATIONS": "1",
+      "MECH_COMPACT_BIND_REGION_INPUT_ROLES": "1",
+      "MECH_COMPACT_FORWARD_VIEW_GEOMETRY": "1",
+      "MECH_COMPACT_VECTOR_FACTS": "1",
+      "MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN": "1",
+      "MECH_COMPACT_ALIGN_REGION_OUTPUTS": "1",
+      "MECH_COMPACT_FOLD_UNIT_BRANCHES": "1",
+      "MECH_COMPACT_PAD_REGION_OUTPUTS": "1",
+      "MECH_COMPACT_SHARE_OWNER_RETIREMENT": "all",
+      "MECH_COMPACT_BIND_REFUSAL_LITERALS": "retry",
+      "MECH_COMPACT_PREPARE_REFUSAL_IR": "1",
+      "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "16",
+      "MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST": "1",
+      "MECH_COMPACT_PAIR_WORDS": "all",
+      "MECH_COMPACT_PAIR_STACK_WORDS": "1",
+      "MECH_COMPACT_ROOT_PROOFS": "all",
+      "MECH_COMPACT_SHARE_COLD_EPILOGUES": "1",
+      "MECH_COMPACT_SHARE_CHECKED_TRAVERSALS": "all",
+      "MECH_COMPACT_SHARE_CONTROLLER_WINDOWS": "2184:2267,2388:2463,2599:2674,2314:2382,2685:2753,31:97",
+      "MECH_COMPACT_REFUSE_GENERAL_VECTORS": "475",
+      "MECH_COMPACT_SHARE_MATRIX_WORDS": "1",
+      "MECH_COMPACT_PACK_WRITABLE_STORAGE": "1",
+      "MECH_COMPACT_GROUP_RETIREMENTS": "1",
+      "MECH_COMPACT_REGISTER_BACKING": "1",
+      "MECH_COMPACT_SHARE_STATIC_ERROR_STATUS": "1",
+      "MECH_PACK_PRIVATE_HALFWORD_STORES": "1",
+      "MECH_COMPACT_FOLD_CHECKED_ADDS": "1",
+      "MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS": "7924:38293:8064,4936:26390:5013,4877:26199:4952,4796:25856:4868,4684:25398:4753,4347:23993:4404,4262:23588:4318,4250:23517:4306,4020:22497:4070,3880:21853:3925,2716:17358:2731,2713:17340:2728,2633:17036:2647,2631:17020:2645,2424:16259:2436,2422:16243:2434,2349:15958:2360,2346:15940:2357,2085:15099:2094,2050:14995:2059,2011:14879:2020,1991:14817:2000,1245:12406:1250,861:11248:862",
+      "MECH_COMPACT_TRIM_RETIREMENTS": "1",
+      "MECH_COMPACT_SHARE_CAPACITY_GROWTH": "preserve",
+      "MECH_COMPACT_FUSE_WRITABLE_GROWTH": "byte-registers",
+      "MECH_COMPACT_PROVE_BACKING_OWNERS": "direct",
+      "MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2": "4",
+      "MECH_COMPACT_COALESCE_PARALLEL_PHIS": "1",
+      "MECH_COMPACT_ROOT_FLOW_PASSES": "equal,identity",
+      "MECH_COMPACT_INLINE_SINGLE_CALLS": "preselected",
+      "MECH_COMPACT_INLINE_SYMBOLS": "mech_compact_numeric_4879,mech_compact_numeric_4673_vector",
+      "MECH_COMPACT_LITERAL_EDGE_ARGUMENTS": "fold",
+      "MECH_COMPACT_FORWARD_SPILL_RELOADS": "1",
+      "MECH_COMPACT_COMPILE_THREADS": "2",
+      "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000",
+      "MECH_COMPACT_REGION_REGISTER_OUTPUTS": "1",
+      "MECH_COMPACT_PHASE_BLOCK_LAYOUT": "mech_compact_numeric_475_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_475_vector.json;mech_compact_numeric_3956_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_3956_vector.json",
+      "MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA": "1",
+      "MECH_COMPACT_SHARE_COLD_TAILS": "1",
+      "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+      "MECH_COMPACT_BRANCH_ON_ZERO": "1"
+    },
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/screen/control/compiled",
+      "compact"
+    ],
+    "identity": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "029718fbdb5802fe5a176458c04d5408f2d785756d507b5be86024fba9bc1a5d",
+      "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "root_code_bytes": 51240,
+    "root_extent_bytes": 51248,
+    "stack_bytes": 3728,
+    "encoder_text_bytes": 71752,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      }
+    ]
+  },
+  "defaulted-word-read": {
+    "selected_instances": [
+      {
+        "entry": 2847,
+        "exit": 2851,
+        "origin_base": 2873,
+        "block_ids": [
+          2847,
+          2848,
+          2849,
+          2850,
+          2853,
+          17829,
+          2854,
+          17832,
+          2855,
+          2852,
+          17868,
+          17867,
+          2858,
+          17871,
+          2859,
+          2856
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          2846
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3012,
+        "exit": 3016,
+        "origin_base": 3042,
+        "block_ids": [
+          3012,
+          3013,
+          3014,
+          3015,
+          3018,
+          18607,
+          3019,
+          18610,
+          3020,
+          3017,
+          18657,
+          18656,
+          3023,
+          18660,
+          3024,
+          3021
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3011
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3033,
+        "exit": 3037,
+        "origin_base": 3064,
+        "block_ids": [
+          3033,
+          3034,
+          3035,
+          3036,
+          3039,
+          18682,
+          3040,
+          18685,
+          3041,
+          3038,
+          18732,
+          18731,
+          3044,
+          18735,
+          3045,
+          3042
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3032
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3055,
+        "exit": 3059,
+        "origin_base": 3087,
+        "block_ids": [
+          3055,
+          3056,
+          3057,
+          3058,
+          3061,
+          18758,
+          3062,
+          18761,
+          3063,
+          3060,
+          18808,
+          18807,
+          3066,
+          18811,
+          3067,
+          3064
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3054
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3125,
+        "exit": 3129,
+        "origin_base": 3159,
+        "block_ids": [
+          3125,
+          3126,
+          3127,
+          3128,
+          3131,
+          18944,
+          3132,
+          18947,
+          3133,
+          3130,
+          18994,
+          18993,
+          3136,
+          18997,
+          3137,
+          3134
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3124
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3170,
+        "exit": 3174,
+        "origin_base": 3205,
+        "block_ids": [
+          3170,
+          3171,
+          3172,
+          3173,
+          3176,
+          19085,
+          3177,
+          19088,
+          3178,
+          3175,
+          19135,
+          19134,
+          3181,
+          19138,
+          3182,
+          3179
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3169
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3189,
+        "exit": 3193,
+        "origin_base": 3225,
+        "block_ids": [
+          3189,
+          3190,
+          3191,
+          3192,
+          3195,
+          19158,
+          3196,
+          19161,
+          3197,
+          3194,
+          19208,
+          19207,
+          3200,
+          19211,
+          3201,
+          3198
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3188
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3232,
+        "exit": 3236,
+        "origin_base": 3269,
+        "block_ids": [
+          3232,
+          3233,
+          3234,
+          3235,
+          3238,
+          19299,
+          3239,
+          19302,
+          3240,
+          3237,
+          19349,
+          19348,
+          3243,
+          19352,
+          3244,
+          3241
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3231
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3521,
+        "exit": 3525,
+        "origin_base": 3564,
+        "block_ids": [
+          3521,
+          3522,
+          3523,
+          3524,
+          3527,
+          20360,
+          3528,
+          20363,
+          3529,
+          3526,
+          20410,
+          20409,
+          3532,
+          20413,
+          3533,
+          3530
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3520
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3570,
+        "exit": 3574,
+        "origin_base": 3614,
+        "block_ids": [
+          3570,
+          3571,
+          3572,
+          3573,
+          3576,
+          20515,
+          3577,
+          20518,
+          3578,
+          3575,
+          20565,
+          20564,
+          3581,
+          20568,
+          3582,
+          3579
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3569
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3851,
+        "exit": 3855,
+        "origin_base": 3904,
+        "block_ids": [
+          3851,
+          3852,
+          3853,
+          3854,
+          3857,
+          21725,
+          3858,
+          21728,
+          3859,
+          3856,
+          21775,
+          21774,
+          3862,
+          21778,
+          3863,
+          3860
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3850
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 3948,
+        "exit": 3952,
+        "origin_base": 4004,
+        "block_ids": [
+          3948,
+          3949,
+          3950,
+          3951,
+          3954,
+          22176,
+          3955,
+          22179,
+          3956,
+          3953,
+          22226,
+          22225,
+          3959,
+          22229,
+          3960,
+          3957
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          3947
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4142,
+        "exit": 4146,
+        "origin_base": 4203,
+        "block_ids": [
+          4142,
+          4143,
+          4144,
+          4145,
+          4148,
+          23140,
+          4149,
+          23143,
+          4150,
+          4147,
+          23190,
+          23189,
+          4153,
+          23193,
+          4154,
+          4151
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4141
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4164,
+        "exit": 4168,
+        "origin_base": 4226,
+        "block_ids": [
+          4164,
+          4165,
+          4166,
+          4167,
+          4170,
+          23217,
+          4171,
+          23220,
+          4172,
+          4169,
+          23267,
+          23266,
+          4175,
+          23270,
+          4176,
+          4173
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4163
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4185,
+        "exit": 4189,
+        "origin_base": 4248,
+        "block_ids": [
+          4185,
+          4186,
+          4187,
+          4188,
+          4191,
+          23292,
+          4192,
+          23295,
+          4193,
+          4190,
+          23342,
+          23341,
+          4196,
+          23345,
+          4197,
+          4194
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4184
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4206,
+        "exit": 4210,
+        "origin_base": 4270,
+        "block_ids": [
+          4206,
+          4207,
+          4208,
+          4209,
+          4212,
+          23368,
+          4213,
+          23371,
+          4214,
+          4211,
+          23418,
+          23417,
+          4217,
+          23421,
+          4218,
+          4215
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4205
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4327,
+        "exit": 4331,
+        "origin_base": 4392,
+        "block_ids": [
+          4327,
+          4328,
+          4329,
+          4330,
+          4333,
+          23914,
+          4334,
+          23917,
+          4335,
+          4332,
+          23964,
+          23963,
+          4338,
+          23967,
+          4339,
+          4336
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4326
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4392,
+        "exit": 4396,
+        "origin_base": 4458,
+        "block_ids": [
+          4392,
+          4393,
+          4394,
+          4395,
+          4398,
+          24185,
+          4399,
+          24188,
+          4400,
+          4397,
+          24235,
+          24234,
+          4403,
+          24238,
+          4404,
+          4401
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4391
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4434,
+        "exit": 4438,
+        "origin_base": 4502,
+        "block_ids": [
+          4434,
+          4435,
+          4436,
+          4437,
+          4440,
+          24353,
+          4441,
+          24356,
+          4442,
+          4439,
+          24403,
+          24402,
+          4445,
+          24406,
+          4446,
+          4443
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4433
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4455,
+        "exit": 4459,
+        "origin_base": 4524,
+        "block_ids": [
+          4455,
+          4456,
+          4457,
+          4458,
+          4461,
+          24428,
+          4462,
+          24431,
+          4463,
+          4460,
+          24478,
+          24477,
+          4466,
+          24481,
+          4467,
+          4464
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4454
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4664,
+        "exit": 4668,
+        "origin_base": 4741,
+        "block_ids": [
+          4664,
+          4665,
+          4666,
+          4667,
+          4670,
+          25315,
+          4671,
+          25318,
+          4672,
+          4669,
+          25369,
+          25368,
+          4675,
+          25372,
+          4676,
+          4673
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4663
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4750,
+        "exit": 4754,
+        "origin_base": 4829,
+        "block_ids": [
+          4750,
+          4751,
+          4752,
+          4753,
+          4756,
+          25694,
+          4757,
+          25697,
+          4758,
+          4755,
+          25744,
+          25743,
+          4761,
+          25747,
+          4762,
+          4759
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4749
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4827,
+        "exit": 4831,
+        "origin_base": 4909,
+        "block_ids": [
+          4827,
+          4828,
+          4829,
+          4830,
+          4833,
+          25990,
+          4834,
+          25993,
+          4835,
+          4832,
+          26040,
+          26039,
+          4838,
+          26043,
+          4839,
+          4836
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4826
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4861,
+        "exit": 4865,
+        "origin_base": 4944,
+        "block_ids": [
+          4861,
+          4862,
+          4863,
+          4864,
+          4867,
+          26124,
+          4868,
+          26127,
+          4869,
+          4866,
+          26174,
+          26173,
+          4872,
+          26177,
+          4873,
+          4870
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4860
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 4998,
+        "exit": 5002,
+        "origin_base": 5085,
+        "block_ids": [
+          4998,
+          4999,
+          5000,
+          5001,
+          5004,
+          26756,
+          5005,
+          26759,
+          5006,
+          5003,
+          26806,
+          26805,
+          5009,
+          26809,
+          5010,
+          5007
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          4997
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5053,
+        "exit": 5057,
+        "origin_base": 5142,
+        "block_ids": [
+          5053,
+          5054,
+          5055,
+          5056,
+          5059,
+          26974,
+          5060,
+          26977,
+          5061,
+          5058,
+          27024,
+          27023,
+          5064,
+          27027,
+          5065,
+          5062
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5052
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5157,
+        "exit": 5161,
+        "origin_base": 5248,
+        "block_ids": [
+          5157,
+          5158,
+          5159,
+          5160,
+          5163,
+          27427,
+          5164,
+          27430,
+          5165,
+          5162,
+          27481,
+          27480,
+          5168,
+          27484,
+          5169,
+          5166
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5156
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5213,
+        "exit": 5217,
+        "origin_base": 5306,
+        "block_ids": [
+          5213,
+          5214,
+          5215,
+          5216,
+          5219,
+          27644,
+          5220,
+          27647,
+          5221,
+          5218,
+          27697,
+          27696,
+          5224,
+          27700,
+          5225,
+          5222
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5212
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5316,
+        "exit": 5320,
+        "origin_base": 5410,
+        "block_ids": [
+          5316,
+          5317,
+          5318,
+          5319,
+          5322,
+          28085,
+          5323,
+          28088,
+          5324,
+          5321,
+          28139,
+          28138,
+          5327,
+          28142,
+          5328,
+          5325
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5315
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5454,
+        "exit": 5458,
+        "origin_base": 5551,
+        "block_ids": [
+          5454,
+          5455,
+          5456,
+          5457,
+          5460,
+          28703,
+          5461,
+          28706,
+          5462,
+          5459,
+          28754,
+          28753,
+          5465,
+          28757,
+          5466,
+          5463
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5453
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5585,
+        "exit": 5589,
+        "origin_base": 5685,
+        "block_ids": [
+          5585,
+          5586,
+          5587,
+          5588,
+          5591,
+          29269,
+          5592,
+          29272,
+          5593,
+          5590,
+          29319,
+          29318,
+          5596,
+          29322,
+          5597,
+          5594
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5584
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5613,
+        "exit": 5617,
+        "origin_base": 5714,
+        "block_ids": [
+          5613,
+          5614,
+          5615,
+          5616,
+          5619,
+          29391,
+          5620,
+          29394,
+          5621,
+          5618,
+          29441,
+          29440,
+          5624,
+          29444,
+          5625,
+          5622
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5612
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5726,
+        "exit": 5730,
+        "origin_base": 5831,
+        "block_ids": [
+          5726,
+          5727,
+          5728,
+          5729,
+          5732,
+          29864,
+          5733,
+          29867,
+          5734,
+          5731,
+          29914,
+          29913,
+          5737,
+          29917,
+          5738,
+          5735
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5725
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5830,
+        "exit": 5834,
+        "origin_base": 5937,
+        "block_ids": [
+          5830,
+          5831,
+          5832,
+          5833,
+          5836,
+          30352,
+          5837,
+          30355,
+          5838,
+          5835,
+          30402,
+          30401,
+          5841,
+          30405,
+          5842,
+          5839
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5829
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5936,
+        "exit": 5940,
+        "origin_base": 6045,
+        "block_ids": [
+          5936,
+          5937,
+          5938,
+          5939,
+          5942,
+          30860,
+          5943,
+          30863,
+          5944,
+          5941,
+          30911,
+          30910,
+          5947,
+          30914,
+          5948,
+          5945
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5935
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 5955,
+        "exit": 5959,
+        "origin_base": 6065,
+        "block_ids": [
+          5955,
+          5956,
+          5957,
+          5958,
+          5961,
+          30934,
+          5962,
+          30937,
+          5963,
+          5960,
+          30985,
+          30984,
+          5966,
+          30988,
+          5967,
+          5964
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          5954
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 6575,
+        "exit": 6579,
+        "origin_base": 6694,
+        "block_ids": [
+          6575,
+          6576,
+          6577,
+          6578,
+          6581,
+          33579,
+          6582,
+          33582,
+          6583,
+          6580,
+          33626,
+          33625,
+          6586,
+          33629,
+          6587,
+          6584
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          6574
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7024,
+        "exit": 7028,
+        "origin_base": 7149,
+        "block_ids": [
+          7024,
+          7025,
+          7026,
+          7027,
+          7030,
+          35434,
+          7031,
+          35437,
+          7032,
+          7029,
+          35469,
+          35468,
+          7035,
+          35472,
+          7036,
+          7033
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7023
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7108,
+        "exit": 7112,
+        "origin_base": 7236,
+        "block_ids": [
+          7108,
+          7109,
+          7110,
+          7111,
+          7114,
+          35726,
+          7115,
+          35729,
+          7116,
+          7113,
+          35765,
+          35764,
+          7119,
+          35768,
+          7120,
+          7117
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7107
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7188,
+        "exit": 7192,
+        "origin_base": 7318,
+        "block_ids": [
+          7188,
+          7189,
+          7190,
+          7191,
+          7194,
+          35999,
+          7195,
+          36002,
+          7196,
+          7193,
+          36034,
+          36033,
+          7199,
+          36037,
+          7200,
+          7197
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7187
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7209,
+        "exit": 7213,
+        "origin_base": 7340,
+        "block_ids": [
+          7209,
+          7210,
+          7211,
+          7212,
+          7215,
+          36059,
+          7216,
+          36062,
+          7217,
+          7214,
+          36094,
+          36093,
+          7220,
+          36097,
+          7221,
+          7218
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7208
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7384,
+        "exit": 7388,
+        "origin_base": 7518,
+        "block_ids": [
+          7384,
+          7385,
+          7386,
+          7387,
+          7390,
+          36686,
+          7391,
+          36689,
+          7392,
+          7389,
+          36725,
+          36724,
+          7395,
+          36728,
+          7396,
+          7393
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7383
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7408,
+        "exit": 7412,
+        "origin_base": 7543,
+        "block_ids": [
+          7408,
+          7409,
+          7410,
+          7411,
+          7414,
+          36753,
+          7415,
+          36756,
+          7416,
+          7413,
+          36792,
+          36791,
+          7419,
+          36795,
+          7420,
+          7417
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7407
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7436,
+        "exit": 7440,
+        "origin_base": 7572,
+        "block_ids": [
+          7436,
+          7437,
+          7438,
+          7439,
+          7442,
+          36824,
+          7443,
+          36827,
+          7444,
+          7441,
+          36863,
+          36862,
+          7447,
+          36866,
+          7448,
+          7445
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7435
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7463,
+        "exit": 7467,
+        "origin_base": 7600,
+        "block_ids": [
+          7463,
+          7464,
+          7465,
+          7466,
+          7469,
+          36894,
+          7470,
+          36897,
+          7471,
+          7468,
+          36933,
+          36932,
+          7474,
+          36936,
+          7475,
+          7472
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7462
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7543,
+        "exit": 7547,
+        "origin_base": 7683,
+        "block_ids": [
+          7543,
+          7544,
+          7545,
+          7546,
+          7549,
+          37135,
+          7550,
+          37138,
+          7551,
+          7548,
+          37173,
+          37172,
+          7554,
+          37176,
+          7555,
+          7552
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7542
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7625,
+        "exit": 7629,
+        "origin_base": 7767,
+        "block_ids": [
+          7625,
+          7626,
+          7627,
+          7628,
+          7631,
+          37370,
+          7632,
+          37373,
+          7633,
+          7630,
+          37409,
+          37408,
+          7636,
+          37412,
+          7637,
+          7634
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7624
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7651,
+        "exit": 7655,
+        "origin_base": 7794,
+        "block_ids": [
+          7651,
+          7652,
+          7653,
+          7654,
+          7657,
+          37439,
+          7658,
+          37442,
+          7659,
+          7656,
+          37478,
+          37477,
+          7662,
+          37481,
+          7663,
+          7660
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7650
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7673,
+        "exit": 7677,
+        "origin_base": 7817,
+        "block_ids": [
+          7673,
+          7674,
+          7675,
+          7676,
+          7679,
+          37504,
+          7680,
+          37507,
+          7681,
+          7678,
+          37543,
+          37542,
+          7684,
+          37546,
+          7685,
+          7682
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7672
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7727,
+        "exit": 7731,
+        "origin_base": 7872,
+        "block_ids": [
+          7727,
+          7728,
+          7729,
+          7730,
+          7733,
+          37633,
+          7734,
+          37636,
+          7735,
+          7732,
+          37672,
+          37671,
+          7738,
+          37675,
+          7739,
+          7736
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7726
+        ],
+        "cold_blocks": 1
+      },
+      {
+        "entry": 7755,
+        "exit": 7759,
+        "origin_base": 7901,
+        "block_ids": [
+          7755,
+          7756,
+          7757,
+          7758,
+          7761,
+          37704,
+          7762,
+          37707,
+          7763,
+          7760,
+          37743,
+          37742,
+          7766,
+          37746,
+          7767,
+          7764
+        ],
+        "instructions": 27,
+        "entry_predecessors": [
+          7754
+        ],
+        "cold_blocks": 1
+      }
+    ],
+    "original_instances": 51,
+    "output": {
+      "flags": {
+        "MECH_PRIVATE_INDEXED_CHAINS": "1",
+        "MECH_PHASE_OWNER_TRANSFER": "1",
+        "MECH_PHASE_VECTOR_FAST": "1",
+        "MECH_PRIVATE_READ_INTERVALS": "1",
+        "MECH_PHASE_INVARIANT_VIEWS": "1",
+        "MECH_CURRENT_PREDICATES": "1",
+        "MECH_PRIVATE_NESTED_PHASES": "1",
+        "MECH_PHASE_ASSERTION_FLOORS": "1",
+        "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+        "MECH_WIDE_ANY_BITS": "1",
+        "MECH_WHOLE_PHASE_CAPACITY": "1",
+        "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+        "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+        "MECH_REUSE_SHIFTED_EQUALITY": "1",
+        "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+        "MECH_CHECKED_APPEND_RUN": "1",
+        "MECH_NARROW_MASKED_ARITHMETIC": "1",
+        "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+        "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+        "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+        "MECH_ORDERED_CAPTURE_SPANS": "1",
+        "MECH_REUSE_EQUALITY_PREFIX": "1",
+        "MECH_ADJACENT_ADDRESSES": "1",
+        "MECH_WIDENING_REDUCTION": "1",
+        "MECH_SHARE_REPEATED_BOUNDS": "1",
+        "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+        "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+        "MECH_PROVE_SCALAR_SPANS": "1",
+        "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+        "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+        "MECH_NARROW_ORDERED_ITEM": "1",
+        "MECH_REUSE_SELECTED_READ_BOUND": "1",
+        "MECH_REVERSE_REDUCTION_CURSOR": "1",
+        "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+        "MECH_GROUP_PACKED_HISTOGRAM": "1",
+        "MECH_REDUCTION_COUNTDOWN": "1",
+        "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+        "MECH_FIRST_PACKED_REVERSE_READ": "1",
+        "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+        "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+        "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+        "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+        "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+        "MECH_SHARE_CLAMP_DECISIONS": "1",
+        "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+        "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+        "MECH_PREFETCH_PRIVATE_WRITES": "1",
+        "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+        "MECH_BORROW_COMPACT_READ_COPIES": "1",
+        "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+        "MECH_PROVE_PACKED_BASE_SPANS": "1",
+        "MECH_PAIR_CHECKED_APPENDS": "1",
+        "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+        "MECH_CARRY_REDUCTION_BOUND": "1",
+        "MECH_TERMINAL_BYTE_APPENDS": "1",
+        "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+        "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+        "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+        "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+        "MECH_ARM64_SUBTRACT_BRANCH": "1",
+        "MECH_COMPACT_REUSE_OVERWRITTEN_RESULT": "1",
+        "MECH_COMPACT_DIRECT_RUNTIME_CALLS": "allocation-and-byte-appends",
+        "MECH_COMPACT_PACK_LARGE_REFUSALS": "1",
+        "MECH_COMPACT_LAYOUT_REGIONS_LAST": "1",
+        "MECH_COMPACT_PREPARE_LAYOUT_REGION_IR": "1",
+        "MECH_COMPACT_ORDER_REGION_CAPTURES": "1",
+        "MECH_COMPACT_BIND_REGION_LITERALS": "1",
+        "MECH_COMPACT_SHARE_PHASE_RELOCATIONS": "1",
+        "MECH_COMPACT_BIND_REGION_INPUT_ROLES": "1",
+        "MECH_COMPACT_FORWARD_VIEW_GEOMETRY": "1",
+        "MECH_COMPACT_VECTOR_FACTS": "1",
+        "MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN": "1",
+        "MECH_COMPACT_ALIGN_REGION_OUTPUTS": "1",
+        "MECH_COMPACT_FOLD_UNIT_BRANCHES": "1",
+        "MECH_COMPACT_PAD_REGION_OUTPUTS": "1",
+        "MECH_COMPACT_SHARE_OWNER_RETIREMENT": "all",
+        "MECH_COMPACT_BIND_REFUSAL_LITERALS": "retry",
+        "MECH_COMPACT_PREPARE_REFUSAL_IR": "1",
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "16",
+        "MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST": "1",
+        "MECH_COMPACT_PAIR_WORDS": "all",
+        "MECH_COMPACT_PAIR_STACK_WORDS": "1",
+        "MECH_COMPACT_ROOT_PROOFS": "all",
+        "MECH_COMPACT_SHARE_COLD_EPILOGUES": "1",
+        "MECH_COMPACT_SHARE_CHECKED_TRAVERSALS": "all",
+        "MECH_COMPACT_SHARE_CONTROLLER_WINDOWS": "2184:2267,2388:2463,2599:2674,2314:2382,2685:2753,31:97",
+        "MECH_COMPACT_REFUSE_GENERAL_VECTORS": "475",
+        "MECH_COMPACT_SHARE_MATRIX_WORDS": "1",
+        "MECH_COMPACT_PACK_WRITABLE_STORAGE": "1",
+        "MECH_COMPACT_GROUP_RETIREMENTS": "1",
+        "MECH_COMPACT_REGISTER_BACKING": "1",
+        "MECH_COMPACT_SHARE_STATIC_ERROR_STATUS": "1",
+        "MECH_PACK_PRIVATE_HALFWORD_STORES": "1",
+        "MECH_COMPACT_FOLD_CHECKED_ADDS": "1",
+        "MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS": "7924:38293:8064,4936:26390:5013,4877:26199:4952,4796:25856:4868,4684:25398:4753,4347:23993:4404,4262:23588:4318,4250:23517:4306,4020:22497:4070,3880:21853:3925,2716:17358:2731,2713:17340:2728,2633:17036:2647,2631:17020:2645,2424:16259:2436,2422:16243:2434,2349:15958:2360,2346:15940:2357,2085:15099:2094,2050:14995:2059,2011:14879:2020,1991:14817:2000,1245:12406:1250,861:11248:862",
+        "MECH_COMPACT_TRIM_RETIREMENTS": "1",
+        "MECH_COMPACT_SHARE_CAPACITY_GROWTH": "preserve",
+        "MECH_COMPACT_FUSE_WRITABLE_GROWTH": "byte-registers",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "direct",
+        "MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2": "4",
+        "MECH_COMPACT_COALESCE_PARALLEL_PHIS": "1",
+        "MECH_COMPACT_ROOT_FLOW_PASSES": "equal,identity",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS": "preselected",
+        "MECH_COMPACT_INLINE_SYMBOLS": "mech_compact_numeric_4879,mech_compact_numeric_4673_vector",
+        "MECH_COMPACT_LITERAL_EDGE_ARGUMENTS": "fold",
+        "MECH_COMPACT_FORWARD_SPILL_RELOADS": "1",
+        "MECH_COMPACT_COMPILE_THREADS": "2",
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;2847:2851:2873,3012:3016:3042,3033:3037:3064,3055:3059:3087,3125:3129:3159,3170:3174:3205,3189:3193:3225,3232:3236:3269,3521:3525:3564,3570:3574:3614,3851:3855:3904,3948:3952:4004,4142:4146:4203,4164:4168:4226,4185:4189:4248,4206:4210:4270,4327:4331:4392,4392:4396:4458,4434:4438:4502,4455:4459:4524,4664:4668:4741,4750:4754:4829,4827:4831:4909,4861:4865:4944,4998:5002:5085,5053:5057:5142,5157:5161:5248,5213:5217:5306,5316:5320:5410,5454:5458:5551,5585:5589:5685,5613:5617:5714,5726:5730:5831,5830:5834:5937,5936:5940:6045,5955:5959:6065,6575:6579:6694,7024:7028:7149,7108:7112:7236,7188:7192:7318,7209:7213:7340,7384:7388:7518,7408:7412:7543,7436:7440:7572,7463:7467:7600,7543:7547:7683,7625:7629:7767,7651:7655:7794,7673:7677:7817,7727:7731:7872,7755:7759:7901",
+        "MECH_COMPACT_REGION_REGISTER_OUTPUTS": "1",
+        "MECH_COMPACT_PHASE_BLOCK_LAYOUT": "mech_compact_numeric_475_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_475_vector.json;mech_compact_numeric_3956_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_3956_vector.json",
+        "MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA": "1",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1",
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+        "MECH_COMPACT_BRANCH_ON_ZERO": "1"
+      },
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/screen/defaulted-word-read/compiled",
+        "compact"
+      ],
+      "identity": {
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "program.o": "9f40ad355980b941dfd15da9137766ec341d68b9c5dec90c11daebdbfe81450d",
+        "metadata.json": "eaf76beac332c5f3b61671b4412d75477f3a49db80fdbeeb2c3524bb01bb9d67"
+      },
+      "root_code_bytes": 51860,
+      "root_extent_bytes": 51872,
+      "stack_bytes": 3792,
+      "encoder_text_bytes": 72544,
+      "checked_continuations": [
+        {
+          "code_bytes": 324,
+          "headers": [
+            9112,
+            18836
+          ],
+          "input_words": 7,
+          "register_output_words": 2,
+          "stack_bytes": 48
+        },
+        {
+          "code_bytes": 320,
+          "headers": [
+            9562,
+            10073,
+            20752,
+            22297
+          ],
+          "input_words": 7,
+          "register_output_words": 2,
+          "stack_bytes": 48
+        },
+        {
+          "code_bytes": 296,
+          "headers": [
+            21031,
+            22580
+          ],
+          "input_words": 6,
+          "register_output_words": 2,
+          "stack_bytes": 48
+        },
+        {
+          "code_bytes": 648,
+          "headers": [
+            44070,
+            44405,
+            46040,
+            46259
+          ],
+          "input_words": 8,
+          "register_output_words": 5,
+          "stack_bytes": 80
+        },
+        {
+          "code_bytes": 80,
+          "headers": [
+            11070,
+            11744,
+            11793,
+            12973,
+            13084,
+            13539,
+            15411,
+            15874,
+            15978
+          ],
+          "input_words": 3,
+          "literal_inputs": [
+            [
+              320
+            ],
+            [
+              320
+            ],
+            [
+              320
+            ],
+            [
+              17
+            ],
+            [
+              17
+            ],
+            [
+              19
+            ],
+            [
+              320
+            ],
+            [
+              291
+            ],
+            [
+              291
+            ]
+          ],
+          "register_output_words": 1,
+          "stack_bytes": 16
+        },
+        {
+          "code_bytes": 80,
+          "headers": [
+            11235,
+            11256,
+            11278,
+            11348,
+            11393,
+            11412,
+            11455,
+            12074,
+            12171,
+            12365,
+            12387,
+            12408,
+            12429,
+            12550,
+            12615,
+            12657,
+            12678,
+            12887,
+            13050,
+            13221,
+            13276,
+            13380,
+            13436,
+            13677,
+            13808,
+            13836,
+            13949,
+            14053,
+            14159,
+            14178,
+            14798,
+            15247,
+            15331,
+            15432,
+            15607,
+            15631,
+            15659,
+            15686,
+            15766,
+            15848,
+            15896,
+            15950
+          ],
+          "input_words": 3,
+          "register_output_words": 1,
+          "stack_bytes": 16
+        }
+      ]
+    }
+  },
+  "general-byte-read": {
+    "selected_instances": [
+      {
+        "entry": 380,
+        "exit": 393,
+        "origin_base": 385,
+        "block_ids": [
+          380,
+          381,
+          382,
+          385,
+          384,
+          386,
+          391,
+          9659,
+          9658,
+          392,
+          387,
+          383,
+          9661,
+          9660,
+          9663,
+          9662,
+          388,
+          389
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          9626
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 956,
+        "exit": 969,
+        "origin_base": 964,
+        "block_ids": [
+          956,
+          957,
+          958,
+          961,
+          960,
+          962,
+          967,
+          11619,
+          11618,
+          968,
+          963,
+          959,
+          11621,
+          11620,
+          11623,
+          11622,
+          964,
+          965
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          955
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 970,
+        "exit": 983,
+        "origin_base": 978,
+        "block_ids": [
+          970,
+          971,
+          972,
+          975,
+          974,
+          976,
+          981,
+          11662,
+          11661,
+          982,
+          977,
+          973,
+          11664,
+          11663,
+          11666,
+          11665,
+          978,
+          979
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          969
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1036,
+        "exit": 1049,
+        "origin_base": 1046,
+        "block_ids": [
+          1036,
+          1037,
+          1038,
+          1041,
+          1040,
+          1042,
+          1047,
+          11894,
+          11893,
+          1048,
+          1043,
+          1039,
+          11896,
+          11895,
+          11898,
+          11897,
+          1044,
+          1045
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1035
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1050,
+        "exit": 1063,
+        "origin_base": 1060,
+        "block_ids": [
+          1050,
+          1051,
+          1052,
+          1055,
+          1054,
+          1056,
+          1061,
+          11937,
+          11936,
+          1062,
+          1057,
+          1053,
+          11939,
+          11938,
+          11941,
+          11940,
+          1058,
+          1059
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1049
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1289,
+        "exit": 1302,
+        "origin_base": 1300,
+        "block_ids": [
+          1289,
+          1290,
+          1291,
+          1294,
+          1293,
+          1295,
+          1300,
+          12620,
+          12619,
+          1301,
+          1296,
+          1292,
+          12622,
+          12621,
+          12624,
+          12623,
+          1297,
+          1298
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1288
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1303,
+        "exit": 1316,
+        "origin_base": 1314,
+        "block_ids": [
+          1303,
+          1304,
+          1305,
+          1308,
+          1307,
+          1309,
+          1314,
+          12663,
+          12662,
+          1315,
+          1310,
+          1306,
+          12665,
+          12664,
+          12667,
+          12666,
+          1311,
+          1312
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1302
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1491,
+        "exit": 1504,
+        "origin_base": 1503,
+        "block_ids": [
+          1491,
+          1492,
+          1493,
+          1496,
+          1495,
+          1497,
+          1502,
+          13262,
+          13261,
+          1503,
+          1498,
+          1494,
+          13264,
+          13263,
+          13266,
+          13265,
+          1499,
+          1500
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1490
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1505,
+        "exit": 1518,
+        "origin_base": 1517,
+        "block_ids": [
+          1505,
+          1506,
+          1507,
+          1510,
+          1509,
+          1511,
+          1516,
+          13305,
+          13304,
+          1517,
+          1512,
+          1508,
+          13307,
+          13306,
+          13309,
+          13308,
+          1513,
+          1514
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1504
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1580,
+        "exit": 1593,
+        "origin_base": 1594,
+        "block_ids": [
+          1580,
+          1581,
+          1582,
+          1585,
+          1584,
+          1586,
+          1591,
+          13571,
+          13570,
+          1592,
+          1587,
+          1583,
+          13573,
+          13572,
+          13575,
+          13574,
+          1588,
+          1589
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1579
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1594,
+        "exit": 1607,
+        "origin_base": 1608,
+        "block_ids": [
+          1594,
+          1595,
+          1596,
+          1599,
+          1598,
+          1600,
+          1605,
+          13614,
+          13613,
+          1606,
+          1601,
+          1597,
+          13616,
+          13615,
+          13618,
+          13617,
+          1602,
+          1603
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1593
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1800,
+        "exit": 1813,
+        "origin_base": 1815,
+        "block_ids": [
+          1800,
+          1801,
+          1802,
+          1805,
+          1804,
+          1806,
+          1811,
+          14169,
+          14168,
+          1812,
+          1807,
+          1803,
+          14171,
+          14170,
+          14173,
+          14172,
+          1808,
+          1809
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1799
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 1814,
+        "exit": 1827,
+        "origin_base": 1829,
+        "block_ids": [
+          1814,
+          1815,
+          1816,
+          1819,
+          1818,
+          1820,
+          1825,
+          14212,
+          14211,
+          1826,
+          1821,
+          1817,
+          14214,
+          14213,
+          14216,
+          14215,
+          1822,
+          1823
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          1813
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 2016,
+        "exit": 2029,
+        "origin_base": 2031,
+        "block_ids": [
+          2016,
+          2017,
+          2018,
+          2021,
+          2020,
+          2022,
+          2027,
+          14923,
+          14922,
+          2028,
+          2023,
+          2019,
+          14925,
+          14924,
+          14927,
+          14926,
+          2024,
+          2025
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          2015
+        ],
+        "cold_blocks": 2
+      },
+      {
+        "entry": 2066,
+        "exit": 2079,
+        "origin_base": 2081,
+        "block_ids": [
+          2066,
+          2067,
+          2068,
+          2071,
+          2070,
+          2072,
+          2077,
+          15070,
+          15069,
+          2078,
+          2073,
+          2069,
+          15072,
+          15071,
+          15074,
+          15073,
+          2074,
+          2075
+        ],
+        "instructions": 39,
+        "entry_predecessors": [
+          2065
+        ],
+        "cold_blocks": 2
+      }
+    ],
+    "original_instances": 15,
+    "output": {
+      "flags": {
+        "MECH_PRIVATE_INDEXED_CHAINS": "1",
+        "MECH_PHASE_OWNER_TRANSFER": "1",
+        "MECH_PHASE_VECTOR_FAST": "1",
+        "MECH_PRIVATE_READ_INTERVALS": "1",
+        "MECH_PHASE_INVARIANT_VIEWS": "1",
+        "MECH_CURRENT_PREDICATES": "1",
+        "MECH_PRIVATE_NESTED_PHASES": "1",
+        "MECH_PHASE_ASSERTION_FLOORS": "1",
+        "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+        "MECH_WIDE_ANY_BITS": "1",
+        "MECH_WHOLE_PHASE_CAPACITY": "1",
+        "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+        "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+        "MECH_REUSE_SHIFTED_EQUALITY": "1",
+        "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+        "MECH_CHECKED_APPEND_RUN": "1",
+        "MECH_NARROW_MASKED_ARITHMETIC": "1",
+        "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+        "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+        "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+        "MECH_ORDERED_CAPTURE_SPANS": "1",
+        "MECH_REUSE_EQUALITY_PREFIX": "1",
+        "MECH_ADJACENT_ADDRESSES": "1",
+        "MECH_WIDENING_REDUCTION": "1",
+        "MECH_SHARE_REPEATED_BOUNDS": "1",
+        "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+        "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+        "MECH_PROVE_SCALAR_SPANS": "1",
+        "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+        "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+        "MECH_NARROW_ORDERED_ITEM": "1",
+        "MECH_REUSE_SELECTED_READ_BOUND": "1",
+        "MECH_REVERSE_REDUCTION_CURSOR": "1",
+        "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+        "MECH_GROUP_PACKED_HISTOGRAM": "1",
+        "MECH_REDUCTION_COUNTDOWN": "1",
+        "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+        "MECH_FIRST_PACKED_REVERSE_READ": "1",
+        "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+        "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+        "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+        "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+        "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+        "MECH_SHARE_CLAMP_DECISIONS": "1",
+        "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+        "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+        "MECH_PREFETCH_PRIVATE_WRITES": "1",
+        "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+        "MECH_BORROW_COMPACT_READ_COPIES": "1",
+        "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+        "MECH_PROVE_PACKED_BASE_SPANS": "1",
+        "MECH_PAIR_CHECKED_APPENDS": "1",
+        "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+        "MECH_CARRY_REDUCTION_BOUND": "1",
+        "MECH_TERMINAL_BYTE_APPENDS": "1",
+        "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+        "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+        "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+        "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+        "MECH_ARM64_SUBTRACT_BRANCH": "1",
+        "MECH_COMPACT_REUSE_OVERWRITTEN_RESULT": "1",
+        "MECH_COMPACT_DIRECT_RUNTIME_CALLS": "allocation-and-byte-appends",
+        "MECH_COMPACT_PACK_LARGE_REFUSALS": "1",
+        "MECH_COMPACT_LAYOUT_REGIONS_LAST": "1",
+        "MECH_COMPACT_PREPARE_LAYOUT_REGION_IR": "1",
+        "MECH_COMPACT_ORDER_REGION_CAPTURES": "1",
+        "MECH_COMPACT_BIND_REGION_LITERALS": "1",
+        "MECH_COMPACT_SHARE_PHASE_RELOCATIONS": "1",
+        "MECH_COMPACT_BIND_REGION_INPUT_ROLES": "1",
+        "MECH_COMPACT_FORWARD_VIEW_GEOMETRY": "1",
+        "MECH_COMPACT_VECTOR_FACTS": "1",
+        "MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN": "1",
+        "MECH_COMPACT_ALIGN_REGION_OUTPUTS": "1",
+        "MECH_COMPACT_FOLD_UNIT_BRANCHES": "1",
+        "MECH_COMPACT_PAD_REGION_OUTPUTS": "1",
+        "MECH_COMPACT_SHARE_OWNER_RETIREMENT": "all",
+        "MECH_COMPACT_BIND_REFUSAL_LITERALS": "retry",
+        "MECH_COMPACT_PREPARE_REFUSAL_IR": "1",
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "16",
+        "MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST": "1",
+        "MECH_COMPACT_PAIR_WORDS": "all",
+        "MECH_COMPACT_PAIR_STACK_WORDS": "1",
+        "MECH_COMPACT_ROOT_PROOFS": "all",
+        "MECH_COMPACT_SHARE_COLD_EPILOGUES": "1",
+        "MECH_COMPACT_SHARE_CHECKED_TRAVERSALS": "all",
+        "MECH_COMPACT_SHARE_CONTROLLER_WINDOWS": "2184:2267,2388:2463,2599:2674,2314:2382,2685:2753,31:97",
+        "MECH_COMPACT_REFUSE_GENERAL_VECTORS": "475",
+        "MECH_COMPACT_SHARE_MATRIX_WORDS": "1",
+        "MECH_COMPACT_PACK_WRITABLE_STORAGE": "1",
+        "MECH_COMPACT_GROUP_RETIREMENTS": "1",
+        "MECH_COMPACT_REGISTER_BACKING": "1",
+        "MECH_COMPACT_SHARE_STATIC_ERROR_STATUS": "1",
+        "MECH_PACK_PRIVATE_HALFWORD_STORES": "1",
+        "MECH_COMPACT_FOLD_CHECKED_ADDS": "1",
+        "MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS": "7924:38293:8064,4936:26390:5013,4877:26199:4952,4796:25856:4868,4684:25398:4753,4347:23993:4404,4262:23588:4318,4250:23517:4306,4020:22497:4070,3880:21853:3925,2716:17358:2731,2713:17340:2728,2633:17036:2647,2631:17020:2645,2424:16259:2436,2422:16243:2434,2349:15958:2360,2346:15940:2357,2085:15099:2094,2050:14995:2059,2011:14879:2020,1991:14817:2000,1245:12406:1250,861:11248:862",
+        "MECH_COMPACT_TRIM_RETIREMENTS": "1",
+        "MECH_COMPACT_SHARE_CAPACITY_GROWTH": "preserve",
+        "MECH_COMPACT_FUSE_WRITABLE_GROWTH": "byte-registers",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "direct",
+        "MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2": "4",
+        "MECH_COMPACT_COALESCE_PARALLEL_PHIS": "1",
+        "MECH_COMPACT_ROOT_FLOW_PASSES": "equal,identity",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS": "preselected",
+        "MECH_COMPACT_INLINE_SYMBOLS": "mech_compact_numeric_4879,mech_compact_numeric_4673_vector",
+        "MECH_COMPACT_LITERAL_EDGE_ARGUMENTS": "fold",
+        "MECH_COMPACT_FORWARD_SPILL_RELOADS": "1",
+        "MECH_COMPACT_COMPILE_THREADS": "2",
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;380:393:385,956:969:964,970:983:978,1036:1049:1046,1050:1063:1060,1289:1302:1300,1303:1316:1314,1491:1504:1503,1505:1518:1517,1580:1593:1594,1594:1607:1608,1800:1813:1815,1814:1827:1829,2016:2029:2031,2066:2079:2081",
+        "MECH_COMPACT_REGION_REGISTER_OUTPUTS": "1",
+        "MECH_COMPACT_PHASE_BLOCK_LAYOUT": "mech_compact_numeric_475_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_475_vector.json;mech_compact_numeric_3956_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_3956_vector.json",
+        "MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA": "1",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1",
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+        "MECH_COMPACT_BRANCH_ON_ZERO": "1"
+      },
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/screen/general-byte-read/compiled",
+        "compact"
+      ],
+      "identity": {
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "program.o": "1ba5b62ab2f54deaa2b34ea1d97a635458a09dd981e471789e6bd94fedd15460",
+        "metadata.json": "bb1e9dcde194691d6f70f584a64f1e90ffcfd4ece9513fe7745df3156484acf9"
+      },
+      "root_code_bytes": 50740,
+      "root_extent_bytes": 50752,
+      "stack_bytes": 3776,
+      "encoder_text_bytes": 71420,
+      "checked_continuations": [
+        {
+          "code_bytes": 324,
+          "headers": [
+            9112,
+            18836
+          ],
+          "input_words": 7,
+          "register_output_words": 2,
+          "stack_bytes": 48
+        },
+        {
+          "code_bytes": 320,
+          "headers": [
+            9562,
+            10073,
+            20752,
+            22297
+          ],
+          "input_words": 7,
+          "register_output_words": 2,
+          "stack_bytes": 48
+        },
+        {
+          "code_bytes": 296,
+          "headers": [
+            21031,
+            22580
+          ],
+          "input_words": 6,
+          "register_output_words": 2,
+          "stack_bytes": 48
+        },
+        {
+          "code_bytes": 648,
+          "headers": [
+            44070,
+            44405,
+            46040,
+            46259
+          ],
+          "input_words": 8,
+          "register_output_words": 5,
+          "stack_bytes": 80
+        },
+        {
+          "code_bytes": 156,
+          "headers": [
+            8603,
+            9179,
+            9193,
+            9259,
+            9273,
+            9512,
+            9526,
+            9714,
+            9728,
+            9803,
+            9817,
+            10023,
+            10037,
+            10239,
+            10289
+          ],
+          "input_words": 5,
+          "register_output_words": 1,
+          "stack_bytes": 16
+        }
+      ]
+    }
+  }
+}
