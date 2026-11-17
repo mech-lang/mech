@@ -190,6 +190,13 @@ impl<T: Measured> RetainedSequence<T> {
     pub(crate) fn len(&self) -> usize {
         self.root.as_ref().map_or(0, |node| node.len())
     }
+    #[inline]
+    pub(crate) fn single(&self) -> Option<&T> {
+        match self.root.as_deref() {
+            Some(Node::Leaf(value)) => Some(value),
+            _ => None,
+        }
+    }
     pub(crate) fn get(&self, index: usize) -> Option<&T> {
         self.root.as_ref()?.get(index)
     }
