@@ -1,0 +1,36 @@
+{
+  "compiler_source": "70802f65fe4b4e5c2331d8db551d93451acb0ddc",
+  "measured_program": {
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056",
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "events": 718353,
+    "parser_steps": 3967302
+  },
+  "scope": "Two separate opt-level-3 standalone parser diagnostics on Apple M1. The production parser was left intact.",
+  "unmodified_parser_phase_medians_from_diagnostic_seconds": {
+    "grammar": 2.5645892295,
+    "finalization-and-cache": 9.667e-06,
+    "final-tree": 6.875e-07,
+    "diagnostics": 1.6650000000000002e-07,
+    "snapshot-index": 0.0352907915,
+    "restart-index": 0.0022212079999999997
+  },
+  "within_grammar_cache_counters_with_timing_instrumentation": {
+    "queue-requests": {
+      "seconds": 0.037230508499999995,
+      "calls": 1414476.0
+    },
+    "advance-cache": {
+      "seconds": 0.5065045695,
+      "calls": 499404.0
+    }
+  },
+  "nested_profile_wall_time_seconds": {
+    "control": 2.6067807295,
+    "instrumented": 2.6767524165000003
+  },
+  "interpretation": "The grammar entry includes cache work performed before completion. The nested cache timers increase total time and the cache cost is part of, rather than additional to, the grammar span. Restart indexing is a small part of this workload.",
+  "next_measurement": "Distinguish cache requests whose completed nodes are published and reused from requests whose allocations are discarded. Preserve event, token and node identities and finite work accounting in any candidate.",
+  "raw_stage_trials": "parser-stages.json",
+  "raw_cache_trials": "parser-cache-stages.json"
+}
