@@ -1753,6 +1753,19 @@ impl<'a> Verifier<'a> {
         cfg: &ControlFlowGraph,
         errors: &mut VerifierErrors,
     ) -> VerifierStepResult {
+        // The CFG stores successors by block and predecessors by instruction.
+        // Equal ordered edges prove equal sets without allocating per block.
+        // Keep the set comparison for mismatches and their diagnostics.
+        if self.func.layout.blocks().all(|block| {
+            self.expected_cfg.succ_iter(block).eq(cfg.succ_iter(block))
+                && self
+                    .expected_cfg
+                    .pred_iter(block)
+                    .map(|edge| edge.inst)
+                    .eq(cfg.pred_iter(block).map(|edge| edge.inst))
+        }) {
+            return errors.as_result();
+        }
         let mut expected_succs = BTreeSet::<Block>::new();
         let mut got_succs = BTreeSet::<Block>::new();
         let mut expected_preds = BTreeSet::<Inst>::new();
