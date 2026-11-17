@@ -80,6 +80,16 @@ recorded 81/81 and 61/81 scores in each full order. Parsing still takes
 2.108 s and native emission 1.518 s.
 [Exact inputs, profiles and output identities](evidence/direct-source/README.md)
 
+## Reusable parser cache frames
+
+Each parser keeps the frame allocation for its active subtree sink and
+reuses it after that request completes. On the benchmark source, frame
+stack growth drops from 706,474 to one. Matched Apple M1 source through
+final link improves from **4.01608 to 3.95160 seconds** and reproduces
+the exact **71,768-byte** encoder and linked timing worker. Both full
+runtime orders on that worker recorded **81/81 Roc and 61/81 libdeflate**.
+[Checks, build trials, and reproduction](evidence/parser-cache-frames/README.md)
+
 ## Optimized compiler builds
 
 On this M1 the same 71,960-byte encoder builds in **4.76479 s**
