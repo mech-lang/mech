@@ -1,10 +1,40 @@
 # PR #993 current status
 
-The benchmark evidence is at review head `dae46c686703560230150a93f36c44c4978ffdc7`,
+The deployment comparison uses compiler source `3819f8850ee17e12ed09659d22c48d9181ef4451`.
+The measurement evidence is published through `f68f93c66e14b8f227bf4a9d1df16d99a59f9b1d` on PR #993,
 stacked on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
-GitHub's integration commit for that head is `ee91fed7880010209c0b166258b4d661b028bf13`.
-The matched build and runtime host is Apple M1, macOS 15.6.1, arm64.
+The host is Apple M1, macOS 15.6.1, arm64.
 [Machine-readable measurements and per-case changes](scorecard.json)
+
+## Current matched deployment build
+
+The eight balanced comparisons use prebuilt compilers and fixed host support.
+Peer executables use the same CLI, allocator, target, and strip rules.
+
+| Measurement | Mech | Roc | libdeflate |
+| --- | ---: | ---: | ---: |
+| Source through final link | 3.13566 s | 2.98380 s | 0.48054 s |
+| Source through strip | 3.14623 s | 2.99426 s | 0.49110 s |
+| Generated encoder text | 71,768 B | 57,696 B | 37,080 B |
+| Stripped deployment file | 292,576 B | 191,920 B | 155,760 B |
+| Compiler peak RSS | 395,493,376 B | 397,230,080 B | 71,532,544 B |
+
+The parser replay reduces the paired complete build by
+**15.39%**. Median Mech time through final link
+falls from **3.70961 s** to
+**3.13566 s**, or **1.052× Roc** and
+**6.530× libdeflate** on paired link-inclusive timing.
+Encoder text is **1.244× Roc** and **1.935× libdeflate**.
+The worker, bytecode, encoder object and complete metadata reproduce exactly.
+The normalized timing output name changes the signing record by eight bytes.
+[Matched compiler timings and identity checks](evidence/scoped-definition-replay/README.md)
+· [Common deployment link](evidence/alloc-only-deployment/README.md)
+
+Parsing takes 1.315 s, source semantics 0.227 s,
+native preparation through object generation 1.464 s,
+and catalog initialization 0.059 s. Artifact construction,
+encoding, fixed deployment link, and process overhead account for about
+0.070 s, including the 34.1 ms link. Phase values are medians.
 
 ## Which build to use
 
@@ -13,7 +43,7 @@ The matched build and runtime host is Apple M1, macOS 15.6.1, arm64.
 | Historical rebuild default | 72,520 B | `rebuild.py --variant baseline`, compiler opt level 1 |
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
 | Latest fully timed size candidate | 71,288 B | Shared owner exchange rejected by the v2 runtime gate |
-| Current compiler investigations | — | Structural parser replay and native work attribution |
+| Current compiler source | **71,768 B** | Guarded structural replay and shared native facts owner |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
@@ -24,7 +54,11 @@ python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuil
 The fixed object is `7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b`.
 [Exact recipe and build receipts](evidence/refused-general-ssa/README.md)
 
-## Measurements
+## Earlier build with the benchmark host
+
+These measurements are pinned to the earlier evidence revision `dae46c686703560230150a93f36c44c4978ffdc7`.
+They include the original benchmark executable and its larger host support.
+[Earlier source-through-link comparison](evidence/refused-general-ssa/README.md)
 
 | Benchmark dimension | Fixed Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
@@ -34,27 +68,6 @@ The fixed object is `7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a4
 | Linked executable text | 474,692 B | 150,416 B | 129,900 B |
 | Benchmark executable file | 956,056 B | 230,600 B | 210,168 B |
 | Compiler peak RSS | 401,498,112 B | 395,739,136 B | 71,499,776 B |
-| Stripped deployment file | 292,576 B | 191,920 B | 155,760 B |
-
-The benchmark build spends 1.89649 s parsing and 1.46648 s in native
-emission. The experimental deployment link uses the same encoder and a Rust
-`core` and `alloc` host. Peer links use the same C driver, mimalloc, target
-and strip rules. Generated text, linked text, file bytes, and RSS have
-separate measurement boundaries. [Matched builds](evidence/refused-general-ssa/README.md)
-· [Common deployment](evidence/minimal-deployment/README.md)
-
-| Latest matched deployment build | Mech | Roc | libdeflate |
-| --- | ---: | ---: | ---: |
-| Source through final link | **3.13566 s** | 2.98380 s | 0.48054 s |
-| Source through strip | 3.14623 s | 2.99426 s | 0.49110 s |
-| Compiler peak RSS | 395,493,376 B | 397,230,080 B | 71,532,544 B |
-
-The guarded replay improves paired complete build time by 15.39%
-with the fixed Mech deployment link and exact encoder. In the same runs Mech
-takes 1.052× Roc and 6.530× libdeflate through final link.
-The normalized output name changes the ad hoc signing record by eight bytes.
-[Latest compiler comparison](evidence/scoped-definition-replay/README.md)
-· [Earlier deployment-host comparison](evidence/alloc-only-deployment/README.md)
 
 The fixed worker's measured private payload peak is 10,548,878 B. Its
 checked root frame is 3,728 B and the full measured stack high-water is
@@ -76,19 +89,20 @@ diagnostics have separate entries in the scorecard. The latest candidate
 loses `random-1024` and gains `320-overlap` in reverse.
 [Complete v2 candidate evidence](evidence/owner-exchange-71288-v2/README.md)
 
-CI remains open. The journal file/directory collision has been repaired locally and all syntax
-unit tests pass. The Related Posts producer binding remains open.
+The journal module layout is repaired and all syntax unit tests pass. The
+Related Posts after-4 binding has static proof and awaits compiled validation.
+[Checked after-4 binding](evidence/related-post-linked-binding/checked-after-4/README.md)
 The optimized compact path is diagnostic. Finite admission, cumulative
 accounting and recovery under the ordinary entry remain required. The bounded control-drift check recovered all four affected periodic wins in
 both orders. The earlier transient's cause remains open.
 [Fixed-worker sentinel diagnostic](evidence/fixed-reference-drift/README.md)
-[CI at the recorded integration commit](https://github.com/mech-lang/mech/actions/runs/44100619431)
+[CI for the measured source and evidence](https://github.com/mech-lang/mech/actions/runs/44118007456)
 · [Related Posts binding audit](evidence/related-post-linked-binding/README.md)
 
 ## Active work
 
-- **Parser.** Measure the repeated winner execution in BestChoice and choose
-  one expensive structural family for a conservative replay summary. Preserve
+- **Parser.** The guarded first structural summary replays the winning
+  variable definition under exact resource and context checks. Preserve
   event order and fresh IDs, diagnostics and recovery, longest-match and tie
   behavior, finite grants, streaming and segmented/UTF-8 cases. Recheck the
   parser after the replay change before allocating a tree project.
@@ -102,10 +116,8 @@ both orders. The earlier transient's cause remains open.
   [Published source and complete build comparisons](evidence/scoped-definition-replay/README.md)
 - **Native compiler.** Attribute plan/semantic preparation, lazy facts,
   SSA construction, cleanup, Cranelift and worker waits separately. Share
-  one immutable facts owner across read packing and branch analysis first.
-  Prototype demanded scalar payload fields only with a bounded fixed point
-  and the original all-fields fallback. Keep phase choices and publication
-  order exact while separating selection from body construction.
+  one immutable facts owner across read packing and branch analysis. Keep
+  phase choices and publication order exact when omitting a body.
   [First matched source change](evidence/shared-program-facts/README.md)
   The exclusive trace measures 0.692 s in CFG cleanup and 0.280 s in SSA
   construction. The facts change removes one graph and 11 definition
@@ -114,14 +126,10 @@ both orders. The earlier transient's cause remains open.
   chain exposes about 3.2 ms of CFG and dominator recomputation. Park both
   narrow changes and inspect the next exact-choice omitted-body case. [Scoped native diagnoses](evidence/checked-root-work/README.md)
   [Exclusive native cost and raw traces](evidence/native-exclusive-work/README.md)
-- **Integration and qualification.** Finish the Related Posts producer
-  binding and run the bounded control-drift diagnostic before any new full
-  promotion campaign. The archived reference has a v2 runtime Retain decision.
-
-The measured build spends 1.896 s parsing, 0.233 s in source semantics,
-1.466 s on native preparation through object, and 0.063 s in catalog
-construction. Artifact, encode, link and remaining work total about
-0.079 s. Use these proportions to prioritize the next experiment.
+- **Integration and qualification.** Compile and test the checked Related
+  Posts producer binding. The 24-block control-drift diagnostic recovers the
+  four affected peer wins in both orders. The archived reference has a v2
+  runtime Retain decision.
 
 Initial diagnosis is bounded to roughly 60–90 minutes and the first
 implementation to half a day. Park a direction after two flat or adverse
@@ -136,6 +144,6 @@ the portfolio after two experiments or a substantial decision.
 | Unchanged stale-root batching | A distinct mechanism can account for the prior size and random-data costs |
 | Equivalent-vector or cached-join follow-ups | An exclusive elapsed-time profile shows materially removable work |
 | Rescreening the smaller historical objects | A specific source change can recover its measured peer losses |
-| Parser implementation after the current exclusive profile | A slot opens and measured removable work justifies the build-time effect |
+| Additional parser replay families | The post-change profile identifies enough repeated work and conservative admission coverage |
 | Wider Related Posts historical probes | The checked producer route is available and each archive identity can be preserved |
 | Scorer lowering and table-slot partition selection | A runtime slot reopens after the compiler investigation, with the separate source and causal ablation ready. [Partition evidence](evidence/match-cache-partition-cause/README.md) |
