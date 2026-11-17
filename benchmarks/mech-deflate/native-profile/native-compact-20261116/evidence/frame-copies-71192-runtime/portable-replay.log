@@ -1,0 +1,15 @@
+Recorded v1 runtime decision: Reject
+prefix-periodic-16384: established slowdown above the 0.5% resolution
+source-frame-copies-71192-full-forward: libdeflate floor 61 missed (control 57, candidate 57)
+empty: combined and individual run bounds conflict: source-frame-copies-71192-full-forward
+seven-stored-prefix: regression bound or duplicate-control repeatability unresolved
+random-64: regression bound or duplicate-control repeatability unresolved
+heldout-slides-65537: regression bound or duplicate-control repeatability unresolved
+prefix-natural-131072: regression bound or duplicate-control repeatability unresolved
+prefix-random-1024: regression bound or duplicate-control repeatability unresolved
+prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved
+prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved
+prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved
+prefix-repeated-32768: regression bound or duplicate-control repeatability unresolved
+prefix-repeated-32769: regression bound or duplicate-control repeatability unresolved
+Baseline drift diagnostic matches exact archived inputs

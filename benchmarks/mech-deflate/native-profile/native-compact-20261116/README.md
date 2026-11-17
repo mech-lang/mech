@@ -20,6 +20,14 @@ the exact timed worker and emits **71,768 B**, or **1.244× Roc** and
 and **61/81 libdeflate** wins.
 [Compiler comparison and reproduction](evidence/native-graph-work/README.md)
 
+The opt-in frame-copy variant emits **71,192 B**, or **1.234× Roc** and
+**1.920× libdeflate**. Its two full orders preserve every individual
+control win. They record **81/81 Roc** in both orders and **57/81 and
+61/81 libdeflate**. The validator rejects this campaign on the 16 KiB
+periodic case. The exact 71,768-byte control also varies from its previous
+full orders, recording 57 and 60 libdeflate wins in this comparison.
+[Complete orders and replay](evidence/frame-copies-71192-runtime/README.md)
+
 The current opt-in **71,768-byte** Cranelift encoder uses
 **1.244× Roc** and **1.935× libdeflate** text. Single-piece source
 access brings the matched Apple M1 build through the final link to
