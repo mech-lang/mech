@@ -19319,6 +19319,11 @@
       "bytes": 15266
     },
     {
+      "path": "vendor/cranelift-codegen/src/settings.rs",
+      "sha256": "6308129b598742518eafa1f4146b762bd60429af55fd7fe4d790ff61df9009ba",
+      "bytes": 18045
+    },
+    {
       "path": "vendor/cranelift-codegen/src/verifier/mod.rs",
       "sha256": "9c12e88bf4cbbc00e764b1c5826a1ac5ba9e0095e45cea29ee0c235addddd89d",
       "bytes": 82733
