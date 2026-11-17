@@ -1380,11 +1380,15 @@ def assert_fullscreen_accessibility():
         fail(f"fullscreen workspace splits did not adapt to viewport pressure: {responsive!r}")
 
     evaluate("document.querySelector('[data-mech-console-fullscreen]')?.click()")
+    # The controller restores the docked state before the browser finishes
+    # exiting native fullscreen. The next resize check needs docked geometry.
     wait_for(
+        "document.fullscreenElement === null && "
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'docked' && "
         "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed') === 'false' && "
         "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-label') === 'Enter fullscreen workspace' && "
         "document.querySelectorAll('[data-mech-console-panel]:not([hidden])').length === 1",
-        "the fullscreen control restoring its accessible inactive state",
+        "the browser and console restoring the accessible docked state",
     )
 
 
