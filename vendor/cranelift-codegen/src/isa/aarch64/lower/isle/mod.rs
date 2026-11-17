@@ -714,6 +714,25 @@ impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
         CondBrKind::Cond(*cond)
     }
 
+    fn zero_comparison_branch(&mut self, cc: &IntCC, ty: Type) -> Option<bool> {
+        if !self.lower_ctx.f.aarch64_branch_on_zero || !matches!(ty, I32 | I64) {
+            return None;
+        }
+        match cc {
+            IntCC::Equal | IntCC::UnsignedLessThanOrEqual => Some(true),
+            IntCC::NotEqual | IntCC::UnsignedGreaterThan => Some(false),
+            _ => None,
+        }
+    }
+
+    fn reg_zero_branch(&mut self, zero: bool, reg: Reg, size: &OperandSize) -> CondBrKind {
+        if zero {
+            CondBrKind::Zero(reg, *size)
+        } else {
+            CondBrKind::NotZero(reg, *size)
+        }
+    }
+
     fn nzcv(&mut self, n: bool, z: bool, c: bool, v: bool) -> NZCV {
         NZCV::new(n, z, c, v)
     }
