@@ -370,10 +370,8 @@ fn optimize_ordered(
         if controls.enabled(OptimizationPass::EarlyIdentities) {
             report.neutral_operations_removed += fold_identities(&mut context.func);
         }
-        context.compute_cfg();
-        context.compute_domtree();
         context
-            .prune_unreachable_and_remove_constant_phis(isa)
+            .compute_flowgraph_and_cleanup(isa)
             .map_err(backend)?;
         if early_boolean_conditions {
             finish_boolean_conditions(controls, context, &mut report);
@@ -390,10 +388,8 @@ fn optimize_ordered(
     // inputs. Repeating that exact sweep cannot expose another branch. Only a
     // final fold at the round limit leaves changed edges requiring cleanup.
     if !report.fixed_point {
-        context.compute_cfg();
-        context.compute_domtree();
         context
-            .prune_unreachable_and_remove_constant_phis(isa)
+            .compute_flowgraph_and_cleanup(isa)
             .map_err(backend)?;
     }
     report.local_phi_preheaders =
@@ -410,20 +406,16 @@ fn optimize_ordered(
         report.boolean_phi_values,
     ) = selected_ranges::fold(&mut context.func, &context.cfg, &context.domtree);
     if report.selected_range_branches_removed != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
         context
-            .prune_unreachable_and_remove_constant_phis(isa)
+            .compute_flowgraph_and_cleanup(isa)
             .map_err(backend)?;
     }
     if controls.enabled(OptimizationPass::ProvedWordWidths) {
         report.known_width_branches_removed =
             known_widths::fold(&mut context.func, &context.cfg, &context.domtree);
         if report.known_width_branches_removed != 0 {
-            context.compute_cfg();
-            context.compute_domtree();
             context
-                .prune_unreachable_and_remove_constant_phis(isa)
+                .compute_flowgraph_and_cleanup(isa)
                 .map_err(backend)?;
         }
     }
@@ -510,10 +502,8 @@ pub(in crate::native_artifact) fn reuse_dominating_window_facts(
     let replaced =
         current_predicates::relations::fold(&mut context.func, &context.cfg, &context.domtree);
     if replaced != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
         context
-            .prune_unreachable_and_remove_constant_phis(isa)
+            .compute_flowgraph_and_cleanup(isa)
             .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
@@ -563,10 +553,8 @@ pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
         context.func.dfg.resolve_all_aliases();
         let branches = fold(&mut context.func);
         if branches != 0 {
-            context.compute_cfg();
-            context.compute_domtree();
             context
-                .prune_unreachable_and_remove_constant_phis(isa)
+                .compute_flowgraph_and_cleanup(isa)
                 .map_err(backend)?;
             if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("constant branches after equal argument coalescing: {branches}");
@@ -672,10 +660,8 @@ fn fold_scalar_span_guards(
         source,
     );
     if replaced != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
         context
-            .prune_unreachable_and_remove_constant_phis(isa)
+            .compute_flowgraph_and_cleanup(isa)
             .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
@@ -930,10 +916,8 @@ pub(in crate::native_artifact) fn share_repeated_bounds(
     context.compute_domtree();
     let changed = repeated_bounds::fold(&mut context.func, &context.domtree);
     if changed != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
         context
-            .prune_unreachable_and_remove_constant_phis(isa)
+            .compute_flowgraph_and_cleanup(isa)
             .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
