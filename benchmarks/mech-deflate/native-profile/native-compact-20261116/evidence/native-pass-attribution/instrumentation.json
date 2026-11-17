@@ -1,0 +1,85 @@
+{
+  "source": "7a0b3127ce2ec163d3989f706b7ab819901ec0c2",
+  "wrapped_sites": {
+    "mod.rs": {},
+    "compiler.rs": {
+      "session": 1
+    },
+    "compact/emit.rs": {
+      "actions": 0,
+      "flow": 2,
+      "owners": 1,
+      "guards": 1,
+      "word-packs": 1,
+      "phases": 1,
+      "layout": 0,
+      "word-kernels": 1,
+      "capacity-calls": 1,
+      "layouts": 1,
+      "cfg_cleanup": 15,
+      "bit_counts": 2,
+      "unsigned_guard_facts": 1,
+      "vector_guard_facts": 2,
+      "checked_traversals": 5,
+      "checked_region_discovery": 4,
+      "constant_folds": 0,
+      "owner_counts": 1,
+      "backing_owners": 1,
+      "word_pairs": 2,
+      "cold_status": 1,
+      "owner_retirement": 2,
+      "scalar_selects": 1,
+      "analysis.cfg": 1,
+      "analysis.flowgraph": 12,
+      "analysis.verify": 18,
+      "analysis.prune": 5,
+      "analysis.phi": 1,
+      "analysis.prune-phi": 1
+    },
+    "compact/flow.rs": {
+      "scopes": 2
+    },
+    "codegen/cfg_cleanup/mod.rs": {
+      "early-identities": 1,
+      "constant-branches": 3,
+      "count-ir": 3,
+      "aliases": 24,
+      "local-phis": 1,
+      "preheaders": 1,
+      "selected-ranges": 1,
+      "unsigned-intervals": 1,
+      "proved-widths": 2,
+      "demand-liveness": 1,
+      "identity-routes": 1,
+      "equal-arguments": 1,
+      "parallel-arguments": 1,
+      "literal-arguments": 1,
+      "loop-edges": 1,
+      "boolean-conditions": 1,
+      "analysis.cfg": 25,
+      "analysis.dominators": 23,
+      "analysis.flowgraph": 4,
+      "analysis.verify": 16,
+      "analysis.prune": 2,
+      "analysis.phi": 2,
+      "analysis.prune-phi": 8
+    },
+    "prepare/mod.rs": {
+      "((?:\\w+::)+derive(?:_with_frontiers)?)\\(": 25,
+      "((?:\\w+::)+control_visits)\\(": 2,
+      "(facts\\.(?:scalar_aggregates|buffer_frame_owner_layouts|unsigned_buffer_calls|text_line_retention_frontiers))\\(": 4,
+      "(plan\\.(?:validate_current_visits|string_map_regions))\\(": 2,
+      "(compose_work|prepare_frame_composition|prepare_native_program_library_call_with_descriptors)\\(": 7
+    }
+  },
+  "patch_sha256": "146188e20c7aa1083d87cac7f4f869a5e01943ca333e790d98b5cfd0184d1307",
+  "temporary_source": {
+    "hosts/gpu/src/native_artifact/program/mod.rs": "a1c7c3a38d6ea807b0dd6bb0e1f88708ef2e13ca0106254894d3a21e93dc4d3c",
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "4abad4d9e5426a837d79fe36e712b2a34fa1e43c7679c5e10f1db4ecff2cd539",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "6c4b87b251f356f911b0e0b839c703bee2ab4c3135f5d3f05f33a3e6dd9c1b2f",
+    "hosts/gpu/src/native_artifact/program/compact/flow.rs": "3a0f88767737c8a555f962906c9fafecaf162e41d4ea10fc68e36f68fe0613b2",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "51b8375f4c43349042a65fb4a9c1de445068db834f89bacbf3d6faa32713babe",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "6a2a4b065d390f93879f371b337862caa58f49c7fb5bcf414b92259079721d19",
+    "hosts/gpu/src/native_artifact/program/attribution.rs": "0569ef0ed49287c6d4abacd6af79fe6d19e81e9a1d1c0a592b0598d2b68aed27"
+  }
+}

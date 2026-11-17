@@ -1,0 +1,56 @@
+{
+  "plan_sha256": "fad1fdf469aae5da6337eea705da493d4b693a4304533edd3fffcfd7539246ce",
+  "warmup_s": {
+    "control": 0.919687834,
+    "expected": 0.91322875,
+    "candidate": 0.852860833
+  },
+  "trials_s": [
+    {
+      "control": 0.9183515,
+      "expected": 0.876322875,
+      "candidate": 0.811758
+    },
+    {
+      "control": 0.918097209,
+      "candidate": 0.811355792,
+      "expected": 0.877715541
+    },
+    {
+      "expected": 0.875859709,
+      "control": 0.917790292,
+      "candidate": 0.812292958
+    },
+    {
+      "expected": 0.876456875,
+      "candidate": 0.812838625,
+      "control": 0.917750834
+    },
+    {
+      "candidate": 0.812168959,
+      "control": 0.918063709,
+      "expected": 0.875827917
+    },
+    {
+      "candidate": 0.822112375,
+      "expected": 0.875072333,
+      "control": 0.923111416
+    }
+  ],
+  "median_s": {
+    "control": 0.918080459,
+    "expected": 0.8760912919999999,
+    "candidate": 0.8122309585
+  },
+  "pair_ratio": {
+    "expected": 0.9542741272797555,
+    "candidate": 0.8848535725685158
+  },
+  "exact_parse_report": {
+    "events": 718353,
+    "parser_steps": 3967302,
+    "source_bytes": 243209,
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+  }
+}

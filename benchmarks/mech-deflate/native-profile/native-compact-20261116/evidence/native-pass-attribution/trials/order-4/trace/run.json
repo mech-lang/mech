@@ -1,0 +1,1022 @@
+{
+  "wall_s": 2.901486833114177,
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/native-pass-attribution/compiler/compile_profile",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/native-pass-attribution/observed/order-4/trace/compile",
+    "compact"
+  ],
+  "phases": [
+    {
+      "phase": "parse",
+      "seconds": 0.914998584,
+      "total_seconds": 0.915036208
+    },
+    {
+      "phase": "catalog",
+      "seconds": 0.059314708,
+      "total_seconds": 0.974448625
+    },
+    {
+      "phase": "frontend",
+      "seconds": 0.227174834,
+      "total_seconds": 1.201702417
+    },
+    {
+      "phase": "artifact",
+      "seconds": 0.007008083,
+      "total_seconds": 1.208799667
+    },
+    {
+      "phase": "encode",
+      "seconds": 0.002548125,
+      "total_seconds": 1.22262925
+    },
+    {
+      "phase": "native",
+      "seconds": 1.66248975,
+      "total_seconds": 2.887202833
+    }
+  ],
+  "artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "spans": {
+    "native": {
+      "native": [
+        1421476958,
+        1697584,
+        1
+      ],
+      "prepare.lower_native_program_artifact_with_definition_table_limit": [
+        17638125,
+        17638125,
+        1
+      ],
+      "prepare.PreparedNativeProgram::prepare": [
+        141688458,
+        1980313,
+        1
+      ],
+      "prepare.plan.validate_current_visits": [
+        3436208,
+        3436208,
+        1
+      ],
+      "prepare.facts.scalar_aggregates": [
+        610792,
+        610792,
+        1
+      ],
+      "prepare.facts.buffer_frame_owner_layouts": [
+        13898667,
+        13898667,
+        1
+      ],
+      "prepare.native::program::prepare::parallel::Layout::derive": [
+        3601667,
+        3601667,
+        1
+      ],
+      "prepare.RetirementTables::derive": [
+        47000,
+        47000,
+        1
+      ],
+      "prepare.native::program::prepare::borrowed::Layout::derive": [
+        384375,
+        384375,
+        1
+      ],
+      "prepare.plan.string_map_regions": [
+        625,
+        625,
+        1
+      ],
+      "prepare.facts.unsigned_buffer_calls": [
+        534791,
+        534791,
+        1
+      ],
+      "prepare.native::program::prepare::selected_join::Layout::derive": [
+        3930125,
+        3930125,
+        1
+      ],
+      "prepare.native::program::prepare::line_matrix::Layout::derive": [
+        17625,
+        17625,
+        1
+      ],
+      "prepare.utf8_reads::Layout::derive": [
+        4338167,
+        4338167,
+        1
+      ],
+      "prepare.numeric_maps::Layout::derive": [
+        4075375,
+        4075375,
+        1
+      ],
+      "prepare.native::iteration_abi::control_visits": [
+        1637834,
+        1637834,
+        2
+      ],
+      "prepare.compose_work": [
+        150125,
+        150125,
+        5
+      ],
+      "prepare.facts.text_line_retention_frontiers": [
+        13916,
+        13916,
+        1
+      ],
+      "prepare.native::program::prepare::prefix::derive_with_frontiers": [
+        1417,
+        1417,
+        1
+      ],
+      "prepare.prepare_native_program_library_call_with_descriptors": [
+        3202641,
+        3202641,
+        974
+      ],
+      "prepare.prepare_frame_composition": [
+        53500,
+        53500,
+        1
+      ],
+      "prepare.matrix_map_keys::Layout::derive": [
+        3584,
+        3584,
+        1
+      ],
+      "prepare.borrowed_map_keys::Layout::derive": [
+        250,
+        250,
+        1
+      ],
+      "prepare.generic_dictionary::Layout::derive": [
+        41,
+        41,
+        1
+      ],
+      "prepare.dictionary_seed_frames::Layout::derive": [
+        1167,
+        1167,
+        1
+      ],
+      "prepare.borrowed_dictionary_values::Layout::derive": [
+        3869417,
+        3869417,
+        1
+      ],
+      "prepare.fixed_key_loops::Layout::derive": [
+        125,
+        125,
+        1
+      ],
+      "prepare.native::program::prepare::tail::Layout::derive": [
+        88841667,
+        88841667,
+        1
+      ],
+      "prepare.native::program::prepare::map_admission::Layout::derive": [
+        1652625,
+        1652625,
+        1
+      ],
+      "prepare.frame_retirement::FrameRetirements::derive": [
+        31250,
+        31250,
+        1
+      ],
+      "prepare.cleanup_effects::Layout::derive": [
+        75334,
+        75334,
+        1
+      ],
+      "prepare.composition::Layout::derive": [
+        4773708,
+        4773708,
+        1
+      ],
+      "prepare.word_collections::derive": [
+        415500,
+        415500,
+        1
+      ],
+      "prepare.call_routes::derive": [
+        60709,
+        60709,
+        1
+      ],
+      "prepare.call_cache::Layout::derive": [
+        47209,
+        47209,
+        1
+      ],
+      "prepare.worker_values::derive": [
+        709,
+        709,
+        1
+      ],
+      "compact.define": [
+        1260452791,
+        1589541,
+        1
+      ],
+      "compact.flow": [
+        4643668,
+        668,
+        2
+      ],
+      "flow.derive-entry": [
+        4643000,
+        868917,
+        2
+      ],
+      "flow.initialization": [
+        3774083,
+        3774083,
+        2
+      ],
+      "compact.phases": [
+        243813875,
+        142863452,
+        1
+      ],
+      "cleanup.ordered": [
+        280869796,
+        55160,
+        88
+      ],
+      "cleanup.count-ir": [
+        3582029,
+        3582029,
+        206
+      ],
+      "cleanup.early-identities": [
+        7319866,
+        7319866,
+        114
+      ],
+      "analysis.cfg": [
+        15181005,
+        15181005,
+        530
+      ],
+      "analysis.dominators": [
+        27995793,
+        27995793,
+        524
+      ],
+      "analysis.prune-phi": [
+        188354251,
+        188354251,
+        158
+      ],
+      "cleanup.boolean-conditions": [
+        4444248,
+        4444248,
+        114
+      ],
+      "cleanup.constant-branches": [
+        12010665,
+        12010665,
+        116
+      ],
+      "cleanup.preheaders": [
+        536704,
+        536704,
+        88
+      ],
+      "cleanup.local-phis": [
+        21261958,
+        21261958,
+        88
+      ],
+      "cleanup.unsigned-intervals": [
+        1737375,
+        1737375,
+        88
+      ],
+      "cleanup.selected-ranges": [
+        23793875,
+        23793875,
+        88
+      ],
+      "cleanup.proved-widths": [
+        13545166,
+        13545166,
+        121
+      ],
+      "cleanup.demand-liveness": [
+        15729337,
+        15729337,
+        88
+      ],
+      "cleanup.after-ordered": [
+        243681667,
+        17350530,
+        30
+      ],
+      "cleanup.aliases": [
+        29028754,
+        29028754,
+        337
+      ],
+      "cleanup.loop-edges": [
+        29092126,
+        29092126,
+        32
+      ],
+      "analysis.verify": [
+        73943501,
+        73943501,
+        85
+      ],
+      "cleanup.identity-routes": [
+        43447541,
+        43447541,
+        33
+      ],
+      "cleanup.equal-arguments": [
+        254166,
+        254166,
+        4
+      ],
+      "compact.word-kernels": [
+        252208,
+        252208,
+        1
+      ],
+      "compact.entry": [
+        1012485833,
+        382172916,
+        1
+      ],
+      "compact.word-packs": [
+        1408458,
+        1408458,
+        1
+      ],
+      "compact.layouts": [
+        291,
+        291,
+        1
+      ],
+      "compact.owners": [
+        10656625,
+        10656625,
+        1
+      ],
+      "compact.guards": [
+        78002750,
+        78002750,
+        1
+      ],
+      "compact.checked_traversals.controller_candidates": [
+        2666,
+        2666,
+        1
+      ],
+      "compact.capacity-calls": [
+        4339459,
+        4339459,
+        1
+      ],
+      "analysis.flowgraph": [
+        10541041,
+        10541041,
+        12
+      ],
+      "analysis.prune": [
+        23893958,
+        23893958,
+        6
+      ],
+      "root.cleanup": [
+        513141708,
+        584045,
+        1
+      ],
+      "compact.bit_counts.optimize": [
+        368249,
+        368249,
+        2
+      ],
+      "compact.cfg_cleanup.optimize": [
+        278576583,
+        1249,
+        1
+      ],
+      "compact.cfg_cleanup.refine_current_predicates": [
+        7127834,
+        5365710,
+        1
+      ],
+      "compact.vector_guard_facts.fold": [
+        2067958,
+        2067958,
+        1
+      ],
+      "compact.vector_guard_facts.fold_unit_branches": [
+        1808708,
+        1808708,
+        1
+      ],
+      "compact.checked_traversals.share": [
+        7000,
+        7000,
+        1
+      ],
+      "compact.checked_traversals.share_controllers": [
+        23573875,
+        23573875,
+        2
+      ],
+      "compact.checked_region_discovery.families": [
+        7833,
+        7833,
+        2
+      ],
+      "compact.owner_retirement.share": [
+        895834,
+        895834,
+        1
+      ],
+      "compact.checked_traversals.share_continuations": [
+        9107750,
+        9107750,
+        1
+      ],
+      "compact.unsigned_guard_facts.optimize_with_ranges": [
+        5983875,
+        5983875,
+        1
+      ],
+      "compact.cfg_cleanup.share_repeated_bounds": [
+        1988584,
+        192375,
+        1
+      ],
+      "compact.cfg_cleanup.reuse_dominating_window_facts": [
+        9962667,
+        742042,
+        1
+      ],
+      "compact.cfg_cleanup.reuse_selected_read_bounds": [
+        13403000,
+        1471832,
+        1
+      ],
+      "compact.cfg_cleanup.prove_scalar_spans": [
+        2241416,
+        475291,
+        1
+      ],
+      "compact.cfg_cleanup.prove_packed_bases": [
+        1928250,
+        200584,
+        1
+      ],
+      "compact.cfg_cleanup.coalesce_equal_join_arguments": [
+        13009750,
+        1917,
+        1
+      ],
+      "compact.cfg_cleanup.forward_identity_routes": [
+        48461500,
+        707,
+        1
+      ],
+      "compact.cfg_cleanup.coalesce_literal_join_arguments": [
+        22892333,
+        135873,
+        1
+      ],
+      "cleanup.literal-arguments": [
+        230625,
+        230625,
+        1
+      ],
+      "analysis.phi": [
+        11722667,
+        11722667,
+        3
+      ],
+      "compact.cfg_cleanup.coalesce_parallel_join_arguments": [
+        8801750,
+        418,
+        1
+      ],
+      "cleanup.parallel-arguments": [
+        4013500,
+        4013500,
+        1
+      ],
+      "compact.owner_counts.fold": [
+        1065417,
+        1065417,
+        1
+      ],
+      "compact.backing_owners.fold": [
+        955000,
+        955000,
+        1
+      ],
+      "compact.owner_retirement.trim_empty_owners": [
+        162416,
+        162416,
+        1
+      ],
+      "compact.word_pairs.available": [
+        417,
+        417,
+        1
+      ],
+      "compact.word_pairs.fold": [
+        191333,
+        191333,
+        1
+      ],
+      "compact.cold_status.share": [
+        87208,
+        87208,
+        1
+      ]
+    },
+    "preparation": {
+      "prepare.PreparedNativeProgram::prepare": [
+        141688458,
+        1980313,
+        1
+      ],
+      "prepare.plan.validate_current_visits": [
+        3436208,
+        3436208,
+        1
+      ],
+      "prepare.facts.scalar_aggregates": [
+        610792,
+        610792,
+        1
+      ],
+      "prepare.facts.buffer_frame_owner_layouts": [
+        13898667,
+        13898667,
+        1
+      ],
+      "prepare.native::program::prepare::parallel::Layout::derive": [
+        3601667,
+        3601667,
+        1
+      ],
+      "prepare.RetirementTables::derive": [
+        47000,
+        47000,
+        1
+      ],
+      "prepare.native::program::prepare::borrowed::Layout::derive": [
+        384375,
+        384375,
+        1
+      ],
+      "prepare.plan.string_map_regions": [
+        625,
+        625,
+        1
+      ],
+      "prepare.facts.unsigned_buffer_calls": [
+        534791,
+        534791,
+        1
+      ],
+      "prepare.native::program::prepare::selected_join::Layout::derive": [
+        3930125,
+        3930125,
+        1
+      ],
+      "prepare.native::program::prepare::line_matrix::Layout::derive": [
+        17625,
+        17625,
+        1
+      ],
+      "prepare.utf8_reads::Layout::derive": [
+        4338167,
+        4338167,
+        1
+      ],
+      "prepare.numeric_maps::Layout::derive": [
+        4075375,
+        4075375,
+        1
+      ],
+      "prepare.native::iteration_abi::control_visits": [
+        1637834,
+        1637834,
+        2
+      ],
+      "prepare.compose_work": [
+        150125,
+        150125,
+        5
+      ],
+      "prepare.facts.text_line_retention_frontiers": [
+        13916,
+        13916,
+        1
+      ],
+      "prepare.native::program::prepare::prefix::derive_with_frontiers": [
+        1417,
+        1417,
+        1
+      ],
+      "prepare.prepare_native_program_library_call_with_descriptors": [
+        3202641,
+        3202641,
+        974
+      ],
+      "prepare.prepare_frame_composition": [
+        53500,
+        53500,
+        1
+      ],
+      "prepare.matrix_map_keys::Layout::derive": [
+        3584,
+        3584,
+        1
+      ],
+      "prepare.borrowed_map_keys::Layout::derive": [
+        250,
+        250,
+        1
+      ],
+      "prepare.generic_dictionary::Layout::derive": [
+        41,
+        41,
+        1
+      ],
+      "prepare.dictionary_seed_frames::Layout::derive": [
+        1167,
+        1167,
+        1
+      ],
+      "prepare.borrowed_dictionary_values::Layout::derive": [
+        3869417,
+        3869417,
+        1
+      ],
+      "prepare.fixed_key_loops::Layout::derive": [
+        125,
+        125,
+        1
+      ],
+      "prepare.native::program::prepare::tail::Layout::derive": [
+        88841667,
+        88841667,
+        1
+      ],
+      "prepare.native::program::prepare::map_admission::Layout::derive": [
+        1652625,
+        1652625,
+        1
+      ],
+      "prepare.frame_retirement::FrameRetirements::derive": [
+        31250,
+        31250,
+        1
+      ],
+      "prepare.cleanup_effects::Layout::derive": [
+        75334,
+        75334,
+        1
+      ],
+      "prepare.composition::Layout::derive": [
+        4773708,
+        4773708,
+        1
+      ],
+      "prepare.word_collections::derive": [
+        415500,
+        415500,
+        1
+      ],
+      "prepare.call_routes::derive": [
+        60709,
+        60709,
+        1
+      ],
+      "prepare.call_cache::Layout::derive": [
+        47209,
+        47209,
+        1
+      ],
+      "prepare.worker_values::derive": [
+        709,
+        709,
+        1
+      ]
+    },
+    "cleanup": {
+      "root.cleanup": [
+        513141708,
+        584045,
+        1
+      ],
+      "compact.bit_counts.optimize": [
+        368249,
+        368249,
+        2
+      ],
+      "compact.cfg_cleanup.optimize": [
+        278576583,
+        1249,
+        1
+      ],
+      "cleanup.ordered": [
+        222348375,
+        6458,
+        5
+      ],
+      "cleanup.count-ir": [
+        2398667,
+        2398667,
+        11
+      ],
+      "cleanup.early-identities": [
+        5751706,
+        5751706,
+        11
+      ],
+      "analysis.cfg": [
+        11307210,
+        11307210,
+        40
+      ],
+      "analysis.dominators": [
+        21656419,
+        21656419,
+        37
+      ],
+      "analysis.prune-phi": [
+        151474503,
+        151474503,
+        20
+      ],
+      "cleanup.boolean-conditions": [
+        1456,
+        1456,
+        11
+      ],
+      "cleanup.constant-branches": [
+        10540750,
+        10540750,
+        13
+      ],
+      "cleanup.preheaders": [
+        398416,
+        398416,
+        5
+      ],
+      "cleanup.local-phis": [
+        20072750,
+        20072750,
+        5
+      ],
+      "cleanup.unsigned-intervals": [
+        1293458,
+        1293458,
+        5
+      ],
+      "cleanup.selected-ranges": [
+        18817834,
+        18817834,
+        5
+      ],
+      "cleanup.proved-widths": [
+        9950042,
+        9950042,
+        6
+      ],
+      "cleanup.demand-liveness": [
+        12052417,
+        12052417,
+        5
+      ],
+      "cleanup.after-ordered": [
+        185755042,
+        7600083,
+        1
+      ],
+      "cleanup.aliases": [
+        24374125,
+        24374125,
+        25
+      ],
+      "cleanup.loop-edges": [
+        23140958,
+        23140958,
+        1
+      ],
+      "analysis.verify": [
+        58400791,
+        58400791,
+        21
+      ],
+      "cleanup.identity-routes": [
+        39707417,
+        39707417,
+        2
+      ],
+      "compact.cfg_cleanup.refine_current_predicates": [
+        7127834,
+        5365710,
+        1
+      ],
+      "compact.vector_guard_facts.fold": [
+        2067958,
+        2067958,
+        1
+      ],
+      "analysis.prune": [
+        14041083,
+        14041083,
+        5
+      ],
+      "compact.vector_guard_facts.fold_unit_branches": [
+        1808708,
+        1808708,
+        1
+      ],
+      "compact.checked_traversals.share": [
+        7000,
+        7000,
+        1
+      ],
+      "compact.checked_traversals.share_controllers": [
+        23573875,
+        23573875,
+        2
+      ],
+      "compact.checked_region_discovery.families": [
+        7833,
+        7833,
+        2
+      ],
+      "analysis.flowgraph": [
+        8526832,
+        8526832,
+        11
+      ],
+      "compact.owner_retirement.share": [
+        895834,
+        895834,
+        1
+      ],
+      "compact.checked_traversals.share_continuations": [
+        9107750,
+        9107750,
+        1
+      ],
+      "compact.unsigned_guard_facts.optimize_with_ranges": [
+        5983875,
+        5983875,
+        1
+      ],
+      "compact.cfg_cleanup.share_repeated_bounds": [
+        1988584,
+        192375,
+        1
+      ],
+      "compact.cfg_cleanup.reuse_dominating_window_facts": [
+        9962667,
+        742042,
+        1
+      ],
+      "compact.cfg_cleanup.reuse_selected_read_bounds": [
+        13403000,
+        1471832,
+        1
+      ],
+      "compact.cfg_cleanup.prove_scalar_spans": [
+        2241416,
+        475291,
+        1
+      ],
+      "compact.cfg_cleanup.prove_packed_bases": [
+        1928250,
+        200584,
+        1
+      ],
+      "compact.cfg_cleanup.coalesce_equal_join_arguments": [
+        13009750,
+        1917,
+        1
+      ],
+      "cleanup.equal-arguments": [
+        206625,
+        206625,
+        1
+      ],
+      "compact.cfg_cleanup.forward_identity_routes": [
+        48461500,
+        707,
+        1
+      ],
+      "compact.cfg_cleanup.coalesce_literal_join_arguments": [
+        22892333,
+        135873,
+        1
+      ],
+      "cleanup.literal-arguments": [
+        230625,
+        230625,
+        1
+      ],
+      "analysis.phi": [
+        11722667,
+        11722667,
+        3
+      ],
+      "compact.cfg_cleanup.coalesce_parallel_join_arguments": [
+        8801750,
+        418,
+        1
+      ],
+      "cleanup.parallel-arguments": [
+        4013500,
+        4013500,
+        1
+      ],
+      "compact.owner_counts.fold": [
+        1065417,
+        1065417,
+        1
+      ],
+      "compact.backing_owners.fold": [
+        955000,
+        955000,
+        1
+      ],
+      "compact.owner_retirement.trim_empty_owners": [
+        162416,
+        162416,
+        1
+      ],
+      "compact.word_pairs.available": [
+        417,
+        417,
+        1
+      ],
+      "compact.word_pairs.fold": [
+        191333,
+        191333,
+        1
+      ],
+      "compact.cold_status.share": [
+        87208,
+        87208,
+        1
+      ]
+    }
+  },
+  "trace_sha256": "f3c337a732e5c76e7bee2929e168e2fce7d7e8bf2de697d421fb55893cd4ebc9",
+  "root_ir": {
+    "adjacent_addresses_reused": 0,
+    "after_blocks": 11896,
+    "after_instructions": 21025,
+    "before_blocks": 17952,
+    "before_instructions": 47660,
+    "bitwise_constant_branches": 0,
+    "boolean_conditions_simplified": 0,
+    "boolean_phi_values": 1224,
+    "constant_branches_removed": 1702,
+    "current_predicate_branches": 38,
+    "dead_instructions_removed": 13055,
+    "dead_loads_removed": 8,
+    "dead_parameters_removed": 2465,
+    "enabled": true,
+    "fixed_point": true,
+    "identity_edges": 224,
+    "known_width_branches_removed": 3,
+    "local_phi_parameters_removed": 21221,
+    "local_phi_preheaders": 0,
+    "loop_edges": 2,
+    "neutral_operations_removed": 1366,
+    "ordered_capture_spans": 0,
+    "pre_codegen_data_passes": 0,
+    "rounds": 3,
+    "selected_home_constant_operands": 0,
+    "selected_home_merge_parameters": 0,
+    "selected_increment_guards_removed": 0,
+    "selected_range_branches_removed": 29,
+    "unsigned_intervals_combined": 1,
+    "window_bounds_combined": 0
+  }
+}
