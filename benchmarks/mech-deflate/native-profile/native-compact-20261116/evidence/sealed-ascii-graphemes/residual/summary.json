@@ -1,0 +1,3046 @@
+{
+  "plan_sha256": "2b774bfd934df5ad23c4043ad0ba6d63004b470092de0a3614b4dbd6a7503592",
+  "captures": [
+    {
+      "capture": 1,
+      "probe_command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/sampler-probe",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-1.json"
+      ],
+      "sample_command": [
+        "/usr/bin/sample",
+        "18698",
+        "2",
+        "1",
+        "-mayDie",
+        "-file",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-1.txt"
+      ],
+      "raw_sha256": "801251dd8fb4616a88ef18daba8250034b75fe1176f35263b5583cd31f72c0db",
+      "parser_samples": 672,
+      "family_samples": {
+        "base-continuation": 150,
+        "grammar-journal": 58,
+        "cache-enqueue": 14,
+        "recognition-memo": 12,
+        "literal-scan": 45,
+        "grapheme-scan": 5,
+        "grammar-source-access": 13,
+        "grammar-transactions": 10,
+        "literal-continuation": 56,
+        "tree-storage": 14,
+        "subtree-cache": 38,
+        "tree-source-access": 4,
+        "tree-journal-access": 6,
+        "precedence-continuation": 89,
+        "operator-continuation": 19,
+        "document-continuation": 48,
+        "structural-replay": 63,
+        "snapshot-index": 26,
+        "restart-index": 2
+      },
+      "top_leaves": [
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+          119
+        ],
+        [
+          "_platform_memmove",
+          56
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+          35
+        ],
+        [
+          "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+          24
+        ],
+        [
+          "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+          23
+        ],
+        [
+          "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+          19
+        ],
+        [
+          "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+          13
+        ],
+        [
+          "_RNvMs0_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replayNtB5_7Summary12fresh_events",
+          13
+        ],
+        [
+          "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+          12
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+          11
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+          11
+        ],
+        [
+          "mi_free",
+          11
+        ],
+        [
+          "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser6rewind",
+          10
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE4pushBb_",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+          9
+        ],
+        [
+          "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3rev3RevINtNtNtCsgKscDXrlV49_5alloc3vec9into_iter8IntoIterB1f_EEEBc_",
+          9
+        ],
+        [
+          "_tlv_get_addr",
+          8
+        ],
+        [
+          "mi_heap_malloc_aligned_at",
+          8
+        ],
+        [
+          "<deduplicated_symbol>",
+          8
+        ]
+      ],
+      "top_leaves_by_family": {
+        "base-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            119
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuation12FrameStorageEBS_",
+            7
+          ],
+          [
+            "_platform_memcmp",
+            6
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            5
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7literal",
+            4
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7scanner",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation6repeat",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base4spec13specification",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser15complete_marker",
+            1
+          ],
+          [
+            "_RNvMNtNtCsgDHHaSskbIF_4core4char7methodsc13is_alphabetic",
+            1
+          ],
+          [
+            "DYLD-STUB$$memcmp",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation6choice",
+            1
+          ]
+        ],
+        "grammar-journal": [
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+            11
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE4pushBb_",
+            10
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            9
+          ],
+          [
+            "_platform_memmove",
+            8
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtB7_17PendingDiagnosticE8truncateBb_",
+            3
+          ],
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain5ChainIB1H_INtNtNtB1N_7sources4once4OnceB1f_EINtNtB1L_3map3MapINtNtB1L_9enumerate9EnumerateINtNtNtB1P_5slice4iter4IterNtNtBa_11syntax_kind10SyntaxKindEENCNvMs3_NtNtNtB8_9canonical4base11recognitionNtB52_5Cache6replays_0EEB2D_EEBc_",
+            2
+          ],
+          [
+            "_RNvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters9enumerateINtB4_9EnumerateINtNtB6_4take4TakeINtNtB6_4skip4SkipINtNtB6_7flatten7FlatMapINtNtB6_5chain5ChainIB26_INtB1K_7FlattenINtNtBa_6option8IntoIterINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtB3c_6parser7journal5ChunkNtNtB4q_5event5EventEEEEIB2v_IB2K_IB1q_IB1I_IB26_IB38_INtNtB4o_5batch9PageGroupB4R_EEINtNtB6_6filter6FilterINtB2M_4IterB5J_ENCNvMs3_B5M_INtB5M_10BatchPagesB4R_E9iter_from0EEINtNtNtBa_5slice4iter4IterB4l_ENCB6T_s_0EEEEEIB6f_IB6B_B4l_ENCNvMs6_B4o_INtB4o_7JournalB4R_E10iter_range0EEIB7F_B4R_ENCB8E_s_0EEEENtNtNtB8_6traits8iterator8Iterator4nextB3e_",
+            2
+          ],
+          [
+            "_RNvMsk_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtCsndNvC2FrNY_8smallvec8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EE17clone_from_ref_inB1n_",
+            2
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ],
+          [
+            "_RNvMs1_NtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journal5batchINtB5_9PageGroupNtNtB9_5event5EventE8make_mutBd_",
+            1
+          ],
+          [
+            "mi_heap_malloc_zero_aligned_at_fallback",
+            1
+          ],
+          [
+            "_RINvNtNtNtCsgDHHaSskbIF_4core4iter8adapters7flatten17and_then_or_clearINtNtB4_4skip4SkipINtB2_7FlatMapINtNtB4_5chain5ChainINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtNtB21_6parser7journal5batch9PageGroupNtNtB3h_5event5EventEEINtNtB4_6filter6FilterINtNtB8_6option4IterB3a_ENCNvMs3_B3d_INtB3d_10BatchPagesB3S_E9iter_from0EEINtNtNtB8_5slice4iter4IterINtB3f_5ChunkB3S_EENCB51_s_0EERB6c_NvYB16_NtNtNtB6_6traits8iterator8Iterator4nextEB23_",
+            1
+          ]
+        ],
+        "cache-enqueue": [
+          [
+            "_RINvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB5_6ClonedINtNtNtBb_5slice4iter4IterNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEENtNtNtB9_6traits8iterator8Iterator4folduNCINvNvXs_NtB7_9enumerateINtB3j_9EnumeratepEB2v_4fold9enumerateB1s_uNCINvNvB2v_8for_each4callTjB1s_ENCINvMs1_NtNtCsgKscDXrlV49_5alloc11collections9vec_dequeINtB4U_8VecDequeB1s_E10write_iterBP_E0E0E0EB1A_",
+            7
+          ],
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7enqueue",
+            5
+          ],
+          [
+            "_RNvXs_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque11spec_extendINtB6_8VecDequeNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEINtB4_10SpecExtendB1j_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6cloned6ClonedINtNtNtB2Q_5slice4iter4IterB1j_EEE11spec_extendB1r_",
+            2
+          ]
+        ],
+        "recognition-memo": [
+          [
+            "_RNvMs3_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_5Cache6replay",
+            4
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "_RNvMs4_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_7Capture8complete",
+            2
+          ],
+          [
+            "_RNvXs_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque11spec_extendINtB6_8VecDequeNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEINtB4_10SpecExtendB1j_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6cloned6ClonedINtNtNtB2Q_5slice4iter4IterB1j_EEE11spec_extendB1r_",
+            1
+          ],
+          [
+            "_RNvMs4_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_7Capture3raw",
+            1
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            1
+          ],
+          [
+            "_RINvMNtCsgDHHaSskbIF_4core6optionINtB3_6OptionINtNtCsgKscDXrlV49_5alloc5boxed3BoxNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognition7StorageEE18get_or_insert_withNCNvMNtB1l_12continuationNtB3b_12Continuation4call0EB1t_",
+            1
+          ]
+        ],
+        "literal-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+            12
+          ],
+          [
+            "_RINvMNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB3_11LiteralScan7advanceNtNtB7_6source12TextSnapshotEB9_",
+            7
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            6
+          ],
+          [
+            "_RNvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB5_12GraphemeScan20advance_sealed_ascii",
+            5
+          ],
+          [
+            "_RNvMs4_NtCs5dk4s2rDkQY_20unicode_segmentation8graphemeNtB5_14GraphemeCursor13next_boundary",
+            5
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan10advance_ineEBc_",
+            3
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            2
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceeEBc_",
+            2
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "DYLD-STUB$$memcmp",
+            1
+          ],
+          [
+            "_platform_memcmp",
+            1
+          ]
+        ],
+        "grapheme-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            5
+          ]
+        ],
+        "grammar-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            12
+          ],
+          [
+            "_RNvNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser6cursor9peek_char",
+            1
+          ]
+        ],
+        "grammar-transactions": [
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser6rewind",
+            10
+          ]
+        ],
+        "literal-continuation": [
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            35
+          ],
+          [
+            "_platform_memmove",
+            6
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7scanner",
+            5
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation4base",
+            3
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation8sequence",
+            2
+          ],
+          [
+            "DYLD-STUB$$memcpy",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation5based",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser15complete_marker",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation4node",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals8supports",
+            1
+          ]
+        ],
+        "tree-storage": [
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6branchB6_",
+            3
+          ],
+          [
+            "_tlv_get_addr",
+            2
+          ],
+          [
+            "mi_find_page",
+            1
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ],
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document5green17child_hash_append",
+            1
+          ],
+          [
+            "mi_free",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document5green8childrenNtB4_13GreenChildren6append",
+            1
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_RNvXsv_CsndNvC2FrNY_8smallvecINtB5_8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_ENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropBP_",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_0",
+            1
+          ],
+          [
+            "_RNvCsfBzVIH1HIC6_7___rustc35___rust_no_alloc_shim_is_unstable_v2",
+            1
+          ]
+        ],
+        "subtree-cache": [
+          [
+            "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+            19
+          ],
+          [
+            "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+            11
+          ],
+          [
+            "_RNvXs2_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque5drainINtB5_5DrainNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropB1i_",
+            5
+          ],
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7release",
+            2
+          ],
+          [
+            "_RNvMs1_NtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB5_16RetainedSequenceNtNtB7_5green12GreenElementE8appendedB9_",
+            1
+          ]
+        ],
+        "tree-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            4
+          ]
+        ],
+        "tree-journal-access": [
+          [
+            "<deduplicated_symbol>",
+            2
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            2
+          ],
+          [
+            "_RNvMs6_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE7page_atBb_",
+            1
+          ],
+          [
+            "_RNvMsk_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtCsndNvC2FrNY_8smallvec8SmallVecAINtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journal5ChunkNtNtB1k_5event5EventEj20_EE17clone_from_ref_inB1o_",
+            1
+          ]
+        ],
+        "precedence-continuation": [
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+            24
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation7advance",
+            8
+          ],
+          [
+            "_platform_memmove",
+            8
+          ],
+          [
+            "mi_free",
+            5
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            4
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core5kinds12continuationNtB2_16KindContinuation7advance",
+            3
+          ],
+          [
+            "_RNvMs_NtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical7stringsNtB4_12Continuation7advance",
+            3
+          ],
+          [
+            "_tlv_get_addr",
+            3
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10prediction16predict_operator",
+            2
+          ],
+          [
+            "DYLD-STUB$$memcpy",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuation7postfixNtB4_12Continuation13postfix_frame",
+            2
+          ],
+          [
+            "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+            1
+          ]
+        ],
+        "operator-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+            9
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10prediction16predict_operator",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation4push",
+            2
+          ],
+          [
+            "DYLD-STUB$$memcpy",
+            1
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuation12ContinuationEBS_",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators8supports",
+            1
+          ]
+        ],
+        "document-continuation": [
+          [
+            "_platform_memmove",
+            21
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation5probe",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation7advance",
+            3
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation10expression",
+            2
+          ],
+          [
+            "_RNvMs_NtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10primitivesNtB4_12Continuation7advance",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10statementsNtB2_12Continuation7advance",
+            1
+          ],
+          [
+            "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical12declarations12continuationNtB4_12Continuation7advance",
+            1
+          ],
+          [
+            "mi_find_page",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5pathsNtB2_12Continuation7advance",
+            1
+          ]
+        ],
+        "structural-replay": [
+          [
+            "_RNvMs0_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replayNtB5_7Summary12fresh_events",
+            13
+          ],
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3rev3RevINtNtNtCsgKscDXrlV49_5alloc3vec9into_iter8IntoIterB1f_EEEBc_",
+            9
+          ],
+          [
+            "_RNvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB4_6ClonedINtNtB6_4take4TakeINtNtB6_4skip4SkipINtNtB6_7flatten7FlatMapINtNtB6_5chain5ChainIB20_INtB1E_7FlattenINtNtBa_6option8IntoIterINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtB36_6parser7journal5ChunkNtNtB4k_5event5EventEEEEIB2p_IB2E_IB1k_IB1C_IB20_IB32_INtNtB4i_5batch9PageGroupB4L_EEINtNtB6_6filter6FilterINtB2G_4IterB5D_ENCNvMs3_B5G_INtB5G_10BatchPagesB4L_E9iter_from0EEINtNtNtBa_5slice4iter4IterB4f_ENCB6N_s_0EEEEEIB69_IB6v_B4f_ENCNvMs6_B4i_INtB4i_7JournalB4L_E10iter_range0EEIB7z_B4L_ENCB8y_s_0EEEENtNtNtB8_6traits8iterator8Iterator4nextB38_",
+            6
+          ],
+          [
+            "mi_free",
+            5
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "_RNvMs_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document5green8childrenNtB4_13GreenChildren6append",
+            3
+          ],
+          [
+            "<deduplicated_symbol>",
+            3
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            3
+          ],
+          [
+            "_RNvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters7flattenINtB5_7FlatMapINtNtB7_5chain5ChainIB15_INtB5_7FlattenINtNtBb_6option8IntoIterINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtB2a_6parser7journal5ChunkNtNtB3o_5event5EventEEEEIB1u_IB1I_INtNtB7_4skip4SkipIBR_IB15_IB26_INtNtB3m_5batch9PageGroupB3P_EEINtNtB7_6filter6FilterINtB1K_4IterB4T_ENCNvMs3_B4W_INtB4W_10BatchPagesB3P_E9iter_from0EEINtNtNtBb_5slice4iter4IterB3j_ENCB63_s_0EEEEEIB5p_IB5L_B3j_ENCNvMs6_B3m_INtB3m_7JournalB3P_E10iter_range0EEIB6P_B3P_ENCB7O_s_0ENtNtNtB9_6traits8iterator8Iterator4nextB2c_",
+            3
+          ],
+          [
+            "_tlv_get_addr",
+            2
+          ],
+          [
+            "mi_malloc_aligned",
+            2
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            2
+          ]
+        ],
+        "snapshot-index": [
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids7TokenIdNtNtB1b_5index11TokenRecordE6insertB1d_",
+            8
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1b_5index10NodeRecordE6insertB1d_",
+            4
+          ],
+          [
+            "<deduplicated_symbol>",
+            3
+          ],
+          [
+            "mi_page_free_list_extend",
+            3
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document5indexNtB2_9NodeIndex10index_node",
+            3
+          ],
+          [
+            "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1H_5index10NodeRecordNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB42_11VacantEntryB1D_B2u_E12insert_entry0EB1J_",
+            2
+          ]
+        ],
+        "restart-index": [
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser19build_restart_index",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "capture": 2,
+      "probe_command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/sampler-probe",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-2.json"
+      ],
+      "sample_command": [
+        "/usr/bin/sample",
+        "18700",
+        "2",
+        "1",
+        "-mayDie",
+        "-file",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-2.txt"
+      ],
+      "raw_sha256": "6e63efd73a7d024eeade094b53016f6eae10af3ee8a21df8141baac9f6fcc644",
+      "parser_samples": 667,
+      "family_samples": {
+        "base-continuation": 129,
+        "grammar-journal": 68,
+        "cache-enqueue": 17,
+        "recognition-memo": 8,
+        "grammar-source-access": 12,
+        "literal-scan": 48,
+        "grapheme-scan": 3,
+        "grammar-transactions": 10,
+        "literal-continuation": 43,
+        "precedence-continuation": 91,
+        "tree-storage": 29,
+        "subtree-cache": 43,
+        "tree-source-access": 7,
+        "tree-journal-access": 9,
+        "operator-continuation": 34,
+        "document-continuation": 39,
+        "structural-replay": 48,
+        "snapshot-index": 26,
+        "restart-index": 2,
+        "other-parser": 1
+      },
+      "top_leaves": [
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+          99
+        ],
+        [
+          "_platform_memmove",
+          53
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+          33
+        ],
+        [
+          "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+          23
+        ],
+        [
+          "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+          21
+        ],
+        [
+          "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+          20
+        ],
+        [
+          "_tlv_get_addr",
+          14
+        ],
+        [
+          "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+          13
+        ],
+        [
+          "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+          13
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+          12
+        ],
+        [
+          "_RINvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB5_6ClonedINtNtNtBb_5slice4iter4IterNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEENtNtNtB9_6traits8iterator8Iterator4folduNCINvNvXs_NtB7_9enumerateINtB3j_9EnumeratepEB2v_4fold9enumerateB1s_uNCINvNvB2v_8for_each4callTjB1s_ENCINvMs1_NtNtCsgKscDXrlV49_5alloc11collections9vec_dequeINtB4U_8VecDequeB1s_E10write_iterBP_E0E0E0EB1A_",
+          11
+        ],
+        [
+          "_RINvMNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB3_11LiteralScan7advanceNtNtB7_6source12TextSnapshotEB9_",
+          11
+        ],
+        [
+          "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser6rewind",
+          10
+        ],
+        [
+          "mi_heap_malloc_aligned_at",
+          10
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+          9
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtB7_17PendingDiagnosticE8truncateBb_",
+          9
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+          9
+        ],
+        [
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1b_5index10NodeRecordE6insertB1d_",
+          9
+        ],
+        [
+          "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6appendB6_",
+          8
+        ],
+        [
+          "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+          8
+        ]
+      ],
+      "top_leaves_by_family": {
+        "base-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            99
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7literal",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base4spec13specification",
+            5
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuation12FrameStorageEBS_",
+            4
+          ],
+          [
+            "_platform_memcmp",
+            4
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation6repeat",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser16bump_bytes_token",
+            1
+          ]
+        ],
+        "grammar-journal": [
+          [
+            "_platform_memmove",
+            13
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+            9
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtB7_17PendingDiagnosticE8truncateBb_",
+            9
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE4pushBb_",
+            6
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            6
+          ],
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain5ChainIB1H_INtNtNtB1N_7sources4once4OnceB1f_EINtNtB1L_3map3MapINtNtB1L_9enumerate9EnumerateINtNtNtB1P_5slice4iter4IterNtNtBa_11syntax_kind10SyntaxKindEENCNvMs3_NtNtNtB8_9canonical4base11recognitionNtB52_5Cache6replays_0EEB2D_EEBc_",
+            4
+          ],
+          [
+            "_RINvXss_CsndNvC2FrNY_8smallvecINtB6_8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EINtNtNtNtCsgDHHaSskbIF_4core4iter6traits7collect6ExtendBI_E6extendBs_EBQ_",
+            3
+          ],
+          [
+            "_RNvMsk_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtCsndNvC2FrNY_8smallvec8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EE17clone_from_ref_inB1n_",
+            3
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            3
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE3popBb_",
+            2
+          ],
+          [
+            "_RNvXsv_CsndNvC2FrNY_8smallvecINtB5_8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_ENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropBP_",
+            2
+          ],
+          [
+            "_RNvMs3_NtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journal5batchINtB5_10BatchPagesNtNtB9_5event5EventE8truncateBd_",
+            1
+          ]
+        ],
+        "cache-enqueue": [
+          [
+            "_RINvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB5_6ClonedINtNtNtBb_5slice4iter4IterNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEENtNtNtB9_6traits8iterator8Iterator4folduNCINvNvXs_NtB7_9enumerateINtB3j_9EnumeratepEB2v_4fold9enumerateB1s_uNCINvNvB2v_8for_each4callTjB1s_ENCINvMs1_NtNtCsgKscDXrlV49_5alloc11collections9vec_dequeINtB4U_8VecDequeB1s_E10write_iterBP_E0E0E0EB1A_",
+            11
+          ],
+          [
+            "_RNvXs_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque11spec_extendINtB6_8VecDequeNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEINtB4_10SpecExtendB1j_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6cloned6ClonedINtNtNtB2Q_5slice4iter4IterB1j_EEE11spec_extendB1r_",
+            2
+          ],
+          [
+            "_RNvMs6_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE7page_atBb_",
+            2
+          ],
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7enqueue",
+            2
+          ]
+        ],
+        "recognition-memo": [
+          [
+            "_RNvMs3_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_5Cache6replay",
+            3
+          ],
+          [
+            "_RNvMs4_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_7Capture8complete",
+            3
+          ],
+          [
+            "_RNvXs_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque11spec_extendINtB6_8VecDequeNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEINtB4_10SpecExtendB1j_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6cloned6ClonedINtNtNtB2Q_5slice4iter4IterB1j_EEE11spec_extendB1r_",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ]
+        ],
+        "grammar-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            9
+          ],
+          [
+            "_RNvNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser6cursor9peek_char",
+            3
+          ]
+        ],
+        "literal-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+            13
+          ],
+          [
+            "_RINvMNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB3_11LiteralScan7advanceNtNtB7_6source12TextSnapshotEB9_",
+            11
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            9
+          ],
+          [
+            "_RNvNtNtCsgDHHaSskbIF_4core3str8converts9from_utf8",
+            3
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            2
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan10advance_ineEBc_",
+            2
+          ],
+          [
+            "_RNvNtNtCs5dk4s2rDkQY_20unicode_segmentation6tables8grapheme17grapheme_category",
+            2
+          ],
+          [
+            "_RNvMs4_NtCs5dk4s2rDkQY_20unicode_segmentation8graphemeNtB5_14GraphemeCursor13next_boundary",
+            2
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceeEBc_",
+            1
+          ],
+          [
+            "_RNvMs4_NtCs5dk4s2rDkQY_20unicode_segmentation8graphemeNtB5_14GraphemeCursor17grapheme_category",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvMs4_NtCs5dk4s2rDkQY_20unicode_segmentation8graphemeNtB5_14GraphemeCursor11is_boundary",
+            1
+          ]
+        ],
+        "grapheme-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            3
+          ]
+        ],
+        "grammar-transactions": [
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser6rewind",
+            10
+          ]
+        ],
+        "literal-continuation": [
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            33
+          ],
+          [
+            "_platform_memmove",
+            5
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation4base",
+            3
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation8sequence",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation4call",
+            1
+          ]
+        ],
+        "precedence-continuation": [
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+            20
+          ],
+          [
+            "_platform_memmove",
+            10
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation7advance",
+            6
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core5kinds12continuationNtB2_16KindContinuation7advance",
+            4
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation5child",
+            3
+          ],
+          [
+            "_mi_heap_realloc_zero",
+            3
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            3
+          ],
+          [
+            "mi_malloc_aligned",
+            3
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser5start",
+            2
+          ],
+          [
+            "_RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs7kqvMiEY1kn_11mech_syntax",
+            2
+          ],
+          [
+            "mi_free",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10structures12continuationNtB2_21StructureContinuation7advance",
+            2
+          ]
+        ],
+        "tree-storage": [
+          [
+            "_tlv_get_addr",
+            8
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            6
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6appendB6_",
+            5
+          ],
+          [
+            "mi_free",
+            2
+          ],
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document5green17child_hash_append",
+            2
+          ],
+          [
+            "_RNvMs_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document5green8childrenNtB4_13GreenChildren6append",
+            2
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ],
+          [
+            "mi_page_queue_find_free_ex.cold.1",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_0",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_27",
+            1
+          ]
+        ],
+        "subtree-cache": [
+          [
+            "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+            23
+          ],
+          [
+            "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+            13
+          ],
+          [
+            "_RNvXs2_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque5drainINtB5_5DrainNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropB1i_",
+            4
+          ],
+          [
+            "_tlv_get_addr",
+            1
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ],
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7release",
+            1
+          ]
+        ],
+        "tree-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot8chunk_at",
+            4
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            3
+          ]
+        ],
+        "tree-journal-access": [
+          [
+            "_RNvMs6_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE3getBb_",
+            3
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "<deduplicated_symbol>",
+            1
+          ],
+          [
+            "_RNvMsk_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtCsndNvC2FrNY_8smallvec8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EE17clone_from_ref_inB1n_",
+            1
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            1
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journal7JournalNtNtBL_5event5EventEEBP_",
+            1
+          ]
+        ],
+        "operator-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+            12
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10prediction16predict_operator",
+            6
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation4push",
+            3
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators8supports",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10statementsNtB2_12Continuation7advance",
+            2
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser16bump_bytes_token",
+            1
+          ],
+          [
+            "DYLD-STUB$$memcpy",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser5start",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators4spec13specification",
+            1
+          ],
+          [
+            "_RNvXso_NtCsgKscDXrlV49_5alloc3vecINtB5_3VecNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuation5FrameENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropBR_",
+            1
+          ]
+        ],
+        "document-continuation": [
+          [
+            "_platform_memmove",
+            13
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+            9
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation7advance",
+            8
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation5probe",
+            3
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser15complete_marker",
+            1
+          ],
+          [
+            "DYLD-STUB$$memcpy",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation4push",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            1
+          ],
+          [
+            "DYLD-STUB$$memmove",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10primitivesNtB4_12Continuation7advance",
+            1
+          ]
+        ],
+        "structural-replay": [
+          [
+            "_RNvMs0_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replayNtB5_7Summary12fresh_events",
+            8
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            4
+          ],
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3rev3RevINtNtNtCsgKscDXrlV49_5alloc3vec9into_iter8IntoIterB1f_EEEBc_",
+            4
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6appendB6_",
+            3
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replay7SummaryEBS_",
+            3
+          ],
+          [
+            "_tlv_get_addr",
+            2
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6branchB6_",
+            2
+          ],
+          [
+            "mi_page_free_list_extend",
+            2
+          ],
+          [
+            "mi_malloc_aligned",
+            2
+          ],
+          [
+            "_RNvMs_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document5green8childrenNtB4_13GreenChildren6append",
+            2
+          ],
+          [
+            "mi_free",
+            2
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcNtNtNtCs7kqvMiEY1kn_11mech_syntax8document5green9GreenNodeE9drop_slowBM_",
+            2
+          ]
+        ],
+        "snapshot-index": [
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1b_5index10NodeRecordE6insertB1d_",
+            9
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids7TokenIdNtNtB1b_5index11TokenRecordE6insertB1d_",
+            7
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "<deduplicated_symbol>",
+            3
+          ],
+          [
+            "mi_page_free_list_extend",
+            2
+          ],
+          [
+            "mi_find_page.cold.1",
+            1
+          ],
+          [
+            "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids7TokenIdNtNtB1H_5index11TokenRecordNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB44_11VacantEntryB1D_B2v_E12insert_entry0EB1J_",
+            1
+          ]
+        ],
+        "restart-index": [
+          [
+            "mi_page_free_list_extend",
+            1
+          ],
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser19build_restart_index",
+            1
+          ]
+        ],
+        "other-parser": [
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser33parse_canonical_document_with_ids",
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "capture": 3,
+      "probe_command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/sampler-probe",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-3.json"
+      ],
+      "sample_command": [
+        "/usr/bin/sample",
+        "18702",
+        "2",
+        "1",
+        "-mayDie",
+        "-file",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-3.txt"
+      ],
+      "raw_sha256": "5806a223c0ce90ba36642abb9651ec1a3f4eb3199aa51deecf85800c92f77ddf",
+      "parser_samples": 670,
+      "family_samples": {
+        "base-continuation": 141,
+        "grammar-journal": 74,
+        "recognition-memo": 6,
+        "cache-enqueue": 20,
+        "literal-scan": 49,
+        "grammar-transactions": 8,
+        "literal-continuation": 63,
+        "grammar-source-access": 9,
+        "grapheme-scan": 2,
+        "precedence-continuation": 78,
+        "tree-storage": 14,
+        "subtree-cache": 38,
+        "tree-source-access": 7,
+        "tree-journal-access": 8,
+        "operator-continuation": 22,
+        "document-continuation": 53,
+        "structural-replay": 49,
+        "snapshot-index": 27,
+        "restart-index": 2
+      },
+      "top_leaves": [
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+          97
+        ],
+        [
+          "_platform_memmove",
+          54
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+          51
+        ],
+        [
+          "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+          24
+        ],
+        [
+          "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+          21
+        ],
+        [
+          "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+          20
+        ],
+        [
+          "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+          17
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+          14
+        ],
+        [
+          "_RINvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB5_6ClonedINtNtNtBb_5slice4iter4IterNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEENtNtNtB9_6traits8iterator8Iterator4folduNCINvNvXs_NtB7_9enumerateINtB3j_9EnumeratepEB2v_4fold9enumerateB1s_uNCINvNvB2v_8for_each4callTjB1s_ENCINvMs1_NtNtCsgKscDXrlV49_5alloc11collections9vec_dequeINtB4U_8VecDequeB1s_E10write_iterBP_E0E0E0EB1A_",
+          13
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE4pushBb_",
+          13
+        ],
+        [
+          "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+          13
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+          12
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+          11
+        ],
+        [
+          "<deduplicated_symbol>",
+          10
+        ],
+        [
+          "mi_free",
+          10
+        ],
+        [
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids7TokenIdNtNtB1b_5index11TokenRecordE6insertB1d_",
+          10
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7literal",
+          9
+        ],
+        [
+          "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+          9
+        ],
+        [
+          "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser6rewind",
+          8
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+          8
+        ]
+      ],
+      "top_leaves_by_family": {
+        "base-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            97
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            11
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7literal",
+            9
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuation12FrameStorageEBS_",
+            6
+          ],
+          [
+            "_RNvNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base4spec13specification",
+            5
+          ],
+          [
+            "_platform_memcmp",
+            4
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation6repeat",
+            3
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser5token",
+            3
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser29observe_definition_raw_origin",
+            1
+          ]
+        ],
+        "grammar-journal": [
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            14
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE4pushBb_",
+            13
+          ],
+          [
+            "_platform_memmove",
+            9
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+            8
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtB7_17PendingDiagnosticE8truncateBb_",
+            4
+          ],
+          [
+            "_RNvXsv_CsndNvC2FrNY_8smallvecINtB5_8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_ENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropBP_",
+            4
+          ],
+          [
+            "_RINvXss_CsndNvC2FrNY_8smallvecINtB6_8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EINtNtNtNtCsgDHHaSskbIF_4core4iter6traits7collect6ExtendBI_E6extendBs_EBQ_",
+            3
+          ],
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain5ChainIB1H_INtNtNtB1N_7sources4once4OnceB1f_EINtNtB1L_3map3MapINtNtB1L_9enumerate9EnumerateINtNtNtB1P_5slice4iter4IterNtNtBa_11syntax_kind10SyntaxKindEENCNvMs3_NtNtNtB8_9canonical4base11recognitionNtB52_5Cache6replays_0EEB2D_EEBc_",
+            3
+          ],
+          [
+            "_RNvMs1_NtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journal5batchINtB5_9PageGroupNtNtB9_5event5EventE8make_mutBd_",
+            3
+          ],
+          [
+            "mi_find_page.cold.1",
+            3
+          ],
+          [
+            "_RNvMs6_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE10iter_rangeBb_",
+            2
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            2
+          ]
+        ],
+        "recognition-memo": [
+          [
+            "_RNvMs3_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_5Cache6replay",
+            2
+          ],
+          [
+            "_RNvXs_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque11spec_extendINtB6_8VecDequeNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEINtB4_10SpecExtendB1j_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6cloned6ClonedINtNtNtB2Q_5slice4iter4IterB1j_EEE11spec_extendB1r_",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            1
+          ],
+          [
+            "_RNvMs4_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_7Capture8complete",
+            1
+          ]
+        ],
+        "cache-enqueue": [
+          [
+            "_RINvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB5_6ClonedINtNtNtBb_5slice4iter4IterNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEENtNtNtB9_6traits8iterator8Iterator4folduNCINvNvXs_NtB7_9enumerateINtB3j_9EnumeratepEB2v_4fold9enumerateB1s_uNCINvNvB2v_8for_each4callTjB1s_ENCINvMs1_NtNtCsgKscDXrlV49_5alloc11collections9vec_dequeINtB4U_8VecDequeB1s_E10write_iterBP_E0E0E0EB1A_",
+            13
+          ],
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7enqueue",
+            7
+          ]
+        ],
+        "literal-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+            17
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            7
+          ],
+          [
+            "_RINvMNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB3_11LiteralScan7advanceNtNtB7_6source12TextSnapshotEB9_",
+            5
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            4
+          ],
+          [
+            "_RNvMs4_NtCs5dk4s2rDkQY_20unicode_segmentation8graphemeNtB5_14GraphemeCursor13next_boundary",
+            3
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan10advance_ineEBc_",
+            3
+          ],
+          [
+            "_RNvNtNtCsgDHHaSskbIF_4core3str8converts9from_utf8",
+            2
+          ],
+          [
+            "DYLD-STUB$$memcmp",
+            2
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvNtNtCs5dk4s2rDkQY_20unicode_segmentation6tables8grapheme17grapheme_category",
+            1
+          ],
+          [
+            "_RNvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB5_12GraphemeScan20advance_sealed_ascii",
+            1
+          ],
+          [
+            "_platform_memcmp",
+            1
+          ]
+        ],
+        "grammar-transactions": [
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser6rewind",
+            8
+          ]
+        ],
+        "literal-continuation": [
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            51
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation8sequence",
+            3
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser15complete_marker",
+            2
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7scanner",
+            2
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser5start",
+            1
+          ]
+        ],
+        "grammar-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            7
+          ],
+          [
+            "_RNvNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser6cursor9peek_char",
+            2
+          ]
+        ],
+        "grapheme-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            2
+          ]
+        ],
+        "precedence-continuation": [
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+            21
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation7advance",
+            7
+          ],
+          [
+            "_tlv_get_addr",
+            5
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core5kinds12continuationNtB2_16KindContinuation7advance",
+            5
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "mi_free",
+            4
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10structures12continuationNtB2_21StructureContinuation7advance",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuation7postfixNtB4_12Continuation13postfix_frame",
+            3
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation5child",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuation10expressionNtB4_12Continuation16expression_frame",
+            2
+          ],
+          [
+            "mi_malloc_aligned",
+            2
+          ]
+        ],
+        "tree-storage": [
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document5green17child_hash_append",
+            3
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6appendB6_",
+            2
+          ],
+          [
+            "_tlv_get_addr",
+            2
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6branchB6_",
+            2
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            2
+          ],
+          [
+            "_RNvMs_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document5green8childrenNtB4_13GreenChildren6append",
+            2
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            1
+          ]
+        ],
+        "subtree-cache": [
+          [
+            "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+            24
+          ],
+          [
+            "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+            8
+          ],
+          [
+            "_RNvXs2_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque5drainINtB5_5DrainNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropB1i_",
+            4
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ],
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7release",
+            1
+          ]
+        ],
+        "tree-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            5
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot8chunk_at",
+            2
+          ]
+        ],
+        "tree-journal-access": [
+          [
+            "<deduplicated_symbol>",
+            3
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journal7JournalNtNtBL_5event5EventEEBP_",
+            1
+          ],
+          [
+            "mi_free",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvMsk_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtCsndNvC2FrNY_8smallvec8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EE17clone_from_ref_inB1n_",
+            1
+          ],
+          [
+            "_RNvMs6_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE3getBb_",
+            1
+          ]
+        ],
+        "operator-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+            11
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10prediction16predict_operator",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10statementsNtB2_12Continuation7advance",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators8supports",
+            2
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser5start",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation4push",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators4spec13specification",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation4base",
+            1
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuation12ContinuationEBS_",
+            1
+          ]
+        ],
+        "document-continuation": [
+          [
+            "_platform_memmove",
+            24
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+            12
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation7advance",
+            4
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation5probe",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation10expression",
+            2
+          ],
+          [
+            "DYLD-STUB$$memcpy",
+            2
+          ],
+          [
+            "DYLD-STUB$$memmove",
+            1
+          ],
+          [
+            "mi_find_page.cold.1",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14source_imports8supports",
+            1
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8mechdown8supports",
+            1
+          ]
+        ],
+        "structural-replay": [
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3rev3RevINtNtNtCsgKscDXrlV49_5alloc3vec9into_iter8IntoIterB1f_EEEBc_",
+            5
+          ],
+          [
+            "_platform_memmove",
+            5
+          ],
+          [
+            "mi_free",
+            4
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            4
+          ],
+          [
+            "_RNvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB4_6ClonedINtNtB6_4take4TakeINtNtB6_4skip4SkipINtNtB6_7flatten7FlatMapINtNtB6_5chain5ChainIB20_INtB1E_7FlattenINtNtBa_6option8IntoIterINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtB36_6parser7journal5ChunkNtNtB4k_5event5EventEEEEIB2p_IB2E_IB1k_IB1C_IB20_IB32_INtNtB4i_5batch9PageGroupB4L_EEINtNtB6_6filter6FilterINtB2G_4IterB5D_ENCNvMs3_B5G_INtB5G_10BatchPagesB4L_E9iter_from0EEINtNtNtBa_5slice4iter4IterB4f_ENCB6N_s_0EEEEEIB69_IB6v_B4f_ENCNvMs6_B4i_INtB4i_7JournalB4L_E10iter_range0EEIB7z_B4L_ENCB8y_s_0EEEENtNtNtB8_6traits8iterator8Iterator4nextB38_",
+            4
+          ],
+          [
+            "OUTLINED_FUNCTION_10",
+            3
+          ],
+          [
+            "_RNvMs0_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replayNtB5_7Summary12fresh_events",
+            3
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            2
+          ],
+          [
+            "mi_malloc_aligned",
+            2
+          ],
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document5green17child_hash_append",
+            2
+          ],
+          [
+            "_RNvMs_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document5green8childrenNtB4_13GreenChildren6append",
+            2
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replay7SummaryEBS_",
+            2
+          ]
+        ],
+        "snapshot-index": [
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids7TokenIdNtNtB1b_5index11TokenRecordE6insertB1d_",
+            10
+          ],
+          [
+            "<deduplicated_symbol>",
+            5
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1b_5index10NodeRecordE6insertB1d_",
+            4
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "mi_page_free_list_extend",
+            2
+          ],
+          [
+            "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1H_5index10NodeRecordNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB42_11VacantEntryB1D_B2u_E12insert_entry0EB1J_",
+            1
+          ],
+          [
+            "mi_heap_malloc_zero_aligned_at_fallback",
+            1
+          ],
+          [
+            "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids7TokenIdNtNtB1H_5index11TokenRecordNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB44_11VacantEntryB1D_B2v_E12insert_entry0EB1J_",
+            1
+          ]
+        ],
+        "restart-index": [
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser19build_restart_index",
+            2
+          ]
+        ]
+      }
+    },
+    {
+      "capture": 4,
+      "probe_command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/sampler-probe",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-4.json"
+      ],
+      "sample_command": [
+        "/usr/bin/sample",
+        "18704",
+        "2",
+        "1",
+        "-mayDie",
+        "-file",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/residual/capture-4.txt"
+      ],
+      "raw_sha256": "69da922b9b00c467dcdbbf5092dda820a926f6f684a1284ac443510cb946b31c",
+      "parser_samples": 670,
+      "family_samples": {
+        "base-continuation": 153,
+        "grammar-journal": 67,
+        "cache-enqueue": 12,
+        "recognition-memo": 9,
+        "literal-scan": 49,
+        "grammar-source-access": 11,
+        "grapheme-scan": 5,
+        "grammar-transactions": 6,
+        "literal-continuation": 39,
+        "tree-storage": 19,
+        "subtree-cache": 44,
+        "tree-source-access": 4,
+        "precedence-continuation": 78,
+        "tree-journal-access": 2,
+        "operator-continuation": 19,
+        "structural-replay": 64,
+        "document-continuation": 61,
+        "snapshot-index": 26,
+        "restart-index": 2
+      },
+      "top_leaves": [
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+          107
+        ],
+        [
+          "_platform_memmove",
+          56
+        ],
+        [
+          "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+          31
+        ],
+        [
+          "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+          23
+        ],
+        [
+          "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+          20
+        ],
+        [
+          "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+          18
+        ],
+        [
+          "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+          17
+        ],
+        [
+          "mi_free",
+          15
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+          14
+        ],
+        [
+          "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+          13
+        ],
+        [
+          "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+          12
+        ],
+        [
+          "_RINvMNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB3_11LiteralScan7advanceNtNtB7_6source12TextSnapshotEB9_",
+          12
+        ],
+        [
+          "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+          12
+        ],
+        [
+          "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+          12
+        ],
+        [
+          "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7literal",
+          10
+        ],
+        [
+          "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+          10
+        ],
+        [
+          "_tlv_get_addr",
+          10
+        ],
+        [
+          "mi_heap_malloc_aligned_at",
+          10
+        ],
+        [
+          "<deduplicated_symbol>",
+          9
+        ],
+        [
+          "_RNvMs0_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replayNtB5_7Summary12fresh_events",
+          9
+        ]
+      ],
+      "top_leaves_by_family": {
+        "base-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            107
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            14
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7literal",
+            10
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuation12FrameStorageEBS_",
+            8
+          ],
+          [
+            "_platform_memcmp",
+            4
+          ],
+          [
+            "_RNvNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base4spec13specification",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation6repeat",
+            2
+          ],
+          [
+            "DYLD-STUB$$memcmp",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser5token",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser16bump_bytes_token",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation6choice",
+            1
+          ]
+        ],
+        "grammar-journal": [
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            14
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE8truncateBb_",
+            13
+          ],
+          [
+            "_platform_memmove",
+            7
+          ],
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain5ChainIB1H_INtNtNtB1N_7sources4once4OnceB1f_EINtNtB1L_3map3MapINtNtB1L_9enumerate9EnumerateINtNtNtB1P_5slice4iter4IterNtNtBa_11syntax_kind10SyntaxKindEENCNvMs3_NtNtNtB8_9canonical4base11recognitionNtB52_5Cache6replays_0EEB2D_EEBc_",
+            5
+          ],
+          [
+            "mi_free",
+            5
+          ],
+          [
+            "_RNvXsv_CsndNvC2FrNY_8smallvecINtB5_8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_ENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropBP_",
+            5
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            4
+          ],
+          [
+            "_RNvMsk_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtCsndNvC2FrNY_8smallvec8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EE17clone_from_ref_inB1n_",
+            3
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE4pushBb_",
+            3
+          ],
+          [
+            "_RNvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters7flattenINtB5_7FlatMapINtNtB7_5chain5ChainIB15_INtB5_7FlattenINtNtBb_6option8IntoIterINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtB2a_6parser7journal5ChunkNtNtB3o_5event5EventEEEEIB1u_IB1I_INtNtB7_4skip4SkipIBR_IB15_IB26_INtNtB3m_5batch9PageGroupB3P_EEINtNtB7_6filter6FilterINtB1K_4IterB4T_ENCNvMs3_B4W_INtB4W_10BatchPagesB3P_E9iter_from0EEINtNtNtBb_5slice4iter4IterB3j_ENCB63_s_0EEEEEIB5p_IB5L_B3j_ENCNvMs6_B3m_INtB3m_7JournalB3P_E10iter_range0EEIB6P_B3P_ENCB7O_s_0ENtNtNtB9_6traits8iterator8Iterator4nextB2c_",
+            2
+          ],
+          [
+            "_RINvXss_CsndNvC2FrNY_8smallvecINtB6_8SmallVecANtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5Eventj20_EINtNtNtNtCsgDHHaSskbIF_4core4iter6traits7collect6ExtendBI_E6extendBs_EBQ_",
+            1
+          ],
+          [
+            "_platform_memset",
+            1
+          ]
+        ],
+        "cache-enqueue": [
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7enqueue",
+            6
+          ],
+          [
+            "_RINvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB5_6ClonedINtNtNtBb_5slice4iter4IterNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEENtNtNtB9_6traits8iterator8Iterator4folduNCINvNvXs_NtB7_9enumerateINtB3j_9EnumeratepEB2v_4fold9enumerateB1s_uNCINvNvB2v_8for_each4callTjB1s_ENCINvMs1_NtNtCsgKscDXrlV49_5alloc11collections9vec_dequeINtB4U_8VecDequeB1s_E10write_iterBP_E0E0E0EB1A_",
+            5
+          ],
+          [
+            "_RNvXs_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque11spec_extendINtB6_8VecDequeNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEINtB4_10SpecExtendB1j_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6cloned6ClonedINtNtNtB2Q_5slice4iter4IterB1j_EEE11spec_extendB1r_",
+            1
+          ]
+        ],
+        "recognition-memo": [
+          [
+            "_RNvMs3_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_5Cache6replay",
+            3
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RNvMs4_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_7Capture3raw",
+            2
+          ],
+          [
+            "_RNvMs3_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical4base11recognitionNtB5_5Cache4kind",
+            1
+          ]
+        ],
+        "literal-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB6_11LiteralScan14advance_cachedNtNtBa_6source12TextSnapshotEBc_",
+            12
+          ],
+          [
+            "_RINvMNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser12literal_scanNtB3_11LiteralScan7advanceNtNtB7_6source12TextSnapshotEB9_",
+            12
+          ],
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            7
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            5
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan10advance_ineEBc_",
+            4
+          ],
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceeEBc_",
+            3
+          ],
+          [
+            "_RNvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB5_12GraphemeScan20advance_sealed_ascii",
+            2
+          ],
+          [
+            "_RNvMs4_NtCs5dk4s2rDkQY_20unicode_segmentation8graphemeNtB5_14GraphemeCursor13next_boundary",
+            2
+          ],
+          [
+            "_RNvNtNtCsgDHHaSskbIF_4core3str8converts9from_utf8",
+            1
+          ],
+          [
+            "_RNvNtNtCs5dk4s2rDkQY_20unicode_segmentation6tables8grapheme17grapheme_category",
+            1
+          ]
+        ],
+        "grammar-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            9
+          ],
+          [
+            "_RNvNtNtCsgDHHaSskbIF_4core3str8converts9from_utf8",
+            2
+          ]
+        ],
+        "grapheme-scan": [
+          [
+            "_RINvMs0_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+            5
+          ]
+        ],
+        "grammar-transactions": [
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser6rewind",
+            6
+          ]
+        ],
+        "literal-continuation": [
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            31
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation8sequence",
+            3
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser15complete_marker",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation4base",
+            1
+          ]
+        ],
+        "tree-storage": [
+          [
+            "OUTLINED_FUNCTION_10",
+            3
+          ],
+          [
+            "_tlv_get_addr",
+            3
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            3
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            3
+          ],
+          [
+            "mi_malloc_aligned",
+            2
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB2_4NodeNtNtB4_5green12GreenElementE6appendB6_",
+            2
+          ],
+          [
+            "mi_free",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_14",
+            1
+          ],
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document5green17child_hash_append",
+            1
+          ]
+        ],
+        "subtree-cache": [
+          [
+            "_RNvMs3_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+            23
+          ],
+          [
+            "_RINvMs1_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+            12
+          ],
+          [
+            "_RNvXs2_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque5drainINtB5_5DrainNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventENtNtNtCsgDHHaSskbIF_4core3ops4drop4Drop4dropB1i_",
+            6
+          ],
+          [
+            "_RNvMs2_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser10tree_cacheNtB5_9TreeCache7release",
+            2
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNvXs2_NtNtNtCsgKscDXrlV49_5alloc11collections9vec_deque5drainINtBP_5DrainppENtNtNtB4_3ops4drop4Drop4drop9DropGuardNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventNtNtBV_5alloc6GlobalEEB2H_",
+            1
+          ]
+        ],
+        "tree-source-access": [
+          [
+            "_RNvMs0_NtNtCs7kqvMiEY1kn_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            4
+          ]
+        ],
+        "precedence-continuation": [
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+            18
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation7advance",
+            7
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core5kinds12continuationNtB2_16KindContinuation7advance",
+            7
+          ],
+          [
+            "_platform_memmove",
+            5
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            5
+          ],
+          [
+            "mi_free",
+            4
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation8sequence",
+            3
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical15structure_shell12continuationNtB4_12Continuation5child",
+            3
+          ],
+          [
+            "_mi_heap_realloc_zero",
+            3
+          ],
+          [
+            "_tlv_get_addr",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14recursive_core10structures12continuationNtB2_21StructureContinuation7advance",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5pathsNtB2_12Continuation7advance",
+            2
+          ]
+        ],
+        "tree-journal-access": [
+          [
+            "<deduplicated_symbol>",
+            1
+          ],
+          [
+            "_RINvNvMs2_NtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequenceINtB8_16RetainedSequencepE7get_mut7descendINtNtNtNtBa_6parser7journal5batch9PageGroupNtNtB1S_5event5EventEEBc_",
+            1
+          ]
+        ],
+        "operator-continuation": [
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+            8
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10statementsNtB2_12Continuation7advance",
+            3
+          ],
+          [
+            "_RNvMs_NtNtCs7kqvMiEY1kn_11mech_syntax8document6parserNtB4_6Parser5start",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation4base",
+            2
+          ],
+          [
+            "mi_page_free_list_extend",
+            1
+          ],
+          [
+            "_mi_heap_realloc_zero",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10prediction16predict_operator",
+            1
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical9operators12continuation12ContinuationEBS_",
+            1
+          ]
+        ],
+        "structural-replay": [
+          [
+            "_RNvMs0_NtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document17definition_replayNtB5_7Summary12fresh_events",
+            9
+          ],
+          [
+            "_RNvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6clonedINtB4_6ClonedINtNtB6_4take4TakeINtNtB6_4skip4SkipINtNtB6_7flatten7FlatMapINtNtB6_5chain5ChainIB20_INtB1E_7FlattenINtNtBa_6option8IntoIterINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtB36_6parser7journal5ChunkNtNtB4k_5event5EventEEEEIB2p_IB2E_IB1k_IB1C_IB20_IB32_INtNtB4i_5batch9PageGroupB4L_EEINtNtB6_6filter6FilterINtB2G_4IterB5D_ENCNvMs3_B5G_INtB5G_10BatchPagesB4L_E9iter_from0EEINtNtNtBa_5slice4iter4IterB4f_ENCB6N_s_0EEEEEIB69_IB6v_B4f_ENCNvMs6_B4i_INtB4i_7JournalB4L_E10iter_range0EEIB7z_B4L_ENCB8y_s_0EEEENtNtNtB8_6traits8iterator8Iterator4nextB38_",
+            7
+          ],
+          [
+            "<deduplicated_symbol>",
+            5
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence4NodeNtNtBL_5green12GreenElementEE9drop_slowBN_",
+            5
+          ],
+          [
+            "mi_free",
+            5
+          ],
+          [
+            "_tlv_get_addr",
+            4
+          ],
+          [
+            "_RNvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters7flattenINtB5_7FlatMapINtNtB7_5chain5ChainIB15_INtB5_7FlattenINtNtBb_6option8IntoIterINtNtNtCs7kqvMiEY1kn_11mech_syntax8document17retained_sequence12SequenceIterINtNtNtB2a_6parser7journal5ChunkNtNtB3o_5event5EventEEEEIB1u_IB1I_INtNtB7_4skip4SkipIBR_IB15_IB26_INtNtB3m_5batch9PageGroupB3P_EEINtNtB7_6filter6FilterINtB1K_4IterB4T_ENCNvMs3_B4W_INtB4W_10BatchPagesB3P_E9iter_from0EEINtNtNtBb_5slice4iter4IterB3j_ENCB63_s_0EEEEEIB5p_IB5L_B3j_ENCNvMs6_B3m_INtB3m_7JournalB3P_E10iter_range0EEIB6P_B3P_ENCB7O_s_0ENtNtNtB9_6traits8iterator8Iterator4nextB2c_",
+            4
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser5event5EventEINtB2_18SpecFromIterNestedB11_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6cloned6ClonedINtNtB2C_4take4TakeINtNtB2C_4skip4SkipINtNtB2C_7flatten7FlatMapINtNtB2C_5chain5ChainIB4t_INtB46_7FlattenINtNtB2G_6option8IntoIterINtNtB17_17retained_sequence12SequenceIterINtNtB15_7journal5ChunkB11_EEEEIB4T_IB58_IB3L_IB44_IB4t_IB5x_INtNtB6f_5batch9PageGroupB11_EEINtNtB2C_6filter6FilterINtB5a_4IterB7b_ENCNvMs3_B7e_INtB7e_10BatchPagesB11_E9iter_from0EEINtNtNtB2G_5slice4iter4IterB6c_ENCB8m_s_0EEEEEIB7H_IB84_B6c_ENCNvMs6_B6f_INtB6f_7JournalB11_E10iter_range0EEIB98_B11_ENCBa8_s_0EEEEE9from_iterB19_",
+            4
+          ],
+          [
+            "mi_page_free_list_extend",
+            3
+          ],
+          [
+            "mi_malloc_aligned",
+            3
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            2
+          ],
+          [
+            "_RINvMs7_NtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3rev3RevINtNtNtCsgKscDXrlV49_5alloc3vec9into_iter8IntoIterB1f_EEEBc_",
+            2
+          ]
+        ],
+        "document-continuation": [
+          [
+            "_platform_memmove",
+            32
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+            8
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation7advance",
+            4
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation5probe",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation10expression",
+            3
+          ],
+          [
+            "mi_realloc_aligned",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation8sequence",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation4push",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical10primitivesNtB4_12Continuation7advance",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation24record_structural_choice",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser9canonical14source_imports8supports",
+            1
+          ]
+        ],
+        "snapshot-index": [
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1b_5index10NodeRecordE6insertB1d_",
+            9
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids7TokenIdNtNtB1b_5index11TokenRecordE6insertB1d_",
+            6
+          ],
+          [
+            "<deduplicated_symbol>",
+            3
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtNtCs7kqvMiEY1kn_11mech_syntax8document3ids6NodeIdNtNtB1H_5index10NodeRecordNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB42_11VacantEntryB1D_B2u_E12insert_entry0EB1J_",
+            2
+          ],
+          [
+            "DYLD-STUB$$memmove",
+            2
+          ],
+          [
+            "_RNvMNtNtCs7kqvMiEY1kn_11mech_syntax8document5indexNtB2_9NodeIndex10index_node",
+            1
+          ]
+        ],
+        "restart-index": [
+          [
+            "_RNvNtNtCs7kqvMiEY1kn_11mech_syntax8document6parser19build_restart_index",
+            2
+          ]
+        ]
+      }
+    }
+  ],
+  "matched_control_families": {
+    "base-continuation": {
+      "fractions": [
+        0.19473684210526315,
+        0.19818652849740934,
+        0.1986842105263158,
+        0.19736842105263158
+      ],
+      "median": 0.19777747477502045,
+      "hot_repetitions": 4
+    },
+    "literal-scan": {
+      "fractions": [
+        0.1631578947368421,
+        0.172279792746114,
+        0.15921052631578947,
+        0.15657894736842104
+      ],
+      "median": 0.1611842105263158,
+      "hot_repetitions": 4
+    },
+    "precedence-continuation": {
+      "fractions": [
+        0.08947368421052632,
+        0.09455958549222798,
+        0.11315789473684211,
+        0.09736842105263158
+      ],
+      "median": 0.09596400327242978,
+      "hot_repetitions": 4
+    },
+    "grammar-journal": {
+      "fractions": [
+        0.10394736842105264,
+        0.09067357512953368,
+        0.08157894736842106,
+        0.09473684210526316
+      ],
+      "median": 0.09270520861739842,
+      "hot_repetitions": 4
+    },
+    "structural-replay": {
+      "fractions": [
+        0.07763157894736843,
+        0.06994818652849741,
+        0.06710526315789474,
+        0.06842105263157895
+      ],
+      "median": 0.06918461958003819,
+      "hot_repetitions": 4
+    },
+    "literal-continuation": {
+      "fractions": [
+        0.07105263157894737,
+        0.08031088082901554,
+        0.06710526315789474,
+        0.060526315789473685
+      ],
+      "median": 0.06907894736842105,
+      "hot_repetitions": 4
+    },
+    "document-continuation": {
+      "fractions": [
+        0.05921052631578947,
+        0.06476683937823834,
+        0.07105263157894737,
+        0.07763157894736843
+      ],
+      "median": 0.06790973547859286,
+      "hot_repetitions": 4
+    },
+    "subtree-cache": {
+      "fractions": [
+        0.042105263157894736,
+        0.05310880829015544,
+        0.05526315789473684,
+        0.04342105263157895
+      ],
+      "median": 0.048264930460867196,
+      "hot_repetitions": 2
+    },
+    "operator-continuation": {
+      "fractions": [
+        0.031578947368421054,
+        0.04145077720207254,
+        0.04078947368421053,
+        0.030263157894736843
+      ],
+      "median": 0.03618421052631579,
+      "hot_repetitions": 0
+    },
+    "snapshot-index": {
+      "fractions": [
+        0.035526315789473684,
+        0.034974093264248704,
+        0.035526315789473684,
+        0.035526315789473684
+      ],
+      "median": 0.035526315789473684,
+      "hot_repetitions": 0
+    },
+    "tree-storage": {
+      "fractions": [
+        0.03684210526315789,
+        0.02072538860103627,
+        0.02763157894736842,
+        0.03289473684210526
+      ],
+      "median": 0.03026315789473684,
+      "hot_repetitions": 0
+    },
+    "grapheme-scan": {
+      "fractions": [
+        0.02763157894736842,
+        0.012953367875647668,
+        0.021052631578947368,
+        0.015789473684210527
+      ],
+      "median": 0.01842105263157895,
+      "hot_repetitions": 0
+    },
+    "cache-enqueue": {
+      "fractions": [
+        0.009210526315789473,
+        0.018134715025906734,
+        0.017105263157894738,
+        0.02368421052631579
+      ],
+      "median": 0.017619989091900736,
+      "hot_repetitions": 0
+    },
+    "grammar-transactions": {
+      "fractions": [
+        0.014473684210526316,
+        0.01683937823834197,
+        0.014473684210526316,
+        0.011842105263157895
+      ],
+      "median": 0.014473684210526316,
+      "hot_repetitions": 0
+    },
+    "tree-journal-access": {
+      "fractions": [
+        0.009210526315789473,
+        0.01683937823834197,
+        0.007894736842105263,
+        0.015789473684210527
+      ],
+      "median": 0.0125,
+      "hot_repetitions": 0
+    },
+    "recognition-memo": {
+      "fractions": [
+        0.014473684210526316,
+        0.006476683937823834,
+        0.007894736842105263,
+        0.014473684210526316
+      ],
+      "median": 0.01118421052631579,
+      "hot_repetitions": 0
+    },
+    "grammar-source-access": {
+      "fractions": [
+        0.013157894736842105,
+        0.0051813471502590676,
+        0.007894736842105263,
+        0.014473684210526316
+      ],
+      "median": 0.010526315789473684,
+      "hot_repetitions": 0
+    },
+    "tree-source-access": {
+      "fractions": [
+        0.003947368421052632,
+        0.0,
+        0.003947368421052632,
+        0.006578947368421052
+      ],
+      "median": 0.003947368421052632,
+      "hot_repetitions": 0
+    },
+    "restart-index": {
+      "fractions": [
+        0.002631578947368421,
+        0.0025906735751295338,
+        0.002631578947368421,
+        0.002631578947368421
+      ],
+      "median": 0.002631578947368421,
+      "hot_repetitions": 0
+    }
+  },
+  "families": {
+    "base-continuation": {
+      "median_fraction": 0.21683102345415778,
+      "per_capture": [
+        0.22321428571428573,
+        0.1934032983508246,
+        0.21044776119402986,
+        0.22835820895522388
+      ]
+    },
+    "precedence-continuation": {
+      "median_fraction": 0.1244291933191187,
+      "per_capture": [
+        0.1324404761904762,
+        0.136431784107946,
+        0.11641791044776119,
+        0.11641791044776119
+      ]
+    },
+    "grammar-journal": {
+      "median_fraction": 0.10097451274362819,
+      "per_capture": [
+        0.08630952380952381,
+        0.10194902548725637,
+        0.11044776119402985,
+        0.1
+      ]
+    },
+    "structural-replay": {
+      "median_fraction": 0.08344216417910448,
+      "per_capture": [
+        0.09375,
+        0.07196401799100449,
+        0.07313432835820896,
+        0.0955223880597015
+      ]
+    },
+    "document-continuation": {
+      "median_fraction": 0.07526652452025587,
+      "per_capture": [
+        0.07142857142857142,
+        0.05847076461769116,
+        0.0791044776119403,
+        0.09104477611940298
+      ]
+    },
+    "literal-continuation": {
+      "median_fraction": 0.07390054972513743,
+      "per_capture": [
+        0.08333333333333333,
+        0.06446776611694154,
+        0.09402985074626866,
+        0.058208955223880594
+      ]
+    },
+    "literal-scan": {
+      "median_fraction": 0.07254917317460673,
+      "per_capture": [
+        0.06696428571428571,
+        0.07196401799100449,
+        0.07313432835820896,
+        0.07313432835820896
+      ]
+    },
+    "subtree-cache": {
+      "median_fraction": 0.06059209201369465,
+      "per_capture": [
+        0.05654761904761905,
+        0.06446776611694154,
+        0.056716417910447764,
+        0.06567164179104477
+      ]
+    },
+    "snapshot-index": {
+      "median_fraction": 0.038893239947190586,
+      "per_capture": [
+        0.03869047619047619,
+        0.038980509745127435,
+        0.04029850746268657,
+        0.03880597014925373
+      ]
+    },
+    "operator-continuation": {
+      "median_fraction": 0.030597014925373135,
+      "per_capture": [
+        0.028273809523809524,
+        0.050974512743628186,
+        0.03283582089552239,
+        0.028358208955223882
+      ]
+    },
+    "tree-storage": {
+      "median_fraction": 0.024626865671641792,
+      "per_capture": [
+        0.020833333333333332,
+        0.043478260869565216,
+        0.020895522388059702,
+        0.028358208955223882
+      ]
+    },
+    "cache-enqueue": {
+      "median_fraction": 0.02316029485257371,
+      "per_capture": [
+        0.020833333333333332,
+        0.025487256371814093,
+        0.029850746268656716,
+        0.01791044776119403
+      ]
+    },
+    "grammar-source-access": {
+      "median_fraction": 0.01720445747275616,
+      "per_capture": [
+        0.019345238095238096,
+        0.017991004497751123,
+        0.013432835820895522,
+        0.016417910447761194
+      ]
+    },
+    "grammar-transactions": {
+      "median_fraction": 0.013410625444207534,
+      "per_capture": [
+        0.01488095238095238,
+        0.014992503748125937,
+        0.011940298507462687,
+        0.008955223880597015
+      ]
+    },
+    "recognition-memo": {
+      "median_fraction": 0.012713419409698137,
+      "per_capture": [
+        0.017857142857142856,
+        0.01199400299850075,
+        0.008955223880597015,
+        0.013432835820895522
+      ]
+    },
+    "tree-journal-access": {
+      "median_fraction": 0.010434434968017058,
+      "per_capture": [
+        0.008928571428571428,
+        0.013493253373313344,
+        0.011940298507462687,
+        0.0029850746268656717
+      ]
+    },
+    "tree-source-access": {
+      "median_fraction": 0.008208955223880597,
+      "per_capture": [
+        0.005952380952380952,
+        0.010494752623688156,
+        0.010447761194029851,
+        0.005970149253731343
+      ]
+    },
+    "grapheme-scan": {
+      "median_fraction": 0.005969113657456985,
+      "per_capture": [
+        0.00744047619047619,
+        0.004497751124437781,
+        0.0029850746268656717,
+        0.007462686567164179
+      ]
+    },
+    "restart-index": {
+      "median_fraction": 0.0029850746268656717,
+      "per_capture": [
+        0.002976190476190476,
+        0.0029985007496251873,
+        0.0029850746268656717,
+        0.0029850746268656717
+      ]
+    },
+    "other-parser": {
+      "median_fraction": 0.0,
+      "per_capture": [
+        0.0,
+        0.0014992503748125937,
+        0.0,
+        0.0
+      ]
+    }
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "compiler_source": "c93ed0e1a726ff7f64164533593349f04fdfa12c",
+  "reference_source": "7a0b3127ce2ec163d3989f706b7ab819901ec0c2",
+  "source_through_deployment": {
+    "mech-control": {
+      "source": 2.6569120830390602,
+      "link": 0.034272645600140095,
+      "source_through_link": 2.6932035624049604,
+      "strip": 0.010364582994952798,
+      "source_through_strip": 2.7038128750864416
+    },
+    "mech-sealed-ascii": {
+      "source": 2.559716292191297,
+      "link": 0.0340228748973459,
+      "source_through_link": 2.594658249989152,
+      "strip": 0.01044027111493051,
+      "source_through_strip": 2.605311604682356
+    },
+    "roc": {
+      "source": 2.9437215628568083,
+      "link": 0.033907187171280384,
+      "source_through_link": 2.9779513543471694,
+      "strip": 0.0103238127194345,
+      "source_through_strip": 2.988524021115154
+    },
+    "libdeflate": {
+      "source": 0.44663083320483565,
+      "link": 0.03374499944038689,
+      "source_through_link": 0.4807373334188014,
+      "strip": 0.010275749955326319,
+      "source_through_strip": 0.49122910387814045
+    }
+  },
+  "source_through_link_paired_ratio": {
+    "mech-control": 0.9634238179726796,
+    "roc": 0.8702558373197027,
+    "libdeflate": 5.405155794077347
+  },
+  "paired_source_through_link_saved_ms": 98.50412514060736,
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 0.9169701045,
+      "catalog": 0.057990833,
+      "frontend": 0.2254338335,
+      "artifact": 0.006967915999999999,
+      "encode": 0.0025511875,
+      "native": 1.4202452504999998
+    },
+    "mech-sealed-ascii": {
+      "parse": 0.8124982085,
+      "catalog": 0.0617702915,
+      "frontend": 0.22569231299999998,
+      "artifact": 0.0069730625,
+      "encode": 0.002534729,
+      "native": 1.4199922704999999
+    }
+  },
+  "within_trial_residual_medians_seconds": {
+    "mech-control": 0.07051583253580129,
+    "mech-sealed-ascii": 0.07096525020821809
+  },
+  "without_parse_or_native_median_seconds": 0.3583537076445902,
+  "encoder_text_bytes": 71192,
+  "encoder_artifacts": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "reference_worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+  "standalone_parser_medians_seconds": {
+    "control": 0.918080459,
+    "expected": 0.8760912919999999,
+    "candidate": 0.8122309585
+  },
+  "reported_parser_comparison": {
+    "seconds": {
+      "mech-sealed-ascii": 0.8127022495,
+      "roc": 0.003
+    },
+    "mech_x_roc": 270.90074983333335,
+    "scope": "Mech lossless parse, indexes and strict check. Roc summed parser phase with one job."
+  },
+  "working_target_s": 0.45,
+  "evidence": "evidence/sealed-ascii-graphemes/README.md",
+  "native_diagnostic": "evidence/native-pass-attribution/README.md"
+}
