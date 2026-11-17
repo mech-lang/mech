@@ -1337,6 +1337,34 @@ impl DataFlowGraph {
         }
     }
 
+    /// Keep the parameters for which `keep` returns true, preserving their order.
+    ///
+    /// Reindex the surviving parameters in one pass. The caller must update the
+    /// arguments of branches to this block to match the new parameter list.
+    pub fn retain_block_params(&mut self, block: Block, mut keep: impl FnMut(Value) -> bool) {
+        let params = &mut self.blocks[block].params;
+        let list = params.as_mut_slice(&mut self.value_lists);
+        let mut kept = 0;
+        for index in 0..list.len() {
+            let value = list[index];
+            if !keep(value) {
+                continue;
+            }
+            if kept != index {
+                let packed = &mut self.values[value];
+                let mut data = ValueData::from(*packed);
+                let ValueData::Param { num, .. } = &mut data else {
+                    panic!("{value} must be a block parameter");
+                };
+                *num = kept as u16;
+                *packed = data.into();
+                list[kept] = value;
+            }
+            kept += 1;
+        }
+        params.truncate(kept, &mut self.value_lists);
+    }
+
     /// Append an existing value to `block`'s parameters.
     ///
     /// The appended value can't already be attached to something else.
@@ -1746,6 +1774,41 @@ mod tests {
         dfg.swap_remove_block_param(arg3);
         assert_eq!(dfg.value_is_attached(arg3), false);
         assert_eq!(dfg.block_params(block), &[]);
+    }
+
+    #[test]
+    fn retain_block_params_reindexes_survivors() {
+        let mut dfg = DataFlowGraph::new();
+        let block = dfg.make_block();
+        let first = dfg.append_block_param(block, types::I32);
+        let left = dfg.append_block_param(block, types::I32);
+        let middle = dfg.append_block_param(block, types::I64);
+        let right = dfg.append_block_param(block, types::I64);
+        let last = dfg.append_block_param(block, types::I64);
+
+        dfg.retain_block_params(block, |value| value == left || value == right);
+        assert_eq!(dfg.block_params(block), &[left, right]);
+        assert_eq!(dfg.value_def(left), ValueDef::Param(block, 0));
+        assert_eq!(dfg.value_def(right), ValueDef::Param(block, 1));
+        assert_eq!(dfg.value_type(left), types::I32);
+        assert_eq!(dfg.value_type(right), types::I64);
+        assert!(!dfg.value_is_attached(first));
+        assert!(!dfg.value_is_attached(middle));
+        assert!(!dfg.value_is_attached(last));
+        assert!(dfg.value_is_attached(left));
+        assert!(dfg.value_is_attached(right));
+        dfg.change_to_alias(first, left);
+        dfg.change_to_alias(middle, right);
+        assert_eq!(dfg.resolve_aliases(first), left);
+        assert_eq!(dfg.resolve_aliases(middle), right);
+
+        dfg.retain_block_params(block, |_| true);
+        assert_eq!(dfg.block_params(block), &[left, right]);
+        dfg.retain_block_params(block, |_| false);
+        assert!(dfg.block_params(block).is_empty());
+        assert!(!dfg.value_is_attached(left));
+        assert!(!dfg.value_is_attached(right));
+        dfg.retain_block_params(block, |_| unreachable!());
     }
 
     #[test]
