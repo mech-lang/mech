@@ -25,7 +25,9 @@ use crate::result::{CodegenResult, CompileResult};
 use crate::settings::{FlagsOrIsa, OptLevel};
 use crate::trace;
 use crate::unreachable_code::eliminate_unreachable_code;
-use crate::verifier::{VerifierErrors, VerifierResult, verify_context};
+use crate::verifier::{
+    VerifierErrors, VerifierResult, verify_context, verify_function_and_flowgraph,
+};
 use crate::{CompileError, timing};
 #[cfg(feature = "souper-harvest")]
 use alloc::string::String;
@@ -173,10 +175,14 @@ impl Context {
             self.canonicalize_nans(isa)?;
         }
 
-        self.legalize(isa)?;
-
-        self.compute_cfg();
-        self.compute_domtree();
+        self.legalize_ir(isa);
+        if isa.flags().enable_verifier() {
+            // The verifier builds both graphs from the legalized function.
+            // Keep those graphs for the next pass instead of rebuilding them.
+            (self.cfg, self.domtree) = verify_function_and_flowgraph(&self.func, isa)?;
+        } else {
+            self.flowgraph();
+        }
         self.eliminate_unreachable_code(isa)?;
         self.remove_constant_phis(isa)?;
 
@@ -295,6 +301,11 @@ impl Context {
 
     /// Run the legalizer for `isa` on the function.
     pub fn legalize(&mut self, isa: &dyn TargetIsa) -> CodegenResult<()> {
+        self.legalize_ir(isa);
+        self.verify_if(isa)
+    }
+
+    fn legalize_ir(&mut self, isa: &dyn TargetIsa) {
         // Legalization invalidates the domtree and loop_analysis by mutating the CFG.
         // TODO: Avoid doing this when legalization doesn't actually mutate the CFG.
         self.domtree.clear();
@@ -303,7 +314,6 @@ impl Context {
 
         // Run some specific legalizations only.
         simple_legalize(&mut self.func, isa);
-        self.verify_if(isa)
     }
 
     /// Compute the control flow graph.

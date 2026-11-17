@@ -24109,6 +24109,11 @@
       "bytes": 152065
     },
     {
+      "path": "vendor/cranelift-codegen/src/context.rs",
+      "sha256": "c3f1fe21857f226b70fd35b990139356a5020fe5dc688d6ac87942c7334479a5",
+      "bytes": 13775
+    },
+    {
       "path": "vendor/cranelift-codegen/src/dominator_tree/mod.rs",
       "sha256": "53479d3d43c9c2dbb39bd2f440a114a1e29edff7040c2dbc782f80fdb1f28aab",
       "bytes": 28356
@@ -24320,8 +24325,8 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/verifier/mod.rs",
-      "sha256": "9c12e88bf4cbbc00e764b1c5826a1ac5ba9e0095e45cea29ee0c235addddd89d",
-      "bytes": 82733
+      "sha256": "ef19d8094c03ec6e94efec63116dadf33ce372430caf7d4ea294cce6caa7d088",
+      "bytes": 83093
     },
     {
       "path": "vendor/cranelift-codegen-meta/src/pulley.rs",
