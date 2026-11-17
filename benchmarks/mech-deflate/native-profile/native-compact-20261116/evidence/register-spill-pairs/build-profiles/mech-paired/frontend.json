@@ -1,0 +1,42 @@
+{
+  "bytecode_bytes": 1034027,
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "mode": "frontend",
+  "object_bytes": 0,
+  "object_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "phases": [
+    {
+      "phase": "parse",
+      "seconds": 2.457365375,
+      "total_seconds": 2.457401083
+    },
+    {
+      "phase": "catalog",
+      "seconds": 0.06067725,
+      "total_seconds": 2.5181693750000003
+    },
+    {
+      "phase": "frontend",
+      "seconds": 0.229808667,
+      "total_seconds": 2.748057208
+    },
+    {
+      "phase": "artifact",
+      "seconds": 0.007061625,
+      "total_seconds": 2.755222292
+    },
+    {
+      "phase": "encode",
+      "seconds": 0.002400417,
+      "total_seconds": 2.7577000419999997
+    },
+    {
+      "phase": "native",
+      "seconds": 3.75e-7,
+      "total_seconds": 2.75807
+    }
+  ],
+  "source_bytes": 243209,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "total_seconds": 2.758129833
+}

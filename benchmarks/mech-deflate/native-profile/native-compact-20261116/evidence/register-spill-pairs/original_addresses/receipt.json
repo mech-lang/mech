@@ -1,0 +1,27 @@
+{
+  "object_text_bytes": 71960,
+  "object_text_x_roc": 1.2472268441486412,
+  "object_text_x_libdeflate": 1.9406688241639698,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 51448,
+  "root_frame_bytes": 3744,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 1.7942254999652505,
+  "peak_resident_bytes": 218071040,
+  "object_sha256": "d2d0ee253fc846cae6dc7ca42f577df6423ffc7a46745b505e4ea061d7110b44",
+  "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+  "linked_text_bytes": 474788,
+  "worker_sha256": "010adac211abc907ceeaa8e4c606185e300868fd3d7ddaf2cd2453a2dba78529",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/spill-pairs-restored-placement-worker-qualification.json",
+  "postprocess": {
+    "matched_atom": "_mech_compact_numeric_475_vector",
+    "bytes_of_unreachable_padding": 96,
+    "paired_object_sha256": "463a3a0d275548b9be6f646cd9f978f6c929b58c9779b88e2d22183019b0b99a",
+    "all_object_text_symbol_addresses_restored": true
+  },
+  "linked_native_symbol_addresses_checked": 40,
+  "linked_native_symbols_with_different_addresses": []
+}
