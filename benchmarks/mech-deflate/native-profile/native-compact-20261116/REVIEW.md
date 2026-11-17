@@ -86,6 +86,13 @@ placement and remains unresolved at equal stub and constant section
 addresses. Exact reproduction, checked errors, and both timing receipts
 are recorded. [Prototype and intended backend boundary](evidence/cold-origin-tables/README.md)
 
+A follow-up removes one repeated reference-count assignment in the
+terminal append helper and independently combines it with the 71,256-byte
+packed origin prototype. Both preserve individual focused wins. Empty
+input is 1.146% slower with the helper change alone and 2.375% slower with
+packing, so policy v1 rejects both variants.
+[Focused experiments and raw replay](evidence/terminal-owner-publication/README.md)
+
 ## Single-process source compilation
 
 The maintained rebuild accepts `--direct-source`. The existing diagnostic

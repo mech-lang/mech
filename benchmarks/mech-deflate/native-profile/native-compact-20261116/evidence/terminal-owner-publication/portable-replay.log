@@ -1,0 +1,9 @@
+terminal-owner-only: Reject
+empty: established slowdown above the 0.5% resolution
+both complete timing orders are required
+random-64: regression bound or duplicate-control repeatability unresolved
+terminal-owner-cold-origins: Reject
+empty: established slowdown above the 0.5% resolution
+both complete timing orders are required
+one-stored: combined and individual run bounds conflict: terminal-owner-cold-origins-focus-reverse
+random-64: regression bound or duplicate-control repeatability unresolved

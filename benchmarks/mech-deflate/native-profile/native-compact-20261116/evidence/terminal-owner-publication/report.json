@@ -1,0 +1,570 @@
+{
+  "terminal-owner-only": {
+    "encoder_text_bytes": 71768,
+    "encoder_text_x_roc": 1.2438990571270105,
+    "encoder_text_x_libdeflate": 1.9354908306364618,
+    "decision": "Reject",
+    "rejected": [
+      "empty: established slowdown above the 0.5% resolution"
+    ],
+    "unresolved": [
+      "both complete timing orders are required",
+      "random-64: regression bound or duplicate-control repeatability unresolved"
+    ],
+    "runs": [
+      {
+        "id": "terminal-owner-only-focus-forward",
+        "kind": "focus",
+        "order": "forward",
+        "case_count": 9,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "precision_supported_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 5,
+              "mech-experiment": 5
+            },
+            "precision_supported_wins": {
+              "mech-control": 5,
+              "mech-experiment": 5
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          }
+        }
+      },
+      {
+        "id": "terminal-owner-only-focus-reverse",
+        "kind": "focus",
+        "order": "reverse",
+        "case_count": 9,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "precision_supported_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 6,
+              "mech-experiment": 6
+            },
+            "precision_supported_wins": {
+              "mech-control": 6,
+              "mech-experiment": 6
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          }
+        }
+      }
+    ],
+    "cases": {
+      "empty": {
+        "decision": "regression",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": 0.0202098948640681,
+            "lower": 0.011889476905412977,
+            "upper": 0.028503641073290398
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": 0.0027788582335210865,
+            "lower": -0.005166143094850195,
+            "upper": 0.010852402615541434
+          }
+        },
+        "combined": {
+          "estimate": 0.011456827319056062,
+          "lower": 0.005711383839297923,
+          "upper": 0.017172920039059125
+        },
+        "adverse_runs": [
+          "terminal-owner-only-focus-forward"
+        ],
+        "duplicate_controls": []
+      },
+      "one-stored": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": -0.001380535297372143,
+            "lower": -0.008718429059856092,
+            "upper": 0.0063290323939777515
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": -0.005066993232695216,
+            "lower": -0.012810223584867941,
+            "upper": 0.002793193966180496
+          }
+        },
+        "combined": {
+          "estimate": -0.0032254685070740585,
+          "lower": -0.008589426738750516,
+          "upper": 0.002164537580421344
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "seven-stored-prefix": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": -0.04677952699127963,
+            "lower": -0.05435655392519756,
+            "upper": -0.03941816088955896
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": -0.054515442238600054,
+            "lower": -0.06173607901937084,
+            "upper": -0.047747371812770556
+          }
+        },
+        "combined": {
+          "estimate": -0.05065536427925055,
+          "lower": -0.055784755857766766,
+          "upper": -0.045545510684293244
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "320-overlap": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": 0.0020078699801262534,
+            "lower": -0.001218604840353188,
+            "upper": 0.005554835623103438
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": -0.002361218499075779,
+            "lower": -0.0042471099379495225,
+            "upper": -0.00047080353729322955
+          }
+        },
+        "combined": {
+          "estimate": -0.00017906080073037955,
+          "lower": -0.002051504754018829,
+          "upper": 0.0018116454117027558
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "random-64": {
+        "decision": "unresolved",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": 0.0010512715863768562,
+            "lower": -0.004025498152140483,
+            "upper": 0.006564225365714993
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": 0.006448386956591667,
+            "lower": 0.0015649675116491402,
+            "upper": 0.011756132101146344
+          }
+        },
+        "combined": {
+          "estimate": 0.0037462017606613163,
+          "lower": 0.00017346798316197898,
+          "upper": 0.007472339364025693
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-4096": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": 0.0015209861986784645,
+            "lower": -0.0017922886470157495,
+            "upper": 0.004743542250202015
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": -0.0023954193391496625,
+            "lower": -0.006227801683301948,
+            "upper": 0.0015247498559631811
+          }
+        },
+        "combined": {
+          "estimate": -0.00043913468975098624,
+          "lower": -0.0030373824761708024,
+          "upper": 0.0020464992986859443
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-8192": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": 0.00152103694996919,
+            "lower": -0.0004910056217189984,
+            "upper": 0.003631912359389977
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": -0.0030388270859741384,
+            "lower": -0.004514532930056325,
+            "upper": -0.00155601372466041
+          }
+        },
+        "combined": {
+          "estimate": -0.0007614960902914136,
+          "lower": -0.0019885614999219925,
+          "upper": 0.0005149815231892951
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-random-4096": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": 0.00010258772847571151,
+            "lower": -0.003606921919731332,
+            "upper": 0.0037774021912819755
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": -0.016135204707358186,
+            "lower": -0.020720856820262368,
+            "upper": -0.01105801585774524
+          }
+        },
+        "combined": {
+          "estimate": -0.008049533622208505,
+          "lower": -0.011148970635106004,
+          "upper": -0.004815889209144775
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-repeated-32769": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-only-focus-forward": {
+            "estimate": 0.0008079154247475628,
+            "lower": -0.0004740691094838878,
+            "upper": 0.002094333912924462
+          },
+          "terminal-owner-only-focus-reverse": {
+            "estimate": -0.004313698778592778,
+            "lower": -0.007155557969388493,
+            "upper": -0.0019218280139065014
+          }
+        },
+        "combined": {
+          "estimate": -0.0017561763064226632,
+          "lower": -0.003378017912385678,
+          "upper": -0.0003883081211868422
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      }
+    },
+    "runtime_metadata": "terminal-owner-only/identities/runtime.json"
+  },
+  "terminal-owner-cold-origins": {
+    "encoder_text_bytes": 71256,
+    "encoder_text_x_roc": 1.2350249584026622,
+    "encoder_text_x_libdeflate": 1.92168284789644,
+    "decision": "Reject",
+    "rejected": [
+      "empty: established slowdown above the 0.5% resolution"
+    ],
+    "unresolved": [
+      "both complete timing orders are required",
+      "one-stored: combined and individual run bounds conflict: terminal-owner-cold-origins-focus-reverse",
+      "random-64: regression bound or duplicate-control repeatability unresolved"
+    ],
+    "runs": [
+      {
+        "id": "terminal-owner-cold-origins-focus-forward",
+        "kind": "focus",
+        "order": "forward",
+        "case_count": 9,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "precision_supported_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 6,
+              "mech-experiment": 6
+            },
+            "precision_supported_wins": {
+              "mech-control": 5,
+              "mech-experiment": 6
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          }
+        }
+      },
+      {
+        "id": "terminal-owner-cold-origins-focus-reverse",
+        "kind": "focus",
+        "order": "reverse",
+        "case_count": 9,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "precision_supported_wins": {
+              "mech-control": 9,
+              "mech-experiment": 9
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 6,
+              "mech-experiment": 6
+            },
+            "precision_supported_wins": {
+              "mech-control": 5,
+              "mech-experiment": 6
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          }
+        }
+      }
+    ],
+    "cases": {
+      "empty": {
+        "decision": "regression",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": 0.02058663710800035,
+            "lower": 0.012715554634466386,
+            "upper": 0.02828479230277492
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": 0.026919731376089162,
+            "lower": 0.019526651952038288,
+            "upper": 0.0342230368509886
+          }
+        },
+        "combined": {
+          "estimate": 0.02374828704373111,
+          "lower": 0.018340591041048793,
+          "upper": 0.029149906592773167
+        },
+        "adverse_runs": [
+          "terminal-owner-cold-origins-focus-forward",
+          "terminal-owner-cold-origins-focus-reverse"
+        ],
+        "duplicate_controls": []
+      },
+      "one-stored": {
+        "decision": "unresolved",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": -0.0033509572065920645,
+            "lower": -0.011173315170399212,
+            "upper": 0.0047266646262504874
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": 0.013370611844759406,
+            "lower": 0.0056245335203251035,
+            "upper": 0.021037933724796565
+          }
+        },
+        "combined": {
+          "estimate": 0.004975049585834057,
+          "lower": -0.0005962636877439031,
+          "upper": 0.01058514338633798
+        },
+        "adverse_runs": [
+          "terminal-owner-cold-origins-focus-reverse"
+        ],
+        "duplicate_controls": []
+      },
+      "seven-stored-prefix": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": -0.0552247968265106,
+            "lower": -0.06269418202999322,
+            "upper": -0.04769116562208364
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": -0.04749889889231729,
+            "lower": -0.05472502712990879,
+            "upper": -0.039738518032550796
+          }
+        },
+        "combined": {
+          "estimate": -0.051369713048342924,
+          "lower": -0.05665960668159664,
+          "upper": -0.0461772128716752
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "320-overlap": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": -0.00148695430243162,
+            "lower": -0.004589549510946589,
+            "upper": 0.0016380646608533667
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": -0.0017733975197358198,
+            "lower": -0.004923782120443865,
+            "upper": 0.0010459149636126153
+          }
+        },
+        "combined": {
+          "estimate": -0.0016301861840450904,
+          "lower": -0.0038438071187135714,
+          "upper": 0.0005210191039315415
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "random-64": {
+        "decision": "unresolved",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": 0.005255030588774412,
+            "lower": 0.0013325622453310704,
+            "upper": 0.009568004269674413
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": 0.003363411151554585,
+            "lower": 0.0002940167234839475,
+            "upper": 0.006739474054296757
+          }
+        },
+        "combined": {
+          "estimate": 0.004308775511203455,
+          "lower": 0.0017896369748300334,
+          "upper": 0.00698564507792887
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-4096": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": -0.00186723123697774,
+            "lower": -0.004797402069173451,
+            "upper": 0.0010269868754051448
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": -0.0018551248939328024,
+            "lower": -0.0038885730050151057,
+            "upper": 0.00013598840454331906
+          }
+        },
+        "combined": {
+          "estimate": -0.0018611780838099223,
+          "lower": -0.0036264802911537553,
+          "upper": -0.00013891876810057102
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-8192": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": 0.0017792555275890631,
+            "lower": -0.00020115344317539474,
+            "upper": 0.0039324139828917914
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": 0.0007963281024672142,
+            "lower": -0.0005230430789211482,
+            "upper": 0.002073829909757574
+          }
+        },
+        "combined": {
+          "estimate": 0.001287671202054863,
+          "lower": 9.3929836472606e-05,
+          "upper": 0.0025114132491843577
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-random-4096": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": -0.011548663327716424,
+            "lower": -0.014659373244747087,
+            "upper": -0.00853689999210372
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": 0.004739773032255146,
+            "lower": -0.0005357033890214247,
+            "upper": 0.01023324647286672
+          }
+        },
+        "combined": {
+          "estimate": -0.003437723139422033,
+          "lower": -0.006560611592370202,
+          "upper": -0.00020291693492269225
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-repeated-32769": {
+        "decision": "bounded",
+        "runs": {
+          "terminal-owner-cold-origins-focus-forward": {
+            "estimate": -0.0009168667945544939,
+            "lower": -0.002161076576872256,
+            "upper": 0.0003715127800623108
+          },
+          "terminal-owner-cold-origins-focus-reverse": {
+            "estimate": -0.0005682929016488369,
+            "lower": -0.0030487212787955187,
+            "upper": 0.0019483892202085684
+          }
+        },
+        "combined": {
+          "estimate": -0.0007425950473582965,
+          "lower": -0.002127967560058841,
+          "upper": 0.0006520710872177649
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      }
+    },
+    "runtime_metadata": "terminal-owner-cold-origins/identities/runtime.json"
+  }
+}
