@@ -166,6 +166,27 @@ cache scheduling and materialization. Measure which requests publish and
 reuse their completed nodes before changing event or finite-work accounting.
 [Raw profiles and instrumentation](evidence/parser-stage-profile/report.json)
 
+## Preselected root inlining
+
+The opt-in AArch64 policy selects private single-call helpers from optimized
+IR. It verifies the inlined root and skips the first machine compilation
+of the projection policy. A missing inlining candidate follows the existing
+path. Both pinned benchmark workers reproduce byte for byte.
+
+On Apple M1, source through final link takes **4.58958 →
+4.52728 s** in eight matched orders. Native emission falls from
+**1.76414 to 1.69787 s**. The smaller encoder emits
+**71,960 B**, or **1.24723× Roc and 1.94067× libdeflate**. It builds in
+**1.518× Roc** and
+**9.427× libdeflate**. The 81/81 Roc
+and 61/81 libdeflate receipts remain bound to both exact historical workers.
+The rebuilt adapter also passes 162 exact linked calls in each mode.
+[Build trials, profiles, memory and size metrics](evidence/native-root-inline-plan/report.json)
+
+The [cached-join SSA screen](evidence/native-ssa-timing/report.json) avoids
+17,270 temporary values and leaves native emission time effectively flat.
+The implementation remains in the experiment archive.
+
 ## Smaller reviewed configuration
 
 Use `rebuild.py --variant fresh-owner-counts-cold-tails` to review the
@@ -206,7 +227,8 @@ focused screen. Its exact rebuild variant is `fresh-owner-counts-cleanup`.
 The GitHub run for `ddc26e24` passed distribution, browser compute, and the
 warning-policy step. The browser standard canary exposed an asynchronous
 native fullscreen exit. The corrected check waits for native exit and docked
-mode before testing resize, and both modes pass a targeted Chrome reproduction.
+mode before testing resize. Both modes pass the targeted Chrome reproduction,
+and the [hosted browser standard canary passed](https://github.com/mech-lang/mech/actions/runs/44022578666/job/133835834951).
 The static audit now has 11 additional exact-file contracts. Its complete-tree
 gate still fails on the historical runtime and the inventory includes remaining
 violations inherited from #973. The full gate remains required.
