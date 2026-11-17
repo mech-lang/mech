@@ -1,0 +1,341 @@
+{
+  "base": "ed99ade92836761bebd2f7357bf46817204433d4",
+  "source": "4b154d273646256d52a3260c1b054f9a1cbd7ab8",
+  "evidence": "evidence/immutable-root-literals/README.md",
+  "adopted": true,
+  "candidate": "mech-literals-enabled",
+  "counts": {
+    "lanes": 1389,
+    "reads": 2026,
+    "writes": 0,
+    "parameter_reads": 1831
+  },
+  "build_sha256": "22fb420a78945b8ceaeb2764c7368efb0e5e0355696826beed478d345e02b440",
+  "paired_source_through_link_x": {
+    "mech-incumbent": 0.9840153425201492,
+    "mech-literals-disabled": 0.9851559196992234,
+    "roc": 0.8350775141505412,
+    "libdeflate": 5.173237243677271
+  },
+  "gain_interval_ms": {
+    "median": 40.63339554704726,
+    "lower_90": 33.0789377912879,
+    "upper_90": 47.170833218842745
+  },
+  "paired": {
+    "mech-incumbent": {
+      "elapsed_x": 0.9840153425201492,
+      "paired_elapsed_ms": [
+        47.170833218842745,
+        58.315624948590994,
+        27.498167473822832,
+        -21.011125296354294,
+        145.88500000536442,
+        42.16337529942393,
+        38.659708108752966,
+        40.01279128715396,
+        41.253999806940556,
+        29.661249835044146
+      ],
+      "elapsed_interval_ms": {
+        "median": 40.63339554704726,
+        "lower_90": 33.0789377912879,
+        "upper_90": 47.170833218842745
+      },
+      "paired_cpu_ms": [
+        47.60999999999971,
+        50.30200000000029,
+        26.28599999999981,
+        28.900000000000148,
+        53.0109999999997,
+        41.399000000000186,
+        38.117999999999874,
+        33.08499999999981,
+        41.81199999999974,
+        38.66299999999967
+      ],
+      "cpu_interval_ms": {
+        "median": 40.03099999999993,
+        "lower_90": 33.509000000000015,
+        "upper_90": 46.057000000000016
+      },
+      "native_interval_ms": {
+        "median": 37.04129149999991,
+        "lower_90": 36.04374999999993,
+        "upper_90": 41.202458500000034
+      }
+    },
+    "mech-literals-disabled": {
+      "elapsed_x": 0.9851559196992234,
+      "paired_elapsed_ms": [
+        38.93466619774699,
+        38.9144173823297,
+        34.72154261544347,
+        -41.01483430713415,
+        167.6707500591874,
+        38.078917656093836,
+        42.18041570857167,
+        22.5722910836339,
+        37.05516690388322,
+        22.330500185489655
+      ],
+      "elapsed_interval_ms": {
+        "median": 37.56704227998853,
+        "lower_90": 28.52602140046656,
+        "upper_90": 38.93466619774699
+      },
+      "paired_cpu_ms": [
+        38.40500000000002,
+        38.924999999999876,
+        25.790999999999897,
+        11.207999999999885,
+        101.8709999999996,
+        38.38300000000005,
+        38.98099999999971,
+        23.922999999999917,
+        39.07600000000011,
+        32.19400000000006
+      ],
+      "cpu_interval_ms": {
+        "median": 38.394000000000034,
+        "lower_90": 28.058499999999988,
+        "upper_90": 38.98099999999971
+      },
+      "native_interval_ms": {
+        "median": 36.36745849999989,
+        "lower_90": 36.032499999999914,
+        "upper_90": 36.703041999999854
+      }
+    },
+    "roc": {
+      "elapsed_x": 0.8350775141505412,
+      "paired_elapsed_ms": [
+        487.9275830462575,
+        500.194625928998,
+        500.07641734555364,
+        435.99345767870545,
+        681.1781246215105,
+        494.230542331934,
+        495.41612388566136,
+        477.44966577738523,
+        490.5552500858903,
+        478.0319160781801
+      ],
+      "elapsed_interval_ms": {
+        "median": 492.39289620891213,
+        "lower_90": 482.68862441182137,
+        "upper_90": 497.8053749073297
+      },
+      "paired_cpu_ms": [
+        474.1439999999999,
+        485.19800000000043,
+        482.8619999999999,
+        463.05200000000025,
+        524.4589999999998,
+        477.40899999999976,
+        480.8880000000002,
+        465.2229999999995,
+        478.08099999999956,
+        472.55400000000014
+      ],
+      "cpu_interval_ms": {
+        "median": 477.74499999999966,
+        "lower_90": 472.55400000000014,
+        "upper_90": 482.8619999999999
+      },
+      "native_interval_ms": null
+    },
+    "libdeflate": {
+      "elapsed_x": 5.173237243677271,
+      "paired_elapsed_ms": [
+        -2001.0583749972284,
+        -2005.9513747692108,
+        -2014.259749557823,
+        -2077.428082935512,
+        -2027.9427501372993,
+        -2004.1072494350374,
+        -2011.2300841137767,
+        -2028.6016259342432,
+        -2012.0557923801243,
+        -2017.2539581544697
+      ],
+      "elapsed_interval_ms": {
+        "median": -2013.1577709689736,
+        "lower_90": -2022.9277920443565,
+        "upper_90": -2007.668666774407
+      },
+      "paired_cpu_ms": [
+        -2011.673,
+        -2015.9989999999998,
+        -2026.2600000000002,
+        -2044.0700000000002,
+        -2038.3760000000004,
+        -2022.0859999999998,
+        -2023.897,
+        -2038.2670000000003,
+        -2021.7050000000004,
+        -2027.1500000000003
+      ],
+      "cpu_interval_ms": {
+        "median": -2025.0785,
+        "lower_90": -2032.7630000000004,
+        "upper_90": -2021.7050000000004
+      },
+      "native_interval_ms": null
+    }
+  },
+  "disabled_vs_incumbent": {
+    "elapsed_x": 0.9977274069872941,
+    "paired_elapsed_ms": [
+      8.236167021095753,
+      19.40120756626129,
+      -7.223375141620636,
+      20.003709010779858,
+      -21.785750053822994,
+      4.084457643330097,
+      -3.5207075998187065,
+      17.44050020352006,
+      4.198832903057337,
+      7.330749649554491
+    ],
+    "elapsed_interval_ms": {
+      "median": 5.764791276305914,
+      "lower_90": -1.5694587491452694,
+      "upper_90": 13.818687293678522
+    },
+    "paired_cpu_ms": [
+      9.204999999999686,
+      11.377000000000415,
+      0.4949999999999122,
+      17.692000000000263,
+      -48.8599999999999,
+      3.0160000000001297,
+      -0.8629999999998361,
+      9.161999999999892,
+      2.7359999999996276,
+      6.468999999999614
+    ],
+    "cpu_interval_ms": {
+      "median": 4.742499999999872,
+      "lower_90": 0.9364999999998957,
+      "upper_90": 9.204999999999686
+    },
+    "native_interval_ms": {
+      "median": 0.8501874999999881,
+      "lower_90": -0.749957999999884,
+      "upper_90": 5.663583000000028
+    }
+  },
+  "median_seconds": {
+    "mech-incumbent": {
+      "source": 2.5012453955132514,
+      "link": 0.03460437501780689,
+      "source_through_link": 2.5365527083631605,
+      "strip": 0.01035708305425942,
+      "source_through_strip": 2.547099332790822
+    },
+    "mech-literals-disabled": {
+      "source": 2.4959112086798996,
+      "link": 0.034767041681334376,
+      "source_through_link": 2.530845104716718,
+      "strip": 0.01036770804785192,
+      "source_through_strip": 2.541381313232705
+    },
+    "mech-literals-enabled": {
+      "source": 2.460881291422993,
+      "link": 0.03456289600580931,
+      "source_through_link": 2.4953602498862892,
+      "strip": 0.010302457958459854,
+      "source_through_strip": 2.505833978764713
+    },
+    "roc": {
+      "source": 2.9527014582417905,
+      "link": 0.03422199981287122,
+      "source_through_link": 2.987254708306864,
+      "strip": 0.010275020496919751,
+      "source_through_strip": 2.9977178543340415
+    },
+    "libdeflate": {
+      "source": 0.44721427094191313,
+      "link": 0.03411668702028692,
+      "source_through_link": 0.4826153330504894,
+      "strip": 0.010289103956893086,
+      "source_through_strip": 0.49332349956966937
+    }
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-incumbent": {
+      "parse": 0.78722425,
+      "catalog": 0.057704520999999995,
+      "frontend": 0.23288433349999998,
+      "artifact": 0.0069689995,
+      "encode": 0.0025591045,
+      "native": 1.386727562
+    },
+    "mech-literals-disabled": {
+      "parse": 0.783815833,
+      "catalog": 0.060851333,
+      "frontend": 0.23062549999999998,
+      "artifact": 0.0069798745,
+      "encode": 0.0025354795,
+      "native": 1.3852431459999999
+    },
+    "mech-literals-enabled": {
+      "parse": 0.7836167295,
+      "catalog": 0.0609068335,
+      "frontend": 0.231202646,
+      "artifact": 0.0069827915,
+      "encode": 0.0025519375,
+      "native": 1.3488811875
+    }
+  },
+  "encoder_text_bytes": 71192,
+  "linked_worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+  "artifact_sha256": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "runtime_wins": {
+    "libdeflate": [
+      61,
+      61
+    ],
+    "roc": [
+      81,
+      81
+    ]
+  },
+  "exact": true,
+  "checked": {
+    "commands": {
+      "failures": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/immutable-root-literals/linked/linked-proofs/check-linked-error-exits.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/immutable-root-literals/linked/worker-checks/mech-incumbent",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/immutable-root-literals/linked/worker-checks/mech-literals-enabled"
+      ],
+      "stack": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/immutable-root-literals/linked/linked-proofs/check-layout-stack.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/immutable-root-literals/linked/worker-checks/mech-incumbent",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/immutable-root-literals/linked/worker-checks/mech-literals-enabled"
+      ]
+    },
+    "peak_stack_bytes": {
+      "mech-incumbent": 5280,
+      "mech-literals-enabled": 5280
+    },
+    "matches_success_observations": 162,
+    "checked_failure_cases": [
+      "empty",
+      "one-stored",
+      "seven-stored-prefix",
+      "prefix-periodic-4096",
+      "prefix-repeated-16384",
+      "heldout-mixed-131073"
+    ]
+  }
+}

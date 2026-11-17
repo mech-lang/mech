@@ -1,0 +1,19 @@
+{
+  "sources": {
+    "source_cfg": {
+      "path": ".qualification/current-roadmap/checked-root-census/observed/ir/source-cfg.json",
+      "sha256": "d24007e2a49c55f28dbf32304fecc81a864e5723284cd12c02f48fd14c889ad4"
+    },
+    "emission_probe": {
+      "path": ".qualification/current-roadmap/semantic-and-ssa-attribution/observed/round-1/ssa/result.json",
+      "sha256": "8e647b8e4b4ba96e0637d8f0d3867d5fbd4811e7921f7366224af0cdfc46ab9f"
+    }
+  },
+  "scope": "Declared scalar entry constants absent from the source definitions, matched with the exact emitted-lane census.",
+  "counts": {
+    "lanes": 1389,
+    "reads": 2026,
+    "writes": 0,
+    "parameter_reads": 1831
+  }
+}
