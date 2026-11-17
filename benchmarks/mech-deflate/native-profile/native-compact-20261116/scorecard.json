@@ -7055,5 +7055,19 @@
   "integration_lane": {
     "journal_layout": "test result: ok. 535 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.13s",
     "related_post_producer_binding": "in progress"
+  },
+  "parser_structural_replay_diagnostic": {
+    "source": "dae46c686703560230150a93f36c44c4978ffdc7",
+    "measured_control_seconds": 1.8802938335000001,
+    "instrumented_seconds": 1.884513437,
+    "grammar_seconds": 1.843370521,
+    "best_choice_replay_seconds": 1.141601505,
+    "first_family": "statement/variable-define",
+    "exclusive_family_seconds": 0.6430960735,
+    "clean_matches": 3128,
+    "provisional_shapes": 1588,
+    "provisional_work": 116615736,
+    "family_work": 231376278,
+    "scope": "Diagnostic parser timing. Measured scope contains no implementation gain."
   }
 }

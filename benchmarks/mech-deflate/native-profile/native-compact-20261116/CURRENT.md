@@ -91,6 +91,9 @@ control-drift sentinel check comes before another full promotion campaign.
   event order and fresh IDs, diagnostics and recovery, longest-match and tie
   behavior, finite grants, streaming and segmented/UTF-8 cases. Recheck the
   parser after the replay change before allocating a tree project.
+  The frozen parser trace attributes 1.142 s to BestChoice winner re-execution
+  within 1.843 s of grammar work. The first family is variable definitions
+  at 0.643 s exclusive. [Parser attribution](evidence/best-choice-structural-replay/README.md)
 - **Native compiler.** Attribute plan/semantic preparation, lazy facts,
   SSA construction, cleanup, Cranelift and worker waits separately. Share
   one immutable facts owner across read packing and branch analysis first.
@@ -122,4 +125,4 @@ the portfolio after two experiments or a substantial decision.
 | Rescreening the smaller historical objects | A specific source change can recover its measured peer losses |
 | Parser implementation after the current exclusive profile | A slot opens and measured removable work justifies the build-time effect |
 | Wider Related Posts historical probes | The checked producer route is available and each archive identity can be preserved |
-| Scorer lowering and table-slot partition selection | A runtime slot reopens after the compiler investigation, with the separate source and causal ablation ready |
+| Scorer lowering and table-slot partition selection | A runtime slot reopens after the compiler investigation, with the separate source and causal ablation ready. [Partition evidence](evidence/match-cache-partition-cause/README.md) |

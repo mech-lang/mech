@@ -1,0 +1,8449 @@
+{
+  "control": {
+    "offset_slot_constant": 1335,
+    "phases": [
+      {
+        "header": 362,
+        "classification": "outlined",
+        "origin": [
+          39,
+          4
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            5,
+            "Match"
+          ],
+          [
+            37,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 60,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            39,
+            3
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 39,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 39,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 475,
+        "classification": "outlined",
+        "origin": [
+          33,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 132,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            33,
+            6
+          ],
+          "fields": 22,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 3
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 2
+                  },
+                  {
+                    "Parameter": 3
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 9,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 4
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 11
+                }
+              }
+            },
+            {
+              "field": 10,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 5
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 12
+                }
+              }
+            },
+            {
+              "field": 11,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 6
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 13
+                }
+              }
+            },
+            {
+              "field": 12,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 7
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 14
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 914,
+        "classification": "nested in 475",
+        "origin": [
+          106,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            105,
+            0,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 110,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            106,
+            0
+          ],
+          "fields": 18,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 106,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 106,
+                  "ordinal": 1
+                }
+              }
+            },
+            {
+              "field": 3,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 2
+                  },
+                  {
+                    "Parameter": 3
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 106,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1001,
+        "classification": "nested in 475",
+        "origin": [
+          115,
+          8
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            105,
+            0,
+            "Match"
+          ],
+          [
+            106,
+            1,
+            "Match"
+          ],
+          [
+            107,
+            1,
+            "Match"
+          ],
+          [
+            108,
+            15,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            115,
+            7
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 115,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1020,
+        "classification": "nested in 475",
+        "origin": [
+          117,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            105,
+            0,
+            "Match"
+          ],
+          [
+            106,
+            1,
+            "Match"
+          ],
+          [
+            107,
+            1,
+            "Match"
+          ],
+          [
+            108,
+            15,
+            "Match"
+          ],
+          [
+            115,
+            8,
+            "Match"
+          ],
+          [
+            116,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            117,
+            0
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 117,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1426,
+        "classification": "nested in 475",
+        "origin": [
+          160,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            105,
+            0,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 64,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            160,
+            0
+          ],
+          "fields": 13,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 160,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 160,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1549,
+        "classification": "nested in 475",
+        "origin": [
+          177,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            105,
+            0,
+            "Match"
+          ],
+          [
+            160,
+            1,
+            "Match"
+          ],
+          [
+            161,
+            1,
+            "Match"
+          ],
+          [
+            162,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            177,
+            6
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 177,
+                  "ordinal": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1568,
+        "classification": "nested in 475",
+        "origin": [
+          179,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            105,
+            0,
+            "Match"
+          ],
+          [
+            160,
+            1,
+            "Match"
+          ],
+          [
+            161,
+            1,
+            "Match"
+          ],
+          [
+            162,
+            16,
+            "Match"
+          ],
+          [
+            177,
+            7,
+            "Match"
+          ],
+          [
+            178,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            179,
+            0
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 179,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2185,
+        "classification": "nested in 475",
+        "origin": [
+          247,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            245,
+            13,
+            "Match"
+          ],
+          [
+            246,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            247,
+            0
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 247,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 247,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2315,
+        "classification": "nested in 475",
+        "origin": [
+          267,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            245,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            267,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 267,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 267,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2389,
+        "classification": "nested in 475",
+        "origin": [
+          267,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            245,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            267,
+            6
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 267,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 267,
+                  "ordinal": 5
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2521,
+        "classification": "nested in 475",
+        "origin": [
+          294,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            291,
+            5,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            294,
+            1
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 294,
+                  "ordinal": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2600,
+        "classification": "nested in 475",
+        "origin": [
+          308,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            291,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            308,
+            0
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 308,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 308,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2686,
+        "classification": "nested in 475",
+        "origin": [
+          321,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            291,
+            8,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            321,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 321,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 321,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2821,
+        "classification": "outlined",
+        "origin": [
+          33,
+          29
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            33,
+            28
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 33,
+                  "node": 27
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3009,
+        "classification": "outlined",
+        "origin": [
+          354,
+          9
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 63,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            354,
+            8
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 354,
+                  "node": 4
+                }
+              }
+            },
+            {
+              "field": 3,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 354,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 354,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 5,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 256
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 354,
+                  "ordinal": 5
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3447,
+        "classification": "outlined",
+        "origin": [
+          402,
+          5
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            10,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            402,
+            4
+          ],
+          "fields": 7,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 402,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 402,
+                  "node": 1
+                }
+              }
+            },
+            {
+              "field": 5,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 259
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 402,
+                  "ordinal": 2
+                }
+              }
+            },
+            {
+              "field": 6,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 256
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 402,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3872,
+        "classification": "outlined",
+        "origin": [
+          462,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 66,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            462,
+            0
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 462,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 462,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3956,
+        "classification": "outlined",
+        "origin": [
+          462,
+          5
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            462,
+            4
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 462,
+                  "node": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3975,
+        "classification": "nested in 3956",
+        "origin": [
+          476,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            7,
+            "Match"
+          ],
+          [
+            462,
+            5,
+            "Match"
+          ],
+          [
+            475,
+            4,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            476,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 476,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4012,
+        "classification": "nested in 3956",
+        "origin": [
+          478,
+          3
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            7,
+            "Match"
+          ],
+          [
+            462,
+            5,
+            "Match"
+          ],
+          [
+            475,
+            4,
+            "Match"
+          ],
+          [
+            476,
+            1,
+            "Match"
+          ],
+          [
+            477,
+            1,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            478,
+            2
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 478,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4173,
+        "classification": "outlined",
+        "origin": [
+          508,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            508,
+            1
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 508,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4673,
+        "classification": "outlined",
+        "origin": [
+          508,
+          24
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            508,
+            23
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 508,
+                  "node": 21
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 508,
+                  "ordinal": 3
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 508,
+                  "node": 22
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4711,
+        "classification": "nested in 4673",
+        "origin": [
+          575,
+          3
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            11,
+            "Match"
+          ],
+          [
+            508,
+            24,
+            "Match"
+          ],
+          [
+            574,
+            1,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 66,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            575,
+            2
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 575,
+                  "ordinal": 2
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 575,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4799,
+        "classification": "outlined",
+        "origin": [
+          508,
+          28
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            508,
+            27
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 508,
+                  "node": 26
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 508,
+                  "node": 25
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4879,
+        "classification": "outlined",
+        "origin": [
+          508,
+          30
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            13,
+            "Match"
+          ],
+          [
+            449,
+            2,
+            "Match"
+          ],
+          [
+            450,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            508,
+            29
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 508,
+                  "node": 24
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 508,
+                  "node": 28
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 256
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 508,
+                  "ordinal": 4
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 5895,
+        "classification": "outlined",
+        "origin": [
+          741,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            27,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            741,
+            1
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 741,
+                  "ordinal": 1
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 741,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 547
+                  }
+                ]
+              },
+              "operand": {
+                "Constant": 997
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 6633,
+        "classification": "outlined",
+        "origin": [
+          780,
+          36
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            350,
+            65,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            780,
+            35
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 780,
+                  "ordinal": 12
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 547
+                  }
+                ]
+              },
+              "operand": {
+                "Constant": 997
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 8026,
+        "classification": "outlined",
+        "origin": [
+          1029,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            89,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            1029,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 1029,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "slot_uses": [
+      {
+        "at": [
+          33,
+          38,
+          29
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "core/composite-pack",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      },
+      {
+        "at": [
+          926,
+          10,
+          12
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            75,
+            "Match"
+          ]
+        ],
+        "operation": "core/composite-pack",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      }
+    ]
+  },
+  "stored-table-slot": {
+    "offset_slot_constant": 1335,
+    "phases": [
+      {
+        "header": 362,
+        "classification": "outlined",
+        "origin": [
+          39,
+          4
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            5,
+            "Match"
+          ],
+          [
+            37,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 60,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            39,
+            3
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 39,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 39,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 475,
+        "classification": "no outlined phase",
+        "origin": [
+          33,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 132,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            33,
+            6
+          ],
+          "fields": 22,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 3
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 2
+                  },
+                  {
+                    "Parameter": 3
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 9,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 4
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 11
+                }
+              }
+            },
+            {
+              "field": 10,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 5
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 12
+                }
+              }
+            },
+            {
+              "field": 11,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 6
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 13
+                }
+              }
+            },
+            {
+              "field": 12,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 7
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 14
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 940,
+        "classification": "outlined",
+        "origin": [
+          108,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            107,
+            0,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 110,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            108,
+            0
+          ],
+          "fields": 18,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 108,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 108,
+                  "ordinal": 1
+                }
+              }
+            },
+            {
+              "field": 3,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 2
+                  },
+                  {
+                    "Parameter": 3
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 108,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2367,
+        "classification": "outlined",
+        "origin": [
+          271,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            249,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            271,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 271,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 271,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2441,
+        "classification": "outlined",
+        "origin": [
+          271,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            249,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            271,
+            6
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 271,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 271,
+                  "ordinal": 5
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2652,
+        "classification": "outlined",
+        "origin": [
+          312,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            295,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            312,
+            0
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 312,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 312,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2738,
+        "classification": "outlined",
+        "origin": [
+          325,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            295,
+            8,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            325,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 325,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 325,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2873,
+        "classification": "outlined",
+        "origin": [
+          33,
+          29
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            33,
+            28
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 33,
+                  "node": 27
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3061,
+        "classification": "outlined",
+        "origin": [
+          358,
+          9
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 63,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            358,
+            8
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 358,
+                  "node": 4
+                }
+              }
+            },
+            {
+              "field": 3,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 358,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 358,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3456,
+        "classification": "outlined",
+        "origin": [
+          401,
+          5
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            10,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            401,
+            4
+          ],
+          "fields": 7,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 401,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 401,
+                  "node": 1
+                }
+              }
+            },
+            {
+              "field": 5,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 259
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 401,
+                  "ordinal": 2
+                }
+              }
+            },
+            {
+              "field": 6,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 256
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 401,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3881,
+        "classification": "outlined",
+        "origin": [
+          461,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 66,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            461,
+            0
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 461,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 461,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3965,
+        "classification": "outlined",
+        "origin": [
+          461,
+          5
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            461,
+            4
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 461,
+                  "node": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3984,
+        "classification": "nested in 3965",
+        "origin": [
+          475,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            7,
+            "Match"
+          ],
+          [
+            461,
+            5,
+            "Match"
+          ],
+          [
+            474,
+            4,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            475,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 475,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4021,
+        "classification": "nested in 3965",
+        "origin": [
+          477,
+          3
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            7,
+            "Match"
+          ],
+          [
+            461,
+            5,
+            "Match"
+          ],
+          [
+            474,
+            4,
+            "Match"
+          ],
+          [
+            475,
+            1,
+            "Match"
+          ],
+          [
+            476,
+            1,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            477,
+            2
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 477,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4182,
+        "classification": "outlined",
+        "origin": [
+          507,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            507,
+            1
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 507,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4682,
+        "classification": "outlined",
+        "origin": [
+          507,
+          24
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            507,
+            23
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 507,
+                  "node": 21
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 507,
+                  "ordinal": 3
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 507,
+                  "node": 22
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4720,
+        "classification": "nested in 4682",
+        "origin": [
+          574,
+          3
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            11,
+            "Match"
+          ],
+          [
+            507,
+            24,
+            "Match"
+          ],
+          [
+            573,
+            1,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 66,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            574,
+            2
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 574,
+                  "ordinal": 2
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 574,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4808,
+        "classification": "outlined",
+        "origin": [
+          507,
+          28
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            507,
+            27
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 507,
+                  "node": 26
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 507,
+                  "node": 25
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4888,
+        "classification": "outlined",
+        "origin": [
+          507,
+          30
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            13,
+            "Match"
+          ],
+          [
+            448,
+            2,
+            "Match"
+          ],
+          [
+            449,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            507,
+            29
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 507,
+                  "node": 24
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 507,
+                  "node": 28
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 256
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 507,
+                  "ordinal": 4
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 5904,
+        "classification": "outlined",
+        "origin": [
+          740,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            27,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            740,
+            1
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 740,
+                  "ordinal": 1
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 740,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 547
+                  }
+                ]
+              },
+              "operand": {
+                "Constant": 997
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 6642,
+        "classification": "outlined",
+        "origin": [
+          779,
+          36
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            354,
+            65,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            779,
+            35
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 779,
+                  "ordinal": 12
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 547
+                  }
+                ]
+              },
+              "operand": {
+                "Constant": 997
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 8035,
+        "classification": "outlined",
+        "origin": [
+          1028,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            89,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            1028,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 1028,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "slot_uses": [
+      {
+        "at": [
+          33,
+          38,
+          29
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "core/composite-pack",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      },
+      {
+        "at": [
+          99,
+          9,
+          0
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            41,
+            "Match"
+          ],
+          [
+            78,
+            4,
+            "Match"
+          ]
+        ],
+        "operation": "sequence/length",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      },
+      {
+        "at": [
+          100,
+          1,
+          0
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            41,
+            "Match"
+          ],
+          [
+            78,
+            4,
+            "Match"
+          ],
+          [
+            99,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "access/scalar",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      },
+      {
+        "at": [
+          141,
+          10,
+          0
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            107,
+            0,
+            "Match"
+          ],
+          [
+            108,
+            1,
+            "Match"
+          ],
+          [
+            109,
+            1,
+            "Match"
+          ],
+          [
+            110,
+            18,
+            "Match"
+          ]
+        ],
+        "operation": "sequence/length",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      },
+      {
+        "at": [
+          142,
+          1,
+          0
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            107,
+            0,
+            "Match"
+          ],
+          [
+            108,
+            1,
+            "Match"
+          ],
+          [
+            109,
+            1,
+            "Match"
+          ],
+          [
+            110,
+            18,
+            "Match"
+          ],
+          [
+            141,
+            12,
+            "Match"
+          ]
+        ],
+        "operation": "access/scalar",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      },
+      {
+        "at": [
+          925,
+          10,
+          12
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            75,
+            "Match"
+          ]
+        ],
+        "operation": "core/composite-pack",
+        "wire_operand": {
+          "Constant": 1335
+        }
+      }
+    ]
+  },
+  "stored-arithmetic-slot": {
+    "offset_slot_constant": 1336,
+    "phases": [
+      {
+        "header": 362,
+        "classification": "outlined",
+        "origin": [
+          39,
+          4
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            5,
+            "Match"
+          ],
+          [
+            37,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 60,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            39,
+            3
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 39,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 39,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 475,
+        "classification": "outlined",
+        "origin": [
+          33,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 132,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            33,
+            6
+          ],
+          "fields": 22,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 3
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 2
+                  },
+                  {
+                    "Parameter": 3
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 9,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 4
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 11
+                }
+              }
+            },
+            {
+              "field": 10,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 5
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 12
+                }
+              }
+            },
+            {
+              "field": 11,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 6
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 13
+                }
+              }
+            },
+            {
+              "field": 12,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 7
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 14
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 952,
+        "classification": "nested in 475",
+        "origin": [
+          112,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            111,
+            0,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 110,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            112,
+            0
+          ],
+          "fields": 18,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 112,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 112,
+                  "ordinal": 1
+                }
+              }
+            },
+            {
+              "field": 3,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 2
+                  },
+                  {
+                    "Parameter": 3
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 112,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1039,
+        "classification": "nested in 475",
+        "origin": [
+          121,
+          8
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            111,
+            0,
+            "Match"
+          ],
+          [
+            112,
+            1,
+            "Match"
+          ],
+          [
+            113,
+            1,
+            "Match"
+          ],
+          [
+            114,
+            15,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            121,
+            7
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 121,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1058,
+        "classification": "nested in 475",
+        "origin": [
+          123,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            111,
+            0,
+            "Match"
+          ],
+          [
+            112,
+            1,
+            "Match"
+          ],
+          [
+            113,
+            1,
+            "Match"
+          ],
+          [
+            114,
+            15,
+            "Match"
+          ],
+          [
+            121,
+            8,
+            "Match"
+          ],
+          [
+            122,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            123,
+            0
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 123,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1502,
+        "classification": "nested in 475",
+        "origin": [
+          172,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            111,
+            0,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 64,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            172,
+            0
+          ],
+          "fields": 13,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 172,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 172,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1625,
+        "classification": "nested in 475",
+        "origin": [
+          189,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            111,
+            0,
+            "Match"
+          ],
+          [
+            172,
+            1,
+            "Match"
+          ],
+          [
+            173,
+            1,
+            "Match"
+          ],
+          [
+            174,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            189,
+            6
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 189,
+                  "ordinal": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 1644,
+        "classification": "nested in 475",
+        "origin": [
+          191,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            12,
+            "Match"
+          ],
+          [
+            73,
+            55,
+            "Match"
+          ],
+          [
+            111,
+            0,
+            "Match"
+          ],
+          [
+            172,
+            1,
+            "Match"
+          ],
+          [
+            173,
+            1,
+            "Match"
+          ],
+          [
+            174,
+            16,
+            "Match"
+          ],
+          [
+            189,
+            7,
+            "Match"
+          ],
+          [
+            190,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            191,
+            0
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 191,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2261,
+        "classification": "nested in 475",
+        "origin": [
+          259,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            257,
+            13,
+            "Match"
+          ],
+          [
+            258,
+            2,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            259,
+            0
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 259,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 259,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2391,
+        "classification": "nested in 475",
+        "origin": [
+          279,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            257,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            279,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 279,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 279,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2465,
+        "classification": "nested in 475",
+        "origin": [
+          279,
+          7
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            61,
+            "Match"
+          ],
+          [
+            257,
+            16,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            279,
+            6
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 279,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 279,
+                  "ordinal": 5
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2597,
+        "classification": "nested in 475",
+        "origin": [
+          306,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            303,
+            5,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 6,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            306,
+            1
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 306,
+                  "ordinal": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2676,
+        "classification": "nested in 475",
+        "origin": [
+          320,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            303,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            320,
+            0
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 320,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 320,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2762,
+        "classification": "nested in 475",
+        "origin": [
+          333,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            7,
+            "Match"
+          ],
+          [
+            59,
+            72,
+            "Match"
+          ],
+          [
+            303,
+            8,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 97,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            333,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 333,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 333,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 2897,
+        "classification": "outlined",
+        "origin": [
+          33,
+          29
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            33,
+            28
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 33,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 33,
+                  "node": 27
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3085,
+        "classification": "outlined",
+        "origin": [
+          366,
+          9
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 63,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            366,
+            8
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 366,
+                  "node": 4
+                }
+              }
+            },
+            {
+              "field": 3,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 366,
+                  "ordinal": 4
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 366,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3480,
+        "classification": "outlined",
+        "origin": [
+          409,
+          5
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            10,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            409,
+            4
+          ],
+          "fields": 7,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 409,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 409,
+                  "node": 1
+                }
+              }
+            },
+            {
+              "field": 5,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 259
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 409,
+                  "ordinal": 2
+                }
+              }
+            },
+            {
+              "field": 6,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 256
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 409,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3905,
+        "classification": "outlined",
+        "origin": [
+          469,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 66,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            469,
+            0
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 469,
+                  "ordinal": 0
+                }
+              }
+            },
+            {
+              "field": 4,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 469,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 3989,
+        "classification": "outlined",
+        "origin": [
+          469,
+          5
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            7,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            469,
+            4
+          ],
+          "fields": 3,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 469,
+                  "node": 2
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4008,
+        "classification": "nested in 3989",
+        "origin": [
+          483,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            7,
+            "Match"
+          ],
+          [
+            469,
+            5,
+            "Match"
+          ],
+          [
+            482,
+            4,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            483,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 483,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4045,
+        "classification": "nested in 3989",
+        "origin": [
+          485,
+          3
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            7,
+            "Match"
+          ],
+          [
+            469,
+            5,
+            "Match"
+          ],
+          [
+            482,
+            4,
+            "Match"
+          ],
+          [
+            483,
+            1,
+            "Match"
+          ],
+          [
+            484,
+            1,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            485,
+            2
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 485,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4206,
+        "classification": "outlined",
+        "origin": [
+          515,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            515,
+            1
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 515,
+                  "ordinal": 1
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4706,
+        "classification": "outlined",
+        "origin": [
+          515,
+          24
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            515,
+            23
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 515,
+                  "node": 21
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 515,
+                  "ordinal": 3
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 2
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 515,
+                  "node": 22
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4744,
+        "classification": "nested in 4706",
+        "origin": [
+          582,
+          3
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            11,
+            "Match"
+          ],
+          [
+            515,
+            24,
+            "Match"
+          ],
+          [
+            581,
+            1,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 66,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            582,
+            2
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 582,
+                  "ordinal": 2
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 582,
+                  "ordinal": 3
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4832,
+        "classification": "outlined",
+        "origin": [
+          515,
+          28
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            515,
+            27
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W64"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 515,
+                  "node": 26
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 515,
+                  "node": 25
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 4912,
+        "classification": "outlined",
+        "origin": [
+          515,
+          30
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            13,
+            "Match"
+          ],
+          [
+            456,
+            2,
+            "Match"
+          ],
+          [
+            457,
+            11,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            515,
+            29
+          ],
+          "fields": 5,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 515,
+                  "node": 24
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 515,
+                  "node": 28
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W8"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 256
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 515,
+                  "ordinal": 4
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 5928,
+        "classification": "outlined",
+        "origin": [
+          748,
+          2
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            27,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            748,
+            1
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 748,
+                  "ordinal": 1
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ]
+              },
+              "operand": {
+                "Local": {
+                  "block": 748,
+                  "node": 0
+                }
+              }
+            },
+            {
+              "field": 2,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 547
+                  }
+                ]
+              },
+              "operand": {
+                "Constant": 997
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 6666,
+        "classification": "outlined",
+        "origin": [
+          787,
+          36
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            39,
+            "Match"
+          ],
+          [
+            362,
+            65,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            787,
+            35
+          ],
+          "fields": 6,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 787,
+                  "ordinal": 12
+                }
+              }
+            },
+            {
+              "field": 1,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W16"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Constant": 547
+                  }
+                ]
+              },
+              "operand": {
+                "Constant": 997
+              }
+            }
+          ]
+        }
+      },
+      {
+        "header": 8059,
+        "classification": "outlined",
+        "origin": [
+          1036,
+          1
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            89,
+            "Match"
+          ]
+        ],
+        "operation": "Match",
+        "schema": 62,
+        "input_count": 1,
+        "wire_details": {
+          "captures": []
+        },
+        "seed": {
+          "origin": [
+            1036,
+            0
+          ],
+          "fields": 4,
+          "matrices": [
+            {
+              "field": 0,
+              "type": {
+                "element": {
+                  "UnsignedInteger": "W32"
+                },
+                "dimensions": [
+                  {
+                    "Constant": 1
+                  },
+                  {
+                    "Parameter": 0
+                  }
+                ]
+              },
+              "operand": {
+                "Parameter": {
+                  "block": 1036,
+                  "ordinal": 0
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "slot_uses": [
+      {
+        "at": [
+          33,
+          38,
+          29
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ]
+        ],
+        "operation": "core/composite-pack",
+        "wire_operand": {
+          "Constant": 1336
+        }
+      },
+      {
+        "at": [
+          933,
+          10,
+          12
+        ],
+        "ancestry": [
+          [
+            0,
+            2,
+            "Match"
+          ],
+          [
+            13,
+            30,
+            "Match"
+          ],
+          [
+            33,
+            75,
+            "Match"
+          ]
+        ],
+        "operation": "core/composite-pack",
+        "wire_operand": {
+          "Constant": 1336
+        }
+      }
+    ]
+  }
+}
