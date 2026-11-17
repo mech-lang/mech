@@ -18099,6 +18099,16 @@
       "bytes": 20144
     },
     {
+      "path": "src/syntax/src/document/parser/canonical/literals/continuation.rs",
+      "sha256": "467eabe4dbeb276e3d25971ae5406917a44ffec63c404c4a3e991968c37519d9",
+      "bytes": 32517
+    },
+    {
+      "path": "src/syntax/src/document/parser/canonical/literals/mod.rs",
+      "sha256": "826a656770ae90cad24c77379de33166968f30af77a832e0c952afce875033e6",
+      "bytes": 8009
+    },
+    {
       "path": "src/syntax/src/document/parser/canonical/prediction.rs",
       "sha256": "5ac96f782cfe6c7ba70c09c7d83a5b5a7dfc073c41ddbbf9d9524f05df6a31a5",
       "bytes": 17863
@@ -18115,8 +18125,8 @@
     },
     {
       "path": "src/syntax/src/document/parser/mod.rs",
-      "sha256": "eb5dfc4307dab869e5c6b6aea6d5cabab7c4082c36e604e822561100902c5317",
-      "bytes": 56853
+      "sha256": "771dfd566f9e31c5a89fac8f409d466c0de7ac01493d2725865b2917f44fd048",
+      "bytes": 56984
     },
     {
       "path": "src/syntax/src/document/parser/tree_cache.rs",
