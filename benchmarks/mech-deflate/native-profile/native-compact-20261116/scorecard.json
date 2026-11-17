@@ -3,11 +3,11 @@
   "review": {
     "pr": 993,
     "target_pr": 973,
-    "evidence_head": "dae46c686703560230150a93f36c44c4978ffdc7",
+    "evidence_head": "f68f93c66e14b8f227bf4a9d1df16d99a59f9b1d",
     "base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
-    "integration": "ee91fed7880010209c0b166258b4d661b028bf13",
+    "integration": "2f0586b7550bb78e827985421145e4cd7c5731c0",
     "benchmark_compiler_source": "7c77a620cad6854b5e69938021df2f83db2b62f7",
-    "validation_run": 44100619431,
+    "validation_run": 44118007456,
     "host": {
       "cpu": "Apple M1",
       "cpu_source": {
@@ -18,7 +18,8 @@
       "architecture": "arm64",
       "clock": "Rust Instant",
       "protocol": "Serial balanced worker orders with separate warmup and private allocation cleanup."
-    }
+    },
+    "deployment_compiler_source": "3819f8850ee17e12ed09659d22c48d9181ef4451"
   },
   "historical_default": {
     "variant": "baseline",
@@ -228,7 +229,9 @@
       }
     },
     "paired_complete_build_ratio_to_previous_mech": 0.9912755621918761,
-    "paired_native_ratio_to_previous_mech": 0.9775046764463636
+    "paired_native_ratio_to_previous_mech": 0.9775046764463636,
+    "evidence_head": "dae46c686703560230150a93f36c44c4978ffdc7",
+    "scope": "Earlier source-through-link measurements with original benchmark host support."
   },
   "deployment": {
     "std_and_peers": {
@@ -7084,7 +7087,7 @@
   },
   "integration_lane": {
     "journal_layout": "test result: ok. 535 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 10.13s",
-    "related_post_producer_binding": "in progress"
+    "related_post_producer_binding": "Checked after-4 static proof published; compiled validation pending."
   },
   "parser_structural_replay_diagnostic": {
     "source": "dae46c686703560230150a93f36c44c4978ffdc7",
@@ -7228,5 +7231,6 @@
     "conservative_mixed_sibling_candidate_reads": 14,
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
-  }
+  },
+  "current_matched_build": "scoped_definition_replay"
 }

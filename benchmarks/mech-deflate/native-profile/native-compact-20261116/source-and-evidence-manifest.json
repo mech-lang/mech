@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "8a9f8d9b3d463c216ea5787ddbd63fe56ed607bf965522abcfaaa95616335b36",
-      "bytes": 8783
+      "sha256": "137afc577cf891326b751b03724496b3cf558e3c4db1520fa6e17038dee375f5",
+      "bytes": 8979
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -29870,8 +29870,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "8e0539bfd905287237076f9e9be964adb27a5a163dd1e4acbf580ea31b194e28",
-      "bytes": 253730
+      "sha256": "8d6c27244d1ea7f8ed58ddd5475585740a5008d60f045404a2e52ffb5bf26d72",
+      "bytes": 254080
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
