@@ -274,9 +274,9 @@
       "bytes": 4239
     },
     {
-      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/layout-check/unit-tests.log",
-      "sha256": "59576bc0f9a4ae40a1c8d8f4008f4fd6bf92428185a2c137cc73e80671071283",
-      "bytes": 257
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/layout-check/unit-tests.log.gz",
+      "sha256": "7180ea77b5f8377e601e5e6aa513ffa09dff37bf8deab2c1ecf3f92805aeaebf",
+      "bytes": 186
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/maintained-rebuild/compiler-build.jsonl.gz",
