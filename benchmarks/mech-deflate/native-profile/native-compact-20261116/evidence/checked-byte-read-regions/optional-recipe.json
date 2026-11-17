@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/read-outline-recipe-_0mdsi3_/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/optional-recipe-rebuild",
+    "--variant",
+    "shared-byte-read-layout",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "compiler": "d1af77a055519dd03aefd0e3908aad3f01defd7733d6bf9aee097aaf0cdb2753",
+  "bindings": {
+    "pin": "d1a9ae0c3f4f8945ddd11fd3903edd6aaab089e2",
+    "variant": "shared-byte-read-layout",
+    "sources": {
+      "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py": "ab7c534a0fa7e7ec73e68784da6ea9e7e5a6a9e110ecd4c6b01a2f8b08c2db2a",
+      "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json": "e811a7c369d48b2c349d9577365be61d31789ce860c511b9515b65af24dff6c4"
+    }
+  },
+  "artifacts": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "1ba5b62ab2f54deaa2b34ea1d97a635458a09dd981e471789e6bd94fedd15460",
+    "metadata.json": "bb1e9dcde194691d6f70f584a64f1e90ffcfd4ece9513fe7745df3156484acf9"
+  }
+}
