@@ -21,7 +21,7 @@ PACKET = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PACKET))
 import qualify
 from qualification_records import (
-    ACTORS, CANDIDATE, CONTROL, MECH, PEERS, POLICY_PATH, Evidence, Findings, load_fixtures, read_json,
+    ACTORS, CANDIDATE, CONTROL, MECH, PEERS, POLICY_PATH, Evidence, Findings, load_fixtures, load_policy, read_json,
 )
 from qualification_timings import CLEANUP, COUNTERS, DUPLICATE_ACTORS
 
@@ -44,7 +44,7 @@ class Campaign:
         self.names = list(fixtures)
         self.manifest = {
             "schema_version": 1,
-            "policy_version": 1,
+            "policy_version": policy["version"],
             "objective": "encoder_text_bytes",
             "environment": self.json("environment.json", {"cpu": "test ARM64", "os": "test OS", "clock": "test monotonic"}),
             "contract": self.json("contract.json", {
@@ -54,7 +54,7 @@ class Campaign:
             "runs": [], "duplicate_controls": [],
         }
         self.plan = {
-            "policy_version": 1, "objective": self.manifest["objective"], "runs": [], "duplicate_control_ids": [],
+            "policy_version": policy["version"], "objective": self.manifest["objective"], "runs": [], "duplicate_control_ids": [],
             **self.binding(),
         }
         self.manifest["artifacts"] = {
@@ -320,6 +320,50 @@ class QualificationTests(unittest.TestCase):
         result = self.outcome("Reject")
         self.assertEqual(result["runtime"]["cases"]["empty"]["decision"], "regression")
         self.assertEqual(result["runtime"]["runs"][0]["peers"]["libdeflate"]["point_estimate_wins"][CANDIDATE], 61)
+
+    def use_peer_win_policy(self):
+        self.campaign = Campaign(Path(self.temp.name), load_policy(2), self.fixtures)
+
+    def test_peer_win_policy_retains_smaller_artifact_with_a_reported_slowdown(self):
+        self.use_peer_win_policy()
+        self.campaign.full(overrides={"empty": {CANDIDATE: 0.93}})
+        result = self.outcome("Retain")
+        self.assertEqual(result["policy_version"], 2)
+        self.assertEqual(result["runtime"]["cases"]["empty"]["decision"], "regression")
+        timing = result["runtime"]["candidate_control_timing_observations"]
+        self.assertEqual(timing["slowdowns"], ["empty: established slowdown above the 0.5% resolution"])
+        self.assertEqual(result["issues"], {"rejected": [], "unresolved": []})
+
+    def test_peer_win_policy_still_rejects_a_lost_win_with_equal_totals(self):
+        self.use_peer_win_policy()
+        lost, gained = self.campaign.names[60:62]
+        self.campaign.full(overrides={lost: {CANDIDATE: 1.1}, gained: {CANDIDATE: 0.9}})
+        result = self.outcome("Reject")
+        peer = result["runtime"]["runs"][0]["peers"]["libdeflate"]
+        self.assertEqual(peer["point_estimate_wins"], {CONTROL: 61, CANDIDATE: 61})
+        self.assertEqual(peer["lost_cases"], [lost])
+
+    def test_peer_win_policy_still_requires_both_floors(self):
+        self.use_peer_win_policy()
+        self.campaign.full(wins=60)
+        result = self.outcome("Unresolved")
+        self.assertTrue(any("floor 61 missed" in line for line in result["issues"]["unresolved"]))
+
+    def test_peer_win_policy_reports_duplicate_control_uncertainty(self):
+        self.use_peer_win_policy()
+        self.campaign.full()
+        self.campaign.duplicate_study("empty", 0.99, 0.995)
+        result = self.outcome("Retain")
+        self.assertEqual(result["runtime"]["cases"]["empty"]["decision"], "unresolved")
+        self.assertTrue(any("empty: regression bound" in line
+                            for line in result["runtime"]["candidate_control_timing_observations"]["uncertain"]))
+
+    def test_peer_win_policy_requires_a_plan_with_the_same_version(self):
+        self.use_peer_win_policy()
+        self.campaign.plan["policy_version"] = 1
+        self.campaign.full()
+        result = self.outcome("Reject")
+        self.assertTrue(any("disagrees on the policy" in line for line in result["issues"]["rejected"]))
 
     def test_equal_counts_cannot_conceal_lost_case(self):
         lost, gained = self.campaign.names[60:62]

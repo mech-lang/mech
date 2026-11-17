@@ -23,6 +23,28 @@ by the committed source and evidence ledger. The legacy campaigns retain their
 original evidence, including missing provenance for a current promotion.
 [Archived evaluation results](evidence/qualification-v1/archived-decisions.json)
 
+## Acceptance policy v2
+
+Use `policy_version: 2` in the manifest and the independently pinned plan
+for new campaigns. Promotion requires both complete orders, at least
+**81/81 Roc** and **61/81 libdeflate** point wins in each, and preservation of
+every peer win from the corresponding control order. A gain on a different
+case cannot cover a loss. Exact parity is a tie. The 74-contract view and
+precision-supported win counts remain available in the report.
+
+Candidate/control slowdowns and repeatability estimates are reported as
+timing observations. Their confidence intervals use the same paired-block
+method and 0.5% reporting threshold as v1. On a roughly 40 ns invocation,
+0.5% is about 0.2 ns, making per-case timing changes sensitive to the timer
+and linked layout even when the peer outcomes are reproducible. In v2,
+the peer comparisons determine the runtime promotion gate. All fixture,
+artifact, output, alias, error-origin, stack, resource, and improvement
+checks apply. All predeclared evidence remains required and is replayed.
+
+Evaluate historical manifests with their original `policy_version: 1`.
+Each campaign retains its original observations and decision.
+[Policy v2](qualification-policy-v2.json) · [Policy v1](qualification-policy-v1.json)
+
 ## Acceptance policy v1
 
 The policy freezes the 81 named fixtures and their input, prefix, output, and
@@ -77,7 +99,8 @@ The manifest declares these fields.
 
 | Field | Value |
 | --- | --- |
-| `schema_version`, `policy_version` | Both 1 |
+| `schema_version` | 1 |
+| `policy_version` | 1 for historical campaigns, 2 for new peer-win campaigns |
 | `objective` | One of `encoder_text_bytes`, `build_seconds`, `compiler_peak_rss_bytes`, `runtime_peak_payload_bytes`, or `runtime` |
 | `environment` | Reference to JSON with `cpu`, `os`, and `clock`, plus the recorded conditions |
 | `contract` | Reference to JSON with `scope` equal to `diagnostic`, `level` equal to 12, the frozen `fixture_inventory_sha256`, and the `timing_boundary` |
