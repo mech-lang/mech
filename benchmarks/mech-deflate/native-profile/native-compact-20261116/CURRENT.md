@@ -13,7 +13,7 @@ The matched build and runtime host is Apple M1, macOS 15.6.1, arm64.
 | Historical rebuild default | 72,520 B | `rebuild.py --variant baseline`, compiler opt level 1 |
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
 | Latest fully timed size candidate | 71,288 B | Shared owner exchange rejected by the v2 runtime gate |
-| Current implementation candidates | — | Phase partitioning and checked scorer lowering are in progress |
+| Current compiler investigations | — | Structural parser replay and native work attribution |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
@@ -76,8 +76,8 @@ diagnostics have separate entries in the scorecard. The latest candidate
 loses `random-1024` and gains `320-overlap` in reverse.
 [Complete v2 candidate evidence](evidence/owner-exchange-71288-v2/README.md)
 
-CI remains open. The immediate failures are the journal module file/directory
-collision and the Related Posts host's compiled module producer binding.
+CI remains open. The journal file/directory collision has been repaired locally and all syntax
+unit tests pass. The Related Posts producer binding remains open.
 The optimized compact path is diagnostic. Finite admission, cumulative
 accounting and recovery under the ordinary entry remain required. A bounded
 control-drift sentinel check comes before another full promotion campaign.
@@ -86,18 +86,26 @@ control-drift sentinel check comes before another full promotion campaign.
 
 ## Active work
 
-- **Phase partitioning.** Explain the 91,556 / 77,236 / 90,868-byte generic
-  objects through selection, captures, guard coverage and actual execution.
-  Test one general invariant-transport or selection change if supported.
-  The setup, zeroing, match and output work census for random inputs belongs
-  in this investigation.
-- **Scorer lowering.** Express immutable address reuse through checked
-  ordinary lowering. Preserve wrapping arithmetic, ranges and the earliest
-  winner. Use a focused natural/short/random screen before a full campaign.
-  Measure producer-side offset-slot precomputation separately.
-- **Integration and qualification.** Repair the journal layout and the
-  Related Posts producer binding, replay eligible reference orders under v2,
-  and spend one diagnostic block on the observed periodic-case control drift.
+- **Parser.** Measure the repeated winner execution in BestChoice and choose
+  one expensive structural family for a conservative replay summary. Preserve
+  event order and fresh IDs, diagnostics and recovery, longest-match and tie
+  behavior, finite grants, streaming and segmented/UTF-8 cases. Recheck the
+  parser after the replay change before allocating a tree project.
+- **Native compiler.** Attribute plan/semantic preparation, lazy facts,
+  SSA construction, cleanup, Cranelift and worker waits separately. Share
+  one immutable facts owner across read packing and branch analysis first.
+  Prototype demanded scalar payload fields only with a bounded fixed point
+  and the original all-fields fallback. Keep phase choices and publication
+  order exact while separating selection from body construction.
+  [First matched source change](evidence/shared-program-facts/README.md)
+- **Integration and qualification.** Finish the Related Posts producer
+  binding and run the bounded control-drift diagnostic before any new full
+  promotion campaign. The archived reference has a v2 runtime Retain decision.
+
+The measured build spends 1.896 s parsing, 0.233 s in source semantics,
+1.466 s on native preparation through object, and 0.063 s in catalog
+construction. Artifact, encode, link and remaining work total about
+0.079 s. Use these proportions to prioritize the next experiment.
 
 Initial diagnosis is bounded to roughly 60–90 minutes and the first
 implementation to half a day. Park a direction after two flat or adverse
@@ -114,3 +122,4 @@ the portfolio after two experiments or a substantial decision.
 | Rescreening the smaller historical objects | A specific source change can recover its measured peer losses |
 | Parser implementation after the current exclusive profile | A slot opens and measured removable work justifies the build-time effect |
 | Wider Related Posts historical probes | The checked producer route is available and each archive identity can be preserved |
+| Scorer lowering and table-slot partition selection | A runtime slot reopens after the compiler investigation, with the separate source and causal ablation ready |
