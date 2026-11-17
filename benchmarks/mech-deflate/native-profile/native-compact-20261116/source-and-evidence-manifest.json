@@ -55,8 +55,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
-      "sha256": "e41c7cd26d65df422ae91f2d315a11e1559029fb631bfcaf3af3a913a0f4d75b",
-      "bytes": 10231
+      "sha256": "f8cfc832181f72431a233affe84b10ba8b396c68ec9ba2d5a4c148c6e270ef27",
+      "bytes": 10792
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
@@ -35349,19 +35349,24 @@
       "bytes": 1064
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+      "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c",
+      "bytes": 1149
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_artifacts.py",
       "sha256": "5e2297d7671bb65241c046a91275fde3ec9d43cf714e66b38e839be88515465e",
       "bytes": 13055
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_records.py",
-      "sha256": "29cd21a8e857ffb5724f52fbe0091d01723ca754a16d2ca0e8e36592975bd13e",
-      "bytes": 6397
+      "sha256": "2f0830d9030b8a14dfb4559b48734b3f8222278927a5746ea2ff8af8c9cd7a2d",
+      "bytes": 6470
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_timings.py",
-      "sha256": "5480e66e8d412d7517b3cf6bd0a28d1d2bbfc8fed040e886750b0fafa87eb677",
-      "bytes": 23186
+      "sha256": "149a646be4be7691327db8bd8c568f06b810fd9e2c21762aef286e50e7a336ba",
+      "bytes": 23486
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualify.py",
@@ -35400,8 +35405,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/tests/test_qualify.py",
-      "sha256": "394a187c18bc969a00bdae22b32fd314678617614a59e4d572cc6a8ded13f445",
-      "bytes": 26901
+      "sha256": "06c871da34ae7d51bb17099b995de8b37ce29f025d842334ff733fb8dca9b06f",
+      "bytes": 28448
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/worker.rs",

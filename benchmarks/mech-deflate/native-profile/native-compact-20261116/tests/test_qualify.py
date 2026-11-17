@@ -349,6 +349,35 @@ class QualificationTests(unittest.TestCase):
         result = self.outcome("Unresolved")
         self.assertTrue(any("floor 61 missed" in line for line in result["issues"]["unresolved"]))
 
+    def high_water_campaign(self):
+        return Campaign(Path(self.temp.name), load_policy(3), self.fixtures)
+
+    def test_current_policy_requires_62_wins_in_each_complete_order(self):
+        self.campaign = self.high_water_campaign()
+        case = "prefix-natural-8192"
+        assert self.campaign.names.index(case) < 61
+        self.campaign.run("fwd", "forward", wins=62)
+        self.campaign.run("rev", "reverse", wins=61)
+        result = self.outcome("Unresolved")
+        self.assertEqual(result["policy_version"], 3)
+        self.assertTrue(any("rev: libdeflate floor 62 missed" in line for line in result["issues"]["unresolved"]))
+
+    def test_current_policy_preserves_the_historical_8_kib_win(self):
+        self.campaign = self.high_water_campaign()
+        case = "prefix-natural-8192"
+        new_win = self.campaign.names[62]
+        self.campaign.full(wins=62, overrides={case: {CONTROL: 1.1, CANDIDATE: 1.1},
+                                              new_win: {CONTROL: 0.9, CANDIDATE: 0.9}})
+        result = self.outcome("Reject")
+        self.assertEqual(result["runtime"]["runs"][0]["peers"]["libdeflate"]["point_estimate_wins"][CANDIDATE], 62)
+        self.assertTrue(any("missed required libdeflate wins" in line for line in result["issues"]["rejected"]))
+
+    def test_current_policy_accepts_restoring_the_62nd_win(self):
+        self.campaign = self.high_water_campaign()
+        case = "prefix-natural-8192"
+        self.campaign.full(wins=62, overrides={case: {CONTROL: 1.1}})
+        self.outcome("Retain")
+
     def test_peer_win_policy_reports_duplicate_control_uncertainty(self):
         self.use_peer_win_policy()
         self.campaign.full()
