@@ -9,6 +9,8 @@ use crate::machinst::{FinalizedRelocTarget, MachBufferFinalized, Stencil};
 use alloc::{collections::BTreeMap, vec, vec::Vec};
 use core::ops::Range;
 
+mod frame_copies;
+
 const B: u32 = 0x1400_0000;
 const MAX_TAIL: usize = 40;
 
@@ -80,10 +82,39 @@ fn flow(word: u32, at: usize) -> Option<Flow> {
     Some(Flow::Plain)
 }
 
+#[derive(Clone, Copy)]
+struct Replacement {
+    target: usize,
+    width: usize,
+    emit_branch: bool,
+    redirect_branches: bool,
+}
+
+#[derive(Clone, Copy)]
+enum TailKind {
+    Cold,
+    FrameCopies,
+}
+
 /// Returns bytes removed, or `None` without modifying unsupported input.
 pub(super) fn apply(
     buffer: &mut MachBufferFinalized<Stencil>,
     cold: Range<CodeOffset>,
+) -> Option<usize> {
+    apply_kind(buffer, cold, TailKind::Cold)
+}
+
+pub(super) fn share_frame_copies(
+    buffer: &mut MachBufferFinalized<Stencil>,
+    cold: Range<CodeOffset>,
+) -> Option<usize> {
+    apply_kind(buffer, cold, TailKind::FrameCopies)
+}
+
+fn apply_kind(
+    buffer: &mut MachBufferFinalized<Stencil>,
+    cold: Range<CodeOffset>,
+    kind: TailKind,
 ) -> Option<usize> {
     // Constant islands, exceptions and instruction-specific debug metadata need
     // a more general remapper. Keep those functions untouched. Apple unwind
@@ -173,7 +204,109 @@ pub(super) fn apply(
         }
     }
 
-    let first = cold.start as usize / 4;
+    let substitutions = match kind {
+        TailKind::Cold => plan_cold(&words, &flows, &heads, &protected, cold.start as usize / 4),
+        TailKind::FrameCopies => {
+            let frame_size = buffer.frame_layout.as_ref()?.frame_to_fp_offset;
+            // Bound the frame copies below the caller frame and after any
+            // prologue action. Every recorded unwind offset is verified again
+            // after remapping and remains byte-for-byte unchanged.
+            let first = buffer.unwind_info.iter().map(|&(offset, _)| offset).max()?;
+            if first % 4 != 0 || frame_size == 0 {
+                return None;
+            }
+            frame_copies::plan(&words, &flows, &heads, &protected, first as usize / 4, frame_size)
+        }
+    };
+
+    let mut code = Vec::with_capacity(words.len());
+    let mut moved = vec![None; words.len() + 1];
+    let mut branches = Vec::new();
+    let mut at = 0;
+    while at < words.len() {
+        moved[at] = Some(code.len());
+        if let Some(replacement) = substitutions[at] {
+            if replacement.emit_branch {
+                branches.push((
+                    code.len(),
+                    Branch {
+                        target: replacement.target,
+                        shift: 0,
+                        bits: 26,
+                    },
+                ));
+                code.push(B);
+            } else {
+                moved[at] = None;
+            }
+            at += replacement.width;
+        } else {
+            if let Flow::Branch(branch) = flows[at] {
+                branches.push((code.len(), branch));
+            }
+            code.push(words[at]);
+            at += 1;
+        }
+    }
+    moved[words.len()] = Some(code.len());
+    let saved = (words.len() - code.len()) * 4;
+    if saved == 0 {
+        return Some(0);
+    }
+    for (at, branch) in branches {
+        let target = match substitutions.get(branch.target).copied().flatten() {
+            Some(replacement) if replacement.redirect_branches => replacement.target,
+            _ => branch.target,
+        };
+        code[at] = branch.encode(code[at], at, moved.get(target).copied().flatten()?)?;
+    }
+    let remap = |offset: u32| -> Option<u32> {
+        if offset % 4 != 0 {
+            return None;
+        }
+        u32::try_from(4 * moved.get(offset as usize / 4).copied().flatten()?).ok()
+    };
+    if buffer
+        .unwind_info
+        .iter()
+        .any(|&(offset, _)| remap(offset) != Some(offset))
+    {
+        return None;
+    }
+    let mut relocs = buffer.relocs.clone();
+    for reloc in &mut relocs {
+        reloc.offset = remap(reloc.offset)?;
+    }
+    let mut traps = buffer.traps.clone();
+    for trap in &mut traps {
+        trap.offset = remap(trap.offset)?;
+    }
+    let mut calls = buffer.call_sites.clone();
+    for call in &mut calls {
+        call.ret_addr = remap(call.ret_addr)?;
+    }
+
+    let end = u32::try_from(code.len() * 4).ok()?;
+    // All validation succeeds before changing any field of the original buffer.
+    buffer.relocs = relocs;
+    buffer.traps = traps;
+    buffer.call_sites = calls;
+    buffer.srclocs.truncate(1);
+    if let Some(loc) = buffer.srclocs.first_mut() {
+        loc.start = 0;
+        loc.end = end;
+    }
+    buffer.data = code.into_iter().flat_map(u32::to_le_bytes).collect();
+    Some(saved)
+}
+
+fn plan_cold(
+    words: &[u32],
+    flows: &[Flow],
+    heads: &[bool],
+    protected: &[bool],
+    first: usize,
+) -> Vec<Option<Replacement>> {
     let mut groups: BTreeMap<(usize, Vec<u32>), Vec<usize>> = BTreeMap::new();
     for end in first..words.len() {
         let Flow::Branch(branch) = flows[end] else {
@@ -227,74 +360,16 @@ pub(super) fn apply(
             occupied[start..start + width].fill(true);
         }
         for &start in &available[1..] {
-            substitutions[start] = Some((available[0], width));
+            substitutions[start] = Some(Replacement {
+                target: available[0],
+                width,
+                emit_branch: true,
+                redirect_branches: false,
+            });
         }
     }
 
-    let mut code = Vec::with_capacity(words.len());
-    let mut moved = vec![None; words.len() + 1];
-    let mut branches = Vec::new();
-    let mut at = 0;
-    while at < words.len() {
-        moved[at] = Some(code.len());
-        if let Some((target, width)) = substitutions[at] {
-            branches.push((
-                code.len(),
-                Branch {
-                    target,
-                    shift: 0,
-                    bits: 26,
-                },
-            ));
-            code.push(B);
-            at += width;
-        } else {
-            if let Flow::Branch(branch) = flows[at] {
-                branches.push((code.len(), branch));
-            }
-            code.push(words[at]);
-            at += 1;
-        }
-    }
-    moved[words.len()] = Some(code.len());
-    let saved = (words.len() - code.len()) * 4;
-    if saved == 0 {
-        return Some(0);
-    }
-    for (at, branch) in branches {
-        code[at] = branch.encode(code[at], at, moved.get(branch.target).copied().flatten()?)?;
-    }
-    let remap = |offset: u32| -> Option<u32> {
-        if offset % 4 != 0 {
-            return None;
-        }
-        u32::try_from(4 * moved.get(offset as usize / 4).copied().flatten()?).ok()
-    };
-    let mut relocs = buffer.relocs.clone();
-    for reloc in &mut relocs {
-        reloc.offset = remap(reloc.offset)?;
-    }
-    let mut traps = buffer.traps.clone();
-    for trap in &mut traps {
-        trap.offset = remap(trap.offset)?;
-    }
-    let mut calls = buffer.call_sites.clone();
-    for call in &mut calls {
-        call.ret_addr = remap(call.ret_addr)?;
-    }
-
-    let end = u32::try_from(code.len() * 4).ok()?;
-    // All validation succeeds before changing any field of the original buffer.
-    buffer.relocs = relocs;
-    buffer.traps = traps;
-    buffer.call_sites = calls;
-    buffer.srclocs.truncate(1);
-    if let Some(loc) = buffer.srclocs.first_mut() {
-        loc.start = 0;
-        loc.end = end;
-    }
-    buffer.data = code.into_iter().flat_map(u32::to_le_bytes).collect();
-    Some(saved)
+    substitutions
 }
 
 #[cfg(test)]
