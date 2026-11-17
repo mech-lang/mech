@@ -1,0 +1,58 @@
+{
+  "preparation_base": "ed99ade92836761bebd2f7357bf46817204433d4",
+  "patch_sha256": "2404c680f4324af25a7a81db632fa695d8750f12bd340c61ec0ef2d373accc97",
+  "previous_paths": {
+    "benchmarks/related-post-gen/hosts/after-4.rs": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "benchmarks/related-post-gen/verify-review.py": "478828d10404a2a9b0c3323e2a1576d0b34b66ed9e983bafabfde681b57c4bc8",
+    "hosts/gpu/src/native_artifact/application/mod.rs": "bc4247fa6ee3b580b87367bb8b67b1d84454906e9ba500d2a197efeb1943ede7",
+    "hosts/gpu/src/native_artifact/launch/program.rs": "770c12f8e5310b9af685adee34c03c283cd427ba7e06687654fc13cefdbadbdf",
+    "hosts/gpu/src/native_artifact/mod.rs": "f1574ded99f5e66fab21856f7524c56c19441e9b997589e60b33e0e6dbf19e80",
+    "hosts/gpu/src/native_artifact/program/application.rs": "2826818ba888be164c133bd799d2e2d449b8e258c960c91f6a249dc3465a5804"
+  },
+  "overlay_files": {
+    "benchmarks/related-post-gen/AFTER-4.md": "1c227640fc1564afb271789b1c31f02d50f3c63f4c45af86ef3e9dbecbfbe780",
+    "benchmarks/related-post-gen/build-after-4.py": "f35e10395c918cbe27e255bd3216df3a13527e8d3f6f7313bf631db21286a649",
+    "benchmarks/related-post-gen/hosts/after-4.rs": "8a0e3946966d7f5b0879eba3ff809ce75d420407500f55b1cc88f9ed74082b1e",
+    "benchmarks/related-post-gen/review/recorded-sources/after-4.rs.gz": "b6acd4a2030960ae42fad990cb1a1f2e307d6dabfb2d44a1e75b3978c808d7c9",
+    "benchmarks/related-post-gen/verify-review.py": "c8ee57841fd7c1bd9835a8d39dac9d29d2f09aeb99afc1e214fe3262caacadb9",
+    "hosts/gpu/examples/related_post_after_4.rs": "7539324ce2453f405ad7b9869c65c9d6195532ae0a9380748889bac64569ccac",
+    "hosts/gpu/src/native_artifact/application/mod.rs": "96d54ccb30dbf48d7662d5be63e094ba653c06e538e94d2a149f342fab6a1072",
+    "hosts/gpu/src/native_artifact/launch/program.rs": "61ae0984d0b873f3d4638c75a4e38f9412be71e1bdd046cad69d400903c344d5",
+    "hosts/gpu/src/native_artifact/mod.rs": "df4bc0e000e0dec1906e0ae0ebd2f1b26a072b7a3521651610b2e314e9c28083",
+    "hosts/gpu/src/native_artifact/program/application.rs": "13c0972582c7238431994b0627dced5a4419d29cc16167027e24aca5e306b03d",
+    "hosts/gpu/src/native_artifact/templates/linked_program_adapter_main.rs.in": "143813390a8b99bf493e2a50371e34b216eeb0cdf938a54ef70524b575e7a331"
+  },
+  "metadata_command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "metadata",
+    "--offline",
+    "--locked",
+    "--no-deps",
+    "--format-version",
+    "1"
+  ],
+  "producer_target": {
+    "kind": [
+      "example"
+    ],
+    "crate_types": [
+      "bin"
+    ],
+    "name": "related_post_after_4",
+    "src_path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/pinned-formatter/workspace/hosts/gpu/examples/related_post_after_4.rs",
+    "edition": "2024",
+    "doc": false,
+    "doctest": false,
+    "test": false
+  },
+  "workspace": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/pinned-formatter/workspace",
+  "static_gate": {
+    "command": [
+      "bash",
+      "scripts/check-unsafe-boundaries.sh"
+    ],
+    "status": 1,
+    "log_sha256": "9fadc540237338a4e1344ae515d8c58b612c2074060fddab933f2036c693d8a9"
+  }
+}
