@@ -17,7 +17,7 @@ use super::base;
 use super::combinator::{self, Attempt};
 
 mod continuation;
-pub(crate) use continuation::{Continuation, Progress};
+pub(crate) use continuation::{Continuation, FrameStorage, Progress};
 pub(crate) fn supports(rule: crate::document::RuleId) -> bool {
     matches!(
         rule,
