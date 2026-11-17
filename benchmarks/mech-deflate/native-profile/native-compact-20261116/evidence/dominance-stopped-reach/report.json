@@ -1,0 +1,117 @@
+{
+  "source_parent": "197ad8ff1272a9f411bd56f14f08efabba2553cd",
+  "native_phase_ratios": [
+    0.9854086436245977,
+    0.9870567623029778,
+    1.004167235653794,
+    0.9780765172439313,
+    0.9994241502132916,
+    0.9930276554416574,
+    0.9999120188191523,
+    0.9816162931377159
+  ],
+  "source_to_link_ratios": [
+    0.9934860815610289,
+    1.0025097600371877,
+    1.0053770576892118,
+    0.9959321532136267,
+    1.0059177570918387,
+    0.9953090677859757,
+    1.0166652018593383,
+    0.9947295984153369
+  ],
+  "native_phase_paired_reduction_fraction": 0.00995779112768247,
+  "source_to_link_paired_reduction_fraction": 0.0007790433745927805,
+  "medians": {
+    "mech-control": {
+      "source_to_native": 3.8162046873476356,
+      "stage_outputs": 0.00026318756863474846,
+      "link": 0.0403651453088969,
+      "total": 3.8570055412128568,
+      "compiler_peak_rss_bytes": 401530880.0,
+      "compiler_phases_seconds": {
+        "parse": 1.9564783129999999,
+        "catalog": 0.057945978999999995,
+        "frontend": 0.23560352099999998,
+        "artifact": 0.007164687,
+        "encode": 0.0026199795,
+        "native": 1.524263875
+      }
+    },
+    "mech-experiment": {
+      "source_to_native": 3.8049778540153056,
+      "stage_outputs": 0.0002583959139883518,
+      "link": 0.04738341621123254,
+      "total": 3.853010728955269,
+      "compiler_peak_rss_bytes": 401522688.0,
+      "compiler_phases_seconds": {
+        "parse": 1.961353521,
+        "catalog": 0.0620365835,
+        "frontend": 0.23762381300000002,
+        "artifact": 0.0070826665,
+        "encode": 0.002604396,
+        "native": 1.508294188
+      }
+    },
+    "roc": {
+      "compile": 2.955279020825401,
+      "link": 0.0336940623819828,
+      "total": 2.9916231045499444,
+      "compiler_peak_rss_bytes": 396066816.0
+    },
+    "libdeflate": {
+      "compile": 0.4462192081846297,
+      "link": 0.033922916278243065,
+      "total": 0.4808682498987764,
+      "compiler_peak_rss_bytes": 71532544.0
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "executable_text_bytes": 150416,
+      "executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_bytes": 210168
+    }
+  },
+  "exact_artifacts": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "controls": {
+    "mech-control": "5d1a791930204bafa27b32658e738aa53eec06edd609337a3d9db106c9218109",
+    "mech-experiment": "a7a38f5e72c977b6933dbebfbd658a122fec32d270d80633245334c6d5e5d800"
+  },
+  "worker_check": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-dominance-search/matched/warmup/mech-experiment/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-dominance-search/matched/warmup/mech-experiment/native/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "complete_smokes": 162,
+    "verified": true,
+    "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "decision": "Screen only. The native-phase paired median reduction fell short of the declared 1% gate."
+}

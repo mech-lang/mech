@@ -11,6 +11,15 @@ checkout-relative reproduction commands. No smaller candidate has been promoted.
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 
+Reusing the verifier's graph and proving identity-route reachability cuts
+matched native time by **1.71%** and the complete build by
+**0.50%**. The Apple M1 build takes **3.83915 s** through the
+final link, **1.285× Roc** and **8.016× libdeflate**. It reproduces
+the exact timed worker and emits **71,768 B**, or **1.244× Roc** and
+**1.935× libdeflate**. Both full runtime orders preserve all **81/81 Roc**
+and **61/81 libdeflate** wins.
+[Compiler comparison and reproduction](evidence/native-graph-work/README.md)
+
 The current opt-in **71,768-byte** Cranelift encoder uses
 **1.244× Roc** and **1.935× libdeflate** text. Single-piece source
 access brings the matched Apple M1 build through the final link to

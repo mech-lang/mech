@@ -1,0 +1,98 @@
+{
+  "parent": "197ad8ff1272a9f411bd56f14f08efabba2553cd",
+  "verified_flowgraph_source": "7cf85cccec5a98330d17b8023972b56d8826d117",
+  "dominance_route_source": "51b21b2d4fb3591845e65cbf95880d4c2f848aea",
+  "native_phase_paired_reduction_fraction": 0.017131844763572213,
+  "complete_build_paired_reduction_fraction": 0.00500249403372921,
+  "native_faster_pairs": 8,
+  "complete_faster_pairs": 7,
+  "medians": {
+    "mech-control": {
+      "source_to_native": 3.8189863124862313,
+      "stage_outputs": 0.00026552099734544754,
+      "link": 0.043290625093504786,
+      "total": 3.8611412078607827,
+      "compiler_peak_rss_bytes": 401530880.0,
+      "compiler_phases_seconds": {
+        "parse": 1.9646078955,
+        "catalog": 0.058204228999999996,
+        "frontend": 0.23527281249999998,
+        "artifact": 0.007068479,
+        "encode": 0.002587187,
+        "native": 1.5181186665
+      }
+    },
+    "mech-experiment": {
+      "source_to_native": 3.7969133756123483,
+      "stage_outputs": 0.00026381248608231544,
+      "link": 0.042260082671418786,
+      "total": 3.8391461458522826,
+      "compiler_peak_rss_bytes": 401522688.0,
+      "compiler_phases_seconds": {
+        "parse": 1.966850896,
+        "catalog": 0.060210833000000005,
+        "frontend": 0.234092771,
+        "artifact": 0.0070571665,
+        "encode": 0.002605417,
+        "native": 1.4909500420000001
+      }
+    },
+    "roc": {
+      "compile": 2.9543863961007446,
+      "link": 0.034125208389014006,
+      "total": 2.9886427915189415,
+      "compiler_peak_rss_bytes": 396410880.0
+    },
+    "libdeflate": {
+      "compile": 0.44509912515059114,
+      "link": 0.03381068748421967,
+      "total": 0.47891649953089654,
+      "compiler_peak_rss_bytes": 71516160.0
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "executable_text_bytes": 150416,
+      "executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_bytes": 210168
+    }
+  },
+  "expected_artifacts": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "mech_build_x_roc": 1.2845784570664878,
+  "mech_build_x_libdeflate": 8.016316309028326,
+  "exact_worker": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/combined-native-graph-work/matched/warmup/mech-experiment/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/combined-native-graph-work/matched/warmup/mech-experiment/native/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "complete_smokes": 162,
+    "verified": true,
+    "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  }
+}

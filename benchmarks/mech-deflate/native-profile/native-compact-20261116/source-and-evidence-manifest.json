@@ -55,13 +55,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "1a31458c22bf61df3dc6c35970a06fb5610d061132c48048ef2377c85e8e5c98",
-      "bytes": 32345
+      "sha256": "4144781c2ddb4afe12f99820841137d824706604e222f7341e704cc0bb5a93ed",
+      "bytes": 32865
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "c5c21edd41c1200fa0b5e707446203d09c72f21fe748a7d1274cbd4a824a8205",
-      "bytes": 25819
+      "sha256": "16ca560fe1744b3c93277d91bab79695afd16f42036cba37f0748c82be520070",
+      "bytes": 26339
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/README.md",
@@ -10044,6 +10044,81 @@
       "bytes": 613
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/README.md",
+      "sha256": "dd326f48464fedfc1193f62a9c2f5c64c93d0368ee63311cfd2bc8c223d4f71e",
+      "bytes": 1142
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/as-run/check-dominance.py",
+      "sha256": "a283b50001e018926537174cae7b8f026fea1b406c294a0d982b607c80d577d0",
+      "bytes": 2383
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/as-run/dominance-probe.rs.gz",
+      "sha256": "76842ea8b35f582c24ca538ab93fe16b51fa92b3772e2babd24194cba282949f",
+      "bytes": 1671
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/as-run/identity-route-dominance.patch.gz",
+      "sha256": "a63b6060971ddf1426de8742ecb9b16c9ae506eb476e21948f352511a0869950",
+      "bytes": 819
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/as-run/measure_builds.py",
+      "sha256": "52867e3e9921c87bd8139fbd006a05cf2231ee24f04b3a79f646652408eb6c9f",
+      "bytes": 6183
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/as-run/reach-before.rs.gz",
+      "sha256": "ad448a468222c85e78ae71aee1c3cee48e8bb4f5dc533efb699f94a81981f1ba",
+      "bytes": 1316
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/as-run/run-dominance-probe.sh",
+      "sha256": "4c8f94a797c5510e47e1a6004e47e9798b523be9a3c5a84f2a61393c3530b1b7",
+      "bytes": 491
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/as-run/study_tools.py",
+      "sha256": "bafe65da00c13682e8132156d2f183f13f5de43b9ebde539a1ad360fd5384516",
+      "bytes": 2306
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/checks/dominance-rust.log",
+      "sha256": "ec0313eb6ea27c44f62cd2e639c5e478174bb89e01d5d147bf181e000eff96d2",
+      "bytes": 502
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/compiler-construction-time.txt",
+      "sha256": "6e7fe24f70c926c98735f68b83e95386bed936fd31de7651fcde08ef61215f90",
+      "bytes": 32
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/integrated-cargo.jsonl.gz",
+      "sha256": "270ae205c397d9b2716986230c113a59d4f113bb9feed1802f187fb094dc979d",
+      "bytes": 12941
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/matched/build-stdout.log.gz",
+      "sha256": "d056aa676866cfd200df298abcbef9a57170d91b84f58d52d831ec5f1f3b040e",
+      "bytes": 3764
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/matched/plan.json",
+      "sha256": "c6be49fbb9ac7e78e4aef6e559beff011faf7cd9a46194ec71fbe8deb7e1b4d8",
+      "bytes": 17933
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/matched/timing.json.gz",
+      "sha256": "4a6ea5b611f0496dbdca196cb0ad98e6082170ab9da24b40b55d9b743a1932ee",
+      "bytes": 17404
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/report.json",
+      "sha256": "c45ed4926d73c8b75f66e98d97a993de498afae3b05ab4f73870a470722d95a3",
+      "bytes": 4022
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/diagnostic-checks.json",
       "sha256": "da8d9b4ecd60c0e012343792a620fc8293b7bc5f913dd855d4fc6f2b88f7e69d",
       "bytes": 6002
@@ -13547,6 +13622,51 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/linked-size-census/roc/receipt.json",
       "sha256": "16fd1049d452af7376e53d756667ee53598f7affc6dd8aecaa26b4e9c198d881",
       "bytes": 875
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/README.md",
+      "sha256": "72716080e5b7958610b475d14b63d93e4ff1370455018503413725204ca4d4db",
+      "bytes": 1656
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/compiler-construction-time.txt",
+      "sha256": "d0a44650316abb6f032af6cd9d1023fc164905ca761103dbf03664282d178878",
+      "bytes": 32
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/integrated-cargo.jsonl.gz",
+      "sha256": "fbb322aa2f38b6cd7c6f931412872d6c744f021c4dddbdf5cd32007de679e555",
+      "bytes": 12957
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/matched/plan.json",
+      "sha256": "e1232cce917ee32fcc41cf406e28a5aa525391cd9a541afc5d5a4ac9093478f4",
+      "bytes": 18106
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/matched/timing.json.gz",
+      "sha256": "c1d4c58ae3abd05deba4abc06729ac86ecfae3e55d6c3609c8ff77cf2d0e81cc",
+      "bytes": 17526
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/matched.log.gz",
+      "sha256": "743dfb02e6b83d6328b02afd07b73c7931c8e547e2d744d2ad6c96542b119473",
+      "bytes": 3732
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/measure_builds.py",
+      "sha256": "bb06f0be9fa29e6d1d2500a927295d2ee7ca95bdc9d545bc368765c279c18701",
+      "bytes": 6418
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/report.json",
+      "sha256": "f3013a76e8a1a511aacc82ec80068b39bde4247df29bf3e6770e7eee2eb671f1",
+      "bytes": 3575
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-graph-work/study_tools.py",
+      "sha256": "bafe65da00c13682e8132156d2f183f13f5de43b9ebde539a1ad360fd5384516",
+      "bytes": 2306
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/README.md",
@@ -22597,6 +22717,86 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/terminal-owner-publication/terminal-owner-only-focus-reverse/summary.json",
       "sha256": "2486f1f57cd79432440f85986b376746abad795069dcc8090232ad28030ac08e",
       "bytes": 7720
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/README.md",
+      "sha256": "3dd27d7f81a35259d15bd1760acbbea4a98068ddbb46cc1e6cfcc352164d7b29",
+      "bytes": 1618
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/as-run/flowgraph_probe.rs.gz",
+      "sha256": "30c539275842d27e6101dd168fa4f622f275f7f45e33f0f7c6e06dc1c2f4888a",
+      "bytes": 873
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/as-run/measure_builds.py",
+      "sha256": "2d6f2af6df2c7f6a02dc41b1c79be2ec0227be6d515a3a5768cd47aa4218722f",
+      "bytes": 6228
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/as-run/prepare_source.py",
+      "sha256": "0b9f4c2878b38a734230deef6667fed80fb943b92c6a1f8311dfc119d35d7c13",
+      "bytes": 4554
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/as-run/study_tools.py",
+      "sha256": "bafe65da00c13682e8132156d2f183f13f5de43b9ebde539a1ad360fd5384516",
+      "bytes": 2306
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/as-run/verified-legalized-flowgraph.patch.gz",
+      "sha256": "ad194d2ce4ecf1da44cd7aedf19b12d6bb80ad783fc4328761f709e48fc64f30",
+      "bytes": 1095
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/as-run/verify_flowgraph.py",
+      "sha256": "f76bed45ea1e186c39a583833e511be4ef11c3fb882f11688a09e57b1738fd91",
+      "bytes": 2467
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/checks/flowgraph-candidate.txt",
+      "sha256": "f0e77739b9ca0b42f58efd71298fbaec45efe742494c8c5c20cc567df6e03899",
+      "bytes": 496
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/checks/flowgraph-control.txt",
+      "sha256": "f0e77739b9ca0b42f58efd71298fbaec45efe742494c8c5c20cc567df6e03899",
+      "bytes": 496
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/checks/flowgraph-verification.json",
+      "sha256": "8a286b229acb3e385e4127def9f1be9c5e9af1cb6683bb2924bf4f5af5a98f46",
+      "bytes": 1928
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/compiler-construction-time.txt",
+      "sha256": "eeb1318ed03d252c2d5ea641a53985c81fe0c56e0fcd7d827ff56cd183fc3fb9",
+      "bytes": 32
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/integrated-cargo.jsonl.gz",
+      "sha256": "228ea4ce22c86a7dacf3d9019ecc34ecdc5718278d23d831629b7a7369a01aea",
+      "bytes": 13066
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/matched/build-stdout.log.gz",
+      "sha256": "bbdf454c41a77c8b701d1f4a7b21a46d9ed014e1ddd4ebba493f28ded2a0a6c3",
+      "bytes": 3695
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/matched/plan.json",
+      "sha256": "de0babf8420927935fbc01a0a3382114cdb0c34ed6ec42715563f779e2166130",
+      "bytes": 17933
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/matched/timing.json.gz",
+      "sha256": "a84c73e88cc6c0c8ae6c58b1cdc7b5aa8ab0ad964338ab359381fe9cc85b0e88",
+      "bytes": 17344
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/verified-legalized-flowgraph/report.json",
+      "sha256": "e9107b72ecfa98bc6302c59f0e86436d26c691c03b7af16afd18b3fb050ec381",
+      "bytes": 3703
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/004680407282aad7d520e5e93fe90b2c884f0c269463a45ae2f961af139c3538",
