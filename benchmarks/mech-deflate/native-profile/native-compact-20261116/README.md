@@ -16,11 +16,70 @@ that wording is historical. Historical evidence has not been edited.
 | Apple M1 evidence | Mech code | × Roc code | × libdeflate code | Runtime qualification |
 | --- | ---: | ---: | ---: | --- |
 | Retained native baseline | 72,520 B | 1.25693 | 1.95577 | 81/81 and 61/81, both full orders |
+| Fresh owner reference counts | 72,344 B | 1.25388 | 1.95102 | 81/81 and 61/81, both full orders |
 | Optional cold-tail sharing | 72,200 B | 1.25139 | 1.94714 | 162 exact encoder calls; 15-case screen only |
 
 The code denominators are 57,696 B for Roc and **37,080 B for libdeflate**.
 Older receipts used a different 41,112-byte C object; their C size ratios must not
 be substituted for this matched encoder comparison.
+
+## Fresh owner reference counts
+
+The optional compiler pass folds 20 reference-count loads in the compact root.
+A successful allocation with nonzero capacity and stride initializes its count
+to zero. The pass follows direct allocation results and exact count stores, and
+requires agreement at joins. It stops at potentially aliasing stores, unrecognized
+calls, and cycles. It preserves the allocation, count writes, and checked failure
+paths. Five native test groups exercise 2,592 calls across the proof boundaries.
+
+The standalone pass reduces emitted text by **176 bytes** to **72,344 B**. Both
+full peer benchmark orders record **81/81 Roc and 61/81 libdeflate** for this
+candidate and the control. Its peak stack remains 5,296 bytes. It passes 162
+exact-output checks, six checked-failure cases, and 14 shape controls. The full
+orders verify 1,965,312 timed calls. The initial paired analysis bounds 77 cases
+at 0.5% resolution and has four inconclusive cases. The report includes longer
+measurements with a duplicate control for those cases. `heldout-window-32767`
+is bounded in the follow-up. The duplicate controls vary beyond the resolution
+on `random-64`, `reymont-prefix-32769`, and `prefix-natural-16384`.
+
+The pass remains opt-in. The default configuration reproduces the retained
+object, metadata, and historical benchmark worker byte for byte. Both the
+standalone pass and its cleanup combination reproduce their objects and metadata
+through `rebuild.py` and pass 162 checks each. The combination reaches 72,024 B
+and consistently slows `16384-distribution-change` and `heldout-mixed-131073`
+in both focused orders. The standalone pass avoids those focused regressions.
+
+| Matched Apple M1 builds | Source to executable | Encoder text | Executable file |
+| --- | ---: | ---: | ---: |
+| Retained Mech control | 6.25214 s | 72,520 B | 956,056 B |
+| Mech with fresh owner counts | 6.24649 s | 72,344 B | 956,056 B |
+| Roc | 2.98377 s | 57,696 B | 230,600 B |
+| libdeflate | 0.48196 s | 37,080 B | 210,168 B |
+
+The candidate build takes 0.99910× the control, 2.09349× Roc, and 12.96053×
+libdeflate. The timing is effectively flat. Final linking is included, with the
+compilers, runtimes, and host adapters prebuilt. Four balanced orders follow one
+excluded warmup for each actor. Bytecode is identical across both Mech variants.
+Each variant reproduces its object, metadata, and executable in all five builds
+and passes 162 correctness checks on its newly linked worker.
+
+The candidate medians include 3.523 s parsing, 3.973 s for the whole frontend,
+2.233 s for native emission, and 0.041 s for final linking. A separate instrumented
+run shows 0.777 s between the native root cleanup and machine code stages and
+0.221 s for root machine code. Roc's instrumented build spends 1.651 s on
+specialization and 0.811 s on LLVM optimization and emission. Clang reports
+0.085 s in the frontend and 0.441 s in the backend for the profiled C build.
+The instrumented runs are excluded from the build medians.
+
+See [the fresh owner report](evidence/fresh-owner-counts/report.json) for the
+measurements, qualification status, and exact artifact identities.
+
+```sh
+python3 benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py /tmp/native-fresh-owners --variant fresh-owner-counts
+cargo +nightly-2026-03-03 test --locked --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml --release --test fresh_owner_counts
+```
+
+## Retained parser change
 
 The retained parser change measured **7.59864 → 7.21202 seconds** from the same
 source through a runnable executable (5.09% faster). Matched Roc and libdeflate
@@ -109,9 +168,9 @@ rebuild receipts, and as-run analysis scripts are in `evidence/owner-proof-runti
 The as-run scripts retain original machine paths; the advertised rebuild command
 uses paths relative to this checkout.
 
-## Owner-proof and cleanup screen
+## Owner-proof and cleanup experiment
 
-The latest linked experiment combines owner proofs with final control-flow
+This experiment combines owner proofs with final control-flow
 cleanup, using the compiler source already on this branch. It produces
 **72,136 bytes of encoder text**, 384 bytes below the retained baseline, or
 **1.25028× Roc and 1.94542× libdeflate**. The root frame grows from 3,744 to
@@ -124,10 +183,13 @@ are 0.99775× and 0.99628×. The first order's one-byte case is 0.675% slower,
 while the reverse order is 1.981% faster. Both observations are retained; this
 screen does not establish per-case nonregression at the declared 0.5% resolution.
 
-**This is not a new 81/61 result.** Complete peer orders, checked-failure and
-stack controls, and uncertainty follow-ups remain pending. The retained recipe
-is unchanged. [The report and raw observations](evidence/owner-cleanup-focus/report.json)
-are committed, and `replay.py` now recomputes these focused win counts too.
+Both subsequent full orders reach 81/81 against Roc and 61/81 against libdeflate
+for both actors. The per-case analysis finds five slowdowns above 0.5%, including
+a 2.84% estimate for `16384-distribution-change`. Peak stack grows to 5,344 bytes.
+The benchmark therefore rejects this optimization. See the
+[initial screen](evidence/owner-cleanup-focus/report.json) and the
+[full qualification](evidence/owner-cleanup-full/report.json) for raw results,
+checked failures, and stack controls. `replay.py` checks both sets of wins.
 Use `size_screens.py --case combinations--owners-cleanup` with the output and
 emitter arguments documented in `REVIEW.md` to reproduce the exact object and
 metadata. The single emission duration in its receipt is not a complete build

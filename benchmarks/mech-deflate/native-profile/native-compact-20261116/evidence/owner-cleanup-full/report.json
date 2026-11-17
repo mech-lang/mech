@@ -1,0 +1,101 @@
+{
+  "source_review_commit": "07df69372ffcc60490622fdd34c3116560f28d3d",
+  "production_compiler_source_changed_by_this_experiment": false,
+  "retained_recipe_changed": false,
+  "decision": "rejected: persistent per-case regressions despite matching the 81/61 peer win counts",
+  "candidate_identity_and_flags": "../owner-cleanup-focus/runtime.json",
+  "candidate_object_text_bytes": 72136,
+  "candidate_object_text_x_roc": 1.2502773155851359,
+  "candidate_object_text_x_libdeflate": 1.9454153182308522,
+  "root_frame_bytes": 3792,
+  "peak_stack_bytes": 5344,
+  "baseline_peak_stack_bytes": 5296,
+  "full_orders": [
+    {
+      "roc_wins": [
+        81,
+        81
+      ],
+      "libdeflate_wins": [
+        61,
+        61
+      ],
+      "candidate_over_control_geometric_mean": 1.00033519847452,
+      "verified_full_calls": 982656,
+      "lost_cases_mech_over_roc": [],
+      "lost_cases_mech_over_libdeflate": []
+    },
+    {
+      "roc_wins": [
+        81,
+        81
+      ],
+      "libdeflate_wins": [
+        61,
+        61
+      ],
+      "candidate_over_control_geometric_mean": 0.9994232372476108,
+      "verified_full_calls": 982656,
+      "lost_cases_mech_over_roc": [],
+      "lost_cases_mech_over_libdeflate": []
+    }
+  ],
+  "checked_timed_calls": 1965312,
+  "point_regressions_above_0_5_percent_in_both_orders": {
+    "16384-distribution-change": [
+      1.0268600682701037,
+      1.0299455818704117
+    ],
+    "reymont-prefix-1024": [
+      1.0063010606269007,
+      1.0105483161822661
+    ],
+    "heldout-mixed-131073": [
+      1.0134224179758624,
+      1.0133544581048444
+    ],
+    "prefix-natural-1024": [
+      1.0082074816511861,
+      1.0079008378330572
+    ]
+  },
+  "uncertainty": {
+    "resolution": 0.005,
+    "resamples": 8000,
+    "interval": "90% paired block bootstrap, stratified by run and control/candidate order",
+    "above_resolution": {
+      "128-biased-dynamic": {
+        "estimate": 0.00940309825884822,
+        "lower": 0.00786491339524198,
+        "upper": 0.010913501364862244
+      },
+      "16384-distribution-change": {
+        "estimate": 0.028401667887573145,
+        "lower": 0.026343504795736772,
+        "upper": 0.030442802934366187
+      },
+      "reymont-prefix-1024": {
+        "estimate": 0.008422452342738529,
+        "lower": 0.0067151746541431745,
+        "upper": 0.01012134048708968
+      },
+      "heldout-mixed-131073": {
+        "estimate": 0.01338843747066254,
+        "lower": 0.012772934377144107,
+        "upper": 0.01399532421485028
+      },
+      "prefix-natural-1024": {
+        "estimate": 0.008054148082228263,
+        "lower": 0.007062604846648224,
+        "upper": 0.009060592833953773
+      }
+    },
+    "inconclusive": [
+      "one-stored",
+      "prefix-random-4096",
+      "prefix-repeated-4096"
+    ],
+    "bounded_cases": 73
+  },
+  "scope": "Raw observations, checked failures, stack measurements, and shape controls are preserved. No source-to-executable build comparison was run for this configuration. The earlier focused screen is historical and is not substituted for these full results."
+}
