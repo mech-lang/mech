@@ -16,6 +16,10 @@ parser.add_argument(
 )
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)
+parser.add_argument(
+    '--compiler-opt-level', type=int, choices=(1, 3), default=1,
+    help='Rust optimization level for the compiler binaries (default: 1)',
+)
 args=parser.parse_args()
 out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
 target=(args.target_dir or out/'compiler').resolve()
@@ -26,9 +30,25 @@ def run(command,log,env):
     with log.open('w') as stream:subprocess.run(command,check=True,env=env,stdout=stream,stderr=subprocess.STDOUT)
     return {'command':command,'seconds':time.perf_counter()-start}
 env={k:v for k,v in os.environ.items() if not k.startswith('MECH_')}
-env.update(CARGO_BUILD_JOBS='1',CARGO_PROFILE_RELEASE_OPT_LEVEL='1',CARGO_PROFILE_RELEASE_DEBUG='false',CARGO_PROFILE_RELEASE_LTO='false',CARGO_PROFILE_RELEASE_CODEGEN_UNITS='16')
-cargo=['cargo','+nightly-2026-03-03','build','--locked','--release','--manifest-path',here.parent/'Cargo.toml','--target-dir',target,'--bin','native_compact_frontend','--bin','emit_compact_size','--message-format=json']
+profile = {
+    'CARGO_BUILD_JOBS': '1',
+    'CARGO_PROFILE_RELEASE_OPT_LEVEL': str(args.compiler_opt_level),
+    'CARGO_PROFILE_RELEASE_DEBUG': 'false',
+    'CARGO_PROFILE_RELEASE_LTO': 'false',
+    'CARGO_PROFILE_RELEASE_CODEGEN_UNITS': '16',
+}
+env.update(profile)
+# The allocator's C build takes OPT_LEVEL from Cargo's package profile.
+allocator_profile = 'profile.release.package.libmimalloc-sys.opt-level=1'
+cargo = [
+    'cargo', '+nightly-2026-03-03', 'build', '--locked', '--release',
+    '--config', allocator_profile, '--manifest-path', here.parent / 'Cargo.toml',
+    '--target-dir', target, '--bin', 'native_compact_frontend',
+    '--bin', 'emit_compact_size', '--message-format=json',
+]
 build=run(cargo,out/'compiler-build.jsonl',env)
+build['profile'] = profile
+build['package_profile'] = allocator_profile
 libraries={}
 for line in (out/'compiler-build.jsonl').read_text().splitlines():
     try:row=json.loads(line)
