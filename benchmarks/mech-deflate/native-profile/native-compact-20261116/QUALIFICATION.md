@@ -23,10 +23,21 @@ by the committed source and evidence ledger. The legacy campaigns retain their
 original evidence, including missing provenance for a current promotion.
 [Archived evaluation results](evidence/qualification-v1/archived-decisions.json)
 
+## Acceptance policy v3
+
+Use `policy_version: 3` in the manifest and the independently pinned plan
+for new campaigns. Every complete order must record **81/81 against Roc**
+and at least **62/81 against libdeflate**. Both orders must include the
+historical natural 8 KiB libdeflate win and retain every peer win from the
+corresponding control order. **63/81** is the next performance target.
+Per-case slowdowns continue to be reported. Peer wins govern the timing
+decision, along with the correctness and resource checks below.
+[Policy v3](qualification-policy-v3.json)
+
 ## Acceptance policy v2
 
-Use `policy_version: 2` in the manifest and the independently pinned plan
-for new campaigns. Promotion requires both complete orders, at least
+Replay v2 campaigns with `policy_version: 2` in their original manifests
+and plans. Promotion requires both complete orders, at least
 **81/81 Roc** and **61/81 libdeflate** point wins in each, and preservation of
 every peer win from the corresponding control order. A gain on a different
 case cannot cover a loss. Exact parity is a tie. The 74-contract view and
@@ -100,7 +111,7 @@ The manifest declares these fields.
 | Field | Value |
 | --- | --- |
 | `schema_version` | 1 |
-| `policy_version` | 1 for historical campaigns, 2 for new peer-win campaigns |
+| `policy_version` | 3 for new campaigns, 1 or 2 for their historical replays |
 | `objective` | One of `encoder_text_bytes`, `build_seconds`, `compiler_peak_rss_bytes`, `runtime_peak_payload_bytes`, or `runtime` |
 | `environment` | Reference to JSON with `cpu`, `os`, and `clock`, plus the recorded conditions |
 | `contract` | Reference to JSON with `scope` equal to `diagnostic`, `level` equal to 12, the frozen `fixture_inventory_sha256`, and the `timing_boundary` |

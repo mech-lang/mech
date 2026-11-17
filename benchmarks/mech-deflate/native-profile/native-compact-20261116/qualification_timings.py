@@ -373,6 +373,10 @@ def decide_runtime(runs, repeats, policy, fixtures, findings):
                 continue
             if lost:
                 findings.rejected.append(f"{run['id']}: lost previously won {peer} cases: {', '.join(lost)}")
+            required = policy.get("required_peer_wins", {}).get(peer, ())
+            missed = [name for name in required if run["ratios"][name][peer][CANDIDATE] >= 1.0]
+            if missed:
+                findings.rejected.append(f"{run['id']}: missed required {peer} wins: {', '.join(missed)}")
             floor = policy["peer_win_floors"][peer]
             if wins[CANDIDATE] < floor:
                 reason = f"{run['id']}: {peer} floor {floor} missed (control {wins[CONTROL]}, candidate {wins[CANDIDATE]})"
