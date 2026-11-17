@@ -23579,6 +23579,11 @@
       "bytes": 10998
     },
     {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/identity_routes/route.rs",
+      "sha256": "6dee529acac211ec9e66dfb9f56feb3bb0bd23d6cf399551c1b4e2664dd51cdb",
+      "bytes": 9583
+    },
+    {
       "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/independent_private_read/mod.rs",
       "sha256": "b934b18324bdd00f7de8fef50826bae467ba82d8bd7acac2f1ce8921227f8edd",
       "bytes": 13638
