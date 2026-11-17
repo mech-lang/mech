@@ -35159,9 +35159,9 @@
       "bytes": 2619
     },
     {
-      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ssa-local-definitions/build/first-definition/test-ssa.rs",
-      "sha256": "3c086dd78cb932a4197c41e88aebf1fddec2a5a829f2305feec1129a55d6ba1a",
-      "bytes": 407
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ssa-local-definitions/build/first-definition/test-ssa.rs.gz",
+      "sha256": "24fd731cfa66f373e3e1fb54a9f89aa1450a44b2dc76ed7f9e18fdaac641988e",
+      "bytes": 241
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ssa-local-definitions/build/first-definition/tests.log.gz",
@@ -35179,9 +35179,9 @@
       "bytes": 2598
     },
     {
-      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ssa-local-definitions/build/local-hit/test-ssa.rs",
-      "sha256": "b634c71f8e8309e0e34a061012316482e59c7c5269d357d19b4c5a0d360779ea",
-      "bytes": 400
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ssa-local-definitions/build/local-hit/test-ssa.rs.gz",
+      "sha256": "7293f3d09a2f6ed865a7045e91c2427a901abf05cf8d4b30a2e06eb553ea9d92",
+      "bytes": 237
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ssa-local-definitions/build/local-hit/tests.log.gz",
@@ -37710,8 +37710,8 @@
     },
     {
       "path": "src/syntax/src/document/parser/canonical/base/continuation.rs",
-      "sha256": "38a4b129096aae568f8e20a332f5928d02181c3f3a5730f014ca53f2237fec80",
-      "bytes": 40347
+      "sha256": "01224aeb0957c4e264eff51e3c4e1ec470432d618b53395cb5dbac25d49055c0",
+      "bytes": 40529
     },
     {
       "path": "src/syntax/src/document/parser/canonical/base/mod.rs",
@@ -37775,8 +37775,8 @@
     },
     {
       "path": "src/syntax/src/document/parser/literal_scan.rs",
-      "sha256": "6a5b37ece69129088a36022544b38448a96c4d4e5e1fc1ba41d34b04e78c0e14",
-      "bytes": 25146
+      "sha256": "6cda383b65b8017db324629b37235ccb5d364de185daf1aa76a974143ea4cca1",
+      "bytes": 25421
     },
     {
       "path": "src/syntax/src/document/parser/mod.rs",
