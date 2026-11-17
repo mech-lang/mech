@@ -2,6 +2,7 @@
 use super::super::{
     checked_region_discovery, checked_traversals,
     phase_bodies::{PhaseBodies, define_body, define_prepared_body, prepare_body},
+    phase_layout,
 };
 use super::*;
 use crate::native_artifact::{
@@ -1046,15 +1047,8 @@ fn prepare_impl<M: Module>(
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
-                if !observe
-                    && module.isa().name() == "aarch64"
-                    && let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT")
-                    && let Some(path) = profiles
-                        .split(';')
-                        .filter_map(|profile| profile.split_once('@'))
-                        .find_map(|(phase, path)| (phase == name).then_some(path))
-                {
-                    set_block_layout_profile(&mut candidate, path)?;
+                if !observe && module.isa().name() == "aarch64" {
+                    phase_layout::apply(&mut candidate, &name).map_err(backend)?;
                 }
                 let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
                     .map(std::path::PathBuf::from)
@@ -1189,16 +1183,8 @@ fn prepare_impl<M: Module>(
         && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_FORWARD_PHASE_SPILLS")
             .is_some_and(|phase| phase == symbol.as_str());
-    if !observe
-        && vectors.is_some()
-        && module.isa().name() == "aarch64"
-        && let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT")
-        && let Some(path) = profiles
-            .split(';')
-            .filter_map(|profile| profile.split_once('@'))
-            .find_map(|(phase, path)| (phase == symbol).then_some(path))
-    {
-        set_block_layout_profile(&mut context, path)?;
+    if !observe && vectors.is_some() && module.isa().name() == "aarch64" {
+        phase_layout::apply(&mut context, &symbol).map_err(backend)?;
     }
     prepare_body(module.isa(), &mut context)?;
     let entry_bounds = report
@@ -1364,20 +1350,6 @@ fn finish_preparation(
             vcode_path,
         },
     }
-}
-
-fn set_block_layout_profile(context: &mut Context, path: &str) -> Result<(), NativeCompileError> {
-    #[derive(serde::Deserialize)]
-    struct Profile {
-        order: Vec<u32>,
-        #[serde(default)]
-        literal_offset: Option<u32>,
-    }
-    let profile: Profile =
-        serde_json::from_slice(&std::fs::read(path).map_err(backend)?).map_err(backend)?;
-    context.func.aarch64_block_layout = profile.order;
-    context.func.aarch64_block_layout_literal_start = profile.literal_offset;
-    Ok(())
 }
 
 #[cfg(all(test, target_arch = "aarch64"))]

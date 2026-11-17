@@ -31,6 +31,7 @@ mod le_scalar_stores;
 mod packed;
 mod parallel;
 mod phase_bodies;
+mod phase_layout;
 mod phase_storage;
 mod phases;
 mod vector_guard_facts;

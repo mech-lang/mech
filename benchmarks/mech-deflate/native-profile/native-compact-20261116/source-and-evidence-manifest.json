@@ -15959,6 +15959,11 @@
       "bytes": 1063
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_475_vector-paired-spills.json",
+      "sha256": "61191e4dc884233d2620306a3b35d27b06fd9a6585f6f52851905db08c433829",
+      "bytes": 4239
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/profiles/mech_compact_numeric_475_vector.json",
       "sha256": "13b891e125554f1b5c66d8147e63d854192e295c1b0050169ce2917f0f8406fc",
       "bytes": 4818
@@ -16005,13 +16010,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "688bcd9cc9f42fd2986b388052d8f678f175a978023e8a66f109b51a7f1d8e79",
-      "bytes": 8158
+      "sha256": "b2f207c66ff0e713a0eec6acd03c10101f2968307c80334088efd5194b3c3c44",
+      "bytes": 8446
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
-      "sha256": "35c3cd1a6b8c3866f0bc8be1628fec34930771b9a11c8f58b767a12ebfe8a16d",
-      "bytes": 7304
+      "sha256": "81a0a3afd381bba4c497bd16fcb168f240b15c874af7cbc4e1afc791a8852557",
+      "bytes": 7900
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/mod.rs",
@@ -16380,13 +16385,13 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/mod.rs",
-      "sha256": "5ac5df2ae308aef84e46d7ae53e6656cb7014a64e1bd6cfb5bf75bcb0c6666e0",
-      "bytes": 4422
+      "sha256": "ac923b47eeffa37eb11b4849283dd217a75c4dbf64db03e7c1139855442fe6cf",
+      "bytes": 4440
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/object.rs",
-      "sha256": "ae4db5e29d3cfd1e12c886b6bfee7a405e3794d7417425e0b5669ac32355eda7",
-      "bytes": 35999
+      "sha256": "6f91da4f0e7bd3cbbf5da00ee41cf2ff754d111d44cb32be06b42aa4c859b8b6",
+      "bytes": 36751
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/overwrite_reuse.rs",
@@ -16430,8 +16435,13 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
-      "sha256": "cbf2a25ca75e4eabd6db1d134339c4e74e09677828ea98924581a9f49892c021",
-      "bytes": 64197
+      "sha256": "003ef03e0f100c77990c1eead2bb5c67c1c1b644398cb9f9af50299f6c4b310d",
+      "bytes": 63073
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs",
+      "sha256": "078ad323ac968689d64b8ddf3d6505eb10e7446b1296d8dab2630749cbd83e53",
+      "bytes": 3273
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout_tests.rs",
@@ -16495,8 +16505,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compiler.rs",
-      "sha256": "394550b7649a2c3d77eedfaef530f720dbad34b6e3d1967af078507969db49ae",
-      "bytes": 48908
+      "sha256": "c3543861e845b7a685f8385c65d9f6a2a853f442a5143a4c7e6bc8621ec20861",
+      "bytes": 49246
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/llvm_backend/compact_body.rs",
@@ -16679,6 +16689,11 @@
       "bytes": 19985
     },
     {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/abi.rs",
+      "sha256": "b99ca8bc4c3dd104f018b2085fe68bb7a9a3cd63fb0a296a46d394672a8a1f41",
+      "bytes": 62852
+    },
+    {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/block_layout.rs",
       "sha256": "35338a48ed6fa61a731d7b058a22300762cca8e7fce470a3ff21c296db47d0c7",
       "bytes": 11756
@@ -16829,9 +16844,14 @@
       "bytes": 3906
     },
     {
+      "path": "vendor/cranelift-codegen/src/machinst/abi.rs",
+      "sha256": "7042c030a7fd80a958f454baf76a13656d67aabd915f015a812f19a1ac3c1a9e",
+      "bytes": 106169
+    },
+    {
       "path": "vendor/cranelift-codegen/src/machinst/vcode.rs",
-      "sha256": "f59c38a2a65a0d177827c00d27cd73419a43513fe08e2da690fda0c4dee2c3b9",
-      "bytes": 89509
+      "sha256": "ec32e0bac1f20c67e913fc5a2961f9b4a62b2014ff74081b875ef6a1d6589da7",
+      "bytes": 90439
     },
     {
       "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
@@ -16852,6 +16872,11 @@
       "path": "vendor/cranelift-codegen-meta/src/pulley.rs",
       "sha256": "c6c3f44d874c2c0d2fa4d0d35e5763173a931dfaf7d7daf92b7e658c956adab4",
       "bytes": 14129
+    },
+    {
+      "path": "vendor/cranelift-codegen-meta/src/shared/settings.rs",
+      "sha256": "521bf566cfaf9553fa3b816ba071dcdd393c8918ae8eee00d56bbd0780090450",
+      "bytes": 14350
     },
     {
       "path": "vendor/cranelift-frontend/src/frontend/mod.rs",

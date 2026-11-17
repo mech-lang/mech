@@ -12,6 +12,7 @@ use std::{
 };
 
 use super::super::llvm_backend::{CompactBody, NativeLlvmToolchain, compact_definition};
+use super::phase_layout;
 
 struct Text {
     alignment: u64,
@@ -557,6 +558,10 @@ impl PreparedObject {
             };
             symbols.insert(id, emitted);
         }
+        let tail_layout = (self.isa().name() == "aarch64"
+            && self.isa().flags().enable_regalloc_spill_pairs())
+        .then(phase_layout::profiles)
+        .flatten();
         let mut native_root = None;
         for id in self.definition_order {
             let body = self.bodies.remove(&id).unwrap();
@@ -564,12 +569,21 @@ impl PreparedObject {
                 continue;
             };
             match (emitted, body) {
-                (FuncOrDataId::Func(id), Body::Text(mut text)) => {
+                (FuncOrDataId::Func(emitted), Body::Text(mut text)) => {
                     for reloc in &mut text.relocs {
                         relocate(&symbols, &mut reloc.name)?;
                     }
+                    if let (Some(profiles), FuncOrDataId::Func(id)) = (&tail_layout, id) {
+                        let decl = self.declarations.get_function_decl(id);
+                        if decl.linkage == Linkage::Local
+                            && let Some(name) = &decl.name
+                        {
+                            phase_layout::pad_object_tail(profiles, name, &mut text.bytes)
+                                .map_err(|error| ModuleError::Backend(error.into()))?;
+                        }
+                    }
                     self.object.define_function_bytes(
-                        id,
+                        emitted,
                         text.alignment,
                         &text.bytes,
                         &text.relocs,

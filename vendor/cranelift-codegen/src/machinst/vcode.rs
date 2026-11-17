@@ -890,6 +890,11 @@ impl<I: VCodeInst> VCode<I> {
             self.arrange_fallthrough(&mut final_order);
         }
         final_order.extend(cold_blocks.clone());
+        let pair_spills = flags.enable_regalloc_spill_pairs()
+            && self.debug_value_labels.is_empty()
+            && self.user_stack_maps.is_empty()
+            && self.debug_tags.is_empty()
+            && regalloc.debug_locations.is_empty();
 
         // Compute/save info we need for the prologue: clobbers and
         // number of spillslots.
@@ -1027,7 +1032,8 @@ impl<I: VCodeInst> VCode<I> {
                 do_emit(&block_start, &mut disasm, &mut buffer, &mut state);
             }
 
-            for inst_or_edit in regalloc.block_insts_and_edits(&self, block) {
+            let mut operations = regalloc.block_insts_and_edits(&self, block).peekable();
+            while let Some(inst_or_edit) = operations.next() {
                 match inst_or_edit {
                     InstOrEdit::Inst(iix) => {
                         if !self.debug_value_labels.is_empty() {
@@ -1207,7 +1213,19 @@ impl<I: VCodeInst> VCode<I> {
                         }
                     }
 
-                    InstOrEdit::Edit(Edit::Move { from, to }) => {
+                    InstOrEdit::Edit(movement @ Edit::Move { from, to }) => {
+                        if pair_spills
+                            && let Some(InstOrEdit::Edit(next)) = operations.peek()
+                            && let Some(pair) = I::ABIMachineSpec::gen_spill_pair(
+                                self.abi.frame_layout(),
+                                movement,
+                                next,
+                            )
+                        {
+                            operations.next();
+                            do_emit(&pair, &mut disasm, &mut buffer, &mut state);
+                            continue;
+                        }
                         // Create a move/spill/reload instruction and
                         // immediately emit it.
                         match (from.as_reg(), to.as_reg()) {
