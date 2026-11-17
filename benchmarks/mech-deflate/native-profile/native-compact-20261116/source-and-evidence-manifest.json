@@ -14004,9 +14004,14 @@
       "bytes": 13324
     },
     {
+      "path": "src/syntax/src/document/parser/mod.rs",
+      "sha256": "eb5dfc4307dab869e5c6b6aea6d5cabab7c4082c36e604e822561100902c5317",
+      "bytes": 56853
+    },
+    {
       "path": "src/syntax/src/document/parser/tree_cache.rs",
-      "sha256": "dc03fa8290e03ac40e89ca1ddb00b66dee6b51a236ba5dc5151c4e0a8261312f",
-      "bytes": 15245
+      "sha256": "1fa85ba4e771302e2f7a6e221f8f3adb4ea06d52efbcb312ece8c766f6610e12",
+      "bytes": 21857
     },
     {
       "path": "tests/architecture/distributions/full.json",
