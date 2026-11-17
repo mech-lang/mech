@@ -1,0 +1,80 @@
+{
+  "source_base": "ddc26e24222f14229f4787f55d1d659a4482cddd",
+  "host": "Apple M1, Rust opt-level 3, AArch64 Cranelift",
+  "scope": "Diagnostic level-12 encoder. Untimed image comparison with exact linked calls.",
+  "compiler_build_command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo",
+    "--bin",
+    "emit_compact_size",
+    "--message-format=json"
+  ],
+  "compiler_build_environment": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "mechanism": "Run backwards liveness over private spill-slot cells after AArch64 register allocation, unioning successor requirements. Skip functions with stack maps or debug observations. Remove a store only if no load can read any cell before overwrite or exit.",
+  "qualification": "Unresolved. Exact output checked on 162 linked calls. Full runtime, stack high-water and complete build time were not measured for the changed worker.",
+  "decision": "The 16-byte text saving did not justify keeping the pass or scheduling a full runtime study. Keep the existing pinned workers.",
+  "root_text_delta_bytes": -20,
+  "encoder_text_delta_bytes": -16,
+  "job_build_seconds": 258,
+  "ratios": "Compare Apple M1 encoder __text against Roc 57,696 bytes and libdeflate 37,080 bytes. Original probe receipts contain an earlier 41,112-byte libdeflate comparison and single emission timings; this report uses the matched peers and makes no build-time claim.",
+  "variants": {
+    "default-control": {
+      "object_text_bytes": 71960,
+      "root_code_bytes": 51448,
+      "root_frame_bytes": 3744,
+      "linked_text_bytes": 474884,
+      "worker_sha256": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+      "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "verified_calls": 162,
+      "object_file_bytes": 159576,
+      "executable_file_bytes": 956056,
+      "text_x_roc": 1.2472268441486412,
+      "text_x_libdeflate": 1.9406688241639698
+    },
+    "pruned": {
+      "object_text_bytes": 71944,
+      "root_code_bytes": 51428,
+      "root_frame_bytes": 3744,
+      "linked_text_bytes": 474868,
+      "worker_sha256": "ba2cb3ee06212671e3424e7e71c3620d79cb27485c7276361567baff072f4fb8",
+      "object_sha256": "1285cc558622d3b17649aaa7bbdbf96cf84ed869bc52723764a9bd14f50577cf",
+      "metadata_sha256": "ab229a4c8c50a09e7ba369ceebb1b79cb950f5edfac85ea4a3b247c0ac92feb9",
+      "verified_calls": 162,
+      "object_file_bytes": 159560,
+      "executable_file_bytes": 956056,
+      "text_x_roc": 1.2469495285635053,
+      "text_x_libdeflate": 1.9402373247033442
+    },
+    "checked": {
+      "object_text_bytes": 71944,
+      "root_code_bytes": 51428,
+      "root_frame_bytes": 3744,
+      "linked_text_bytes": 474868,
+      "worker_sha256": "ba2cb3ee06212671e3424e7e71c3620d79cb27485c7276361567baff072f4fb8",
+      "object_sha256": "1285cc558622d3b17649aaa7bbdbf96cf84ed869bc52723764a9bd14f50577cf",
+      "metadata_sha256": "ab229a4c8c50a09e7ba369ceebb1b79cb950f5edfac85ea4a3b247c0ac92feb9",
+      "verified_calls": 162,
+      "object_file_bytes": 159560,
+      "executable_file_bytes": 956056,
+      "text_x_roc": 1.2469495285635053,
+      "text_x_libdeflate": 1.9402373247033442
+    }
+  }
+}
