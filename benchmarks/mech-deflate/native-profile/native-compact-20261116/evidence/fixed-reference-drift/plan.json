@@ -1,0 +1,35 @@
+{
+  "scope": "Same fixed reference on both actor slots. Partial diagnostic for recorded drift.",
+  "cases": [
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-periodic-8192",
+    "prefix-periodic-16384",
+    "prefix-periodic-32767",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "random-1024",
+    "prefix-random-4096",
+    "heldout-random-65537"
+  ],
+  "time_block_minutes": [
+    60,
+    90
+  ],
+  "repetitions": 1,
+  "blocks_per_case": 96,
+  "orders": [
+    "forward",
+    "reverse"
+  ],
+  "inputs_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+  "peer_pins_sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d",
+  "original_timer_sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+  "scoped_timer_sha256": "01c348e54a645a24e08c3d0b1af30dea667ed724b75da34b412dbdc2dffe7f81",
+  "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+  "hypothesis": "The large periodic drift came from transient host or acquisition behavior.",
+  "comparison": "Per-actor absolute and paired timing for the same worker and fixed C peer against the archived historical, frame-copy, and owner-exchange orders.",
+  "capture": "Pre/post order workload and thermal state where readable. Both raw orders are retained."
+}

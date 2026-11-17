@@ -1,0 +1,31 @@
+{
+  "role": "old",
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/private/tmp/mech-native-exclusive.Hc4E2q/source/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-native-exclusive.Hc4E2q/target",
+    "--bin",
+    "compile_profile",
+    "--message-format=json"
+  ],
+  "cwd": "/private/tmp/mech-native-exclusive.Hc4E2q/source",
+  "profile": {
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "recipe_sha256": "afef2e92720384706a25cd4b3f548981bee8caa8ccaba0ff7cf76c16db290b5a",
+  "trace_patch_sha256": "dc34011b4a54ce7ee178b695baada69e19a617c88bc50cc5fd1bcb0d994919dc",
+  "owner_source_sha256": "429bdc68dc90e990f7ce3768b589a819f38ff846a277830fb5f73def648047c0"
+}

@@ -1,0 +1,6 @@
+{
+  "planned_blocks_per_case": 96,
+  "observed_blocks_per_case": 24,
+  "cause": "The scoped driver filtered fixtures and retained the base timer's single permutation cycle.",
+  "scope": "Both original observations retained as a bounded diagnostic."
+}

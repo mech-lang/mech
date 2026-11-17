@@ -1,0 +1,10 @@
+{
+  "archive": [
+    "git",
+    "archive",
+    "--format=tar",
+    "dae46c686703560230150a93f36c44c4978ffdc7",
+    "tests",
+    "docs"
+  ]
+}

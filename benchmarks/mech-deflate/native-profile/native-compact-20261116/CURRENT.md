@@ -79,8 +79,9 @@ loses `random-1024` and gains `320-overlap` in reverse.
 CI remains open. The journal file/directory collision has been repaired locally and all syntax
 unit tests pass. The Related Posts producer binding remains open.
 The optimized compact path is diagnostic. Finite admission, cumulative
-accounting and recovery under the ordinary entry remain required. A bounded
-control-drift sentinel check comes before another full promotion campaign.
+accounting and recovery under the ordinary entry remain required. The bounded control-drift check recovered all four affected periodic wins in
+both orders. The earlier transient's cause remains open.
+[Fixed-worker sentinel diagnostic](evidence/fixed-reference-drift/README.md)
 [CI at the recorded integration commit](https://github.com/mech-lang/mech/actions/runs/44100619431)
 · [Related Posts binding audit](evidence/related-post-linked-binding/README.md)
 
@@ -101,6 +102,11 @@ control-drift sentinel check comes before another full promotion campaign.
   and the original all-fields fallback. Keep phase choices and publication
   order exact while separating selection from body construction.
   [First matched source change](evidence/shared-program-facts/README.md)
+  The exclusive trace measures 0.692 s in CFG cleanup and 0.280 s in SSA
+  construction. The facts change removes one graph and 11 definition
+  initializations, about 1 ms in the trace. The first scalar demand slice
+  targets unnecessary aggregate and carrier reads before SSA construction.
+  [Exclusive native cost and raw traces](evidence/native-exclusive-work/README.md)
 - **Integration and qualification.** Finish the Related Posts producer
   binding and run the bounded control-drift diagnostic before any new full
   promotion campaign. The archived reference has a v2 runtime Retain decision.

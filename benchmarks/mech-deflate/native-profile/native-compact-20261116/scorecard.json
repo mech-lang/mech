@@ -7069,5 +7069,51 @@
     "provisional_work": 116615736,
     "family_work": 231376278,
     "scope": "Diagnostic parser timing. Measured scope contains no implementation gain."
+  },
+  "native_exclusive_diagnostic": {
+    "shared_coordinator_exclusive_nanoseconds": {
+      "native": 11118287,
+      "native_plan": 17444583,
+      "immutable_facts": 21687448,
+      "semantic_preparation": 296994965,
+      "phase_selection": 528042,
+      "ssa_construction": 280449595,
+      "cranelift_other": 18255787,
+      "cfg_cleanup": 691530332,
+      "coordinator_wait": 18223790,
+      "object_publication": 394337,
+      "coordination": 65290,
+      "codegen_context": 1107375,
+      "cranelift_optimize": 46430212,
+      "cranelift_lower_codegen": 76507957
+    },
+    "compiled_artifact_sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+      "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+      "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+    },
+    "graph_materializations_removed": 1,
+    "definition_materializations_removed": 11,
+    "scope": "Diagnostic paired old/shared native traces with per-thread overlap preserved."
+  },
+  "fixed_worker_drift_diagnostic": {
+    "orders": {
+      "forward": {
+        "prefix-periodic-1024": 0.9804806043568801,
+        "prefix-periodic-4096": 0.9331130769396695,
+        "prefix-periodic-8192": 0.88127913345474,
+        "prefix-periodic-16384": 0.8653455385199672
+      },
+      "reverse": {
+        "prefix-periodic-1024": 0.9816691303969604,
+        "prefix-periodic-4096": 0.9113473442496955,
+        "prefix-periodic-8192": 0.8873086500450477,
+        "prefix-periodic-16384": 0.8536954910310304
+      }
+    },
+    "named_cases": 11,
+    "blocks_per_case": 24,
+    "cause": "unresolved"
   }
 }
