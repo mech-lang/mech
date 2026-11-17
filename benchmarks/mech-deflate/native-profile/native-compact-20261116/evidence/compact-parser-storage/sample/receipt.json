@@ -1,0 +1,13 @@
+{
+  "frontend_sha256": "7ad7aa9b422266367568f06cbe4ac1f52346e78b146bba0f23139f8a978619eb",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "sample_command": [
+    "/usr/bin/sample",
+    "11773",
+    "4",
+    "1",
+    "-file",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/sample/sample.txt"
+  ]
+}

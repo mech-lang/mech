@@ -1,0 +1,354 @@
+{
+  "parent_source": "e7e54b488641a4665bdb5221f124ff028ddca5ca",
+  "source_commit": "eefbc059aca81b5aa68ed75b9a9e3b3c8ff8e900",
+  "pooled_literal_source_commit": "a44485007daa13723d163fa2c462cafce6e64b1d",
+  "pr_973_base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "host": "Apple M1, host compiler built at Rust opt-level 3",
+  "host_compiler_construction": "Finished `release` profile [optimized] target(s) in 10m 24s",
+  "scope": "The canonical parser uses the same grammar and replay. The fixed Cranelift back end and runtime hold the native build boundary constant.",
+  "sample": {
+    "memory_copy_leaf_samples": 244,
+    "by_immediate_caller": [
+      [
+        "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+        74
+      ],
+      [
+        "_RNvMsk_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtCsndNvC2FrNY_8smallvec8SmallVecANtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser5event5Eventj20_EE17clone_from_ref_inB1n_",
+        33
+      ],
+      [
+        "_mi_heap_realloc_zero",
+        28
+      ],
+      [
+        "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation4push",
+        25
+      ],
+      [
+        "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation7advance",
+        14
+      ],
+      [
+        "_RINvMs0_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceNtNtBa_6source12TextSnapshotEBc_",
+        8
+      ],
+      [
+        "_RINvMs5_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser7journalINtB6_7JournalNtNtB8_5event5EventE6extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain5ChainIB1H_INtNtNtB1N_7sources4once4OnceB1f_EINtNtB1L_3map3MapINtNtB1L_9enumerate9EnumerateINtNtNtB1P_5slice4iter4IterNtNtBa_11syntax_kind10SyntaxKindEENCNvMs3_NtNtNtB8_9canonical4base11recognitionNtB52_5Cache6replays_0EEB2D_EEBc_",
+        8
+      ],
+      [
+        "_RNvMs5_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE4pushBb_",
+        5
+      ],
+      [
+        "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation4base",
+        5
+      ],
+      [
+        "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtNtCs7n6wMvN6r1k_11mech_syntax8document3ids7TokenIdNtNtB1H_5index11TokenRecordNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB44_11VacantEntryB1D_B2v_E12insert_entry0EB1J_",
+        5
+      ],
+      [
+        "_RNvMs1_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+        4
+      ],
+      [
+        "_RNvMNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical5proseNtB2_12Continuation7advance",
+        4
+      ],
+      [
+        "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation10enter_rule",
+        4
+      ],
+      [
+        "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8document12continuationNtB2_12Continuation10expression",
+        4
+      ],
+      [
+        "_RINvMs0_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser13grapheme_scanNtB6_12GraphemeScan7advanceeEBc_",
+        3
+      ],
+      [
+        "_RNvMNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical10statementsNtB2_12Continuation7advance",
+        2
+      ],
+      [
+        "_RNvMs_NtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical7stringsNtB4_12Continuation7advance",
+        2
+      ],
+      [
+        "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical12declarations12continuationNtB4_12Continuation7advance",
+        2
+      ],
+      [
+        "_RINvNtCsgKscDXrlV49_5alloc3str17join_generic_copyehNtNtB4_6string6StringECsRfHOWuUYb2_9mech_core",
+        2
+      ],
+      [
+        "_RNvMNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical10statementsNtB2_12Continuation5probe",
+        1
+      ]
+    ]
+  },
+  "window_census": {
+    "requests": 1414476,
+    "at_most_16_events": 1078128,
+    "same_page": 910277,
+    "max_pending": 68,
+    "event_journal_allocations": 4514183
+  },
+  "parser_only": {
+    "medians_seconds": {
+      "current": 2.4395714369999997,
+      "borrow": 2.4608615205,
+      "bounded-copy": 2.2853907295,
+      "pooled-literal": 2.217395354
+    },
+    "paired_parse_ratios": {
+      "borrow": [
+        1.0095786547293841,
+        1.0025807218855585,
+        1.0080167711672772,
+        1.0075932058859276,
+        1.0073200596843253,
+        1.0091247178446479,
+        1.011158602816949,
+        1.0080560879906835
+      ],
+      "bounded-copy": [
+        0.9355745225307017,
+        0.9308229516249946,
+        0.9373103587783783,
+        0.9364181326396065,
+        0.9374263170089876,
+        0.9357720136494138,
+        0.9359377175533701,
+        0.9399748832236339
+      ],
+      "pooled-literal": [
+        0.9095374907341136,
+        0.9025764317346305,
+        0.9084839194078868,
+        0.9137358738185236,
+        0.9081125283008827,
+        0.9092632029282544,
+        0.9086839669018546,
+        0.9119779604888231
+      ]
+    },
+    "median_peak_rss_bytes": {
+      "current": 115916800.0,
+      "borrow": 115916800.0,
+      "bounded-copy": 115834880.0,
+      "pooled-literal": 115916800.0
+    }
+  },
+  "source_through_link": {
+    "mech-retained-control": {
+      "frontend": 2.791180853964761,
+      "native": 1.7013091668486595,
+      "link": 0.040156520903110504,
+      "total": 4.533480792073533,
+      "parse": 2.4575826044999998
+    },
+    "mech-retained-combined": {
+      "frontend": 2.43594981264323,
+      "native": 1.6998019791208208,
+      "link": 0.03974014613777399,
+      "total": 4.178095687413588,
+      "parse": 2.108788187
+    },
+    "mech-smaller-control": {
+      "frontend": 2.790353500051424,
+      "native": 1.7083727705758065,
+      "link": 0.040563999908044934,
+      "total": 4.538983353879303,
+      "parse": 2.4587628544999998
+    },
+    "mech-smaller-combined": {
+      "frontend": 2.437712104059756,
+      "native": 1.7098478958941996,
+      "link": 0.04004295822232962,
+      "total": 4.186943750130013,
+      "parse": 2.109567833
+    },
+    "roc": {
+      "compile": 2.9522155828308314,
+      "link": 0.035054270876571536,
+      "total": 2.9871181456837803
+    },
+    "libdeflate": {
+      "compile": 0.44639881257899106,
+      "link": 0.03386779152788222,
+      "total": 0.48025777097791433
+    }
+  },
+  "source_through_link_results": {
+    "retained": {
+      "parse_reduction_fraction": 0.14192581639426227,
+      "build_reduction_fraction": 0.07839122320344005,
+      "complete_paired_change": {
+        "estimate": -0.07858824785243834,
+        "lower": -0.0792777458821522,
+        "upper": -0.07790228831021462
+      },
+      "complete_build_x": {
+        "roc": 1.3987045318079248,
+        "libdeflate": 8.69969408075591
+      },
+      "encoder_text_x": {
+        "roc": 1.256932889628397,
+        "libdeflate": 1.9557713052858683
+      },
+      "median_phase_peak_rss_bytes": {
+        "mech-retained-control": {
+          "frontend": 382443520.0,
+          "native": 217784320.0,
+          "link": 59539456.0
+        },
+        "mech-retained-combined": {
+          "frontend": 382304256.0,
+          "native": 217743360.0,
+          "link": 59588608.0
+        }
+      }
+    },
+    "smaller": {
+      "parse_reduction_fraction": 0.14202061856470105,
+      "build_reduction_fraction": 0.07755913082351684,
+      "complete_paired_change": {
+        "estimate": -0.07794467830532759,
+        "lower": -0.07899879605187465,
+        "upper": -0.076889354084545
+      },
+      "complete_build_x": {
+        "roc": 1.4016666050453725,
+        "libdeflate": 8.71811765086995
+      },
+      "encoder_text_x": {
+        "roc": 1.2472268441486412,
+        "libdeflate": 1.9406688241639698
+      },
+      "median_phase_peak_rss_bytes": {
+        "mech-smaller-control": {
+          "frontend": 382500864.0,
+          "native": 217849856.0,
+          "link": 59531264.0
+        },
+        "mech-smaller-combined": {
+          "frontend": 382263296.0,
+          "native": 217890816.0,
+          "link": 59408384.0
+        }
+      }
+    }
+  },
+  "encoder_and_executable_sizes_bytes": {
+    "mech-retained-control": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-retained-combined": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-control": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-combined": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168
+    }
+  },
+  "fixed_native_artifacts": {
+    "retained": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-retained",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/retained",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+      ],
+      "artifacts": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+      },
+      "pinned_reference": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-retained",
+      "linked_smokes": 162
+    },
+    "smaller": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-smaller",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/smaller",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+      ],
+      "artifacts": {
+        "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+        "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+        "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+      },
+      "pinned_reference": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-smaller",
+      "linked_smokes": 162
+    },
+    "aligned": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/aligned-register-spills-native/final-candidate",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/aligned",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+      ],
+      "artifacts": {
+        "program.o": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+        "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+        "mech-worker": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91"
+      },
+      "pinned_reference": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/aligned-register-spills-native/final-candidate",
+      "linked_smokes": 162
+    }
+  },
+  "syntax_unit_tests": "test result: ok. 533 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.78s",
+  "syntax_snapshots_matched": 60,
+  "all_combined_frontend_bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "qualification": "The exact retained and smaller linked timing workers preserve their recorded 81 Roc and 61 libdeflate wins in both full orders. The exact aligned spill worker retains its opt-in status and earlier per-case rejection. The parser measurements use the same native emitter on both sides."
+}

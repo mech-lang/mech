@@ -148,6 +148,17 @@ benchmark workers reproduce byte for byte and carry **81/81 Roc and 61/81
 libdeflate** receipts from both full orders. The existing rebuild command uses
 the one-shot parser for the exact source. [Census, build trials, and controls](evidence/stale-cache-accounting/report.json)
 
+## Canonical parser storage
+
+Literal continuations reuse a per-parser frame stack and scanner slot. The
+one-shot parser copies short cache request ranges into a queue so they release
+their journal pages. On Apple M1, the 71,960-byte encoder's matched complete
+build goes from **4.53898 to 4.18694 s**
+(7.76% faster), with parsing at **2.45876 to
+2.10957 s**. The exact bytecode, object, metadata and timing
+workers match the recorded recipes with **81 Roc and 61 libdeflate wins**
+in both complete orders. [Measurements and proof](evidence/compact-parser-storage/README.md)
+
 ## Parser stage profile
 
 In six balanced Apple M1 parser-only pairs, the coarse instrumented run

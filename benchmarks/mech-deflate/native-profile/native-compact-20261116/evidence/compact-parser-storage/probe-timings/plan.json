@@ -1,0 +1,61 @@
+{
+  "scope": "Standalone parser, fixed source and allocator",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "probe_sha256": {
+    "current": "cb1fd64304ddd88d63afd5a80218ae692c58b9ef37e48181c584db6157ac08aa",
+    "borrow": "7c4f2048749f6bc9eb574eb97996003df94946de7fa0f475e0d48114093f5b1e",
+    "bounded-copy": "1a6baddb28157e92f0cb5bba9eb6cf5a8548a159dd68747d88742180418a2009",
+    "pooled-literal": "2986e6a8c608c17e48af34446bc981db264d01f19fb2bed91f014543e286b75d"
+  },
+  "orders": [
+    [
+      "current",
+      "borrow",
+      "pooled-literal",
+      "bounded-copy"
+    ],
+    [
+      "borrow",
+      "bounded-copy",
+      "current",
+      "pooled-literal"
+    ],
+    [
+      "bounded-copy",
+      "pooled-literal",
+      "borrow",
+      "current"
+    ],
+    [
+      "pooled-literal",
+      "current",
+      "bounded-copy",
+      "borrow"
+    ],
+    [
+      "current",
+      "borrow",
+      "pooled-literal",
+      "bounded-copy"
+    ],
+    [
+      "borrow",
+      "bounded-copy",
+      "current",
+      "pooled-literal"
+    ],
+    [
+      "bounded-copy",
+      "pooled-literal",
+      "borrow",
+      "current"
+    ],
+    [
+      "pooled-literal",
+      "current",
+      "bounded-copy",
+      "borrow"
+    ]
+  ],
+  "criterion": "Compare paired parse durations and exact tree, event and step identities."
+}
