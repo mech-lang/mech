@@ -20,6 +20,10 @@ parser.add_argument(
     '--compiler-opt-level', type=int, choices=(1, 3), default=1,
     help='Rust optimization level for the compiler binaries (default: 1)',
 )
+parser.add_argument(
+    '--reuse-equivalent-vector-ir', action='store_true',
+    help='reuse machine code for vector alternatives with identical prepared IR',
+)
 args=parser.parse_args()
 out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
 target=(args.target_dir or out/'compiler').resolve()
@@ -64,6 +68,8 @@ bytecode=out/'frontend/program.mecb'
 assert sha(bytecode)==recipe['bytecode_sha256'],'changed canonical bytecode; inspect before comparing native output'
 flags=dict(recipe['flags'])
 flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in recipe['profiles'])
+if args.reuse_equivalent_vector_ir:
+    flags['MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR'] = '1'
 if args.variant in ('cold-tails', 'fresh-owner-counts-cold-tails'):
     flags['MECH_COMPACT_SHARE_COLD_TAILS'] = '1'
 if args.variant=='owner-ranges':flags['MECH_COMPACT_PROVE_BACKING_OWNERS']='ranges'
@@ -86,6 +92,7 @@ expected=recipe[variant_key+'_object_sha256']
 expected_metadata=recipe[variant_key+'_metadata_sha256']
 actual_metadata=sha(out/'native/metadata.json')
 record={'variant':args.variant,'compiler_build':build,'phases':phases,'source_to_object_seconds':time.perf_counter()-start,'object_sha256':sha(object_file),'expected_object_sha256':expected,'metadata_sha256':actual_metadata,'expected_metadata_sha256':expected_metadata,'object_text_bytes':text_bytes,'object_text_x_roc':text_bytes/57696,'object_text_x_libdeflate':text_bytes/37080,'full_integrated_source_identity':sha(object_file)==expected and actual_metadata==expected_metadata,'runtime_wins':'not measured by this command'}
+record['native_flags'] = flags
 (out/'rebuild.json').write_text(json.dumps(record,indent=2)+'\n')
 assert record['full_integrated_source_identity'],'integrated compiler changed the object; report this result, do not reuse the historical win count'
 if args.mimalloc_object:

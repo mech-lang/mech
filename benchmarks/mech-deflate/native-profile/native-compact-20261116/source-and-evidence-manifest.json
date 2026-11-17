@@ -13125,8 +13125,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "27ef56af4c9ea625780cd0f38bdf38d439a973f68521e402a3d73668222236f2",
-      "bytes": 7616
+      "sha256": "0111de5d2d465ce7b22dc1f7e2cd616fa8c8543f1128c551da8e633a1d811b8a",
+      "bytes": 7904
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
@@ -13550,8 +13550,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
-      "sha256": "c37df224f81d8b70e956e71f411f71f06219aad27099b502506f4ab434528f9a",
-      "bytes": 61381
+      "sha256": "cbf2a25ca75e4eabd6db1d134339c4e74e09677828ea98924581a9f49892c021",
+      "bytes": 64197
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout_tests.rs",
@@ -13570,8 +13570,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phases.rs",
-      "sha256": "7b9b2c5bab47cd975111328928498a32a68287a4179f0c88bed3f10a985775af",
-      "bytes": 56615
+      "sha256": "2eee0c39ffc04b34c91f454da80599d3ba77d14a9a0973bb1d2dacd840affdc7",
+      "bytes": 56809
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/private_chains.rs",
