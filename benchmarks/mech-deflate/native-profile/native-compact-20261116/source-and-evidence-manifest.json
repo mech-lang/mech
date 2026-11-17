@@ -34185,8 +34185,8 @@
     },
     {
       "path": "src/syntax/src/document/parser/grapheme_scan.rs",
-      "sha256": "6444e023759ea2a51d59e7be5ebc474292f8032dd11c1b26702451d63b5689ea",
-      "bytes": 12909
+      "sha256": "6717f63bbdfdecc7b07bd140472817678499ed1f461b34557a9e1c7cdf6eb2f1",
+      "bytes": 16737
     },
     {
       "path": "src/syntax/src/document/parser/journal/batch.rs",
