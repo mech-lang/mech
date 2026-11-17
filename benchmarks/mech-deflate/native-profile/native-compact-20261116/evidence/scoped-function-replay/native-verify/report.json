@@ -1,0 +1,2224 @@
+{
+  "counts": {
+    "coordinator": [
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 5533,
+        "constant_formals": 4272,
+        "archived_event": 131,
+        "verifier_event": 132,
+        "archived_verifier_elapsed_ns": 606375
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 1261,
+        "constant_formals": 0,
+        "archived_event": 143,
+        "verifier_event": 144,
+        "archived_verifier_elapsed_ns": 609917
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 606,
+        "constant_formals": 36,
+        "archived_event": 155,
+        "verifier_event": 156,
+        "archived_verifier_elapsed_ns": 574666
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 570,
+        "constant_formals": 0,
+        "archived_event": 165,
+        "verifier_event": 166,
+        "archived_verifier_elapsed_ns": 560916
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 580,
+        "constant_formals": 2,
+        "archived_event": 177,
+        "verifier_event": 178,
+        "archived_verifier_elapsed_ns": 517917
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 629,
+        "constant_formals": 12,
+        "archived_event": 192,
+        "verifier_event": 193,
+        "archived_verifier_elapsed_ns": 511208
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 617,
+        "constant_formals": 1,
+        "archived_event": 202,
+        "verifier_event": 203,
+        "archived_verifier_elapsed_ns": 503750
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 613,
+        "constant_formals": 8,
+        "archived_event": 221,
+        "verifier_event": 222,
+        "archived_verifier_elapsed_ns": 496375
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 615,
+        "constant_formals": 0,
+        "archived_event": 243,
+        "verifier_event": 244,
+        "archived_verifier_elapsed_ns": 525791
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 615,
+        "constant_formals": 0,
+        "archived_event": 258,
+        "verifier_event": 259,
+        "archived_verifier_elapsed_ns": 482125
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 623,
+        "constant_formals": 1,
+        "archived_event": 292,
+        "verifier_event": 293,
+        "archived_verifier_elapsed_ns": 480042
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 622,
+        "constant_formals": 11,
+        "archived_event": 307,
+        "verifier_event": 308,
+        "archived_verifier_elapsed_ns": 475292
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 611,
+        "constant_formals": 1,
+        "archived_event": 322,
+        "verifier_event": 323,
+        "archived_verifier_elapsed_ns": 475667
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 610,
+        "constant_formals": 0,
+        "archived_event": 337,
+        "verifier_event": 338,
+        "archived_verifier_elapsed_ns": 467292
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 771,
+        "constant_formals": 597,
+        "archived_event": 428,
+        "verifier_event": 429,
+        "archived_verifier_elapsed_ns": 148167
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 131,
+        "constant_formals": 0,
+        "archived_event": 440,
+        "verifier_event": 441,
+        "archived_verifier_elapsed_ns": 110250
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 87,
+        "constant_formals": 0,
+        "archived_event": 452,
+        "verifier_event": 453,
+        "archived_verifier_elapsed_ns": 108625
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 91,
+        "constant_formals": 4,
+        "archived_event": 464,
+        "verifier_event": 465,
+        "archived_verifier_elapsed_ns": 96208
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 87,
+        "constant_formals": 0,
+        "archived_event": 474,
+        "verifier_event": 475,
+        "archived_verifier_elapsed_ns": 94375
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 91,
+        "constant_formals": 5,
+        "archived_event": 489,
+        "verifier_event": 490,
+        "archived_verifier_elapsed_ns": 92500
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 82,
+        "constant_formals": 0,
+        "archived_event": 499,
+        "verifier_event": 500,
+        "archived_verifier_elapsed_ns": 89750
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 686,
+        "constant_formals": 571,
+        "archived_event": 550,
+        "verifier_event": 551,
+        "archived_verifier_elapsed_ns": 136333
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 89,
+        "constant_formals": 0,
+        "archived_event": 562,
+        "verifier_event": 563,
+        "archived_verifier_elapsed_ns": 103125
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 71,
+        "constant_formals": 2,
+        "archived_event": 574,
+        "verifier_event": 575,
+        "archived_verifier_elapsed_ns": 101542
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 75,
+        "constant_formals": 4,
+        "archived_event": 586,
+        "verifier_event": 587,
+        "archived_verifier_elapsed_ns": 89042
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 71,
+        "constant_formals": 0,
+        "archived_event": 596,
+        "verifier_event": 597,
+        "archived_verifier_elapsed_ns": 87250
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 72,
+        "constant_formals": 5,
+        "archived_event": 611,
+        "verifier_event": 612,
+        "archived_verifier_elapsed_ns": 85958
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 63,
+        "constant_formals": 0,
+        "archived_event": 621,
+        "verifier_event": 622,
+        "archived_verifier_elapsed_ns": 82375
+      },
+      {
+        "scope": "artifact through object bytes",
+        "iterations": 3,
+        "formals": 73,
+        "constant_formals": 2,
+        "archived_event": 660,
+        "verifier_event": 661,
+        "archived_verifier_elapsed_ns": 93959
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 687,
+        "constant_formals": 571,
+        "archived_event": 699,
+        "verifier_event": 700,
+        "archived_verifier_elapsed_ns": 138667
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 90,
+        "constant_formals": 0,
+        "archived_event": 711,
+        "verifier_event": 712,
+        "archived_verifier_elapsed_ns": 103208
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 73,
+        "constant_formals": 2,
+        "archived_event": 723,
+        "verifier_event": 724,
+        "archived_verifier_elapsed_ns": 101792
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 77,
+        "constant_formals": 4,
+        "archived_event": 735,
+        "verifier_event": 736,
+        "archived_verifier_elapsed_ns": 90583
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 73,
+        "constant_formals": 0,
+        "archived_event": 745,
+        "verifier_event": 746,
+        "archived_verifier_elapsed_ns": 88417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 74,
+        "constant_formals": 5,
+        "archived_event": 760,
+        "verifier_event": 761,
+        "archived_verifier_elapsed_ns": 86750
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 65,
+        "constant_formals": 0,
+        "archived_event": 770,
+        "verifier_event": 771,
+        "archived_verifier_elapsed_ns": 83042
+      },
+      {
+        "scope": "artifact through object bytes",
+        "iterations": 3,
+        "formals": 75,
+        "constant_formals": 2,
+        "archived_event": 809,
+        "verifier_event": 810,
+        "archived_verifier_elapsed_ns": 95834
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 58,
+        "constant_formals": 0,
+        "archived_event": 874,
+        "verifier_event": 875,
+        "archived_verifier_elapsed_ns": 76084
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 74,
+        "constant_formals": 0,
+        "archived_event": 902,
+        "verifier_event": 903,
+        "archived_verifier_elapsed_ns": 99459
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 170,
+        "constant_formals": 139,
+        "archived_event": 932,
+        "verifier_event": 933,
+        "archived_verifier_elapsed_ns": 66959
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 31,
+        "constant_formals": 0,
+        "archived_event": 944,
+        "verifier_event": 945,
+        "archived_verifier_elapsed_ns": 65708
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 31,
+        "constant_formals": 1,
+        "archived_event": 958,
+        "verifier_event": 959,
+        "archived_verifier_elapsed_ns": 59542
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 30,
+        "constant_formals": 0,
+        "archived_event": 968,
+        "verifier_event": 969,
+        "archived_verifier_elapsed_ns": 57958
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 34,
+        "constant_formals": 0,
+        "archived_event": 993,
+        "verifier_event": 994,
+        "archived_verifier_elapsed_ns": 59167
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 170,
+        "constant_formals": 139,
+        "archived_event": 1020,
+        "verifier_event": 1021,
+        "archived_verifier_elapsed_ns": 68000
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 31,
+        "constant_formals": 0,
+        "archived_event": 1032,
+        "verifier_event": 1033,
+        "archived_verifier_elapsed_ns": 72917
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 31,
+        "constant_formals": 1,
+        "archived_event": 1046,
+        "verifier_event": 1047,
+        "archived_verifier_elapsed_ns": 59750
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 30,
+        "constant_formals": 0,
+        "archived_event": 1056,
+        "verifier_event": 1057,
+        "archived_verifier_elapsed_ns": 57875
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 34,
+        "constant_formals": 0,
+        "archived_event": 1081,
+        "verifier_event": 1082,
+        "archived_verifier_elapsed_ns": 58833
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 121,
+        "constant_formals": 110,
+        "archived_event": 1117,
+        "verifier_event": 1118,
+        "archived_verifier_elapsed_ns": 51500
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 11,
+        "constant_formals": 0,
+        "archived_event": 1129,
+        "verifier_event": 1130,
+        "archived_verifier_elapsed_ns": 47417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 11,
+        "constant_formals": 1,
+        "archived_event": 1143,
+        "verifier_event": 1144,
+        "archived_verifier_elapsed_ns": 42583
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1153,
+        "verifier_event": 1154,
+        "archived_verifier_elapsed_ns": 41291
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 3,
+        "archived_event": 1182,
+        "verifier_event": 1183,
+        "archived_verifier_elapsed_ns": 39667
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 7,
+        "constant_formals": 0,
+        "archived_event": 1209,
+        "verifier_event": 1210,
+        "archived_verifier_elapsed_ns": 49708
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 121,
+        "constant_formals": 110,
+        "archived_event": 1245,
+        "verifier_event": 1246,
+        "archived_verifier_elapsed_ns": 51125
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 11,
+        "constant_formals": 0,
+        "archived_event": 1257,
+        "verifier_event": 1258,
+        "archived_verifier_elapsed_ns": 47417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 11,
+        "constant_formals": 1,
+        "archived_event": 1271,
+        "verifier_event": 1272,
+        "archived_verifier_elapsed_ns": 42042
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1281,
+        "verifier_event": 1282,
+        "archived_verifier_elapsed_ns": 41167
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 3,
+        "archived_event": 1310,
+        "verifier_event": 1311,
+        "archived_verifier_elapsed_ns": 43583
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 7,
+        "constant_formals": 0,
+        "archived_event": 1340,
+        "verifier_event": 1341,
+        "archived_verifier_elapsed_ns": 49416
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 103,
+        "constant_formals": 84,
+        "archived_event": 1389,
+        "verifier_event": 1390,
+        "archived_verifier_elapsed_ns": 34166
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 16,
+        "constant_formals": 1,
+        "archived_event": 1405,
+        "verifier_event": 1406,
+        "archived_verifier_elapsed_ns": 30667
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 15,
+        "constant_formals": 0,
+        "archived_event": 1415,
+        "verifier_event": 1416,
+        "archived_verifier_elapsed_ns": 29416
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 17,
+        "constant_formals": 0,
+        "archived_event": 1440,
+        "verifier_event": 1441,
+        "archived_verifier_elapsed_ns": 28917
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 17,
+        "constant_formals": 0,
+        "archived_event": 1455,
+        "verifier_event": 1456,
+        "archived_verifier_elapsed_ns": 28125
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 54,
+        "constant_formals": 45,
+        "archived_event": 1516,
+        "verifier_event": 1517,
+        "archived_verifier_elapsed_ns": 40041
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 9,
+        "constant_formals": 0,
+        "archived_event": 1528,
+        "verifier_event": 1529,
+        "archived_verifier_elapsed_ns": 37875
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 1,
+        "archived_event": 1542,
+        "verifier_event": 1543,
+        "archived_verifier_elapsed_ns": 35209
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1567,
+        "verifier_event": 1568,
+        "archived_verifier_elapsed_ns": 34833
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1582,
+        "verifier_event": 1583,
+        "archived_verifier_elapsed_ns": 34625
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1604,
+        "verifier_event": 1605,
+        "archived_verifier_elapsed_ns": 36042
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 54,
+        "constant_formals": 45,
+        "archived_event": 1633,
+        "verifier_event": 1634,
+        "archived_verifier_elapsed_ns": 40083
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 9,
+        "constant_formals": 0,
+        "archived_event": 1645,
+        "verifier_event": 1646,
+        "archived_verifier_elapsed_ns": 38000
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 1,
+        "archived_event": 1659,
+        "verifier_event": 1660,
+        "archived_verifier_elapsed_ns": 35083
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1684,
+        "verifier_event": 1685,
+        "archived_verifier_elapsed_ns": 34708
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1699,
+        "verifier_event": 1700,
+        "archived_verifier_elapsed_ns": 34375
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1725,
+        "verifier_event": 1726,
+        "archived_verifier_elapsed_ns": 36209
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 71,
+        "constant_formals": 59,
+        "archived_event": 1755,
+        "verifier_event": 1756,
+        "archived_verifier_elapsed_ns": 28375
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 1767,
+        "verifier_event": 1768,
+        "archived_verifier_elapsed_ns": 27000
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1777,
+        "verifier_event": 1778,
+        "archived_verifier_elapsed_ns": 26125
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 1,
+        "archived_event": 1791,
+        "verifier_event": 1792,
+        "archived_verifier_elapsed_ns": 24083
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 11,
+        "constant_formals": 0,
+        "archived_event": 1827,
+        "verifier_event": 1828,
+        "archived_verifier_elapsed_ns": 24292
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 71,
+        "constant_formals": 59,
+        "archived_event": 1856,
+        "verifier_event": 1857,
+        "archived_verifier_elapsed_ns": 28292
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 1868,
+        "verifier_event": 1869,
+        "archived_verifier_elapsed_ns": 26958
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 1878,
+        "verifier_event": 1879,
+        "archived_verifier_elapsed_ns": 26083
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 1,
+        "archived_event": 1892,
+        "verifier_event": 1893,
+        "archived_verifier_elapsed_ns": 23791
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 11,
+        "constant_formals": 0,
+        "archived_event": 1959,
+        "verifier_event": 1960,
+        "archived_verifier_elapsed_ns": 24250
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 69,
+        "constant_formals": 59,
+        "archived_event": 1989,
+        "verifier_event": 1990,
+        "archived_verifier_elapsed_ns": 34500
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2001,
+        "verifier_event": 2002,
+        "archived_verifier_elapsed_ns": 32000
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2015,
+        "verifier_event": 2016,
+        "archived_verifier_elapsed_ns": 29375
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2025,
+        "verifier_event": 2026,
+        "archived_verifier_elapsed_ns": 28042
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2050,
+        "verifier_event": 2051,
+        "archived_verifier_elapsed_ns": 28334
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2065,
+        "verifier_event": 2066,
+        "archived_verifier_elapsed_ns": 28042
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 69,
+        "constant_formals": 59,
+        "archived_event": 2090,
+        "verifier_event": 2091,
+        "archived_verifier_elapsed_ns": 34209
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2102,
+        "verifier_event": 2103,
+        "archived_verifier_elapsed_ns": 32791
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2116,
+        "verifier_event": 2117,
+        "archived_verifier_elapsed_ns": 29416
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2126,
+        "verifier_event": 2127,
+        "archived_verifier_elapsed_ns": 28250
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2151,
+        "verifier_event": 2152,
+        "archived_verifier_elapsed_ns": 28417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2166,
+        "verifier_event": 2167,
+        "archived_verifier_elapsed_ns": 27917
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 71,
+        "constant_formals": 61,
+        "archived_event": 2200,
+        "verifier_event": 2201,
+        "archived_verifier_elapsed_ns": 28833
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2212,
+        "verifier_event": 2213,
+        "archived_verifier_elapsed_ns": 28209
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2226,
+        "verifier_event": 2227,
+        "archived_verifier_elapsed_ns": 25542
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2236,
+        "verifier_event": 2237,
+        "archived_verifier_elapsed_ns": 24417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2261,
+        "verifier_event": 2262,
+        "archived_verifier_elapsed_ns": 24250
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2276,
+        "verifier_event": 2277,
+        "archived_verifier_elapsed_ns": 24041
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 71,
+        "constant_formals": 61,
+        "archived_event": 2301,
+        "verifier_event": 2302,
+        "archived_verifier_elapsed_ns": 29000
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2313,
+        "verifier_event": 2314,
+        "archived_verifier_elapsed_ns": 27875
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2327,
+        "verifier_event": 2328,
+        "archived_verifier_elapsed_ns": 25583
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2337,
+        "verifier_event": 2338,
+        "archived_verifier_elapsed_ns": 24041
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2362,
+        "verifier_event": 2363,
+        "archived_verifier_elapsed_ns": 24666
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2377,
+        "verifier_event": 2378,
+        "archived_verifier_elapsed_ns": 23917
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 48,
+        "constant_formals": 38,
+        "archived_event": 2411,
+        "verifier_event": 2412,
+        "archived_verifier_elapsed_ns": 22916
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2423,
+        "verifier_event": 2424,
+        "archived_verifier_elapsed_ns": 21458
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2437,
+        "verifier_event": 2438,
+        "archived_verifier_elapsed_ns": 19791
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 1,
+        "archived_event": 2447,
+        "verifier_event": 2448,
+        "archived_verifier_elapsed_ns": 18708
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2472,
+        "verifier_event": 2473,
+        "archived_verifier_elapsed_ns": 18667
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2487,
+        "verifier_event": 2488,
+        "archived_verifier_elapsed_ns": 18250
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 48,
+        "constant_formals": 38,
+        "archived_event": 2512,
+        "verifier_event": 2513,
+        "archived_verifier_elapsed_ns": 22417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 0,
+        "archived_event": 2524,
+        "verifier_event": 2525,
+        "archived_verifier_elapsed_ns": 21167
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2538,
+        "verifier_event": 2539,
+        "archived_verifier_elapsed_ns": 19333
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 1,
+        "archived_event": 2548,
+        "verifier_event": 2549,
+        "archived_verifier_elapsed_ns": 18625
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2573,
+        "verifier_event": 2574,
+        "archived_verifier_elapsed_ns": 18750
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0,
+        "archived_event": 2588,
+        "verifier_event": 2589,
+        "archived_verifier_elapsed_ns": 18209
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 2,
+        "formals": 27,
+        "constant_formals": 22,
+        "archived_event": 2622,
+        "verifier_event": 2623,
+        "archived_verifier_elapsed_ns": 24166
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 2634,
+        "verifier_event": 2635,
+        "archived_verifier_elapsed_ns": 22083
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 2644,
+        "verifier_event": 2645,
+        "archived_verifier_elapsed_ns": 21584
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 2,
+        "formals": 27,
+        "constant_formals": 22,
+        "archived_event": 2686,
+        "verifier_event": 2687,
+        "archived_verifier_elapsed_ns": 24625
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 2698,
+        "verifier_event": 2699,
+        "archived_verifier_elapsed_ns": 22417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 2708,
+        "verifier_event": 2709,
+        "archived_verifier_elapsed_ns": 21834
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 45,
+        "constant_formals": 38,
+        "archived_event": 2761,
+        "verifier_event": 2762,
+        "archived_verifier_elapsed_ns": 22666
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 7,
+        "constant_formals": 0,
+        "archived_event": 2777,
+        "verifier_event": 2778,
+        "archived_verifier_elapsed_ns": 20291
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 7,
+        "constant_formals": 0,
+        "archived_event": 2787,
+        "verifier_event": 2788,
+        "archived_verifier_elapsed_ns": 19083
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 7,
+        "constant_formals": 0,
+        "archived_event": 2814,
+        "verifier_event": 2815,
+        "archived_verifier_elapsed_ns": 18542
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 34,
+        "constant_formals": 28,
+        "archived_event": 2839,
+        "verifier_event": 2840,
+        "archived_verifier_elapsed_ns": 21375
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 6,
+        "constant_formals": 0,
+        "archived_event": 2855,
+        "verifier_event": 2856,
+        "archived_verifier_elapsed_ns": 18834
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 6,
+        "constant_formals": 0,
+        "archived_event": 2865,
+        "verifier_event": 2866,
+        "archived_verifier_elapsed_ns": 17750
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 6,
+        "constant_formals": 0,
+        "archived_event": 2892,
+        "verifier_event": 2893,
+        "archived_verifier_elapsed_ns": 17083
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 47,
+        "constant_formals": 39,
+        "archived_event": 2929,
+        "verifier_event": 2930,
+        "archived_verifier_elapsed_ns": 18458
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 8,
+        "constant_formals": 0,
+        "archived_event": 2959,
+        "verifier_event": 2960,
+        "archived_verifier_elapsed_ns": 15458
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 47,
+        "constant_formals": 39,
+        "archived_event": 2984,
+        "verifier_event": 2985,
+        "archived_verifier_elapsed_ns": 18916
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 8,
+        "constant_formals": 0,
+        "archived_event": 3014,
+        "verifier_event": 3015,
+        "archived_verifier_elapsed_ns": 15417
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 35,
+        "constant_formals": 29,
+        "archived_event": 3049,
+        "verifier_event": 3050,
+        "archived_verifier_elapsed_ns": 18625
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 6,
+        "constant_formals": 0,
+        "archived_event": 3079,
+        "verifier_event": 3080,
+        "archived_verifier_elapsed_ns": 16292
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 34,
+        "constant_formals": 29,
+        "archived_event": 3104,
+        "verifier_event": 3105,
+        "archived_verifier_elapsed_ns": 17375
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3134,
+        "verifier_event": 3135,
+        "archived_verifier_elapsed_ns": 14792
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 8,
+        "constant_formals": 3,
+        "archived_event": 3166,
+        "verifier_event": 3167,
+        "archived_verifier_elapsed_ns": 9417
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 1,
+        "archived_event": 3194,
+        "verifier_event": 3195,
+        "archived_verifier_elapsed_ns": 4833
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 1,
+        "formals": 0,
+        "constant_formals": 0,
+        "archived_event": 3228,
+        "verifier_event": 3229,
+        "archived_verifier_elapsed_ns": 11584
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 1,
+        "formals": 0,
+        "constant_formals": 0,
+        "archived_event": 3257,
+        "verifier_event": 3258,
+        "archived_verifier_elapsed_ns": 2750
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 1,
+        "constant_formals": 0,
+        "archived_event": 3285,
+        "verifier_event": 3286,
+        "archived_verifier_elapsed_ns": 3667
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 1,
+        "constant_formals": 0,
+        "archived_event": 3313,
+        "verifier_event": 3314,
+        "archived_verifier_elapsed_ns": 3666
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 69914,
+        "constant_formals": 41218,
+        "archived_event": 3492,
+        "verifier_event": 3493,
+        "archived_verifier_elapsed_ns": 6742334
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 28637,
+        "constant_formals": 112,
+        "archived_event": 3502,
+        "verifier_event": 3503,
+        "archived_verifier_elapsed_ns": 5159166
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 28525,
+        "constant_formals": 0,
+        "archived_event": 3512,
+        "verifier_event": 3513,
+        "archived_verifier_elapsed_ns": 5169334
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 7302,
+        "constant_formals": 0,
+        "archived_event": 3522,
+        "verifier_event": 3523,
+        "archived_verifier_elapsed_ns": 4465458
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 7302,
+        "constant_formals": 0,
+        "archived_event": 3532,
+        "verifier_event": 3533,
+        "archived_verifier_elapsed_ns": 4460333
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 4842,
+        "constant_formals": 9,
+        "archived_event": 3544,
+        "verifier_event": 3545,
+        "archived_verifier_elapsed_ns": 3387417
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 4833,
+        "constant_formals": 0,
+        "archived_event": 3554,
+        "verifier_event": 3555,
+        "archived_verifier_elapsed_ns": 3334625
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 4833,
+        "constant_formals": 0,
+        "archived_event": 3564,
+        "verifier_event": 3565,
+        "archived_verifier_elapsed_ns": 3381875
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5362,
+        "constant_formals": 90,
+        "archived_event": 3579,
+        "verifier_event": 3580,
+        "archived_verifier_elapsed_ns": 3283166
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5272,
+        "constant_formals": 1,
+        "archived_event": 3589,
+        "verifier_event": 3590,
+        "archived_verifier_elapsed_ns": 3253083
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5270,
+        "constant_formals": 0,
+        "archived_event": 3599,
+        "verifier_event": 3600,
+        "archived_verifier_elapsed_ns": 3230292
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5371,
+        "constant_formals": 78,
+        "archived_event": 3611,
+        "verifier_event": 3612,
+        "archived_verifier_elapsed_ns": 3181000
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5279,
+        "constant_formals": 11,
+        "archived_event": 3626,
+        "verifier_event": 3627,
+        "archived_verifier_elapsed_ns": 3085209
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3687,
+        "verifier_event": 3688,
+        "archived_verifier_elapsed_ns": 67959
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 23,
+        "constant_formals": 0,
+        "archived_event": 3717,
+        "verifier_event": 3718,
+        "archived_verifier_elapsed_ns": 57541
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3749,
+        "verifier_event": 3750,
+        "archived_verifier_elapsed_ns": 7417
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3779,
+        "verifier_event": 3780,
+        "archived_verifier_elapsed_ns": 7417
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3809,
+        "verifier_event": 3810,
+        "archived_verifier_elapsed_ns": 7000
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3839,
+        "verifier_event": 3840,
+        "archived_verifier_elapsed_ns": 7083
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3869,
+        "verifier_event": 3870,
+        "archived_verifier_elapsed_ns": 7042
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3899,
+        "verifier_event": 3900,
+        "archived_verifier_elapsed_ns": 7042
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3929,
+        "verifier_event": 3930,
+        "archived_verifier_elapsed_ns": 7042
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3959,
+        "verifier_event": 3960,
+        "archived_verifier_elapsed_ns": 7083
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 3989,
+        "verifier_event": 3990,
+        "archived_verifier_elapsed_ns": 7125
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4019,
+        "verifier_event": 4020,
+        "archived_verifier_elapsed_ns": 7083
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4049,
+        "verifier_event": 4050,
+        "archived_verifier_elapsed_ns": 6875
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4079,
+        "verifier_event": 4080,
+        "archived_verifier_elapsed_ns": 6917
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4109,
+        "verifier_event": 4110,
+        "archived_verifier_elapsed_ns": 6958
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4139,
+        "verifier_event": 4140,
+        "archived_verifier_elapsed_ns": 6958
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4169,
+        "verifier_event": 4170,
+        "archived_verifier_elapsed_ns": 6875
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4199,
+        "verifier_event": 4200,
+        "archived_verifier_elapsed_ns": 6959
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4229,
+        "verifier_event": 4230,
+        "archived_verifier_elapsed_ns": 6875
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4259,
+        "verifier_event": 4260,
+        "archived_verifier_elapsed_ns": 7000
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4289,
+        "verifier_event": 4290,
+        "archived_verifier_elapsed_ns": 7000
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4319,
+        "verifier_event": 4320,
+        "archived_verifier_elapsed_ns": 7042
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4349,
+        "verifier_event": 4350,
+        "archived_verifier_elapsed_ns": 6916
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4379,
+        "verifier_event": 4380,
+        "archived_verifier_elapsed_ns": 6833
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4409,
+        "verifier_event": 4410,
+        "archived_verifier_elapsed_ns": 7125
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4439,
+        "verifier_event": 4440,
+        "archived_verifier_elapsed_ns": 6958
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 13,
+        "constant_formals": 6,
+        "archived_event": 4482,
+        "verifier_event": 4483,
+        "archived_verifier_elapsed_ns": 7959
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 9,
+        "constant_formals": 4,
+        "archived_event": 4512,
+        "verifier_event": 4513,
+        "archived_verifier_elapsed_ns": 7208
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 11,
+        "constant_formals": 4,
+        "archived_event": 4542,
+        "verifier_event": 4543,
+        "archived_verifier_elapsed_ns": 7000
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4572,
+        "verifier_event": 4573,
+        "archived_verifier_elapsed_ns": 6875
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 7,
+        "constant_formals": 0,
+        "archived_event": 4602,
+        "verifier_event": 4603,
+        "archived_verifier_elapsed_ns": 6917
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4632,
+        "verifier_event": 4633,
+        "archived_verifier_elapsed_ns": 6792
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 9,
+        "constant_formals": 4,
+        "archived_event": 4662,
+        "verifier_event": 4663,
+        "archived_verifier_elapsed_ns": 6917
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 9,
+        "constant_formals": 4,
+        "archived_event": 4692,
+        "verifier_event": 4693,
+        "archived_verifier_elapsed_ns": 7000
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4722,
+        "verifier_event": 4723,
+        "archived_verifier_elapsed_ns": 6708
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4752,
+        "verifier_event": 4753,
+        "archived_verifier_elapsed_ns": 6792
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4782,
+        "verifier_event": 4783,
+        "archived_verifier_elapsed_ns": 6708
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0,
+        "archived_event": 4812,
+        "verifier_event": 4813,
+        "archived_verifier_elapsed_ns": 6833
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 1,
+        "archived_event": 4842,
+        "verifier_event": 4843,
+        "archived_verifier_elapsed_ns": 16375
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 1,
+        "archived_event": 4872,
+        "verifier_event": 4873,
+        "archived_verifier_elapsed_ns": 16333
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 1,
+        "archived_event": 4902,
+        "verifier_event": 4903,
+        "archived_verifier_elapsed_ns": 16291
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 1,
+        "archived_event": 4932,
+        "verifier_event": 4933,
+        "archived_verifier_elapsed_ns": 16208
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5080,
+        "constant_formals": 74,
+        "archived_event": 4963,
+        "verifier_event": 4964,
+        "archived_verifier_elapsed_ns": 2853875
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5006,
+        "constant_formals": 0,
+        "archived_event": 4980,
+        "verifier_event": 4981,
+        "archived_verifier_elapsed_ns": 2808500
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5006,
+        "constant_formals": 2,
+        "archived_event": 4995,
+        "verifier_event": 4996,
+        "archived_verifier_elapsed_ns": 2768041
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 4999,
+        "constant_formals": 24,
+        "archived_event": 5013,
+        "verifier_event": 5014,
+        "archived_verifier_elapsed_ns": 2777292
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 5011,
+        "constant_formals": 23,
+        "archived_event": 5028,
+        "verifier_event": 5029,
+        "archived_verifier_elapsed_ns": 2752833
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 4988,
+        "constant_formals": 0,
+        "archived_event": 5038,
+        "verifier_event": 5039,
+        "archived_verifier_elapsed_ns": 2735542
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 4989,
+        "constant_formals": 1,
+        "archived_event": 5050,
+        "verifier_event": 5051,
+        "archived_verifier_elapsed_ns": 2764791
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 4969,
+        "constant_formals": 1033
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 3935,
+        "constant_formals": 6
+      },
+      {
+        "scope": "checked root",
+        "iterations": 5,
+        "formals": 3784,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 5,
+        "formals": 3789,
+        "constant_formals": 0,
+        "archived_event": 5136,
+        "verifier_event": 5137,
+        "archived_verifier_elapsed_ns": 2825834
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 4,
+        "formals": 3814,
+        "constant_formals": 1,
+        "archived_event": 5160,
+        "verifier_event": 5161,
+        "archived_verifier_elapsed_ns": 2701917
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 6,
+        "constant_formals": 2,
+        "archived_event": 5191,
+        "verifier_event": 5192,
+        "archived_verifier_elapsed_ns": 5500
+      }
+    ],
+    "worker-0": [
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 598,
+        "constant_formals": 5
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 80,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 34,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 3
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 17,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 6,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 8,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 5,
+        "constant_formals": 0
+      }
+    ],
+    "worker-1": [
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 771,
+        "constant_formals": 597
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 131,
+        "constant_formals": 0
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 87,
+        "constant_formals": 0
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 91,
+        "constant_formals": 4
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 87,
+        "constant_formals": 0
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 91,
+        "constant_formals": 5
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 82,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 80,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 34,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 10,
+        "constant_formals": 3
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 103,
+        "constant_formals": 84
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 16,
+        "constant_formals": 1
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 15,
+        "constant_formals": 0
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 17,
+        "constant_formals": 0
+      },
+      {
+        "scope": "numeric phase",
+        "iterations": 3,
+        "formals": 17,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 17,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 12,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 2,
+        "formals": 5,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 7,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 8,
+        "constant_formals": 0
+      },
+      {
+        "scope": "Optimize IR in Context",
+        "iterations": 3,
+        "formals": 6,
+        "constant_formals": 0
+      }
+    ]
+  },
+  "archived_coordinator_receipt": "554808a737d756b92125b4930ef4b831e5b8b7069685ae219e7fb7693669fe3b",
+  "exact_artifacts": {
+    "source.mec": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "candidate_pair_totals": {
+    "numeric phase": {
+      "adjacent_pairs": 136,
+      "noop_phis": 80,
+      "verification_ns": 12544247,
+      "verification_after_noop_ns": 5515458
+    },
+    "artifact through object bytes": {
+      "adjacent_pairs": 2,
+      "noop_phis": 0,
+      "verification_ns": 189793,
+      "verification_after_noop_ns": 0
+    },
+    "Optimize IR in Context": {
+      "adjacent_pairs": 59,
+      "noop_phis": 46,
+      "verification_ns": 6407669,
+      "verification_after_noop_ns": 3584711
+    },
+    "checked root": {
+      "adjacent_pairs": 20,
+      "noop_phis": 8,
+      "verification_ns": 71594166,
+      "verification_after_noop_ns": 29585959
+    }
+  }
+}
