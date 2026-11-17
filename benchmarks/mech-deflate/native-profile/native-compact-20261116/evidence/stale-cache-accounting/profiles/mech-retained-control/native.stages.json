@@ -1,0 +1,178 @@
+[
+  [
+    0.08176862495020032,
+    "compact-stage: canonical lowering"
+  ],
+  [
+    0.09975983295589685,
+    "compact-stage: preparation blocks=8223 values=5690"
+  ],
+  [
+    0.23982341680675745,
+    "compact-stage: native module"
+  ],
+  [
+    0.28971133287996054,
+    "compact-stage: numeric phase mech_compact_numeric_475"
+  ],
+  [
+    0.32278270786628127,
+    "compact-stage: numeric phase mech_compact_numeric_475_vector"
+  ],
+  [
+    0.42578483279794455,
+    "compact-stage: numeric phase mech_compact_numeric_3009"
+  ],
+  [
+    0.43311716709285975,
+    "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+  ],
+  [
+    0.4489765418693423,
+    "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+  ],
+  [
+    0.47800449980422854,
+    "compact-stage: numeric phase mech_compact_numeric_4173"
+  ],
+  [
+    0.48324387473985553,
+    "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+  ],
+  [
+    0.48920958302915096,
+    "compact-stage: numeric phase mech_compact_numeric_3447"
+  ],
+  [
+    0.49384599970653653,
+    "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+  ],
+  [
+    0.49862433271482587,
+    "compact-stage: numeric phase mech_compact_numeric_3956"
+  ],
+  [
+    0.4999317079782486,
+    "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+  ],
+  [
+    0.503947916906327,
+    "compact-stage: numeric phase mech_compact_numeric_4879"
+  ],
+  [
+    0.5076323328539729,
+    "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+  ],
+  [
+    0.5109620001167059,
+    "compact-stage: numeric phase mech_compact_numeric_4673"
+  ],
+  [
+    0.5133437919430435,
+    "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+  ],
+  [
+    0.5159292076714337,
+    "compact-stage: numeric phase mech_compact_numeric_6633"
+  ],
+  [
+    0.5184754580259323,
+    "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+  ],
+  [
+    0.5215058326721191,
+    "compact-stage: numeric phase mech_compact_numeric_5895"
+  ],
+  [
+    0.5238395826891065,
+    "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+  ],
+  [
+    0.5266491249203682,
+    "compact-stage: numeric phase mech_compact_numeric_3872"
+  ],
+  [
+    0.5286338748410344,
+    "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+  ],
+  [
+    0.530886999797076,
+    "compact-stage: numeric phase mech_compact_numeric_4799"
+  ],
+  [
+    0.5323299579322338,
+    "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+  ],
+  [
+    0.5341714578680694,
+    "compact-stage: numeric phase mech_compact_numeric_2821"
+  ],
+  [
+    0.5357717918232083,
+    "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+  ],
+  [
+    0.5375635828822851,
+    "compact-stage: numeric phase mech_compact_numeric_8026"
+  ],
+  [
+    0.5387613330967724,
+    "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+  ],
+  [
+    0.5402417918667197,
+    "compact-stage: numeric phase mech_compact_numeric_362"
+  ],
+  [
+    0.5414098328910768,
+    "compact-stage: numeric phase mech_compact_numeric_362_vector"
+  ],
+  [
+    0.54279570793733,
+    "compact-stage: typed layout"
+  ],
+  [
+    0.5427982080727816,
+    "compact-stage: flow proof"
+  ],
+  [
+    0.5451658749952912,
+    "compact-stage: operation recipes"
+  ],
+  [
+    0.709051416721195,
+    "compact-stage: source CFG"
+  ],
+  [
+    0.7090552500449121,
+    "compact-stage: source site 0/8223"
+  ],
+  [
+    0.7590197920799255,
+    "compact-stage: source site 4096/8223"
+  ],
+  [
+    0.8735822499729693,
+    "compact-stage: source site 8192/8223"
+  ],
+  [
+    0.8973552500829101,
+    "compact-stage: finalize SSA"
+  ],
+  [
+    0.9270266247913241,
+    "compact-stage: compact values before=1399985"
+  ],
+  [
+    0.9392565418966115,
+    "compact-stage: CFG cleanup"
+  ],
+  [
+    1.5628728750161827,
+    "compact-stage: machine code"
+  ],
+  [
+    1.747220791876316,
+    "compact-stage: machine code complete"
+  ]
+]

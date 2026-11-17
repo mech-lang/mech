@@ -1,0 +1,162 @@
+{
+  "parent_source": "bef604b4ea4facb27263c034d68f4341277600ca",
+  "measurement_host": "Apple M1, Rust opt-level 3",
+  "scope": "Canonical one-shot source parsing, with the same syntax grammar, diagnostics, logical work allowance, and final linking.",
+  "census": {
+    "enqueued": 1414476,
+    "published": 706474,
+    "discarded": 708002,
+    "cached_reads": 628193,
+    "stale_at_materialization_start": 708002,
+    "partial_cache_advances": 0,
+    "overlapping_structural_edits": 368664,
+    "overlapping_rewinds": 1266342,
+    "overlapping_clears": 0,
+    "published_and_read": 628193,
+    "published_and_retained": 160696,
+    "published_and_unread": 78281,
+    "distinct_retained_nodes": 160696
+  },
+  "parser_medians": {
+    "control": {
+      "parse_seconds": 2.5994677499999996,
+      "peak_rss_bytes": 115949568.0
+    },
+    "accounting": {
+      "parse_seconds": 2.4404383330000003,
+      "peak_rss_bytes": 115875840.0
+    }
+  },
+  "parser_reduction_fraction": 0.0611776841624595,
+  "complete_medians_seconds": {
+    "mech-retained-control": {
+      "frontend": 2.9533931456971914,
+      "native": 1.7647708330769092,
+      "link": 0.040655000135302544,
+      "total": 4.760282895760611,
+      "parse": 2.619782729
+    },
+    "mech-retained-accounting": {
+      "frontend": 2.789395208004862,
+      "native": 1.763805125374347,
+      "link": 0.04029802093282342,
+      "total": 4.594658062327653,
+      "parse": 2.459527729
+    },
+    "mech-smaller-control": {
+      "frontend": 2.952722979011014,
+      "native": 1.7701245213393122,
+      "link": 0.040404666448011994,
+      "total": 4.763233250007033,
+      "parse": 2.6184637085
+    },
+    "mech-smaller-accounting": {
+      "frontend": 2.789230792084709,
+      "native": 1.7698284164071083,
+      "link": 0.043142937356606126,
+      "total": 4.602395478868857,
+      "parse": 2.4576938334999996
+    },
+    "roc": {
+      "compile": 2.9604906665626913,
+      "link": 0.03559120884165168,
+      "total": 2.9997031043749303
+    },
+    "libdeflate": {
+      "compile": 0.44700589613057673,
+      "link": 0.03351387497968972,
+      "total": 0.4811893333680928
+    }
+  },
+  "sizes_bytes": {
+    "mech-retained-control": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-retained-accounting": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-control": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-accounting": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168
+    }
+  },
+  "smaller_reduction_fraction": 0.03376651167312428,
+  "smaller_total_x_roc": 1.534283666992401,
+  "smaller_total_x_libdeflate": 9.564624898590983,
+  "pinned_benchmarks": {
+    "retained": {
+      "sha256": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+      },
+      "recorded_full_win_counts": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      },
+      "root_frame_bytes": 3744,
+      "historical_peak_stack_bytes": 5296,
+      "verified_exact_calls": 162
+    },
+    "smaller": {
+      "sha256": {
+        "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+        "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+        "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+      },
+      "recorded_full_win_counts": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      },
+      "root_frame_bytes": 3744,
+      "historical_peak_stack_bytes": 5296,
+      "verified_exact_calls": 162
+    }
+  },
+  "syntax_tests": "test result: ok. 533 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.11s",
+  "source_and_outputs": [
+    "frontend/program.mecb",
+    "native/program.o",
+    "native/metadata.json",
+    "compressor"
+  ],
+  "qualification": "The same pinned benchmark workers keep existing runtime receipts by exact identity. The retained and smaller configurations have separate approval status."
+}

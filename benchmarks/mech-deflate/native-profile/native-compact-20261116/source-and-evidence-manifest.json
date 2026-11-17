@@ -45,13 +45,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "e379ffe93ff34a4e75f2981e7f80934c109fbd772758e532b37258b9d9220dee",
-      "bytes": 26534
+      "sha256": "084e2696fc900163b99624201f9530d46a655d46ce11f5ff3ba311d80c26544b",
+      "bytes": 28235
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "ffdd64dedd3837a5806b6398e32dd3cbca125f26149485d163fd3f7b8ae4c5c1",
-      "bytes": 14916
+      "sha256": "3e55f6a30e9c110aaf8701e30a8ebb0436c27ca2d97dc70bda39e92451935ca1",
+      "bytes": 16617
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/baseline/checked-failures.json",
@@ -12562,6 +12562,186 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/size-screens/root-analysis/receipt.json",
       "sha256": "7411c213db97a4f8db5e19a78ab8e0dd090959d472214a8407908fb3affe44ea",
       "bytes": 566
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/cache-census.json",
+      "sha256": "06c04215b88207d549580b96707484cadf90b9a91eeebbbbfcf287bb694c315d",
+      "bytes": 9772
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/cargo.jsonl.gz",
+      "sha256": "ffb33d5b6ff82ef96f6d3d036494eabac014995177045c5d6356939c986de1c3",
+      "bytes": 13065
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/complete-timing.json",
+      "sha256": "89c8d6f6cfd257e40f8b5b899f0266e78e4c65912d7dff049425d2a79745ed78",
+      "bytes": 339495
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/integrated-rebuild.json",
+      "sha256": "bff5dd80cd73ea3b27dbadd4981479c8de8ef9200de4da359c11ab00247146e9",
+      "bytes": 10794
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/parser-timing.json",
+      "sha256": "85e98c971dbff964680577db3fa298549de8aae74fb75fa977c854cc2f3508f5",
+      "bytes": 19161
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/pinned-workers/retained/exact-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/pinned-workers/retained/runtime.json",
+      "sha256": "8b3593b1e36dc38befc3f3129a187a4251718e068b612f38bccd2147a403e839",
+      "bytes": 8891
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/pinned-workers/smaller/exact-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/pinned-workers/smaller/runtime.json",
+      "sha256": "4fce4568af04371d2a9c0e68d533638948f48661c450cda54d864a760165522c",
+      "bytes": 8979
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/libdeflate/clang-trace.json.gz",
+      "sha256": "db0f620dcc202bca8a5b533ff10b913f84fa8b27cca5baa1b8ff9d024bb87a05",
+      "bytes": 43239
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-retained-accounting/complete-build-exact-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-retained-accounting/frontend.json",
+      "sha256": "0ddf0b466b916a20cbd8a7e06e2d35a121fe5d37f51c671c7ad06d1a9f108b36",
+      "bytes": 1033
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-retained-accounting/native.stages.json",
+      "sha256": "e9e19b0aa33b0fd494414eede6814088dd5c6f6c43715dd099b51b629cdf2d40",
+      "bytes": 3919
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-retained-control/complete-build-exact-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-retained-control/frontend.json",
+      "sha256": "0a87209fa72d6a9d55ea787dbbf4d4ba15405eee0ad9c515a5b65a924dc44292",
+      "bytes": 1028
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-retained-control/native.stages.json",
+      "sha256": "fd975968f09ee39bb3cbb056e5d75f2ba207ca7ddcb224d50a98c9c2b63c6230",
+      "bytes": 3924
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-smaller-accounting/complete-build-exact-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-smaller-accounting/frontend.json",
+      "sha256": "cbef619e55de345509585e06c8f5b2e44502c177cce1ad9de016da2c8c047b98",
+      "bytes": 1045
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-smaller-accounting/native.stages.json",
+      "sha256": "45175d65d505a34c26c4d832021577ecfb120ba59a78e36c1529821d84472ec2",
+      "bytes": 3922
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-smaller-control/complete-build-exact-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-smaller-control/frontend.json",
+      "sha256": "47db2e55c3b5924694284e05542b4de4b7d27f2dae122a4e921b5681b0bee441",
+      "bytes": 1036
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/mech-smaller-control/native.stages.json",
+      "sha256": "185409c8f16195cec28e9246a48d0d2b0851a92c15c0245c2e0f246fdbb588a9",
+      "bytes": 3921
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/profiles/roc/roc-timings.log.gz",
+      "sha256": "99efb4b157475115baf0154ca36cd19ae4caf30eb5299e0e57d042e63b663683",
+      "bytes": 3136
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/rebuild-exact-calls.json.gz",
+      "sha256": "57cd0a39b5d90de4ddc0db9bb4e52baf11f7035a4f11543df7c389b18124af5b",
+      "bytes": 5124
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/report.json",
+      "sha256": "2a295585486d1bf95a37f25db8b86a44223df570ec510024b50d5b8887538d0a",
+      "bytes": 5008
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/compare-builds.py",
+      "sha256": "a4be673db786c0b54fbbc35003a03b04e4035661ea1ca116becf9fa0dfb7de1e",
+      "bytes": 10733
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/compare-stale-cache-accounting.py",
+      "sha256": "fd17e3acfb2729742bece8236fe429505d7702350dfd3ad9f15a8e91d3038f63",
+      "bytes": 7983
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/measure-small-parser-inputs.py",
+      "sha256": "e6086dac43d6b962c5283406db47284385b1f2d2ede46af7ca18636232cd6579",
+      "bytes": 1705
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/measure-stale-cache-accounting.py",
+      "sha256": "8d760ce71c8d093e04cc4a80fc2543e733646a096fada82357c87144da4ebcae",
+      "bytes": 3926
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/parser-cache-census.py",
+      "sha256": "d9fcb068d2a94f5eaba079ac96c22c935741f572440086db654cfc8d25cc47ea",
+      "bytes": 9232
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/probe-literal-reuse.py",
+      "sha256": "4f8e82110a49a928ebff49470ae8ed522d63c16152e458bd34bfd6404f1a79ad",
+      "bytes": 6671
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/test-stale-cache-accounting.py",
+      "sha256": "e6f4863f5b3dd87b56bca68b6ae1f197e24903e12c67e07b7b9861e9b6e664d7",
+      "bytes": 2101
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/scripts-as-run/verify-worker.py",
+      "sha256": "0e0cdffbebe6b8b2295413e53be611351156e478d42e25c78e555b83b2a21e8d",
+      "bytes": 2361
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/small-inputs.json",
+      "sha256": "c2bf1b3869207830971fe7723e19ead64e383f5741b44dd91567575a0fd0e932",
+      "bytes": 30248
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/syntax-tests.log.gz",
+      "sha256": "65fd37276b0f1d089d57fa7626f4d2bdd18da5fccd95d77aa29f430928bc5c41",
+      "bytes": 11545
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/stale-cache-accounting/tests.json",
+      "sha256": "c11abbb1c3fff7e7aab8d0412ae698dd10905b5764610466d6e5a63dfcd6d94f",
+      "bytes": 5638
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/fixture-data/004680407282aad7d520e5e93fe90b2c884f0c269463a45ae2f961af139c3538",
