@@ -527,7 +527,7 @@ benchmark; no compile-time improvement is claimed for this experiment.
 - Vendored native backend: spill forwarding, measured leaf layout, and optional
   sharing of identical cold machine-code tails. Scalar operations keep direct
   native instructions. No external LLVM executable is used by this recipe.
-- `src/syntax/src/document/parser/journal.rs`: retain the current journal page
+- `src/syntax/src/document/parser/journal/mod.rs`: retain the current journal page
   directly while preserving shared snapshots.
 - The maintained allocation policy lives in `compact_runtime/zero_pages.rs`.
   The exact historical runtime remains at the revision pinned in the recipe.
