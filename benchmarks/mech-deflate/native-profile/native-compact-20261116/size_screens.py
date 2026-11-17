@@ -33,16 +33,18 @@ def text_bytes(path):
 def main():
     here = Path(__file__).resolve().parent
     index = json.loads((here / 'evidence/size-screens/index.json').read_text())
-    cases = {row['name']: row for row in index['cases']}
+    default_cases = {row['name']: row for row in index['cases']}
+    continuation = json.loads((here / 'evidence/continuation-widths/index.json').read_text())
+    cases = default_cases | {row['name']: row for row in continuation['cases']}
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('output', nargs='?', type=Path)
     parser.add_argument('--emitter', type=Path, help='emitter built from this PR by rebuild.py')
-    parser.add_argument('--case', action='append', choices=cases, help='repeat to select cases; default: all')
+    parser.add_argument('--case', action='append', choices=cases, help='repeat to select cases; default: original 24')
     parser.add_argument('--list', action='store_true')
     args = parser.parse_args()
     if args.list:
         for name, case in cases.items():
-            print(f"{name}: {case['expected']['object_text_bytes']} bytes; runtime unqualified")
+            print(f"{name}: {case['expected']['object_text_bytes']} bytes")
         return
     if args.output is None or args.emitter is None:
         parser.error('output and --emitter are required unless --list is used')
@@ -63,7 +65,7 @@ def main():
     environment['PATH'] = '/usr/bin:/bin'
     results = []
     emitter_sha = sha(emitter)
-    for name in dict.fromkeys(args.case or cases):
+    for name in dict.fromkeys(args.case or default_cases):
         case = cases[name]
         selected = dict(flags)
         for key, value in case['flag_overrides'].items():

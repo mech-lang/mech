@@ -1,0 +1,18 @@
+width-4 emitted code 1.253× Roc
+width-4 72312 3632
+width-6 emitted code 1.249× Roc
+width-6 72088 3856
+width-8 emitted code 1.257× Roc
+width-8 72520 3744
+width-10 emitted code 1.257× Roc
+width-10 72520 3744
+width-12 emitted code 1.257× Roc
+width-12 72520 3744
+width-14 emitted code 1.257× Roc
+width-14 72520 3744
+width-16-owners-cold emitted code 1.247× Roc
+width-16-owners-cold 71960 3744
+width-6-owners emitted code 1.249× Roc
+width-6-owners 72072 3840
+width-6-owners-cold emitted code 1.243× Roc
+width-6-owners-cold 71720 3840

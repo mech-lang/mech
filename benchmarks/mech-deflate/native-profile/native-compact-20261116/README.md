@@ -16,12 +16,66 @@ that wording is historical. Historical evidence has not been edited.
 | Apple M1 evidence | Mech code | × Roc code | × libdeflate code | Runtime qualification |
 | --- | ---: | ---: | ---: | --- |
 | Retained native baseline | 72,520 B | 1.25693 | 1.95577 | 81/81 and 61/81, both full orders |
+| Fresh owner counts and cold-tail sharing | 71,960 B | 1.24723 | 1.94067 | 81/81 and 61/81, both full orders |
 | Fresh owner reference counts | 72,344 B | 1.25388 | 1.95102 | 81/81 and 61/81, both full orders |
 | Optional cold-tail sharing | 72,200 B | 1.25139 | 1.94714 | 162 exact encoder calls; 15-case screen only |
 
 The code denominators are 57,696 B for Roc and **37,080 B for libdeflate**.
-Older receipts used a different 41,112-byte C object; their C size ratios must not
-be substituted for this matched encoder comparison.
+Historical receipts used a 41,112-byte C object for their size ratios.
+
+## Batched block parameter cleanup
+
+Constant-phi, local-phi, and dead-value cleanup now reindex surviving block
+parameters in one pass. The existing proofs, alias order, and incoming
+argument order are preserved. The constant-phi solver also joins incoming
+facts in place. The earlier M3 trial on #973 batched constant-phi removal
+alone and measured a 0.19% increase in complete build time.
+[Earlier trial](../../../../docs/design/native-batch-phi-params-compile-trial.md)
+
+| Matched Apple M1 build | Source to executable | Encoder text |
+| --- | ---: | ---: |
+| Previous Mech emitter | 5.65167 s | 72,520 B |
+| Mech with batched cleanup | 5.64176 s | 72,520 B |
+| Roc | 2.98782 s | 57,696 B |
+| libdeflate | 0.48359 s | 37,080 B |
+
+The matched complete build improves by **0.18%**, reaching **1.88825× Roc**
+and **11.66649× libdeflate**. Eight balanced native-only pairs move the
+median from **2.22625 to 2.21648 seconds**. Separate instrumented runs move
+the interval from initial CFG cleanup through entry into vector guard
+analysis from 0.44633 to 0.42784 seconds.
+
+All twelve complete Mech builds produced identical bytecode, encoder objects,
+metadata, and executables. The 207 Cranelift unit tests pass, including parameter
+order, reindexing, attachment, and aliasing coverage. The compiler reproduces the
+original pinned worker byte for byte and the fresh-owner object and metadata
+exactly. Both linked rebuilds pass 162 correctness checks.
+[Build trials, profiles, and rebuilds](evidence/batched-block-params/report.json)
+
+## Smaller continuation configurations
+
+The nine screens vary the continuation input budget and combine it with fresh
+owner counts and cold-tail sharing. The 71,960-byte configuration enables those
+two passes with the retained input budget. It cuts **560 bytes (0.77%)** of
+encoder text and keeps **81/81 Roc and 61/81 libdeflate** in both full orders.
+Each order checks 982,656 timed calls. The configuration also passes six
+checked-failure cases, 14 shape controls, and 162 exact linked calls. Peak stack
+remains 5,296 bytes.
+
+In four balanced Apple M1 build orders, this configuration takes **5.65399 s**
+through final linking, or **1.88967× Roc** and **11.76562× libdeflate**.
+The simultaneous Mech control takes 5.63752 s, a 0.29% difference.
+
+Paired intervals bound 77 cases at 0.5% resolution. Longer batches with duplicate
+controls resolve `prefix-repeated-4096`. Control variation exceeds the resolution
+on `one-stored`, `seven-stored-prefix`, and `random-64`, so the 71,960-byte
+configuration is opt-in as `rebuild.py --variant fresh-owner-counts-cold-tails`.
+
+The 71,720-byte configuration also limits direct continuation inputs to six
+words. It loses `320-overlap` and `prefix-periodic-1024` against libdeflate in
+both focused orders. Its reproduction case is
+`size_screens.py --case continuation-widths--width-6-owners-cold`.
+[Static screens, paired runs, and exact rebuilds](evidence/continuation-widths/report.json)
 
 ## Parser journal pages
 

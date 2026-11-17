@@ -1,0 +1,1023 @@
+{
+  "scope": "Native emission only, timestamped compiler log markers, warmup 0 excluded",
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/profile-1"
+  ],
+  "elapsed": 2.2160196672193706,
+  "identities": {
+    "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+  },
+  "events": [
+    [
+      0.1352853341959417,
+      "compact-stage: canonical lowering"
+    ],
+    [
+      0.15904116723686457,
+      "compact-stage: preparation blocks=8223 values=5690"
+    ],
+    [
+      0.3344363342039287,
+      "compact-stage: native module"
+    ],
+    [
+      0.39835008420050144,
+      "compact-stage: numeric phase mech_compact_numeric_475"
+    ],
+    [
+      0.43784283427521586,
+      "compact-stage: numeric phase mech_compact_numeric_475_vector"
+    ],
+    [
+      0.5624289591796696,
+      "compact-stage: numeric phase mech_compact_numeric_3009"
+    ],
+    [
+      0.5714315422810614,
+      "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+    ],
+    [
+      0.5906754592433572,
+      "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+    ],
+    [
+      0.6261955839581788,
+      "compact-stage: numeric phase mech_compact_numeric_4173"
+    ],
+    [
+      0.6326939589343965,
+      "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+    ],
+    [
+      0.6400319999083877,
+      "compact-stage: numeric phase mech_compact_numeric_3447"
+    ],
+    [
+      0.6457382920198143,
+      "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+    ],
+    [
+      0.6516556250862777,
+      "compact-stage: numeric phase mech_compact_numeric_3956"
+    ],
+    [
+      0.6533228340558708,
+      "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+    ],
+    [
+      0.658243500161916,
+      "compact-stage: numeric phase mech_compact_numeric_4879"
+    ],
+    [
+      0.6628116252832115,
+      "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+    ],
+    [
+      0.6670562499202788,
+      "compact-stage: numeric phase mech_compact_numeric_4673"
+    ],
+    [
+      0.6700257500633597,
+      "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+    ],
+    [
+      0.6732364590279758,
+      "compact-stage: numeric phase mech_compact_numeric_6633"
+    ],
+    [
+      0.6764113339595497,
+      "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+    ],
+    [
+      0.680209374986589,
+      "compact-stage: numeric phase mech_compact_numeric_5895"
+    ],
+    [
+      0.6831666249781847,
+      "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+    ],
+    [
+      0.6866945000365376,
+      "compact-stage: numeric phase mech_compact_numeric_3872"
+    ],
+    [
+      0.6892120419070125,
+      "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+    ],
+    [
+      0.6920187091454864,
+      "compact-stage: numeric phase mech_compact_numeric_4799"
+    ],
+    [
+      0.6938507091253996,
+      "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+    ],
+    [
+      0.6961098751053214,
+      "compact-stage: numeric phase mech_compact_numeric_2821"
+    ],
+    [
+      0.6981327091343701,
+      "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+    ],
+    [
+      0.7003984590992332,
+      "compact-stage: numeric phase mech_compact_numeric_8026"
+    ],
+    [
+      0.7019332922063768,
+      "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+    ],
+    [
+      0.7037896672263741,
+      "compact-stage: numeric phase mech_compact_numeric_362"
+    ],
+    [
+      0.7052921252325177,
+      "compact-stage: numeric phase mech_compact_numeric_362_vector"
+    ],
+    [
+      0.7069256249815226,
+      "compact-stage: typed layout"
+    ],
+    [
+      0.7069266671314836,
+      "compact-stage: flow proof"
+    ],
+    [
+      0.7100750422105193,
+      "compact-stage: operation recipes"
+    ],
+    [
+      0.9133043750189245,
+      "compact-stage: source CFG"
+    ],
+    [
+      0.9133064169436693,
+      "compact-stage: source site 0/8223"
+    ],
+    [
+      0.9799690842628479,
+      "compact-stage: source site 4096/8223"
+    ],
+    [
+      1.1285486673004925,
+      "compact-stage: source site 8192/8223"
+    ],
+    [
+      1.1614065002650023,
+      "compact-stage: finalize SSA"
+    ],
+    [
+      1.1855432502925396,
+      "compact scalar array growth sites shared: 3, backing: 19"
+    ],
+    [
+      1.1984467920847237,
+      "compact-stage: compact values before=1399985"
+    ],
+    [
+      1.2147371671162546,
+      "compact-values: retained=165899"
+    ],
+    [
+      1.2147402921691537,
+      "compact-stage: CFG cleanup"
+    ],
+    [
+      1.6534510841593146,
+      "compact vector 362 array 1 keeps guard: computed geometry at v1398 Result(inst1395, 0)"
+    ],
+    [
+      1.6534540839493275,
+      "compact vector definition v1398 = load.i64 v1+32"
+    ],
+    [
+      1.6534545002505183,
+      "compact vector 475 array 1 proved with 1 current values"
+    ],
+    [
+      1.6534548341296613,
+      "compact vector 475 array 2 keeps guard: computed geometry at v1398 Result(inst1395, 0)"
+    ],
+    [
+      1.6534607922658324,
+      "compact vector definition v1398 = load.i64 v1+32"
+    ],
+    [
+      1.6534610842354596,
+      "compact vector 475 array 3 proved with 12 current values"
+    ],
+    [
+      1.6534613342955709,
+      "compact vector 475 array 4 proved with 23 current values"
+    ],
+    [
+      1.653461541980505,
+      "compact vector 475 array 5 proved with 13 current values"
+    ],
+    [
+      1.653472542297095,
+      "compact vector 475 array 6 proved with 23 current values"
+    ],
+    [
+      1.6534769590944052,
+      "compact vector 2821 array 0 keeps guard: computed geometry at v1398 Result(inst1395, 0)"
+    ],
+    [
+      1.6534808338619769,
+      "compact vector definition v1398 = load.i64 v1+32"
+    ],
+    [
+      1.6534874592907727,
+      "compact vector 3956 array 0 proved with 3 current values"
+    ],
+    [
+      1.6534890420734882,
+      "compact vector 4673 array 0 proved with 3 current values"
+    ],
+    [
+      1.6534934588707983,
+      "compact vector 4673 array 1 proved with 3 current values"
+    ],
+    [
+      1.6534985839389265,
+      "compact vector 4673 array 2 proved with 3 current values"
+    ],
+    [
+      1.6666254592128098,
+      "compact unit branches proved: 5"
+    ],
+    [
+      1.67902508424595,
+      "compact checked controller 2184 boundary: 85 blocks, 7 inputs, 1 outputs"
+    ],
+    [
+      1.6790303750894964,
+      "compact checked controller 2388 boundary: 120 blocks, 5 inputs, 4 outputs"
+    ],
+    [
+      1.6790882092900574,
+      "compact checked region 2599 declined: entry or continuation did not survive cleanup"
+    ],
+    [
+      1.679088834207505,
+      "compact checked region 2314 declined: entry or continuation did not survive cleanup"
+    ],
+    [
+      1.6790890418924391,
+      "compact checked region 2685 declined: entry or continuation did not survive cleanup"
+    ],
+    [
+      1.6790898749604821,
+      "compact checked region 31 declined: entry or continuation did not survive cleanup"
+    ],
+    [
+      1.681330167222768,
+      "compact checked controller 2184 packet: 7 captures, 1 results"
+    ],
+    [
+      1.6852340842597187,
+      "compact checked controller 2184 516 bytes, 2 arguments, 32 frame bytes"
+    ],
+    [
+      1.686608084011823,
+      "compact checked controller 2388 retirement sites shared: 1"
+    ],
+    [
+      1.6866102502681315,
+      "compact checked controller 2388 packet: 5 captures, 4 results"
+    ],
+    [
+      1.6902368748560548,
+      "compact checked controller 2388 932 bytes, 2 arguments, 112 frame bytes"
+    ],
+    [
+      1.6927521252073348,
+      "compact checked controller 16147 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6927533340640366,
+      "compact checked controller 13159 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6927559999749064,
+      "compact checked controller 13100 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.6928087500855327,
+      "compact checked controller 13019 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.6928092502057552,
+      "compact checked controller 12907 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6928094592876732,
+      "compact checked controller 12570 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6928122090175748,
+      "compact checked controller 12485 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6928645842708647,
+      "compact checked controller 12473 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6928650420159101,
+      "compact checked controller 12243 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6928652920760214,
+      "compact checked controller 12103 boundary: 14 blocks, 6 inputs, 2 outputs"
+    ],
+    [
+      1.6928692921064794,
+      "compact checked controller 10939 boundary: 14 blocks, 4 inputs, 2 outputs"
+    ],
+    [
+      1.6929159169085324,
+      "compact checked controller 10936 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.692916375119239,
+      "compact checked controller 10856 boundary: 14 blocks, 4 inputs, 2 outputs"
+    ],
+    [
+      1.6929166251793504,
+      "compact checked controller 10854 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.6929239588789642,
+      "compact checked controller 10647 boundary: 14 blocks, 4 inputs, 2 outputs"
+    ],
+    [
+      1.6929700840264559,
+      "compact checked controller 10645 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.6929705841466784,
+      "compact checked controller 10572 boundary: 14 blocks, 4 inputs, 2 outputs"
+    ],
+    [
+      1.6929707922972739,
+      "compact checked controller 10569 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.6929768342524767,
+      "compact checked controller 10308 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6930229999125004,
+      "compact checked controller 10273 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.6930234590545297,
+      "compact checked controller 10234 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.693023667205125,
+      "compact checked controller 10214 boundary: 14 blocks, 5 inputs, 2 outputs"
+    ],
+    [
+      1.6930279592052102,
+      "compact checked controller 9468 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.693074167240411,
+      "compact checked controller 9084 boundary: 14 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.6940191672183573,
+      "compact checked layout 16147 prepared local IR"
+    ],
+    [
+      1.694019792135805,
+      "compact checked layout 16147 retirement sites shared: 1"
+    ],
+    [
+      1.694020084105432,
+      "compact checked layout 16147 packet: 7 captures, 2 results"
+    ],
+    [
+      1.694277792237699,
+      "compact checked layout 16147 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6944867502897978,
+      "compact checked layout 13159 prepared local IR"
+    ],
+    [
+      1.694487334229052,
+      "compact checked layout 13159 retirement sites shared: 1"
+    ],
+    [
+      1.6944876671768725,
+      "compact checked layout 13159 packet: 7 captures, 2 results"
+    ],
+    [
+      1.694694499950856,
+      "compact checked layout 13159 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6949032498523593,
+      "compact checked layout 13100 prepared local IR"
+    ],
+    [
+      1.6949037499725819,
+      "compact checked layout 13100 retirement sites shared: 1"
+    ],
+    [
+      1.6949039590544999,
+      "compact checked layout 13100 packet: 6 captures, 2 results"
+    ],
+    [
+      1.695098333992064,
+      "compact checked layout 13100 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6952997501939535,
+      "compact checked layout 13019 prepared local IR"
+    ],
+    [
+      1.6953002088703215,
+      "compact checked layout 13019 retirement sites shared: 1"
+    ],
+    [
+      1.695301459170878,
+      "compact checked layout 13019 packet: 6 captures, 2 results"
+    ],
+    [
+      1.6954879588447511,
+      "compact checked layout 13019 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6956902919337153,
+      "compact checked layout 12907 prepared local IR"
+    ],
+    [
+      1.695690792053938,
+      "compact checked layout 12907 retirement sites shared: 1"
+    ],
+    [
+      1.6956912092864513,
+      "compact checked layout 12907 packet: 7 captures, 2 results"
+    ],
+    [
+      1.695875792298466,
+      "compact checked layout 12907 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6960788751021028,
+      "compact checked layout 12570 prepared local IR"
+    ],
+    [
+      1.696079334244132,
+      "compact checked layout 12570 retirement sites shared: 1"
+    ],
+    [
+      1.6960796252824366,
+      "compact checked layout 12570 packet: 7 captures, 2 results"
+    ],
+    [
+      1.6962592918425798,
+      "compact checked layout 12570 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.696461624931544,
+      "compact checked layout 12485 prepared local IR"
+    ],
+    [
+      1.6964620840735734,
+      "compact checked layout 12485 retirement sites shared: 1"
+    ],
+    [
+      1.696462375111878,
+      "compact checked layout 12485 packet: 7 captures, 2 results"
+    ],
+    [
+      1.696638667024672,
+      "compact checked layout 12485 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6968537922948599,
+      "compact checked layout 12473 prepared local IR"
+    ],
+    [
+      1.6968542919494212,
+      "compact checked layout 12473 retirement sites shared: 1"
+    ],
+    [
+      1.6968545420095325,
+      "compact checked layout 12473 packet: 7 captures, 2 results"
+    ],
+    [
+      1.6970310839824378,
+      "compact checked layout 12473 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6972351670265198,
+      "compact checked layout 12243 prepared local IR"
+    ],
+    [
+      1.6972356671467423,
+      "compact checked layout 12243 retirement sites shared: 1"
+    ],
+    [
+      1.6972369169816375,
+      "compact checked layout 12243 packet: 7 captures, 2 results"
+    ],
+    [
+      1.6974128750152886,
+      "compact checked layout 12243 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6976175839081407,
+      "compact checked layout 12103 prepared local IR"
+    ],
+    [
+      1.6976180840283632,
+      "compact checked layout 12103 retirement sites shared: 1"
+    ],
+    [
+      1.6976183340884745,
+      "compact checked layout 12103 packet: 7 captures, 2 results"
+    ],
+    [
+      1.697792834136635,
+      "compact checked layout 12103 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.698005000129342,
+      "compact checked layout 10939 prepared local IR"
+    ],
+    [
+      1.6980054592713714,
+      "compact checked layout 10939 retirement sites shared: 1"
+    ],
+    [
+      1.6980057088658214,
+      "compact checked layout 10939 packet: 5 captures, 2 results"
+    ],
+    [
+      1.6981823341920972,
+      "compact checked layout 10939 300 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6983922920189798,
+      "compact checked layout 10936 prepared local IR"
+    ],
+    [
+      1.6983930421993136,
+      "compact checked layout 10936 retirement sites shared: 1"
+    ],
+    [
+      1.69839341705665,
+      "compact checked layout 10936 packet: 6 captures, 2 results"
+    ],
+    [
+      1.6985680419020355,
+      "compact checked layout 10936 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6987805841490626,
+      "compact checked layout 10856 prepared local IR"
+    ],
+    [
+      1.6987810842692852,
+      "compact checked layout 10856 retirement sites shared: 1"
+    ],
+    [
+      1.6987813338637352,
+      "compact checked layout 10856 packet: 5 captures, 2 results"
+    ],
+    [
+      1.6989551670849323,
+      "compact checked layout 10856 300 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6991630839183927,
+      "compact checked layout 10854 prepared local IR"
+    ],
+    [
+      1.6991635421290994,
+      "compact checked layout 10854 retirement sites shared: 1"
+    ],
+    [
+      1.6991638340987265,
+      "compact checked layout 10854 packet: 6 captures, 2 results"
+    ],
+    [
+      1.6993378750048578,
+      "compact checked layout 10854 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6995531250722706,
+      "compact checked layout 10647 prepared local IR"
+    ],
+    [
+      1.6995536251924932,
+      "compact checked layout 10647 retirement sites shared: 1"
+    ],
+    [
+      1.6995538342744112,
+      "compact checked layout 10647 packet: 5 captures, 2 results"
+    ],
+    [
+      1.699723375029862,
+      "compact checked layout 10647 300 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.6999391671270132,
+      "compact checked layout 10645 prepared local IR"
+    ],
+    [
+      1.6999396248720586,
+      "compact checked layout 10645 retirement sites shared: 1"
+    ],
+    [
+      1.6999398339539766,
+      "compact checked layout 10645 packet: 6 captures, 2 results"
+    ],
+    [
+      1.7001253752969205,
+      "compact checked layout 10645 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.7003430421464145,
+      "compact checked layout 10572 prepared local IR"
+    ],
+    [
+      1.70034349989146,
+      "compact checked layout 10572 retirement sites shared: 1"
+    ],
+    [
+      1.700343667063862,
+      "compact checked layout 10572 packet: 5 captures, 2 results"
+    ],
+    [
+      1.7005214588716626,
+      "compact checked layout 10572 300 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.700730875134468,
+      "compact checked layout 10569 prepared local IR"
+    ],
+    [
+      1.7007312919013202,
+      "compact checked layout 10569 retirement sites shared: 1"
+    ],
+    [
+      1.7007315000519156,
+      "compact checked layout 10569 packet: 6 captures, 2 results"
+    ],
+    [
+      1.7009023749269545,
+      "compact checked layout 10569 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.7011178340762854,
+      "compact checked layout 10308 prepared local IR"
+    ],
+    [
+      1.701118292286992,
+      "compact checked layout 10308 retirement sites shared: 1"
+    ],
+    [
+      1.7011184999719262,
+      "compact checked layout 10308 packet: 7 captures, 2 results"
+    ],
+    [
+      1.7012922088615596,
+      "compact checked layout 10308 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.7015080419369042,
+      "compact checked layout 10273 prepared local IR"
+    ],
+    [
+      1.701508500147611,
+      "compact checked layout 10273 retirement sites shared: 1"
+    ],
+    [
+      1.7015088750049472,
+      "compact checked layout 10273 packet: 6 captures, 2 results"
+    ],
+    [
+      1.7016846248880029,
+      "compact checked layout 10273 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.7018953752703965,
+      "compact checked layout 10234 prepared local IR"
+    ],
+    [
+      1.7018958339467645,
+      "compact checked layout 10234 retirement sites shared: 1"
+    ],
+    [
+      1.70189604209736,
+      "compact checked layout 10234 packet: 6 captures, 2 results"
+    ],
+    [
+      1.7020654170773923,
+      "compact checked layout 10234 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.7022780003026128,
+      "compact checked layout 10214 prepared local IR"
+    ],
+    [
+      1.7022784589789808,
+      "compact checked layout 10214 retirement sites shared: 1"
+    ],
+    [
+      1.7022786671295762,
+      "compact checked layout 10214 packet: 6 captures, 2 results"
+    ],
+    [
+      1.7024469589814544,
+      "compact checked layout 10214 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.702667959034443,
+      "compact checked layout 9468 prepared local IR"
+    ],
+    [
+      1.7026684591546655,
+      "compact checked layout 9468 retirement sites shared: 1"
+    ],
+    [
+      1.702668667305261,
+      "compact checked layout 9468 packet: 7 captures, 2 results"
+    ],
+    [
+      1.702841917052865,
+      "compact checked layout 9468 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.7030703341588378,
+      "compact checked layout 9084 prepared local IR"
+    ],
+    [
+      1.7030707499943674,
+      "compact checked layout 9084 retirement sites shared: 1"
+    ],
+    [
+      1.7030710000544786,
+      "compact checked layout 9084 packet: 7 captures, 2 results"
+    ],
+    [
+      1.7032449590042233,
+      "compact checked layout 9084 296 bytes, 1 arguments, 48 frame bytes"
+    ],
+    [
+      1.716137584298849,
+      "compact owner retirements shared: 98"
+    ],
+    [
+      1.7182649592868984,
+      "compact checked controller 8884 boundary: 15 blocks, 7 inputs, 4 outputs"
+    ],
+    [
+      1.7182698342949152,
+      "compact checked controller 9112 boundary: 15 blocks, 7 inputs, 4 outputs"
+    ],
+    [
+      1.7183167501352727,
+      "compact checked controller 9506 boundary: 13 blocks, 10 inputs, 6 outputs"
+    ],
+    [
+      1.7183172502554953,
+      "compact checked controller 9562 boundary: 15 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.7183190421201289,
+      "compact checked controller 10015 boundary: 15 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.7183653339743614,
+      "compact checked controller 10073 boundary: 15 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.718365834094584,
+      "compact checked controller 18836 boundary: 15 blocks, 7 inputs, 4 outputs"
+    ],
+    [
+      1.7183660841546953,
+      "compact checked controller 19604 boundary: 15 blocks, 6 inputs, 4 outputs"
+    ],
+    [
+      1.718412292189896,
+      "compact checked controller 20752 boundary: 15 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.7184128342196345,
+      "compact checked controller 21031 boundary: 15 blocks, 6 inputs, 2 outputs"
+    ],
+    [
+      1.7184130419045687,
+      "compact checked controller 22297 boundary: 15 blocks, 7 inputs, 2 outputs"
+    ],
+    [
+      1.718417250085622,
+      "compact checked controller 22580 boundary: 15 blocks, 6 inputs, 2 outputs"
+    ],
+    [
+      1.7185339592397213,
+      "compact checked controller 44070 boundary: 34 blocks, 8 inputs, 5 outputs"
+    ],
+    [
+      1.7185403341427445,
+      "compact checked controller 44405 boundary: 34 blocks, 8 inputs, 5 outputs"
+    ],
+    [
+      1.7185914171859622,
+      "compact checked controller 46040 boundary: 34 blocks, 8 inputs, 5 outputs"
+    ],
+    [
+      1.7185967089608312,
+      "compact checked controller 46259 boundary: 34 blocks, 8 inputs, 5 outputs"
+    ],
+    [
+      1.719401584006846,
+      "compact checked layout_continuation 8884 prepared local IR"
+    ],
+    [
+      1.719686749856919,
+      "compact checked layout_continuation 8884 324 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.7199115422554314,
+      "compact checked layout_continuation 9112 prepared local IR"
+    ],
+    [
+      1.7201194171793759,
+      "compact checked layout_continuation 9112 324 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.7203427921049297,
+      "compact checked layout_continuation 9506 prepared local IR"
+    ],
+    [
+      1.7205491671338677,
+      "compact checked layout_continuation 9506 316 bytes, 10 arguments, 48 frame bytes"
+    ],
+    [
+      1.7207672093063593,
+      "compact checked layout_continuation 9562 prepared local IR"
+    ],
+    [
+      1.7209594999440014,
+      "compact checked layout_continuation 9562 320 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.7211773749440908,
+      "compact checked layout_continuation 10015 prepared local IR"
+    ],
+    [
+      1.7213671249337494,
+      "compact checked layout_continuation 10015 320 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.7215826250612736,
+      "compact checked layout_continuation 10073 prepared local IR"
+    ],
+    [
+      1.721764167305082,
+      "compact checked layout_continuation 10073 320 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.7219748748466372,
+      "compact checked layout_continuation 18836 prepared local IR"
+    ],
+    [
+      1.7221622918732464,
+      "compact checked layout_continuation 18836 324 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.7223729998804629,
+      "compact checked layout_continuation 19604 prepared local IR"
+    ],
+    [
+      1.7225626250728965,
+      "compact checked layout_continuation 19604 312 bytes, 6 arguments, 48 frame bytes"
+    ],
+    [
+      1.7227627919055521,
+      "compact checked layout_continuation 20752 prepared local IR"
+    ],
+    [
+      1.7229630420915782,
+      "compact checked layout_continuation 20752 320 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.7231627092696726,
+      "compact checked layout_continuation 21031 prepared local IR"
+    ],
+    [
+      1.7233372922055423,
+      "compact checked layout_continuation 21031 296 bytes, 6 arguments, 48 frame bytes"
+    ],
+    [
+      1.7235397920012474,
+      "compact checked layout_continuation 22297 prepared local IR"
+    ],
+    [
+      1.7237097499892116,
+      "compact checked layout_continuation 22297 320 bytes, 7 arguments, 48 frame bytes"
+    ],
+    [
+      1.723906250204891,
+      "compact checked layout_continuation 22580 prepared local IR"
+    ],
+    [
+      1.7240778752602637,
+      "compact checked layout_continuation 22580 296 bytes, 6 arguments, 48 frame bytes"
+    ],
+    [
+      1.7242931672371924,
+      "compact checked layout_continuation 44070 prepared local IR"
+    ],
+    [
+      1.7246999591588974,
+      "compact checked layout_continuation 44070 648 bytes, 8 arguments, 80 frame bytes"
+    ],
+    [
+      1.724906750023365,
+      "compact checked layout_continuation 44405 prepared local IR"
+    ],
+    [
+      1.7252795002423227,
+      "compact checked layout_continuation 44405 648 bytes, 8 arguments, 80 frame bytes"
+    ],
+    [
+      1.7254876671358943,
+      "compact checked layout_continuation 46040 prepared local IR"
+    ],
+    [
+      1.725859375204891,
+      "compact checked layout_continuation 46040 648 bytes, 8 arguments, 80 frame bytes"
+    ],
+    [
+      1.726063875015825,
+      "compact checked layout_continuation 46259 prepared local IR"
+    ],
+    [
+      1.7264261250384152,
+      "compact checked layout_continuation 46259 648 bytes, 8 arguments, 80 frame bytes"
+    ],
+    [
+      1.7374877091497183,
+      "compact root proved carries: 26"
+    ],
+    [
+      1.808305541984737,
+      "compact root range proofs: 190 unsigned, 0 repeated, 6 windows, 145 reads, 0 spans, 0 packed"
+    ],
+    [
+      1.9052015002816916,
+      "compact root flow proofs: 5 equal arguments, 0 loop edges, 18 identity routes, 0 current predicates"
+    ],
+    [
+      1.9402464590966702,
+      "compact root literal edge arguments: 208 definitions, 1033 parameters removed"
+    ],
+    [
+      1.9526734589599073,
+      "compact parallel join arguments coalesced: 145"
+    ],
+    [
+      1.9700508750975132,
+      "compact positive backings: 31, owner checks proved: 32"
+    ],
+    [
+      1.974549958948046,
+      "compact root owner retirement calls trimmed: 70"
+    ],
+    [
+      1.9791388749144971,
+      "compact root paired words: 202"
+    ],
+    [
+      1.9853315842337906,
+      "compact static error returns shared: 177"
+    ],
+    [
+      1.985480791889131,
+      "compact-stage: machine code"
+    ],
+    [
+      2.2048230841755867,
+      "compact native inline projection: 52072 -> 52008 bytes"
+    ],
+    [
+      2.204826459288597,
+      "compact-stage: machine code complete"
+    ]
+  ]
+}
