@@ -1,0 +1,1723 @@
+{
+  "plan_sha256": "36dd2d155cc1d93e5aea001b709525c193f771012040ef930008fdaa757dfa6e",
+  "median_samples": {
+    "libdeflate": {
+      "independent validation": 200.5,
+      "libdeflate compression": 1677.0,
+      "other worker and idle": 402.5
+    },
+    "maintained": {
+      "checked encoder and runtime": 1058.5,
+      "independent validation": 332.0,
+      "match collection": 196.0,
+      "ordered scorer": 171.0,
+      "other numeric phase": 424.0,
+      "other worker and idle": 101.5
+    },
+    "bottom-tested": {
+      "checked encoder and runtime": 1049.5,
+      "independent validation": 359.0,
+      "match collection": 213.0,
+      "ordered scorer": 153.0,
+      "other numeric phase": 378.0,
+      "other worker and idle": 129.5
+    },
+    "historical": {
+      "checked encoder and runtime": 1615.5,
+      "independent validation": 238.0,
+      "match collection": 154.0,
+      "ordered scorer": 176.0,
+      "other worker and idle": 102.0
+    }
+  },
+  "observations": [
+    {
+      "role": "libdeflate",
+      "raw_sha256": "d82b3cf7e5b62040b9a838506e3ebf7306c27d53e33228dc761a4f8ece8c550a",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "reference_capacity": 325,
+          "runtime_input": true,
+          "sample": 0,
+          "seconds": 2.8292e-05,
+          "version": "1.26",
+          "warmup": true
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "reference_capacity": 325,
+          "runtime_input": true,
+          "sample": 1,
+          "seconds": 2.7458e-05,
+          "version": "1.26",
+          "warmup": false
+        }
+      ],
+      "sample_counts": {
+        "libdeflate compression": 1697,
+        "other worker and idle": 394,
+        "independent validation": 188
+      },
+      "leaves": [
+        [
+          "libdeflate compression",
+          "deflate_make_huffman_code",
+          573
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset_pattern16",
+          477
+        ],
+        [
+          "other worker and idle",
+          "deflate_make_huffman_code",
+          260
+        ],
+        [
+          "libdeflate compression",
+          "deflate_compress_near_optimal",
+          212
+        ],
+        [
+          "libdeflate compression",
+          "deflate_optimize_and_flush_block",
+          162
+        ],
+        [
+          "libdeflate compression",
+          "deflate_find_min_cost_path",
+          146
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          145
+        ],
+        [
+          "libdeflate compression",
+          "deflate_precompute_huffman_header",
+          44
+        ],
+        [
+          "other worker and idle",
+          "libdeflate_alloc_compressor_ex",
+          40
+        ],
+        [
+          "libdeflate compression",
+          "deflate_flush_block",
+          29
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset",
+          22
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memmove",
+          19
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          13
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueE6insertCsifA6KkFEdIB_17libdeflate_worker",
+          12
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          10
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          10
+        ],
+        [
+          "other worker and idle",
+          "mi_segment_span_allocate",
+          9
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          8
+        ],
+        [
+          "other worker and idle",
+          "mach_absolute_time",
+          6
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          6
+        ],
+        [
+          "independent validation",
+          "_platform_memset_pattern16",
+          5
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECsifA6KkFEdIB_17libdeflate_worker",
+          5
+        ],
+        [
+          "libdeflate compression",
+          "deflate_compute_true_cost",
+          4
+        ],
+        [
+          "other worker and idle",
+          "_RNCINvCsifA6KkFEdIB_17libdeflate_worker3runNtNtNtCsgirOGyZpP7g_3std2io5stdio9StdinLockEs0_0B4_",
+          4
+        ],
+        [
+          "other worker and idle",
+          "_tlv_get_addr",
+          4
+        ],
+        [
+          "libdeflate compression",
+          "deflate_near_optimal_merge_stats",
+          3
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          3
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          3
+        ],
+        [
+          "independent validation",
+          "_mi_heap_realloc_zero",
+          3
+        ],
+        [
+          "other worker and idle",
+          "DYLD-STUB$$memcmp",
+          3
+        ]
+      ]
+    },
+    {
+      "role": "maintained",
+      "raw_sha256": "623471fef2050a4cde047bd05c7c046cc5698c9ef16d22d950eb79797f00b093",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 0,
+          "seconds": 3.1667e-05,
+          "warmup": true,
+          "zeroed_bytes": 880300
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 1,
+          "seconds": 2.9208e-05,
+          "warmup": false,
+          "zeroed_bytes": 880300
+        }
+      ],
+      "sample_counts": {
+        "checked encoder and runtime": 1064,
+        "match collection": 214,
+        "ordered scorer": 170,
+        "other numeric phase": 462,
+        "independent validation": 298,
+        "other worker and idle": 80
+      },
+      "leaves": [
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          545
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          214
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          207
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          201
+        ],
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth",
+          170
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          153
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          131
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          107
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          90
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          63
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          33
+        ],
+        [
+          "checked encoder and runtime",
+          "_tlv_get_addr",
+          24
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          24
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          23
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          23
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          22
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          19
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          18
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          17
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          15
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3956_vector",
+          10
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_unsigned_dot_product",
+          9
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4799",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          8
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_find_page",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_allocate_backing",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "__mmap",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_release_two",
+          6
+        ],
+        [
+          "other worker and idle",
+          "_tlv_get_addr",
+          6
+        ]
+      ]
+    },
+    {
+      "role": "bottom-tested",
+      "raw_sha256": "c9e157c9e92bbe4d98fa2c7aa577eb96abe4d940c9f2eeb34a19bfacedde7d68",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 0,
+          "seconds": 3.2458e-05,
+          "warmup": true,
+          "zeroed_bytes": 880300
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 1,
+          "seconds": 2.95e-05,
+          "warmup": false,
+          "zeroed_bytes": 880300
+        }
+      ],
+      "sample_counts": {
+        "checked encoder and runtime": 1048,
+        "match collection": 221,
+        "ordered scorer": 162,
+        "other numeric phase": 380,
+        "independent validation": 350,
+        "other worker and idle": 122
+      },
+      "leaves": [
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          455
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          299
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          251
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          221
+        ],
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth",
+          162
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          122
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          113
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          93
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          73
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          62
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          30
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          24
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          23
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          22
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          20
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          17
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          17
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          16
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4173",
+          16
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          16
+        ],
+        [
+          "checked encoder and runtime",
+          "__mmap",
+          13
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          13
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          11
+        ],
+        [
+          "checked encoder and runtime",
+          "_tlv_get_addr",
+          10
+        ],
+        [
+          "other worker and idle",
+          "_RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_",
+          9
+        ],
+        [
+          "checked encoder and runtime",
+          "_mi_malloc_generic",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_RNvMs6_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE12insert_entryCs2fnfepAsUKT_11mech_worker",
+          8
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          8
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3956_vector",
+          7
+        ]
+      ]
+    },
+    {
+      "role": "historical",
+      "raw_sha256": "d5da5cdb6560ea627103eba4d49c8159d714ff237a3518eed3f41a7cd8c1e93a",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 0,
+          "seconds": 4.4584e-05,
+          "warmup": true,
+          "zeroed_bytes": 880300
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 1,
+          "seconds": 2.9333e-05,
+          "warmup": false,
+          "zeroed_bytes": 880300
+        }
+      ],
+      "sample_counts": {
+        "checked encoder and runtime": 1633,
+        "ordered scorer": 175,
+        "match collection": 142,
+        "independent validation": 235,
+        "other worker and idle": 100
+      },
+      "leaves": [
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          771
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          618
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          176
+        ],
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth",
+          175
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          142
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          28
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          26
+        ],
+        [
+          "checked encoder and runtime",
+          "_tlv_get_addr",
+          25
+        ],
+        [
+          "checked encoder and runtime",
+          "mach_absolute_time",
+          24
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          23
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          17
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          16
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_allocate",
+          14
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          14
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          13
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          13
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_release_owner",
+          11
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          10
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          9
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_RNvMs6_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE12insert_entryCs2fnfepAsUKT_11mech_worker",
+          8
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_malloc",
+          7
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_free",
+          6
+        ],
+        [
+          "other worker and idle",
+          "mach_absolute_time",
+          6
+        ],
+        [
+          "other worker and idle",
+          "_RNvCs2fnfepAsUKT_11mech_worker4main",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_segment_span_free",
+          5
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          5
+        ],
+        [
+          "independent validation",
+          "_mi_heap_realloc_zero",
+          5
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          5
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          5
+        ]
+      ]
+    },
+    {
+      "role": "historical",
+      "raw_sha256": "f067588dc0789597e165266e08656732fc8854cd8b184219091d8332c62d7cfe",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 0,
+          "seconds": 3.0792e-05,
+          "warmup": true,
+          "zeroed_bytes": 880300
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 1,
+          "seconds": 2.4625e-05,
+          "warmup": false,
+          "zeroed_bytes": 880300
+        }
+      ],
+      "sample_counts": {
+        "checked encoder and runtime": 1598,
+        "ordered scorer": 177,
+        "match collection": 166,
+        "independent validation": 241,
+        "other worker and idle": 104
+      },
+      "leaves": [
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          743
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          658
+        ],
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth",
+          177
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          166
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          162
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          27
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          23
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          21
+        ],
+        [
+          "checked encoder and runtime",
+          "mach_absolute_time",
+          20
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          20
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          20
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          19
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          19
+        ],
+        [
+          "checked encoder and runtime",
+          "_tlv_get_addr",
+          15
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          15
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          12
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          12
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_allocate",
+          10
+        ],
+        [
+          "other worker and idle",
+          "_RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_",
+          10
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_find_page",
+          9
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_release_owner",
+          9
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          9
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          9
+        ],
+        [
+          "checked encoder and runtime",
+          "_mi_malloc_generic",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          7
+        ],
+        [
+          "other worker and idle",
+          "_tlv_get_addr",
+          6
+        ],
+        [
+          "other worker and idle",
+          "_RNvXs_NtNtCseHa8un3MfdE_10serde_json5value5indexeNtB4_5Index10index_into",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_free",
+          5
+        ],
+        [
+          "other worker and idle",
+          "DYLD-STUB$$memcmp",
+          5
+        ],
+        [
+          "other worker and idle",
+          "_RNvMs6_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE12insert_entryCs2fnfepAsUKT_11mech_worker",
+          5
+        ]
+      ]
+    },
+    {
+      "role": "bottom-tested",
+      "raw_sha256": "d0c24e319b915182cc1d2d7ff3034f34a3f92d2a2e4a877cbaba15ec5ee0bdad",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 0,
+          "seconds": 3.1333e-05,
+          "warmup": true,
+          "zeroed_bytes": 880300
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 1,
+          "seconds": 2.9333e-05,
+          "warmup": false,
+          "zeroed_bytes": 880300
+        }
+      ],
+      "sample_counts": {
+        "checked encoder and runtime": 1051,
+        "match collection": 205,
+        "ordered scorer": 144,
+        "other numeric phase": 376,
+        "independent validation": 368,
+        "other worker and idle": 137
+      },
+      "leaves": [
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          445
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          269
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          266
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          205
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          146
+        ],
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth",
+          144
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          140
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          109
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          67
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          36
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          34
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          29
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          29
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          17
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          17
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          17
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          16
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          16
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          16
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          15
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          15
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          12
+        ],
+        [
+          "checked encoder and runtime",
+          "mach_absolute_time",
+          11
+        ],
+        [
+          "checked encoder and runtime",
+          "__mmap",
+          11
+        ],
+        [
+          "checked encoder and runtime",
+          "_tlv_get_addr",
+          10
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          10
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4173",
+          9
+        ],
+        [
+          "other worker and idle",
+          "_tlv_get_addr",
+          9
+        ],
+        [
+          "other worker and idle",
+          "_RNvCs2fnfepAsUKT_11mech_worker4main",
+          9
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_release_four",
+          6
+        ]
+      ]
+    },
+    {
+      "role": "maintained",
+      "raw_sha256": "df126485e26d1748b334485bc945b773bb0f1409e0176b6bf35043d54f3f3ec0",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 0,
+          "seconds": 3.1333e-05,
+          "warmup": true,
+          "zeroed_bytes": 880300
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 5644,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 59,
+          "peak_private_payload_bytes": 872016,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "requested_payload_bytes": 894349,
+          "sample": 1,
+          "seconds": 2.9291e-05,
+          "warmup": false,
+          "zeroed_bytes": 880300
+        }
+      ],
+      "sample_counts": {
+        "checked encoder and runtime": 1053,
+        "match collection": 178,
+        "ordered scorer": 172,
+        "other numeric phase": 386,
+        "independent validation": 366,
+        "other worker and idle": 123
+      },
+      "leaves": [
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          516
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          270
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          199
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          178
+        ],
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth",
+          172
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          138
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          123
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          106
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          75
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          34
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          31
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          28
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          26
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          25
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          24
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          21
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          21
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          19
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          17
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          14
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4173",
+          12
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          12
+        ],
+        [
+          "checked encoder and runtime",
+          "mach_absolute_time",
+          11
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3956_vector",
+          11
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_unsigned_dot_product",
+          11
+        ],
+        [
+          "other worker and idle",
+          "_tlv_get_addr",
+          11
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          10
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_allocate_backing",
+          9
+        ],
+        [
+          "checked encoder and runtime",
+          "_tlv_get_addr",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          8
+        ]
+      ]
+    },
+    {
+      "role": "libdeflate",
+      "raw_sha256": "2c9b6247720323a9a0c249567c11c35798ce88b00e5a3fbfe8b5aaf164265add",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 7,
+          "reference_capacity": 325,
+          "runtime_input": true,
+          "sample": 0,
+          "seconds": 3.7542e-05,
+          "version": "1.26",
+          "warmup": true
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 325,
+          "case": "320-overlap",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 320,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 7,
+          "reference_capacity": 325,
+          "runtime_input": true,
+          "sample": 1,
+          "seconds": 3.3583e-05,
+          "version": "1.26",
+          "warmup": false
+        }
+      ],
+      "sample_counts": {
+        "libdeflate compression": 1657,
+        "other worker and idle": 411,
+        "independent validation": 213
+      },
+      "leaves": [
+        [
+          "libdeflate compression",
+          "deflate_make_huffman_code",
+          628
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset_pattern16",
+          490
+        ],
+        [
+          "other worker and idle",
+          "deflate_make_huffman_code",
+          263
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          154
+        ],
+        [
+          "libdeflate compression",
+          "deflate_compress_near_optimal",
+          153
+        ],
+        [
+          "libdeflate compression",
+          "deflate_optimize_and_flush_block",
+          138
+        ],
+        [
+          "libdeflate compression",
+          "deflate_find_min_cost_path",
+          133
+        ],
+        [
+          "libdeflate compression",
+          "deflate_precompute_huffman_header",
+          54
+        ],
+        [
+          "other worker and idle",
+          "libdeflate_alloc_compressor_ex",
+          41
+        ],
+        [
+          "libdeflate compression",
+          "deflate_flush_block",
+          25
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          20
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueE6insertCsifA6KkFEdIB_17libdeflate_worker",
+          16
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset",
+          13
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          12
+        ],
+        [
+          "other worker and idle",
+          "mach_absolute_time",
+          11
+        ],
+        [
+          "other worker and idle",
+          "mi_segment_span_allocate",
+          10
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          10
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          9
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memmove",
+          8
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          8
+        ],
+        [
+          "libdeflate compression",
+          "deflate_compute_true_cost",
+          7
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          7
+        ],
+        [
+          "other worker and idle",
+          "_tlv_get_addr",
+          6
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECsifA6KkFEdIB_17libdeflate_worker",
+          5
+        ],
+        [
+          "other worker and idle",
+          "_RNvMs6_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueE12insert_entryCsifA6KkFEdIB_17libdeflate_worker",
+          5
+        ],
+        [
+          "other worker and idle",
+          "_RNvCsifA6KkFEdIB_17libdeflate_worker4main",
+          5
+        ],
+        [
+          "libdeflate compression",
+          "deflate_near_optimal_merge_stats",
+          4
+        ],
+        [
+          "independent validation",
+          "_platform_memset_pattern16",
+          4
+        ],
+        [
+          "independent validation",
+          "_mi_heap_realloc_zero",
+          4
+        ],
+        [
+          "other worker and idle",
+          "DYLD-STUB$$memcmp",
+          4
+        ]
+      ]
+    }
+  ]
+}

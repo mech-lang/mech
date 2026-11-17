@@ -1,0 +1,60 @@
+{
+  "source_pin": "8fb7fa9683a3034866104db196ca5a72d7d312da",
+  "case": {
+    "name": "320-overlap",
+    "input": "/private/tmp/mech-private-store-round228-20261109/fixtures/320-overlap/input",
+    "prefix": "/private/tmp/mech-private-store-round228-20261109/fixtures/320-overlap/prefix",
+    "expected": "/private/tmp/mech-private-store-round228-20261109/fixtures/320-overlap/expected",
+    "capacity": 325,
+    "input_bytes": 320,
+    "prefix_bytes": 0,
+    "raw_bytes": 7,
+    "input_sha256": "fee1a848cb6763c3088a0e523541b46ac171af2677b062178a9116c4612b352f",
+    "expected_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+    "origin": "maintained complete-stream fixture",
+    "reference": "/private/tmp/mech-compression-matrix-round139-20261104/fixtures/320-overlap/reference",
+    "reference_sha256": "6727dcb941792672107547d9ed2ebd48ff0483a687fc21302f575307b4c21e83"
+  },
+  "sampling_interval_ms": 1,
+  "sample_duration_seconds": 3,
+  "schedule": [
+    "libdeflate",
+    "maintained",
+    "bottom-tested",
+    "historical",
+    "historical",
+    "bottom-tested",
+    "maintained",
+    "libdeflate"
+  ],
+  "script_sha256": "258bfbc344d45d6d92dd4c9c36508dc8b451fd0024af6ffdb926f919e5f1e768",
+  "base_script_sha256": "f068799bb1097da187f0852e2722d2281058a1913af268bd47c06a65f0a3dfea",
+  "fixture_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+  "actor_commands": {
+    "libdeflate": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "maintained": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "bottom-tested": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/bound/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/bound/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "historical": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/register-remat-and-compact-native/final-candidate/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/register-remat-and-compact-native/final-candidate/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ]
+  },
+  "actor_sha256": {
+    "libdeflate": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+    "maintained": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+    "bottom-tested": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c",
+    "historical": "1e06450a484acc42cc2a22c854dbf5d02393a4666ea94a0ad93aced7d84b479d"
+  }
+}
