@@ -37729,6 +37729,11 @@
       "bytes": 72716
     },
     {
+      "path": "vendor/cranelift-frontend/src/ssa.rs",
+      "sha256": "c6e146761f78faeeae93634299a75cac8b71532d8f74772b711a55f0e1250deb",
+      "bytes": 64796
+    },
+    {
       "path": "vendor/regalloc2/src/checker.rs",
       "sha256": "8318543ae6a8ce5d9f02466157361ecfad5c2d1ee77c1fa58ea766c7b7fe8b29",
       "bytes": 36294
