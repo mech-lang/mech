@@ -133,5 +133,17 @@
   "fresh_owner_counts_cleanup_object_sha256": "7f4eb5824b335f991d2a51be1d5277b9f04ac37992e679d42c413a5edeb24c02",
   "fresh_owner_counts_cleanup_metadata_sha256": "1246e2726abdd65eea62a9d02af8c2511f354b6b9e1436dc15ecc39f7f1eca78",
   "fresh_owner_counts_cold_tails_object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
-  "fresh_owner_counts_cold_tails_metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb"
+  "fresh_owner_counts_cold_tails_metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+  "fresh_owner_counts_cold_tails_paired_spills_profiles": [
+    {
+      "symbol": "mech_compact_numeric_475_vector",
+      "path": "profiles/mech_compact_numeric_475_vector-paired-spills.json"
+    },
+    {
+      "symbol": "mech_compact_numeric_3956_vector",
+      "path": "profiles/mech_compact_numeric_3956_vector.json"
+    }
+  ],
+  "fresh_owner_counts_cold_tails_paired_spills_object_sha256": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+  "fresh_owner_counts_cold_tails_paired_spills_metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab"
 }

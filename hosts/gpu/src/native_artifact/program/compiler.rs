@@ -878,6 +878,16 @@ fn emit_compact_closed_object(
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     eprintln!("compact-stage: native module");
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
+    if cfg!(target_arch = "aarch64")
+        && !observe
+        && llvm_root.is_none()
+        && let Some(mode) = std::env::var_os("MECH_COMPACT_PAIR_REGISTER_SPILLS")
+    {
+        flags.push(("enable_regalloc_spill_pairs", "true"));
+        if mode == "checked" {
+            flags.push(("regalloc_checker", "true"));
+        }
+    }
     let alignment = std::env::var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2").ok();
     if cfg!(target_arch = "aarch64")
         && !observe

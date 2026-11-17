@@ -11,6 +11,7 @@ parser.add_argument(
     choices=[
         'baseline', 'cold-tails', 'owner-ranges', 'fresh-owner-counts',
         'fresh-owner-counts-cleanup', 'fresh-owner-counts-cold-tails',
+        'fresh-owner-counts-cold-tails-paired-spills',
     ],
     default='baseline',
 )
@@ -71,17 +72,22 @@ phases['frontend']=run([frontend,here/'program.mec',out/'frontend','frontend'],o
 bytecode=out/'frontend/program.mecb'
 assert sha(bytecode)==recipe['bytecode_sha256'],'changed canonical bytecode; inspect before comparing native output'
 flags=dict(recipe['flags'])
-flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in recipe['profiles'])
+variant_key=args.variant.replace('-','_')
+paired_spills=args.variant=='fresh-owner-counts-cold-tails-paired-spills'
+profiles=recipe.get(variant_key+'_profiles',recipe['profiles'])
+flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in profiles)
 if args.preselect_root_inlining:
     flags['MECH_COMPACT_INLINE_SINGLE_CALLS'] = 'preselected'
 if args.reuse_equivalent_vector_ir:
     flags['MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR'] = '1'
-if args.variant in ('cold-tails', 'fresh-owner-counts-cold-tails'):
+if args.variant in ('cold-tails', 'fresh-owner-counts-cold-tails') or paired_spills:
     flags['MECH_COMPACT_SHARE_COLD_TAILS'] = '1'
 if args.variant=='owner-ranges':flags['MECH_COMPACT_PROVE_BACKING_OWNERS']='ranges'
-if args.variant in ('fresh-owner-counts', 'fresh-owner-counts-cleanup', 'fresh-owner-counts-cold-tails'):
+if args.variant in ('fresh-owner-counts', 'fresh-owner-counts-cleanup', 'fresh-owner-counts-cold-tails') or paired_spills:
     flags['MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS'] = '1'
 if args.variant=='fresh-owner-counts-cleanup':flags.update(MECH_COMPACT_PROVE_BACKING_OWNERS='all',MECH_COMPACT_FINISH_CFG_CLEANUP='1')
+if paired_spills:
+    flags['MECH_COMPACT_PAIR_REGISTER_SPILLS'] = '1'
 assert not any('LLVM' in key for key in flags)
 phases['native']=run([emitter,bytecode,out/'native'],out/'native.log',env|flags|{'PATH':'/usr/bin:/bin'})
 object_file=out/'native/program.o';data=object_file.read_bytes();assert struct.unpack_from('<I',data)[0]==0xfeedfacf
@@ -93,7 +99,6 @@ for _ in range(struct.unpack_from('<I',data,16)[0]):
             at=offset+72+section*80
             if data[at:at+16].rstrip(b'\0')==b'__text':text_bytes=struct.unpack_from('<Q',data,at+40)[0]
     offset+=size
-variant_key=args.variant.replace('-','_')
 expected=recipe[variant_key+'_object_sha256']
 expected_metadata=recipe[variant_key+'_metadata_sha256']
 actual_metadata=sha(out/'native/metadata.json')
