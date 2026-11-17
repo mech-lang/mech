@@ -18709,6 +18709,11 @@
       "bytes": 15266
     },
     {
+      "path": "vendor/cranelift-codegen/src/verifier/mod.rs",
+      "sha256": "9c12e88bf4cbbc00e764b1c5826a1ac5ba9e0095e45cea29ee0c235addddd89d",
+      "bytes": 82733
+    },
+    {
       "path": "vendor/cranelift-codegen-meta/src/pulley.rs",
       "sha256": "c6c3f44d874c2c0d2fa4d0d35e5763173a931dfaf7d7daf92b7e658c956adab4",
       "bytes": 14129
