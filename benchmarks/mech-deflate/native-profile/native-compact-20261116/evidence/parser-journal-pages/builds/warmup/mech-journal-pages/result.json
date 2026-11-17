@@ -1,0 +1,14 @@
+{
+  "actor": "mech-journal-pages",
+  "seconds": {
+    "frontend": 4.997060875408351,
+    "native": 2.230191582813859,
+    "link": 0.040953374933451414,
+    "total": 7.268836666364223,
+    "parse": 2.961629916
+  },
+  "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+  "encoder_bytes": 160136,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/mech-journal-pages/compressor",
+  "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+}

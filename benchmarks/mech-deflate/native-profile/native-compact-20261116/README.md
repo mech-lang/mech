@@ -23,6 +23,50 @@ The code denominators are 57,696 B for Roc and **37,080 B for libdeflate**.
 Older receipts used a different 41,112-byte C object; their C size ratios must not
 be substituted for this matched encoder comparison.
 
+## Parser journal pages
+
+The parser groups events into 32-entry pages and borrows each page during tree
+construction. The sink hashes contiguous token bytes while charging the original
+work allowance per byte. Cached subtrees skip an event map that only the final
+diagnostic sink needs. A boundary test resumes within multibyte characters across
+source pieces and verifies the same work, token hash, and node identities.
+
+Six balanced parser-only pairs on the pinned 2,719-line source move the median
+from **3.51713 to 2.92567 seconds**, a **16.82% reduction**. Peak process RSS
+falls from 130,539,520 to 115,974,144 bytes. The complete syntax tree and IDs,
+3,967,302 parser steps, and 718,353 events match in all twelve trials. All **531
+syntax unit tests** pass, including the existing streaming and limit tests.
+The earlier page-size screen compares four, eight, sixteen, and thirty-two
+entries with the same batched implementation.
+
+| Matched Apple M1 builds | Source to executable | Encoder text |
+| --- | ---: | ---: |
+| Previous Mech frontend | 6.30298 s | 72,520 B |
+| Mech with journal pages | 5.65845 s | 72,520 B |
+| Roc | 2.98664 s | 57,696 B |
+| libdeflate | 0.48728 s | 37,080 B |
+
+The complete Mech build takes **10.23% less time**, **1.89458× Roc** and
+**11.61221× libdeflate**. Parsing accounts for 2.930 s of the new build, with
+3.383 s for the whole frontend, 2.232 s for native emission, and 0.040 s for
+final linking. Each actor occupies every position of four timed orders, with
+compilers, runtimes, and adapters prebuilt. Warmups and separate instrumented
+builds are excluded from these medians.
+
+All twelve Mech builds produce the same bytecode, object, metadata, and
+executable, including the warmups and profiles. Both build variants pass 162
+exact-output, alias, and inflation checks. The default and fresh-owner rebuild
+commands also reproduce their respective objects and metadata exactly and pass
+162 checks each.
+
+The retained worker and encoder object are reproduced byte for byte. That keeps
+the earlier 81/81 Roc and 61/81 libdeflate results attached to the same benchmark
+binary. [Parser and build trials, test results, and exact rebuilds](evidence/parser-journal-pages/report.json)
+are included for review.
+
+The native policy workflow keeps twelve minutes of scheduling headroom after
+adding the fresh owner test. The focused workflow contract passes locally.
+
 ## Fresh owner reference counts
 
 The optional compiler pass folds 20 reference-count loads in the compact root.

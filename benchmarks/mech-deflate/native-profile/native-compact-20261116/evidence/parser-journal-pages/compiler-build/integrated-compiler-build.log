@@ -1,0 +1,7 @@
+   Compiling mech-syntax v0.3.5 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax)
+   Compiling mech-engine v0.3.5 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/engine)
+   Compiling mech-compute v0.3.5 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/compute)
+   Compiling mech-gpu v0.3.5 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/stdlib)
+   Compiling mech-compression-native-profile v0.0.0 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile)
+    Finished `release` profile [optimized] target(s) in 10m 02s
