@@ -45,13 +45,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "3fa60cc7a48964b340fdbd8a16da15d5014562e1f96d1ca13ecf088b50e087c8",
-      "bytes": 25152
+      "sha256": "e379ffe93ff34a4e75f2981e7f80934c109fbd772758e532b37258b9d9220dee",
+      "bytes": 26534
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "f9956cf71c3367d475b33428b357de9ba2637e09c20e2dfc49c41222a9359f07",
-      "bytes": 12702
+      "sha256": "7f1e764a0c5ca83e720992ad4e8637ea064638c22d0f8921ac9ae96f644e61c4",
+      "bytes": 14084
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/baseline/checked-failures.json",
@@ -3902,6 +3902,221 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/continuation-widths/width-6-owners-cold/runs/focus-reverse/summary.json",
       "sha256": "57fcd7214878ae813dab0040120d233f2a6cfa6b492f5ed82a13cba399eb6459",
       "bytes": 12895
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/diagnostic-checks.json",
+      "sha256": "da8d9b4ecd60c0e012343792a620fc8293b7bc5f913dd855d4fc6f2b88f7e69d",
+      "bytes": 6002
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/diagnostic-vcode.asm.gz",
+      "sha256": "3632c197ae778d13d0c3060f528e9e0e6bdb0fbcf8290f6a11de652466c335f4",
+      "bytes": 4366
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/diagnostic-vcode.stderr.gz",
+      "sha256": "bac23a0f8dcc59071f3bab897e2f8e11e7439eec210750ce16af863b0ac3be37",
+      "bytes": 1928
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/emitter-build.log.gz",
+      "sha256": "f301bf5af492c5407a26b7dd6b4e70331307f48c11754a8aa2014fbb3d317126",
+      "bytes": 12940
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/one-worker.stderr.gz",
+      "sha256": "60a4e12bb6aefd5867cfaa725e43d1d6c0a629dbe27e130533cbd64ae9fd7748",
+      "bytes": 1965
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/retained-control/emit.stderr.gz",
+      "sha256": "45a1f5a995eb28c6738fc7e485e4910fc7cca0cc4a2f59456eb411738639fcbb",
+      "bytes": 1919
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/retained-control/exact-linked-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/retained-control/runtime.json",
+      "sha256": "70b25d1207d52ed256d73fd87d6438c80acc287d2c9243c157cb7bf880756f2e",
+      "bytes": 8976
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/retained-reuse/emit.stderr.gz",
+      "sha256": "64d7161666bed0c228748dcd77eae4bbd50453020fa6474795f11c94f6f556d5",
+      "bytes": 1965
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/retained-reuse/exact-linked-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/retained-reuse/runtime.json",
+      "sha256": "7059230e6ec105b55baeb236063677d2ba15326aa3ca8a7e3b0fcc5af87d8a7a",
+      "bytes": 9022
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/smaller-reuse/emit.stderr.gz",
+      "sha256": "0761143d712cc87f3f5d1c2e8fa69d2b2bd814f09a80ab7b31604911ad8c34da",
+      "bytes": 1989
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/smaller-reuse/exact-linked-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/pinned-workers/smaller-reuse/runtime.json",
+      "sha256": "9fd6ed5bb45177e653447856172cb9ea9a7f1e8bb29a9ada8185cf27b4a08379",
+      "bytes": 9110
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-control/complete-build-checked-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-control/frontend.json",
+      "sha256": "344f6c05e11ebc83ef06347878ddf4ac701bf99965453bcbb508130e145a54cf",
+      "bytes": 1044
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-control/native.stages.json",
+      "sha256": "5bd355f3036ee12ec740ccb2aa32071141d1635086709ce83c8b06ac3e15c92c",
+      "bytes": 3921
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-control/native.stderr.gz",
+      "sha256": "45a1f5a995eb28c6738fc7e485e4910fc7cca0cc4a2f59456eb411738639fcbb",
+      "bytes": 1919
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-reuse/complete-build-checked-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-reuse/frontend.json",
+      "sha256": "c105f1377052c1f574fe2c48c3c44aa1c03eea95651921e5182b6eaf70cb18f0",
+      "bytes": 1038
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-reuse/native.stages.json",
+      "sha256": "971fddbceb8abad21a5027d6c781f142fa3a0ae1b919fdc3f442d33d16f4ec6e",
+      "bytes": 3922
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-retained-reuse/native.stderr.gz",
+      "sha256": "64d7161666bed0c228748dcd77eae4bbd50453020fa6474795f11c94f6f556d5",
+      "bytes": 1965
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-control/complete-build-checked-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-control/frontend.json",
+      "sha256": "9e0963508d537b558143c973ac2b9055fdb0a490c3187a21369560e883072bf0",
+      "bytes": 1049
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-control/native.stages.json",
+      "sha256": "7efed79cbbf586e69d25e01ef365e1e8ca5aa5573a168e4d0a086ad4a8e87220",
+      "bytes": 3918
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-control/native.stderr.gz",
+      "sha256": "b8ebd3b49c08d82ef345f8c0b2c3e3fc4daf33b07b223b76a1efa84e7646a921",
+      "bytes": 1943
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-reuse/complete-build-checked-calls.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-reuse/frontend.json",
+      "sha256": "212b2002503ff8a2b3608ea7f6b1e612bae1ba1c4b36b41a3ec13f009c57c1d0",
+      "bytes": 1024
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-reuse/native.stages.json",
+      "sha256": "0ed12984c33c922cb00339f8dc33289d99e9b3eb1b29e245b3a6aa3dc6bda848",
+      "bytes": 3918
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/profiles/mech-smaller-reuse/native.stderr.gz",
+      "sha256": "0761143d712cc87f3f5d1c2e8fa69d2b2bd814f09a80ab7b31604911ad8c34da",
+      "bytes": 1989
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/recipe-cargo.log.gz",
+      "sha256": "18a26fc8c02e794c99b45e6000f87c1fd2c5444951bfd0ae88ee8e08df1bf276",
+      "bytes": 12976
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/recipe-checked-calls.json.gz",
+      "sha256": "870ad6e72f33c3a219d4f052100e530fcb434138e97ae7d674a2cb14c13d44be",
+      "bytes": 5104
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/recipe-emitter.log.gz",
+      "sha256": "6a7438fd862997e2517c7649226815077bae04884c207808327e146885e0deb2",
+      "bytes": 1955
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/recipe-rebuild.json",
+      "sha256": "521fe541f71ca37a623502e878da7e5dd871304359b7a1037d603fbd8789ef2e",
+      "bytes": 10835
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/report.json",
+      "sha256": "e987527a0840c792b84ab365847aef3accff0ef8313310e36c2c0b49833024b5",
+      "bytes": 5102
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/scripts-as-run/check-equivalent-vector-ir.py",
+      "sha256": "61de7966f992df62bfe285829b5c49821b420fa6ed5c31e7246f51081fc660b3",
+      "bytes": 3529
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/scripts-as-run/compare-builds.py",
+      "sha256": "a4be673db786c0b54fbbc35003a03b04e4035661ea1ca116becf9fa0dfb7de1e",
+      "bytes": 10733
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/scripts-as-run/compare-equivalent-vector-ir.py",
+      "sha256": "c61d4857e541aa17cb76c3426b5d6d453bd961a5fd5ab15d44e2c538c3c4144f",
+      "bytes": 7475
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/scripts-as-run/probe-literal-reuse.py",
+      "sha256": "4f8e82110a49a928ebff49470ae8ed522d63c16152e458bd34bfd6404f1a79ad",
+      "bytes": 6671
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/scripts-as-run/verify-worker.py",
+      "sha256": "0e0cdffbebe6b8b2295413e53be611351156e478d42e25c78e555b83b2a21e8d",
+      "bytes": 2361
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/serial-control.stderr.gz",
+      "sha256": "73e43c71a557bdd52ae99e5cd2cfc188edb06d42176ea6176b881dfdaf4d8b5e",
+      "bytes": 1885
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/serial-reuse.stderr.gz",
+      "sha256": "73e43c71a557bdd52ae99e5cd2cfc188edb06d42176ea6176b881dfdaf4d8b5e",
+      "bytes": 1885
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/timing.json",
+      "sha256": "c1c23f05c5953632d586962ed009c9d7a188faf459629c3f0dd40805cc262e8b",
+      "bytes": 691789
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/fresh-owner-counts/builds/order-1/libdeflate/commands.json",

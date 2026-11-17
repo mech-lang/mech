@@ -73,6 +73,31 @@ attribute input symbols and include compiler-generated instances in the object
 that publishes them. A minimal deployment interface still needs a separate
 measurement. [Link maps and file-byte census](evidence/linked-size-census/report.json)
 
+## Equivalent vector alternatives
+
+The native phase compiler can reuse a completed general body when its entire
+prepared function matches the vector variant. The comparison covers effects,
+source locations, external names, and layout hints. The vector keeps its own
+guard and cleanup metadata. Declarations are replayed in the original order,
+and disassembly requests still compile their requested body.
+
+On both encoders, seven of nine unused alternatives have identical prepared
+functions. The worker pool submits **23 → 16 jobs**, with two cleanup jobs in
+both runs. The other two unused alternatives have different prepared IR and
+still go through the existing backend comparison. The bytecode, complete
+objects and metadata, and both historical benchmark workers reproduce exactly.
+The historical runtime receipts record **81/81 Roc and 61/81 libdeflate** in
+both full orders.
+
+On Apple M1, eight matched native-only pairs move from
+**1.76341 to 1.76057 s**.
+Six balanced full-build orders move the smaller encoder from **4.76513 to
+4.76469 s**, or **1.592× Roc** and
+**9.909× libdeflate**. This is a measured
+reduction in backend work with essentially flat complete compilation time.
+Use `rebuild.py --compiler-opt-level 3 --reuse-equivalent-vector-ir` to reproduce
+the opt-in path. [Raw trials, controls, and rebuild receipts](evidence/equivalent-vector-ir/report.json)
+
 ## Batched block parameter cleanup
 
 Constant-phi, local-phi, and dead-value cleanup now reindex surviving block
