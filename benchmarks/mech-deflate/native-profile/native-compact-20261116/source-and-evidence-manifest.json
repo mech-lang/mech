@@ -34,6 +34,11 @@
       "bytes": 383
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/guard_state_tests.rs",
+      "sha256": "c865918f21a454cdfd4dbb7f092c1fc2c02efcba507cf622101e3d0e4de01807",
+      "bytes": 1097
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/.gitattributes",
       "sha256": "c59a8b0b4e794a18509fd25200a70a82a860cf1aa6deeab0087fd5c17b3cfaa9",
       "bytes": 206
