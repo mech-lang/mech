@@ -1,0 +1,133 @@
+{
+  "policy_version": 1,
+  "policy_sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984",
+  "compiler_parent": "0da34baad584c3365642cbd18441e200ab7cf2ca",
+  "objective": "encoder_text_bytes",
+  "environment_sha256": "3f1a048134f7e1389b9ed6ba2c4aca7120f6cda3c6ba253097b879ec99e784d0",
+  "contract_sha256": "83638c39d567afce5ea5604884c97cc15a398827b4779c38429334bc3c349d90",
+  "cases": [
+    "prefix-natural-65535",
+    "prefix-natural-65536",
+    "prefix-natural-65537",
+    "prefix-natural-262144",
+    "prefix-natural-8192",
+    "prefix-random-4096",
+    "prefix-random-1048576",
+    "seven-stored-prefix",
+    "random-64"
+  ],
+  "runs": [
+    {
+      "id": "aligned-register-spills-focus-residue-64-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "aligned-register-spills-focus-residue-64-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "aligned-register-spills-full",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "aligned-register-spills-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "artifacts": {
+    "mech-control": {
+      "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+      "runtime.json": "abc4ef1f4e4d8773b92719363f131fe1cce7be94eb905fdd3b3468a5ccf3c72e",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "mech-experiment": {
+      "program.o": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+      "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+      "mech-worker": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+      "runtime.json": "28c4d95a146e60b15a22b4ab54f4cdb3240c047204daf49d5a4f2f292b059273",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "roc": {
+      "worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+    },
+    "libdeflate": {
+      "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+    }
+  },
+  "compiler_emitter_sha256": "5eab2c492d46598819c2cc8253ca1b43823343b00241628dcdbd845dc5a0576f",
+  "diagnostic_worker_sha256": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+  "build_orders": [
+    [
+      "mech-control",
+      "mech-experiment",
+      "libdeflate",
+      "roc"
+    ],
+    [
+      "mech-experiment",
+      "roc",
+      "mech-control",
+      "libdeflate"
+    ],
+    [
+      "roc",
+      "libdeflate",
+      "mech-experiment",
+      "mech-control"
+    ],
+    [
+      "libdeflate",
+      "mech-control",
+      "roc",
+      "mech-experiment"
+    ],
+    [
+      "mech-control",
+      "mech-experiment",
+      "libdeflate",
+      "roc"
+    ],
+    [
+      "mech-experiment",
+      "roc",
+      "mech-control",
+      "libdeflate"
+    ],
+    [
+      "roc",
+      "libdeflate",
+      "mech-experiment",
+      "mech-control"
+    ],
+    [
+      "libdeflate",
+      "mech-control",
+      "roc",
+      "mech-experiment"
+    ]
+  ],
+  "conditional_repeatability": {
+    "trigger": "Unresolved per-case bound with all full individual peer wins preserved and no established regression",
+    "scope": "Every unresolved per-case bound, one distinct-file duplicate-control study",
+    "seed": 88161,
+    "repetitions_per_order": 64,
+    "batch_floor": 24
+  },
+  "max_peak_stack_bytes": 5296,
+  "worker_sha256": {
+    "mech-control": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+    "mech-experiment": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+    "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+    "libdeflate": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+  }
+}
