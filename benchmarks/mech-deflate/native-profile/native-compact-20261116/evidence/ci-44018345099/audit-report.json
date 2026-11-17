@@ -1,0 +1,1531 @@
+{
+  "head": "ddc26e24222f14229f4787f55d1d659a4482cddd",
+  "base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "hosted_job": {
+    "url": "https://github.com/mech-lang/mech/actions/runs/44018345099/job/133822073430",
+    "checkout_sha": "4dda85d9427cb978f672896cc10a9f7b2697e7f4",
+    "validation_kind": "exact-ref"
+  },
+  "local_audit_scope": {
+    "track": "All tracked Rust files selected by the checked-in gate; gate, mutation driver and allowlist exported unchanged. Audit input count includes three scripts and allowlist files.",
+    "rust_files": 2724,
+    "input_files": 2727,
+    "source": "ddc26e24222f14229f4787f55d1d659a4482cddd",
+    "census": "Diagnostic copy removes two early returns to count all findings. Its final pass string is unconditional and conveys no decision."
+  },
+  "result": "full_gate_failed_before_and_after_exact_path_patch",
+  "focus": {
+    "exact_paths_verified_with_unchanged_checker": 11,
+    "existing_mutation_fixtures": "passed"
+  },
+  "summary": {
+    "file_allowlist": {
+      "files": 182,
+      "status_against_base": {
+        "new": 11,
+        "unchanged": 159,
+        "modified": 12
+      },
+      "exact_path_patch_covers": 11
+    },
+    "global_policy": {
+      "files": 3,
+      "status_against_base": {
+        "new": 1,
+        "modified": 1,
+        "unchanged": 1
+      },
+      "exact_path_patch_covers": 0
+    }
+  },
+  "files": [
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/fresh-owner-counts/counts/matrix/matrix-worker.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "fa48dbfda2fc3fbeb46e5a1cada95b652025075e",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/owner-cleanup-full/matrix/matrix-worker.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "fa48dbfda2fc3fbeb46e5a1cada95b652025075e",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/owner-proof-runtime/owner-all-inline-4879/matrix/matrix-worker.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "fa48dbfda2fc3fbeb46e5a1cada95b652025075e",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/owner-proof-runtime/owner-ranges/matrix/matrix-worker.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "fa48dbfda2fc3fbeb46e5a1cada95b652025075e",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/pinned_allocator.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "51ecb2937657597d1b18a2cae88ddadb87cca64d",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/mod.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "fdbcd20a402b013321f6d7ec5df3eb6d8d7301ea",
+      "base_blob": null,
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/terminal_appends.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "91c922f7aae4cd9ef8454be998f8d7f0779091a9",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/zero_pages.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "7a0a1c0d1b15d4d4d57acc6430ade4163ba5ed3f",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/worker.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "ccc4b998fdef4a599154df226466c55870ad861b",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "benchmarks/related-post-gen/check-measurement.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "d6d6eb513b24eed405d86d11650af98fca574658",
+      "base_blob": "d6d6eb513b24eed405d86d11650af98fca574658",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/hosts/after-4.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "base_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/hosts/after-8.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "base_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/hosts/compact-4.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "base_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/hosts/compact-8.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "base_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/hosts/managed-4.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "513b50f238c01ce9c20f50374fdfb0be1476ceb7",
+      "base_blob": "513b50f238c01ce9c20f50374fdfb0be1476ceb7",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/budget/bound/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "c2945eabb33eb31214704f5d9834ecc8b3c6648d",
+      "base_blob": "c2945eabb33eb31214704f5d9834ecc8b3c6648d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/budget/full-catalog/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "9c7d369caec19b9324d6bf95ca9e2e29352f0c60",
+      "base_blob": "9c7d369caec19b9324d6bf95ca9e2e29352f0c60",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/budget/independent/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "8e21d0efe90a44c9f57868fc03ad9da77c218280",
+      "base_blob": "8e21d0efe90a44c9f57868fc03ad9da77c218280",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/compact-budget/bound/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "c2945eabb33eb31214704f5d9834ecc8b3c6648d",
+      "base_blob": "c2945eabb33eb31214704f5d9834ecc8b3c6648d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/compact-budget/full-catalog/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "9c7d369caec19b9324d6bf95ca9e2e29352f0c60",
+      "base_blob": "9c7d369caec19b9324d6bf95ca9e2e29352f0c60",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/compact-budget/independent/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "8e21d0efe90a44c9f57868fc03ad9da77c218280",
+      "base_blob": "8e21d0efe90a44c9f57868fc03ad9da77c218280",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/frontier-image-probe/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "545492b817c709873aa1f7877ab5ed5b6029525d",
+      "base_blob": "545492b817c709873aa1f7877ab5ed5b6029525d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/197/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "base_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/203/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f91666f8b3070748171c442e89171197f9abe226",
+      "base_blob": "f91666f8b3070748171c442e89171197f9abe226",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/204/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "08f840079ae1d16bc2c21cce6c4c591f74d14237",
+      "base_blob": "08f840079ae1d16bc2c21cce6c4c591f74d14237",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/205/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "826024359324dc4eb6cfd7bc1814c1185ad8d82d",
+      "base_blob": "826024359324dc4eb6cfd7bc1814c1185ad8d82d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/206/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "dc6427c8e3c3ce515cf2bfabb223b1bbef8a2824",
+      "base_blob": "dc6427c8e3c3ce515cf2bfabb223b1bbef8a2824",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/207/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "73b689ea86ef20bfab00c86adb0288bb56f8258f",
+      "base_blob": "73b689ea86ef20bfab00c86adb0288bb56f8258f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/208/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "383989f96e8db0f228dd2e8dc60c2a381008e543",
+      "base_blob": "383989f96e8db0f228dd2e8dc60c2a381008e543",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/209/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "2d1bc8d6ebed5d725f9f7263955952293b1c2c61",
+      "base_blob": "2d1bc8d6ebed5d725f9f7263955952293b1c2c61",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/210/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0cd5131f1e623c1cb3e0d3a414813dee913030c6",
+      "base_blob": "0cd5131f1e623c1cb3e0d3a414813dee913030c6",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/211/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "59b2804121802755097a0d68a2d3ba32920976df",
+      "base_blob": "59b2804121802755097a0d68a2d3ba32920976df",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/212/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "30885e4f3a27f1be72f3df930494e1d7138fd854",
+      "base_blob": "30885e4f3a27f1be72f3df930494e1d7138fd854",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/213/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "328068d1ec6e65c1dd1548fe11ac1a25fa947427",
+      "base_blob": "328068d1ec6e65c1dd1548fe11ac1a25fa947427",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/214/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "141766a0ceed05624c80431abc66068efb85a1c9",
+      "base_blob": "141766a0ceed05624c80431abc66068efb85a1c9",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/215/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "602b799242713fa0b191a599a3336edb5cbfa271",
+      "base_blob": "602b799242713fa0b191a599a3336edb5cbfa271",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/216/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "242cf25813a05e5ca9eb7a29c1665f5060192772",
+      "base_blob": "242cf25813a05e5ca9eb7a29c1665f5060192772",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/217/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "cf1d251e8d803a91a332f2fac633933d71899f5b",
+      "base_blob": "cf1d251e8d803a91a332f2fac633933d71899f5b",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/218/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "ff8a49c0b91ee348fb73223908dce023b60ec049",
+      "base_blob": "ff8a49c0b91ee348fb73223908dce023b60ec049",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/219/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "9aae62fc9c56ea1fa88a565e84547a79bc6b423c",
+      "base_blob": "9aae62fc9c56ea1fa88a565e84547a79bc6b423c",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/220/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "48c779d9415a91b41cccd2490f119a0aa4da5f27",
+      "base_blob": "48c779d9415a91b41cccd2490f119a0aa4da5f27",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/221/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "21afa78041f0caf2e670e676e7755c4e8911f815",
+      "base_blob": "21afa78041f0caf2e670e676e7755c4e8911f815",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/222/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "901bc3931723ddfa23495b4aafb5d45b504f2976",
+      "base_blob": "901bc3931723ddfa23495b4aafb5d45b504f2976",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/223/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "a1f1032c4ac17f1ff94850641be1c7444f151c06",
+      "base_blob": "a1f1032c4ac17f1ff94850641be1c7444f151c06",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/224/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "fb104c78560d0a0feea10e9d92559423e5ba2f82",
+      "base_blob": "fb104c78560d0a0feea10e9d92559423e5ba2f82",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/225/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "e466e05a6b2f82cad336aeb114795805eb0e731e",
+      "base_blob": "e466e05a6b2f82cad336aeb114795805eb0e731e",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/226/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "052d09445301371bb4691edf7e73ac82c70a456b",
+      "base_blob": "052d09445301371bb4691edf7e73ac82c70a456b",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/integration/evidence/qualification/old-objects/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "base_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/measurement.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "20515ac863c4428c9e4f9d28784a912451e8ff76",
+      "base_blob": "20515ac863c4428c9e4f9d28784a912451e8ff76",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/197/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "base_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/203/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f91666f8b3070748171c442e89171197f9abe226",
+      "base_blob": "f91666f8b3070748171c442e89171197f9abe226",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/204/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "08f840079ae1d16bc2c21cce6c4c591f74d14237",
+      "base_blob": "08f840079ae1d16bc2c21cce6c4c591f74d14237",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/205/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "826024359324dc4eb6cfd7bc1814c1185ad8d82d",
+      "base_blob": "826024359324dc4eb6cfd7bc1814c1185ad8d82d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/206/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "dc6427c8e3c3ce515cf2bfabb223b1bbef8a2824",
+      "base_blob": "dc6427c8e3c3ce515cf2bfabb223b1bbef8a2824",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/207/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "73b689ea86ef20bfab00c86adb0288bb56f8258f",
+      "base_blob": "73b689ea86ef20bfab00c86adb0288bb56f8258f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/208/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "383989f96e8db0f228dd2e8dc60c2a381008e543",
+      "base_blob": "383989f96e8db0f228dd2e8dc60c2a381008e543",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/209/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "2d1bc8d6ebed5d725f9f7263955952293b1c2c61",
+      "base_blob": "2d1bc8d6ebed5d725f9f7263955952293b1c2c61",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/210/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0cd5131f1e623c1cb3e0d3a414813dee913030c6",
+      "base_blob": "0cd5131f1e623c1cb3e0d3a414813dee913030c6",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/211/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "59b2804121802755097a0d68a2d3ba32920976df",
+      "base_blob": "59b2804121802755097a0d68a2d3ba32920976df",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/212/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "30885e4f3a27f1be72f3df930494e1d7138fd854",
+      "base_blob": "30885e4f3a27f1be72f3df930494e1d7138fd854",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/213/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "328068d1ec6e65c1dd1548fe11ac1a25fa947427",
+      "base_blob": "328068d1ec6e65c1dd1548fe11ac1a25fa947427",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/214/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "141766a0ceed05624c80431abc66068efb85a1c9",
+      "base_blob": "141766a0ceed05624c80431abc66068efb85a1c9",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/215/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "602b799242713fa0b191a599a3336edb5cbfa271",
+      "base_blob": "602b799242713fa0b191a599a3336edb5cbfa271",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/216/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "242cf25813a05e5ca9eb7a29c1665f5060192772",
+      "base_blob": "242cf25813a05e5ca9eb7a29c1665f5060192772",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/217/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "cf1d251e8d803a91a332f2fac633933d71899f5b",
+      "base_blob": "cf1d251e8d803a91a332f2fac633933d71899f5b",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/218/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "ff8a49c0b91ee348fb73223908dce023b60ec049",
+      "base_blob": "ff8a49c0b91ee348fb73223908dce023b60ec049",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/219/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "9aae62fc9c56ea1fa88a565e84547a79bc6b423c",
+      "base_blob": "9aae62fc9c56ea1fa88a565e84547a79bc6b423c",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/220/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "48c779d9415a91b41cccd2490f119a0aa4da5f27",
+      "base_blob": "48c779d9415a91b41cccd2490f119a0aa4da5f27",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/221/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "21afa78041f0caf2e670e676e7755c4e8911f815",
+      "base_blob": "21afa78041f0caf2e670e676e7755c4e8911f815",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/222/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "901bc3931723ddfa23495b4aafb5d45b504f2976",
+      "base_blob": "901bc3931723ddfa23495b4aafb5d45b504f2976",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/old-objects/probe.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "base_blob": "52e54e3a63d93207840f33c79e5e2121c175f1ec",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/runtime-only/managed-app/src/main.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "c02d3d622b24725fabbfc8d62c143478ac130ecd",
+      "base_blob": "c02d3d622b24725fabbfc8d62c143478ac130ecd",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/runtime-only/runtime-compact-runner/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "base_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/qualification/runtime-only/runtime-runner/runner.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "base_blob": "0b8e7c0231861dd9e2efe22429717acf2e5dc453",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/recorded-recipes/compiler/compiler-decoded.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0e212857904cc42605ce6b7d653d3613fae8194b",
+      "base_blob": "0e212857904cc42605ce6b7d653d3613fae8194b",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/recorded-recipes/compiler/compiler-facts.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "505f50e2d922cb90359cf5d49393160db70cc277",
+      "base_blob": "505f50e2d922cb90359cf5d49393160db70cc277",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/bit_counts_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "4a188ef107dddea72f38ff4e1a780c962442076c",
+      "base_blob": "4a188ef107dddea72f38ff4e1a780c962442076c",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/scalar_selects.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "67ec75777a325260cca8243e0653d47a9c119c7c",
+      "base_blob": "67ec75777a325260cca8243e0653d47a9c119c7c",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/arithmetic_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "045bc3785b0ff798f8da23eb235f2102d852c6b2",
+      "base_blob": "b991835cea6b915e666e678c49e5a659c70fdd4c",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f523dee736eee5501f169211560e126cf377f7b2",
+      "base_blob": "f523dee736eee5501f169211560e126cf377f7b2",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/compact_runtime/mod.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "8c2c9c65fc97f887d799acfb6512193b51be32d4",
+      "base_blob": "2d7d5bfd5ca7e01cceda1adaf7161bfcf418c936",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/compact_runtime/zero_pages.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "4f86b0fed2aad87e7325b219331a3c8a79d47b5e",
+      "base_blob": "26ae81c8f9cc766de9a3b1138ac4798f811f461f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/adjacent_addresses/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "ecdb3212017c4dfc1c68665eeeb2e9798c5cfc1c",
+      "base_blob": "ecdb3212017c4dfc1c68665eeeb2e9798c5cfc1c",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/admitted_lengths/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "4d00de26ff1c8fdd2937d6b53df7e65d227b3720",
+      "base_blob": "4d00de26ff1c8fdd2937d6b53df7e65d227b3720",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/boolean_conditions/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "5eff4777c9dff2f394007b05f27f8b314c071439",
+      "base_blob": "5eff4777c9dff2f394007b05f27f8b314c071439",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/relations/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "78e6d3eeec835aadf193583dcc1c1ed731ee7052",
+      "base_blob": "78e6d3eeec835aadf193583dcc1c1ed731ee7052",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "6ceee342f350af83e89479032dc192b15d342ddd",
+      "base_blob": "6ceee342f350af83e89479032dc192b15d342ddd",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/future_store/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f8d827985b5601837ddca4c79791b4f53b7a6292",
+      "base_blob": "f8d827985b5601837ddca4c79791b4f53b7a6292",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/identity_routes/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "3a5c012142d06401a2804aa92ab696638b6842cb",
+      "base_blob": "3a5c012142d06401a2804aa92ab696638b6842cb",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/identity_routes/zero_trip_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "571ec50b5ca0055ce0c7fc3d5105523d98c161dd",
+      "base_blob": "571ec50b5ca0055ce0c7fc3d5105523d98c161dd",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/independent_private_read/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "158d91c6fe32b8dd1e653104754ec01bf68639c8",
+      "base_blob": "158d91c6fe32b8dd1e653104754ec01bf68639c8",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/known_widths_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "184c04b90c697a279f5888882849157d8b983ef9",
+      "base_blob": "184c04b90c697a279f5888882849157d8b983ef9",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/packed_halfword_reads/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "ae825dcd199889fcdc903e244345d13f53e01949",
+      "base_blob": "83922e070022cd05d52f39b5e94a36e98be0342f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/repeated_bounds/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "5db95b1867f489acfc09397d660478524b0bb5d8",
+      "base_blob": "5db95b1867f489acfc09397d660478524b0bb5d8",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/selected_continuations/branch_form_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "13af7650db3405779c208e9077a690a1101491d3",
+      "base_blob": "13af7650db3405779c208e9077a690a1101491d3",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/selected_continuations/comparison_chain_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "79b9f78273eaa006f2b58a11d97760838789835d",
+      "base_blob": "79b9f78273eaa006f2b58a11d97760838789835d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/selected_continuations/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "50a086235649802597b1e2fa41cfa6c400aa1562",
+      "base_blob": "50a086235649802597b1e2fa41cfa6c400aa1562",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/selected_homes/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "43b8e4bac2e7a0cc34381e8185fbad93d527846e",
+      "base_blob": "43b8e4bac2e7a0cc34381e8185fbad93d527846e",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/selected_increments/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "a8786175f4f4c862ba02d8bb4ace5e7c0111b1bf",
+      "base_blob": "a8786175f4f4c862ba02d8bb4ace5e7c0111b1bf",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/shared_clamp/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "87b21c6ae358bf3999009502da8a119cb14c2974",
+      "base_blob": "87b21c6ae358bf3999009502da8a119cb14c2974",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/threaded_edges/test_support.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "65a6311485a488e71ba8adc3cda1f9186abff045",
+      "base_blob": "65a6311485a488e71ba8adc3cda1f9186abff045",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/threaded_edges/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "5adaf52dadaa1e0f2f3049a72ce06e713647991f",
+      "base_blob": "5adaf52dadaa1e0f2f3049a72ce06e713647991f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds/ordered_spans/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0052607e52dc4f445beaca81ff394e7b7557996d",
+      "base_blob": "0052607e52dc4f445beaca81ff394e7b7557996d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "5008b2a34fca23292058ad9b9ca711eff4e390e6",
+      "base_blob": "5008b2a34fca23292058ad9b9ca711eff4e390e6",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/constant_fill_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f330e8d9023627ea898bdcf4d1c6a8493ceb355a",
+      "base_blob": "f330e8d9023627ea898bdcf4d1c6a8493ceb355a",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_captured_reads.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "06427fb8269223bf3ccdeae7d4aa70b2aa1a954f",
+      "base_blob": "06427fb8269223bf3ccdeae7d4aa70b2aa1a954f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_retirement_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "d8c65e46e93642ec0e002d7a85488acbf70a6c55",
+      "base_blob": "d8c65e46e93642ec0e002d7a85488acbf70a6c55",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_unsigned_load_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "e2bd939b6ce5bea53c23c769fe14f53b99ae3aee",
+      "base_blob": "e2bd939b6ce5bea53c23c769fe14f53b99ae3aee",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/utf8_histogram/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "2ead97b1da1af9b8fdf945e019df56a72085c607",
+      "base_blob": "2ead97b1da1af9b8fdf945e019df56a72085c607",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/utf8_lookup_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "87f3f02947b0f7908e4abb304e1cd021801591ae",
+      "base_blob": "87f3f02947b0f7908e4abb304e1cd021801591ae",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "ff70bbb0158200f037d26fedd24be78033e73613",
+      "base_blob": "ff70bbb0158200f037d26fedd24be78033e73613",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/checked_traversal_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "2920e7aee66420b9b0387f3f230712a11b29da72",
+      "base_blob": "ed15e19c0aa1862c1c5ff0221fc986f4aa1c25be",
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/histogram.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "078233008fa970a331dd4c146dfc87b580241d89",
+      "base_blob": "078233008fa970a331dd4c146dfc87b580241d89",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/le_scalar_stores.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "5b447f020e9167ca2af7b1d5b5255fe04569149c",
+      "base_blob": null,
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/maps.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "4c5a73e10abea0f17da55149819d4df13c88427b",
+      "base_blob": "e6b66683fd2c5808f35b84c3dd6438da8db4ec5e",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/owner_retirement.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "fec44ada357416a02fc7768aa928dab7efc7e449",
+      "base_blob": "6106a8daed9d3cca781f273e6b180d0479a2d5bb",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phase_bodies_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "d6ce2e7808f4ec120f3701b2763e6c521b0deb48",
+      "base_blob": "d6ce2e7808f4ec120f3701b2763e6c521b0deb48",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phase_storage_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "ad16e211100969873abca8a1074bfafd51271059",
+      "base_blob": "50ccfecaa76305f68a1c5faf8cd5b45a283aef8e",
+      "covered_by_exact_path_patch": true
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/private_phase.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "8539147f3b6584105c566f568781e0091fe71d69",
+      "base_blob": "b9165a98ebdb3e0673874234426ea710c0b51f73",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/strings.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "06f08f5c14268d8207a966ac2192c3fc3aa77779",
+      "base_blob": "06f08f5c14268d8207a966ac2192c3fc3aa77779",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/terminal_appends.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "4b49fc3b2441e67eb2794ad640975fac4a7b8a0e",
+      "base_blob": "9833c763f02d23bdcce75fb91dfbc1aa756bed80",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/utf8_classes.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "a79e513d39a037c5e59bdbdee7fa8f20574e52b0",
+      "base_blob": "05a75c700fbbba8354bf50f82245221dd872cd18",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/vector_guard_facts.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "6d0df61e09cf22f3efeeec040ca40f72ceaa4e98",
+      "base_blob": "6d0df61e09cf22f3efeeec040ca40f72ceaa4e98",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/word_pairs.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "b53d32890d8cca3d66aaf212e3eb1ea056c905e0",
+      "base_blob": "b53d32890d8cca3d66aaf212e3eb1ea056c905e0",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compiled_module.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "c76bae176ff0b30df11f564688ab1be5ec77bcf7",
+      "base_blob": "c76bae176ff0b30df11f564688ab1be5ec77bcf7",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compiled_module_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "d24eb6ba9ecbb9b490b205391bc3edd01ef03034",
+      "base_blob": "d24eb6ba9ecbb9b490b205391bc3edd01ef03034",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/binding.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "ed649d8b3795d3d1a92fcca31708223ad9352c35",
+      "base_blob": "ed649d8b3795d3d1a92fcca31708223ad9352c35",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/binding_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "22742d7eb0e4bd681d67e1f71bb2641794a84c16",
+      "base_blob": "22742d7eb0e4bd681d67e1f71bb2641794a84c16",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/borrowed_record_map_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "6985ecf68c855ad54714233cd2481435ddfe8ade",
+      "base_blob": "6985ecf68c855ad54714233cd2481435ddfe8ade",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/numeric_tree_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "1a2c64d3556c31055b9cf280628467f8fc4253a7",
+      "base_blob": "1a2c64d3556c31055b9cf280628467f8fc4253a7",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/image/static_layouts.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "300a570e1062c041230d910bb042efe4567945ab",
+      "base_blob": "300a570e1062c041230d910bb042efe4567945ab",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/llvm_backend/image_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "334595f7fb0bc2bac4ecadeb3753cd02e11a24fd",
+      "base_blob": "334595f7fb0bc2bac4ecadeb3753cd02e11a24fd",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/composition/image.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "53617c5dd7d921cd6eb79788adef6f7c8e52a1eb",
+      "base_blob": "53617c5dd7d921cd6eb79788adef6f7c8e52a1eb",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/matrix_map_keys/mod.rs",
+      "category": "file_allowlist",
+      "status_against_base": "new",
+      "head_blob": "9e11ab67c3c6f41744318cec6adf1cd53fec792b",
+      "base_blob": null,
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/buffer_frames_capture.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "194e33759cb8f09b16dda262e44b8333a3796be3",
+      "base_blob": "194e33759cb8f09b16dda262e44b8333a3796be3",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/collections/numeric_map.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "2e7ff5563b216291984006b7be19a4ee9409f3bd",
+      "base_blob": "2e7ff5563b216291984006b7be19a4ee9409f3bd",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/collections/uniform_words.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "250f09a5a210d9cd6465327b99d264cd343ddd96",
+      "base_blob": "250f09a5a210d9cd6465327b99d264cd343ddd96",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/collections/utf8_read.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "85e89e5b5972ee4f62b19a317050b1d2325aef83",
+      "base_blob": "85e89e5b5972ee4f62b19a317050b1d2325aef83",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/compiled_histogram_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "fc9abcdd60b380de2b8b9702abe18ac8cf425e4b",
+      "base_blob": "fc9abcdd60b380de2b8b9702abe18ac8cf425e4b",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/borrowed_dictionary_values.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "58d70eb49457184b2f8713e8f0a89b7f0424f4aa",
+      "base_blob": "58d70eb49457184b2f8713e8f0a89b7f0424f4aa",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/borrowed_map_keys.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "e9da0c794712d7f9e96a1d2a788ef1d12b943268",
+      "base_blob": "e9da0c794712d7f9e96a1d2a788ef1d12b943268",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/borrowed_record_map.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "28ddc918971c7300c7a0f8e602ff88981043b5e2",
+      "base_blob": "28ddc918971c7300c7a0f8e602ff88981043b5e2",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/captured_numeric.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "5adb534111acd9f4aec947f22c5ef3dead5556f4",
+      "base_blob": "5adb534111acd9f4aec947f22c5ef3dead5556f4",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/dictionary_seed_frames.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "81b3969b5975fba524c42f0adcaa28ac75d31414",
+      "base_blob": "81b3969b5975fba524c42f0adcaa28ac75d31414",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/fixed_key_loops.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "c2f4a687f99e0b1f462c5e63c59586743793a790",
+      "base_blob": "c2f4a687f99e0b1f462c5e63c59586743793a790",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/generic_dictionary.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "fe0bfd58d811946741da943cd295250836ad9e51",
+      "base_blob": "fe0bfd58d811946741da943cd295250836ad9e51",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/invariant_numeric.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "eb23acd1bb47442953cd3bfe5e472ac7208af22d",
+      "base_blob": "eb23acd1bb47442953cd3bfe5e472ac7208af22d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/matrix_map_keys.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "d489d87cdc403bac2340ac426d27ae68a948d46a",
+      "base_blob": "d489d87cdc403bac2340ac426d27ae68a948d46a",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/nested_numeric.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "18d9dc99681304b896a0843f3404302666ec791a",
+      "base_blob": "18d9dc99681304b896a0843f3404302666ec791a",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/nested_scalar_array.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "33558a3bfd45197bc46e019edae84869a6ffdccd",
+      "base_blob": "33558a3bfd45197bc46e019edae84869a6ffdccd",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_bindings.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0131c680cd6bbe1566cee1fb28dd9124faa6e798",
+      "base_blob": "0131c680cd6bbe1566cee1fb28dd9124faa6e798",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/numeric_maps.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "d1ded3baed607166dbd3012e334d5077d97c0f6f",
+      "base_blob": "d1ded3baed607166dbd3012e334d5077d97c0f6f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/retained_compound_map.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "3a2f0e7213e856d555954dc4381fab44c8f9fc17",
+      "base_blob": "3a2f0e7213e856d555954dc4381fab44c8f9fc17",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/tagged_map_carrier.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "9d6d89fa7ce1f55a326af268d023c678f55becca",
+      "base_blob": "9d6d89fa7ce1f55a326af268d023c678f55becca",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/u16_arithmetic.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "41601fb1c59492239a2af185504ea0884f3bc5d6",
+      "base_blob": "41601fb1c59492239a2af185504ea0884f3bc5d6",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/uniform_fill.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0a753cb023202898819d62fc39e53e2cfd644b13",
+      "base_blob": "0a753cb023202898819d62fc39e53e2cfd644b13",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/utf8_reads.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "39a0d5ca15163a5efe2b5a9a0857b30d3d119f09",
+      "base_blob": "39a0d5ca15163a5efe2b5a9a0857b30d3d119f09",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/composition_tests/utf8_reads_replay_cache.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f289735a03c8fc53a0dd1d740e23c4220a191bfe",
+      "base_blob": "f289735a03c8fc53a0dd1d740e23c4220a191bfe",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/histogram.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "491d6ec90e29c3d0b44534e5355a4099ebcf2f9d",
+      "base_blob": "491d6ec90e29c3d0b44534e5355a4099ebcf2f9d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/parallel/tests/numeric_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "07ccf4238cf4c0db90e96c16285fd15995046a05",
+      "base_blob": "07ccf4238cf4c0db90e96c16285fd15995046a05",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/invocation/readonly_numeric.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "187b9660761a448bec2362c0f6602c4609265a40",
+      "base_blob": "187b9660761a448bec2362c0f6602c4609265a40",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/maps/fixed_keys.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f1c59153ba44dfec0c59fb30ae88e6d7dd3635a0",
+      "base_blob": "f1c59153ba44dfec0c59fb30ae88e6d7dd3635a0",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/maps/native_utf8_prototype/mod.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "cad0ea7cbe1430ddd05fe6c3f860e79663570678",
+      "base_blob": "cad0ea7cbe1430ddd05fe6c3f860e79663570678",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/maps/native_utf8_prototype/tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "f05153ced3a596c568c711feebc69bcbcc8876ff",
+      "base_blob": "f05153ced3a596c568c711feebc69bcbcc8876ff",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/borrowed_records.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "03d5b847793b865206568d0f141b53cbbb1f3e87",
+      "base_blob": "03d5b847793b865206568d0f141b53cbbb1f3e87",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/fixed_keys.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "4e3dd5388fd8239e04d60e94c8dc30244cd35a1d",
+      "base_blob": "4e3dd5388fd8239e04d60e94c8dc30244cd35a1d",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/map_key_views.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "3db7fe4aa2c5f91fd4c219dfcf4042de73d8146a",
+      "base_blob": "3db7fe4aa2c5f91fd4c219dfcf4042de73d8146a",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/maps/owner/seed_frames.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "cf33d272546f8cd579baf996f42a72be73e75133",
+      "base_blob": "cf33d272546f8cd579baf996f42a72be73e75133",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/session/immutable_retirement_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "2154520dd0fbf31dbbefc2c4c137fb350e7699e6",
+      "base_blob": "2154520dd0fbf31dbbefc2c4c137fb350e7699e6",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/runtime/session/worker_constant_owners.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "982c64057602dce221dbc29b907b2008e6f5ce49",
+      "base_blob": "982c64057602dce221dbc29b907b2008e6f5ce49",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/core/src/type_system/resolved_image.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "e367a80658725ef3059ee4e1a0308f75df5d7db4",
+      "base_blob": "e367a80658725ef3059ee4e1a0308f75df5d7db4",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/core/src/type_system/resolved_value.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "6ff63370ff725053e08a9cdb4a2f57c0a7d33846",
+      "base_blob": "6ff63370ff725053e08a9cdb4a2f57c0a7d33846",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/native_artifact/buffer_frames.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "5f68a4d6e0ba1f2e8e1f70e310cdecc85acf1085",
+      "base_blob": "5f68a4d6e0ba1f2e8e1f70e310cdecc85acf1085",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/native_artifact/build_image/packed_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "modified",
+      "head_blob": "7a37fd906abe5709891668fd1e479a46b1b70ce2",
+      "base_blob": "c3de77566e23d1b23e0dfd47852d7c9c70dd74de",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/native_artifact/control.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "edc2d92e4415a57518ed42325a4a202ad598e8ca",
+      "base_blob": "edc2d92e4415a57518ed42325a4a202ad598e8ca",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_borrowed_map_keys.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "e1638213408189fb85931d921ee27691568cc32f",
+      "base_blob": "e1638213408189fb85931d921ee27691568cc32f",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_borrowed_record_map_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "73afda75160f4300e644c8943e6919ceb4529aec",
+      "base_blob": "73afda75160f4300e644c8943e6919ceb4529aec",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_descriptor_image.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "197291b9bacb6294908ac3ce3031a2e9f84fd501",
+      "base_blob": "197291b9bacb6294908ac3ce3031a2e9f84fd501",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_prepared_capacity_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "753dc3edae67f5de1394d3d74f4a2912dded5fb4",
+      "base_blob": "753dc3edae67f5de1394d3d74f4a2912dded5fb4",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_shared_templates.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "0bfd86f24da5f5ea84b37358bdd53ed8c3eab77b",
+      "base_blob": "0bfd86f24da5f5ea84b37358bdd53ed8c3eab77b",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_string_matrix_key.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "9bbb8b3180344de8b24b9832e53a38d6a18e5f16",
+      "base_blob": "9bbb8b3180344de8b24b9832e53a38d6a18e5f16",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "src/engine/src/resident/general/native_collection_string_matrix_key_tests.rs",
+      "category": "file_allowlist",
+      "status_against_base": "unchanged",
+      "head_blob": "79d8aa92450072fe5b6a656700ac49b2355123dc",
+      "base_blob": "79d8aa92450072fe5b6a656700ac49b2355123dc",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/mod.rs",
+      "category": "global_policy",
+      "status_against_base": "new",
+      "head_blob": "fdbcd20a402b013321f6d7ec5df3eb6d8d7301ea",
+      "base_blob": null,
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/compact_runtime/mod.rs",
+      "category": "global_policy",
+      "status_against_base": "modified",
+      "head_blob": "8c2c9c65fc97f887d799acfb6512193b51be32d4",
+      "base_blob": "2d7d5bfd5ca7e01cceda1adaf7161bfcf418c936",
+      "covered_by_exact_path_patch": false
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compiled_module.rs",
+      "category": "global_policy",
+      "status_against_base": "unchanged",
+      "head_blob": "c76bae176ff0b30df11f564688ab1be5ec77bcf7",
+      "base_blob": "c76bae176ff0b30df11f564688ab1be5ec77bcf7",
+      "covered_by_exact_path_patch": false
+    }
+  ],
+  "references": {
+    "admissions.log": "c24be89d9f9be275f7b5b0f67d7e02f78621e916de92af9d732c99f4ba1e5e55",
+    "fixtures.log": "f1f22b076656fd228975dee03a5a37366eb75886cd1ac28c5bc9a323cf5826d1",
+    "before.log": "4cf28f71549faf324edb48be883f8fac8ddfaff0f5adce7774a14bc0adddaa5e",
+    "after.log": "e88175c673d950a75f520060837b82d6363c6ab3eaf47253a50f5a82f04b70ee",
+    "census.log": "32650b29e1fda6ddaff78cf9b0676f8134341dc05fbe5f7450837e5826d92934",
+    "pr993-compact-boundaries.patch": "1da9b86594358e617822cd48a7eb1a1bcfdbd7a14d963d373547f4e243c3572e"
+  }
+}
