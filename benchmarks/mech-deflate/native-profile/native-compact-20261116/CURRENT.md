@@ -1,7 +1,6 @@
 # PR #993 current status
 
-The deployment comparison uses compiler source `3819f8850ee17e12ed09659d22c48d9181ef4451`.
-The measurement evidence is published through `f68f93c66e14b8f227bf4a9d1df16d99a59f9b1d` on PR #993,
+The deployment comparison uses compiler source `e9538f71514225abf5ca57a9fc0acab358407167` on PR #993,
 stacked on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
 The host is Apple M1, macOS 15.6.1, arm64.
 [Machine-readable measurements and per-case changes](scorecard.json)
@@ -13,28 +12,28 @@ Peer executables use the same CLI, allocator, target, and strip rules.
 
 | Measurement | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 3.13566 s | 2.98380 s | 0.48054 s |
-| Source through strip | 3.14623 s | 2.99426 s | 0.49110 s |
+| Source through final link | 2.84147 s | 2.98471 s | 0.48041 s |
+| Source through strip | 2.85210 s | 2.99527 s | 0.49103 s |
 | Generated encoder text | 71,768 B | 57,696 B | 37,080 B |
 | Stripped deployment file | 292,576 B | 191,920 B | 155,760 B |
-| Compiler peak RSS | 395,493,376 B | 397,230,080 B | 71,532,544 B |
+| Compiler peak RSS | 395,378,688 B | 396,247,040 B | 71,540,736 B |
 
-The parser replay reduces the paired complete build by
-**15.39%**. Median Mech time through final link
-falls from **3.70961 s** to
-**3.13566 s**, or **1.052× Roc** and
-**6.530× libdeflate** on paired link-inclusive timing.
+Function replay reduces paired time **9.39%** from the
+variable-replay control. Median Mech link-inclusive time falls from
+**3.13523 s** to **2.84147 s**.
+The paired comparison is **0.951× Roc** and **5.912× libdeflate**.
 Encoder text is **1.244× Roc** and **1.935× libdeflate**.
+The checked root occupies **51,264 B** including its alignment, 71.4%
+of the Mech encoder text. [Encoder symbol extents](evidence/scoped-function-replay/root-census.json)
 The worker, bytecode, encoder object and complete metadata reproduce exactly.
 The normalized timing output name changes the signing record by eight bytes.
-[Matched compiler timings and identity checks](evidence/scoped-definition-replay/README.md)
+[Matched compiler timings and identity checks](evidence/scoped-function-replay/README.md)
 · [Common deployment link](evidence/alloc-only-deployment/README.md)
 
-Parsing takes 1.315 s, source semantics 0.227 s,
-native preparation through object generation 1.464 s,
-and catalog initialization 0.059 s. Artifact construction,
-encoding, fixed deployment link, and process overhead account for about
-0.070 s, including the 34.1 ms link. Phase values are medians.
+Parsing takes 1.018 s, source semantics 0.227 s,
+native preparation through object generation 1.462 s,
+and catalog initialization 0.062 s in those runs. The
+fixed deployment link takes 34.4 ms. Values are medians.
 
 ## Which build to use
 
@@ -43,7 +42,7 @@ encoding, fixed deployment link, and process overhead account for about
 | Historical rebuild default | 72,520 B | `rebuild.py --variant baseline`, compiler opt level 1 |
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
 | Latest fully timed size candidate | 71,288 B | Shared owner exchange rejected by the v2 runtime gate |
-| Current compiler source | **71,768 B** | Guarded structural replay and shared native facts owner |
+| Current compiler source | **71,768 B** | Guarded variable and function replay, shared native facts |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
@@ -101,19 +100,13 @@ both orders. The earlier transient's cause remains open.
 
 ## Active work
 
-- **Parser.** The guarded first structural summary replays the winning
-  variable definition under exact resource and context checks. Preserve
-  event order and fresh IDs, diagnostics and recovery, longest-match and tie
-  behavior, finite grants, streaming and segmented/UTF-8 cases. Recheck the
-  parser after the replay change before allocating a tree project.
-  The frozen parser trace attributes 1.142 s to BestChoice winner re-execution
-  within 1.843 s of grammar work. The first family is variable definitions
-  at 0.643 s exclusive. [Parser attribution](evidence/best-choice-structural-replay/README.md)
-  The hardened variable-definition replay takes 1.303 s standalone and
-  3.136 s from source through final deployment link with
-  the exact encoder and worker. The paired source-through-link result is
-  1.052× Roc and 6.530× libdeflate.
-  [Published source and complete build comparisons](evidence/scoped-definition-replay/README.md)
+- **Parser.** Function replay applies all 369 recipes in the pinned source. The standalone parser now takes 1.009 s.
+  The post-variable-replay trace identifies current function-family cost
+  separately from already-removed nested work. The next largest replay
+  family in that trace is the enclosing statement at 165 ms inclusive.
+  Measure the remaining cost and applicable bounds before extending it.
+  [Post-variable profile and both ablations](evidence/scoped-function-replay/README.md)
+  [Earlier variable replay](evidence/scoped-definition-replay/README.md)
 - **Native compiler.** Attribute plan/semantic preparation, lazy facts,
   SSA construction, cleanup, Cranelift and worker waits separately. Share
   one immutable facts owner across read packing and branch analysis. Keep
@@ -126,6 +119,7 @@ both orders. The earlier transient's cause remains open.
   chain exposes about 3.2 ms of CFG and dominator recomputation. Park both
   narrow changes and inspect the next exact-choice omitted-body case. [Scoped native diagnoses](evidence/checked-root-work/README.md)
   [Exclusive native cost and raw traces](evidence/native-exclusive-work/README.md)
+  The adjacent verifier census identifies when constant-phi removal leaves IR intact. [Native census](evidence/scoped-function-replay/native-verify/README.md)
 - **Integration and qualification.** Compile and test the checked Related
   Posts producer binding. The 24-block control-drift diagnostic recovers the
   four affected peer wins in both orders. The archived reference has a v2

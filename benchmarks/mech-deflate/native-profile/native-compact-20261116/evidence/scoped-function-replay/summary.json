@@ -1,0 +1,89 @@
+{
+  "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
+  "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
+  "patch_sha256": "e950fb900500158abb3dfae155d9686fb01af0acb852de5a9f2bc2cc27870a2b",
+  "standalone_parser": {
+    "median_s": {
+      "control": 1.3054523745,
+      "nested-disabled": 1.1778575835,
+      "candidate": 1.0093158745,
+      "capture-only": 1.3152629165
+    },
+    "paired_ratio_to_control": {
+      "nested-disabled": 0.9021089262917736,
+      "candidate": 0.7728208376457323,
+      "capture-only": 1.0067675020535336,
+      "candidate-to-nested-disabled": 0.8564263519389567
+    }
+  },
+  "source_through_deployment": {
+    "mech-control": {
+      "source": 3.100139583228156,
+      "link": 0.034367937594652176,
+      "source_through_link": 3.1352251046337187,
+      "strip": 0.010545583441853523,
+      "source_through_strip": 3.14594172895886
+    },
+    "mech-function-replay": {
+      "source": 2.8061672085896134,
+      "link": 0.03440200048498809,
+      "source_through_link": 2.841471582883969,
+      "strip": 0.010531479492783546,
+      "source_through_strip": 2.852101437514648
+    },
+    "roc": {
+      "source": 2.9476456246338785,
+      "link": 0.034092562505975366,
+      "source_through_link": 2.984711478697136,
+      "strip": 0.010334667051211,
+      "source_through_strip": 2.995266020996496
+    },
+    "libdeflate": {
+      "source": 0.44635739526711404,
+      "link": 0.03381381253711879,
+      "source_through_link": 0.4804052710533142,
+      "strip": 0.010443437146022916,
+      "source_through_strip": 0.4910257295705378
+    }
+  },
+  "source_through_link_paired_ratio": {
+    "mech-control": 0.9061331181499126,
+    "roc": 0.9514078200951874,
+    "libdeflate": 5.912374820203363
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 1.3135939375,
+      "catalog": 0.0586953125,
+      "frontend": 0.2270603955,
+      "artifact": 0.006964375,
+      "encode": 0.0026228329999999998,
+      "native": 1.4638289375
+    },
+    "mech-function-replay": {
+      "parse": 1.0180162295,
+      "catalog": 0.0617125205,
+      "frontend": 0.2269496455,
+      "artifact": 0.0069756665,
+      "encode": 0.0025806040000000002,
+      "native": 1.4622378335000001
+    }
+  },
+  "peak_rss_bytes": {
+    "mech-control": 394878976.0,
+    "mech-function-replay": 395378688.0,
+    "roc": 396247040.0,
+    "libdeflate": 71540736.0
+  },
+  "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "object_and_metadata_sha256": {
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "existing_syntax_tests": 535,
+  "focused_differential_tests": 3,
+  "replayed_functions": 369,
+  "exact_linked_calls": 162,
+  "checked_root_extent_bytes": 51264
+}
