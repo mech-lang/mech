@@ -1,0 +1,104 @@
+{
+  "managed": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/compile_profile",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/managed",
+      "managed"
+    ],
+    "code": 0,
+    "log_sha256": "c96bdc4414f15b2cbc0ba25d8b201c66aa9a070cabbbb5c2d22babd8d2a1889f"
+  },
+  "frontend": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/compile_profile",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/frontend",
+      "frontend"
+    ],
+    "code": 0,
+    "log_sha256": "910e7056dc5223f48e2252af61c74c4d7cfed9a720c3e35029e71d6fb57e6bc4"
+  },
+  "split_fixture_frontend": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/split_fixture_frontend",
+      "frontend"
+    ],
+    "code": 0,
+    "log_sha256": "bb4c32938c29a32ef1255013c8de55ba0320d759bbff0cfa48bdb1963ea03e9e"
+  },
+  "invalid_direct": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/compile_profile",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/invalid.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/invalid_direct",
+      "compact"
+    ],
+    "code": 101,
+    "log_sha256": "06963fd0d9329412bf8298a8206f11887beaf08e1f9a92f286aa96aa27d35a4c"
+  },
+  "invalid_split": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/invalid.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/invalid_split",
+      "frontend"
+    ],
+    "code": 101,
+    "log_sha256": "3fb08e5673d0d528467d0af5ef31cf4911e65cd1c93d76b3b79fb7042a180d88"
+  },
+  "aligned_link": {
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "-C",
+      "opt-level=3",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/mech-worker.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/mech-worker",
+      "-C",
+      "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-C",
+      "link-arg=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/variant-fresh-owner-counts-cold-tails-paired-spills/native/program.o",
+      "--extern",
+      "mech_gpu=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+      "--extern",
+      "mech_engine=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+      "--extern",
+      "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+      "--extern",
+      "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+      "--extern",
+      "miniz_oxide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+      "-L",
+      "dependency=/private/tmp/mech-pr973-merged-compression-20261112/reduction-loop-registers-335e58a455/backend",
+      "--remap-path-prefix",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link=/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/terminal-final",
+      "--remap-path-prefix",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/pinned_allocator.rs=/private/tmp/mech-child-prepayment-round163-20261105/pinned_allocator.rs"
+    ],
+    "code": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "aligned_correctness": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary-checks/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/variant-fresh-owner-counts-cold-tails-paired-spills/native/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "code": 0,
+    "log_sha256": "173c9fe66deba7b919fa27e05d8737c0aa5e722ba5223e0eb3fa037b356be241",
+    "complete_smokes": 162,
+    "verified": true,
+    "worker_sha256": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+    "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab"
+  },
+  "fixture_bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c"
+}

@@ -11,7 +11,14 @@ checkout-relative reproduction commands. No smaller candidate has been promoted.
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 
-The current native emitter builds the 71,960-byte recipe from source through
+The opt-in direct source rebuild compiles the 71,960-byte encoder through
+the final link in **3.99930 s** on Apple M1, down from **4.08628 s**
+in the matched split build. It takes **1.339× Roc** and
+**8.292× libdeflate** time. Both paths reproduce the pinned workers.
+The direct compiler uses about 19 MB more peak RSS.
+[Rebuild command, matched trials, and exact worker checks](evidence/direct-source/README.md)
+
+The preceding native emitter study builds the 71,960-byte recipe from source through
 final link in **4.07374 s** on Apple M1, with identical encoder
 objects and benchmark workers. The complete build takes **1.366× Roc**
 and **8.478× libdeflate** time.
