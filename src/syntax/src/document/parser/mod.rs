@@ -901,6 +901,9 @@ pub(crate) fn parse_canonical_document_with_ids(
     parser.state.retain_completed_nodes = false;
     parser.state.events = Journal::transient();
     parser.state.diagnostics = Journal::transient();
+    // One-shot parsing preserves the logical grants and IDs. Streaming work
+    // reports continue tracking every materialized cache allocation.
+    parser.state.tree_cache.discard_stale_requests = true;
     parser.set_resource_rule(rules::PARSE);
     canonical::document::parse_document_root(&mut parser);
     let output = parser.finish();
@@ -1070,6 +1073,60 @@ fn leading_indentation(source: &TextSnapshot, range: TextRange) -> u32 {
 mod tests {
     use super::*;
     use crate::document::{DocumentId, ExpectedSyntax, Revision};
+
+    #[test]
+    fn one_shot_cache_accounting_preserves_trees_and_diagnostics() {
+        fn parse(source: TextSnapshot, config: ParseConfig, discard: bool) -> SyntaxSnapshot {
+            let mut ids = IdGenerator::new();
+            let mut parser = Parser::new(
+                &source,
+                LexicalMode::CanonicalSourceFragment,
+                config,
+                &mut ids,
+            );
+            parser.state.tree_cache.discard_stale_requests = discard;
+            parser.state.tree_cache.preserve_stale_accounting_for_test = true;
+            parser.set_resource_rule(rules::PARSE);
+            canonical::document::parse_document_root(&mut parser);
+            let output = parser.finish();
+            finish_snapshot(source, output, &mut ids, SyntaxKind::Document)
+        }
+
+        let mut finite = ParseConfig::default();
+        finite.limits.fuel = 230;
+        finite.limits.max_events = 50;
+        for config in [ParseConfig::default(), finite] {
+            for text in [
+                "β := [1, 2, 3]\nβ[1]",
+                "β := [1, (4 + ]\nβ[",
+                "**α** and é\n\nβ := 2\n",
+            ] {
+                let boundary = text.char_indices().nth(8).map_or(text.len(), |(at, _)| at);
+                let source = TextSnapshot::new(DocumentId(827), Revision(0), &text[..boundary])
+                    .unwrap()
+                    .append(&text[boundary..])
+                    .unwrap();
+                let original = parse(source.clone(), config, false);
+                let updated = parse(source, config, true);
+                assert_eq!(original.stats, updated.stats, "{text}");
+                assert_eq!(
+                    format!("{:?}", original.root),
+                    format!("{:?}", updated.root),
+                    "{text}"
+                );
+                assert_eq!(
+                    format!("{:?}", original.diagnostics),
+                    format!("{:?}", updated.diagnostics),
+                    "{text}"
+                );
+                assert_eq!(
+                    format!("{:?}", original.restarts),
+                    format!("{:?}", updated.restarts),
+                    "{text}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn nested_cursor_scope_retains_an_open_embedded_frontier_before_the_document_end() {
