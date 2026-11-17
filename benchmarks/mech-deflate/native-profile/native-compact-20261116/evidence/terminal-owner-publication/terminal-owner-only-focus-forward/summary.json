@@ -1,0 +1,263 @@
+[
+  {
+    "case": "empty",
+    "input_bytes": 0,
+    "reference_raw_bytes": 5,
+    "libdeflate_raw_bytes": 5,
+    "reference_capacity": 5,
+    "libdeflate_capacity": 5,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "f067985d352d2da6dfaef4844a66d06c5371ecbd9530a4d195ac599fef8b3427",
+    "median_seconds": {
+      "mech-control": 4.1e-08,
+      "mech-experiment": 4.1e-08,
+      "roc": 4.2e-08,
+      "libdeflate": 4.208e-06
+    },
+    "paired_x_roc": {
+      "mech-control": 0.8330848715727027,
+      "mech-experiment": 0.8499214292400328,
+      "roc": 1.0,
+      "libdeflate": 127.55650543816463
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 0.006531104538424003,
+      "mech-experiment": 0.006663097474491788,
+      "roc": 0.007839662873837262,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 196608
+  },
+  {
+    "case": "one-stored",
+    "input_bytes": 1,
+    "reference_raw_bytes": 6,
+    "libdeflate_raw_bytes": 6,
+    "reference_capacity": 6,
+    "libdeflate_capacity": 6,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "347fd581892eff18f1849acf7d6b75e3a0f0ab3915d2ff304368ccf6202d9393",
+    "median_seconds": {
+      "mech-control": 4.1e-08,
+      "mech-experiment": 4.1e-08,
+      "roc": 4.2e-08,
+      "libdeflate": 4.208e-06
+    },
+    "paired_x_roc": {
+      "mech-control": 0.7435580400608705,
+      "mech-experiment": 0.7425315319409216,
+      "roc": 1.0,
+      "libdeflate": 110.4938657985835
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 0.0067294056071518366,
+      "mech-experiment": 0.006720115425180829,
+      "roc": 0.009050276164858553,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 196608
+  },
+  {
+    "case": "seven-stored-prefix",
+    "input_bytes": 7,
+    "reference_raw_bytes": 12,
+    "libdeflate_raw_bytes": 12,
+    "reference_capacity": 14,
+    "libdeflate_capacity": 14,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "92de6766d1d32885de99221293a6de7168c8b0ec9c873e23c2f4fd2b3f0c504b",
+    "median_seconds": {
+      "mech-control": 4.1e-08,
+      "mech-experiment": 4.1e-08,
+      "roc": 4.2e-08,
+      "libdeflate": 4.208e-06
+    },
+    "paired_x_roc": {
+      "mech-control": 0.8813777133859519,
+      "mech-experiment": 0.8401472808531015,
+      "roc": 1.0,
+      "libdeflate": 120.5463557221189
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 0.007311525164789606,
+      "mech-experiment": 0.006969495475995914,
+      "roc": 0.008295563926504592,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 196608
+  },
+  {
+    "case": "320-overlap",
+    "input_bytes": 320,
+    "reference_raw_bytes": 7,
+    "libdeflate_raw_bytes": 7,
+    "reference_capacity": 325,
+    "libdeflate_capacity": 325,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+    "median_seconds": {
+      "mech-control": 2.8209e-05,
+      "mech-experiment": 2.8208e-05,
+      "roc": 0.0002945,
+      "libdeflate": 2.7791e-05
+    },
+    "paired_x_roc": {
+      "mech-control": 0.09427731876749036,
+      "mech-experiment": 0.09446661536565043,
+      "roc": 1.0,
+      "libdeflate": 0.09410121418737838
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 1.0018714379153637,
+      "mech-experiment": 1.0038830654995,
+      "roc": 10.626855441086628,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 24576
+  },
+  {
+    "case": "random-64",
+    "input_bytes": 64,
+    "reference_raw_bytes": 69,
+    "libdeflate_raw_bytes": 69,
+    "reference_capacity": 69,
+    "libdeflate_capacity": 69,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "81b9fded3e90d9c1f9df87d84eda637b6bd30e4d1fd5c1a30c6a261dc69a4727",
+    "median_seconds": {
+      "mech-control": 1.1542e-05,
+      "mech-experiment": 1.1542e-05,
+      "roc": 0.000287708,
+      "libdeflate": 2.2542e-05
+    },
+    "paired_x_roc": {
+      "mech-control": 0.04114781551554208,
+      "mech-experiment": 0.04119107304483506,
+      "roc": 1.0,
+      "libdeflate": 0.08212587003565174
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 0.501033541534225,
+      "mech-experiment": 0.5015602638602618,
+      "roc": 12.176431124149907,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 24576
+  },
+  {
+    "case": "prefix-natural-4096",
+    "input_bytes": 4096,
+    "reference_raw_bytes": 983,
+    "libdeflate_raw_bytes": 983,
+    "reference_capacity": 4101,
+    "libdeflate_capacity": 4101,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+    "median_seconds": {
+      "mech-control": 0.0004361665,
+      "mech-experiment": 0.000436854,
+      "roc": 0.0006569165,
+      "libdeflate": 0.000388875
+    },
+    "paired_x_roc": {
+      "mech-control": 0.6598859861538701,
+      "mech-experiment": 0.6608896636315115,
+      "roc": 1.0,
+      "libdeflate": 0.5919757733928469
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 1.1147178918687888,
+      "mech-experiment": 1.116413362397741,
+      "roc": 1.689258319252839,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 384
+  },
+  {
+    "case": "prefix-natural-8192",
+    "input_bytes": 8192,
+    "reference_raw_bytes": 2309,
+    "libdeflate_raw_bytes": 2309,
+    "reference_capacity": 8202,
+    "libdeflate_capacity": 8202,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+    "median_seconds": {
+      "mech-control": 0.000934583,
+      "mech-experiment": 0.000934417,
+      "roc": 0.0011253959999999999,
+      "libdeflate": 0.0009056660000000001
+    },
+    "paired_x_roc": {
+      "mech-control": 0.8282931937721164,
+      "mech-experiment": 0.8295530583252518,
+      "roc": 1.0,
+      "libdeflate": 0.8049348075721651
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 1.0290189789039,
+      "mech-experiment": 1.0305841547930323,
+      "roc": 1.24233663470982,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 384
+  },
+  {
+    "case": "prefix-random-4096",
+    "input_bytes": 4096,
+    "reference_raw_bytes": 4101,
+    "libdeflate_raw_bytes": 4101,
+    "reference_capacity": 4101,
+    "libdeflate_capacity": 4101,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+    "median_seconds": {
+      "mech-control": 0.000123417,
+      "mech-experiment": 0.000123625,
+      "roc": 0.000368479,
+      "libdeflate": 7.614549999999999e-05
+    },
+    "paired_x_roc": {
+      "mech-control": 0.3366771683482824,
+      "mech-experiment": 0.3367117072942129,
+      "roc": 1.0,
+      "libdeflate": 0.20570126153489132
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 1.6367287484582327,
+      "mech-experiment": 1.6368966567426682,
+      "roc": 4.861418897182497,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 384
+  },
+  {
+    "case": "prefix-repeated-32769",
+    "input_bytes": 32769,
+    "reference_raw_bytes": 47,
+    "libdeflate_raw_bytes": 47,
+    "reference_capacity": 32804,
+    "libdeflate_capacity": 32804,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "8c359ea8a8ab0873b34186db8ee504220d4df00a850fcfe323365767ab74b1f4",
+    "median_seconds": {
+      "mech-control": 0.00051475,
+      "mech-experiment": 0.000515375,
+      "roc": 0.0013397499999999998,
+      "libdeflate": 0.0006901665
+    },
+    "paired_x_roc": {
+      "mech-control": 0.3836302011580669,
+      "mech-experiment": 0.3839401419149815,
+      "roc": 1.0,
+      "libdeflate": 0.5145681425729736
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 0.7455381890527012,
+      "mech-experiment": 0.7461405208553752,
+      "roc": 1.943377207535122,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 384
+  }
+]
