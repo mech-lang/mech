@@ -1,0 +1,192 @@
+{
+  "program.o": {
+    "control_text_bytes": 71768,
+    "experiment_text_bytes": 71256,
+    "size_delta": -512,
+    "lost_symbols": [],
+    "added_symbols": [],
+    "changed_native_intervals": {
+      "_mech_compact_closed_checked": {
+        "control": [
+          17824,
+          51264,
+          "bdeac1339d11ba2393bcfcd9306a81420f19f59705531237028a5322872d239d"
+        ],
+        "experiment": [
+          17824,
+          50752,
+          "c1a9443ee5e44cddaca18c02930c7fd1f84d7465a1e316fc6aa48f4fc60a699c"
+        ]
+      }
+    },
+    "native_symbols_changed_mod_64": [],
+    "text_x_roc": 1.2350249584026622,
+    "text_x_libdeflate": 1.92168284789644
+  },
+  "mech-worker": {
+    "control_text_bytes": 474692,
+    "experiment_text_bytes": 474180,
+    "size_delta": -512,
+    "lost_symbols": [],
+    "added_symbols": [],
+    "changed_native_intervals": {
+      "_mech_compact_allocate_backing": {
+        "control": [
+          4295060056,
+          84,
+          "781c937f2d91de190b838710962b5d6ed731a20dd3f31b9297dd6f1c49bb3d58"
+        ],
+        "experiment": [
+          4295060056,
+          84,
+          "cda6de86535aaaf4fbb63a692b8ceb916c0cc9e36e60799bbcccafd8d2c92a20"
+        ]
+      },
+      "_mech_compact_checked_layout_10939": {
+        "control": [
+          4295411264,
+          304,
+          "485ba4340a1effc8f86216926756fc630d8dfbae8d9c57617cae454e21e558ff"
+        ],
+        "experiment": [
+          4295410752,
+          304,
+          "d86ddfa9c7b2c49d3b7e7325cdeb57590f159a0b41ff31956791e0c2f8a26f16"
+        ]
+      },
+      "_mech_compact_checked_layout_13100": {
+        "control": [
+          4295410960,
+          304,
+          "587b50b014bde237d3912e3843245f3d85db2a0501a12693d9ae8bf52a4aa3f6"
+        ],
+        "experiment": [
+          4295410448,
+          304,
+          "961637df7a3b3eb942310c73ad7ea7ed1df1a0cb1298f631b2cc64499f109a3d"
+        ]
+      },
+      "_mech_compact_checked_layout_16147": {
+        "control": [
+          4295410656,
+          304,
+          "443a80bbcc5c814b6f6ac8017e87577f08685586cbbe856044f4dfb768047c67"
+        ],
+        "experiment": [
+          4295410144,
+          304,
+          "a16be815e98db6daf130280bb903d27ee61e6f2aa7490bc801bd997a30975d96"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_21031": {
+        "control": [
+          4295412224,
+          304,
+          "3e731dacbf7b53bb7b90fd71ce30b5a0ac1166e4143ff886af295f05c63de602"
+        ],
+        "experiment": [
+          4295411712,
+          304,
+          "47c0b34c578ac2f56ccb74ee626173f8bafeb68cfd958ff51fdf415314527d6b"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_44070": {
+        "control": [
+          4295412528,
+          648,
+          "08de9ad02711d8c5bea11707c2822ff4819fc6479a2a785126847049b6e408ee"
+        ],
+        "experiment": [
+          4295412016,
+          648,
+          "cb862ff870c538756a0b4489c81796b87ad8b30bb289e54c286a2c7d0c3fa13d"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_9112": {
+        "control": [
+          4295411568,
+          336,
+          "d9ea14a205db7c5975b0d7c62d0640bb30616c76f4919d8c2121ed83fed04eb5"
+        ],
+        "experiment": [
+          4295411056,
+          336,
+          "157284268230d289ed9fcf481d38fae8dd8b8077ab6c3ffed4119abc5ecaa3cc"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_9562": {
+        "control": [
+          4295411904,
+          320,
+          "4b7d1f232264a8407d140e64787401b16293a0651f0af6042283f30c2f5cacfe"
+        ],
+        "experiment": [
+          4295411392,
+          320,
+          "73a3491a046117e35e627c0e7fcd00f1ef9d81ad785d865a7fdf76cd21d085d3"
+        ]
+      },
+      "_mech_compact_closed_checked": {
+        "control": [
+          4295359232,
+          51264,
+          "f89ef248d0350dbed59ae1deffe43344f99b8c7231ff56459543e66a4915874f"
+        ],
+        "experiment": [
+          4295359232,
+          50752,
+          "2629d5dde69eaea92b5193427fe123a08a0effca621f9fbb18a30cc17394e890"
+        ]
+      },
+      "_mech_compact_finish_byte_appends": {
+        "control": [
+          4295061236,
+          576,
+          "326050a12fab46f0d1703278b6ece5dfb84cf40a0e8176d3b3957487d157f348"
+        ],
+        "experiment": [
+          4295061236,
+          576,
+          "9ea43c5efd30701f09f98268b52f1511eee52a3aa26085000015aaa236816f59"
+        ]
+      },
+      "_mech_compact_free": {
+        "control": [
+          4295060140,
+          48,
+          "5019aea2ac8901b641fa11aec1d1d5399efb75c88bc43e1812ffc42381a25c5a"
+        ],
+        "experiment": [
+          4295060140,
+          48,
+          "d7cd7c2eb69e61189ec65681e0536bd5f4835cb17cfb6d6308e0ac50722cfe7e"
+        ]
+      },
+      "_mech_compact_numeric_3009_no_growth_composed": {
+        "control": [
+          4295349760,
+          1152,
+          "5783d3cec63c3983705ddce7cb433e6ef86d9d9760715285ade3f278d35dbdc8"
+        ],
+        "experiment": [
+          4295349760,
+          1152,
+          "b0ba7380daa8b73730663e79e4100f4d3c74c5e1e6c797ee84e24dca25c21692"
+        ]
+      },
+      "_mech_compact_writable_scalar_backing": {
+        "control": [
+          4295060780,
+          148,
+          "86e1d259674fe262bb3a10b60c63613f0f0d3b4f06b5c09325d5fbe27a77d369"
+        ],
+        "experiment": [
+          4295060780,
+          148,
+          "fc9a0bb37a52f1f6d1824c4b7391dca4637dc831a508495ae82b32957b3fa692"
+        ]
+      }
+    },
+    "native_symbols_changed_mod_64": []
+  }
+}

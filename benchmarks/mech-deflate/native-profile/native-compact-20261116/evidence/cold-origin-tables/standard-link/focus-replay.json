@@ -1,0 +1,685 @@
+{
+  "runs": [
+    {
+      "id": "cold-origin-packed-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "cold-origin-packed-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.01985291291637359,
+          "lower": 0.011831450248810382,
+          "upper": 0.028013930005785337
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": 0.004509457868093758,
+          "lower": -0.0031283059780282674,
+          "upper": 0.01187420488802493
+        }
+      },
+      "combined": {
+        "estimate": 0.012152111423388234,
+        "lower": 0.0066270898517089005,
+        "upper": 0.017630362080240047
+      },
+      "adverse_runs": [
+        "cold-origin-packed-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.0017070327820660758,
+          "lower": -0.005299271024629237,
+          "upper": 0.008640468475149765
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": 0.0003478818652131732,
+          "lower": -0.015851033768021106,
+          "upper": 0.020968047441752402
+        }
+      },
+      "combined": {
+        "estimate": 0.0010272266492192816,
+        "lower": -0.007944844734459777,
+        "upper": 0.011949322435744314
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": -0.001082467155143707,
+          "lower": -0.02010260211485826,
+          "upper": 0.017148367810764453
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.005851571657569665,
+          "lower": -0.018088156019083423,
+          "upper": 0.004794827191277218
+        }
+      },
+      "combined": {
+        "estimate": -0.003469872346343994,
+        "lower": -0.014524988343172174,
+        "upper": 0.007054197950860042
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.0015299637714816239,
+          "lower": -0.000303578823477646,
+          "upper": 0.0033523223117235545
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.005009169356231635,
+          "lower": -0.007053480235174048,
+          "upper": -0.0030958913781041764
+        }
+      },
+      "combined": {
+        "estimate": -0.0017449571539296382,
+        "lower": -0.0031142538800423836,
+        "upper": -0.0004302325476321922
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.0029913923430495704,
+          "lower": -0.0034764261746230707,
+          "upper": 0.00953628076753632
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.00036731703896564216,
+          "lower": -0.005933864779852027,
+          "upper": 0.005322452388524024
+        }
+      },
+      "combined": {
+        "estimate": 0.0013106293826636861,
+        "lower": -0.002916801986378892,
+        "upper": 0.0056193405857485335
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": -0.001004343888592163,
+          "lower": -0.003507093346565515,
+          "upper": 0.0018906493613188857
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.001497645838133943,
+          "lower": -0.003562599941133948,
+          "upper": 0.0005544926652072402
+        }
+      },
+      "combined": {
+        "estimate": -0.0012510253198161347,
+        "lower": -0.0028762533914058475,
+        "upper": 0.0005534361725210157
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32767": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": -0.001314808260181155,
+          "lower": -0.002167215195554517,
+          "upper": -0.0004579158254547355
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.0009682065976616139,
+          "lower": -0.0018726750467777942,
+          "upper": -9.61536077146441e-05
+        }
+      },
+      "combined": {
+        "estimate": -0.0011415224626717402,
+        "lower": -0.0017565934416892137,
+        "upper": -0.0005402986774689644
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": -0.0010339291434540154,
+          "lower": -0.002190116527660546,
+          "upper": 0.00014147210809056787
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": 0.00031284051011071234,
+          "lower": -0.0009264287548080841,
+          "upper": 0.0015085133670800221
+        }
+      },
+      "combined": {
+        "estimate": -0.0003607711220331433,
+        "lower": -0.0012067801801182165,
+        "upper": 0.00048675365619388344
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.002728919748989256,
+          "lower": -0.001223903587837305,
+          "upper": 0.006808578479360339
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.002261724653104591,
+          "lower": -0.004900491278937991,
+          "upper": 0.0004053235747762951
+        }
+      },
+      "combined": {
+        "estimate": 0.0002304849537491105,
+        "lower": -0.002180426722660833,
+        "upper": 0.0026341799762490403
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.0020449633590304828,
+          "lower": -0.000683341636749768,
+          "upper": 0.004838279797928502
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.004027439989725767,
+          "lower": -0.005861143533342106,
+          "upper": -0.002156552307656767
+        }
+      },
+      "combined": {
+        "estimate": -0.0009958521597145387,
+        "lower": -0.0026554289883919946,
+        "upper": 0.0007028096117891458
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": -0.0027420802095485808,
+          "lower": -0.004404542952167856,
+          "upper": -0.0011647814664635936
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -9.627633736986052e-05,
+          "lower": -0.0013271086518295006,
+          "upper": 0.001195681073580035
+        }
+      },
+      "combined": {
+        "estimate": -0.0014200545522050634,
+        "lower": -0.0024790326009587194,
+        "upper": -0.00038352952617903835
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": -0.00038739292700662453,
+          "lower": -0.0022262334124771854,
+          "upper": 0.0015111192431813691
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": 0.0006149174792375867,
+          "lower": -0.0017244248642542814,
+          "upper": 0.003189957147828215
+        }
+      },
+      "combined": {
+        "estimate": 0.0001136367121232773,
+        "lower": -0.0013611675292162229,
+        "upper": 0.0017253730177875237
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.00797824462473451,
+          "lower": 0.0021308809368816295,
+          "upper": 0.013920609248870175
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": 0.004666068148120095,
+          "lower": -0.0029418392419601203,
+          "upper": 0.01267151512367537
+        }
+      },
+      "combined": {
+        "estimate": 0.0063207936865739,
+        "lower": 0.0016320576980046742,
+        "upper": 0.011190549722063459
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.0024393813365033434,
+          "lower": -0.0027820811494095876,
+          "upper": 0.007518752459921396
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.011067999289647967,
+          "lower": -0.017379171294275686,
+          "upper": -0.005038798520976773
+        }
+      },
+      "combined": {
+        "estimate": -0.004337214225641706,
+        "lower": -0.008423959085525734,
+        "upper": -0.0003635244361889223
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 3.161919971961247e-05,
+          "lower": -0.00046796114892144747,
+          "upper": 0.0005414250913045038
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": 0.0005366735010530199,
+          "lower": -0.0003261594922605582,
+          "upper": 0.0017540118080630052
+        }
+      },
+      "combined": {
+        "estimate": 0.00028411447446230476,
+        "lower": -0.00022737400004357866,
+        "upper": 0.000934666697250508
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "cold-origin-packed-focus-forward": {
+          "estimate": 0.003993686571591271,
+          "lower": 0.0022630937478989033,
+          "upper": 0.005778585771940126
+        },
+        "cold-origin-packed-focus-reverse": {
+          "estimate": -0.0005325574440812053,
+          "lower": -0.0025320652133967725,
+          "upper": 0.0013505475377728615
+        }
+      },
+      "combined": {
+        "estimate": 0.001728008123960345,
+        "lower": 0.00042403751002662027,
+        "upper": 0.003029087771462713
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "both complete timing orders are required",
+    "one-stored: regression bound or duplicate-control repeatability unresolved",
+    "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-4096: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "plan": {
+    "path": "cold-origin-packing/cold-origin-packed/plan.json",
+    "sha256": "d028ccaf0a5e52eb2dda1776e6cdfdd984aee8b3aa22f03b8c31c77b1e534193"
+  },
+  "receipts": {
+    "cold-origin-packed-focus-forward": {
+      "id": "cold-origin-packed-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "cold-origin-packing/cold-origin-packed/canonical-pins/cold-origin-packed-focus-forward.json",
+        "sha256": "f95ebeb655b50bdd922f8559581b94d089ec24bdc11e3ce55beb009e2ae71cc4"
+      },
+      "original_pins": {
+        "path": "cold-origin-packed-focus-forward/pins.json",
+        "sha256": "6760f6e60219d3d9c9b73a20300494a09e97e96b6fd635c0119d63c7c4ef3c06"
+      },
+      "summary": {
+        "path": "cold-origin-packed-focus-forward/summary.json",
+        "sha256": "50739bbebb61ff61e5e4446ed1fac48b4fd2a761a68e92e5cd1f79f3b5e7a53a"
+      },
+      "complete": {
+        "path": "cold-origin-packed-focus-forward/complete.json",
+        "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "cold-origin-packed-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "41e30c78e96ea60a6371799794f2ab2cb5433fd849ff85604a57be3bf9e07865"
+        },
+        "empty": {
+          "path": "cold-origin-packed-focus-forward/empty/observations.json.gz",
+          "sha256": "8999d5809b07cbfc6ed686f3353ce5fefb7d0b8a18996afedf0f9ea043b43a0a"
+        },
+        "heldout-mixed-131073": {
+          "path": "cold-origin-packed-focus-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "6bf24e0b2e4a11456a2752953d386ed10ec6702242c3640bb45a93bad35fe64e"
+        },
+        "heldout-window-32767": {
+          "path": "cold-origin-packed-focus-forward/heldout-window-32767/observations.json.gz",
+          "sha256": "cea6b5e701c60ea9865354adb7b02ddfc9d29483abc9e4ada51552f86f48ef5a"
+        },
+        "one-stored": {
+          "path": "cold-origin-packed-focus-forward/one-stored/observations.json.gz",
+          "sha256": "cc196ab0c355f84354ebbfa0b1eb346a3ab5440df1657a4e8b1539841704e94c"
+        },
+        "prefix-natural-16384": {
+          "path": "cold-origin-packed-focus-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "cd00ae52dc0197991d3ac811ebaa3690afcf26799dfb9678002101c3d874edd1"
+        },
+        "prefix-natural-4096": {
+          "path": "cold-origin-packed-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "5c386bdce0e457f4d089253a219289e62d4179cda229220a8550af735bdd36de"
+        },
+        "prefix-natural-8192": {
+          "path": "cold-origin-packed-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "fba657fc51c2a6f0bd2413f6e4d83a0e1d479f7398a16cca84810171c99af334"
+        },
+        "prefix-periodic-1024": {
+          "path": "cold-origin-packed-focus-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "c023d312ff1d2970a35217c3146d501fb583ab28add5c69bee178ff6c16e1da6"
+        },
+        "prefix-random-1024": {
+          "path": "cold-origin-packed-focus-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "aae84cefa9107a98596eae93110e67c377a9d47bbdb99b845011410e57503022"
+        },
+        "prefix-random-1048576": {
+          "path": "cold-origin-packed-focus-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "a1bf028dd0c1a8d19ddefe968a6b2498112c81f7d4cbcc0c1ae6f0f28812dc26"
+        },
+        "prefix-random-4096": {
+          "path": "cold-origin-packed-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "fa4449d2edb5e4530c22171943823672717f8ace9dcdfd71f3152b8505093553"
+        },
+        "prefix-random-8192": {
+          "path": "cold-origin-packed-focus-forward/prefix-random-8192/observations.json.gz",
+          "sha256": "e99609de7a755e5ec2bc7a2ddec05bb4aa776911460c0ecef650eb1de9a6f6f5"
+        },
+        "random-1024": {
+          "path": "cold-origin-packed-focus-forward/random-1024/observations.json.gz",
+          "sha256": "e2cb9a3d53cb81788fcd69edae1d984083c6f7ce7ab7e733ce500425bb928503"
+        },
+        "random-64": {
+          "path": "cold-origin-packed-focus-forward/random-64/observations.json.gz",
+          "sha256": "f304fbeba55cab6d9318490828c5ffb86df2f2b6107b2b3582865a8f44fe6d94"
+        },
+        "seven-stored-prefix": {
+          "path": "cold-origin-packed-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "236967469fed72857ea144f12c3f352cbcca31ea4c078fbc36d00365d0a97798"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "cold-origin-packed-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "cold-origin-packed-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "cold-origin-packed-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "cold-origin-packed-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "cold-origin-packed-focus-reverse": {
+      "id": "cold-origin-packed-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "cold-origin-packing/cold-origin-packed/canonical-pins/cold-origin-packed-focus-reverse.json",
+        "sha256": "f95ebeb655b50bdd922f8559581b94d089ec24bdc11e3ce55beb009e2ae71cc4"
+      },
+      "original_pins": {
+        "path": "cold-origin-packed-focus-reverse/pins.json",
+        "sha256": "6760f6e60219d3d9c9b73a20300494a09e97e96b6fd635c0119d63c7c4ef3c06"
+      },
+      "summary": {
+        "path": "cold-origin-packed-focus-reverse/summary.json",
+        "sha256": "3e7f38c62e09ffb26ac4a65434182f5901c098a701912e8d2cfa1b00248a4b70"
+      },
+      "complete": {
+        "path": "cold-origin-packed-focus-reverse/complete.json",
+        "sha256": "811d88a8fff305cdf9c57e54d42aae0e85c4aa58c7685a0730afe12f461fce38"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "cold-origin-packed-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "ecc7223c9b047b4e82c35336b0d8559262c23ef40bbdbc679c4384458282344d"
+        },
+        "empty": {
+          "path": "cold-origin-packed-focus-reverse/empty/observations.json.gz",
+          "sha256": "1997f6d8f22dbc736b058dec4a96cba12903de5bf703f2f7682c7a829db009b9"
+        },
+        "heldout-mixed-131073": {
+          "path": "cold-origin-packed-focus-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "2f7dab42f84839cdeaef2fa629d00fca2fd41cef1a0f34536e6e2599adcd6432"
+        },
+        "heldout-window-32767": {
+          "path": "cold-origin-packed-focus-reverse/heldout-window-32767/observations.json.gz",
+          "sha256": "c4955cf94e6cbc9530ddb8771f5104dd57ac23b736cdd8a146aae466c9e2a391"
+        },
+        "one-stored": {
+          "path": "cold-origin-packed-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "63539cd1196f0666d7e2d5217c7a54465781ba424c168cfb59e0da46a3b029da"
+        },
+        "prefix-natural-16384": {
+          "path": "cold-origin-packed-focus-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "1860e4bd80f0451fb3e7a0419d3049ab01cdc83a1051407cbab4ebdf4cf82e2d"
+        },
+        "prefix-natural-4096": {
+          "path": "cold-origin-packed-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "a609fe50e33cb427de497e132d6d5eb79e0087f8ec1ad7d9ac758e5f271be09c"
+        },
+        "prefix-natural-8192": {
+          "path": "cold-origin-packed-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "82cc2cccc254051ab8cbd15ca89fe686ce89be1b6ac5bea0643853e0bb46f489"
+        },
+        "prefix-periodic-1024": {
+          "path": "cold-origin-packed-focus-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "f349dd633606c75b2f809f4c4e2dcdb397ed87a73a6e4b74f3b17adadb60c544"
+        },
+        "prefix-random-1024": {
+          "path": "cold-origin-packed-focus-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "5ca6be28ec53218c77d8953ea1ef91b512949934b9f8ef942b27bf2148707169"
+        },
+        "prefix-random-1048576": {
+          "path": "cold-origin-packed-focus-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "7cb7758197430e7873ae59b45d9d22f2cc800a8401763577284f34b8768c4bdb"
+        },
+        "prefix-random-4096": {
+          "path": "cold-origin-packed-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "4106b2f7cf575a493583d53c06f8bfd5e7ea9987f73a94bae5ba74e590921bc1"
+        },
+        "prefix-random-8192": {
+          "path": "cold-origin-packed-focus-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "5b996e654a33de5c09fbdc28000ace2cc9124a47585ec1dc5728bd02fa3aa350"
+        },
+        "random-1024": {
+          "path": "cold-origin-packed-focus-reverse/random-1024/observations.json.gz",
+          "sha256": "146b48ba571ce54ba2cb7d6e7b15b6c2c8ba835c05de14eb7a89f2ba86b468ed"
+        },
+        "random-64": {
+          "path": "cold-origin-packed-focus-reverse/random-64/observations.json.gz",
+          "sha256": "1636f75ccad6a122c17ea3aaabf93f6d15507dbcbda8d0398dd69d39392e92ac"
+        },
+        "seven-stored-prefix": {
+          "path": "cold-origin-packed-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "1fdf13e98d3d1c21746d1e0ed2c6737740246a11a5ac2ed9756d323fa5d395b4"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "cold-origin-packed-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "cold-origin-packed-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "cold-origin-packed-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "cold-origin-packed-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

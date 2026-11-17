@@ -1,0 +1,204 @@
+{
+  "scope": "AArch64 static object prototype and two focused pairs of linked-worker timing orders.",
+  "control_object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "candidate_object_sha256": "66899f7928c031d7e9e882149f8d428c1b13ca22f1ca50ccdbefad8cb07d706a",
+  "text_bytes": {
+    "control": 71768,
+    "candidate": 71256
+  },
+  "candidate_text_x_roc": 1.2350249584026622,
+  "candidate_text_x_libdeflate": 1.92168284789644,
+  "emitted_object_bytes": {
+    "control": 159384,
+    "candidate": 158872
+  },
+  "cold_origins": 291,
+  "packed_groups": 3,
+  "runtime_screens": {
+    "standard-link": {
+      "decision": "Reject",
+      "regression": [
+        "empty: established slowdown above the 0.5% resolution"
+      ],
+      "unresolved": [
+        "both complete timing orders are required",
+        "one-stored: regression bound or duplicate-control repeatability unresolved",
+        "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+        "random-64: regression bound or duplicate-control repeatability unresolved",
+        "prefix-random-4096: regression bound or duplicate-control repeatability unresolved"
+      ],
+      "empty": {
+        "estimate": 0.012152111423388234,
+        "lower": 0.0066270898517089005,
+        "upper": 0.017630362080240047
+      },
+      "random_prefix_4096": {
+        "estimate": 0.0063207936865739,
+        "lower": 0.0016320576980046742,
+        "upper": 0.011190549722063459
+      },
+      "peers": [
+        {
+          "id": "cold-origin-packed-focus-forward",
+          "kind": "focus",
+          "order": "forward",
+          "case_count": 16,
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "precision_supported_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "precision_supported_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            }
+          }
+        },
+        {
+          "id": "cold-origin-packed-focus-reverse",
+          "kind": "focus",
+          "order": "reverse",
+          "case_count": 16,
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "precision_supported_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "precision_supported_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            }
+          }
+        }
+      ]
+    },
+    "aligned-sections": {
+      "decision": "Unresolved",
+      "regression": [],
+      "unresolved": [
+        "both complete timing orders are required",
+        "empty: regression bound or duplicate-control repeatability unresolved",
+        "one-stored: regression bound or duplicate-control repeatability unresolved",
+        "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+        "prefix-random-4096: regression bound or duplicate-control repeatability unresolved"
+      ],
+      "empty": {
+        "estimate": 0.008928801241163686,
+        "lower": 0.002476029395042545,
+        "upper": 0.015157539491037708
+      },
+      "random_prefix_4096": {
+        "estimate": 0.0015447059367117433,
+        "lower": -0.0037991638939717243,
+        "upper": 0.007076272630406777
+      },
+      "peers": [
+        {
+          "id": "cold-origin-page-candidate-focus-forward",
+          "kind": "focus",
+          "order": "forward",
+          "case_count": 16,
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "precision_supported_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "precision_supported_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            }
+          }
+        },
+        {
+          "id": "cold-origin-page-candidate-focus-reverse",
+          "kind": "focus",
+          "order": "reverse",
+          "case_count": 16,
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "precision_supported_wins": {
+                "mech-control": 16,
+                "mech-experiment": 16
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "precision_supported_wins": {
+                "mech-control": 11,
+                "mech-experiment": 11
+              },
+              "lost_cases": [],
+              "gained_cases": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "checks": {
+    "stack_bytes": 5280,
+    "successful_calls_without_decoder_entry": 162,
+    "identity": {
+      "program.o": "66899f7928c031d7e9e882149f8d428c1b13ca22f1ca50ccdbefad8cb07d706a",
+      "metadata.json": "0aac5b222891e6ca9d4ed88e85597cdef1ef46d9f405648436a18f5d2820d37b",
+      "mech-worker": "ae786482e20040bcaa8f8d44d4f0e93263b9db8b9caf82c14d56a6b9e47ff8f0"
+    }
+  }
+}
