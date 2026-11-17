@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 71752,
+  "object_text_x_roc": 1.2436217415418747,
+  "object_text_x_libdeflate": 1.7452811831095545,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 41112,
+  "root_code_bytes": 51240,
+  "root_frame_bytes": 3728,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 1.6097964588552713,
+  "peak_resident_bytes": 217645056,
+  "object_sha256": "029718fbdb5802fe5a176458c04d5408f2d785756d507b5be86024fba9bc1a5d",
+  "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+  "linked_text_bytes": 474676,
+  "worker_sha256": "433164cc7a10056057e039f06999c5368739c845fd9bfac10b8816c2e114c6b4",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/branch-on-zero-native-final-candidate-qualification.json"
+}

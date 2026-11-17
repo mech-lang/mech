@@ -11,6 +11,12 @@ checkout-relative reproduction commands. No smaller candidate has been promoted.
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 
+The AArch64 checked-root branch recipe emits **71,768 B** of encoder text,
+**1.24390× Roc** and **1.93549× libdeflate**. It saves 192 bytes and
+reduces measured peak native stack to 5,280 bytes. Its matched Apple M1
+source-through-link build is **4.00611 s**. It stays opt-in for runtime
+review. [Rebuild, both full timing orders, and per-case bounds](evidence/branch-on-zero/README.md)
+
 The opt-in direct source rebuild compiles the 71,960-byte encoder through
 the final link in **3.99930 s** on Apple M1, down from **4.08628 s**
 in the matched split build. It takes **1.339× Roc** and
