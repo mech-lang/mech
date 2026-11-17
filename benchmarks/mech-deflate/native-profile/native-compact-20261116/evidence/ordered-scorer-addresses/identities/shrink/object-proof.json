@@ -1,0 +1,114 @@
+{
+  "reference_object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "candidate_object_sha256": "7fbf5f8e13905aa67e42b3fb1287ae0ca11a52f77442a9e9c4891f9178d2d0b2",
+  "reference_text_bytes": 71768,
+  "candidate_text_bytes": 71704,
+  "reference_atom_bytes": 1152,
+  "candidate_atom_bytes": 1088,
+  "original_bytes_before_literals": 1120,
+  "candidate_bytes_before_padding": 1048,
+  "positions_preserved": false,
+  "relocations_moved": {
+    "0x21dc": "0x2128",
+    "0x21e0": "0x212c"
+  },
+  "predicted_instruction_removals": {
+    "prefix-natural-4096": {
+      "baseline_composed_scorer_calls": 5,
+      "baseline_composed_scorer_instructions": 3557035,
+      "projected_reduction_for_unchanged_branches": 421770,
+      "breakdown": {
+        "Keep the invariant cost subtable base, slot-table address, and vector masks": 118490,
+        "Fuse countdown compare against zero with its conditional edge": 21645,
+        "Reuse the literal index already computed at its range check": 17265,
+        "Reuse the current node address for forward and reverse reads and the final store": 165140,
+        "Update the low-word cost directly": 20480,
+        "Reuse the zero flag from masking the count field": 38900,
+        "Emit the scalar countdown's hot backedge as one conditional branch": 39850
+      }
+    },
+    "prefix-natural-8192": {
+      "baseline_composed_scorer_calls": 6,
+      "baseline_composed_scorer_instructions": 7752576,
+      "projected_reduction_for_unchanged_branches": 908028,
+      "breakdown": {
+        "Keep the invariant cost subtable base, slot-table address, and vector masks": 254370,
+        "Fuse countdown compare against zero with its conditional edge": 52626,
+        "Reuse the literal index already computed at its range check": 43020,
+        "Reuse the current node address for forward and reverse reads and the final store": 342906,
+        "Update the low-word cost directly": 49152,
+        "Reuse the zero flag from masking the count field": 95634,
+        "Emit the scalar countdown's hot backedge as one conditional branch": 70320
+      }
+    },
+    "prefix-random-8192": {
+      "baseline_composed_scorer_calls": 0,
+      "baseline_composed_scorer_instructions": 0,
+      "projected_reduction_for_unchanged_branches": 0,
+      "breakdown": {
+        "Keep the invariant cost subtable base, slot-table address, and vector masks": 0,
+        "Fuse countdown compare against zero with its conditional edge": 0,
+        "Reuse the literal index already computed at its range check": 0,
+        "Reuse the current node address for forward and reverse reads and the final store": 0,
+        "Update the low-word cost directly": 0,
+        "Reuse the zero flag from masking the count field": 0,
+        "Emit the scalar countdown's hot backedge as one conditional branch": 0
+      }
+    },
+    "prefix-random-1048576": {
+      "baseline_composed_scorer_calls": 0,
+      "baseline_composed_scorer_instructions": 0,
+      "projected_reduction_for_unchanged_branches": 0,
+      "breakdown": {
+        "Keep the invariant cost subtable base, slot-table address, and vector masks": 0,
+        "Fuse countdown compare against zero with its conditional edge": 0,
+        "Reuse the literal index already computed at its range check": 0,
+        "Reuse the current node address for forward and reverse reads and the final store": 0,
+        "Update the low-word cost directly": 0,
+        "Reuse the zero flag from masking the count field": 0,
+        "Emit the scalar countdown's hot backedge as one conditional branch": 0
+      }
+    },
+    "empty": {
+      "baseline_composed_scorer_calls": 0,
+      "baseline_composed_scorer_instructions": 0,
+      "projected_reduction_for_unchanged_branches": 0,
+      "breakdown": {
+        "Keep the invariant cost subtable base, slot-table address, and vector masks": 0,
+        "Fuse countdown compare against zero with its conditional edge": 0,
+        "Reuse the literal index already computed at its range check": 0,
+        "Reuse the current node address for forward and reverse reads and the final store": 0,
+        "Update the low-word cost directly": 0,
+        "Reuse the zero flag from masking the count field": 0,
+        "Emit the scalar countdown's hot backedge as one conditional branch": 0
+      }
+    }
+  },
+  "retained_checks": [
+    "0x2190",
+    "0x21a4",
+    "0x21e8",
+    "0x21f0",
+    "0x2204",
+    "0x220c",
+    "0x2230",
+    "0x2238",
+    "0x2240",
+    "0x2274",
+    "0x2290",
+    "0x22b0",
+    "0x2300",
+    "0x23ac",
+    "0x23c0",
+    "0x23f8",
+    "0x240c",
+    "0x2430",
+    "0x2440",
+    "0x247c",
+    "0x24a8",
+    "0x24b0",
+    "0x24b8",
+    "0x24c0",
+    "0x24c8"
+  ]
+}

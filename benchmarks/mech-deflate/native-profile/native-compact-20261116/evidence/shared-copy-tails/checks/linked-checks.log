@@ -1,0 +1,11 @@
+shared-copy-tails 162 exact linked calls
+empty {'bytes': 0, 'case': 'empty', 'live_at_failure': 0, 'origin': 23, 'requests': 0, 'status': 103426} [1.25e-07, 1.25e-07]
+one-stored {'bytes': 0, 'case': 'one-stored', 'live_at_failure': 0, 'origin': 69, 'requests': 0, 'status': 103426} [8.3e-08, 8.4e-08]
+seven-stored-prefix {'bytes': 0, 'case': 'seven-stored-prefix', 'live_at_failure': 0, 'origin': 69, 'requests': 0, 'status': 103426} [1.25e-07, 1.25e-07]
+prefix-periodic-4096 {'bytes': 4796076, 'case': 'prefix-periodic-4096', 'live_at_failure': 4778960, 'origin': 7164, 'requests': 41, 'status': 103426} [0.000103042, 0.000120333]
+prefix-repeated-16384 {'bytes': 6685744, 'case': 'prefix-repeated-16384', 'live_at_failure': 6668628, 'origin': 7164, 'requests': 41, 'status': 103426} [0.000257834, 0.000257833]
+heldout-mixed-131073 {'bytes': 7631132, 'case': 'heldout-mixed-131073', 'live_at_failure': 7586140, 'origin': 7164, 'requests': 92, 'status': 103426} [0.000528875, 0.000527375]
+layout-stack-check-control 162 exact linked calls
+/private/tmp/mech-text-reductions.yYja14/check-control peak native stack bytes touched 5280 on ['heldout-random-65537', 'prefix-random-65537', 'prefix-periodic-65537', 'prefix-repeated-65537']
+layout-stack-static-candidate 162 exact linked calls
+/private/tmp/mech-text-reductions.yYja14/static-candidate peak native stack bytes touched 5280 on ['heldout-random-65537', 'prefix-random-65537', 'prefix-periodic-65537', 'prefix-repeated-65537']
