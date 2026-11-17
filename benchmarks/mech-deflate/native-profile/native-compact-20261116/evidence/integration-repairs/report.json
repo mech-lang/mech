@@ -1,0 +1,84 @@
+{
+  "reviewed_failed_integration": {
+    "source": "2e0af88b7d979dc3bd905858089127cd0415ed96",
+    "base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+    "merge": "421f578729c5457ec4983edfb38523231e721541",
+    "run": "https://github.com/mech-lang/mech/actions/runs/43991784603",
+    "failed_jobs": {
+      "static_architecture": 133734583456,
+      "static_distribution": 133734583360,
+      "hosted": 133734583461,
+      "same_binary": 133734583512,
+      "public_cli": 133734583628,
+      "browser_smoke": 133738829745,
+      "browser_scalar": 133738829747,
+      "browser_webgpu": 133738829752
+    }
+  },
+  "measured_source_tip_before_repairs": "5acf709fd8a2904c99a1530e4e29f373c8e09c7a",
+  "static_distribution": {
+    "intent": "Native CLI compiler feature includes the existing compiler-only allocator.",
+    "added_registry_dependencies": [
+      "mimalloc@0.1.39",
+      "libmimalloc-sys@0.1.35"
+    ],
+    "removed": [],
+    "locked_counts": {
+      "standard": [
+        402,
+        404
+      ],
+      "full": [
+        404,
+        406
+      ]
+    },
+    "comparison": "distribution-graph-delta.json",
+    "standard_matches_observed_ci": true,
+    "full_rust_catalog_rebuild_verified": false
+  },
+  "public_cli": {
+    "selection_units": 6,
+    "checker_unit_tests_passed": 7,
+    "scope": "Exact six-name selection from the failed job and a completion-count regression test."
+  },
+  "warning_policy": {
+    "checker_modified": false,
+    "policy_contract_passed": true,
+    "unit_tests_passed": 8,
+    "pinned_pulley_source": "https://github.com/bytecodealliance/wasmtime/blob/v44.0.3/pulley/src/lib.rs",
+    "matched_opcode_tables": {
+      "ordinary": 220,
+      "extended": 310
+    }
+  },
+  "generated_launcher_and_browser": {
+    "verification": "launcher-and-browser-verification.json",
+    "both_runtime_feature_sets_passed_with_denied_warnings": true,
+    "wasm_behavior_tests_passed": 4,
+    "wasm_release_unit_graph_units": 206,
+    "canonical_lock_identical_parsed_package_records": 583,
+    "browser_execution": "Pending updated CI execution."
+  },
+  "open_architecture_contracts": {
+    "unsafe_boundaries": {
+      "checker_modified": false,
+      "audited_test_paths_added": 5,
+      "original_exact_inventory": "unsafe-boundaries-as-run.log.gz",
+      "remaining_unlisted_paths": 182,
+      "globally_forbidden_manual_send_or_sync": 3
+    },
+    "retired_value_system": {
+      "observed_paths": [
+        "hosts/gpu/src/native_artifact/program/compact/layout.rs",
+        "vendor/cranelift-codegen",
+        "archived related-post-gen probes"
+      ],
+      "issues": [
+        "Private Kind declaration",
+        "Generated includes",
+        "Archived includes whose target blobs are absent"
+      ]
+    }
+  }
+}
