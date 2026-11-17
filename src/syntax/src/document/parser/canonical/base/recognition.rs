@@ -174,6 +174,7 @@ impl Cache {
         }
         // All admission checks precede mutation. The cold run starts its first
         // raw scanner afresh at this key, making the final Unicode tail exact.
+        p.observe_definition_raw_origin(Some(key.context_end));
         let start = p.state.events.len();
         let identity = p.ids.node();
         let node = core::iter::once(Event::Start {

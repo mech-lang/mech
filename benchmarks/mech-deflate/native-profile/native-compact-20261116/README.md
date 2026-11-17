@@ -8,6 +8,12 @@ Start with [the current scorecard](CURRENT.md) and [the review and continuation 
 It identifies the retained baseline, review priorities, unresolved CI, and all
 24 static size screens and their subsequent runtime follow-ups, with
 checkout-relative reproduction commands. No smaller candidate has been promoted.
+
+The parser now replays admitted one-shot variable definitions with fresh
+identities. Matched Mech deployment builds take **3.13566 s**
+through the final link. The generated 71,768-byte encoder, metadata and
+timed benchmark worker reproduce exactly.
+[Parser source, finite-limit checks and complete builds](evidence/scoped-definition-replay/README.md)
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 

@@ -88,7 +88,7 @@ pub(crate) struct CacheWork {
     pub reused: u64,
 }
 impl CacheWork {
-    fn accumulate(&mut self, work: Self) {
+    pub(super) fn accumulate(&mut self, work: Self) {
         self.events += work.events;
         self.token_bytes += work.token_bytes;
         self.child_storage_nodes += work.child_storage_nodes;

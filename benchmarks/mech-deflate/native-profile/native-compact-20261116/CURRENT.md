@@ -28,7 +28,7 @@ The fixed object is `7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a4
 
 | Benchmark dimension | Fixed Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 3.73777 s | 2.98844 s | 0.48067 s |
+| Historical benchmark source through final link | 3.73777 s | 2.98844 s | 0.48067 s |
 | Generated encoder text | 71,768 B | 57,696 B | 37,080 B |
 | Complete encoder object | 159,384 B | 79,160 B | 52,128 B |
 | Linked executable text | 474,692 B | 150,416 B | 129,900 B |
@@ -43,18 +43,18 @@ and strip rules. Generated text, linked text, file bytes, and RSS have
 separate measurement boundaries. [Matched builds](evidence/refused-general-ssa/README.md)
 · [Common deployment](evidence/minimal-deployment/README.md)
 
-| Matched deployment build, prebuilt compilers and support | Mech core and alloc | Roc | libdeflate |
+| Latest matched deployment build | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 3.73555 s | 2.99608 s | 0.48811 s |
-| Source through strip | 3.74587 s | 3.00635 s | 0.49889 s |
+| Source through final link | **3.13566 s** | 2.98380 s | 0.48054 s |
+| Source through strip | 3.14623 s | 2.99426 s | 0.49110 s |
+| Compiler peak RSS | 395,493,376 B | 397,230,080 B | 71,532,544 B |
 
-The smaller Mech host is 1.245× Roc and 7.666× libdeflate in the paired
-source-through-link runs. Its paired build time is 0.39% lower than the
-std-backed deployment link and its final link takes 35.56 ms versus
-42.75 ms. The normalized output name in these timing runs changes the
-ad hoc signing record by eight bytes.
-[Core and alloc source, link and checks](evidence/alloc-only-deployment/README.md)
-· [All 32 deployment build measurements](evidence/alloc-only-deployment/measurements/source-through-link-timing.json.gz)
+The guarded replay improves paired complete build time by 15.39%
+with the fixed Mech deployment link and exact encoder. In the same runs Mech
+takes 1.052× Roc and 6.530× libdeflate through final link.
+The normalized output name changes the ad hoc signing record by eight bytes.
+[Latest compiler comparison](evidence/scoped-definition-replay/README.md)
+· [Earlier deployment-host comparison](evidence/alloc-only-deployment/README.md)
 
 The fixed worker's measured private payload peak is 10,548,878 B. Its
 checked root frame is 3,728 B and the full measured stack high-water is
@@ -95,6 +95,11 @@ both orders. The earlier transient's cause remains open.
   The frozen parser trace attributes 1.142 s to BestChoice winner re-execution
   within 1.843 s of grammar work. The first family is variable definitions
   at 0.643 s exclusive. [Parser attribution](evidence/best-choice-structural-replay/README.md)
+  The hardened variable-definition replay takes 1.303 s standalone and
+  3.136 s from source through final deployment link with
+  the exact encoder and worker. The paired source-through-link result is
+  1.052× Roc and 6.530× libdeflate.
+  [Published source and complete build comparisons](evidence/scoped-definition-replay/README.md)
 - **Native compiler.** Attribute plan/semantic preparation, lazy facts,
   SSA construction, cleanup, Cranelift and worker waits separately. Share
   one immutable facts owner across read packing and branch analysis first.
@@ -104,8 +109,10 @@ both orders. The earlier transient's cause remains open.
   [First matched source change](evidence/shared-program-facts/README.md)
   The exclusive trace measures 0.692 s in CFG cleanup and 0.280 s in SSA
   construction. The facts change removes one graph and 11 definition
-  initializations, about 1 ms in the trace. The first scalar demand slice
-  targets unnecessary aggregate and carrier reads before SSA construction.
+  initializations, about 1 ms in the trace. The scoped demand census finds
+  14 scalar sibling reads with protected boundaries. A checked range-proof
+  chain exposes about 3.2 ms of CFG and dominator recomputation. Park both
+  narrow changes and inspect the next exact-choice omitted-body case.
   [Exclusive native cost and raw traces](evidence/native-exclusive-work/README.md)
 - **Integration and qualification.** Finish the Related Posts producer
   binding and run the bounded control-drift diagnostic before any new full
