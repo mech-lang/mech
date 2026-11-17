@@ -106,7 +106,7 @@ The optimized compact path is diagnostic. Finite admission, cumulative
 accounting and recovery under the ordinary entry remain required. The bounded control-drift check recovered all four affected periodic wins in
 both orders. The earlier transient's cause remains open.
 [Fixed-worker sentinel diagnostic](evidence/fixed-reference-drift/README.md)
-[CI for the measured source and evidence](https://github.com/mech-lang/mech/actions/runs/44118007456)
+[Current #993 checks](https://github.com/mech-lang/mech/pull/993/checks) · [Local format and contract checks](evidence/pinned-formatter-repair/README.md)
 · [Related Posts binding audit](evidence/related-post-linked-binding/README.md)
 
 ## Runtime scorer study
@@ -193,26 +193,33 @@ Inline single-definition storage measured a paired saving of
 The 90% interval is **0.86 to 17.41 ms**.
 [SSA results](evidence/ssa-local-definitions/README.md)
 
+## Short scorer visits
+
+Scalar pairing and earlier four-lane entry use the same admitted windows and
+preserve strict winner order. The linked validation covers the complete
+81-case fixture set and six checked exits. The 71,192 B frame-copy encoder remains the maintained build. The next runtime mechanism is the repeated bound reload.
+[Short-visit results](evidence/ordered-scorer-short-visits/README.md)
+
 ## Active work
 
-- **Native compiler.** Close graph reuse for freshly built and post-phi
-  checks. Look for compilation work that can be avoided before constructing
-  specialized bodies and their proof contexts. The current measurements give
-  88.8 ms for tail layout and 77.7 ms for guard derivation.
-  [Graph census](evidence/verified-flowgraphs/diagnostics/summary.json) ·
-  [Native preparation timings](evidence/native-pass-attribution/README.md)
-- **Parser.** Derive a bounded failure prefix for identifier-symbol choices
-  from their canonical definitions. The census identifies 134,387 eligible
-  identifier-symbol arms. Preserve exact parser work, limits and cache order
-  and measure the ordinary parser separately from instrumentation.
-  [Parser census](evidence/verified-flowgraphs/parser-choice-census/report.json)
+- **Native compiler.** Price one provisional SSA value family using the
+  root-lane census. Direct entry values require dominance and immutability
+  on all relevant paths, including ownership, synthetic and failure paths.
+  The bounded freshly built and post-phi graph reuse is complete.
+  [Current SSA census](evidence/source-and-ssa-attribution/README.md) ·
+  [Verified graph reuse](evidence/verified-flowgraphs/README.md)
+- **Parser.** Reprice only the remaining outer identifier-choice and frame
+  work after the literal-mismatch shortcut. Bound the failure-prefix
+  experiment with the current parser and preserve parser event and allowance
+  boundaries. [Earlier grammar census](evidence/verified-flowgraphs/parser-choice-census/report.json)
 - **Runtime and emitted size.** Recover the `320-overlap` win with margin
   while holding natural 8 KiB. Natural 4 KiB is the next additional win.
   Keep both complete orders and checked carrier evidence under v3.
   [Latest scorer observations](evidence/ordered-vector-latch/README.md)
-- **Source semantic frontend.** Attribute declaration registration,
-  body/name/overload lowering, schema and constant finalization, and
-  requirement canonicalization by the 2.0 s milestone review.
+- **Source semantic frontend.** Use the current exclusive capture to
+  select one measured lowering mechanism. Catalog startup, installation
+  and validation have separate timings in the same report.
+  [Source and catalog attribution](evidence/source-and-ssa-attribution/README.md)
 
 - **Integration and qualification.** Compile and test the checked Related
   Posts producer binding. The 24-block control-drift diagnostic recovers the
@@ -230,6 +237,8 @@ the portfolio after two experiments or a substantial decision.
 | --- | --- |
 | Variable, function and bounded statement replay, including nested observation | Complete |
 | Adjacent phi verification reuse | Complete |
+| Fresh and post-phi flowgraph reuse | Complete for the bounded cleanup family |
+| Inline single SSA definition storage | Retained with a paired 5.9 ms through-link saving |
 | Shared immutable facts | Retained and closed at about 1 ms less materialization |
 | Declaration snapshots | Closed at about 0.048 ms |
 | Minimal deployment without std or JSON | Complete |

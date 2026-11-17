@@ -1,0 +1,28 @@
+{
+  "source_pin": "3cde720cdf8b24d6bc4f1818988479d8eb5ae960",
+  "path": "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs",
+  "sha256": "c4f661fc8cc51aa1c2df3784d1373bf5a7dfbd4fda80654f639dbacec7718f8e",
+  "patch_sha256": "53bb6b2f702f526359365116215d4be9646fe6b67a2c7bbd236ec0d7421c0aa2",
+  "folded_base_sha256": "e74aea973a1abe309cd37b432d6b1305307c1b5e2e36d984aedc34fd3d0d6965",
+  "compiler_sha256": "a7de4bae1a01c6c3a90673d75c4168187d9f77db50646b9302ffb09207111c30",
+  "disabled_artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/compiler/disabled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ]
+}
