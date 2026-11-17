@@ -18,27 +18,32 @@ result transport for each selected instance.
 
 The general byte-read outline saves 332 bytes against the unpadded control.
 Its root extent has the published root's address residue modulo 64 without
-the old tail pad. The two linked workers match all 162 exact output and
-resource checks and six checked failures. Each has a measured peak stack of
-5,280 bytes. The encoder text is 1.238× Roc and 1.926× libdeflate.
-[Static results](static-summary.json) · [Contract checks](contract-checks/result.json)
+the old tail pad. The encoder text is 1.238× Roc and 1.926× libdeflate.
+[Static results](static-summary.json)
 
-## Runtime
+## Corrected worker qualification
 
-| Order | Roc, reference and outline | libdeflate, reference and outline |
+The first runtime comparison linked the reference object into both workers.
+The outline object was present on disk but absent from the candidate link
+command. This invalidates the prior comparative win counts and the first
+linked outline contract checks. The archived logs record two runs of the
+reference encoder with different metadata.
+
+The corrected linker arguments explicitly name each actor's distinct
+encoder input. The reference reproduces worker `674d88602946…`. The outline
+links worker `149d0c2cb7d2…`. Both workers match on all 162 exact linked
+output and resource observations and six checked allocation failures.
+
+| Measured stack high-water | Reference | Byte-read outline |
 | --- | ---: | ---: |
-| Focused forward | 15/15 | 11/15 |
-| Focused reverse | 15/15 | 11/15 |
-| Complete forward | 81/81 | 61/81 |
-| Complete reverse | 81/81 | 60/81 |
+| Native stack bytes touched | 5,280 B | 5,328 B |
 
-The outline keeps every individual control win. Both workers cross parity
-against libdeflate on `prefix-periodic-1024` in the complete reverse order.
-The reference takes 1.00208× libdeflate and the outline takes 1.00417×.
-Both complete orders contain 96 balanced blocks per case and 982,656 timed
-calls. Policy v2 reports **Unresolved** for the shared 61-win floor miss.
-[Focused plan and replay](focus/plan.json) · [Complete plan](full/plan.json)
-· [Complete replay](full/replay.json.gz) · [Offline replay](replay-runtime.py)
+The added 48 B exceeds the campaign's predeclared 5,280 B limit. Runtime
+qualification for the corrected outline is pending.
+[Actual link arguments and object digests](corrected-link/link-bindings.json)
+· [Corrected contract checks](corrected-link/result.json)
+· [Per-case stack depths](corrected-link/stack.json)
+· [Correction receipt](corrected-link/runtime-validity.json)
 
 ## Reproduction and build time
 

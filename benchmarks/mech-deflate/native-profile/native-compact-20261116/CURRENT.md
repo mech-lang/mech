@@ -38,10 +38,12 @@ tokenization and parsing with one compilation job. The reported intervals
 are approximately **340×** apart.
 [Separate reported parser phase comparison](evidence/phi-verifier-reuse/parser-phases/README.md)
 
-The general-byte-read outline emits **71,420 B**. It keeps every peer win
-from the paired control in both complete orders. Both workers score 60/81
-against libdeflate in reverse when `prefix-periodic-1024` crosses parity.
-[Checked byte reads](evidence/checked-byte-read-regions/README.md)
+The byte-read outline emits **71,420 B**. Correctly linked workers match
+162 exact output and resource observations and six checked failures. The
+outline raises peak stack from **5,280 B to 5,328 B**. Its previously reported
+win counts are withdrawn because those runs linked the reference encoder
+into both workers.
+[Corrected evidence](evidence/checked-byte-read-regions/README.md)
 
 ## Which build to use
 
@@ -49,7 +51,7 @@ against libdeflate in reverse when `prefix-periodic-1024` crosses parity.
 | --- | ---: | --- |
 | Historical rebuild default | 72,520 B | `rebuild.py --variant baseline`, compiler opt level 1 |
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
-| Latest fully timed size candidate | 71,420 B | Checked byte reads. Both reverse workers scored 60/81 libdeflate |
+| Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Current compiler source | **71,768 B** | Guarded parser replay and adjacent cleanup verification |
 

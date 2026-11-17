@@ -57,5 +57,4 @@ def replay(kind):
 
 
 if __name__ == '__main__':
-    for campaign in ('focus', 'full'):
-        replay(campaign)
+    raise SystemExit("Superseded: both historical workers linked the reference object. See README.md.")

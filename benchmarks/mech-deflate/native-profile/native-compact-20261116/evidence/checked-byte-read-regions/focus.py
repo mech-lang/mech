@@ -74,4 +74,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit("Superseded: both historical workers linked the reference object. See README.md.")

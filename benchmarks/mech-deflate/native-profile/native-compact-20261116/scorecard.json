@@ -7408,112 +7408,9 @@
     "matched_unpadded_control_bytes": 71752,
     "stack_peak_bytes": {
       "control": 5280,
-      "general-byte-read": 5280
+      "general-byte-read": 5328
     },
-    "focused_runtime_decision": "Unresolved",
     "report": "evidence/checked-byte-read-regions/README.md",
-    "full_runtime_decision": "Unresolved",
-    "full_runtime_runs": [
-      {
-        "id": "checked-byte-read-regions-full-v2-forward",
-        "kind": "full",
-        "order": "forward",
-        "case_count": 81,
-        "peers": {
-          "roc": {
-            "point_estimate_wins": {
-              "mech-control": 81,
-              "mech-experiment": 81
-            },
-            "precision_supported_wins": {
-              "mech-control": 81,
-              "mech-experiment": 81
-            },
-            "lost_cases": [],
-            "gained_cases": [],
-            "distinct_contract_point_estimate_wins": {
-              "mech-control": 74,
-              "mech-experiment": 74
-            },
-            "distinct_contract_precision_supported_wins": {
-              "mech-control": 74,
-              "mech-experiment": 74
-            }
-          },
-          "libdeflate": {
-            "point_estimate_wins": {
-              "mech-control": 61,
-              "mech-experiment": 61
-            },
-            "precision_supported_wins": {
-              "mech-control": 61,
-              "mech-experiment": 61
-            },
-            "lost_cases": [],
-            "gained_cases": [],
-            "distinct_contract_point_estimate_wins": {
-              "mech-control": 55,
-              "mech-experiment": 55
-            },
-            "distinct_contract_precision_supported_wins": {
-              "mech-control": 55,
-              "mech-experiment": 55
-            }
-          }
-        }
-      },
-      {
-        "id": "checked-byte-read-regions-full-v2-reverse",
-        "kind": "full",
-        "order": "reverse",
-        "case_count": 81,
-        "peers": {
-          "roc": {
-            "point_estimate_wins": {
-              "mech-control": 81,
-              "mech-experiment": 81
-            },
-            "precision_supported_wins": {
-              "mech-control": 81,
-              "mech-experiment": 81
-            },
-            "lost_cases": [],
-            "gained_cases": [],
-            "distinct_contract_point_estimate_wins": {
-              "mech-control": 74,
-              "mech-experiment": 74
-            },
-            "distinct_contract_precision_supported_wins": {
-              "mech-control": 74,
-              "mech-experiment": 74
-            }
-          },
-          "libdeflate": {
-            "point_estimate_wins": {
-              "mech-control": 60,
-              "mech-experiment": 60
-            },
-            "precision_supported_wins": {
-              "mech-control": 60,
-              "mech-experiment": 60
-            },
-            "lost_cases": [],
-            "gained_cases": [],
-            "distinct_contract_point_estimate_wins": {
-              "mech-control": 54,
-              "mech-experiment": 54
-            },
-            "distinct_contract_precision_supported_wins": {
-              "mech-control": 54,
-              "mech-experiment": 54
-            }
-          }
-        }
-      }
-    ],
-    "full_runtime_unresolved": [
-      "checked-byte-read-regions-full-v2-reverse: libdeflate floor 61 missed (control 60, candidate 60)"
-    ],
     "smaller_encoder_build_seconds": {
       "source": 2.775959562510252,
       "link": 0.03505870862863958,
@@ -7521,7 +7418,9 @@
       "strip": 0.010360229294747114,
       "source_through_strip": 2.8224758959840983
     },
-    "qualification_scope": "Both focused and complete orders with exact linked output checks."
+    "qualification_scope": "Exceeds predeclared stack ceiling. Pending runtime qualification.",
+    "runtime_comparison": "Pending",
+    "link_correction": "evidence/checked-byte-read-regions/corrected-link/runtime-validity.json"
   },
   "reported_parser_comparison": {
     "mech_seconds": 1.0202926665,
