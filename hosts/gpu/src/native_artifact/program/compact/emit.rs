@@ -382,7 +382,7 @@ fn define_entry<M: Module>(
             Some((
                 from,
                 to,
-                consuming[site] && owner_flow.can_finish_source(&flow, &guards, site, from),
+                consuming[site] && owner_flow.can_finish_consumed_source(site, from),
             ))
         })
         .collect::<Vec<_>>();

@@ -18180,8 +18180,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
-      "sha256": "9b83d8347ece76b121ab7e1ac8d498a13b04938212c242c727688e06a99f1dbf",
-      "bytes": 80197
+      "sha256": "217591ae8a7c2d0efe4956c8d85205e6a462f8163d6f70fec70133274430ea8e",
+      "bytes": 80190
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs",
@@ -18240,8 +18240,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/owner_flow/mod.rs",
-      "sha256": "c7b1c2f7f2c9e5010f459e7d84a8056d6624c3d9fb0a55f2d6676b36d6b87e51",
-      "bytes": 18214
+      "sha256": "f4441258920235eee49681e2d659d03268c2ace159849bde1db69d98eb13b3f8",
+      "bytes": 19072
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/owner_flow/read_borrows.rs",
@@ -18295,8 +18295,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/private_chains.rs",
-      "sha256": "189b361dcb2e865657d03c965b323fbd6b10dd82483182c62ef359a95f14da5d",
-      "bytes": 15912
+      "sha256": "d46460e1e01cb5c9b630ce23bd358223515e901a54b23e86e5ac3258389b3d99",
+      "bytes": 15905
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/private_phase.rs",
