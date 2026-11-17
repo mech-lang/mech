@@ -40,12 +40,23 @@ pub(crate) struct CacheWork {
     pub nodes: u64,
     pub reused: u64,
 }
+impl CacheWork {
+    fn accumulate(&mut self, work: Self) {
+        self.events += work.events;
+        self.token_bytes += work.token_bytes;
+        self.child_storage_nodes += work.child_storage_nodes;
+        self.nodes += work.nodes;
+        self.reused += work.reused;
+    }
+}
 pub(crate) struct Sink {
     at: usize,
     end: usize,
     frames: Vec<Frame>,
     token: Option<Token>,
     root: Option<Arc<GreenNode>>,
+    discarded_depth: usize,
+    discarded_root: bool,
     event_nodes: Option<BTreeMap<usize, NodeId>>,
     pub work: CacheWork,
 }
@@ -57,6 +68,8 @@ impl Sink {
             frames: Vec::new(),
             token: None,
             root: None,
+            discarded_depth: 0,
+            discarded_root: false,
             event_nodes: collect_event_nodes.then(BTreeMap::new),
             work: CacheWork::default(),
         }
@@ -73,7 +86,29 @@ impl Sink {
         }
         Ok(())
     }
+    fn discard_element(&mut self, is_node: bool) -> Result<(), BuildError> {
+        if self.discarded_depth == 0 {
+            if !is_node {
+                return Err(BuildError::NoOpenNode);
+            }
+            if core::mem::replace(&mut self.discarded_root, true) {
+                return Err(BuildError::MultipleRoots(2));
+            }
+        }
+        Ok(())
+    }
     pub fn advance(
+        &mut self,
+        source: &TextSnapshot,
+        events: &Journal<Event>,
+        current: &Journal<Event>,
+        ids: &mut IdGenerator,
+        allowance: &mut u64,
+    ) -> Result<bool, BuildError> {
+        self.advance_mode::<true>(source, events, current, ids, allowance)
+    }
+
+    fn advance_mode<const MATERIALIZE: bool>(
         &mut self,
         source: &TextSnapshot,
         events: &Journal<Event>,
@@ -84,10 +119,20 @@ impl Sink {
         let (mut page_start, mut page): (usize, &[Event]) = (0, &[]);
         loop {
             if self.at >= self.end && self.token.is_none() {
-                if !self.frames.is_empty() {
-                    return Err(BuildError::UnclosedNodes(self.frames.len()));
+                let depth = if MATERIALIZE {
+                    self.frames.len()
+                } else {
+                    self.discarded_depth
+                };
+                if depth != 0 {
+                    return Err(BuildError::UnclosedNodes(depth));
                 }
-                if self.root.is_none() {
+                let has_root = if MATERIALIZE {
+                    self.root.is_some()
+                } else {
+                    self.discarded_root
+                };
+                if !has_root {
                     return Err(BuildError::MultipleRoots(0));
                 }
                 return Ok(true);
@@ -98,21 +143,27 @@ impl Sink {
             *allowance -= 1;
             if let Some(mut token) = self.token.take() {
                 if token.at < token.range.end {
-                    let chunk = source.chunk_at(token.at).ok_or(BuildError::TextTooLarge)?;
-                    let available = (token.range.end.min(chunk.range.end) - token.at).to_usize();
                     // The first byte was charged by the loop. Stop at the
                     // same byte even when a budget ends within a UTF-8 scalar.
-                    let count = (available as u64).min(*allowance + 1) as usize;
-                    let start = (token.at - chunk.range.start).to_usize();
-                    for &byte in &chunk.text.as_bytes()[start..start + count] {
-                        token.hash =
-                            (token.hash ^ u64::from(byte)).wrapping_mul(0x0000_0100_0000_01b3);
-                    }
+                    let count = if MATERIALIZE {
+                        let chunk = source.chunk_at(token.at).ok_or(BuildError::TextTooLarge)?;
+                        let available =
+                            (token.range.end.min(chunk.range.end) - token.at).to_usize();
+                        let count = (available as u64).min(*allowance + 1) as usize;
+                        let start = (token.at - chunk.range.start).to_usize();
+                        for &byte in &chunk.text.as_bytes()[start..start + count] {
+                            token.hash =
+                                (token.hash ^ u64::from(byte)).wrapping_mul(0x0000_0100_0000_01b3);
+                        }
+                        count
+                    } else {
+                        u64::from((token.range.end - token.at).0).min(*allowance + 1) as usize
+                    };
                     token.at += TextSize(count as u32);
                     *allowance -= count as u64 - 1;
                     self.work.token_bytes += count as u64;
                     self.token = Some(token);
-                } else {
+                } else if MATERIALIZE {
                     self.element(GreenElement::Token(GreenToken {
                         id: ids.token(),
                         kind: token.kind,
@@ -120,6 +171,9 @@ impl Sink {
                         flags: token.flags,
                         text_hash: token.hash,
                     }))?;
+                } else {
+                    ids.token();
+                    self.discard_element(false)?;
                 }
                 continue;
             }
@@ -162,8 +216,12 @@ impl Sink {
                             nodes.insert(index, cached.node.id);
                         }
                         self.work.reused += 1;
-                        self.element(GreenElement::Node(cached.node))?;
-                    } else {
+                        if MATERIALIZE {
+                            self.element(GreenElement::Node(cached.node))?;
+                        } else {
+                            self.discard_element(true)?;
+                        }
+                    } else if MATERIALIZE {
                         self.frames.push(Frame {
                             kind,
                             flags,
@@ -171,6 +229,13 @@ impl Sink {
                             start: index,
                             children: GreenChildren::for_kind(kind),
                         });
+                    } else {
+                        self.discarded_depth += 1;
+                        // A discarded request has no observable intermediate identities.
+                        // Its anonymous nodes still consume the original ID sequence.
+                        if identity.is_none() {
+                            ids.node();
+                        }
                     }
                 }
                 Event::Token { kind, range, flags } => {
@@ -190,9 +255,22 @@ impl Sink {
                 }
                 Event::Reuse { node } => {
                     self.work.reused += 1;
-                    self.element(GreenElement::Node(node))?;
+                    if MATERIALIZE {
+                        self.element(GreenElement::Node(node))?;
+                    } else {
+                        self.discard_element(true)?;
+                    }
                 }
                 Event::Finish => {
+                    if !MATERIALIZE {
+                        self.discarded_depth = self
+                            .discarded_depth
+                            .checked_sub(1)
+                            .ok_or(BuildError::NoOpenNode)?;
+                        self.work.nodes += 1;
+                        self.discard_element(true)?;
+                        continue;
+                    }
                     let frame = self.frames.pop().ok_or(BuildError::NoOpenNode)?;
                     let node = Arc::new(GreenNode {
                         id: frame.identity.unwrap_or_else(|| ids.node()),
@@ -225,6 +303,9 @@ pub(crate) struct TreeCache {
     active: Option<(Request, Sink)>,
     pub work: CacheWork,
     pub peak_pending: usize,
+    pub discard_stale_requests: bool,
+    #[cfg(test)]
+    pub preserve_stale_accounting_for_test: bool,
 }
 impl TreeCache {
     pub fn enqueue(
@@ -248,11 +329,7 @@ impl TreeCache {
     pub fn total_work(&self) -> CacheWork {
         let mut work = self.work;
         if let Some((_, sink)) = &self.active {
-            work.events += sink.work.events;
-            work.token_bytes += sink.work.token_bytes;
-            work.child_storage_nodes += sink.work.child_storage_nodes;
-            work.nodes += sink.work.nodes;
-            work.reused += sink.work.reused;
+            work.accumulate(sink.work);
         }
         work
     }
@@ -276,16 +353,41 @@ impl TreeCache {
             if self.active.is_none() {
                 *allowance -= 1;
                 let request = self.queue.pop_front().expect("pending cache request");
-                // A child owner can reject an alternative before yielding to
-                // this cache. Its retired marker must never be materialized.
-                if request.end > current.len()
-                    || !matches!(current.get(request.start),
-                        Some(Event::Start { identity: Some(identity), .. })
-                            if *identity == request.identity)
+                // Ordinary streaming drops requests whose marker was rejected.
+                // The differential oracle can retain the previous accounting walk.
+                #[cfg(test)]
+                let preserve_stale_accounting = self.preserve_stale_accounting_for_test;
+                #[cfg(not(test))]
+                let preserve_stale_accounting = false;
+                if !self.discard_stale_requests
+                    && !preserve_stale_accounting
+                    && (request.end > current.len()
+                        || !matches!(current.get(request.start),
+                            Some(Event::Start { identity: Some(identity), .. })
+                                if *identity == request.identity))
                 {
                     continue;
                 }
-                let sink = Sink::new(request.start, request.end, false);
+                // Cache publication needs the root, while the final sink
+                // collects the event map used to anchor diagnostics.
+                let mut sink = Sink::new(request.start, request.end, false);
+                if self.discard_stale_requests
+                    && !matches!(current.get(request.start), Some(Event::Start { identity: Some(id), .. }) if *id == request.identity)
+                    // Bound potential work before starting. Each event costs one unit.
+                    // A token can add the byte length of the source and one finish unit.
+                    && ((request.end - request.start) as u64)
+                        .checked_mul(u64::from(source.byte_len().0) + 2)
+                        .is_some_and(|bound| bound <= *allowance)
+                {
+                    // The marker cannot receive the result. Visit the same events and
+                    // consume the same work and IDs without allocating a discarded tree.
+                    let complete = sink
+                        .advance_mode::<false>(source, &request.events, current, ids, allowance)
+                        .expect("completed canonical marker must materialize");
+                    assert!(complete, "bounded cache accounting must complete");
+                    self.work.accumulate(sink.work);
+                    continue;
+                }
                 self.active = Some((request, sink));
             }
             let (request, sink) = self.active.as_mut().expect("active cache request");
@@ -318,11 +420,7 @@ impl TreeCache {
                     *slot = Some(cached);
                 }
             }
-            self.work.events += work.events;
-            self.work.token_bytes += work.token_bytes;
-            self.work.child_storage_nodes += work.child_storage_nodes;
-            self.work.nodes += work.nodes;
-            self.work.reused += work.reused;
+            self.work.accumulate(work);
         }
     }
 }
@@ -369,6 +467,86 @@ mod tests {
             panic!("the retained marker must be available to streaming views");
         };
         crate::document::validate_lossless(&cached.node, &source).unwrap();
+    }
+
+    #[test]
+    fn stale_requests_keep_later_identities_and_finite_work() {
+        let source = TextSnapshot::new(DocumentId(2), Revision(1), "aé")
+            .unwrap()
+            .append("βz")
+            .unwrap();
+        let mut events = Journal::default();
+        for identity in [Some(NodeId(20)), None] {
+            events.push(Event::Start {
+                kind: SyntaxKind::Document,
+                flags: NodeFlags::NONE,
+                identity,
+                cached: None,
+            });
+        }
+        for _ in 0..65 {
+            events.push(Event::Tombstone);
+        }
+        events.push(Event::Token {
+            kind: SyntaxKind::Unknown,
+            range: source.full_range(),
+            flags: TokenFlags::NONE,
+        });
+        events.push(Event::Finish);
+        events.push(Event::Finish);
+
+        let run = |discard, grant| {
+            let mut cache = TreeCache {
+                discard_stale_requests: discard,
+                preserve_stale_accounting_for_test: true,
+                ..TreeCache::default()
+            };
+            let mut current = events.clone();
+            cache.enqueue(&current, 0, TextSize(0), NodeId(20));
+            let Event::Start { identity, .. } = &mut current[0] else {
+                panic!("root marker")
+            };
+            *identity = Some(NodeId(21));
+            cache.enqueue(&current, 0, TextSize(0), NodeId(21));
+            let mut ids = IdGenerator::with_next(40, 100, 1);
+            let mut charges = Vec::new();
+            loop {
+                let mut remaining = grant;
+                let done = cache.advance(&source, &mut current, &mut ids, &mut remaining);
+                charges.push(grant - remaining);
+                if done {
+                    break;
+                }
+            }
+            let Event::Start {
+                cached: Some(cached),
+                ..
+            } = &current[0]
+            else {
+                panic!("published root")
+            };
+            (
+                charges,
+                ids.next_node(),
+                ids.next_token(),
+                format!("{:?}", cached.node),
+                cache.work,
+            )
+        };
+        for grant in [1, 2, 37, u64::MAX] {
+            let (old_grants, old_node, old_token, old_tree, old_work) = run(false, grant);
+            let (new_grants, new_node, new_token, new_tree, new_work) = run(true, grant);
+            assert_eq!(
+                (old_grants, old_node, old_token, old_tree),
+                (new_grants, new_node, new_token, new_tree)
+            );
+            assert_eq!((new_node, new_token), (42, 102));
+            assert_eq!(old_work.events, new_work.events);
+            assert_eq!(old_work.token_bytes, new_work.token_bytes);
+            assert_eq!(old_work.nodes, new_work.nodes);
+            assert_eq!(old_work.reused, new_work.reused);
+            assert!(new_work.child_storage_nodes <= old_work.child_storage_nodes);
+        }
     }
 
     #[test]
