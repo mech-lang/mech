@@ -10,6 +10,9 @@ pub(crate) trait ScanSource {
     fn boundary(&self, offset: usize) -> bool;
     fn scalar_at(&self, offset: usize) -> Option<&str>;
     fn scalar_before(&self, offset: usize) -> Option<&str>;
+    fn contiguous_without_lookup_work(&self) -> Option<&str> {
+        None
+    }
 }
 impl ScanSource for str {
     fn scan_byte_at(&self, offset: usize) -> Option<u8> {
@@ -31,6 +34,9 @@ impl ScanSource for str {
     }
 }
 impl ScanSource for TextSnapshot {
+    fn contiguous_without_lookup_work(&self) -> Option<&str> {
+        TextSnapshot::contiguous_without_lookup_work(self)
+    }
     fn scan_byte_at(&self, offset: usize) -> Option<u8> {
         self.byte_at(TextSize::checked_from_usize(offset).ok()?)
     }
@@ -106,6 +112,19 @@ impl GraphemeScan {
     /// forward scalar and one preceding scalar (eight bytes). Context requests
     /// are suspended and charged too.
     pub fn advance<S: ScanSource + ?Sized>(
+        &mut self,
+        source: &S,
+        end: TextSize,
+        final_input: bool,
+        allowance: &mut u64,
+    ) -> ScanProgress {
+        if let Some(text) = source.contiguous_without_lookup_work() {
+            return self.advance_in(text, end, final_input, allowance);
+        }
+        self.advance_in(source, end, final_input, allowance)
+    }
+
+    fn advance_in<S: ScanSource + ?Sized>(
         &mut self,
         source: &S,
         end: TextSize,

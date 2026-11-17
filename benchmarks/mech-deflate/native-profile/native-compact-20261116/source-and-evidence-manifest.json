@@ -23349,6 +23349,11 @@
       "bytes": 2210
     },
     {
+      "path": "src/syntax/src/document/parser/grapheme_scan.rs",
+      "sha256": "6444e023759ea2a51d59e7be5ebc474292f8032dd11c1b26702451d63b5689ea",
+      "bytes": 12909
+    },
+    {
       "path": "src/syntax/src/document/parser/journal.rs",
       "sha256": "1c0dc8c04dfb92dca443248f6642caa6e5011d9e2458296f787686d98f7c921c",
       "bytes": 13324
@@ -23362,6 +23367,16 @@
       "path": "src/syntax/src/document/parser/tree_cache.rs",
       "sha256": "5a7be03abb50dc2d35d77dd71e6576b0f88cd2c48c2ccc105ec09c2e3df0a53f",
       "bytes": 25268
+    },
+    {
+      "path": "src/syntax/src/document/retained_sequence.rs",
+      "sha256": "f1018f6d8bf6c7f4dec275638ce87c3141ef0f606e308c88d39a38a1566bf93b",
+      "bytes": 15660
+    },
+    {
+      "path": "src/syntax/src/document/source.rs",
+      "sha256": "f1a85c68c09b181092f7b285f3e351e42bebce7fc5431cc218ced8a895492db9",
+      "bytes": 24565
     },
     {
       "path": "tests/architecture/distributions/full.json",
