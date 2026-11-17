@@ -1,0 +1,6 @@
+{
+  "only_difference": "Whitespace. Removing formatting from the prototype JSON produces the exact source-emitted metadata bytes.",
+  "prototype_sha256": "2a727450ecb1d87e341760878894b7f4188c5abdd9c5a2bee1cf3bb79a66280d",
+  "source_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+  "worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+}

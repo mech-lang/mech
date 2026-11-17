@@ -1,0 +1,136 @@
+{
+  "objective": "share exact checked-root spill-copy tails with an existing fallthrough without adding transfers",
+  "screen_design": {
+    "path": "mech-text-reductions.yYja14/screen-design.json",
+    "sha256": "03514f92d91731f63d04a3a2e6a9ef7819095049aba082aa636826f40f6ef6c5"
+  },
+  "static_transform": {
+    "path": "mech-text-reductions.yYja14/shared_copy_tails.py",
+    "sha256": "99eb06c02da32788cc0636636b752575e9b751d23a3a2121ad65d0f9d4391fa2"
+  },
+  "static_report": {
+    "path": "mech-text-reductions.yYja14/static-candidate/report.json",
+    "sha256": "0ea23970b0317d3d890885c6b420768fd067b70a273de19e349b3d20ba6c540e"
+  },
+  "smoke_report": {
+    "path": "mech-text-reductions.yYja14/shared-copy-tails-qualification.json",
+    "sha256": "7d6182e2fdb082039930e1e16aa8d8379633094abfbd1235ecea980f4e13a507"
+  },
+  "failure_report": {
+    "path": "mech-text-reductions.yYja14/checked-failure-report.json",
+    "sha256": "f75b71471f43127e7e6d0c557eff3e5eac9b30b8b3fafd77c91d56be0541bd19"
+  },
+  "full_screen_trigger": "A source-emitted artifact must reproduce the vetted layout. Screen for per-case regressions and peer win preservation before full timing.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-periodic-1024",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-32768",
+    "reymont-prefix-32769",
+    "prefix-repeated-32769",
+    "heldout-mixed-131073",
+    "prefix-natural-262144",
+    "prefix-random-1048576"
+  ],
+  "runs": [
+    {
+      "id": "shared-copy-tails-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "shared-copy-tails-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v1.json",
+    "sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984"
+  },
+  "timer": {
+    "path": "mech-shared-cold-epilogues.2L6obP/.qualification/compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "mech-text-reductions.yYja14/timing.py",
+    "sha256": "deb76ae15c031660fc2d106fa47895b9a75c6497b57086cc4c555fd37388a3b9"
+  },
+  "as_run_inventory": {
+    "path": "mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117/source-aligned/program.o",
+        "sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b"
+      },
+      "metadata.json": {
+        "path": "mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117/source-aligned/metadata.json",
+        "sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "runtime.json": {
+        "path": "mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117/source-aligned/runtime.json",
+        "sha256": "c610f88fe1d61546a7d8e74352f07a4ac175d571dc6816faff3a778f302b115a"
+      },
+      "mech-worker": {
+        "path": "mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117/source-aligned/mech-worker",
+        "sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "mech-text-reductions.yYja14/static-candidate/program.o",
+        "sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+      },
+      "metadata.json": {
+        "path": "mech-text-reductions.yYja14/static-candidate/metadata.json",
+        "sha256": "2a727450ecb1d87e341760878894b7f4188c5abdd9c5a2bee1cf3bb79a66280d"
+      },
+      "runtime.json": {
+        "path": "mech-text-reductions.yYja14/static-candidate/runtime.json",
+        "sha256": "c5f099db1ff62d1e3917b94a20ab31ef84937bfde5d749f9540ea0bc87d14d5f"
+      },
+      "mech-worker": {
+        "path": "mech-text-reductions.yYja14/static-candidate/mech-worker",
+        "sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "mech-experiment": {
+      "worker": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata": "2a727450ecb1d87e341760878894b7f4188c5abdd9c5a2bee1cf3bb79a66280d"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "b70f72b248fb8f1ef0f5332268e1e2af941377fac9dc7731f3e33454188f08a3",
+    "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+  }
+}

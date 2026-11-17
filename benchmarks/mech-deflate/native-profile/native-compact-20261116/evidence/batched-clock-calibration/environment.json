@@ -1,0 +1,18 @@
+{
+  "arch": "arm64",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+  "cpu": "Apple M1",
+  "device_model": "Macmini9,1",
+  "core_configuration": "proc 8:4:4",
+  "python": "3.14.6",
+  "clock": "Rust std::time::Instant",
+  "execution": "Serial full actor permutations, separate validated 200 ms warmups",
+  "locale": "C",
+  "timezone": "UTC",
+  "removed_environment_keys": [
+    "DYLD_*",
+    "MECH_*",
+    "LD_PRELOAD",
+    "LD_LIBRARY_PATH"
+  ]
+}

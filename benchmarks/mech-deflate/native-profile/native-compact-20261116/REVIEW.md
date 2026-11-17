@@ -86,6 +86,25 @@ The encoder grew by 64 bytes and the empty-input regression triggered the
 validator's Reject decision in the two focused orders.
 [Patch, replay, and exact object reproduction](evidence/ordered-vector-cursors/README.md)
 
+## Shared AArch64 frame copies
+
+The opt-in source recipe emits **71,192 B**, or **1.234× Roc** and
+**1.920× libdeflate**. Its matched source-to-final-link build takes **3.82835 s**.
+Both 17-case orders preserve every individual win at **17/17 Roc and 13/17
+libdeflate**. The 4 KiB random case remains unresolved because the reverse
+order conflicts with the bounded duplicate-control follow-up.
+[Source reproduction, matched sizes and runtime](evidence/shared-copy-tails/README.md)
+
+The separate batched timing study resolved duplicate-control precision on
+seven-stored-prefix for its diagnostic link. It measured the 71,768-byte
+object slower than the 71,960-byte control, with other short cases still
+unresolved. The original paired-worker outcome is preserved.
+[Clock calibration and exact replay](evidence/batched-clock-calibration/README.md)
+
+The 71,704-byte scorer prototype makes natural text faster in both orders
+and is rejected on two short inputs.
+[Scorer source experiment](evidence/ordered-scorer-addresses/README.md)
+
 ## Cold error-origin tables
 
 An exact Mach-O prototype packs 291 cold origins and emits **71,256 bytes**

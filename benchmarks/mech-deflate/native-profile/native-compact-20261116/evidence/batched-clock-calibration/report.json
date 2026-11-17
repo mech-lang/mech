@@ -1,0 +1,674 @@
+{
+  "plan_sha256": "6c5e52ab87999ae5b39db22a0d53ab51893840f7f83ad14783be1ecedcdf5901",
+  "completion_sha256": "dbb968e348532835b3c52fa29ad33157f04aada0e265f6bc3d68bdd7270490e4",
+  "scope": "Diagnostic protocol. The existing qualification decision stays bound to its original protocol.",
+  "resolution": 0.005,
+  "coverage": 0.9,
+  "resamples": 8000,
+  "cases": {
+    "empty": {
+      "1": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": 0.016846101518372958,
+                "lower": 0.013658605660599399,
+                "upper": 0.02036623915456004
+              },
+              "ab": {
+                "estimate": -0.00021520792462592642,
+                "lower": -0.0038538783501238516,
+                "upper": 0.0036910579352937845
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392625,
+                "mean_ns_per_call": 30.87085469563802
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392538,
+                "mean_ns_per_call": 31.3956298828125
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392597,
+                "mean_ns_per_call": 31.13287862141927
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": 0.015211517517414341,
+                "lower": 0.012418157755254677,
+                "upper": 0.018025049640491675
+              },
+              "ab": {
+                "estimate": 0.0014732042135729984,
+                "lower": -0.0019131495057569392,
+                "upper": 0.005331972077461389
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392619,
+                "mean_ns_per_call": 30.877288818359375
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392549,
+                "mean_ns_per_call": 31.347882588704426
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392589,
+                "mean_ns_per_call": 31.166297912597656
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": 0.01602848080363084,
+            "lower": 0.013848181118154335,
+            "upper": 0.01825751750391258
+          },
+          "ab": {
+            "estimate": 0.0006286420264642878,
+            "lower": -0.0018855439086438164,
+            "upper": 0.0033763701860931583
+          }
+        },
+        "aa_stable": false,
+        "candidate_relation": "unresolved AA"
+      },
+      "256": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": 0.007504155273004853,
+                "lower": 0.005507207708138395,
+                "upper": 0.010633627258672895
+              },
+              "ab": {
+                "estimate": 0.00747005026682479,
+                "lower": 0.005829850919750301,
+                "upper": 0.008789562981217358
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.028521219889324
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.176472981770832
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.242652893066406
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": 0.009448168139363888,
+                "lower": 0.007394976627243199,
+                "upper": 0.010954163971964137
+              },
+              "ab": {
+                "estimate": 0.0038025559474428317,
+                "lower": 0.0022422586487347296,
+                "upper": 0.005435617975078966
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.11847178141276
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.297080993652344
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.280667622884113
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": 0.008475693278292118,
+            "lower": 0.007019696722009083,
+            "upper": 0.010168982296216988
+          },
+          "ab": {
+            "estimate": 0.005634631214705754,
+            "lower": 0.004541142051687652,
+            "upper": 0.00673366739653769
+          }
+        },
+        "aa_stable": false,
+        "candidate_relation": "unresolved AA"
+      }
+    },
+    "one-stored": {
+      "1": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": -0.019331418460619032,
+                "lower": -0.048066884824824796,
+                "upper": 0.011192462594029173
+              },
+              "ab": {
+                "estimate": 0.0101506321277125,
+                "lower": -0.015484210131211484,
+                "upper": 0.03631215948843192
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 377190,
+                "mean_ns_per_call": 40.57352193196615
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 379383,
+                "mean_ns_per_call": 38.98859151204427
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 374253,
+                "mean_ns_per_call": 39.79382832845052
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": 0.010955563598289197,
+                "lower": 0.007471941221575129,
+                "upper": 0.014201304458602904
+              },
+              "ab": {
+                "estimate": -0.00043087872384295345,
+                "lower": -0.0037078069799776348,
+                "upper": 0.00351335074707837
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392603,
+                "mean_ns_per_call": 31.48266347249349
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392540,
+                "mean_ns_per_call": 31.818524678548176
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392614,
+                "mean_ns_per_call": 31.643096923828125
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": -0.004303078967661134,
+            "lower": -0.019279018835373196,
+            "upper": 0.010633523099105924
+          },
+          "ab": {
+            "estimate": 0.004845948249009968,
+            "lower": -0.008248331560081756,
+            "upper": 0.017523082998323947
+          }
+        },
+        "aa_stable": false,
+        "candidate_relation": "unresolved AA"
+      },
+      "256": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": 0.02438037633583723,
+                "lower": 0.02288186677371029,
+                "upper": 0.02657073438784674
+              },
+              "ab": {
+                "estimate": 0.0013122570568722125,
+                "lower": -0.0005009309727723732,
+                "upper": 0.003512387855256538
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.34515889485677
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.819198608398438
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.607765197753906
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": 0.010726307094092169,
+                "lower": 0.006496943504135322,
+                "upper": 0.014342071191159045
+              },
+              "ab": {
+                "estimate": 0.005752015199652849,
+                "lower": 0.0033817154076190015,
+                "upper": 0.007765483693238151
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.49334971110026
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.695755004882812
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 19.701265970865887
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": 0.017530439266352893,
+            "lower": 0.015202974525156954,
+            "upper": 0.019618407453477982
+          },
+          "ab": {
+            "estimate": 0.0035296808660230106,
+            "lower": 0.0020107615679296753,
+            "upper": 0.005049866412599746
+          }
+        },
+        "aa_stable": false,
+        "candidate_relation": "unresolved AA"
+      }
+    },
+    "random-64": {
+      "1": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": -0.013451127231800863,
+                "lower": -0.023781141801411776,
+                "upper": -0.00288556986105859
+              },
+              "ab": {
+                "estimate": 0.012558450717427005,
+                "lower": 0.003334724281690127,
+                "upper": 0.02189515736428027
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14222.566139221191
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14035.463401794434
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14309.974810282389
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": 0.003027599772303935,
+                "lower": -0.006919070649525905,
+                "upper": 0.012768615239845627
+              },
+              "ab": {
+                "estimate": 0.008568311982328991,
+                "lower": -0.0006589890777626284,
+                "upper": 0.01781309769491224
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 13890.293434143066
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 13937.723047892252
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14034.311612447103
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": -0.005245885703025199,
+            "lower": -0.012553156901260909,
+            "upper": 0.0019863184964299396
+          },
+          "ab": {
+            "estimate": 0.010561412000041459,
+            "lower": 0.004141732017969302,
+            "upper": 0.01706534251762326
+          }
+        },
+        "aa_stable": false,
+        "candidate_relation": "unresolved AA"
+      },
+      "256": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": 0.001850473489367177,
+                "lower": -0.008135970308687623,
+                "upper": 0.011597173859901444
+              },
+              "ab": {
+                "estimate": -0.003747887433094177,
+                "lower": -0.012219017788178355,
+                "upper": 0.004715189401048647
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14068.571581522623
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14096.775487263998
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14033.645601908365
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": -0.02448060023662324,
+                "lower": -0.03397695720736871,
+                "upper": -0.015048828329759734
+              },
+              "ab": {
+                "estimate": 0.008091536384461362,
+                "lower": -0.00033719533695786286,
+                "upper": 0.016556407517290817
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 14030.033620198568
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 13684.101109822592
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 13971.532272338867
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": -0.01140272479082649,
+            "lower": -0.018241751840668563,
+            "upper": -0.004404197603624982
+          },
+          "ab": {
+            "estimate": 0.002154340799777943,
+            "lower": -0.0038304196258829304,
+            "upper": 0.008138216467124648
+          }
+        },
+        "aa_stable": false,
+        "candidate_relation": "unresolved AA"
+      }
+    },
+    "seven-stored-prefix": {
+      "1": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": -0.006912630434461886,
+                "lower": -0.010563451422786918,
+                "upper": -0.0032688801659565003
+              },
+              "ab": {
+                "estimate": 0.006328416820529981,
+                "lower": 0.003485647569060779,
+                "upper": 0.009217437605228307
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 390185,
+                "mean_ns_per_call": 33.27155049641927
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 390252,
+                "mean_ns_per_call": 33.03448486328125
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 390162,
+                "mean_ns_per_call": 33.357592264811196
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": 0.002338629628324762,
+                "lower": -0.0010958824223672448,
+                "upper": 0.005885839196515086
+              },
+              "ab": {
+                "estimate": 0.022760837457360017,
+                "lower": 0.018607297651177968,
+                "upper": 0.027395430202278748
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392507,
+                "mean_ns_per_call": 32.445098876953125
+              },
+              "duplicate-control": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392456,
+                "mean_ns_per_call": 32.5221201578776
+              },
+              "candidate": {
+                "readings": 393216,
+                "zero_or_one_24mhz_tick": 392435,
+                "mean_ns_per_call": 33.23337046305338
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": -0.0022977232102157075,
+            "lower": -0.004851230953429653,
+            "upper": 0.00018972736863220874
+          },
+          "ab": {
+            "estimate": 0.014511357425092797,
+            "lower": 0.011980774040609266,
+            "upper": 0.017203308622199875
+          }
+        },
+        "aa_stable": false,
+        "candidate_relation": "unresolved AA"
+      },
+      "256": {
+        "runs": [
+          {
+            "epoch": 0,
+            "intervals": {
+              "aa": {
+                "estimate": -0.0007644190899899206,
+                "lower": -0.0044580373469274015,
+                "upper": 0.0026884678194869505
+              },
+              "ab": {
+                "estimate": 0.010922317735057918,
+                "lower": 0.008597135061759742,
+                "upper": 0.013194734344630588
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 20.285430908203125
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 20.266497294108074
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 20.492881774902344
+              }
+            }
+          },
+          {
+            "epoch": 1,
+            "intervals": {
+              "aa": {
+                "estimate": 0.0028478749556322125,
+                "lower": 0.0022837322845785657,
+                "upper": 0.0034406578404315713
+              },
+              "ab": {
+                "estimate": 0.014560289880106936,
+                "lower": 0.014073939291982418,
+                "upper": 0.015048034534308474
+              }
+            },
+            "quantization": {
+              "control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 20.078531901041668
+              },
+              "duplicate-control": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 20.135772705078125
+              },
+              "candidate": {
+                "readings": 1536,
+                "zero_or_one_24mhz_tick": 0,
+                "mean_ns_per_call": 20.399922688802082
+              }
+            }
+          }
+        ],
+        "pooled": {
+          "aa": {
+            "estimate": 0.0010400985453380418,
+            "lower": -0.0007488132384920743,
+            "upper": 0.002778035899103859
+          },
+          "ab": {
+            "estimate": 0.01273967026455014,
+            "lower": 0.01157110071466505,
+            "upper": 0.013884274023284515
+          }
+        },
+        "aa_stable": true,
+        "candidate_relation": "candidate regression"
+      }
+    }
+  }
+}

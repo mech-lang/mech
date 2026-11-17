@@ -1,0 +1,465 @@
+{
+  "stage": "Diagnostic Mach-O prototype and predeclared paired runtime screen",
+  "encoder_text_bytes": 71192,
+  "bytes_saved": 576,
+  "encoder_text_x_roc": 1.2339156960621187,
+  "encoder_text_x_libdeflate": 1.9199568500539375,
+  "object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+  "root_frame_bytes": 3728,
+  "whole_call_peak_native_stack_bytes": 5280,
+  "exact_linked_calls": 162,
+  "matched_checked_failure_cases": 6,
+  "runtime": {
+    "decision": "Unresolved",
+    "rejected": [],
+    "unresolved": [
+      "both complete timing orders are required",
+      "prefix-random-4096: combined and individual run bounds conflict: shared-copy-tails-focus-reverse"
+    ],
+    "runs": [
+      {
+        "id": "shared-copy-tails-focus-forward",
+        "kind": "focus",
+        "order": "forward",
+        "case_count": 17,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 17,
+              "mech-experiment": 17
+            },
+            "precision_supported_wins": {
+              "mech-control": 17,
+              "mech-experiment": 17
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 13,
+              "mech-experiment": 13
+            },
+            "precision_supported_wins": {
+              "mech-control": 13,
+              "mech-experiment": 13
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          }
+        }
+      },
+      {
+        "id": "shared-copy-tails-focus-reverse",
+        "kind": "focus",
+        "order": "reverse",
+        "case_count": 17,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 17,
+              "mech-experiment": 17
+            },
+            "precision_supported_wins": {
+              "mech-control": 17,
+              "mech-experiment": 17
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 13,
+              "mech-experiment": 13
+            },
+            "precision_supported_wins": {
+              "mech-control": 13,
+              "mech-experiment": 13
+            },
+            "lost_cases": [],
+            "gained_cases": []
+          }
+        }
+      }
+    ],
+    "cases": {
+      "empty": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.013704235142935617,
+            "lower": -0.021193148751327273,
+            "upper": -0.006207915293225064
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.0165149999607761,
+            "lower": -0.02517124554481598,
+            "upper": -0.0077199430843505334
+          }
+        },
+        "combined": {
+          "estimate": -0.015110620252641538,
+          "lower": -0.02079495367782458,
+          "upper": -0.009355323097932189
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "one-stored": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": 0.010642813146209074,
+            "lower": 0.0030248266564834037,
+            "upper": 0.018494947080296642
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.019397775782520665,
+            "lower": -0.02799930975476117,
+            "upper": -0.010723121705491834
+          }
+        },
+        "combined": {
+          "estimate": -0.004490788359754472,
+          "lower": -0.010295490194224821,
+          "upper": 0.0013275076634038374
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "seven-stored-prefix": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.016332413170970894,
+            "lower": -0.024143958421766865,
+            "upper": -0.00852279105989684
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.004897697624734021,
+            "lower": -0.012141878181768484,
+            "upper": 0.0026725398071696382
+          }
+        },
+        "combined": {
+          "estimate": -0.010631574980539016,
+          "lower": -0.015997085254208177,
+          "upper": -0.005235053751803442
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "320-overlap": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": 0.0011443546065303956,
+            "lower": -0.0008302887832866146,
+            "upper": 0.0032096902175140496
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.002043204781681407,
+            "lower": -0.00020332668459055458,
+            "upper": 0.004223446880362358
+          }
+        },
+        "combined": {
+          "estimate": 0.001593678863348158,
+          "lower": 8.739913712485503e-05,
+          "upper": 0.003079678621413784
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "random-64": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.0042382341246455235,
+            "lower": -0.009957673195440941,
+            "upper": 0.001857875448077806
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.0021748205608489446,
+            "lower": -0.007759548703902275,
+            "upper": 0.0033805446635308822
+          }
+        },
+        "combined": {
+          "estimate": -0.0032070612643659846,
+          "lower": -0.00716865743500017,
+          "upper": 0.0009597888140258082
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "random-1024": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": 0.0007723922634046421,
+            "lower": -0.0008327666491667607,
+            "upper": 0.0025048578233188845
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.0017506817935701857,
+            "lower": -0.0005521559228025552,
+            "upper": 0.004273025815240361
+          }
+        },
+        "combined": {
+          "estimate": 0.0012614175479088718,
+          "lower": -0.00012956715494327753,
+          "upper": 0.0027602313637040687
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "reymont-prefix-32769": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.001040475775861971,
+            "lower": -0.0023633524249481175,
+            "upper": 0.00033057787397505756
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.0015661341877761803,
+            "lower": -0.00026090562461467126,
+            "upper": 0.003440523335564327
+          }
+        },
+        "combined": {
+          "estimate": 0.00026198012682154825,
+          "lower": -0.0008665045277913563,
+          "upper": 0.001428945858795272
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "heldout-mixed-131073": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.0006442779652264807,
+            "lower": -0.0013978854746088398,
+            "upper": 0.00012038290180571565
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.00157459874907806,
+            "lower": 3.442349933546751e-06,
+            "upper": 0.003260939598133117
+          }
+        },
+        "combined": {
+          "estimate": 0.0004645452511415904,
+          "lower": -0.00040539668631667247,
+          "upper": 0.0014003680703962296
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-4096": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.001893298757186912,
+            "lower": -0.005505894565501213,
+            "upper": 0.0017702471053673285
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.0006313756299781703,
+            "lower": -0.0036555530357452737,
+            "upper": 0.002431750618840267
+          }
+        },
+        "combined": {
+          "estimate": -0.0012625365014434786,
+          "lower": -0.003594729216342518,
+          "upper": 0.001096998932379245
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-8192": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.00033533662766604966,
+            "lower": -0.002240417963583652,
+            "upper": 0.00171367537639866
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.0013094237648330065,
+            "lower": -0.0013356638118956488,
+            "upper": 0.004171196709082281
+          }
+        },
+        "combined": {
+          "estimate": 0.0004867055785484631,
+          "lower": -0.0011570531349182067,
+          "upper": 0.0021663986031434934
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-32768": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.001339435156146207,
+            "lower": -0.002051227288077495,
+            "upper": -0.0005442626366563008
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.0027269154726081712,
+            "lower": 0.001459069156912296,
+            "upper": 0.0041277855622212645
+          }
+        },
+        "combined": {
+          "estimate": 0.0006916746880678559,
+          "lower": -3.888564397092065e-05,
+          "upper": 0.0015005012667250739
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-natural-262144": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": 0.0013112990740178354,
+            "lower": -0.00026583891652742775,
+            "upper": 0.0034740201117802183
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.0013744100551421612,
+            "lower": -0.0024417390313830056,
+            "upper": -0.00028027976738986826
+          }
+        },
+        "combined": {
+          "estimate": -3.245714861177529e-05,
+          "lower": -0.001015077918984142,
+          "upper": 0.0011395905239954818
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-random-1024": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": 0.00047159066949586936,
+            "lower": -0.0005940236478483296,
+            "upper": 0.0015136927084771212
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.0008950546355175337,
+            "lower": -0.000625428944185269,
+            "upper": 0.0024494541098134537
+          }
+        },
+        "combined": {
+          "estimate": 0.0006833002525965526,
+          "lower": -0.00027399127700278303,
+          "upper": 0.0016279933439560246
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-random-4096": {
+        "decision": "unresolved",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.002667510326847977,
+            "lower": -0.0059402553120062596,
+            "upper": 0.0005824644594238926
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.014585599368609703,
+            "lower": 0.008383618559487882,
+            "upper": 0.02105807573793439
+          }
+        },
+        "combined": {
+          "estimate": 0.005922055531551784,
+          "lower": 0.0023694093494219803,
+          "upper": 0.00946608646632452
+        },
+        "adverse_runs": [
+          "shared-copy-tails-focus-reverse"
+        ],
+        "duplicate_controls": []
+      },
+      "prefix-random-1048576": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": 0.0013522065553466245,
+            "lower": -0.00012034333107058259,
+            "upper": 0.003026035266710636
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.0008891636677869075,
+            "lower": -0.0027906467976687166,
+            "upper": 0.0006390257115063136
+          }
+        },
+        "combined": {
+          "estimate": 0.0002308936213775148,
+          "lower": -0.0009538104160261573,
+          "upper": 0.0013747058993631711
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-periodic-1024": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.002605894490223415,
+            "lower": -0.00367482476335268,
+            "upper": -0.0015175525239597976
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": 0.00010050839615538543,
+            "lower": -0.0023982852095632,
+            "upper": 0.002514606851895973
+          }
+        },
+        "combined": {
+          "estimate": -0.0012536097729032303,
+          "lower": -0.0025941377133026355,
+          "upper": 7.177118197487786e-05
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      },
+      "prefix-repeated-32769": {
+        "decision": "bounded",
+        "runs": {
+          "shared-copy-tails-focus-forward": {
+            "estimate": -0.002191204042603534,
+            "lower": -0.0034765737026603016,
+            "upper": -0.0009428334524259618
+          },
+          "shared-copy-tails-focus-reverse": {
+            "estimate": -0.0004108597706693473,
+            "lower": -0.0030881016297540365,
+            "upper": 0.002321717725285888
+          }
+        },
+        "combined": {
+          "estimate": -0.0013014286260756291,
+          "lower": -0.002719613395785636,
+          "upper": 0.00018340244068526523
+        },
+        "adverse_runs": [],
+        "duplicate_controls": []
+      }
+    }
+  }
+}

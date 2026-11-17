@@ -1,0 +1,17 @@
+{
+  "case": "prefix-random-4096",
+  "worker_sha256": {
+    "control": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "duplicate-control": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "candidate": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+  },
+  "focus_plan_sha256": "5c15f88cfa68479ae00034a82a7a933fe222437ae325621adf6ca52f731b283f",
+  "focus_replay_sha256": "b1c64364f859ab9e4f48b4ac3462109b3f21e49372d7395d5197f066399cf6a8",
+  "driver_sha256": "8b88cb5f344f9a94c7a4d6e0b602f932ff02e659a4ccf3934f88c2f11bed8e0f",
+  "wrapper_sha256": "9327088857db4ae7f00750ccf29ef8dbacca7ef42706857f3c11890319d554f3",
+  "batch_floor": 64,
+  "repetitions_per_order": 64,
+  "seed": 11719771492,
+  "environment_sha256": "b70f72b248fb8f1ef0f5332268e1e2af941377fac9dc7731f3e33454188f08a3",
+  "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+}
