@@ -1,0 +1,270 @@
+{
+  "program.o": {
+    "control_text_bytes": 71768,
+    "experiment_text_bytes": 71832,
+    "size_delta": 64,
+    "lost_symbols": [],
+    "added_symbols": [],
+    "changed_native_intervals": {
+      "_mech_compact_numeric_3009": {
+        "control": [
+          6768,
+          1584,
+          "3072678d08fc235ff1ee388c6888afa12af9b35178ebb2a471e520a0c1b6d020"
+        ],
+        "experiment": [
+          6768,
+          1600,
+          "3861c087464cbf2afd200dce09824cf1f568e5b2211b046c4a439e5feb4d4e3a"
+        ]
+      },
+      "_mech_compact_numeric_3009_no_growth": {
+        "control": [
+          9504,
+          1376,
+          "22e6bb6f47e5af23516d3ececd1a6e28002061b06cada1db95d1021f09c2eab7"
+        ],
+        "experiment": [
+          9552,
+          1392,
+          "9dddd06cbf55a2c32fc5c69c55eeee6c92a3d46add911d13169eae64d6df6939"
+        ]
+      },
+      "_mech_compact_numeric_3009_no_growth_composed": {
+        "control": [
+          8352,
+          1152,
+          "5aa87a41015f04b981b971e3d723cdfb3cc613a69382e3d1b53e8498cabacd50"
+        ],
+        "experiment": [
+          8368,
+          1184,
+          "66320da5e27427ca7616fd0874fe71867d628787d32feef7a273ef7876600633"
+        ]
+      }
+    },
+    "native_symbols_changed_mod_64": [
+      "_mech_compact_numeric_3009_no_growth",
+      "_mech_compact_numeric_3009_no_growth_composed"
+    ],
+    "text_x_roc": 1.245008319467554,
+    "text_x_libdeflate": 1.9372168284789644
+  },
+  "mech-worker": {
+    "control_text_bytes": 474692,
+    "experiment_text_bytes": 474756,
+    "size_delta": 64,
+    "lost_symbols": [],
+    "added_symbols": [],
+    "changed_native_intervals": {
+      "_mech_compact_allocate_backing": {
+        "control": [
+          4295060056,
+          84,
+          "781c937f2d91de190b838710962b5d6ed731a20dd3f31b9297dd6f1c49bb3d58"
+        ],
+        "experiment": [
+          4295060056,
+          84,
+          "32931342738ed64676a75821addc65bf035b277fcfbb9823e7e9a385f1f57d9f"
+        ]
+      },
+      "_mech_compact_append_backing_byte_consume": {
+        "control": [
+          4295359056,
+          176,
+          "4da2292fda22d25ef7f061c9992f32032141c2bfa2e5850569bed1ee5ef6e78d"
+        ],
+        "experiment": [
+          4295359120,
+          176,
+          "be3d1eead222505c07910b2c02c95efa6675aeaa1ae319e4461d7a5baa3f63ea"
+        ]
+      },
+      "_mech_compact_checked_layout_10939": {
+        "control": [
+          4295411264,
+          304,
+          "485ba4340a1effc8f86216926756fc630d8dfbae8d9c57617cae454e21e558ff"
+        ],
+        "experiment": [
+          4295411328,
+          304,
+          "df1c33db942fda2323fdd84c8008f5a29f22e4653ca48fd8f764f2013e3b3991"
+        ]
+      },
+      "_mech_compact_checked_layout_13100": {
+        "control": [
+          4295410960,
+          304,
+          "587b50b014bde237d3912e3843245f3d85db2a0501a12693d9ae8bf52a4aa3f6"
+        ],
+        "experiment": [
+          4295411024,
+          304,
+          "6927f91b08ef74329127eb755c78770346ad6c581b2d76c844fac676f9455580"
+        ]
+      },
+      "_mech_compact_checked_layout_16147": {
+        "control": [
+          4295410656,
+          304,
+          "443a80bbcc5c814b6f6ac8017e87577f08685586cbbe856044f4dfb768047c67"
+        ],
+        "experiment": [
+          4295410720,
+          304,
+          "546706cf71fc1316300e732944a55c2cc1044b38f1f6f95698d9c5fde6328609"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_21031": {
+        "control": [
+          4295412224,
+          304,
+          "3e731dacbf7b53bb7b90fd71ce30b5a0ac1166e4143ff886af295f05c63de602"
+        ],
+        "experiment": [
+          4295412288,
+          304,
+          "b91a8c7873b632b363bf644e196641e8d31ee09d3cb3fe50057870a83b06c35a"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_44070": {
+        "control": [
+          4295412528,
+          648,
+          "08de9ad02711d8c5bea11707c2822ff4819fc6479a2a785126847049b6e408ee"
+        ],
+        "experiment": [
+          4295412592,
+          648,
+          "4b2a950ed4c5304f2aa4f87b3c8b5ac3fc4e65fa03e9bbf4cfc707ee137b00be"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_9112": {
+        "control": [
+          4295411568,
+          336,
+          "d9ea14a205db7c5975b0d7c62d0640bb30616c76f4919d8c2121ed83fed04eb5"
+        ],
+        "experiment": [
+          4295411632,
+          336,
+          "f8a167c64de8ad26de6e818a757fa59f5833aa018d4b51b95b79ed7d90529703"
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_9562": {
+        "control": [
+          4295411904,
+          320,
+          "4b7d1f232264a8407d140e64787401b16293a0651f0af6042283f30c2f5cacfe"
+        ],
+        "experiment": [
+          4295411968,
+          320,
+          "e87e6cf288107a2886f471f77194df870636b9f0b5b3bd75c4506e5059eaae9b"
+        ]
+      },
+      "_mech_compact_closed_checked": {
+        "control": [
+          4295359232,
+          51264,
+          "f89ef248d0350dbed59ae1deffe43344f99b8c7231ff56459543e66a4915874f"
+        ],
+        "experiment": [
+          4295359296,
+          51264,
+          "23975feb18949c9440b7e5303878ed421139511bae62f2ce9c767af21db635c1"
+        ]
+      },
+      "_mech_compact_closed_v2": {
+        "control": [
+          4295358496,
+          384,
+          "4ce147ab9c79523a36805a093ed84cc8b1320dae6d9db95b7bb01d2fab480e1b"
+        ],
+        "experiment": [
+          4295358560,
+          384,
+          "ea283dc1a28255380968223d79cc312bb79ef247e3c9b934cff91a17c33c4aed"
+        ]
+      },
+      "_mech_compact_finish_byte_appends": {
+        "control": [
+          4295061236,
+          576,
+          "326050a12fab46f0d1703278b6ece5dfb84cf40a0e8176d3b3957487d157f348"
+        ],
+        "experiment": [
+          4295061236,
+          576,
+          "12ae4d0342ac51795fb61575eb30d27c4e89ee99f2e9e1440f5f6380167f0179"
+        ]
+      },
+      "_mech_compact_free": {
+        "control": [
+          4295060140,
+          48,
+          "5019aea2ac8901b641fa11aec1d1d5399efb75c88bc43e1812ffc42381a25c5a"
+        ],
+        "experiment": [
+          4295060140,
+          48,
+          "de5177a186590bb7d1063ab5ab121738d202ab9a1cd9cafb2b6c253fbb4ea5aa"
+        ]
+      },
+      "_mech_compact_numeric_3009": {
+        "control": [
+          4295348176,
+          1584,
+          "b94b1f50a283c44b2c46ad675c617a8dc98cb1972761364655974394ef4b32c9"
+        ],
+        "experiment": [
+          4295348176,
+          1600,
+          "4577d2195f15e1a57d7351da9cfdeecc2fcfc63b56e4743917957df4de55e458"
+        ]
+      },
+      "_mech_compact_numeric_3009_no_growth": {
+        "control": [
+          4295350912,
+          1376,
+          "22e6bb6f47e5af23516d3ececd1a6e28002061b06cada1db95d1021f09c2eab7"
+        ],
+        "experiment": [
+          4295350960,
+          1392,
+          "9dddd06cbf55a2c32fc5c69c55eeee6c92a3d46add911d13169eae64d6df6939"
+        ]
+      },
+      "_mech_compact_numeric_3009_no_growth_composed": {
+        "control": [
+          4295349760,
+          1152,
+          "5783d3cec63c3983705ddce7cb433e6ef86d9d9760715285ade3f278d35dbdc8"
+        ],
+        "experiment": [
+          4295349776,
+          1184,
+          "38904b33750a8a20e7c4b0a634739deb470617b06ceb5c84441797f2b0c79956"
+        ]
+      },
+      "_mech_compact_writable_scalar_backing": {
+        "control": [
+          4295060780,
+          148,
+          "86e1d259674fe262bb3a10b60c63613f0f0d3b4f06b5c09325d5fbe27a77d369"
+        ],
+        "experiment": [
+          4295060780,
+          148,
+          "d8b0300534a4e04269d5a35e2cab7dd291162b8ad8c468bed7fd69d534ce3625"
+        ]
+      }
+    },
+    "native_symbols_changed_mod_64": [
+      "_mech_compact_numeric_3009_no_growth",
+      "_mech_compact_numeric_3009_no_growth_composed"
+    ]
+  }
+}

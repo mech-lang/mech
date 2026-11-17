@@ -1,0 +1,197 @@
+--- a/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs
+@@ -39,6 +39,12 @@
+ pub(super) enum ScalarRead {
+     LowWord(Value),
+     PackedWord(Value),
++}
++
++#[derive(Clone, Copy)]
++pub(super) enum VectorRead<'a> {
++    Index(Value),
++    Cursors(&'a [(Window, Value)]),
+ }
+ 
+ impl Inputs {
+@@ -106,17 +112,26 @@
+         b: &mut FunctionBuilder<'_>,
+         proof: &Proof,
+         cost: &Cost,
+-        k: Value,
++        read: VectorRead<'_>,
+         indices: Value,
+     ) -> Value {
+         match cost {
+             Cost::Constant(value) => constant(b, [*value; 4]),
+             Cost::Word(slot) => b.ins().splat(types::I32X4, self.words[slot]),
+             Cost::Index => indices,
+-            Cost::Read(w) => self.read(b, proof, *w, k),
++            Cost::Read(w) => {
++                let pointer = match read {
++                    VectorRead::Index(index) => self.vector_pointer(b, proof, *w, index),
++                    VectorRead::Cursors(pointers) => pointers
++                        .iter()
++                        .find_map(|(window, pointer)| (*window == *w).then_some(*pointer))
++                        .expect("each admitted cost window has a vector cursor"),
++                };
++                Self::read_vector(b, proof, *w, pointer)
++            }
+             Cost::Add(a, c) | Cost::And(a, c) | Cost::Or(a, c) | Cost::Xor(a, c) => {
+-                let a = self.emit(b, proof, a, k, indices);
+-                let c = self.emit(b, proof, c, k, indices);
++                let a = self.emit(b, proof, a, read, indices);
++                let c = self.emit(b, proof, c, read, indices);
+                 match cost {
+                     Cost::Add(..) => b.ins().iadd(a, c),
+                     Cost::And(..) => b.ins().band(a, c),
+@@ -146,14 +161,24 @@
+             b.ins().iadd(base, offset)
+         }
+     }
+-    fn read(&self, b: &mut FunctionBuilder<'_>, proof: &Proof, w: Window, k: Value) -> Value {
++    pub(super) fn vector_pointer(
++        &self,
++        b: &mut FunctionBuilder<'_>,
++        proof: &Proof,
++        w: Window,
++        k: Value,
++    ) -> Value {
+         let pointer = self.pointer(b, proof, w, k);
++        if w.reverse {
++            b.ins()
++                .iadd_imm(pointer, -3 * i64::from(proof.arrays[w.array].width))
++        } else {
++            pointer
++        }
++    }
++
++    fn read_vector(b: &mut FunctionBuilder<'_>, proof: &Proof, w: Window, pointer: Value) -> Value {
+         let width = proof.arrays[w.array].width;
+-        let pointer = if w.reverse {
+-            b.ins().iadd_imm(pointer, -3 * width as i64)
+-        } else {
+-            pointer
+-        };
+         // Every lane lies in the original initialized window. Alignment is not
+         // inferred from allocation capacity or the vector load's width.
+         let flags = MemFlags::new().with_notrap();
+--- a/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs
+@@ -1,5 +1,5 @@
+ //! Compact ordered reduction; long current intervals also use four-lane costs.
+-use super::cost::ScalarRead;
++use super::cost::{ScalarRead, VectorRead};
+ use super::*;
+ use crate::native_artifact::codegen::common::ssa_words::Words;
+ use crate::native_artifact::compiler::primitive;
+@@ -228,40 +228,94 @@
+         let costs = b.ins().splat(types::I32X4, best);
+         let indices = super::cost::constant(b, [u32::MAX; 4]);
+         let lanes = super::cost::constant(b, [0, 1, 2, 3]);
++        let use_cursors = cfg!(target_arch = "aarch64")
++            && std::env::var_os("MECH_ORDERED_VECTOR_CURSORS").is_some();
+         let header = b.create_block();
+-        let body = b.create_block();
++        let body = if use_cursors {
++            header
++        } else {
++            b.create_block()
++        };
+         let finish = b.create_block();
+         for ty in [types::I64, types::I32X4, types::I32X4] {
+             b.append_block_param(header, ty);
+         }
+-        b.ins()
+-            .jump(header, &[start.into(), costs.into(), indices.into()]);
++        let mut entry = vec![start.into(), costs.into(), indices.into()];
++        let mut cursors = Vec::new();
++        let mut step = None;
++        if use_cursors {
++            // The long edge proves a nonempty prefix of whole four-lane groups.
++            // Each iteration consumes exactly one group from both admitted windows.
++            entry[0] = prefix.into();
++            let start_word = b.ins().ireduce(types::I32, start);
++            let start_lanes = b.ins().splat(types::I32X4, start_word);
++            entry.push(b.ins().iadd(start_lanes, lanes).into());
++            b.append_block_param(header, types::I32X4);
++            step = Some(super::cost::constant(b, [4; 4]));
++            for window in &self.reads {
++                let pointer = inputs.vector_pointer(b, proof, *window, start);
++                entry.push(pointer.into());
++                cursors.push((*window, b.append_block_param(header, types::I64)));
++            }
++            b.append_block_param(finish, types::I32X4);
++            b.append_block_param(finish, types::I32X4);
++        }
++        b.ins().jump(header, &entry);
+         b.switch_to_block(header);
+         let params = b.block_params(header).to_vec();
+         let k = params[0];
+-        let more = b.ins().icmp(IntCC::UnsignedLessThan, k, end);
+-        b.ins().brif(more, body, &[], finish, &[]);
+-        b.switch_to_block(body);
+-        let k32 = b.ins().ireduce(types::I32, k);
+-        let index = b.ins().splat(types::I32X4, k32);
+-        let index = b.ins().iadd(index, lanes);
+-        let cost = inputs.emit(b, proof, &self.cost, k, index);
++        let (index, read) = if use_cursors {
++            (params[3], VectorRead::Cursors(&cursors))
++        } else {
++            let more = b.ins().icmp(IntCC::UnsignedLessThan, k, end);
++            b.ins().brif(more, body, &[], finish, &[]);
++            b.switch_to_block(body);
++            let k32 = b.ins().ireduce(types::I32, k);
++            let index = b.ins().splat(types::I32X4, k32);
++            (b.ins().iadd(index, lanes), VectorRead::Index(k))
++        };
++        let cost = inputs.emit(b, proof, &self.cost, read, index);
+         let better = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
+         let costs = b.ins().umin(cost, params[1]);
+         let indices = b.ins().bitselect(better, index, params[2]);
+-        let next = b.ins().iadd_imm(k, 4);
+-        b.ins()
+-            .jump(header, &[next.into(), costs.into(), indices.into()]);
++        if let Some(step) = step {
++            let left = b.ins().iadd_imm(k, -4);
++            let next_index = b.ins().iadd(index, step);
++            let mut args = vec![left.into(), costs.into(), indices.into(), next_index.into()];
++            // The integer addresses on the exhausted edge are never loaded.
++            for (window, cursor) in cursors {
++                let width = i64::from(proof.arrays[window.array].width);
++                let stride = if window.reverse {
++                    -4 * width
++                } else {
++                    4 * width
++                };
++                args.push(b.ins().iadd_imm(cursor, stride).into());
++            }
++            let more = b.ins().icmp_imm(IntCC::NotEqual, left, 0);
++            b.ins()
++                .brif(more, header, &args, finish, &[costs.into(), indices.into()]);
++        } else {
++            let next = b.ins().iadd_imm(k, 4);
++            b.ins()
++                .jump(header, &[next.into(), costs.into(), indices.into()]);
++        }
+         b.switch_to_block(finish);
++        let (costs, indices) = if use_cursors {
++            let result = b.block_params(finish);
++            (result[0], result[1])
++        } else {
++            (params[1], params[2])
++        };
+         // The incoming best already occupies every cost lane. A lane records
+         // an index only after a strict improvement, so ties with that incoming
+         // best retain the missing sentinel. Among improved lanes, reduce the
+         // matching indices separately: the earliest index need not be in the
+         // lowest lane after multiple vector groups.
+-        let minima = minimum_splat(b, params[1]);
+-        let equal = b.ins().icmp(IntCC::Equal, params[1], minima);
++        let minima = minimum_splat(b, costs);
++        let equal = b.ins().icmp(IntCC::Equal, costs, minima);
+         let missing_indices = b.ins().splat(types::I32X4, missing);
+-        let indices = b.ins().bitselect(equal, params[2], missing_indices);
++        let indices = b.ins().bitselect(equal, indices, missing_indices);
+         let winners = minimum_splat(b, indices);
+         let minimum = b.ins().extractlane(minima, 0);
+         let winner = b.ins().extractlane(winners, 0);
