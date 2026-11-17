@@ -315,7 +315,10 @@ fn read_keys(
     Ok(keys)
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the proof passes its plan, traversal, and ownership facts explicitly"
+)]
 fn analyze(
     plan: &Plan,
     frames: &NativeBufferFrames,
@@ -353,7 +356,10 @@ fn analyze(
     Ok(analysis)
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the proof passes its plan, traversal, and ownership facts explicitly"
+)]
 fn pass(
     plan: &Plan,
     frames: &NativeBufferFrames,
@@ -450,7 +456,10 @@ fn pass(
     })
 }
 
-#[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the proof passes its plan, traversal, and ownership facts explicitly"
+)]
 fn verify(
     plan: &Plan,
     frames: &NativeBufferFrames,
