@@ -1,0 +1,19 @@
+{
+  "command": [
+    "/usr/bin/clang",
+    "-arch",
+    "arm64",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-adapter.o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-cold-tails-current/warmup/libdeflate/encoder.o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/link-census-preview/libdeflate/compressor",
+    "-Wl,-map,/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/link-census-preview/libdeflate/link.map"
+  ],
+  "map": "link.map",
+  "exact_original": true,
+  "sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461",
+  "matches_latest_timed_executable": true
+}

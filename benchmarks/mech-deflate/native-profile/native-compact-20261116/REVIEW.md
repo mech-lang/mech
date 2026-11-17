@@ -48,6 +48,49 @@ unit tests pass. With the same frontend, the native-only median moves from
 5.64176 seconds. The retained benchmark worker matches byte for byte.
 [Source-to-executable trials and checks](evidence/batched-block-params/report.json)
 
+## Optimized compiler builds
+
+On this M1 the same 71,960-byte encoder builds in **4.76479 s**
+at Rust opt-level 3, down from **5.64395 s**.
+That is **1.596× Roc** and
+**9.893× libdeflate** through
+final linking. The compiler reproduces both pinned benchmark workers and their
+existing runtime receipts exactly. The profile flag is optional and the default
+rebuild stays at level 1. The compiler's C allocator archive is byte-identical.
+[Matched trials and raw profiles](evidence/host-opt-levels/report.json)
+
+Parsing still takes **2.618 s** of the retained build. Native
+emission takes **1.765 s**. Inspect the 14 built vector
+alternatives, of which five are selected, before adding compilation concurrency.
+The raw marker spans cover groups of work. Instrument an individual compile or
+cleanup before assigning its cost to a specific rewrite.
+The [linked-size census](evidence/linked-size-census/report.json) attributes
+237,384 bytes of retained executable text to Rust standard libraries. Use a
+frozen deployment interface to measure how much support can be removed.
+
+The standalone fresh-owner diagnostic ran eight fresh-process epochs using
+one executable file and separate byte-identical copies, with two batch floors.
+The table counts intervals within the existing 0.5% resolution.
+
+| Case | Duplicate control | Candidate |
+| --- | ---: | ---: |
+| `prefix-natural-16384` | 7/8 | 8/8 |
+| `random-64` | 0/8 | 8/8 |
+| `reymont-prefix-32769` | 8/8 | 7/8 |
+
+All earlier observations remain in the qualification review. The diagnostic
+preserves the unresolved decision. [Predeclared plan and raw observations](evidence/fresh-owner-repeatability/report.json)
+
+In the eight-pair root inlining ablation, complete build time moves from
+**4.77169 to 4.67504 s**.
+Native emission moves from **1.76630 to
+1.67275 s**. Encoder text moves from
+**72,520 to 72,600 B** and the root
+frame goes from **3,744 to 3,536 B**.
+The changed encoder passes 162 exact linked calls. Full runtime and peak-stack
+qualification remain open. The pinned recipe keeps its existing inlining.
+[Ablation and raw trials](evidence/root-inlining-opt3/timing.json)
+
 ## Smaller reviewed configuration
 
 Use `rebuild.py --variant fresh-owner-counts-cold-tails` to review the
