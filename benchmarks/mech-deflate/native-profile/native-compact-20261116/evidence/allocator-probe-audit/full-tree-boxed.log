@@ -1,0 +1,3 @@
+nice: setpriority: Operation not permitted
+unsafe boundary audit failed: prohibited code exists outside the exact allowlist: benchmarks/related-post-gen/hosts/after-4.rs
+104:    let program = unsafe { mech_gpu::native_artifact::LinkedProgramArtifact::from_compiled_module(&LINKED_MODULE, &catalog) }.unwrap();

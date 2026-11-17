@@ -1,0 +1,228 @@
+{
+  "base": "d5bd13ddd3f5dfd97ee6118171c8674a511c04d0",
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+  "programs": {
+    "baseline": {
+      "command": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "--crate-name",
+        "check_measurement",
+        "-D",
+        "warnings",
+        "-C",
+        "opt-level=3",
+        "-L",
+        "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde-2456c0391d15d182.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/baseline/check-measurement.rs",
+        "-o",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/baseline/check-measurement"
+      ],
+      "source_sha256": "77bf5730a6a9a4388f98d704c62c08f12e974bcd539b440b8adc1ea7559108ab",
+      "measurement_sha256": "c94bf3d9f289ad48cbf2187a94dc7f2ed386dc933ee540b8d0c2b52a00571c79",
+      "binary_sha256": "89d607fb95175fe50a4c2022ed6278c1d1bfab0b91d1db25342e3becd188d6d9",
+      "exact_layout_checks": null,
+      "outcome": {
+        "allocation_requests": 19,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 12992,
+        "hardware": {
+          "cycles": 946407,
+          "instructions_per_cycle": 0.8278446799315727,
+          "instructions_retired": 783478,
+          "lifetime_peak_physical_footprint_bytes_after": 1377152,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 1262400,
+          "physical_footprint_bytes_before": 1147712,
+          "resident_bytes_after": 1654784,
+          "resident_bytes_before": 1507328,
+          "system_cpu_seconds": 0.00028612500000000003,
+          "user_cpu_seconds": 4.229166666666667e-05
+        },
+        "live_requested_heap_bytes_after": 1140,
+        "live_requested_heap_bytes_before": 1444,
+        "peak_additional_live_requested_heap_bytes": 12544,
+        "peak_live_requested_heap_bytes": 13988,
+        "requested_allocation_bytes": 12688
+      },
+      "empty_window_samples": 7
+    },
+    "baseline-layout": {
+      "command": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "--crate-name",
+        "check_measurement",
+        "-D",
+        "warnings",
+        "-C",
+        "opt-level=3",
+        "-L",
+        "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde-2456c0391d15d182.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/baseline-layout/check-measurement.rs",
+        "-o",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/baseline-layout/check-measurement"
+      ],
+      "source_sha256": "64519f87d07a12858ba723cae9904dbfeab72941590f8f538b55d33cd67a1f6d",
+      "measurement_sha256": "af38925a1e3a83822c3019915a666cbbf14b3c635dd8d9ca83eddcde89a5d1fc",
+      "binary_sha256": "27db2ee6c0e7810b37a5947462ad4d9634d02a9f597e4564230f8cadde27b5ba",
+      "exact_layout_checks": [
+        [
+          12,
+          0
+        ],
+        [
+          12,
+          12
+        ]
+      ],
+      "outcome": {
+        "allocation_requests": 18,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 12928,
+        "hardware": {
+          "cycles": 995770,
+          "instructions_per_cycle": 0.7875724313847575,
+          "instructions_retired": 784241,
+          "lifetime_peak_physical_footprint_bytes_after": 1377088,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 1295104,
+          "physical_footprint_bytes_before": 1147712,
+          "resident_bytes_after": 1720320,
+          "resident_bytes_before": 1523712,
+          "system_cpu_seconds": 0.000312625,
+          "user_cpu_seconds": 5.2333333333333336e-05
+        },
+        "live_requested_heap_bytes_after": 1140,
+        "live_requested_heap_bytes_before": 1444,
+        "peak_additional_live_requested_heap_bytes": 12528,
+        "peak_live_requested_heap_bytes": 13972,
+        "requested_allocation_bytes": 12624
+      },
+      "empty_window_samples": 7
+    },
+    "boxed": {
+      "command": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "--crate-name",
+        "check_measurement",
+        "-D",
+        "warnings",
+        "-C",
+        "opt-level=3",
+        "-L",
+        "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde-2456c0391d15d182.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/boxed/check-measurement.rs",
+        "-o",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/boxed/check-measurement"
+      ],
+      "source_sha256": "be79881edca52e827bd74462a7c82d60a5f2a63b2982685e36e562eac20e8c0b",
+      "measurement_sha256": "c94bf3d9f289ad48cbf2187a94dc7f2ed386dc933ee540b8d0c2b52a00571c79",
+      "binary_sha256": "2eba810966096e30011fb0fd201c5b7700fce341aaafb97ea2de4465695b71dc",
+      "exact_layout_checks": null,
+      "outcome": {
+        "allocation_requests": 18,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 12928,
+        "hardware": {
+          "cycles": 914496,
+          "instructions_per_cycle": 0.7695123871509553,
+          "instructions_retired": 703716,
+          "lifetime_peak_physical_footprint_bytes_after": 1377024,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 1311488,
+          "physical_footprint_bytes_before": 1131264,
+          "resident_bytes_after": 1720320,
+          "resident_bytes_before": 1507328,
+          "system_cpu_seconds": 0.000277,
+          "user_cpu_seconds": 4.7000000000000004e-05
+        },
+        "live_requested_heap_bytes_after": 1140,
+        "live_requested_heap_bytes_before": 1444,
+        "peak_additional_live_requested_heap_bytes": 12528,
+        "peak_live_requested_heap_bytes": 13972,
+        "requested_allocation_bytes": 12624
+      },
+      "empty_window_samples": 7
+    },
+    "boxed-layout": {
+      "command": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "--crate-name",
+        "check_measurement",
+        "-D",
+        "warnings",
+        "-C",
+        "opt-level=3",
+        "-L",
+        "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+        "--extern",
+        "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde-2456c0391d15d182.rlib",
+        "--extern",
+        "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/boxed-layout/check-measurement.rs",
+        "-o",
+        "/private/tmp/mech-allocator-probe-runtime.0islwx9m/boxed-layout/check-measurement"
+      ],
+      "source_sha256": "978a3581bda637538c4ac8a90166fd1c1a79fd4ab774cd5d3bfe7de57f49ad0e",
+      "measurement_sha256": "af38925a1e3a83822c3019915a666cbbf14b3c635dd8d9ca83eddcde89a5d1fc",
+      "binary_sha256": "95fdded8b367979e2f32d09cf46bcac5aa4deba13b3f7ea642714425a156d04a",
+      "exact_layout_checks": [
+        [
+          12,
+          0
+        ],
+        [
+          12,
+          12
+        ]
+      ],
+      "outcome": {
+        "allocation_requests": 18,
+        "allocator_accounting_underflows": 0,
+        "allocator_lifetime_accounting_underflows": 0,
+        "freed_allocation_bytes": 12928,
+        "hardware": {
+          "cycles": 749012,
+          "instructions_per_cycle": 0.9029615012843586,
+          "instructions_retired": 676329,
+          "lifetime_peak_physical_footprint_bytes_after": 1360704,
+          "pageins": 0,
+          "physical_footprint_bytes_after": 1311552,
+          "physical_footprint_bytes_before": 1131264,
+          "resident_bytes_after": 1703936,
+          "resident_bytes_before": 1507328,
+          "system_cpu_seconds": 0.00021395833333333333,
+          "user_cpu_seconds": 5.408333333333334e-05
+        },
+        "live_requested_heap_bytes_after": 1140,
+        "live_requested_heap_bytes_before": 1444,
+        "peak_additional_live_requested_heap_bytes": 12528,
+        "peak_live_requested_heap_bytes": 13972,
+        "requested_allocation_bytes": 12624
+      },
+      "empty_window_samples": 7
+    }
+  }
+}

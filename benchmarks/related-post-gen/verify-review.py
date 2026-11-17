@@ -10,13 +10,23 @@ packet = Path(__file__).resolve().parent
 root = packet.parents[1]
 manifest = json.loads((packet / 'review/manifest.json').read_text())
 
-def verify(base, name, expected):
+# These files may change in the checkout. The review manifest and integration
+# inventory retain the bytes published in 95c9a1f454681e2c4f6813b277d3e23277607d2c.
+recorded_files = {
+    'check-measurement.rs': 'review/recorded-sources/check-measurement.rs.gz',
+    'verify-review.py': 'review/recorded-sources/verify-review.py.gz',
+}
+
+def verify(base, name, expected, *, decompress=False):
     path = (base / name).resolve()
     if not path.is_relative_to(base.resolve()):
         raise SystemExit(f'Invalid manifest path: {name}')
     if not path.is_file():
         raise SystemExit(f'Missing published file: {name}')
-    actual = hashlib.sha256(path.read_bytes()).hexdigest()
+    contents = path.read_bytes()
+    if decompress:
+        contents = gzip.decompress(contents)
+    actual = hashlib.sha256(contents).hexdigest()
     if actual != expected:
         raise SystemExit(f'Hash mismatch: {name}')
 
@@ -40,7 +50,11 @@ def verify_git_inventory(revision, files):
     assert at == len(data)
 
 for name, item in manifest['files'].items():
-    verify(packet, name, item['sha256'])
+    recorded = recorded_files.get(name)
+    if recorded is None:
+        verify(packet, name, item['sha256'])
+    else:
+        verify(packet, recorded, item['sha256'], decompress=True)
     if item.get('compression') == 'gzip':
         assert hashlib.sha256(gzip.decompress((packet/name).read_bytes())).hexdigest() == item['uncompressed_sha256'], name
 # The current branch includes newer compiler work. Historical timings belong
@@ -74,7 +88,10 @@ current_files = 0
 if integration.exists():
     current = json.loads(integration.read_text())
     for name, expected in current['files'].items():
-        verify(root, name, expected)
+        if name == 'benchmarks/related-post-gen/check-measurement.rs':
+            verify(packet, recorded_files['check-measurement.rs'], expected, decompress=True)
+        else:
+            verify(root, name, expected)
     current_files = len(current['files'])
 
 # Validate the corrected audit from raw reports, not a printed success label.

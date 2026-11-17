@@ -60,8 +60,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "379dccdcc34419bbc5e61e33ba49f59c9008e54e1457319a6121ff0152ac16b5",
-      "bytes": 25464
+      "sha256": "c5c21edd41c1200fa0b5e707446203d09c72f21fe748a7d1274cbd4a824a8205",
+      "bytes": 25819
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/README.md",
@@ -1532,6 +1532,61 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/source-to-link/timing.json.gz",
       "sha256": "f451f33d19481e06aa2155ef5494fc1d65f448ee9bf1e7a1e3d0d01b961e06f4",
       "bytes": 18513
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/README.md",
+      "sha256": "e255eea672c8c8316ef595d729df03657fe1095ea17ffce922d6b672e4827220",
+      "bytes": 1543
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/baseline-layout-run.log",
+      "sha256": "3e3ad07fd402d3a075794d37b5b924531e550d7fc910dbfe8798527577eb8d4c",
+      "bytes": 5865
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/baseline-run.log",
+      "sha256": "294bd7caa7713138e5e04e943c58e895ecef5fb0b24e8703b49a3446b27abb6c",
+      "bytes": 5868
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/boxed-layout-run.log",
+      "sha256": "e71090365d0e41cf3b2450dc0fabd92f0d839c0145129456683168ab5a878d4e",
+      "bytes": 5862
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/boxed-run.log",
+      "sha256": "4b908c7e18aa6f1e2b7edc36c364ebb3fb515c8d7aed8ae0883970ff608dd819",
+      "bytes": 5865
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/full-tree-boxed.log",
+      "sha256": "8574057083d45ef14eef172d9d46a864521b64bc708c972a4f3df3cd06157313",
+      "bytes": 310
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/mutation-tests.log",
+      "sha256": "f1f22b076656fd228975dee03a5a37366eb75886cd1ac28c5bc9a323cf5826d1",
+      "bytes": 38
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/provenance-verification.log",
+      "sha256": "f2b938a6cb5a05e52fe2fc9b3a4cca4fc1f55e84bbec492b0ddfb684c60a5bcf",
+      "bytes": 260
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/runtime-validation.json",
+      "sha256": "ee3e9b62a11694a908b71bdb5b4b456da3e1d9209973f7dac88f25c17bec21e6",
+      "bytes": 9482
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/runtime-validation.py.gz",
+      "sha256": "0051ef1ba279c6069d8bae9479eb5f29c3a20044357dab8a5b9ac7d29943b49c",
+      "bytes": 2331
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/allocator-probe-audit/verify-provenance.py",
+      "sha256": "bb9d785ea0b71cf757e09bc01571cf8762f2f75a702b3daa2148f2802fce8f42",
+      "bytes": 5727
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/baseline/checked-failures.json",
@@ -23402,6 +23457,26 @@
       "path": "benchmarks/mech-deflate/native-profile/ssa_builder_tests.rs",
       "sha256": "db43efab10fd1eefe12645106655537a4e97de7e4cd500d01c1a14aff195fe2f",
       "bytes": 330
+    },
+    {
+      "path": "benchmarks/related-post-gen/check-measurement.rs",
+      "sha256": "be79881edca52e827bd74462a7c82d60a5f2a63b2982685e36e562eac20e8c0b",
+      "bytes": 2433
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/recorded-sources/check-measurement.rs.gz",
+      "sha256": "b49e058d70a7f991dbd2c1086c89af1666c6971898f73e604d743a915945a5d5",
+      "bytes": 946
+    },
+    {
+      "path": "benchmarks/related-post-gen/review/recorded-sources/verify-review.py.gz",
+      "sha256": "b49f9d8868d0ab3dcc140d1104072d26e0c20918a99cbd1333fa59173edd07fe",
+      "bytes": 10965
+    },
+    {
+      "path": "benchmarks/related-post-gen/verify-review.py",
+      "sha256": "478828d10404a2a9b0c3323e2a1576d0b34b66ed9e983bafabfde681b57c4bc8",
+      "bytes": 53212
     },
     {
       "path": "hosts/gpu/examples/native_tagged_map_allocations.rs",
