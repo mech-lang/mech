@@ -1,0 +1,8 @@
+{
+  "scope": "Exact terminal cache probes and resolved one-shot failures.",
+  "probes": 5535739,
+  "hits": 4263296,
+  "negative_hits": 3874036,
+  "eligible_batch_negative_hits": 3874036,
+  "eligible_fraction_of_probes": 0.6998227336946341
+}

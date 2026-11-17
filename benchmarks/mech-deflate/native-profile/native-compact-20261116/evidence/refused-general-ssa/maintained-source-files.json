@@ -1,0 +1,8 @@
+{
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs": "429bdc68dc90e990f7ce3768b589a819f38ff846a277830fb5f73def648047c0",
+  "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs": "3e5a02064b8bb68cf84c2e815660b43d38d7331c29d78ec604d0874a86e89451",
+  "hosts/gpu/src/native_artifact/program/compact/arrays.rs": "aff6cbd2925cb8516838138ab85872bc71b186248eb67acbcfddec1290572b26",
+  "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "bbe80f667f7ccc84b31a144ff9e5844d59d441ca47fe79c6245a593b44992bad",
+  "hosts/gpu/src/native_artifact/program/compact/phases.rs": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+  "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py": "edd41ceb36ff37234ac1d0783e4b9e243034b56f914fb3f90def8fe19efea6a2"
+}

@@ -1,0 +1,36 @@
+{
+  "base": "78b064c5bb70937db72db21ebd3ab2fd556816c3",
+  "old_compiler_sha256": "a095ada5329d0ed445dc4a3ffe9d2f7807ec91944eaae50d4e280246d9579a20",
+  "patches": {
+    "refused-ssa": "669e0848fce497bbfe2415b8a44827168f3532ffeb938a14c7ab233fe13eb42d",
+    "owner-exchange": "4e65e9a349c825b2885174520cf31db672e389f63b7bb23a3f03c1df2ac18dd3",
+    "guard-hardening.patch": "c78a64d437428ff241b8ff0590979e6f606d048174f5e91d8b5e83522aabc804",
+    "focused-test.patch": "ee89a2c4a22bb1b4a05bd32e2a8954ae5f369b46b67bd07f2aa87f30125797ee"
+  },
+  "paths": {
+    "refused-ssa": [
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs",
+      "hosts/gpu/src/native_artifact/program/compact/arrays.rs",
+      "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
+      "hosts/gpu/src/native_artifact/program/compact/phases.rs"
+    ],
+    "owner-exchange": [
+      "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+      "hosts/gpu/src/native_artifact/program/compact/owner_retirement.rs",
+      "hosts/gpu/src/native_artifact/program/compact/owner_retirement/exchange.rs",
+      "hosts/gpu/src/native_artifact/program/compact/owner_retirement/exchange/exchange_tests.rs"
+    ]
+  },
+  "path_contents": {
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs": "429bdc68dc90e990f7ce3768b589a819f38ff846a277830fb5f73def648047c0",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs": "743edcbd563ff40fe945ff4750325ec6b551ecf6f178cb9bc3bb8f371ae45201",
+    "hosts/gpu/src/native_artifact/program/compact/arrays.rs": "3dc823ed215d3737008a69d93cb825526dc66d848eef200f205ae544a2dd05ce",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "310bbdf0a103a4e25c6ab5c71246635950b9c6f069db6c13667beaf72fb34041",
+    "hosts/gpu/src/native_artifact/program/compact/owner_retirement/exchange.rs": "d59f9cb07eb7d0b6148b78e37a76ee19da080ba7c5194e0db3711cc0e04c5aef",
+    "hosts/gpu/src/native_artifact/program/compact/owner_retirement.rs": "3065413fe769ffcf3b73efb5b5089963663ed50ffe80aca67c77f448c3ecc7b7",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "cdfe4f0c85e68180abdac2ffb7e84a3ebf99546c1c8da3a1b092747fe1be8175",
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": "f07baf00e307e8543d1d035fc069f26f261c5b8cc7623dc739925d0073c30298",
+    "hosts/gpu/src/native_artifact/program/compact/owner_retirement/exchange/exchange_tests.rs": "1a577dd5476b82a68d96a41a5fb7171702e7393a54136c5fe9e33f9f8bded776"
+  }
+}

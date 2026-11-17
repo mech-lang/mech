@@ -1,0 +1,129 @@
+{
+  "compiler_source_commit": "7c77a620cad6854b5e69938021df2f83db2b62f7",
+  "policy_commit": "a6cb46aa8720478b947e39e90e70524dba1142c1",
+  "sizes": {
+    "mech-control": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "executable_text_bytes": 150416,
+      "executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_bytes": 210168
+    }
+  },
+  "medians": {
+    "mech-control": {
+      "source_to_native": 3.7325543540064245,
+      "stage_outputs": 0.00027166586369276047,
+      "link": 0.04078327096067369,
+      "total": 3.773623353568837,
+      "compiler_peak_rss_bytes": 401506304.0,
+      "compiler_phases_seconds": {
+        "parse": 1.8956811875000001,
+        "catalog": 0.062674083,
+        "frontend": 0.23248922900000002,
+        "artifact": 0.006953104,
+        "encode": 0.002584083,
+        "native": 1.5003047079999998
+      }
+    },
+    "mech-experiment": {
+      "source_to_native": 3.696568999905139,
+      "stage_outputs": 0.0002721038181334734,
+      "link": 0.04093404160812497,
+      "total": 3.7377732710447162,
+      "compiler_peak_rss_bytes": 401498112.0,
+      "compiler_phases_seconds": {
+        "parse": 1.8964918334999998,
+        "catalog": 0.062693854,
+        "frontend": 0.2327597085,
+        "artifact": 0.006960249999999999,
+        "encode": 0.0025789165000000003,
+        "native": 1.4664763545
+      }
+    },
+    "roc": {
+      "compile": 2.9536672711838037,
+      "link": 0.03458660398609936,
+      "total": 2.9884446039795876,
+      "compiler_peak_rss_bytes": 395739136.0
+    },
+    "libdeflate": {
+      "compile": 0.4467270418535918,
+      "link": 0.034236208302900195,
+      "total": 0.4806727289687842,
+      "compiler_peak_rss_bytes": 71499776.0
+    }
+  },
+  "x_roc_time": 1.2507420301742516,
+  "x_libdeflate_time": 7.776129257558638,
+  "paired_complete_build_ratio_median": 0.9912755621918761,
+  "native_phase_paired_median_ratio": 0.9775046764463636,
+  "initial_complete_build_ratio_median": 0.9937816306291234,
+  "initial_native_paired_median_ratio": 0.9846446663870567,
+  "reference_worker": {
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "-C",
+      "opt-level=3",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/mech-worker.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/mech-experiment/mech-worker",
+      "-C",
+      "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-C",
+      "link-arg=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/mech-experiment/native/program.o",
+      "--extern",
+      "mech_gpu=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+      "--extern",
+      "mech_engine=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+      "--extern",
+      "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+      "--extern",
+      "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+      "--extern",
+      "miniz_oxide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+      "-L",
+      "dependency=/private/tmp/mech-pr973-merged-compression-20261112/reduction-loop-registers-335e58a455/backend",
+      "--remap-path-prefix",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link=/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/terminal-final",
+      "--remap-path-prefix",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/pinned_allocator.rs=/private/tmp/mech-child-prepayment-round163-20261105/pinned_allocator.rs"
+    ],
+    "worker": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/mech-experiment/mech-worker",
+    "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "correctness": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/mech-experiment/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/mech-experiment/native/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "complete_smokes": 162,
+      "verified": true,
+      "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "source_head": "78b064c5bb70937db72db21ebd3ab2fd556816c3",
+  "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+  "control_source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "candidate_source_sha256": "7625c4613caea164d20cb56a507b156d4d9e95c8e045ade490ea459f6bdebb0f",
+  "all_stored_u16_offsets_round_trip": true,
+  "arithmetic_equivalence_stored_offset_range": [
+    0,
+    65535
+  ],
+  "arithmetic_source_sha256": "95ca6583f883018499f3d9751e297c82e7c0793402243eb60e5ccfe6a0ffb45c",
+  "checked_source_length_interval": [
+    3,
+    258
+  ],
+  "compile_link_runtime": "unverified"
+}
