@@ -2,7 +2,7 @@
 
 use super::{
     array_growth::provider,
-    layout::{Kind, Layout, Type},
+    layout::{Layout, LayoutKind, Type},
     packed,
     recipes::Recipe,
 };
@@ -30,7 +30,7 @@ pub(super) struct IndexedStores {
 }
 
 fn scalar_width(element: &Type) -> Option<usize> {
-    let Kind::Scalar {
+    let LayoutKind::Scalar {
         bytes,
         float: false,
         ..

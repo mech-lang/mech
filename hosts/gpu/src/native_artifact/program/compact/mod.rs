@@ -109,7 +109,7 @@ pub(in crate::native_artifact) fn inventory(
     let arrays = layout
         .types
         .iter()
-        .filter(|t| matches!(t.kind, layout::Kind::Array { .. }))
+        .filter(|t| matches!(t.kind, layout::LayoutKind::Array { .. }))
         .count();
     let owners: usize = layout.types.iter().map(|t| t.owners.len()).sum();
     Ok(

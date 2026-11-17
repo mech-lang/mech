@@ -3,7 +3,7 @@
 //! the fact even if it has the same element type and dimensions.
 use super::{
     flow::Flow,
-    layout::{ARRAY_OWNER, ARRAY_WORDS, Kind, Layout},
+    layout::{ARRAY_OWNER, ARRAY_WORDS, Layout, LayoutKind},
     recipes::Recipe,
 };
 use crate::native_artifact::program::codegen::cfg_cleanup::composed_reads::Literal;
@@ -69,7 +69,7 @@ impl LiteralViews {
         for constant in plan.constants() {
             let value = constant.value().get();
             let ty = layout.ty(value);
-            let maximum = if matches!(ty.kind, Kind::Array { .. }) {
+            let maximum = if matches!(ty.kind, LayoutKind::Array { .. }) {
                 literal(constant.constant().data())
             } else {
                 None

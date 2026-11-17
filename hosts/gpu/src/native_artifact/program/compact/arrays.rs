@@ -3,7 +3,7 @@
 use super::{
     array_growth::{BackingResults, BackingSite, CapacityGrowth, GrowthSite},
     indexed_stores::{IndexedStore, IndexedStores},
-    layout::{Kind, Layout, Type},
+    layout::{Layout, LayoutKind, Type},
     packed,
     recipes::Recipe,
 };
@@ -102,7 +102,7 @@ fn same_elements(left: &Type, right: &Type) -> Result<(), NativeCompileError> {
 }
 fn unsigned(ty: &Type) -> Result<(), NativeCompileError> {
     match ty.kind {
-        Kind::Scalar {
+        LayoutKind::Scalar {
             signed: false,
             float: false,
             ..
@@ -114,8 +114,8 @@ fn unsigned(ty: &Type) -> Result<(), NativeCompileError> {
 }
 fn integer_element(ty: &Type) -> bool {
     match &ty.kind {
-        Kind::Scalar { float: false, .. } => true,
-        Kind::Product(fields) => fields.iter().all(|f| integer_element(&f.ty)),
+        LayoutKind::Scalar { float: false, .. } => true,
+        LayoutKind::Product(fields) => fields.iter().all(|f| integer_element(&f.ty)),
         _ => false,
     }
 }
@@ -473,7 +473,7 @@ impl Arrays {
             .packed_bytes
             .ok_or_else(|| backend("compact writable backing requires a fixed element stride"))?;
         let scalar = self.writable_scalar.filter(|_| {
-            matches!(element.kind, Kind::Scalar { .. })
+            matches!(element.kind, LayoutKind::Scalar { .. })
                 && element.packed_align == stride
                 && matches!(stride, 1 | 2 | 4 | 8)
         });
