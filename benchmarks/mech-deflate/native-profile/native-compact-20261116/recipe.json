@@ -1,4 +1,13 @@
 {
+  "recorded_runtime": {
+    "commit": "3ff13b6ab4834770aa422fa26887c7ff8cef6b0e",
+    "directory": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime",
+    "source_sha256": {
+      "mod.rs": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
+      "terminal_appends.rs": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4",
+      "zero_pages.rs": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80"
+    }
+  },
   "flags": {
     "MECH_PRIVATE_INDEXED_CHAINS": "1",
     "MECH_PHASE_OWNER_TRANSFER": "1",

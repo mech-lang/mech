@@ -55,8 +55,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "0ef93c34fd396e097d0a1f0a30ecf884f770a88ef9912270f706620a5501b6f3",
-      "bytes": 30528
+      "sha256": "562e646636e70fa84e8615b5213085b250fe8767abbf2152fedcb1f8bd97b678",
+      "bytes": 31060
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
@@ -16764,6 +16764,21 @@
       "bytes": 119
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/recorded-runtime-provenance/README.md",
+      "sha256": "5c9fb528b4976e68d364959cc6959ccdf8d7755e738f21d1150f518880d9c1af",
+      "bytes": 1050
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/recorded-runtime-provenance/audit-next-file.log",
+      "sha256": "df8230378ba7c302e264a930c3c9caf5992214e29faca4c83ac4277ce2de38f3",
+      "bytes": 409
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/recorded-runtime-provenance/identity.json",
+      "sha256": "2dae0a15b9a1d79ce18bfcdc9eed31d79d98675309c6758bf55eb175be015991",
+      "bytes": 3428
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/register-spill-pairs/README.md",
       "sha256": "6d83493e00221a12c6380de5c3afe019a660c636836a37b7d3bd18a0418820c7",
       "bytes": 2937
@@ -20335,28 +20350,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "cb99d3e9f40292457f83ae2f266bc70f802950f029ae8e46fa95b13e253ec449",
-      "bytes": 9697
+      "sha256": "ea7ee105eec30c8b0e95d0720008c90296332399b77dac7bca20fbf58e23e9ae",
+      "bytes": 11325
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
-      "sha256": "28df1312655e67acf2443d4f4c3566c950aa540d8abf66cd7f757e9bd39ae37d",
-      "bytes": 8240
-    },
-    {
-      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/mod.rs",
-      "sha256": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
-      "bytes": 47520
-    },
-    {
-      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/terminal_appends.rs",
-      "sha256": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4",
-      "bytes": 9463
-    },
-    {
-      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/zero_pages.rs",
-      "sha256": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80",
-      "bytes": 2994
+      "sha256": "b10f205b3c3438b195f7c34d1a6b29274e5d8832d8558aa0c236d261e0b52420",
+      "bytes": 8727
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/replay.py",
@@ -20900,8 +20900,8 @@
     },
     {
       "path": "scripts/unsafe-boundaries.allowlist",
-      "sha256": "ebaa0374b2dad5bcaec9c3a005105fade0ef9ac7c4fe77418b3d690ecd903c9f",
-      "bytes": 61973
+      "sha256": "65770b9575b8ad6304503faac7e5f70528d73c78b61913a11f57196272349739",
+      "bytes": 61186
     },
     {
       "path": "scripts/warning-exceptions.json",

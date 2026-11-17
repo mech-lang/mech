@@ -452,8 +452,9 @@ benchmark; no compile-time improvement is claimed for this experiment.
   native instructions. No external LLVM executable is used by this recipe.
 - `src/syntax/src/document/parser/journal.rs`: retain the current journal page
   directly while preserving shared snapshots.
-- The allocation policy now lives in `compact_runtime/zero_pages.rs`; the exact
-  runtime source used for the measurements is also retained in `recorded-runtime`.
+- The maintained allocation policy lives in `compact_runtime/zero_pages.rs`.
+  The exact historical runtime remains at the revision pinned in the recipe.
+  [Recorded runtime source](https://github.com/mech-lang/mech/tree/3ff13b6ab4834770aa422fa26887c7ff8cef6b0e/benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime)
 
 Cold-tail sharing is **not promoted as a new 81/61 result**. Its two focused
 orders preserve the screen's peer wins, but tiny inputs have adverse estimates.
@@ -488,7 +489,11 @@ regenerates the retained baseline. Compiler construction and source-to-object
 timings are separate. No timing result from this command is a new runtime score.
 An optional `--mimalloc-object PATH` links the recorded worker and runs 162 exact
 calls using the included fixtures. Use the same allocator object as the peer
-workers for a runtime comparison.
+workers for a runtime comparison. This option needs a Git checkout containing
+the recorded runtime's pinned ancestor. In a shallow checkout, fetch the
+history containing `3ff13b6ab4834770aa422fa26887c7ff8cef6b0e`. The rebuild
+verifies all three source hashes and extracts the pinned files into its output
+directory before linking. The source-to-object rebuild runs without Git history.
 
 The complete integrated compiler build **succeeded at
 `2b930a8dfa0f085d46d68bc6593bd182b58f26a2`**. An audit compared 2,891 source and
