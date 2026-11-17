@@ -4,7 +4,7 @@ use super::{
     arrays::Arrays,
     collections::Collections,
     flow::Flow,
-    layout::{Kind, Layout},
+    layout::{Layout, LayoutKind},
     map_index, packed,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
@@ -43,7 +43,10 @@ impl Proof {
                     .inputs()
                     .iter()
                     .any(|p| p.value().get() == region.source)
-                || !matches!(layout.ty(region.map_root).kind, Kind::SortedMap { .. })
+                || !matches!(
+                    layout.ty(region.map_root).kind,
+                    LayoutKind::SortedMap { .. }
+                )
             {
                 continue;
             }
@@ -143,7 +146,7 @@ impl State {
         // checked cast is part of the result, not an optional representation.
         let scalar = layout.ty(region.output).element()?;
         let width = match scalar.kind {
-            Kind::Scalar {
+            LayoutKind::Scalar {
                 bytes,
                 signed: false,
                 float: false,

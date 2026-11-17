@@ -375,7 +375,7 @@ impl TerminalAppends {
             layout.ty(id).element().is_ok_and(|e| {
                 matches!(
                     e.kind,
-                    super::layout::Kind::Scalar {
+                    super::layout::LayoutKind::Scalar {
                         bytes: 1,
                         signed: false,
                         float: false
@@ -491,7 +491,7 @@ impl TerminalAppends {
                                 == Some(NativeScalarKind::F64)
                                 || matches!(
                                     layout.ty(left.get()).kind,
-                                    super::layout::Kind::Scalar { float: true, .. }
+                                    super::layout::LayoutKind::Scalar { float: true, .. }
                                 )
                             {
                                 return Err(TraceFailure::Unsupported);
