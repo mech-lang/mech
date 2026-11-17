@@ -19,6 +19,15 @@ keep the ordinary resource-accounting limitations explicit. The rebuild recipe
 uses no external LLVM executable. Do not substitute old M3/LLVM measurements for
 the current Apple M1 comparisons.
 
+Reusing the verifier's graph and proving identity-route reachability cuts
+matched native time by **1.71%** and the complete build by
+**0.50%**. The Apple M1 build takes **3.83915 s** through the
+final link, **1.285× Roc** and **8.016× libdeflate**. It reproduces
+the exact timed worker and emits **71,768 B**, or **1.244× Roc** and
+**1.935× libdeflate**. Both full runtime orders preserve all **81/81 Roc**
+and **61/81 libdeflate** wins.
+[Compiler comparison and reproduction](evidence/native-graph-work/README.md)
+
 ## Latest matched build and runtime
 
 The current opt-in **71,768-byte** Cranelift encoder uses
