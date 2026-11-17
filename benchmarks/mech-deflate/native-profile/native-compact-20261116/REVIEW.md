@@ -48,6 +48,14 @@ unit tests pass. With the same frontend, the native-only median moves from
 5.64176 seconds. The retained benchmark worker matches byte for byte.
 [Source-to-executable trials and checks](evidence/batched-block-params/report.json)
 
+## AArch64 checked-root zero branches
+
+The AArch64 checked-root branch recipe emits **71,768 B** of encoder text,
+**1.24390× Roc** and **1.93549× libdeflate**. It saves 192 bytes and
+reduces measured peak native stack to 5,280 bytes. Its matched Apple M1
+source-through-link build is **4.00611 s**. It stays opt-in for runtime
+review. [Rebuild, both full timing orders, and per-case bounds](evidence/branch-on-zero/README.md)
+
 ## Single-process source compilation
 
 The maintained rebuild accepts `--direct-source`. The existing diagnostic
