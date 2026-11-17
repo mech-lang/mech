@@ -1,0 +1,36 @@
+{
+  "standard": {
+    "old_count": 402,
+    "new_count": 404,
+    "added": [
+      "libmimalloc-sys@0.1.35",
+      "mimalloc@0.1.39"
+    ],
+    "removed": [],
+    "shared_feature_changes": {},
+    "workspace_changes": [
+      [],
+      []
+    ],
+    "old_surface_digest": "edc188d1cadff9ea3ee26cc2c11bd77b3e5333880487689d45bb04c70fd15ae1",
+    "new_surface_digest": "c86f6f746328233613d9baf449d52854e6d1f00c5e02e8a7b9d5419840ccc6a2",
+    "runtime_surface_digest": "32e4acbfd68e37cea65b63f1a62d941856014362293bc06999ab1d138cfb73ac"
+  },
+  "full": {
+    "old_count": 404,
+    "new_count": 406,
+    "added": [
+      "libmimalloc-sys@0.1.35",
+      "mimalloc@0.1.39"
+    ],
+    "removed": [],
+    "shared_feature_changes": {},
+    "workspace_changes": [
+      [],
+      []
+    ],
+    "old_surface_digest": "2bb8750aacb60c8af33196df880ea5dedb9e41bd74101ac732272b349cc73f8b",
+    "new_surface_digest": "93b4996e9260f87f3b7ea845fbbcef32ed5c8f54db6ae093cc90467778cf52e9",
+    "runtime_surface_digest": "0093bafeef6052836166f1840d2515f306c1c6208d4c15ec10527f4ea6fe40c7"
+  }
+}

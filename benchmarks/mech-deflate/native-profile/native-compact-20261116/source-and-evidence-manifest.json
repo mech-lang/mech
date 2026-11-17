@@ -1,12 +1,22 @@
 {
   "base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
   "qualified_source_parent": "aea29386069ee3c2873ceceae127dc5297f46b41",
-  "integration_status": "Complete integrated compiler reproduction at 2b930a8d is recorded. The frontend now reuses the existing compiler allocator: four balanced complete-build orders improve 6.84496 to 6.24081 seconds with all ten Mech outputs byte-identical. Runtime peer scores remain historical; whole-stack CI remains incomplete. The review handoff now includes all 24 latest static screens, reproduced with exact object and metadata hashes; no smaller candidate is promoted. Owner-proof runtime follow-up is published without changing the retained recipe: the broad candidate loses wins; the range candidate has 81 Roc and 61/60 C wins in full orders and unresolved tiny-input repeatability. Both candidates pass correctness; owner-ranges rebuild checks exact object and metadata identity. Its matched complete build is 6.26348 seconds versus 6.24346 for the control. The owner-proof/final-cleanup focused follow-up is now published: 72,136-byte encoder, 162 correctness calls, and two 12-case orders preserving 12 Roc/eight C wins. The one-byte adverse observation is preserved; full qualification remains pending. No compiler source or retained recipe changes. The complete cleanup experiment preserves peer win totals but regresses individual cases. The optional compiler pass folds 20 reference-count loads from freshly allocated owners. Default output identity, focused and full raw measurements, exact rebuilds, and complete builds are recorded in evidence/fresh-owner-counts. The parser now uses 32-event journal pages, reads each page as a slice, hashes contiguous source bytes within the same work allowance, and skips unused event maps. The measured syntax tree, bytecode, object, and retained benchmark worker are unchanged. Parser and complete build measurements are in evidence/parser-journal-pages. Native cleanup keeps block parameters in order while removing redundant formals in one pass. The measured objects, metadata, and retained benchmark worker reproduce exactly. New continuation widths and combinations are screened separately from the baseline.",
+  "integration_status": "Complete integrated compiler reproduction at 2b930a8d is recorded. The frontend now reuses the existing compiler allocator: four balanced complete-build orders improve 6.84496 to 6.24081 seconds with all ten Mech outputs byte-identical. Runtime peer scores remain historical; whole-stack CI remains incomplete. The review handoff now includes all 24 latest static screens, reproduced with exact object and metadata hashes; no smaller candidate is promoted. Owner-proof runtime follow-up is published without changing the retained recipe: the broad candidate loses wins; the range candidate has 81 Roc and 61/60 C wins in full orders and unresolved tiny-input repeatability. Both candidates pass correctness; owner-ranges rebuild checks exact object and metadata identity. Its matched complete build is 6.26348 seconds versus 6.24346 for the control. The owner-proof/final-cleanup focused follow-up is now published: 72,136-byte encoder, 162 correctness calls, and two 12-case orders preserving 12 Roc/eight C wins. The one-byte adverse observation is preserved; full qualification remains pending. No compiler source or retained recipe changes. The complete cleanup experiment preserves peer win totals but regresses individual cases. The optional compiler pass folds 20 reference-count loads from freshly allocated owners. Default output identity, focused and full raw measurements, exact rebuilds, and complete builds are recorded in evidence/fresh-owner-counts. The parser now uses 32-event journal pages, reads each page as a slice, hashes contiguous source bytes within the same work allowance, and skips unused event maps. The measured syntax tree, bytecode, object, and retained benchmark worker are unchanged. Parser and complete build measurements are in evidence/parser-journal-pages. Native cleanup keeps block parameters in order while removing redundant formals in one pass. The measured objects, metadata, and retained benchmark worker reproduce exactly. New continuation widths and combinations are screened separately from the baseline. Qualification v1 replays pinned observations and requires both full orders, fixed floors, individual wins, and authoritative artifact provenance. The CLI, distribution snapshots, warning declarations, and generated browser and launcher provenance have targeted repairs. The complete unsafe-boundary and retired-value gates remain open.",
   "files": [
     {
       "path": ".github/workflows/ci-native-plan.yml",
       "sha256": "cbcdcbf79138f983ebc489399fa4b68f7cd7258a8ab72d33eda66fb4978c7afc",
       "bytes": 30431
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "c115ad1ae1465fc124fb467b5ad0860af75cbc36e025cab34d5311e858ac1fbd",
+      "bytes": 46625
+    },
+    {
+      "path": "Cargo.lock",
+      "sha256": "47d838f0e05be758fa8f91eb31e4f2fcbdb0367e04846c78b1f4490602b7410f",
+      "bytes": 141224
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/Cargo.lock",
@@ -29,14 +39,19 @@
       "bytes": 206
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
+      "sha256": "6d65861eaec2e32d0ae59e3d17a1e1399aa62c1ec9fd724174f711da91d673cf",
+      "bytes": 8908
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "244c3c1712e490c62fdcd85c1e56c7614e88a0534056d8ba2c21b24452743f05",
-      "bytes": 22222
+      "sha256": "e10a2ada196bf90e02acd6d06576e496f95b41af7a44bd79b0c4dcbe86623182",
+      "bytes": 22376
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "ded88bb54bf95f658b321c384adcc61d5d7e3db4057cd5f8a46b01b4b9ba2995",
-      "bytes": 9988
+      "sha256": "b75e4c9abd82104fe3d82c6d42b90b194f4ab5e1cc08f7b27abf5b5a168f7d4a",
+      "bytes": 10566
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/baseline/checked-failures.json",
@@ -6409,6 +6424,36 @@
       "bytes": 101
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration-repairs/distribution-graph-delta.json",
+      "sha256": "a67f1ac1c554c9b2d9af7a25af46f3f78d39c4c6f33d1334bfdc2f4bb6281008",
+      "bytes": 1067
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration-repairs/launcher-and-browser-verification.json",
+      "sha256": "c45f4a3d48f8aae9b54d3f2904d676932f0e33d24c99c5aae27e3809b852dab1",
+      "bytes": 2346
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration-repairs/pulley-opcode-match.log",
+      "sha256": "97336024c1e7720eb7dbd4b43c9880415ad79adaaa7ac1e3d37ae7ad8aae0bfb",
+      "bytes": 63
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration-repairs/report.json",
+      "sha256": "a6964b9129abbd96f66c757eaf64cfd7a7b2338fc824f80ca9f0677131dfde48",
+      "bytes": 2745
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration-repairs/unsafe-boundaries-as-run.log.gz",
+      "sha256": "251350449e1c2e08ed1c68f59e22f2d3635c8f91c12812fc1c141e2378b8762c",
+      "bytes": 15757
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/integration-repairs/warning-policy.log",
+      "sha256": "43c902f13e02413a527c9f0483cd12052c5d4ebd3a92d08a609163e3a3defade",
+      "bytes": 31
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/owner-cleanup-focus/commands-as-run.json",
       "sha256": "6c38b4d4b7a1f8e05660c8e013ddb093251620974bfe7faeeb2221173c094c92",
       "bytes": 705
@@ -10919,6 +10964,16 @@
       "bytes": 98
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/qualification-v1/archived-decisions.json",
+      "sha256": "7ca5d84ff95ed53c9dcdfd47297d6ee612faabed65409cb18c3a0cd59ff7e691",
+      "bytes": 554325
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/qualification-v1/tests.log",
+      "sha256": "9027727bd5caf3dfc53ba7707b128dd2e2c1c68195458214aa2fbd27de294273",
+      "bytes": 119
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/runtime-tests.log",
       "sha256": "c3adbb3605d03c66a18d7692a4883040c2d65b134112b8eb8ec15d2e1666c959",
       "bytes": 2291
@@ -12259,6 +12314,36 @@
       "bytes": 1034027
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v1.json",
+      "sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984",
+      "bytes": 834
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_artifacts.py",
+      "sha256": "5e2297d7671bb65241c046a91275fde3ec9d43cf714e66b38e839be88515465e",
+      "bytes": 13055
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_records.py",
+      "sha256": "4e39f16d41c5065fedf07bfdd2956cd6d968f9e7b316c71d3f221b2400e3c4bf",
+      "bytes": 6028
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification_timings.py",
+      "sha256": "43eb6e1e023a54a3ba5de706998df6369f40fb8f119962dc3cc815796cfa4d01",
+      "bytes": 22826
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualify.py",
+      "sha256": "92c29792ecd5b9f1fd3ffe94e5e6b40939dcfb3829616ccf60533359d8921f5b",
+      "bytes": 13403
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/qualify_archived.py",
+      "sha256": "604e5ee416dcd36ab8da2735df09dc0784f9fef7bf5cafcdc75498818500ef34",
+      "bytes": 9223
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
       "sha256": "f05a11032f8c3bf5a3478a3864a483d5eff0d2977af0f9b3023c42cfece0c523",
       "bytes": 7081
@@ -12294,6 +12379,11 @@
       "bytes": 5064
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/tests/test_qualify.py",
+      "sha256": "ead2e196d45f24306f0652a8664b73da99109416f9cc9f0b910f8a3284385f96",
+      "bytes": 24491
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/worker.rs",
       "sha256": "edcda2417cce1b5c94fdbc899d67622b77893ba1020d5579ac261b07933ebdd8",
       "bytes": 7721
@@ -12307,6 +12397,11 @@
       "path": "benchmarks/mech-deflate/native-profile/ssa_builder_tests.rs",
       "sha256": "db43efab10fd1eefe12645106655537a4e97de7e4cd500d01c1a14aff195fe2f",
       "bytes": 330
+    },
+    {
+      "path": "hosts/gpu/examples/native_tagged_map_allocations.rs",
+      "sha256": "3893030a1e2d24c360906ecee6c2336f775a12f71d8fb4af5cb650098ebf2d1b",
+      "bytes": 7835
     },
     {
       "path": "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/arithmetic_tests.rs",
@@ -12614,14 +12709,59 @@
       "bytes": 12922
     },
     {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/numeric_induction.rs",
+      "sha256": "fc42590f0ddd8cd0f6f3210e1531a0976a581af1b8492f74924a1162a851f257",
+      "bytes": 17564
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/prepare/readonly_numeric.rs",
+      "sha256": "eae1e66a35e4f9fe1e1c99dcea97b33b24250063eb93a1c1b7a48f41577fa935",
+      "bytes": 60380
+    },
+    {
+      "path": "scripts/build-wasm.py",
+      "sha256": "73d0fe3cdf63040bdac108385a71e582a20498d86be6e55af7bb068fb937d059",
+      "bytes": 3032
+    },
+    {
+      "path": "scripts/check_canonical_cli_ci.py",
+      "sha256": "1bc2f7d86f7811745f74054741df68b68d3f768d6cd39796d99253b456dbac3d",
+      "bytes": 8650
+    },
+    {
+      "path": "scripts/tests/test_build_wasm.py",
+      "sha256": "8e71bf7a8c38ca6d2435810e7260b1d3a1c152af164c2af4392ad75999e77f60",
+      "bytes": 3595
+    },
+    {
+      "path": "scripts/tests/test_canonical_cli_ci.py",
+      "sha256": "da340ec25ac58d712dd79807c7b7a51618b12d78c318dbc41e79440f78d415c1",
+      "bytes": 7405
+    },
+    {
+      "path": "scripts/unsafe-boundaries.allowlist",
+      "sha256": "ce306a6de133e1cd028b3ea6434e23114a48ac9985eaf74e65f6fdfc612d1714",
+      "bytes": 57710
+    },
+    {
       "path": "scripts/warning-exceptions.json",
-      "sha256": "6fa1ba854cd99d5df06cb4afc9b96508ac6fdeac97e3c3c95322d99e3a9452a8",
-      "bytes": 18490
+      "sha256": "6c61b634f8f63bb4aed7eedb0b930c1bf866133bc95cce6477d6a50a2fc4dcb1",
+      "bytes": 52097
     },
     {
       "path": "src/compiler_allocator.rs",
       "sha256": "488e5aec337fe153a7173f8adcf996bc35c9604783adf24ea16febd2dc35b677",
       "bytes": 178
+    },
+    {
+      "path": "src/engine/src/native_artifact/build_image/packed_tests.rs",
+      "sha256": "396124ae63fd8148c87c23f730cd998cd05a5a5134ddf86d4182077eeaebabd2",
+      "bytes": 10534
+    },
+    {
+      "path": "src/engine/src/native_artifact/build_image/tests.rs",
+      "sha256": "82e0d9c33a3d36a6d09c9405bfe491e6ba05729a1b022324372ba9d5655888b4",
+      "bytes": 24864
     },
     {
       "path": "src/engine/src/source_semantics/application.rs",
@@ -12669,6 +12809,16 @@
       "bytes": 15245
     },
     {
+      "path": "tests/architecture/distributions/full.json",
+      "sha256": "d7c0702442ff8ae66659cef97a41b738ebc68ee1df6acb481a16745464c6648f",
+      "bytes": 4688
+    },
+    {
+      "path": "tests/architecture/distributions/standard.json",
+      "sha256": "95c1ec2a311a474638b37f38fde9db718c340b3fd9143cc7bd09d3e1717d988b",
+      "bytes": 3795
+    },
+    {
       "path": "vendor/cranelift-codegen/src/inline.rs",
       "sha256": "b98c5d41ab4f645efeaad1086e20bb67ac33e90f8e867ec8a4ae5ca01164fc54",
       "bytes": 64713
@@ -12704,6 +12854,11 @@
       "bytes": 9939
     },
     {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "sha256": "9b3f62ddb4be59e1ed57cfd79389e72271bc712edcb8566c08dee1a463c72c85",
+      "bytes": 790
+    },
+    {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/lower.isle",
       "sha256": "c0b05f24f87cabb13467445260e2821e87c865ca858230cbeda9298375cdfd8c",
       "bytes": 143945
@@ -12719,14 +12874,59 @@
       "bytes": 6975
     },
     {
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "sha256": "0bb3c5c29712734f3c299eff60500c8ba1221dfe113e0db273404304d48a18d4",
+      "bytes": 734
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "sha256": "ce82f6085562d74808804132e405579cd85074dd698374a23d9e87ddb772d902",
+      "bytes": 738
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "sha256": "9ebdd336aa63be8561291c449262921fa4aa0b79c26e0d835c7248acd3802a94",
+      "bytes": 736
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "sha256": "77e750125a94d3ac1272a9f104ab354c8f10a1e60bbdfa3c4a17d154375cc0a2",
+      "bytes": 725
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/lib.rs",
+      "sha256": "323511d499dac84de979aa8d0200615600d030af18b70dfafd8ba32087febe31",
+      "bytes": 3906
+    },
+    {
       "path": "vendor/cranelift-codegen/src/machinst/vcode.rs",
       "sha256": "f59c38a2a65a0d177827c00d27cd73419a43513fe08e2da690fda0c4dee2c3b9",
       "bytes": 89509
     },
     {
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "sha256": "e3d3a7fab0071481300d780ba4bec73e963dd69ed4c8dd12ae1d6db8a48b238b",
+      "bytes": 871
+    },
+    {
       "path": "vendor/cranelift-codegen/src/remove_constant_phis.rs",
       "sha256": "5eef7f548e4335eb601ecaa9a3411cc54e753ff68b4272b506ccaeca435aaae6",
       "bytes": 15266
+    },
+    {
+      "path": "vendor/cranelift-codegen-meta/src/pulley.rs",
+      "sha256": "c6c3f44d874c2c0d2fa4d0d35e5763173a931dfaf7d7daf92b7e658c956adab4",
+      "bytes": 14129
+    },
+    {
+      "path": "vendor/regalloc2/src/checker.rs",
+      "sha256": "8318543ae6a8ce5d9f02466157361ecfad5c2d1ee77c1fa58ea766c7b7fe8b29",
+      "bytes": 36294
+    },
+    {
+      "path": "vendor/regalloc2/src/lib.rs",
+      "sha256": "61348b78638227dce909912d357b11d73fdcffb19d521ce9346be9900a2408e5",
+      "bytes": 63070
     }
   ]
 }
