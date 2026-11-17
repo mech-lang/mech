@@ -32420,8 +32420,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
-      "sha256": "9d4e8deea8729a2f23414ba6b6ca53f12289e89b2ce67f47fd9d68a9d1558ae0",
-      "bytes": 80487
+      "sha256": "7ff97d65d2aa1791a618a52e427b3e77dbc02b72e492a14bbbfba819ef28494a",
+      "bytes": 81084
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/immutable_arrays.rs",

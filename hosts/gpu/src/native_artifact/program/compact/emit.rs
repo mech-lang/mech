@@ -45,6 +45,7 @@ fn seal_auxiliary(
     b: &mut FunctionBuilder<'_>,
     source: &BTreeSet<Block>,
     entry: Block,
+    sealed_error: Option<Block>,
     last: &mut Option<Block>,
 ) {
     let mut next = match *last {
@@ -52,7 +53,7 @@ fn seal_auxiliary(
         None => b.func.layout.blocks().next(),
     };
     while let Some(block) = next {
-        if block != entry && !source.contains(&block) {
+        if block != entry && Some(block) != sealed_error && !source.contains(&block) {
             b.seal_block(block);
         }
         *last = Some(block);
@@ -672,7 +673,7 @@ fn define_entry<M: Module>(
         if remaining[flow.entry] == 0 {
             b.seal_block(blocks[flow.entry].unwrap());
         }
-        seal_auxiliary(&mut b, &source_blocks, entry, &mut last_layout);
+        seal_auxiliary(&mut b, &source_blocks, entry, None, &mut last_layout);
         // One shared action/settlement implementation serves both the
         // checked source CFG and the short guarded private interval.
         let mut emit_action = |b: &mut FunctionBuilder<'_>,
@@ -1313,9 +1314,19 @@ fn define_entry<M: Module>(
                 }
             }
             b.switch_to_block(error);
-            let status = b.block_params(error)[0];
-            let at = b.ins().iconst(types::I64, site as i64);
-            b.ins().return_(&[status, at]);
+            let sealed_error = if outline_allowed {
+                // All branches to this local failure block are known after its
+                // source site has emitted ordinary and specialized edges.
+                b.seal_block(error);
+                Some(error)
+            } else {
+                None
+            };
+            if sealed_error.is_none() || !b.is_unreachable() {
+                let status = b.block_params(error)[0];
+                let at = b.ins().iconst(types::I64, site as i64);
+                b.ins().return_(&[status, at]);
+            }
             for next in flow.successors[site]
                 .iter()
                 .copied()
@@ -1326,7 +1337,13 @@ fn define_entry<M: Module>(
                     b.seal_block(blocks[next].expect("reachable source successor"));
                 }
             }
-            seal_auxiliary(&mut b, &source_blocks, entry, &mut last_layout);
+            seal_auxiliary(
+                &mut b,
+                &source_blocks,
+                entry,
+                sealed_error,
+                &mut last_layout,
+            );
         }
         assert!(remaining.iter().all(|&n| n == 0));
         if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
