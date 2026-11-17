@@ -131,5 +131,7 @@
   "fresh_owner_counts_object_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
   "fresh_owner_counts_metadata_sha256": "f78b82fbd6dec22d84d92700b74f6a28871b0963c2f8e2acd07359aefc7f08a0",
   "fresh_owner_counts_cleanup_object_sha256": "7f4eb5824b335f991d2a51be1d5277b9f04ac37992e679d42c413a5edeb24c02",
-  "fresh_owner_counts_cleanup_metadata_sha256": "1246e2726abdd65eea62a9d02af8c2511f354b6b9e1436dc15ecc39f7f1eca78"
+  "fresh_owner_counts_cleanup_metadata_sha256": "1246e2726abdd65eea62a9d02af8c2511f354b6b9e1436dc15ecc39f7f1eca78",
+  "fresh_owner_counts_cold_tails_object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+  "fresh_owner_counts_cold_tails_metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb"
 }

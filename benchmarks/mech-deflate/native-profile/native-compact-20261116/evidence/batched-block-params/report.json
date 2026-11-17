@@ -1,0 +1,108 @@
+{
+  "control_commit": "2e0af88b7d979dc3bd905858089127cd0415ed96",
+  "comparison": "Same Apple M1 frontend, source, native configuration, runtime and final linker inputs; only the emitter source differs.",
+  "compiler_tests": {
+    "passed": 207,
+    "log": "cranelift-tests.log",
+    "command": "CARGO_BUILD_JOBS=1 CARGO_PROFILE_DEV_DEBUG=false CARGO_INCREMENTAL=0 cargo +nightly-2026-03-03 test --locked --offline --manifest-path vendor/cranelift-codegen/Cargo.toml --no-default-features --features std,unwind,arm64,experimental-cmp-reuse --lib"
+  },
+  "complete_medians_seconds": {
+    "mech-control": {
+      "frontend": 3.3854370624758303,
+      "native": 2.2242947497870773,
+      "link": 0.039887812454253435,
+      "total": 5.651671874569729,
+      "parse": 2.9328113125
+    },
+    "mech-batch": {
+      "frontend": 3.3805588122922927,
+      "native": 2.217168145813048,
+      "link": 0.040161520475521684,
+      "total": 5.641758666373789,
+      "parse": 2.9319903545
+    },
+    "roc": {
+      "compile": 2.9535288538318127,
+      "link": 0.03398916684091091,
+      "total": 2.9878214583732188
+    },
+    "libdeflate": {
+      "compile": 0.44969199993647635,
+      "link": 0.03383091650903225,
+      "total": 0.48358677118085325
+    }
+  },
+  "complete_reduction_fraction": 0.001754031093090358,
+  "mech_build_x_roc": 1.8882516057186234,
+  "mech_build_x_libdeflate": 11.666486766371587,
+  "native_only_medians_seconds": {
+    "mech-control": 2.226245312485844,
+    "mech-batch": 2.21647843811661
+  },
+  "diagnostic_initial_cleanup_span_seconds": {
+    "mech-control": [
+      0.45277604134753346,
+      0.4398905001580715
+    ],
+    "mech-batch": [
+      0.42826233291998506,
+      0.4274221248924732
+    ]
+  },
+  "diagnostic_initial_cleanup_span_medians_seconds": {
+    "mech-control": 0.4463332707528025,
+    "mech-batch": 0.42784222890622914
+  },
+  "diagnostic_scope": "Elapsed time from the initial CFG cleanup marker through the first vector guard decision.",
+  "exact_complete_build_files": [
+    "frontend/program.mecb",
+    "native/program.o",
+    "native/metadata.json",
+    "compressor"
+  ],
+  "pinned_worker": {
+    "object_text_bytes": 72520,
+    "object_text_x_roc": 1.256932889628397,
+    "object_text_x_libdeflate": 1.9557713052858683,
+    "roc_object_text_bytes": 57696,
+    "libdeflate_object_text_bytes": 37080,
+    "root_code_bytes": 52008,
+    "root_frame_bytes": 3744,
+    "source_blocks": 8223,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.217666832730174,
+    "peak_resident_bytes": 226623488,
+    "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+    "linked_text_bytes": 475444,
+    "worker_sha256": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "verified_calls": 162,
+    "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study-pinned-worker-qualification.json"
+  },
+  "fresh_owner_rebuild": {
+    "object_text_bytes": 72344,
+    "object_text_x_roc": 1.2538824181919024,
+    "object_text_x_libdeflate": 1.951024811218986,
+    "roc_object_text_bytes": 57696,
+    "libdeflate_object_text_bytes": 37080,
+    "root_code_bytes": 51840,
+    "root_frame_bytes": 3744,
+    "source_blocks": 8223,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.233946916181594,
+    "peak_resident_bytes": 226689024,
+    "object_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+    "metadata_sha256": "f78b82fbd6dec22d84d92700b74f6a28871b0963c2f8e2acd07359aefc7f08a0",
+    "linked_text_bytes": 475268,
+    "worker_sha256": "4374799309e26e3b85b84e8ac9dc796eac15621a52b1851c6cdb61c3126c4db7",
+    "verified_calls": 162,
+    "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study-fresh-owners-qualification.json"
+  },
+  "retained_worker_historical_peer_wins": {
+    "roc": 81,
+    "libdeflate": 61,
+    "cases": 81,
+    "orders": 2
+  },
+  "raw_timing": "builds/timing.json"
+}

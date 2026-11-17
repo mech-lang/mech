@@ -40,6 +40,27 @@ files under `src/syntax/src/document/parser` and the
 All build comparisons include final linking with compilers, fixed runtimes, and
 adapters prebuilt. See the README for phase timings and exact rebuild commands.
 
+The native cleanup change batches ordered block parameter removal in Cranelift's
+constant-phi pass and Mech's local-phi and dead-value passes. All 207 Cranelift
+unit tests pass. With the same frontend, the native-only median moves from
+2.22625 to 2.21648 seconds, and the complete build moves from 5.65167 to
+5.64176 seconds. The retained benchmark worker matches byte for byte.
+[Source-to-executable trials and checks](evidence/batched-block-params/report.json)
+
+## Smaller reviewed configuration
+
+Use `rebuild.py --variant fresh-owner-counts-cold-tails` to review the
+**71,960 B** encoder. It is **1.24723× Roc and 1.94067× libdeflate**,
+with **81/81 Roc and 61/81 libdeflate** in both full orders. Peak stack is
+5,296 bytes. The default recipe keeps the pinned 72,520-byte encoder while
+three short cases have repeatability outside the 0.5% resolution.
+
+With six direct continuation input words, the same passes reach 71,720 B and
+lose two libdeflate cases in both focused orders. Use `size_screens.py --list`
+to find the nine screen cases and `replay.py` to recompute peer wins from the
+recorded observations.
+[Continuation budgets and linked qualification](evidence/continuation-widths/report.json)
+
 ## Fresh owner reference counts
 
 The new pass folds 20 reference-count loads from direct, checked allocations
