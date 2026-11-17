@@ -1,0 +1,429 @@
+{
+  "machine": "Apple M1",
+  "scope": "Fresh encoder source through final executable link; compilers, runtimes and adapters prebuilt.",
+  "mech_compiler_build": "Rust opt-level 1, no PGO. Only the parser implementation differs between Mech frontends. Both use the same native emitter and runtime.",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "frontends": {
+    "mech-control": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-journal-batch-study/control-native-frontend",
+      "sha256": "9fc8d2135a8c5251d7af9acd12af5bd0b2f06f0d2ea4b9452d8273f2de984d82"
+    },
+    "mech-journal-pages": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/native_compact_frontend",
+      "sha256": "29f91fd50d58cea9298e63c8dda1d1effa92e87d55fcca5cfae45abf6f6384bd"
+    }
+  },
+  "emitter_sha256": "660a78aca6eb616c18873fdcf7f6dd19ca635aa5b9c919290598ee4e4d607580",
+  "runtime_sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+  "roc_compiler_sha256": "28467784aa83637d8a5aa70e074e627d5469449c4a6a1f068dd0b5cfb9819b9b",
+  "roc_source_sha256": "e2a7a543f4fb8863e1dd3f98d62a5a29a12d16cb3fa2db1960e8d55af0d0c2f1",
+  "c_source_sha256": "a46dae12f2020b68d20c965ae43f9710e3e792bf77f3ca4611582f8d8d0c9541",
+  "orders": [
+    [
+      "mech-control",
+      "mech-journal-pages",
+      "libdeflate",
+      "roc"
+    ],
+    [
+      "mech-journal-pages",
+      "roc",
+      "mech-control",
+      "libdeflate"
+    ],
+    [
+      "roc",
+      "libdeflate",
+      "mech-journal-pages",
+      "mech-control"
+    ],
+    [
+      "libdeflate",
+      "mech-control",
+      "roc",
+      "mech-journal-pages"
+    ]
+  ],
+  "warmup": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 5.293131332844496,
+        "native": 4.56150908395648,
+        "link": 0.05442016711458564,
+        "total": 9.909606458153576,
+        "parse": 3.55970125
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-journal-pages",
+      "seconds": {
+        "frontend": 4.997060875408351,
+        "native": 2.230191582813859,
+        "link": 0.040953374933451414,
+        "total": 7.268836666364223,
+        "parse": 2.961629916
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/mech-journal-pages/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 3.288715499918908,
+        "link": 0.04137808410450816,
+        "total": 3.330411583185196
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.6082852077670395,
+        "link": 0.034473083447664976,
+        "total": 0.6430090828798711
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    }
+  ],
+  "trials": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 4.063461000099778,
+        "native": 2.2427440830506384,
+        "link": 0.04057945776730776,
+        "total": 6.347391375340521,
+        "parse": 3.537459542
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-1/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-journal-pages",
+      "seconds": {
+        "frontend": 3.3866200409829617,
+        "native": 2.226269292179495,
+        "link": 0.04607466608285904,
+        "total": 5.65952533390373,
+        "parse": 2.926088334
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-1/mech-journal-pages/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.4544305829331279,
+        "link": 0.034805291797965765,
+        "total": 0.48949404200538993
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-1/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.952286457642913,
+        "link": 0.035111290868371725,
+        "total": 2.987711458001286
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-1/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-journal-pages",
+      "seconds": {
+        "frontend": 3.3928224998526275,
+        "native": 2.2301250002346933,
+        "link": 0.03998895874246955,
+        "total": 5.663545666728169,
+        "parse": 2.942643041
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-2/mech-journal-pages/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.974113834090531,
+        "link": 0.037174500059336424,
+        "total": 3.0115901669487357
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-2/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 4.06237354176119,
+        "native": 2.237727042287588,
+        "link": 0.04765887465327978,
+        "total": 6.348326874896884,
+        "parse": 3.604864167
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-2/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.45722595788538456,
+        "link": 0.032906541135162115,
+        "total": 0.49038437521085143
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-2/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.9498005001805723,
+        "link": 0.034243874717503786,
+        "total": 2.984345083590597
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-3/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.45066200010478497,
+        "link": 0.03415716718882322,
+        "total": 0.48507483256980777
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-3/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "mech-journal-pages",
+      "seconds": {
+        "frontend": 3.3784412504173815,
+        "native": 2.2333104996941984,
+        "link": 0.039726666174829006,
+        "total": 5.6520592090673745,
+        "parse": 2.929576167
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-3/mech-journal-pages/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.9671745421364903,
+        "native": 2.2357560419477522,
+        "link": 0.045278375037014484,
+        "total": 6.248752583283931,
+        "parse": 3.518514875
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-3/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.4480988751165569,
+        "link": 0.0341367912478745,
+        "total": 0.4824766661040485
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-4/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.981573333032429,
+        "native": 2.235222749877721,
+        "link": 0.041189834009855986,
+        "total": 6.2585766250267625,
+        "parse": 3.531755584
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-4/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.950857250019908,
+        "link": 0.03442383324727416,
+        "total": 2.9855781658552587
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-4/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-journal-pages",
+      "seconds": {
+        "frontend": 3.378401333000511,
+        "native": 2.238629875238985,
+        "link": 0.03973654191941023,
+        "total": 5.657377208117396,
+        "parse": 2.930406167
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-4/mech-journal-pages/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    }
+  ],
+  "diagnostic_profiles_excluded_from_medians": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.981402500066906,
+        "native": 2.237401250284165,
+        "link": 0.04680266696959734,
+        "total": 6.266484667081386,
+        "parse": 3.53095225
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/profile/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-journal-pages",
+      "seconds": {
+        "frontend": 3.3823709171265364,
+        "native": 2.2276984998025,
+        "link": 0.040521834045648575,
+        "total": 5.651468665804714,
+        "parse": 2.936178125
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/profile/mech-journal-pages/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.988800207618624,
+        "link": 0.0360982078127563,
+        "total": 3.025229584425688
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/profile/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.5436540828086436,
+        "link": 0.03462175000458956,
+        "total": 0.5785660827532411
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/profile/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    }
+  ],
+  "medians": {
+    "mech-control": {
+      "frontend": 4.0219734373968095,
+      "native": 2.23674154211767,
+      "link": 0.043234104523435235,
+      "total": 6.302984000183642,
+      "parse": 3.534607563
+    },
+    "mech-journal-pages": {
+      "frontend": 3.3825306457001716,
+      "native": 2.231717749964446,
+      "link": 0.03986275033093989,
+      "total": 5.658451271010563,
+      "parse": 2.929991167
+    },
+    "roc": {
+      "compile": 2.9515718538314104,
+      "link": 0.03476756205782294,
+      "total": 2.9866448119282722
+    },
+    "libdeflate": {
+      "compile": 0.4525462915189564,
+      "link": 0.03414697921834886,
+      "total": 0.48728443728759885
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "mech-journal-pages": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "roc": {
+      "emitted_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+    },
+    "libdeflate": {
+      "emitted_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+    }
+  },
+  "byte_identical_across_both_frontends_and_all_builds": [
+    "frontend/program.mecb",
+    "native/program.o",
+    "native/metadata.json",
+    "compressor"
+  ],
+  "verified_exact_calls": 324,
+  "runtime_score_scope": "The rebuilt workers passed correctness. The exact identity check of the pinned worker is a separate run."
+}

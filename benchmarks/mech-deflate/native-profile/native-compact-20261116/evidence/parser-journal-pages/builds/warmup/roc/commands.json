@@ -1,0 +1,28 @@
+[
+  [
+    "compile",
+    [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/roc-compiler/roc-d99c7b838fb05bb1047eb0c18d4d06d0f86f345d/zig-out/bin/roc",
+      "build",
+      "--no-cache",
+      "--opt=speed",
+      "--jobs=1",
+      "--target=arm64mac",
+      "--output=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/roc/encoder.a",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/published-peer-inputs/peer-inputs/roc-profile/app.roc"
+    ]
+  ],
+  [
+    "link",
+    [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/roc-adapter.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/roc/encoder.a",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/roc/compressor"
+    ]
+  ]
+]

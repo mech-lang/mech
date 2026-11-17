@@ -1,0 +1,29 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--manifest-path",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler",
+    "--bin",
+    "native_compact_frontend",
+    "--bin",
+    "emit_compact_size"
+  ],
+  "environment_overrides": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "1",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "scope": "Rebuilds the compiler with previously built dependencies; excluded from source-to-executable timings.",
+  "elapsed_seconds": 602.1790292919613,
+  "control_frontend_sha256": "9fc8d2135a8c5251d7af9acd12af5bd0b2f06f0d2ea4b9452d8273f2de984d82",
+  "candidate_frontend_sha256": "29f91fd50d58cea9298e63c8dda1d1effa92e87d55fcca5cfae45abf6f6384bd"
+}

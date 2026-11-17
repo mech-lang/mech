@@ -1,0 +1,31 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+    "--native-reference",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate",
+    "--emitter",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-journal-batch-study/pinned-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-journal-batch-study/integrated-baseline/frontend/program.mecb"
+  ],
+  "source_bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "pinned_artifacts_sha256": {
+    "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+    "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+  },
+  "recorded_full_runtime_wins_for_exact_worker": {
+    "roc": [
+      81,
+      81
+    ],
+    "libdeflate": [
+      61,
+      61
+    ]
+  },
+  "checked_calls": 162,
+  "scope": "Byte identity and correctness check; no runtime timing performed here."
+}
