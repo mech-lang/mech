@@ -1,0 +1,248 @@
+{
+  "parent_source": "b6d684604b07ab777330362e8dbafce6f4779d45",
+  "source_commit": "ddd9ba3364fe1efda7a9c92a858afd026eed45da",
+  "cfg_verifier_commit": "1eaa0442e68a9de9dd454f21b084e4a3aff98e8b",
+  "pr_973_base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "host": "Apple M1, Rust release opt-level 3",
+  "scope": "Same bytecode and native encoder settings in each pair. Complete builds use the same prebuilt frontend, fixed runtimes and link adapters.",
+  "sampled_frames_before": {
+    "cfg_integrity": 90,
+    "ssa_nonlocal": 95,
+    "guard_close": 76,
+    "guard_merge": 29
+  },
+  "native_only_medians": {
+    "retained-control": 1.697942333528772,
+    "retained-work-reuse": 1.5906564379110932,
+    "smaller-control": 1.7043308755382895,
+    "smaller-work-reuse": 1.596609146334231
+  },
+  "native_only_peak_rss_medians": {
+    "retained-control": 217808896.0,
+    "retained-work-reuse": 217612288.0,
+    "smaller-control": 217833472.0,
+    "smaller-work-reuse": 217694208.0
+  },
+  "complete_medians": {
+    "mech-retained-control": {
+      "frontend": 2.43893020786345,
+      "native": 1.6987324999645352,
+      "link": 0.04166956269182265,
+      "total": 4.181877375114709,
+      "parse": 2.112397271
+    },
+    "mech-retained-work-reuse": {
+      "frontend": 2.4352034584153444,
+      "native": 1.5937569788657129,
+      "link": 0.0402985829859972,
+      "total": 4.074468374950811,
+      "parse": 2.1100583129999997
+    },
+    "mech-smaller-control": {
+      "frontend": 2.4341451046057045,
+      "native": 1.7058961873408407,
+      "link": 0.040895854122936726,
+      "total": 4.185682916548103,
+      "parse": 2.1087588125
+    },
+    "mech-smaller-work-reuse": {
+      "frontend": 2.434312083059922,
+      "native": 1.597742750076577,
+      "link": 0.040531937731429935,
+      "total": 4.073740625521168,
+      "parse": 2.1090525415
+    },
+    "roc": {
+      "compile": 2.94811260397546,
+      "link": 0.03446122934110463,
+      "total": 2.982970228884369
+    },
+    "libdeflate": {
+      "compile": 0.4464880416635424,
+      "link": 0.034124458907172084,
+      "total": 0.48049827106297016
+    }
+  },
+  "comparisons": {
+    "retained": {
+      "native_only_reduction": 0.06318582998912003,
+      "native_only_paired": {
+        "estimate": -0.0626356964050484,
+        "lower": -0.06430436007858986,
+        "upper": -0.060979616380175905
+      },
+      "complete_reduction": 0.025684397348200938,
+      "complete_paired": {
+        "estimate": -0.022144238957575002,
+        "lower": -0.02680475283929351,
+        "upper": -0.017209839320244114
+      },
+      "complete_build_x": {
+        "roc": 1.3659098356052526,
+        "libdeflate": 8.479673331471457
+      },
+      "encoder_text_x": {
+        "roc": 1.256932889628397,
+        "libdeflate": 1.9557713052858683
+      },
+      "phase_peak_rss_medians": {
+        "mech-retained-control": {
+          "frontend": 382304256.0,
+          "native": 217808896.0,
+          "link": 59662336.0
+        },
+        "mech-retained-work-reuse": {
+          "frontend": 382304256.0,
+          "native": 217628672.0,
+          "link": 59351040.0
+        }
+      }
+    },
+    "smaller": {
+      "native_only_reduction": 0.06320470440931036,
+      "native_only_paired": {
+        "estimate": -0.06420701648665006,
+        "lower": -0.0657983537572171,
+        "upper": -0.06286795746746265
+      },
+      "complete_reduction": 0.026744092483539816,
+      "complete_paired": {
+        "estimate": -0.02643746175321482,
+        "lower": -0.027564993665897708,
+        "upper": -0.025308622474789377
+      },
+      "complete_build_x": {
+        "roc": 1.365665867555355,
+        "libdeflate": 8.478158759050554
+      },
+      "encoder_text_x": {
+        "roc": 1.2472268441486412,
+        "libdeflate": 1.9406688241639698
+      },
+      "phase_peak_rss_medians": {
+        "mech-smaller-control": {
+          "frontend": 382263296.0,
+          "native": 217899008.0,
+          "link": 59260928.0
+        },
+        "mech-smaller-work-reuse": {
+          "frontend": 382222336.0,
+          "native": 217702400.0,
+          "link": 59449344.0
+        }
+      }
+    }
+  },
+  "sizes_bytes": {
+    "mech-retained-control": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-retained-work-reuse": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-control": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-work-reuse": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168
+    }
+  },
+  "new_emitter_identities": {
+    "emitter_sha256": "d4b5489e24f8885ce8ff8d0da097878c4c57f1d15bbc83544c400062e089e10b",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "variants": {
+      "retained": {
+        "artifacts": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+          "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+        },
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "-B",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+          "--native-reference",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-retained",
+          "--emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/native-work-identities/retained",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+          "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+        ],
+        "verified_calls": 162,
+        "object_text_bytes": 72520
+      },
+      "smaller": {
+        "artifacts": {
+          "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+          "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+          "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+        },
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "-B",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+          "--native-reference",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-smaller",
+          "--emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/native-work-identities/smaller",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+          "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+        ],
+        "verified_calls": 162,
+        "object_text_bytes": 71960
+      },
+      "aligned": {
+        "artifacts": {
+          "program.o": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+          "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+          "mech-worker": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91"
+        },
+        "command": [
+          "/opt/homebrew/opt/python@3.14/bin/python3.14",
+          "-B",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+          "--native-reference",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/aligned-register-spills-native/final-candidate",
+          "--emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/native-work-identities/aligned",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+          "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+        ],
+        "verified_calls": 162,
+        "object_text_bytes": 71896
+      }
+    }
+  },
+  "cfg_probe_cases": 4,
+  "relevant_unit_tests_passed": 43,
+  "maintained_rebuild_worker_sha256": "e527d47b287f1002e29b9670cbe2a6eeff5edc6601bf75bf74a5c686ecae3ab7",
+  "compiler_construction_log_tail": "Finished `release` profile [optimized] target(s) in 4m 11s",
+  "qualification": "The three exact linked workers preserve their original evidence. Both retained and smaller workers carry recorded 81/81 Roc and 61/81 libdeflate wins. The aligned worker remains opt-in with its earlier per-case rejection."
+}

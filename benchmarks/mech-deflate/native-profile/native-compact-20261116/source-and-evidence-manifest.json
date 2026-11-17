@@ -50,13 +50,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "771524bf2be58769fd53d89a72c6c858cf0b54d4dd9c7762518da22cee01c9fe",
-      "bytes": 29390
+      "sha256": "70ec4ff9a23f9b24803690f19378f4cc50ff7622677ee8c4b38c10be20cfa7f5",
+      "bytes": 29714
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
-      "sha256": "8d529b936777b6399b9f6b2b2733a0b7325c37a6ba6408fd7b3c663338594be2",
-      "bytes": 21207
+      "sha256": "1b77a19ed3959989a2282f0df70e458cf78a322b8ab59506d6855e1fe59f1b9a",
+      "bytes": 21741
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/aligned-register-spills/README.md",
@@ -9392,6 +9392,316 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/linked-size-census/roc/receipt.json",
       "sha256": "16fd1049d452af7376e53d756667ee53598f7affc6dd8aecaa26b4e9c198d881",
       "bytes": 875
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/README.md",
+      "sha256": "acc99820876f0f8ab70de934666ec3fab9a7daae16411af84b4ee09bcb673506",
+      "bytes": 3893
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/build_old_verifier.py",
+      "sha256": "6ca10a0418524dbf13c6ad84a1ae83cc679697ce9cd6884c7054884695ba9c89",
+      "bytes": 3138
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/cfg-verifier-probe.rs",
+      "sha256": "233d04066ae30eac4fae4e86f73c7d6cfd115a332e2f20381b77050c81cc7bbe",
+      "bytes": 1939
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/cfg_verifier_probe.py",
+      "sha256": "d1185c2662866a82a46386494c492004288af12bd578550fe01747e31879b966",
+      "bytes": 2033
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/check_identities.py",
+      "sha256": "93138fb976f8dc7af9e7a07c3e5a9ad911edba1f98b032f2a0b9a325914161d3",
+      "bytes": 1925
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/compare-builds.py",
+      "sha256": "a4be673db786c0b54fbbc35003a03b04e4035661ea1ca116becf9fa0dfb7de1e",
+      "bytes": 10733
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/compare-native-pass-work-reuse.py",
+      "sha256": "2eca5b61d2c3e07706dccf30076f4bac295db4a81780436da7a49f8819859d57",
+      "bytes": 8685
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/native_only.py",
+      "sha256": "0dc92523542a31524a4dbb70ebc3d0a792a5f893b9c3ce00052a6e0d5251eda4",
+      "bytes": 3819
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/as-run/sample_native.py",
+      "sha256": "548745f1df03305b06d98695d455fec1f381ec00a0dcbc988d0035eed6a61291",
+      "bytes": 2064
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/baseline.json",
+      "sha256": "6feb481ac177569c956178f6e89d175905ceca0bacb9c0cdc39c17a0480d5451",
+      "bytes": 783
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/cargo.jsonl.gz",
+      "sha256": "8c75797fe2b0897768d5c35aa1ac2fb3afcb5e0358970f3f99e690d2e6bd76b2",
+      "bytes": 13020
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/cfg-verifier/control.txt",
+      "sha256": "5c6459fe4003e01ede1c23a0c143988a279de68747382f7fae43e36f55dcfd58",
+      "bytes": 450
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/cfg-verifier/receipt.json",
+      "sha256": "49470745328f6447996f5b4bc350a3f2dcb8cb010cb3282aad5319f439904a03",
+      "bytes": 2066
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/cfg-verifier/work-reuse.txt",
+      "sha256": "5c6459fe4003e01ede1c23a0c143988a279de68747382f7fae43e36f55dcfd58",
+      "bytes": 450
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/guard-harness-before.log.gz",
+      "sha256": "f70e23f0ddc569fcc281ddfa2adae450c04a9719380d8ab85d47586b4e31f07d",
+      "bytes": 454
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/plan.json",
+      "sha256": "4784f2c588b6ffb6319e7ba5ac212a1df346858977299b1735fbde297ce96257",
+      "bytes": 11533
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/libdeflate/clang-trace.json.gz",
+      "sha256": "a168c799936bb974a600d70f48955e32b768c5b4815b209f812caf9328c2acc8",
+      "bytes": 41592
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/libdeflate/compile.log.gz",
+      "sha256": "0da81b384e004fe781025f0305f17603e3342ee4570674cbba8a8bd6edd2b31e",
+      "bytes": 7632
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/libdeflate/link.log.gz",
+      "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "bytes": 20
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-control/frontend/compile.json.gz",
+      "sha256": "4fe736e54f2974abd18811151d22d8a53b0b36d97ab08d20083910c9edb7ca89",
+      "bytes": 406
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-control/link.log.gz",
+      "sha256": "b626d6c5f64b026e31f85b0f274d309c9ee890389222c8ca9e075baa7b80d496",
+      "bytes": 287
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-control/native.log.gz",
+      "sha256": "daeb121043f4cf120260152839f686dcef4fbbf1746c560f28e35ec50fb09a9b",
+      "bytes": 1886
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-control/native.stages.json.gz",
+      "sha256": "a24ef0b903ec31111205811404f9ac04ee30ff476952a14e20cc1e7dc0655843",
+      "bytes": 864
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-work-reuse/frontend/compile.json.gz",
+      "sha256": "852c9105c1c8910c2e4c42076049596b9777f89a9388c2a2d0005ac6e545bec8",
+      "bytes": 406
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-work-reuse/link.log.gz",
+      "sha256": "11cba0fe33b68cfb7562bbb393c60dfb18746f71824e0a7f23aa5f9ce971ee1a",
+      "bytes": 289
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-work-reuse/native.log.gz",
+      "sha256": "daeb121043f4cf120260152839f686dcef4fbbf1746c560f28e35ec50fb09a9b",
+      "bytes": 1886
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-retained-work-reuse/native.stages.json.gz",
+      "sha256": "e2455be3c707436ea9725d1e6fea321ed97159641a05ac052b8c943b5572efa9",
+      "bytes": 872
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-control/frontend/compile.json.gz",
+      "sha256": "acaf85957d514db632b1dd368a30780f8a4cebc8ab7abd7f61daec55a910b3b1",
+      "bytes": 404
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-control/link.log.gz",
+      "sha256": "b17b29734147e15ab0a56f9fef8d4c34e376aaa828b2c534fa07894c8ee35fc5",
+      "bytes": 286
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-control/native.log.gz",
+      "sha256": "a462ca1eb9891db2ffe03b7e495bd61eef87ff58f1e42a6905daccd84f0dca47",
+      "bytes": 1906
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-control/native.stages.json.gz",
+      "sha256": "21d297302b91d48add8a16e386c4ca1c11ee19323c0216b9ffbf27a1d78fc83a",
+      "bytes": 871
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-work-reuse/frontend/compile.json.gz",
+      "sha256": "23c724e16eb93f94e4644cd7f4ae59e85fe0b79a8b29b7bf9c6537fc51952fc3",
+      "bytes": 403
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-work-reuse/link.log.gz",
+      "sha256": "b458bb1dac4317b035370d15880da5003bb00331a6443a2f4706fb84ba42711b",
+      "bytes": 289
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-work-reuse/native.log.gz",
+      "sha256": "a462ca1eb9891db2ffe03b7e495bd61eef87ff58f1e42a6905daccd84f0dca47",
+      "bytes": 1906
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/mech-smaller-work-reuse/native.stages.json.gz",
+      "sha256": "267e446a5c9a3670176512bedcdd71ce66707686b5924791aeeada397903db0f",
+      "bytes": 867
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/roc/compile.log.gz",
+      "sha256": "8e776e5a0087907035eb72bf7bfc63ccc35127392a19ae87762aa830bce5ed4f",
+      "bytes": 3136
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/profiles/roc/link.log.gz",
+      "sha256": "937e9b3021e220d3e9ef14fff1b73f09c12699221056f33ede5ea3037282a27b",
+      "bytes": 202
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/matched/timing.json.gz",
+      "sha256": "8d580bfa2e02931422fd6af20ac9ac041ac74b4a9e23b4136e622e9518a13167",
+      "bytes": 16758
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-only/plan.json",
+      "sha256": "28eb08a4476f9c6640c5a11a11b92eee9b5a59a74d6c09c0ff15b2e4f646c4b2",
+      "bytes": 14779
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-only/timing.json.gz",
+      "sha256": "907754eb6fce5e78449b3c13dfa27802f99555f74238c2cca8e418da5c0e808b",
+      "bytes": 1677
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/aligned/correctness.json",
+      "sha256": "9a2411a945f286bd6019f0facb15b1638c5d15c0b771bb39e5eb34ab33ae6465",
+      "bytes": 611
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/aligned/receipt-as-run.json",
+      "sha256": "d1bce88d6f798d12711d773de23b2d0d42e1edaadfad76d6d8c97d9697b72ddc",
+      "bytes": 829
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/aligned/runtime.json",
+      "sha256": "d0f85094f09a73022721d62610e7c3a358196caaf7bd66ba3b2d8ea6b7aace53",
+      "bytes": 9206
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/aligned/smokes.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/receipt.json",
+      "sha256": "8be7e7be05515ec5de2870c6a2ae3dc8ed867646f42a7b860dcf49675fff39b1",
+      "bytes": 3818
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/retained/correctness.json",
+      "sha256": "c6315b3d9d12d0f08849fd1b3b2724044bf6e10dd1589679e28f53bc8fb64b91",
+      "bytes": 613
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/retained/receipt-as-run.json",
+      "sha256": "d893079289f8af614ecbf50e845dcf1a772158c349fc0acdd98ffb3e14a6f315",
+      "bytes": 828
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/retained/runtime.json",
+      "sha256": "16fef024b7b1439b930aa91e01f0c3449805edde3b5f507e014fe2b9e1305408",
+      "bytes": 8974
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/retained/smokes.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/smaller/correctness.json",
+      "sha256": "d47e40ed8d6e57345696a4be9521e8d8fc527b4b4792da7a52af6cf5c87f485f",
+      "bytes": 611
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/smaller/receipt-as-run.json",
+      "sha256": "86a5ed3911a88cd3fdb2a53d30a7b00830528d457f485962ae59e55cbf6b45b2",
+      "bytes": 828
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/smaller/runtime.json",
+      "sha256": "c0d2fa51b1e54bbd6b5a57a5868f87f3ef01387879b942137354fe49e2bbd51a",
+      "bytes": 9062
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/native-work-identities/smaller/smokes.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/recipe-rebuild/compiler-build.jsonl.gz",
+      "sha256": "b6a5586710fea499afe119f20e90e2646bb9116e981b9051b37d4b5eb39b2843",
+      "bytes": 12938
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/recipe-rebuild/correctness.json.gz",
+      "sha256": "b54bc38d05ff7b93ca54ccee04a9aff230c9ad611df1211ef321b734684bf291",
+      "bytes": 5102
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/recipe-rebuild/native.log.gz",
+      "sha256": "a462ca1eb9891db2ffe03b7e495bd61eef87ff58f1e42a6905daccd84f0dca47",
+      "bytes": 1906
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/recipe-rebuild/rebuild.json",
+      "sha256": "ef2047245657a0816a48689dbe22d7e27aac09d12ec3a04f55a20e79fff58636",
+      "bytes": 10816
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/report.json",
+      "sha256": "b980fff59fbaced9d68e86c2548e4b3d837e9f2813c4d9cb842cc8f90f76fad8",
+      "bytes": 9702
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/sample/receipt.json",
+      "sha256": "9045c5bcdf4c59f576477269a226a3ad0ddcf489dffba7d32b91e02fadd2a16f",
+      "bytes": 7046
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/sample/sample.txt.gz",
+      "sha256": "46854967c4327e036c600b5c65b91a85851c5d3de501ff0c9c5762b139a00220",
+      "bytes": 81920
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/tests.log.gz",
+      "sha256": "75355d718a77c8193388e7f5a15584a1e351a9b609d3683cfc77efaf62c87677",
+      "bytes": 1769
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-pass-work-reuse/verifier-control/build.json",
+      "sha256": "6eef44d17a3b1e15479b3f7e1ed8a29ab9675f98c36d622973a7d754e48a4bb8",
+      "bytes": 4449
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/native-root-inline-plan/as-run/compare-builds.py",
