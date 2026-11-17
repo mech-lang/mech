@@ -1,6 +1,6 @@
 # PR #993 current status
 
-Maintained compiler source 00bb25b9e936efeab666e1738007ff3707ae1050 is on PR #993 stacked on #973.
+Maintained compiler source 1426ea50ba887590c0696f9e3c767a41c5cd847f is on PR #993 stacked on #973.
 These measurements use Apple M1, macOS 15.6.1 and arm64.
 [Machine-readable scorecard](scorecard.json)
 
@@ -8,24 +8,21 @@ These measurements use Apple M1, macOS 15.6.1 and arm64.
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.54104 s | 2.98847 s | 0.48068 s |
-| Source through strip | 2.55172 s | 2.99894 s | 0.49114 s |
+| Source through final link | 2.54442 s | 2.99543 s | 0.48343 s |
+| Source through strip | 2.55500 s | 3.00609 s | 0.49411 s |
 | Encoder text | 71,192 B | 57,696 B | 37,080 B |
 | Stripped executable | 292,568 B | 191,912 B | 155,752 B |
 
-Mech saves a paired **29.3 ms** through final linking
-and builds in **0.850× Roc** and **5.290× libdeflate**
-time. Its encoder text is **1.234× Roc** and **1.920× libdeflate**.
-Compilers, allocator and fixed deployment support are prebuilt.
-The maintained worker carries **81/81 Roc** and **61/81 libdeflate** in
-both full orders. The historical LLVM-assisted worker won **62/81**
-against libdeflate with the same fixtures and peers. Natural 8 KiB is the
-one difference in both orders. Promotions use the v3 floor of **62/81**
-in both orders while holding every prior win. **63/81** is the next target.
-[Historical comparison](evidence/runtime-62-high-water/README.md) ·
-[Qualification v3](qualification-policy-v3.json)
-[Matched build observations](evidence/sealed-ascii-literal-miss/README.md) ·
-[Runtime qualification](evidence/frame-copy-v2/README.md)
+Mech builds in **0.849× Roc** and
+**5.267× libdeflate** time. Its encoder text is
+**1.234× Roc** and **1.920× libdeflate**. Compilers, allocator and fixed
+deployment support are prebuilt. The exact worker carries 81/81 Roc and
+61/81 libdeflate in its current full qualification. Promotions of new
+runtime artifacts require the v3 floor of 62/81 in both orders, with
+63/81 as the next target.
+[Matched measurements](evidence/ssa-local-definitions/README.md) ·
+[Runtime qualification](evidence/frame-copy-v2/README.md) ·
+[Policy v3](qualification-policy-v3.json)
 
 An earlier dedicated parser-phase comparison reported **813 ms Mech**
 and **3 ms Roc**. Mech's interval includes indexing and its strict check.
@@ -38,12 +35,12 @@ and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 | Parser | 0.786 s | 0.75 | 0.35 | 0.13 |
 | Native preparation through object | 1.386 s | 0.95 | 0.48 | 0.22 |
 | Source semantic frontend | 0.233 s | 0.18 | 0.09 | 0.04 |
-| Catalog initialization | 0.064 s | 0.05 | 0.02 | 0.01 |
-| Artifact, encoding, link and other work | 0.073 s | 0.07 | 0.06 | 0.05 |
-| **Total** | 2.541 s | 2.00 | 1.00 | 0.45 |
+| Catalog initialization | 0.058 s | 0.05 | 0.02 | 0.01 |
+| Artifact, encoding, link and other work | 0.077 s | 0.07 | 0.06 | 0.05 |
+| **Total** | 2.544 s | 2.00 | 1.00 | 0.45 |
 
-Mech needs **2.091 s** less elapsed time to reach the
-0.45 s working budget. The phase medians come from the same eight trials.
+Mech needs **2.094 s** less elapsed time to reach the
+0.45 s working budget. The phase medians come from the same ten matched trials.
 
 ## Which build to use
 
@@ -179,6 +176,22 @@ SSA construction, cleanup and constant-phi work among the larger remaining
 native costs. Reusing Tail graph discovery saves **0.19 ms** in the trace.
 [Guard propagation](evidence/native-guard-edge-closure/README.md) ·
 [Compiler samples](evidence/ordered-vector-cursor-ablations/compiler-sample/)
+
+## Overlap backing and SSA storage
+
+The 32-page word mapping threshold takes about 0.5% longer on
+`320-overlap` in both focused orders. Natural 8 KiB is **1.0047×**
+libdeflate in reverse. The checked root and its runtime calls
+account for about 59% of the sampled native encoder on `320-overlap`.
+[Overlap profile and timings](evidence/runtime-overlap-backing/README.md)
+
+The exact bottom-tested scorer repeated at **62/81 and 60/81**
+against libdeflate in the complete orders. [Full repeat](evidence/runtime-overlap-backing/root-confirmation/README.md)
+
+Inline single-definition storage measured a paired saving of
+**5.88 ms** through final link with exact outputs.
+The 90% interval is **0.86 to 17.41 ms**.
+[SSA results](evidence/ssa-local-definitions/README.md)
 
 ## Active work
 

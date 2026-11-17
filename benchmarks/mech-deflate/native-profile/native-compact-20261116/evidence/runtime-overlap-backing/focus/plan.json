@@ -1,0 +1,124 @@
+{
+  "objective": "Measure a backing change with the emitted encoder held fixed.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "overlap-margin-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "overlap-margin-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "current-roadmap/runtime-overlap-margin/timing.py",
+    "sha256": "0dc05a51fb5419d1a7d98fede0eb636262a5f7a24db2ef1b9681d0cfa74d65eb"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/control/program.o",
+        "sha256": "d0f6f40124bb9dcd17db355630f70d9c9605c58cc71f3bc2464642c6cae00049"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/control/metadata.json",
+        "sha256": "4a3cb290174ac28a110cd376527912f26b83f0457e1d3c4b3b00dd9fac466044"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/control/runtime.json",
+        "sha256": "178949240f04c1fe36cf7abfa1cf8a1cd19dcb97dab6df6b248a0162dac8feb1"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/control/mech-worker",
+        "sha256": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/word-pages-32/program.o",
+        "sha256": "d0f6f40124bb9dcd17db355630f70d9c9605c58cc71f3bc2464642c6cae00049"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/word-pages-32/metadata.json",
+        "sha256": "4a3cb290174ac28a110cd376527912f26b83f0457e1d3c4b3b00dd9fac466044"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/word-pages-32/runtime.json",
+        "sha256": "e48f0d5cd34fec1909fa89212cc5fe7f76671d296c3ab10a5ff024fd641ddb5f"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/runtime-overlap-margin/checks/worker-checks/word-pages-32/mech-worker",
+        "sha256": "686c35c5639bf3cc864b6d0cab716ab940d388c05ee4773e9444986c912291e6"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c",
+      "metadata": "4a3cb290174ac28a110cd376527912f26b83f0457e1d3c4b3b00dd9fac466044"
+    },
+    "mech-experiment": {
+      "worker": "686c35c5639bf3cc864b6d0cab716ab940d388c05ee4773e9444986c912291e6",
+      "metadata": "4a3cb290174ac28a110cd376527912f26b83f0457e1d3c4b3b00dd9fac466044"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "341552d9dac5ee46aa0bb7cc0ca4d688b7740d069fd7cdcd718a8c6ab33440a9"
+  },
+  "source_pin": "8fb7fa9683a3034866104db196ca5a72d7d312da",
+  "policy_version": 3,
+  "max_peak_stack_bytes": 5280,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "linked_contract": {
+    "path": "current-roadmap/runtime-overlap-margin/checks/linked-proofs/result.json",
+    "sha256": "38eb71e8c21149376663f7da6914f5d5c74ce88618ca7ffd6124f95c65f02579"
+  }
+}
