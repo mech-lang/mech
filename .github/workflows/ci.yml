@@ -159,6 +159,7 @@ jobs:
             scripts.tests.test_native_macos_ci \
             tests.browser.harness.test_chrome_session \
             tests.browser.harness.test_completion_server
+          python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/tests/test_qualify.py
           python3 scripts/check-production-resident-routing.py
           python3 scripts/check-warning-policy.py
           python3 scripts/check-interactive-architecture.py
@@ -662,13 +663,15 @@ jobs:
           node-version: '22'
       - name: Build mixed compute WASM and refresh the server
         run: |
+          python3 -B scripts/tests/test_build_wasm.py
           node --test scripts/tests/static-project.test.mjs
           node scripts/test-browser-compute-lifecycle.mjs
-          python3 scripts/build-wasm.py --profile browser-compute-canary
+          python3 scripts/build-wasm.py --profile browser-compute-canary --locked
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
+          git diff --exit-code HEAD -- Cargo.lock
           mkdir -p target/browser-compute-provenance
           git rev-parse HEAD > target/browser-compute-provenance/revision
           git rev-parse 'HEAD^{tree}' > target/browser-compute-provenance/tree
