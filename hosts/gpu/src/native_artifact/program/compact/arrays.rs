@@ -18,7 +18,7 @@ use cranelift_codegen::ir::{
     Value, ValueDef, types,
 };
 use cranelift_frontend::FunctionBuilder;
-use cranelift_module::{Linkage, Module};
+use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::{NativeCollectionPrimitive as P, NativeMatchValue as V};
 
 pub(super) const BOUNDS: u64 = 0x19401;
@@ -41,20 +41,18 @@ pub(in crate::native_artifact) struct Arrays {
     register_backing: bool,
 }
 
-fn import<M: Module>(
+fn declare_import<M: Module>(
     module: &mut M,
-    b: &mut FunctionBuilder<'_>,
     name: &str,
     parameters: usize,
     returns: usize,
-) -> Result<FuncRef, NativeCompileError> {
+) -> Result<FuncId, NativeCompileError> {
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); parameters];
     signature.returns = vec![AbiParam::new(types::I64); returns];
-    let id = module
+    module
         .declare_function(name, Linkage::Import, &signature)
-        .map_err(backend)?;
-    Ok(module.declare_func_in_func(id, b.func))
+        .map_err(backend)
 }
 fn success(b: &mut FunctionBuilder<'_>, status: Value, error: Block) {
     let next = b.create_block();
@@ -119,11 +117,21 @@ fn integer_element(ty: &Type) -> bool {
         _ => false,
     }
 }
-impl Arrays {
-    pub fn new<M: Module>(
+pub(super) struct ArrayImports {
+    allocate: FuncId,
+    writable: FuncId,
+    writable_scalar: Option<FuncId>,
+    free: FuncId,
+    release_groups: Option<[FuncId; 2]>,
+    memmove: FuncId,
+    retirement_observer: Option<FuncId>,
+    forward_view_geometry: bool,
+    register_backing: bool,
+}
+
+impl ArrayImports {
+    pub(super) fn declare<M: Module>(
         module: &mut M,
-        b: &mut FunctionBuilder<'_>,
-        heap: Value,
         observe: bool,
     ) -> Result<Self, NativeCompileError> {
         let forward_view_geometry =
@@ -133,14 +141,13 @@ impl Arrays {
             && cfg!(all(target_arch = "aarch64", target_os = "macos"))
             && std::env::var_os("MECH_COMPACT_REGISTER_BACKING").is_some();
         let allocate = if register_backing {
-            import(module, b, "mech_compact_allocate_backing", 5, 2)?
+            declare_import(module, "mech_compact_allocate_backing", 5, 2)?
         } else {
-            import(module, b, "mech_compact_allocate", 6, 1)?
+            declare_import(module, "mech_compact_allocate", 6, 1)?
         };
         let writable_scalar = if register_backing {
-            Some(import(
+            Some(declare_import(
                 module,
-                b,
                 "mech_compact_writable_scalar_backing",
                 7,
                 2,
@@ -148,26 +155,64 @@ impl Arrays {
         } else if forward_view_geometry
             && std::env::var_os("MECH_COMPACT_PACK_WRITABLE_STORAGE").is_some()
         {
-            Some(import(module, b, "mech_compact_writable_scalar", 8, 1)?)
+            Some(declare_import(
+                module,
+                "mech_compact_writable_scalar",
+                8,
+                1,
+            )?)
         } else {
             None
         };
         let release_groups =
             if !observe && std::env::var_os("MECH_COMPACT_GROUP_RETIREMENTS").is_some() {
                 Some([
-                    import(module, b, "mech_compact_release_two", 3, 1)?,
-                    import(module, b, "mech_compact_release_four", 5, 1)?,
+                    declare_import(module, "mech_compact_release_two", 3, 1)?,
+                    declare_import(module, "mech_compact_release_four", 5, 1)?,
                 ])
             } else {
                 None
             };
         Ok(Self {
             allocate,
-            writable: import(module, b, "mech_compact_writable", 7, 1)?,
+            writable: declare_import(module, "mech_compact_writable", 7, 1)?,
             writable_scalar,
-            free: import(module, b, "mech_compact_free", 2, 1)?,
+            free: declare_import(module, "mech_compact_free", 2, 1)?,
             release_groups,
-            memmove: import(module, b, "memmove", 3, 1)?,
+            memmove: declare_import(module, "memmove", 3, 1)?,
+            retirement_observer: if observe {
+                Some(declare_import(module, "mech_compact_phase_observe", 3, 1)?)
+            } else {
+                None
+            },
+            forward_view_geometry,
+            register_backing,
+        })
+    }
+}
+
+impl Arrays {
+    pub fn new<M: Module>(
+        module: &mut M,
+        b: &mut FunctionBuilder<'_>,
+        heap: Value,
+        observe: bool,
+    ) -> Result<Self, NativeCompileError> {
+        let imports = ArrayImports::declare(module, observe)?;
+        let allocate = module.declare_func_in_func(imports.allocate, b.func);
+        let writable_scalar = imports
+            .writable_scalar
+            .map(|id| module.declare_func_in_func(id, b.func));
+        let release_groups = imports
+            .release_groups
+            .map(|ids| ids.map(|id| module.declare_func_in_func(id, b.func)));
+        Ok(Self {
+            allocate,
+            writable: module.declare_func_in_func(imports.writable, b.func),
+            writable_scalar,
+            free: module.declare_func_in_func(imports.free, b.func),
+            release_groups,
+            memmove: module.declare_func_in_func(imports.memmove, b.func),
             source: b.create_sized_stack_slot(StackSlotData::new(
                 StackSlotKind::ExplicitSlot,
                 48,
@@ -182,13 +227,11 @@ impl Arrays {
             capacity_growth: None,
             indexed_stores: None,
             pack_le_stores: None,
-            forward_view_geometry,
-            register_backing,
-            retirement_observer: if observe {
-                Some(import(module, b, "mech_compact_phase_observe", 3, 1)?)
-            } else {
-                None
-            },
+            forward_view_geometry: imports.forward_view_geometry,
+            register_backing: imports.register_backing,
+            retirement_observer: imports
+                .retirement_observer
+                .map(|id| module.declare_func_in_func(id, b.func)),
         })
     }
 
