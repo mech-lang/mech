@@ -201,6 +201,25 @@ the candidate with exact object and metadata checks.
 The 72,024-byte cleanup combination still has two sustained slowdowns in the
 focused screen. Its exact rebuild variant is `fresh-owner-counts-cleanup`.
 
+## Integration follow-up
+
+The GitHub run for `ddc26e24` passed distribution, browser compute, and the
+warning-policy step. The browser standard canary exposed an asynchronous
+native fullscreen exit. The corrected check waits for native exit and docked
+mode before testing resize, and both modes pass a targeted Chrome reproduction.
+The static audit now has 11 additional exact-file contracts. Its complete-tree
+gate still fails on the historical runtime and the inventory includes remaining
+violations inherited from #973. The full gate remains required.
+[Hosted failures, replay, and audit inventory](evidence/ci-44018345099/README.md)
+
+## Dead spill-store screen
+
+A diagnostic AArch64 liveness pass reduced the smaller encoder from 71,960 to
+71,944 bytes, or 1.94024× libdeflate. The candidate passed 162 exact linked calls
+and Cranelift's register allocation check. The 16-byte saving did not justify
+keeping the pass. The pinned workers and their original runtime receipts remain
+the basis for comparison. [Source patch and raw checks](evidence/dead-spill-stores/report.json)
+
 ## Earlier experiments
 
 `evidence/size-screens` contains all 24 static screens: ten additional shared-region
