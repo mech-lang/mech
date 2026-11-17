@@ -29,6 +29,11 @@
       "bytes": 4644
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/compile_profile.rs",
+      "sha256": "14874e4b87f32998d97780fe9b1afd7829b48d9b24ce88da6ab419b2dc2f0662",
+      "bytes": 5039
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/fresh_owner_counts_tests.rs",
       "sha256": "be662350c3e9f6d742da428688bfc72ae12bb5005afdf5fd03776b6311bb1366",
       "bytes": 383
@@ -18155,8 +18160,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "b2f207c66ff0e713a0eec6acd03c10101f2968307c80334088efd5194b3c3c44",
-      "bytes": 8446
+      "sha256": "d22043d98e196bf8369bb849ed1104cea0b6fa57cb78586ef9f5ce4dcdb2b005",
+      "bytes": 9357
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
