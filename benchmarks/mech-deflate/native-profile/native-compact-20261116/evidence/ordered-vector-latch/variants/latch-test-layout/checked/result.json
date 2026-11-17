@@ -1,0 +1,31 @@
+{
+  "commands": {
+    "failures": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/linked-proofs/check-linked-error-exits.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/control",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/latch-test-layout"
+    ],
+    "stack": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/linked-proofs/check-layout-stack.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/control",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/latch-test-layout"
+    ]
+  },
+  "peak_stack_bytes": {
+    "control": 5280,
+    "latch-test-layout": 5280
+  },
+  "matches_success_observations": 162,
+  "checked_failure_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ]
+}

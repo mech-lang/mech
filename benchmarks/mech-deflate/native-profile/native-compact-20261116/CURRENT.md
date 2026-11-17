@@ -17,9 +17,13 @@ Mech saves a paired **29.3 ms** through final linking
 and builds in **0.850× Roc** and **5.290× libdeflate**
 time. Its encoder text is **1.234× Roc** and **1.920× libdeflate**.
 Compilers, allocator and fixed deployment support are prebuilt.
-The identical worker carries **81/81 Roc** and **61/81 libdeflate** in
-both full orders. The latest scorer high-water result is 62/81 in the
-forward order, with 62/81 in both orders required for its release.
+The maintained worker carries **81/81 Roc** and **61/81 libdeflate** in
+both full orders. The historical LLVM-assisted worker won **62/81**
+against libdeflate with the same fixtures and peers. Natural 8 KiB is the
+one difference in both orders. Promotions use the v3 floor of **62/81**
+in both orders while holding every prior win. **63/81** is the next target.
+[Historical comparison](evidence/runtime-62-high-water/README.md) ·
+[Qualification v3](qualification-policy-v3.json)
 [Matched build observations](evidence/sealed-ascii-literal-miss/README.md) ·
 [Runtime qualification](evidence/frame-copy-v2/README.md)
 
@@ -116,8 +120,8 @@ to **71,048 B**, or **1.231× Roc** and
 and checked-failure receipts are below. The caller-address candidate increases measured peak stack from **5,280 B to 5,296 B**, above the study's
 nonregression bound. Both candidates preserve existing individual wins in their respective
 screens. The measured deployment build uses the qualified frame-copy recipe.
-The forward result sets 62/81 as the next libdeflate floor. The next target
-is 63/81 while holding 81/81 Roc.
+The experiment reached the 62-win high-water mark in its forward order.
+The v3 policy requires 62/81 in both full orders.
 
 | Scope | Order | Control wins vs Roc/C | Candidate wins vs Roc/C | Control 8 KiB vs C | Candidate 8 KiB vs C |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -141,6 +145,41 @@ The parser shortcut preserves all three native artifact hashes and passes
 **28.5 ms**.
 [Parser shortcut and matched final-link results](evidence/sealed-ascii-literal-miss/README.md)
 
+## Ordered reduction follow-up
+
+A bottom-tested vector loop shrinks encoder text to **71,048 B**
+and wins natural 8 KiB in both focused orders without losing a peer case.
+The candidate wins 81/81 against Roc in both full orders.
+It wins **61/81 and 61/81 against libdeflate**, with natural 8 KiB at
+**0.99779× and 1.00436×**.
+
+Restoring the qualified root layout emits **71,096 B**.
+The candidate wins 81/81 against Roc in both full orders.
+It wins **62/81 and 61/81 against libdeflate**, with natural 8 KiB at
+**0.99286× and 0.99866×**.
+
+Its reverse order misses `320-overlap` in both Mech slots.
+The linked checks cover all 162 exact outcomes, six checked failures and
+a measured peak stack of **5,280 B**.
+[Bottom-tested loop build and observations](evidence/ordered-vector-latch/README.md)
+
+The preceding vector-cursor screens eliminated repeated address or lane
+work. They established an extra 43,020 scorer stack loads on natural
+8 KiB for either address-carrying version. Lane-position deferral alone
+kept 5,280 B peak stack and preserved its focused peer wins.
+[Vector ablation and counts](evidence/ordered-vector-cursor-ablations/README.md)
+
+## Native compile-time attribution
+
+Incremental branch guard propagation emits exact artifacts and passes
+17 guard tests and 162 linked checks. The matched probe is
+**4.58 ms slower** than the
+maintained compiler through final link. Four compiler profiles put
+SSA construction, cleanup and constant-phi work among the larger remaining
+native costs. Reusing Tail graph discovery saves **0.19 ms** in the trace.
+[Guard propagation](evidence/native-guard-edge-closure/README.md) ·
+[Compiler samples](evidence/ordered-vector-cursor-ablations/compiler-sample/)
+
 ## Active work
 
 - **Native compiler.** Close graph reuse for freshly built and post-phi
@@ -154,10 +193,10 @@ The parser shortcut preserves all three native artifact hashes and passes
   identifier-symbol arms. Preserve exact parser work, limits and cache order
   and measure the ordinary parser separately from instrumentation.
   [Parser census](evidence/verified-flowgraphs/parser-choice-census/report.json)
-- **Runtime and emitted size.** The nearest missed win is natural 8 KiB,
-  about 4% away from parity. Price repeated work in the existing composed
-  scorer. Retain the existing checked carrier and validate both 81-case
-  orders for any changed object. [Case and atom bindings](evidence/verified-flowgraphs/runtime-target.json)
+- **Runtime and emitted size.** Recover the `320-overlap` win with margin
+  while holding natural 8 KiB. Natural 4 KiB is the next additional win.
+  Keep both complete orders and checked carrier evidence under v3.
+  [Latest scorer observations](evidence/ordered-vector-latch/README.md)
 - **Source semantic frontend.** Attribute declaration registration,
   body/name/overload lowering, schema and constant finalization, and
   requirement canonicalization by the 2.0 s milestone review.

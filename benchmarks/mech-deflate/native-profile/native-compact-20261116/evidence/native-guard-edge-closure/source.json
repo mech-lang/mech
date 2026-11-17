@@ -1,0 +1,9 @@
+{
+  "base": "b05241855264df7df861994ef125e5dfb678bc81",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/compact/guard_state.rs": "3ec1b7fd3f284e8e6dd5c4222010a7dec841b83784aba0bbecc318d7b3716966",
+    "hosts/gpu/src/native_artifact/program/compact/guards.rs": "9b91d827cf128378189b7ed34f8a7be50ba6a235aff2b9a58059794824e7f8bc"
+  },
+  "flag": "MECH_INCREMENTAL_GUARD_EDGE_CLOSURE",
+  "profile": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/compiler-sample/result.json"
+}

@@ -1,0 +1,90 @@
+{
+  "kind": "focus",
+  "policy_decision": "Unresolved",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.0329396754518554,
+          "mech-experiment": 1.0037461562583718
+        },
+        "320-overlap": {
+          "mech-control": 0.9902658423678072,
+          "mech-experiment": 0.9917988787377251
+        },
+        "random-1024": {
+          "mech-control": 0.954800626086077,
+          "mech-experiment": 0.9545288048132856
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9918023762092797,
+          "mech-experiment": 0.9865777219267619
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 12,
+          "mech-experiment": 12
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.042221544840883,
+          "mech-experiment": 1.0114662755742434
+        },
+        "320-overlap": {
+          "mech-control": 0.9907440164159983,
+          "mech-experiment": 0.9916065601202299
+        },
+        "random-1024": {
+          "mech-control": 0.9569648273391639,
+          "mech-experiment": 0.956131554089927
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9831923801676744,
+          "mech-experiment": 0.9809734653595896
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 12,
+          "mech-experiment": 12
+        }
+      }
+    }
+  ],
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required"
+  ],
+  "achieves_target": false,
+  "preserves_peer_wins": true
+}

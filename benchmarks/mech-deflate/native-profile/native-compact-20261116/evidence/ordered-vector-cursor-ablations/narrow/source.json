@@ -1,0 +1,21 @@
+{
+  "base": "b05241855264df7df861994ef125e5dfb678bc81",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": "da80b85aafc6dcf3d2cf5fee02ad807cdd5d61a4a782ef6eab52217e63cf0bb0",
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": "b2211623bd840d32d2fd9553ba3f094bb8641e60507348235ed67427b52f4f64",
+    "hosts/gpu/src/native_artifact/program/prepare/phase_numeric.rs": "b5582f874b74b9dea263cd57d6e01dc28ebb19a9dd3e77b58da8d59cda308e61"
+  },
+  "flag": "MECH_ORDERED_VECTOR_WINDOW_CURSORS",
+  "census_sha256": "ad538af1b5b225016f3abb89b9a584e8d71503044b847af7c3b2cb54d41900ac",
+  "validated": false,
+  "compiler_control": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-literal-miss/production/compile_profile",
+  "compiler_control_sha256": "9b3dd2ebae981a27c4890484a1e203b19633313920e628db83240fe1da04c77d",
+  "modes": {
+    "vec-reverse-cursor": "reverse",
+    "vec-lane-only": "lanes-only",
+    "vec-reverse-and-lanes": "reverse-with-lanes"
+  },
+  "reason": "Both-address variants add one scorer stack reload per outer loop.",
+  "inventory_flag": "MECH_REUSE_NUMERIC_PHASE_INVENTORY",
+  "inventory_trace": "MECH_TRACE_NUMERIC_PHASE_INVENTORY"
+}
