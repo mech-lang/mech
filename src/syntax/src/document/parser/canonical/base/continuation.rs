@@ -463,6 +463,7 @@ impl Continuation {
                     }
                     if parser.charge() {
                         let end = final_input.then_some(parser.cursor().context_end());
+                        parser.observe_definition_raw_origin(end);
                         let scan = parser
                             .state
                             .grapheme_tail
