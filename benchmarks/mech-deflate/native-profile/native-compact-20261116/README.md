@@ -73,6 +73,22 @@ attribute input symbols and include compiler-generated instances in the object
 that publishes them. A minimal deployment interface still needs a separate
 measurement. [Link maps and file-byte census](evidence/linked-size-census/report.json)
 
+## Preselected root inlining
+
+Use the opt-in AArch64 diagnostic build to skip the first machine compilation
+of the checked root while keeping the existing IR optimizer and verifier.
+
+```sh
+python3 rebuild.py /tmp/mech-native-preselected \
+  --compiler-opt-level 3 --variant fresh-owner-counts-cold-tails \
+  --preselect-root-inlining
+```
+
+Run this command from this benchmark packet directory. The rebuild verifies
+the pinned object and metadata. Supply `--mimalloc-object` with the fixed
+allocator object to link the worker and check all 81 named fixtures.
+[Matched build trials and exact worker identities](evidence/native-root-inline-plan/report.json)
+
 ## Equivalent vector alternatives
 
 The native phase compiler can reuse a completed general body when its entire
