@@ -66,7 +66,7 @@ recorded observations.
 
 The new pass folds 20 reference-count loads from direct, checked allocations
 that have known nonempty storage. It preserves the writes and checked paths.
-Review `hosts/gpu/src/native_artifact/program/compact/owner_counts.rs` and its
+Review `hosts/gpu/src/native_artifact/program/compact/owner_counts/mod.rs` and its
 tests. The five native test groups cover aliasing stores, unknown calls, reused
 backings, loop changes, allocation failures, and joins.
 

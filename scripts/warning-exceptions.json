@@ -689,7 +689,7 @@
       "lint": "unused_imports",
       "occurrences": 1,
       "owner": "Vendored Cranelift",
-      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle.rs",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/mod.rs",
       "production_or_test": "production",
       "reason": "used on other backends, used here to suppress warning elsewhere"
     },
@@ -1145,7 +1145,7 @@
       "lint": "dead_code",
       "occurrences": 1,
       "owner": "Vendored Cranelift",
-      "path": "vendor/cranelift-codegen/src/opts.rs",
+      "path": "vendor/cranelift-codegen/src/opts/mod.rs",
       "production_or_test": "production",
       "reason": "dead code, only on nightly rust at this time"
     },

@@ -13,7 +13,7 @@ use cranelift_codegen::ir::{
     Opcode, Value, ValueDef, types,
 };
 use std::collections::BTreeSet;
-#[path = "wide_equal_prefix.rs"]
+#[path = "wide_equal_prefix/mod.rs"]
 mod prefix;
 #[path = "wide_equal_reuse.rs"]
 mod reuse;

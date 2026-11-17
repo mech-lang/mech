@@ -15,7 +15,7 @@ use cranelift_codegen::ir::{
 use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(test)]
-#[path = "reduction_bound/tests.rs"]
+#[path = "tests.rs"]
 mod tests;
 
 const MAX_PROOF_STEPS: usize = 256;
