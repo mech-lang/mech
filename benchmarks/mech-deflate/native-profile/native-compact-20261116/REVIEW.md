@@ -48,6 +48,21 @@ unit tests pass. With the same frontend, the native-only median moves from
 5.64176 seconds. The retained benchmark worker matches byte for byte.
 [Source-to-executable trials and checks](evidence/batched-block-params/report.json)
 
+## Single-process source compilation
+
+The maintained rebuild accepts `--direct-source`. The existing diagnostic
+driver now hands its in-memory Program artifact and function catalog to
+Cranelift. The canonical bytecode receipt remains available at
+`frontend/program.mecb`. The external bytecode emitter still validates input
+canonicality when invoked on a file.
+
+The 71,960-byte recipe completes in **3.99930 s**, a **2.13%** reduction
+from the split control in six matched orders. Peak compiler RSS rises from
+382,443,520 B to 401,408,000 B. Both exact benchmark workers keep the
+recorded 81/81 and 61/81 scores in each full order. Parsing still takes
+2.108 s and native emission 1.518 s.
+[Exact inputs, profiles and output identities](evidence/direct-source/README.md)
+
 ## Optimized compiler builds
 
 On this M1 the same 71,960-byte encoder builds in **4.76479 s**
