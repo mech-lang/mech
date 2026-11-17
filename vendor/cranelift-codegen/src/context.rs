@@ -26,7 +26,8 @@ use crate::settings::{FlagsOrIsa, OptLevel};
 use crate::trace;
 use crate::unreachable_code::eliminate_unreachable_code;
 use crate::verifier::{
-    VerifierErrors, VerifierResult, verify_context, verify_function_and_flowgraph,
+    VerifierErrors, VerifierResult, verify_context, verify_context_dominators,
+    verify_function_and_flowgraph, verify_ir_with_dominators,
 };
 use crate::{CompileError, timing};
 #[cfg(feature = "souper-harvest")]
@@ -183,7 +184,7 @@ impl Context {
         } else {
             self.flowgraph();
         }
-        self.prune_unreachable_and_remove_constant_phis(isa)?;
+        self.prune_and_remove_constant_phis(isa, true)?;
 
         self.func.dfg.resolve_all_aliases();
 
@@ -355,9 +356,50 @@ impl Context {
         &mut self,
         isa: &dyn TargetIsa,
     ) -> CodegenResult<()> {
-        self.eliminate_unreachable_code(isa)?;
+        self.prune_and_remove_constant_phis(isa, false)
+    }
+
+    /// Build the flowgraph, prune unreachable blocks, and remove constant phis.
+    pub fn compute_flowgraph_and_cleanup(&mut self, isa: &dyn TargetIsa) -> CodegenResult<()> {
+        self.flowgraph();
+        self.prune_and_remove_constant_phis(isa, true)
+    }
+
+    fn prune_and_remove_constant_phis(
+        &mut self,
+        isa: &dyn TargetIsa,
+        fresh_flowgraph: bool,
+    ) -> CodegenResult<()> {
+        let pruned = eliminate_unreachable_code(&mut self.func, &mut self.cfg, &self.domtree);
+        let fisa = FlagsOrIsa::from(isa);
+        if !fisa.flags.enable_verifier() {
+            do_remove_constant_phis(&mut self.func, &self.domtree);
+            return Ok(());
+        }
+
+        let verified;
+        let dominators = if fresh_flowgraph && !pruned {
+            // The caller built both graphs immediately before pruning. With
+            // no removed blocks, only unused jump and exception tables can
+            // have changed, so the complete control-flow layout still matches.
+            verify_ir_with_dominators(&self.func, &self.domtree, fisa)?;
+            &self.domtree
+        } else {
+            let mut errors = VerifierErrors::default();
+            let result =
+                verify_context_dominators(&self.func, &self.cfg, &self.domtree, fisa, &mut errors);
+            if !errors.is_empty() {
+                return Err(errors.into());
+            }
+            verified = result.expect("verification failed without errors");
+            &verified
+        };
+
         if do_remove_constant_phis(&mut self.func, &self.domtree) {
-            self.verify_if(isa)?;
+            // The edit changes formals, aliases, and actual arguments. Both
+            // graphs still apply because the pass preserves block and
+            // instruction layout and the order and destinations of all edges.
+            verify_ir_with_dominators(&self.func, dominators, fisa)?;
         }
         Ok(())
     }

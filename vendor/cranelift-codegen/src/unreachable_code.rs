@@ -14,16 +14,18 @@ use crate::{ir, trace};
 /// individual instructions whose results are unused.
 ///
 /// The reachability analysis is performed by the dominator tree analysis.
+/// Returns whether any blocks were removed.
 pub fn eliminate_unreachable_code(
     func: &mut ir::Function,
     cfg: &mut ControlFlowGraph,
     domtree: &DominatorTree,
-) {
+) -> bool {
     let _tt = timing::unreachable_code();
     let mut pos = FuncCursor::new(func);
     let mut used_tables = EntitySet::with_capacity(pos.func.stencil.dfg.jump_tables.len());
     let mut used_exception_tables =
         EntitySet::with_capacity(pos.func.stencil.dfg.exception_tables.len());
+    let mut removed_blocks = false;
     while let Some(block) = pos.next_block() {
         if domtree.is_reachable(block) {
             let inst = pos.func.layout.last_inst(block).unwrap();
@@ -57,6 +59,7 @@ pub fn eliminate_unreachable_code(
 
         // Finally, remove the block from the layout.
         pos.func.layout.remove_block(block);
+        removed_blocks = true;
     }
 
     for (table, jt_data) in func.stencil.dfg.jump_tables.iter_mut() {
@@ -70,4 +73,5 @@ pub fn eliminate_unreachable_code(
             exception_data.clear();
         }
     }
+    removed_blocks
 }
