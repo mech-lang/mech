@@ -1,0 +1,800 @@
+{
+  "historical": {
+    "prefix-periodic-1024": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-periodic-1024/observations.json.gz",
+      "observation_sha256": "53a4ef867c5036f0dbff9b9220916506e468e01c79c8455b6c678f94597ad121",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          43.947578125,
+          44.098312500000006,
+          43.987609375000005,
+          43.9804765625
+        ],
+        "roc": [
+          324.595703125,
+          323.9176328125,
+          324.1754453125,
+          323.9866875
+        ],
+        "libdeflate": [
+          45.0491875,
+          44.968078125,
+          44.944953125,
+          44.7363046875
+        ]
+      }
+    },
+    "prefix-periodic-4096": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-periodic-4096/observations.json.gz",
+      "observation_sha256": "137fafbea2cc10eadeb14c2da9cd0c95d2f279a69c33419e2b26f63a5d5dfdd3",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          94.6875,
+          94.6045,
+          95.104,
+          93.104
+        ],
+        "roc": [
+          431.52049999999997,
+          427.85400000000004,
+          426.4375,
+          427.75
+        ],
+        "libdeflate": [
+          102.3335,
+          101.91699999999999,
+          101.3125,
+          100.9995
+        ]
+      }
+    },
+    "prefix-periodic-8192": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-periodic-8192/observations.json.gz",
+      "observation_sha256": "ecf5640102a675faed62ce859ee3573a3f646734b7bd1e372880d26819fab56f",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          159.9165,
+          157.08350000000002,
+          157.29149999999998,
+          156.125
+        ],
+        "roc": [
+          556.188,
+          558.4585,
+          556.75,
+          555.4375
+        ],
+        "libdeflate": [
+          175.583,
+          175.6045,
+          175.77100000000002,
+          175.4785
+        ]
+      }
+    },
+    "prefix-periodic-16384": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-periodic-16384/observations.json.gz",
+      "observation_sha256": "3a02238d7ec5eac30bdf78bebf86eca8d2139dc28a224e1466516ab4d90098b6",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          260.4165,
+          258.4375,
+          259.0215,
+          255.45799999999997
+        ],
+        "roc": [
+          768.1455,
+          766.604,
+          767.3335,
+          764.5
+        ],
+        "libdeflate": [
+          301.125,
+          299.5,
+          300.0,
+          300.27049999999997
+        ]
+      }
+    },
+    "prefix-periodic-32767": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-periodic-32767/observations.json.gz",
+      "observation_sha256": "fc4fecdabe010d03316dc96df07d0bbea8de4671303cfcc194ce2e84420dcc79",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          482.72900000000004,
+          479.83349999999996,
+          482.312,
+          480.7915
+        ],
+        "roc": [
+          1241.0625,
+          1242.146,
+          1241.4375,
+          1237.3540000000003
+        ],
+        "libdeflate": [
+          577.646,
+          578.0625,
+          577.333,
+          577.479
+        ]
+      }
+    },
+    "prefix-natural-4096": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-natural-4096/observations.json.gz",
+      "observation_sha256": "6630a80c780a88accbbd2f4437ffab0ac12350ab5c667be061d6c7b04a2bc6ae",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          437.938,
+          437.8125,
+          436.60450000000003,
+          436.4585
+        ],
+        "roc": [
+          661.7295,
+          658.0415,
+          662.479,
+          661.4795
+        ],
+        "libdeflate": [
+          387.5005,
+          388.4995,
+          387.02099999999996,
+          387.2085
+        ]
+      }
+    },
+    "prefix-natural-8192": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-natural-8192/observations.json.gz",
+      "observation_sha256": "bbf16a71e8f49ed5f4a2cc894ba6f448b8848a0bb3652d1cf7cfbd6583dcf416",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          936.9375,
+          938.8335,
+          936.9585,
+          937.9375
+        ],
+        "roc": [
+          1131.0835,
+          1124.3335,
+          1126.375,
+          1125.6045
+        ],
+        "libdeflate": [
+          906.5415,
+          904.7705,
+          903.8125,
+          903.208
+        ]
+      }
+    },
+    "prefix-natural-16384": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-natural-16384/observations.json.gz",
+      "observation_sha256": "a0816063389f5ad2e58d41a53351491826b9fd7b3a6bb6fbe8b7b57ff8545095",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          2031.1045,
+          2029.7079999999999,
+          2030.7505,
+          2027.7704999999999
+        ],
+        "roc": [
+          2179.8545,
+          2172.125,
+          2173.813,
+          2171.3335
+        ],
+        "libdeflate": [
+          2153.2290000000003,
+          2154.667,
+          2156.3755,
+          2154.2915000000003
+        ]
+      }
+    },
+    "random-1024": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/random-1024/observations.json.gz",
+      "observation_sha256": "58e3f6043bfc59d9d7bfc88f5ec587fe7afa874b49c1ceb08b0d6fdb92d535b8",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          31.630187499999998,
+          31.608343749999996,
+          31.636078124999997,
+          31.505234375
+        ],
+        "roc": [
+          307.5690390625,
+          307.3574375,
+          307.4860078125,
+          307.508109375
+        ],
+        "libdeflate": [
+          33.040078125,
+          33.015929687500005,
+          33.0494921875,
+          33.036765625
+        ]
+      }
+    },
+    "prefix-random-4096": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/prefix-random-4096/observations.json.gz",
+      "observation_sha256": "27d7ae7d685f2afcfd302a1a4a9db1828e8efb056a86cad30110c37d8ca30eea",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          126.3545,
+          125.8125,
+          124.8545,
+          124.43799999999999
+        ],
+        "roc": [
+          371.646,
+          373.2915,
+          372.854,
+          370.29150000000004
+        ],
+        "libdeflate": [
+          76.75,
+          76.8335,
+          76.542,
+          76.667
+        ]
+      }
+    },
+    "heldout-random-65537": {
+      "observation_ref": "bound-71768-runtime/fully-bound-71768-full-forward/heldout-random-65537/observations.json.gz",
+      "observation_sha256": "25a8c96cc9076880a709ad680ff70a8c2c9acf020a5ff4418b623842be08c06f",
+      "quartiles_of_block_means_us": {
+        "mech-experiment": [
+          1711.4795,
+          1706.0835,
+          1700.0415,
+          1706.375
+        ],
+        "roc": [
+          1945.0004999999999,
+          1947.9164999999998,
+          1945.3755,
+          1946.5414999999998
+        ],
+        "libdeflate": [
+          1152.9165,
+          1149.9375,
+          1150.479,
+          1151.8335000000002
+        ]
+      }
+    }
+  },
+  "outlier": {
+    "prefix-periodic-1024": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-periodic-1024/observations.json.gz",
+      "observation_sha256": "fa262c06ddcfee2a89d0f0797d12c956326848f4ba348ec380eada84745302b7",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          44.2389453125,
+          44.1041171875,
+          44.131156250000004,
+          283.8424609375
+        ],
+        "roc": [
+          322.669890625,
+          322.3029765625,
+          322.764984375,
+          382.52315624999994
+        ],
+        "libdeflate": [
+          45.303406249999995,
+          45.0823515625,
+          45.097953125000004,
+          53.618492187499996
+        ]
+      }
+    },
+    "prefix-periodic-4096": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-periodic-4096/observations.json.gz",
+      "observation_sha256": "036a2efa8ce02350eb427fd6d665c06c3eaa233e1f9392dbd866eb1dc710f16a",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          154.1875,
+          625.7295,
+          176.54149999999998,
+          241.9165
+        ],
+        "roc": [
+          493.77049999999997,
+          496.79150000000004,
+          481.9375,
+          523.396
+        ],
+        "libdeflate": [
+          117.6665,
+          117.9375,
+          118.125,
+          122.625
+        ]
+      }
+    },
+    "prefix-periodic-8192": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-periodic-8192/observations.json.gz",
+      "observation_sha256": "d1e585ec20d8bc4dde6cc20d023f0ba5dd61551e4b1c1f0cfb459999ad1eb19c",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          185.4375,
+          178.89600000000002,
+          179.958,
+          185.021
+        ],
+        "roc": [
+          603.7705,
+          601.2705,
+          629.2705000000001,
+          595.6665
+        ],
+        "libdeflate": [
+          192.125,
+          189.167,
+          197.083,
+          191.937
+        ]
+      }
+    },
+    "prefix-periodic-16384": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-periodic-16384/observations.json.gz",
+      "observation_sha256": "cfce70b3f2109cdc230360fb7ffdb54bae141f17cd5a1ebcb590ab26c1b202ea",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          547.4585,
+          742.5419999999999,
+          1134.146,
+          684.354
+        ],
+        "roc": [
+          909.5205,
+          972.2705000000001,
+          879.125,
+          957.3125
+        ],
+        "libdeflate": [
+          435.04200000000003,
+          355.146,
+          341.3755,
+          384.562
+        ]
+      }
+    },
+    "prefix-periodic-32767": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-periodic-32767/observations.json.gz",
+      "observation_sha256": "88d224ef63a773b98cba5fd296aa0930eb9c3a6af3163ee56c6505555ef7fb12",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          499.66700000000003,
+          480.062,
+          478.8335,
+          477.97900000000004
+        ],
+        "roc": [
+          1273.0,
+          1234.667,
+          1235.8125,
+          1234.75
+        ],
+        "libdeflate": [
+          598.646,
+          578.396,
+          576.8745,
+          577.3125
+        ]
+      }
+    },
+    "prefix-natural-4096": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-natural-4096/observations.json.gz",
+      "observation_sha256": "f0cf4abe78688f6681ffca6c988f2e19fb30db7c976f854458d0a2b4ced54339",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          438.063,
+          437.979,
+          438.2505,
+          437.91650000000004
+        ],
+        "roc": [
+          665.9375,
+          658.25,
+          658.854,
+          658.396
+        ],
+        "libdeflate": [
+          390.33299999999997,
+          388.70799999999997,
+          389.22900000000004,
+          388.187
+        ]
+      }
+    },
+    "prefix-natural-8192": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-natural-8192/observations.json.gz",
+      "observation_sha256": "d303892dc75d71d20cdf17d8350466520728b6f98ef92c170c7582c063038caa",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          936.417,
+          936.2085,
+          935.0835000000001,
+          936.729
+        ],
+        "roc": [
+          1122.396,
+          1126.0414999999998,
+          1119.7285,
+          1121.708
+        ],
+        "libdeflate": [
+          905.2085,
+          906.0005000000001,
+          905.146,
+          904.3125
+        ]
+      }
+    },
+    "prefix-natural-16384": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-natural-16384/observations.json.gz",
+      "observation_sha256": "7af86ee5d05c0643166b3899df6ae4cb2e0da6b42245d7daa35246cce113352b",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          2025.4375,
+          2025.2295,
+          2024.7710000000002,
+          2024.5625
+        ],
+        "roc": [
+          2173.4790000000003,
+          2167.3334999999997,
+          2167.0415000000003,
+          2168.9375
+        ],
+        "libdeflate": [
+          2155.1665000000003,
+          2153.7495,
+          2155.2290000000003,
+          2153.0205
+        ]
+      }
+    },
+    "random-1024": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/random-1024/observations.json.gz",
+      "observation_sha256": "0ae1eb27b03e6351a5213e6f32e9bced2f5b0f46b1fe8c04691d39ffd8fb9c7f",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          31.765,
+          31.644265625,
+          31.72625,
+          31.7113125
+        ],
+        "roc": [
+          306.10871875,
+          305.01922656249997,
+          305.03290625,
+          304.8799296875
+        ],
+        "libdeflate": [
+          33.0507890625,
+          33.04296875,
+          33.0429296875,
+          33.034210937500006
+        ]
+      }
+    },
+    "prefix-random-4096": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/prefix-random-4096/observations.json.gz",
+      "observation_sha256": "40e8b7ad6c89f7e966d9c713b6067d52ba450a615200ba4ad4b261a590f03f3c",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          125.75,
+          124.313,
+          123.93700000000001,
+          123.41650000000001
+        ],
+        "roc": [
+          373.187,
+          372.708,
+          370.083,
+          372.5
+        ],
+        "libdeflate": [
+          77.438,
+          77.313,
+          77.354,
+          77.479
+        ]
+      }
+    },
+    "heldout-random-65537": {
+      "observation_ref": "frame-copies-71192-runtime/source-frame-copies-71192-full-forward/heldout-random-65537/observations.json.gz",
+      "observation_sha256": "fb8143216315111b37f513519e352906f6ee7a61d10ee515221d1e65c323bc84",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          1706.2710000000002,
+          1706.542,
+          1705.417,
+          1705.333
+        ],
+        "roc": [
+          1939.479,
+          1940.5835000000002,
+          1939.3129999999999,
+          1941.729
+        ],
+        "libdeflate": [
+          1148.875,
+          1150.0414999999998,
+          1147.5,
+          1148.7085000000002
+        ]
+      }
+    }
+  },
+  "later": {
+    "prefix-periodic-1024": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-periodic-1024/observations.json.gz",
+      "observation_sha256": "4b3e3ab628398acf20fd0aaa930bb4e787a85df16ad0f01e62bab0a1f93637c7",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          44.9332734375,
+          44.656273437500005,
+          44.68390625,
+          44.5146328125
+        ],
+        "roc": [
+          323.4377734375,
+          326.03677343749996,
+          324.55527343750003,
+          325.06575000000004
+        ],
+        "libdeflate": [
+          46.0143359375,
+          45.25554687499999,
+          45.304734375,
+          45.202140625
+        ]
+      }
+    },
+    "prefix-periodic-4096": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-periodic-4096/observations.json.gz",
+      "observation_sha256": "c9595c23312434dd417660d964a3940b6e26761eb63bc3e5f53b2ed841b52386",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          95.5205,
+          95.1875,
+          95.0205,
+          94.917
+        ],
+        "roc": [
+          424.646,
+          424.91650000000004,
+          421.39549999999997,
+          423.5625
+        ],
+        "libdeflate": [
+          103.208,
+          102.4375,
+          102.1665,
+          102.458
+        ]
+      }
+    },
+    "prefix-periodic-8192": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-periodic-8192/observations.json.gz",
+      "observation_sha256": "593b351e74e415bbb29e2efd6476bfb49988e0e56e9134d24b21e6c66af2a46f",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          158.1875,
+          158.27100000000002,
+          173.91649999999998,
+          182.542
+        ],
+        "roc": [
+          558.0,
+          555.396,
+          585.0005000000001,
+          603.8125
+        ],
+        "libdeflate": [
+          177.458,
+          176.66649999999998,
+          188.25,
+          198.291
+        ]
+      }
+    },
+    "prefix-periodic-16384": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-periodic-16384/observations.json.gz",
+      "observation_sha256": "42078781e59f090cdfe2a9284862609239b780a32b10762355c0bf2f674a6d5b",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          260.291,
+          257.83299999999997,
+          256.021,
+          256.22950000000003
+        ],
+        "roc": [
+          765.333,
+          764.271,
+          767.3545,
+          768.0415
+        ],
+        "libdeflate": [
+          304.2505,
+          301.875,
+          301.3125,
+          300.563
+        ]
+      }
+    },
+    "prefix-periodic-32767": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-periodic-32767/observations.json.gz",
+      "observation_sha256": "aad034fe046a0b16ca3a68c2f404a64ef5be8586f234a230d329bf50a962520c",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          478.6665,
+          477.33299999999997,
+          478.833,
+          478.79150000000004
+        ],
+        "roc": [
+          1239.937,
+          1242.125,
+          1235.75,
+          1237.125
+        ],
+        "libdeflate": [
+          579.5835,
+          578.2705000000001,
+          579.0,
+          578.7294999999999
+        ]
+      }
+    },
+    "prefix-natural-4096": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-natural-4096/observations.json.gz",
+      "observation_sha256": "a8bfbd08183a55fdc3d97e1f85594f80fd278c0632b50a84761035badb6e0dfc",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          467.02099999999996,
+          462.75,
+          465.25,
+          461.938
+        ],
+        "roc": [
+          696.5625,
+          692.5205,
+          695.75,
+          696.979
+        ],
+        "libdeflate": [
+          415.5205,
+          412.33299999999997,
+          412.8125,
+          414.2705
+        ]
+      }
+    },
+    "prefix-natural-8192": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-natural-8192/observations.json.gz",
+      "observation_sha256": "4b91de325fd2b587a07cc4cdc2058356aada2cee339617afcca95c9610cf4be6",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          999.3340000000001,
+          999.6669999999999,
+          1000.604,
+          998.479
+        ],
+        "roc": [
+          1198.0410000000002,
+          1191.6255,
+          1196.5,
+          1196.5835000000002
+        ],
+        "libdeflate": [
+          971.5835,
+          966.229,
+          966.4165,
+          966.6875
+        ]
+      }
+    },
+    "prefix-natural-16384": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-natural-16384/observations.json.gz",
+      "observation_sha256": "9b2e2056f3ebb6e49fb492c5ff01cf7feb3a497d314bd7598b90f420ebedd38a",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          2173.625,
+          2171.0835,
+          2167.3125,
+          2178.4795000000004
+        ],
+        "roc": [
+          2307.8535,
+          2311.2079999999996,
+          2304.8955,
+          2324.625
+        ],
+        "libdeflate": [
+          2306.7704999999996,
+          2308.7915000000003,
+          2302.9584999999997,
+          2322.8540000000003
+        ]
+      }
+    },
+    "random-1024": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/random-1024/observations.json.gz",
+      "observation_sha256": "5fea64eb094a10d60f4cc826b240f89a191a80bfe69fddf15c400e9653735c2c",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          31.4576953125,
+          31.4286875,
+          31.392867187500002,
+          31.434578124999998
+        ],
+        "roc": [
+          305.2531953125,
+          305.12953125,
+          305.39554687500004,
+          306.87466406249996
+        ],
+        "libdeflate": [
+          33.0650703125,
+          33.119140625,
+          33.060234375,
+          33.0498125
+        ]
+      }
+    },
+    "prefix-random-4096": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/prefix-random-4096/observations.json.gz",
+      "observation_sha256": "36ca91cd011a14e28f0bfa50782eda234546622be7f941ee7287a9f1536861eb",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          127.25,
+          125.667,
+          124.375,
+          123.87450000000001
+        ],
+        "roc": [
+          376.354,
+          370.89599999999996,
+          371.04150000000004,
+          372.4375
+        ],
+        "libdeflate": [
+          76.5415,
+          76.3125,
+          76.31200000000001,
+          76.35400000000001
+        ]
+      }
+    },
+    "heldout-random-65537": {
+      "observation_ref": "owner-exchange-71288-v2/source-owner-exchange-71288-v2-full-forward/heldout-random-65537/observations.json.gz",
+      "observation_sha256": "ae81f8664d7452aebe51e2a2461daca0f8cf8fcb87e113448583803f19d9f3c0",
+      "quartiles_of_block_means_us": {
+        "mech-control": [
+          1707.7495,
+          1710.7495,
+          1706.834,
+          1707.7295
+        ],
+        "roc": [
+          1941.75,
+          1942.0,
+          1940.4795,
+          1943.875
+        ],
+        "libdeflate": [
+          1149.25,
+          1150.8545,
+          1149.083,
+          1148.5
+        ]
+      }
+    }
+  }
+}
