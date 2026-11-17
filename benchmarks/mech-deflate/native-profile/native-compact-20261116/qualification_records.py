@@ -14,7 +14,11 @@ PEERS = ("roc", "libdeflate")
 ACTORS = (CONTROL, CANDIDATE, *PEERS)
 MECH = (CONTROL, CANDIDATE)
 POLICY_PATH = Path(__file__).with_name("qualification-policy-v1.json")
-POLICIES = {1: POLICY_PATH, 2: POLICY_PATH.with_name("qualification-policy-v2.json")}
+POLICIES = {
+    1: POLICY_PATH,
+    2: POLICY_PATH.with_name("qualification-policy-v2.json"),
+    3: POLICY_PATH.with_name("qualification-policy-v3.json"),
+}
 
 
 class InvalidEvidence(ValueError):
