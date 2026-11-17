@@ -17,6 +17,11 @@ reduces measured peak native stack to 5,280 bytes. Its matched Apple M1
 source-through-link build is **4.00611 s**. It stays opt-in for runtime
 review. [Rebuild, both full timing orders, and per-case bounds](evidence/branch-on-zero/README.md)
 
+The ordered-scoring vector address experiment grew the encoder by 64 bytes
+and was rejected after the empty-input slowdown. Its patch, measured stack
+traffic, raw observations, and object reproduction are available for review.
+[Ordered scoring experiment](evidence/ordered-vector-cursors/README.md)
+
 The opt-in direct source rebuild compiles the 71,960-byte encoder through
 the final link in **3.99930 s** on Apple M1, down from **4.08628 s**
 in the matched split build. It takes **1.339× Roc** and

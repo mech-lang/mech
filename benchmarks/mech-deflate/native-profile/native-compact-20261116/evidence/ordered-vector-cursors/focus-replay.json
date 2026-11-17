@@ -1,0 +1,653 @@
+{
+  "runs": [
+    {
+      "id": "ordered-cursors-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "ordered-cursors-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.02772734151049594,
+          "lower": 0.017173208144633856,
+          "upper": 0.040224933561055165
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": 0.012627507322627185,
+          "lower": -0.006562877490981611,
+          "upper": 0.02910166306262818
+        }
+      },
+      "combined": {
+        "estimate": 0.020149487105239894,
+        "lower": 0.008970604171465446,
+        "upper": 0.03017046394598255
+      },
+      "adverse_runs": [
+        "ordered-cursors-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": -0.0013711745361609795,
+          "lower": -0.009304653059535095,
+          "upper": 0.00652195218368079
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.0005851741770234176,
+          "lower": -0.011997421382755835,
+          "upper": 0.00923200263840851
+        }
+      },
+      "combined": {
+        "estimate": -0.0009782516567788946,
+        "lower": -0.007777451196107177,
+        "upper": 0.005434133440453293
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": -0.0015940998002722528,
+          "lower": -0.003999150523057771,
+          "upper": 0.0005945611595001843
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.004776082154320571,
+          "lower": -0.007019181527078477,
+          "upper": -0.0022636039212889925
+        }
+      },
+      "combined": {
+        "estimate": -0.003186360648583686,
+        "lower": -0.004822620756378848,
+        "upper": -0.001476117528623977
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.009260831886369392,
+          "lower": 0.004282514469203358,
+          "upper": 0.01441214285144099
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": 8.043431849569238e-05,
+          "lower": -0.00519968021003292,
+          "upper": 0.005275157013992171
+        }
+      },
+      "combined": {
+        "estimate": 0.004660147061466002,
+        "lower": 0.0009665600908959071,
+        "upper": 0.008338799474981728
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.0006316425584707019,
+          "lower": -0.0010177973543308294,
+          "upper": 0.002240225785630212
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.0006423220548664732,
+          "lower": -0.003212266434685862,
+          "upper": 0.0016362368508540115
+        }
+      },
+      "combined": {
+        "estimate": -5.5426225312738e-06,
+        "lower": -0.0015084409093284457,
+        "upper": 0.0014077139771622171
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32767": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": -0.0021025120248683304,
+          "lower": -0.0028594711954604835,
+          "upper": -0.0013081994552435194
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.0016274826023046085,
+          "lower": -0.003333546683260691,
+          "upper": -0.00022236087482441214
+        }
+      },
+      "combined": {
+        "estimate": -0.0018650255729094622,
+        "lower": -0.0028309552257381743,
+        "upper": -0.0010631903801526787
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": -0.0010377319966022869,
+          "lower": -0.0018940412885648517,
+          "upper": -0.00016555414968355553
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.00156058819367777,
+          "lower": -0.0024997085853966095,
+          "upper": -0.0006273279779441809
+        }
+      },
+      "combined": {
+        "estimate": -0.0012991943119190497,
+        "lower": -0.0019344559549451246,
+        "upper": -0.0006491898994752665
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.00034211573353770675,
+          "lower": -0.0037676837461785295,
+          "upper": 0.004693747492657163
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.002896371674739995,
+          "lower": -0.0065433963178092025,
+          "upper": 0.0006598595846309951
+        }
+      },
+      "combined": {
+        "estimate": -0.0012784406229744416,
+        "lower": -0.004071936100283002,
+        "upper": 0.001526978339735141
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.0010390758618028517,
+          "lower": -0.001467336787184137,
+          "upper": 0.0035034835423279898
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.00019854016747222758,
+          "lower": -0.002303943087635818,
+          "upper": 0.001997926524700544
+        }
+      },
+      "combined": {
+        "estimate": 0.000420076465898811,
+        "lower": -0.0012303629291805507,
+        "upper": 0.002101015356321456
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": -0.00407423716858879,
+          "lower": -0.005241594548888395,
+          "upper": -0.002851262560006118
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.0028305749657707713,
+          "lower": -0.003922429793141724,
+          "upper": -0.0017560680364315795
+        }
+      },
+      "combined": {
+        "estimate": -0.0034526000739480978,
+        "lower": -0.0042329620138624735,
+        "upper": -0.0026348758034747677
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.0017792561596621237,
+          "lower": -0.0003265514748294063,
+          "upper": 0.0040605380944158664
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": 0.001228851579702539,
+          "lower": -0.0007334149370245013,
+          "upper": 0.0034943610589244223
+        }
+      },
+      "combined": {
+        "estimate": 0.0015040160584014473,
+        "lower": 3.0300948724804044e-05,
+        "upper": 0.003090050156816737
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.0032741782054503954,
+          "lower": -0.0011018563904017231,
+          "upper": 0.007848531168276107
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.007558443988436858,
+          "lower": -0.014702689724495954,
+          "upper": -0.00023035976828778004
+        }
+      },
+      "combined": {
+        "estimate": -0.0021568327014312993,
+        "lower": -0.006478327847895149,
+        "upper": 0.002218724122722948
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": -0.012648038263269212,
+          "lower": -0.017317049515537253,
+          "upper": -0.00800754202120646
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.018347515795970826,
+          "lower": -0.022946887432647167,
+          "upper": -0.013922459034993118
+        }
+      },
+      "combined": {
+        "estimate": -0.015501901463195633,
+        "lower": -0.018711342302388467,
+        "upper": -0.012279445175141457
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": 0.00020196191591148605,
+          "lower": -0.00031404070645568716,
+          "upper": 0.000747462073647398
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.00022696828476276298,
+          "lower": -0.0008879361910133499,
+          "upper": 0.00040231487415343103
+        }
+      },
+      "combined": {
+        "estimate": -1.2526182353034265e-05,
+        "lower": -0.00044069284863323954,
+        "upper": 0.00040445269692934716
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "ordered-cursors-focus-forward": {
+          "estimate": -0.008004602856915288,
+          "lower": -0.010922690567219062,
+          "upper": -0.005116599245854947
+        },
+        "ordered-cursors-focus-reverse": {
+          "estimate": -0.009767614232837007,
+          "lower": -0.011369378826042387,
+          "upper": -0.008187308599459375
+        }
+      },
+      "combined": {
+        "estimate": -0.008886500554532328,
+        "lower": -0.010504852723530633,
+        "upper": -0.007259148906721413
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "both complete timing orders are required",
+    "one-stored: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "plan": {
+    "path": "ordered-vector-cursors/ordered-cursors/plan.json",
+    "sha256": "a40f6d0c92572e12b9a2a640c8119aa50c4664a74d575ee04495f7d2d88db1cf"
+  },
+  "receipts": {
+    "ordered-cursors-focus-forward": {
+      "id": "ordered-cursors-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "ordered-vector-cursors/ordered-cursors/canonical-pins/ordered-cursors-focus-forward.json",
+        "sha256": "cc3d8ce85baa228d486d311d316c624634e7985b4a87b0bb62d86da80b355f2f"
+      },
+      "original_pins": {
+        "path": "ordered-cursors-focus-forward/pins.json",
+        "sha256": "e86d21c9752e62cf2895972577a575f5b9aa3ab8b047b44c566ba25bc8754d91"
+      },
+      "summary": {
+        "path": "ordered-cursors-focus-forward/summary.json",
+        "sha256": "0777570719fb141898b4f51c8f64d0ce61dffbc09f832e0a7d55691de563cf3f"
+      },
+      "complete": {
+        "path": "ordered-cursors-focus-forward/complete.json",
+        "sha256": "247afef3f4fb61eeaa342a578d5ec65c01428f1f00b98f7fc300aa24ffb5bc11"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "ordered-cursors-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "9fcd303b8ac4a36a354caad885fdaff10e7e56521cc76a89d4c1b55665d8d5c3"
+        },
+        "empty": {
+          "path": "ordered-cursors-focus-forward/empty/observations.json.gz",
+          "sha256": "73d942fad86c19c6fee7254859883b9aed7f5ad2a89c6867ae86e6ee666a1d23"
+        },
+        "heldout-mixed-131073": {
+          "path": "ordered-cursors-focus-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "2b9ee63e5fedab76d4edd4436932638c483c61da09769bfaf8aaa6febce67dbf"
+        },
+        "heldout-window-32767": {
+          "path": "ordered-cursors-focus-forward/heldout-window-32767/observations.json.gz",
+          "sha256": "57d49b04132fbe957275ebf6f9b63d5ca3b950c6c8fd598747e37b387b1eaeb4"
+        },
+        "one-stored": {
+          "path": "ordered-cursors-focus-forward/one-stored/observations.json.gz",
+          "sha256": "bb30fc6965da1f4ad32c5e0fa98a4290d586e697dd0ad442ce8cc781b7be8fd8"
+        },
+        "prefix-natural-16384": {
+          "path": "ordered-cursors-focus-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "25e6ba7674cdb36148b3d93c52be34f8acdb451ba75f746b3cd71ade4e8b776c"
+        },
+        "prefix-natural-4096": {
+          "path": "ordered-cursors-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "b5b9c70778992d19b4031d81be87778e5b1a74092d2521f412fb4611e0536456"
+        },
+        "prefix-natural-8192": {
+          "path": "ordered-cursors-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "f8718ee7799cf13a0f2f23b060ae9e2ab3921c8213cec1cea88dfa2d1a9b01b8"
+        },
+        "prefix-periodic-1024": {
+          "path": "ordered-cursors-focus-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "4c8ae0ea6384485590fd0d53f56fd4f3c5812a998f0abeda044660f2b46482fc"
+        },
+        "prefix-random-1024": {
+          "path": "ordered-cursors-focus-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "143b3fc2d7c307337b207faa40eed81c9fde4442583d49103ea726427261c9d6"
+        },
+        "prefix-random-1048576": {
+          "path": "ordered-cursors-focus-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "dafa8be965d5577e7860a48cb36d5ab297fc37b3da9b705276aecf7b06007244"
+        },
+        "prefix-random-4096": {
+          "path": "ordered-cursors-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "1b95cd3111b6409154b0bb65e2f7523a811aa29b80ef6ba6a98bfbb98ba4e329"
+        },
+        "prefix-random-8192": {
+          "path": "ordered-cursors-focus-forward/prefix-random-8192/observations.json.gz",
+          "sha256": "53d2310d43d10068a2f6f16e811ba7f62aad127be391753d1fb53edbd9d04228"
+        },
+        "random-1024": {
+          "path": "ordered-cursors-focus-forward/random-1024/observations.json.gz",
+          "sha256": "7d6235c4efe1f47ed69121bbe91c63d25bdb97d1d85e52b3d3d2b70f3da207ae"
+        },
+        "random-64": {
+          "path": "ordered-cursors-focus-forward/random-64/observations.json.gz",
+          "sha256": "e4683acac02f5f84703ba155ae07bf58e1823ef2a81655d0701f3d43af0573bd"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "ordered-cursors-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "ordered-cursors-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "ordered-cursors-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "ordered-cursors-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "ordered-cursors-focus-reverse": {
+      "id": "ordered-cursors-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "ordered-vector-cursors/ordered-cursors/canonical-pins/ordered-cursors-focus-reverse.json",
+        "sha256": "cc3d8ce85baa228d486d311d316c624634e7985b4a87b0bb62d86da80b355f2f"
+      },
+      "original_pins": {
+        "path": "ordered-cursors-focus-reverse/pins.json",
+        "sha256": "e86d21c9752e62cf2895972577a575f5b9aa3ab8b047b44c566ba25bc8754d91"
+      },
+      "summary": {
+        "path": "ordered-cursors-focus-reverse/summary.json",
+        "sha256": "69fe862fc1bdba0f0a3ca2198d576c37ce31b427427c687ec24dec0609798137"
+      },
+      "complete": {
+        "path": "ordered-cursors-focus-reverse/complete.json",
+        "sha256": "247afef3f4fb61eeaa342a578d5ec65c01428f1f00b98f7fc300aa24ffb5bc11"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "ordered-cursors-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "4fc041cf66dbb09aebce71b07e5cdb8aab695fccde5259682a43f465f6ec3e4d"
+        },
+        "empty": {
+          "path": "ordered-cursors-focus-reverse/empty/observations.json.gz",
+          "sha256": "c71ccc6146778ba4c72b872528e492fe8476406a230012fe4e61f08aac14c875"
+        },
+        "heldout-mixed-131073": {
+          "path": "ordered-cursors-focus-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "876e497ca80beb603314acf95ffd7714a6025cf096b5242b215f5263a9d9e9a9"
+        },
+        "heldout-window-32767": {
+          "path": "ordered-cursors-focus-reverse/heldout-window-32767/observations.json.gz",
+          "sha256": "626e51ca927a7f7ae37f0dc1511e66701425e7d981d79533a700864a1ad7b47e"
+        },
+        "one-stored": {
+          "path": "ordered-cursors-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "2ea5089c94a2803c67f3ebcadaf3debdf5c7f0dccb5987fccde9996b546a75fa"
+        },
+        "prefix-natural-16384": {
+          "path": "ordered-cursors-focus-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "be6b4fe1ddf8d9efd191bf4a167571078bf2cd446532957221c687a297a2f438"
+        },
+        "prefix-natural-4096": {
+          "path": "ordered-cursors-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "5890363e0d32918cf97de907030392633a5c6d2c4cae2238d5842f83b7cae47b"
+        },
+        "prefix-natural-8192": {
+          "path": "ordered-cursors-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "52627a3519829f8b8642fe19d72ca0888d5ee1cb1449179dea227428780a84bc"
+        },
+        "prefix-periodic-1024": {
+          "path": "ordered-cursors-focus-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "5b6685118ae1c2a263407ab3c9788ccd8f69dc515237f9f06b362194239bc411"
+        },
+        "prefix-random-1024": {
+          "path": "ordered-cursors-focus-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "26f83a2cf1c4a7db081c662ee3f3dd1eb3e84ec07ad3bb8ac0a2b5009c70806d"
+        },
+        "prefix-random-1048576": {
+          "path": "ordered-cursors-focus-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "ae45fb236fdf8422f5f7bf5a9ae0eefeafd3c97b74ae6492ec53c191f633a01d"
+        },
+        "prefix-random-4096": {
+          "path": "ordered-cursors-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "295d4d1d445c5b44fbb765e6e44ade4efdc4142c452578666d08366c1f762d96"
+        },
+        "prefix-random-8192": {
+          "path": "ordered-cursors-focus-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "17cc551e9f40e541f918ff366a98473f3e72182c75679ebf948e2a6890d25b22"
+        },
+        "random-1024": {
+          "path": "ordered-cursors-focus-reverse/random-1024/observations.json.gz",
+          "sha256": "4ad07bad5d36ba6969ccd2ebccdd4cdfe864a77805d151b0094875d439f39c87"
+        },
+        "random-64": {
+          "path": "ordered-cursors-focus-reverse/random-64/observations.json.gz",
+          "sha256": "a15608237b48c5c64906bdf9c99fbd633c04f0e22bb3e7a6bad37a2e3b951345"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "ordered-cursors-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "ordered-cursors-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "ordered-cursors-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "ordered-cursors-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}
