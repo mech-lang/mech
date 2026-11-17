@@ -18,6 +18,7 @@ UNIT_NAMES = {
         "exact_linked_name_grammar_rejects_before_compilation_without_sanitizing",
         "explicit_compile_policy_is_strict_and_separate_from_launch_authority",
         "ordinary_turn_inputs_are_rejected_without_another_execution_route",
+        "explicit_compile_policy_is_strict_and_separate_from_launch_authority",
     )
 }
 PUBLIC_NAMES = {
