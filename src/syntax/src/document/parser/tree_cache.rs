@@ -41,25 +41,23 @@ pub(crate) struct CacheWork {
     pub reused: u64,
 }
 pub(crate) struct Sink {
-    events: Journal<Event>,
     at: usize,
     end: usize,
     frames: Vec<Frame>,
     token: Option<Token>,
     root: Option<Arc<GreenNode>>,
-    event_nodes: BTreeMap<usize, NodeId>,
+    event_nodes: Option<BTreeMap<usize, NodeId>>,
     pub work: CacheWork,
 }
 impl Sink {
-    pub fn new(events: Journal<Event>, start: usize, end: usize) -> Self {
+    pub fn new(start: usize, end: usize, collect_event_nodes: bool) -> Self {
         Self {
-            events,
             at: start,
             end,
             frames: Vec::new(),
             token: None,
             root: None,
-            event_nodes: BTreeMap::new(),
+            event_nodes: collect_event_nodes.then(BTreeMap::new),
             work: CacheWork::default(),
         }
     }
@@ -78,10 +76,12 @@ impl Sink {
     pub fn advance(
         &mut self,
         source: &TextSnapshot,
+        events: &Journal<Event>,
         current: &Journal<Event>,
         ids: &mut IdGenerator,
         allowance: &mut u64,
     ) -> Result<bool, BuildError> {
+        let (mut page_start, mut page): (usize, &[Event]) = (0, &[]);
         loop {
             if self.at >= self.end && self.token.is_none() {
                 if !self.frames.is_empty() {
@@ -98,10 +98,19 @@ impl Sink {
             *allowance -= 1;
             if let Some(mut token) = self.token.take() {
                 if token.at < token.range.end {
-                    let byte = source.byte_at(token.at).ok_or(BuildError::TextTooLarge)?;
-                    token.hash = (token.hash ^ u64::from(byte)).wrapping_mul(0x0000_0100_0000_01b3);
-                    token.at += TextSize(1);
-                    self.work.token_bytes += 1;
+                    let chunk = source.chunk_at(token.at).ok_or(BuildError::TextTooLarge)?;
+                    let available = (token.range.end.min(chunk.range.end) - token.at).to_usize();
+                    // The first byte was charged by the loop. Stop at the
+                    // same byte even when a budget ends within a UTF-8 scalar.
+                    let count = (available as u64).min(*allowance + 1) as usize;
+                    let start = (token.at - chunk.range.start).to_usize();
+                    for &byte in &chunk.text.as_bytes()[start..start + count] {
+                        token.hash =
+                            (token.hash ^ u64::from(byte)).wrapping_mul(0x0000_0100_0000_01b3);
+                    }
+                    token.at += TextSize(count as u32);
+                    *allowance -= count as u64 - 1;
+                    self.work.token_bytes += count as u64;
                     self.token = Some(token);
                 } else {
                     self.element(GreenElement::Token(GreenToken {
@@ -115,9 +124,11 @@ impl Sink {
                 continue;
             }
             let index = self.at;
-            let event = self
-                .events
-                .get(index)
+            if index < page_start || index - page_start >= page.len() {
+                (page_start, page) = events.page_at(index).ok_or(BuildError::NoOpenNode)?;
+            }
+            let event = page
+                .get(index - page_start)
                 .ok_or(BuildError::NoOpenNode)?
                 .clone();
             self.at += 1;
@@ -132,17 +143,24 @@ impl Sink {
                     // A queued parent may predate a child's cache publication.
                     // Its immutable marker identity proves whether the current
                     // journal still describes that exact completed child.
-                    let cached = cached.or_else(|| match current.get(index) {
-                        Some(Event::Start {
-                            identity: now,
-                            cached,
-                            ..
-                        }) if identity.is_some() && *now == identity => cached.clone(),
-                        _ => None,
+                    let cached = cached.or_else(|| {
+                        if identity.is_none() || core::ptr::eq(events, current) {
+                            return None;
+                        }
+                        match current.get(index) {
+                            Some(Event::Start {
+                                identity: now,
+                                cached,
+                                ..
+                            }) if *now == identity => cached.clone(),
+                            _ => None,
+                        }
                     });
                     if let Some(cached) = cached.filter(|cached| cached.end_event <= self.end) {
                         self.at = cached.end_event;
-                        self.event_nodes.insert(index, cached.node.id);
+                        if let Some(nodes) = &mut self.event_nodes {
+                            nodes.insert(index, cached.node.id);
+                        }
                         self.work.reused += 1;
                         self.element(GreenElement::Node(cached.node))?;
                     } else {
@@ -185,7 +203,9 @@ impl Sink {
                         children: frame.children,
                     });
                     self.work.nodes += 1;
-                    self.event_nodes.insert(frame.start, node.id);
+                    if let Some(nodes) = &mut self.event_nodes {
+                        nodes.insert(frame.start, node.id);
+                    }
                     self.element(GreenElement::Node(node))?;
                 }
                 Event::Tombstone => {}
@@ -195,7 +215,7 @@ impl Sink {
     pub fn finish(self) -> SinkResult {
         SinkResult {
             root: self.root.expect("completed sink"),
-            event_nodes: self.event_nodes,
+            event_nodes: self.event_nodes.unwrap_or_default(),
         }
     }
 }
@@ -265,12 +285,12 @@ impl TreeCache {
                 {
                     continue;
                 }
-                let sink = Sink::new(request.events.clone(), request.start, request.end);
+                let sink = Sink::new(request.start, request.end, false);
                 self.active = Some((request, sink));
             }
             let (request, sink) = self.active.as_mut().expect("active cache request");
             if !sink
-                .advance(source, current, ids, allowance)
+                .advance(source, &request.events, current, ids, allowance)
                 .expect("completed canonical marker must materialize")
             {
                 return false;
@@ -284,9 +304,8 @@ impl TreeCache {
             let start = request.start;
             let expected_identity = request.identity;
             let work = sink.work;
-            // The completed sink no longer reads its immutable journals. Release
-            // both snapshots before updating the current journal, so those
-            // finished owners do not force otherwise unnecessary path copying.
+            // Release the request's snapshot before publishing the new cache
+            // entry, so the completed request cannot force path copying.
             drop(request);
             drop(sink);
             if let Some(Event::Start {
@@ -350,5 +369,71 @@ mod tests {
             panic!("the retained marker must be available to streaming views");
         };
         crate::document::validate_lossless(&cached.node, &source).unwrap();
+    }
+
+    #[test]
+    fn batches_token_bytes_without_changing_partial_progress_or_hashes() {
+        let first = TextSnapshot::new(DocumentId(1), Revision(1), "aé").unwrap();
+        let source = first.append("βz").unwrap();
+        assert_eq!(source.piece_count(), 2);
+        let mut events = Journal::default();
+        events.push(Event::Start {
+            kind: SyntaxKind::Document,
+            flags: NodeFlags::NONE,
+            identity: Some(NodeId(20)),
+            cached: None,
+        });
+        // Traverse two journal pages, then hash a token across both source
+        // pieces. Small work grants stop inside both multibyte scalars.
+        for _ in 0..65 {
+            events.push(Event::Tombstone);
+        }
+        events.push(Event::Token {
+            kind: SyntaxKind::Unknown,
+            range: source.full_range(),
+            flags: TokenFlags::NONE,
+        });
+        events.push(Event::Finish);
+        let mut baseline_ids = IdGenerator::new();
+        let mut baseline = Sink::new(0, events.len(), true);
+        let mut unlimited = u64::MAX;
+        assert!(
+            baseline
+                .advance(&source, &events, &events, &mut baseline_ids, &mut unlimited)
+                .unwrap()
+        );
+        let reference = baseline.finish();
+        let expected_work = events.len() as u64 + u64::from(source.byte_len().0) + 1;
+        assert_eq!(u64::MAX - unlimited, expected_work);
+
+        for quantum in [1, 2, 4, 7] {
+            let mut ids = IdGenerator::new();
+            let mut sink = Sink::new(0, events.len(), true);
+            let mut charged = 0;
+            loop {
+                let mut allowance = quantum;
+                let complete = sink
+                    .advance(&source, &events, &events, &mut ids, &mut allowance)
+                    .unwrap();
+                charged += quantum - allowance;
+                assert!(charged <= expected_work);
+                if complete {
+                    break;
+                }
+                assert_eq!(allowance, 0);
+            }
+            assert_eq!(sink.work.token_bytes, u64::from(source.byte_len().0));
+            assert_eq!(sink.work.events, events.len() as u64);
+            assert_eq!(charged, expected_work);
+            let resumed = sink.finish();
+            assert_eq!(resumed.event_nodes, reference.event_nodes);
+            assert_eq!(resumed.root.id, reference.root.id);
+            assert_eq!(resumed.root.structural_hash, reference.root.structural_hash);
+            assert_eq!(resumed.root.text_len, source.byte_len());
+            let GreenElement::Token(token) = resumed.root.children.iter().next().unwrap() else {
+                panic!("the full source must be represented by one token")
+            };
+            assert_eq!(token.text_hash, crate::document::green::text_hash("aéβz"));
+        }
     }
 }
