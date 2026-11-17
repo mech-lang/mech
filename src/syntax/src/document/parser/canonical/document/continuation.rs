@@ -284,7 +284,7 @@ impl<'g> Continuation<'g> {
         }
     }
 
-    fn record_definition(
+    fn record_structural_choice(
         &self,
         parser: &mut Parser<'_>,
         expression: &GrammarExpression,
@@ -300,6 +300,9 @@ impl<'g> Continuation<'g> {
             }
             rules::FUNCTION_DEFINE if parser.current_rule() == Some(rules::MECH_CODE_ALT) => {
                 SyntaxKind::FunctionDefine
+            }
+            rules::STATEMENT if parser.current_rule() == Some(rules::MECH_CODE_ALT) => {
+                SyntaxKind::Statement
             }
             _ => return None,
         };
@@ -1406,8 +1409,12 @@ impl<'g> Continuation<'g> {
                     self.state = frame.initial;
                     if let Some(item) = frame.items.get(frame.index) {
                         if definition.is_none() {
-                            definition =
-                                self.record_definition(parser, item, input_final, *allowance);
+                            definition = self.record_structural_choice(
+                                parser,
+                                item,
+                                input_final,
+                                *allowance,
+                            );
                         }
                         self.push(Frame::BestChoice(frame, selected, definition));
                         self.push(Frame::Expression(item));
@@ -1585,7 +1592,7 @@ impl<'g> Continuation<'g> {
                 if matches!(expression, GrammarExpression::BestChoice(_)) {
                     parser.rewind(frame.checkpoint);
                     let definition =
-                        self.record_definition(parser, &items[0], input_final, allowance);
+                        self.record_structural_choice(parser, &items[0], input_final, allowance);
                     self.push(Frame::BestChoice(frame, None, definition));
                 } else {
                     self.push(Frame::Choice(frame));

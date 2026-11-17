@@ -1,4 +1,4 @@
-//! Scoped recipes for winning variable and function definitions.
+//! Scoped recipes for selected structural alternatives.
 use super::{Parser, RuleId};
 use crate::document::parser::canonical::prediction::MIN_ANALYSIS_ALLOWANCE;
 use crate::document::parser::{
