@@ -18,6 +18,10 @@ parser.add_argument(
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)
 parser.add_argument(
+    '--direct-source', action='store_true',
+    help='run the benchmark frontend and diagnostic native emitter in one compiler process',
+)
+parser.add_argument(
     '--compiler-opt-level', type=int, choices=(1, 3), default=1,
     help='Rust optimization level for the compiler binaries (default: 1)',
 )
@@ -52,9 +56,12 @@ allocator_profile = 'profile.release.package.libmimalloc-sys.opt-level=1'
 cargo = [
     'cargo', '+nightly-2026-03-03', 'build', '--locked', '--release',
     '--config', allocator_profile, '--manifest-path', here.parent / 'Cargo.toml',
-    '--target-dir', target, '--bin', 'native_compact_frontend',
-    '--bin', 'emit_compact_size', '--message-format=json',
+    '--target-dir', target, '--message-format=json',
 ]
+if args.direct_source:
+    cargo.extend(('--bin', 'compile_profile'))
+else:
+    cargo.extend(('--bin', 'native_compact_frontend', '--bin', 'emit_compact_size'))
 build=run(cargo,out/'compiler-build.jsonl',env)
 build['profile'] = profile
 build['package_profile'] = allocator_profile
@@ -65,12 +72,7 @@ for line in (out/'compiler-build.jsonl').read_text().splitlines():
     if row.get('reason')=='compiler-artifact':
         for path in row['filenames']:
             if path.endswith('.rlib'):libraries[row['target']['name']]=path
-frontend=target/'release/native_compact_frontend';emitter=target/'release/emit_compact_size'
 assert sha(here/'program.mec')==recipe['source_sha256']
-phases={};start=time.perf_counter()
-phases['frontend']=run([frontend,here/'program.mec',out/'frontend','frontend'],out/'frontend.log',env)
-bytecode=out/'frontend/program.mecb'
-assert sha(bytecode)==recipe['bytecode_sha256'],'changed canonical bytecode; inspect before comparing native output'
 flags=dict(recipe['flags'])
 variant_key=args.variant.replace('-','_')
 paired_spills=args.variant=='fresh-owner-counts-cold-tails-paired-spills'
@@ -89,7 +91,38 @@ if args.variant=='fresh-owner-counts-cleanup':flags.update(MECH_COMPACT_PROVE_BA
 if paired_spills:
     flags['MECH_COMPACT_PAIR_REGISTER_SPILLS'] = '1'
 assert not any('LLVM' in key for key in flags)
-phases['native']=run([emitter,bytecode,out/'native'],out/'native.log',env|flags|{'PATH':'/usr/bin:/bin'})
+source = here / 'program.mec'
+frontend = out / 'frontend'
+native = out / 'native'
+bytecode = frontend / 'program.mecb'
+native_env = env | flags | {'PATH': '/usr/bin:/bin'}
+
+
+def verify_bytecode():
+    assert sha(bytecode) == recipe['bytecode_sha256'], (
+        'changed canonical bytecode; inspect before comparing native output'
+    )
+
+
+phases = {}
+start = time.perf_counter()
+if args.direct_source:
+    compiler = target / 'release/compile_profile'
+    phases['source_to_native'] = run(
+        [compiler, source, frontend, 'compact'], out / 'direct-source.log', native_env,
+    )
+    verify_bytecode()
+    native.mkdir()
+    for artifact in ('program.o', 'metadata.json'):
+        (frontend / artifact).rename(native / artifact)
+else:
+    compiler = target / 'release/native_compact_frontend'
+    phases['frontend'] = run(
+        [compiler, source, frontend, 'frontend'], out / 'frontend.log', env,
+    )
+    verify_bytecode()
+    emitter = target / 'release/emit_compact_size'
+    phases['native'] = run([emitter, bytecode, native], out / 'native.log', native_env)
 object_file=out/'native/program.o';data=object_file.read_bytes();assert struct.unpack_from('<I',data)[0]==0xfeedfacf
 text_bytes=None;offset=32
 for _ in range(struct.unpack_from('<I',data,16)[0]):
@@ -104,6 +137,7 @@ expected_metadata=recipe[variant_key+'_metadata_sha256']
 actual_metadata=sha(out/'native/metadata.json')
 record={'variant':args.variant,'compiler_build':build,'phases':phases,'source_to_object_seconds':time.perf_counter()-start,'object_sha256':sha(object_file),'expected_object_sha256':expected,'metadata_sha256':actual_metadata,'expected_metadata_sha256':expected_metadata,'object_text_bytes':text_bytes,'object_text_x_roc':text_bytes/57696,'object_text_x_libdeflate':text_bytes/37080,'full_integrated_source_identity':sha(object_file)==expected and actual_metadata==expected_metadata,'runtime_wins':'not measured by this command'}
 record['native_flags'] = flags
+record['compiler_pipeline'] = 'direct-source' if args.direct_source else 'split'
 (out/'rebuild.json').write_text(json.dumps(record,indent=2)+'\n')
 assert record['full_integrated_source_identity'],'integrated compiler changed the object; report this result, do not reuse the historical win count'
 if args.mimalloc_object:
