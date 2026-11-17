@@ -901,7 +901,7 @@ pub(crate) fn parse_canonical_document_with_ids(
     // A complete-file parse has no intermediate views. Build its final tree
     // once, rather than materializing every speculative completed marker.
     parser.state.retain_completed_nodes = false;
-    parser.state.events = Journal::transient();
+    parser.state.events = Journal::batch();
     parser.state.diagnostics = Journal::transient();
     // One-shot parsing preserves the logical grants and IDs. Streaming work
     // reports continue tracking every materialized cache allocation.
@@ -1086,6 +1086,9 @@ mod tests {
                 config,
                 &mut ids,
             );
+            if discard {
+                parser.state.events = Journal::batch();
+            }
             parser.state.tree_cache.one_shot = discard;
             parser.state.tree_cache.preserve_stale_accounting_for_test = true;
             parser.set_resource_rule(rules::PARSE);
