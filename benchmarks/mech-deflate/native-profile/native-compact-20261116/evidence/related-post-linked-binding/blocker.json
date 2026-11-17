@@ -1,0 +1,327 @@
+{
+  "review_head": "b72b7419b39b22765fe1eed6b5c636e63964b905",
+  "base_head": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "integration_head": "3a670730c8953f275fb59fcd7ac503d086995001",
+  "hosted_architecture_job": {
+    "run": 44080079325,
+    "job": 134028828788,
+    "conclusion": "failure",
+    "path": "benchmarks/related-post-gen/hosts/after-4.rs",
+    "line": 104
+  },
+  "source_scan_roots": [
+    "benchmarks/related-post-gen/hosts",
+    "benchmarks/related-post-gen/measurement.rs",
+    "benchmarks/related-post-gen/review/qualification"
+  ],
+  "source_match_counts": {
+    "hosts": 5,
+    "measurement.rs": 1,
+    "review/qualification/old-objects": 22,
+    "review/qualification/runtime-only": 3
+  },
+  "source_matches": {
+    "hosts/after-4.rs": {
+      "lines": [
+        104
+      ],
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "hosts/after-8.rs": {
+      "lines": [
+        104
+      ],
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "hosts/compact-4.rs": {
+      "lines": [
+        104
+      ],
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "hosts/compact-8.rs": {
+      "lines": [
+        104
+      ],
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "hosts/managed-4.rs": {
+      "lines": [
+        103
+      ],
+      "sha256": "484c5a1794faa7d3f1834078230e1448fc87552def6baf31cda09e9522d8f78c",
+      "review_manifest_pin": false,
+      "integration_inventory_pin": false
+    },
+    "measurement.rs": {
+      "lines": [
+        43,
+        44,
+        46,
+        52,
+        54,
+        60,
+        62,
+        69,
+        70,
+        129,
+        130,
+        132,
+        138,
+        145
+      ],
+      "sha256": "c94bf3d9f289ad48cbf2187a94dc7f2ed386dc933ee540b8d0c2b52a00571c79",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/197/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "5d942e6761c72636d8aaf878c8d6fb28702cef39eec148ab1dd37babcef2a412",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/203/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "7f620695d401ef3700ae233e55adaaf8f89ae96b48aef949c702d35874062142",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/204/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "d30ab8156b554175950cd91ad708692e7a2351e13373896ee94415e93af75891",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/205/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "1b0283561846e3524ad5ed22fad458a3106779f40204e42be374ad7f4a54a920",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/206/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "433d3370e62f1a44738e9f83e76aaaf1a4db223264b5bb786b7727fe973c029d",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/207/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "8234208fed70f654db166787600dac6dfdfdd6c6ba79a6cd347ebb2b366313c6",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/208/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "fad454b2b4fcd7434cf8037ec3c2965a42824ad1c9ad1874909f06527f659c48",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/209/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "76cd0f53c991ff60e2f0799e4a09773ed521a987c5eaad2bd8a9037eee153b3a",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/210/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "4c34813718fb887986602d94ed5720aa1d25da02114f1817b2e55f70c6e80f39",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/211/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "044c9a55aa377faad2ef6e10ca8de2d7d555817d34ef5583348b008ea3806670",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/212/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "439fe27ea29b01f6401bc03671be66761b6ea86dac8afe107d7a0e614c67852e",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/213/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "88715645ef99d690978efe7b154abbe19687d87c62c880a0de05072c89c79635",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/214/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "f0278e0b6515e9e880e2ef3f3f14caf5bd6da76d04117c2692647a4b06b40df0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/215/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "f1bbbef577e3cdadb5adf7e79c2d427b6d0f785d9b2d8f8f4ad7d61493f5296b",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/216/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "3e790bae812f6b7e12197175801afa31e2fb652fe2075a5e8725c413043344ce",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/217/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "8814fa210e9334f679f0762f0acfed21b5b69d0ad05b8fc2971d0e69bae2b941",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/218/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "d5ad9ee314dd2c0dfb6b64c5909cab2fcfe35e99704a86d19299f2d9cf22d9e5",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/219/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "83459a850e9a4005f68b02bcb722306d355cf6d52e1fa1d2d40279ca7b44983f",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/220/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "182c63f644780c3f88e346add8d32eb8e8f699a4955f24d5892b08230fe25307",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/221/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "a7a74d3632db5ec799225e62d77c1bdb6d2e795661a4c8fe62bf211d1ace7cca",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/222/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "f1cd579ffb4b6fcf0fae750c06c6a3cbf891d750aabe7c4695e51d767e09639a",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/old-objects/probe.rs": {
+      "lines": [
+        5,
+        8
+      ],
+      "sha256": "5d942e6761c72636d8aaf878c8d6fb28702cef39eec148ab1dd37babcef2a412",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/runtime-only/managed-app/src/main.rs": {
+      "lines": [
+        3,
+        15
+      ],
+      "sha256": "8915c58fb429d396ef610618ff6b35c4e9fd3fdd72db90d427fdb7752403b3e0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/runtime-only/runtime-compact-runner/runner.rs": {
+      "lines": [
+        104
+      ],
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    },
+    "review/qualification/runtime-only/runtime-runner/runner.rs": {
+      "lines": [
+        104
+      ],
+      "sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+      "review_manifest_pin": true,
+      "integration_inventory_pin": true
+    }
+  },
+  "historical_after_4": {
+    "receipt": "benchmarks/related-post-gen/review/qualification/after-4/runner-aot.build.json",
+    "receipt_sha256": "cafec623670bb0790d053471593885175fd9319238c1c5be5744bf31415f84e7",
+    "source_path": "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/after-4/runner.rs",
+    "host_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0",
+    "object_path": "/private/tmp/mech-related-native-fixed-frame-arenas-runners-20261106-v2/after-4/build/object.o",
+    "object_sha256": "53a54413a7defd37c1ca9a966044c51f47292a442f5697576d4d17f6096e7d2a",
+    "linked_executable_sha256": "d2bcba34105722ed7d87b998db59d10dca40c3acb4c0f967e1dfca904aaf55d0",
+    "included_and_linked_roots_coincide_in_receipt": true
+  },
+  "producer_proof_paths": {
+    "current_host_builder": "benchmarks/related-post-gen/build-host.py",
+    "historical_producer": "benchmarks/related-post-gen/review/recorded-recipes/compiler/compiler-facts.rs",
+    "restore_contract": "hosts/gpu/src/native_artifact/program/linked.rs",
+    "checked_generator_binding": "hosts/gpu/src/native_artifact/program/application.rs",
+    "checked_generator_pins": "hosts/gpu/src/native_artifact/templates/linked_build.rs.in",
+    "generated_launcher": "hosts/gpu/src/native_artifact/launch/managed.rs"
+  }
+}

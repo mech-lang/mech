@@ -1,0 +1,120 @@
+{
+  "decision": "Reject",
+  "rejected": [
+    "prefix-periodic-16384: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "source-frame-copies-71192-full-forward: libdeflate floor 61 missed (control 57, candidate 57)",
+    "empty: combined and individual run bounds conflict: source-frame-copies-71192-full-forward",
+    "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved",
+    "heldout-slides-65537: regression bound or duplicate-control repeatability unresolved",
+    "prefix-natural-131072: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+    "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+    "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+    "prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved",
+    "prefix-repeated-32768: regression bound or duplicate-control repeatability unresolved",
+    "prefix-repeated-32769: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "runs": [
+    {
+      "id": "source-frame-copies-71192-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 80,
+            "mech-experiment": 79
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 73,
+            "mech-experiment": 72
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 57,
+            "mech-experiment": 57
+          },
+          "precision_supported_wins": {
+            "mech-control": 57,
+            "mech-experiment": 57
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 51,
+            "mech-experiment": 51
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 51,
+            "mech-experiment": 51
+          }
+        }
+      }
+    },
+    {
+      "id": "source-frame-copies-71192-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 60,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 60,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [
+            "reymont-prefix-16384"
+          ],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 54,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 54,
+            "mech-experiment": 55
+          }
+        }
+      }
+    }
+  ]
+}

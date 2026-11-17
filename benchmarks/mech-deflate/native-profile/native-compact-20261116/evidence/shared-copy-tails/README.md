@@ -25,8 +25,16 @@ Both Mech builds use the same prebuilt compiler with fixed link inputs.
 The predeclared distinct-control study bounds the 4 KiB random follow-up at
 **+0.093%** with a 90% interval from **+0.064% to +0.123%**. The original
 adverse reverse order remains in the combined replay. The focused candidate
-remains **Unresolved** under v1 and has two full orders ahead.
+remains **Unresolved** under v1 in the historical 17-case campaign.
 [Duplicate-control replay](repeatability/combined-replay.json)
+
+The full campaign records **81/81 Roc** in both orders and **57/81 then
+61/81 libdeflate** for this candidate. The exact control records 57 and
+60 libdeflate wins. The candidate preserves every individual control win.
+The full runtime validator reports **Reject** after the established
+`prefix-periodic-16384` slowdown. The unchanged control's shift from the
+previous full orders and the adverse order remain in the archive.
+[Both full raw orders and validator replay](../frame-copies-71192-runtime/README.md)
 
 Rebuild from the repository root on Apple ARM64.
 
