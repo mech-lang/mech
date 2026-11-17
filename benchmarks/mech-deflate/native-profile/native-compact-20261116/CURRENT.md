@@ -1,47 +1,46 @@
 # PR #993 current status
 
-Maintained compiler source `c93ed0e1a726ff7f64164533593349f04fdfa12c` is on PR #993, stacked on #973 at
+Maintained compiler source `204656da92013ce24dabb115685a75fc930c7c46` is on PR #993, stacked on #973 at
 `9087b1f07727a9bfcb7c09059f48edaca6dc2301`. These results use Apple M1, macOS 15.6.1 and arm64.
 [Machine-readable scorecard](scorecard.json)
 
 ## Current matched deployment build
 
-| Measurement | Mech | Roc | libdeflate |
+| Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.59466 s | 2.97795 s | 0.48074 s |
-| Source through strip | 2.60531 s | 2.98852 s | 0.49123 s |
+| Source through final link | 2.57808 s | 2.99395 s | 0.48620 s |
+| Source through strip | 2.58878 s | 3.00439 s | 0.49685 s |
 | Encoder text | 71,192 B | 57,696 B | 37,080 B |
-| Stripped executable used in timing | 292,568 B | 191,912 B | 155,752 B |
+| Stripped executable | 292,568 B | 191,912 B | 155,752 B |
 
-Mech builds through the final link in **0.870× Roc** and
-**5.405× libdeflate** time. Encoder text is
-**1.234× Roc** and **1.920× libdeflate**.
-Compilers, allocator and deployment support are prebuilt. The byte-identical
-71,192 B worker has **81/81 Roc** and **61/81 libdeflate** wins in both full
-orders. [Matched builds](evidence/sealed-ascii-graphemes/README.md) ·
+Mech saves a paired **33.8 ms** through final linking and builds
+in **0.861× Roc** and **5.297× libdeflate**
+time. Its encoder text is **1.234× Roc** and
+**1.920× libdeflate**. Compilers, allocator and fixed
+deployment support are prebuilt. The identical worker carries the existing
+**81/81 Roc** and **61/81 libdeflate** runtime results in both full orders.
+[Reused flow analyses and all matched builds](evidence/verified-flowgraphs/README.md) ·
 [Runtime qualification](evidence/frame-copy-v2/README.md)
 
-The separate phase run reports **812.7 ms Mech** and
-**3.0 ms Roc**. Mech includes indexing and its strict check.
-[Parser phase plan](evidence/sealed-ascii-graphemes/parser-phase-plan.json)
+The preceding dedicated parser-phase comparison reports **813 ms Mech**
+and **3 ms Roc**. Mech's interval includes indexing and its strict check.
+[Parser-phase plan and observations](evidence/sealed-ascii-graphemes/README.md)
 
 ## Whole-build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
-| Parser | 0.812 s | 0.75 | 0.35 | 0.13 |
-| Native preparation through object | 1.420 s | 0.95 | 0.48 | 0.22 |
-| Source semantic frontend | 0.226 s | 0.18 | 0.09 | 0.04 |
-| Catalog initialization | 0.062 s | 0.05 | 0.02 | 0.01 |
-| Artifact, encoding, link and other work | 0.071 s | 0.07 | 0.06 | 0.05 |
-| **Total** | 2.595 s | 2.00 | 1.00 | 0.45 |
+| Parser | 0.815 s | 0.75 | 0.35 | 0.13 |
+| Native preparation through object | 1.386 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.233 s | 0.18 | 0.09 | 0.04 |
+| Catalog initialization | 0.066 s | 0.05 | 0.02 | 0.01 |
+| Artifact, encoding, link and other work | 0.074 s | 0.07 | 0.06 | 0.05 |
+| **Total** | 2.578 s | 2.00 | 1.00 | 0.45 |
 
-The matched scanner ablation removes **98.5 ms**
-through linking. The remaining gap to libdeflate is **2.114 s**.
-The 0.45 s working budget requires **2.145 s** less elapsed time.
-Removing all parse and native time from each trial leaves
-**0.358 s**. The milestone columns
-allocate elapsed time, and most of the remaining gap needs a tested mechanism.
+Mech needs **2.128 s**
+less elapsed time to reach the 0.45 s working budget. The measured compile
+change carries over the existing score. A runtime gain is needed to restore
+62/81 against libdeflate.
 
 ## Which build to use
 
@@ -112,15 +111,21 @@ both orders. The earlier transient's cause remains open.
 
 ## Active work
 
-- **Native compiler.** Measure reuse of CFG and dominator graphs at successive
-  root verifier checkpoints with identical ordered flow. Preserve first and
-  standalone checks and the full IR verifier after mutations.
-  [Current trace and scoped experiment](evidence/native-pass-attribution/README.md)
-- **Parser.** Price one family of losing base alternatives by deriving safe
-  exclusions from canonical productions. Start with adjacent rejected
-  alternatives at the same offset in the base choice continuation.
-  Preserve the winner, ties, diagnostics, event and cache order, and logical charges.
-  [Post-change stack samples](evidence/sealed-ascii-graphemes/residual/summary.json)
+- **Native compiler.** Close graph reuse for freshly built and post-phi
+  checks. Look for compilation work that can be avoided before constructing
+  specialized bodies and their proof contexts. The current measurements give
+  88.8 ms for tail layout and 77.7 ms for guard derivation.
+  [Graph census](evidence/verified-flowgraphs/diagnostics/summary.json) ·
+  [Native preparation timings](evidence/native-pass-attribution/README.md)
+- **Parser.** Derive a bounded failure prefix for identifier-symbol choices
+  from their canonical definitions. The census identifies 134,387 eligible
+  identifier-symbol arms. Preserve exact parser work, limits and cache order
+  and measure the ordinary parser separately from instrumentation.
+  [Parser census](evidence/verified-flowgraphs/parser-choice-census/report.json)
+- **Runtime and emitted size.** The nearest missed win is natural 8 KiB,
+  about 4% away from parity. Price repeated work in the existing composed
+  scorer. Retain the existing checked carrier and validate both 81-case
+  orders for any changed object. [Case and atom bindings](evidence/verified-flowgraphs/runtime-target.json)
 - **Source semantic frontend.** Attribute declaration registration,
   body/name/overload lowering, schema and constant finalization, and
   requirement canonicalization by the 2.0 s milestone review.
