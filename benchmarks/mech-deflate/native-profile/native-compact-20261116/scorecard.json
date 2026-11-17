@@ -8383,5 +8383,361 @@
       }
     ],
     "evidence": "evidence/verified-flowgraphs/README.md"
+  },
+  "caller_address_scorer": {
+    "source_pin": "176a80bde45bdc0c137ddd797e5961c42f23d56c",
+    "release_selection": "frame-copies",
+    "decision": "Diagnostic only. Measured stack exceeds the declared 5280-byte nonregression limit.",
+    "reference_worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+    "reference_text_bytes": 71192,
+    "reference_text_x": {
+      "roc": 1.2339156960621187,
+      "libdeflate": 1.9199568500539375
+    },
+    "experiment": "caller-addresses-refined",
+    "text_bytes": 71048,
+    "text_bytes_removed": 144,
+    "text_x": {
+      "roc": 1.2314198557958957,
+      "libdeflate": 1.9160733549083064
+    },
+    "checked_root_frame_bytes": {
+      "control": 3728,
+      "caller-addresses-refined": 3744
+    },
+    "peak_stack_bytes": {
+      "control": 5280,
+      "caller-addresses-refined": 5296
+    },
+    "shared_phase_input_bytes": {
+      "control": 440,
+      "caller-addresses-refined": 440
+    },
+    "exact_successes": 162,
+    "checked_failures": [
+      "empty",
+      "one-stored",
+      "seven-stored-prefix",
+      "prefix-periodic-4096",
+      "prefix-repeated-16384",
+      "heldout-mixed-131073"
+    ],
+    "target_case": "prefix-natural-8192",
+    "promotion_floor": {
+      "roc": 81,
+      "libdeflate": 62
+    },
+    "next_target": {
+      "libdeflate": 63,
+      "margins": [
+        {
+          "case": "prefix-natural-8192",
+          "x_libdeflate": {
+            "forward": 0.9975787609315162,
+            "reverse": 1.0055485593999691
+          },
+          "worst_order_reduction_needed": 0.005517942766762096
+        },
+        {
+          "case": "prefix-natural-4096",
+          "x_libdeflate": {
+            "forward": 1.0900574340815983,
+            "reverse": 1.0965166705560796
+          },
+          "worst_order_reduction_needed": 0.08802116114398228
+        }
+      ],
+      "short_natural_profile": {
+        "case": "prefix-natural-4096",
+        "median_instrumented_ns": 975291.0,
+        "scorer": {
+          "calls": 5,
+          "median_ns": 468001,
+          "median_fraction": 0.47256878989317724
+        },
+        "matcher": {
+          "calls": 1,
+          "median_ns": 292500,
+          "median_fraction": 0.2985962975824321
+        }
+      }
+    },
+    "unpadded_peak_stack": {
+      "control": 5280,
+      "horizontal-reverse-layout-unpadded": 5280
+    },
+    "unpadded_focus": {
+      "kind": "focus",
+      "policy_decision": "Unresolved",
+      "runs": [
+        {
+          "order": "forward",
+          "cases": {
+            "prefix-natural-8192": {
+              "mech-control": 1.0291901756038195,
+              "mech-experiment": 1.0004579371069662
+            },
+            "320-overlap": {
+              "mech-control": 0.9896922326615825,
+              "mech-experiment": 0.9898471915235778
+            },
+            "random-1024": {
+              "mech-control": 1.0524269875803844,
+              "mech-experiment": 1.0388980619438741
+            },
+            "prefix-periodic-1024": {
+              "mech-control": 0.9870075905771973,
+              "mech-experiment": 0.9855100977144702
+            }
+          },
+          "lost_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "gained_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "wins": {
+            "roc": {
+              "mech-control": 15,
+              "mech-experiment": 15
+            },
+            "libdeflate": {
+              "mech-control": 11,
+              "mech-experiment": 11
+            }
+          }
+        },
+        {
+          "order": "reverse",
+          "cases": {
+            "prefix-natural-8192": {
+              "mech-control": 1.0399866887763696,
+              "mech-experiment": 1.0073545724656325
+            },
+            "320-overlap": {
+              "mech-control": 0.9892545389294239,
+              "mech-experiment": 0.9880813933327107
+            },
+            "random-1024": {
+              "mech-control": 0.9600783971020704,
+              "mech-experiment": 0.9588714069670694
+            },
+            "prefix-periodic-1024": {
+              "mech-control": 0.9893789047937362,
+              "mech-experiment": 0.9885559557120458
+            }
+          },
+          "lost_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "gained_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "wins": {
+            "roc": {
+              "mech-control": 15,
+              "mech-experiment": 15
+            },
+            "libdeflate": {
+              "mech-control": 12,
+              "mech-experiment": 12
+            }
+          }
+        }
+      ],
+      "rejected": [],
+      "unresolved": [
+        "both complete timing orders are required"
+      ],
+      "achieves_target": false,
+      "preserves_peer_wins": true
+    },
+    "focus_comparison": {
+      "kind": "focus",
+      "policy_decision": "Unresolved",
+      "runs": [
+        {
+          "order": "forward",
+          "cases": {
+            "prefix-natural-8192": {
+              "mech-control": 1.0292618896884087,
+              "mech-experiment": 0.9940956005152867
+            },
+            "320-overlap": {
+              "mech-control": 0.9908283386486436,
+              "mech-experiment": 0.990894280916628
+            },
+            "random-1024": {
+              "mech-control": 0.958418141975285,
+              "mech-experiment": 0.9568474222986736
+            },
+            "prefix-periodic-1024": {
+              "mech-control": 0.9840468043567837,
+              "mech-experiment": 0.9851543190282541
+            }
+          },
+          "lost_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "gained_cases": {
+            "roc": [],
+            "libdeflate": [
+              "prefix-natural-8192"
+            ]
+          },
+          "wins": {
+            "roc": {
+              "mech-control": 15,
+              "mech-experiment": 15
+            },
+            "libdeflate": {
+              "mech-control": 12,
+              "mech-experiment": 13
+            }
+          }
+        },
+        {
+          "order": "reverse",
+          "cases": {
+            "prefix-natural-8192": {
+              "mech-control": 1.042654329697216,
+              "mech-experiment": 1.0024790292471764
+            },
+            "320-overlap": {
+              "mech-control": 0.9905416930188025,
+              "mech-experiment": 0.9913067994003542
+            },
+            "random-1024": {
+              "mech-control": 0.955691397952493,
+              "mech-experiment": 0.9561347616684518
+            },
+            "prefix-periodic-1024": {
+              "mech-control": 0.9917900391448184,
+              "mech-experiment": 0.9879255164378898
+            }
+          },
+          "lost_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "gained_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "wins": {
+            "roc": {
+              "mech-control": 15,
+              "mech-experiment": 15
+            },
+            "libdeflate": {
+              "mech-control": 12,
+              "mech-experiment": 12
+            }
+          }
+        }
+      ],
+      "rejected": [],
+      "unresolved": [
+        "both complete timing orders are required"
+      ],
+      "achieves_target": false,
+      "preserves_peer_wins": true
+    },
+    "full_comparison": {
+      "kind": "full",
+      "policy_decision": "Retain",
+      "runs": [
+        {
+          "order": "forward",
+          "cases": {
+            "prefix-natural-8192": {
+              "mech-control": 1.0336089101211874,
+              "mech-experiment": 0.9975787609315162
+            },
+            "320-overlap": {
+              "mech-control": 0.9921794055778024,
+              "mech-experiment": 0.9923082521867149
+            },
+            "random-1024": {
+              "mech-control": 0.9590106550548715,
+              "mech-experiment": 0.9595424074818745
+            },
+            "prefix-periodic-1024": {
+              "mech-control": 0.9797436878142943,
+              "mech-experiment": 0.9801130010790274
+            }
+          },
+          "lost_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "gained_cases": {
+            "roc": [],
+            "libdeflate": [
+              "prefix-natural-8192"
+            ]
+          },
+          "wins": {
+            "roc": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "libdeflate": {
+              "mech-control": 61,
+              "mech-experiment": 62
+            }
+          }
+        },
+        {
+          "order": "reverse",
+          "cases": {
+            "prefix-natural-8192": {
+              "mech-control": 1.0418035666650298,
+              "mech-experiment": 1.0055485593999691
+            },
+            "320-overlap": {
+              "mech-control": 0.990645081389213,
+              "mech-experiment": 0.9967725393582779
+            },
+            "random-1024": {
+              "mech-control": 0.9547600056984126,
+              "mech-experiment": 0.9563448914112748
+            },
+            "prefix-periodic-1024": {
+              "mech-control": 0.9780869148246633,
+              "mech-experiment": 0.9809531982685206
+            }
+          },
+          "lost_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "gained_cases": {
+            "roc": [],
+            "libdeflate": []
+          },
+          "wins": {
+            "roc": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "libdeflate": {
+              "mech-control": 61,
+              "mech-experiment": 61
+            }
+          }
+        }
+      ],
+      "rejected": [],
+      "unresolved": [],
+      "achieves_target": false,
+      "preserves_peer_wins": true
+    },
+    "evidence": "evidence/caller-address-scorer/README.md"
   }
 }

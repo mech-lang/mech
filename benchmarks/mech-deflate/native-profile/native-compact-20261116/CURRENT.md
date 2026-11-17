@@ -109,6 +109,26 @@ both orders. The earlier transient's cause remains open.
 [CI for the measured source and evidence](https://github.com/mech-lang/mech/actions/runs/44118007456)
 · [Related Posts binding audit](evidence/related-post-linked-binding/README.md)
 
+## Runtime scorer study
+
+The caller-address and layout experiment reduces encoder text by **144 B**
+to **71,048 B**, or **1.231× Roc** and
+**1.916× libdeflate**. Its full runtime orders
+and checked-failure receipts are below. The caller-address candidate increases measured peak stack from **5,280 B to 5,296 B**, above the study's
+nonregression bound. Both candidates preserve existing individual wins in their respective
+screens. The measured deployment build uses the qualified frame-copy recipe.
+The forward result sets 62/81 as the next libdeflate floor. The next target
+is 63/81 while holding 81/81 Roc.
+
+| Scope | Order | Control wins vs Roc/C | Candidate wins vs Roc/C | Control 8 KiB vs C | Candidate 8 KiB vs C |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Focus | Forward | 15/12 | 15/13 | 1.0293× | 0.9941× |
+| Focus | Reverse | 15/12 | 15/12 | 1.0427× | 1.0025× |
+| Full | Forward | 81/61 | 81/62 | 1.0336× | 0.9976× |
+| Full | Reverse | 81/61 | 81/61 | 1.0418× | 1.0055× |
+
+[Raw runtime observations, checked stack and compiler patch](evidence/caller-address-scorer/README.md)
+
 ## Active work
 
 - **Native compiler.** Close graph reuse for freshly built and post-phi

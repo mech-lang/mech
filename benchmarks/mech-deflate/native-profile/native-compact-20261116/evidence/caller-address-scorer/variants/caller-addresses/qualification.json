@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-runtime/caller-addresses/bound/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-runtime/caller-addresses/bound/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "2e76fe9145ee234b89cda5a58ad0bbbf6cf6e4febf1bbef41f2819599f7edfac",
+  "metadata_sha256": "d591c39bde5b0857a85ec08df1622cf7b6478b08c8daf5ea9f54bf9caa352e55"
+}

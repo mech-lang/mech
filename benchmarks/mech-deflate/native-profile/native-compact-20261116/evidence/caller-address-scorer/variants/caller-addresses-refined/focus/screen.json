@@ -1,0 +1,92 @@
+{
+  "kind": "focus",
+  "policy_decision": "Unresolved",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.0292618896884087,
+          "mech-experiment": 0.9940956005152867
+        },
+        "320-overlap": {
+          "mech-control": 0.9908283386486436,
+          "mech-experiment": 0.990894280916628
+        },
+        "random-1024": {
+          "mech-control": 0.958418141975285,
+          "mech-experiment": 0.9568474222986736
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9840468043567837,
+          "mech-experiment": 0.9851543190282541
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": [
+          "prefix-natural-8192"
+        ]
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 12,
+          "mech-experiment": 13
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.042654329697216,
+          "mech-experiment": 1.0024790292471764
+        },
+        "320-overlap": {
+          "mech-control": 0.9905416930188025,
+          "mech-experiment": 0.9913067994003542
+        },
+        "random-1024": {
+          "mech-control": 0.955691397952493,
+          "mech-experiment": 0.9561347616684518
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9917900391448184,
+          "mech-experiment": 0.9879255164378898
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 12,
+          "mech-experiment": 12
+        }
+      }
+    }
+  ],
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required"
+  ],
+  "achieves_target": false,
+  "preserves_peer_wins": true
+}
