@@ -1,0 +1,85 @@
+{
+  "source": "00bb25b9e936efeab666e1738007ff3707ae1050",
+  "base": "d03f097b06c8386822a8063de9826715a9c1e897",
+  "decision": "Retain",
+  "evidence": "evidence/sealed-ascii-literal-miss/README.md",
+  "median_seconds": {
+    "mech-control": {
+      "source": 2.536256895866245,
+      "link": 0.034898229176178575,
+      "source_through_link": 2.571451166179031,
+      "strip": 0.010663354303687811,
+      "source_through_strip": 2.5823020827956498
+    },
+    "mech-ascii-miss": {
+      "source": 2.5052066668868065,
+      "link": 0.035248749889433384,
+      "source_through_link": 2.5410396044608206,
+      "strip": 0.01056627044454217,
+      "source_through_strip": 2.5517247084062546
+    },
+    "roc": {
+      "source": 2.9531799373216927,
+      "link": 0.034346646163612604,
+      "source_through_link": 2.988465166417882,
+      "strip": 0.01038241689093411,
+      "source_through_strip": 2.9989419165067375
+    },
+    "libdeflate": {
+      "source": 0.4467482711188495,
+      "link": 0.03373541706241667,
+      "source_through_link": 0.48068493767641485,
+      "strip": 0.010281312512233853,
+      "source_through_strip": 0.49113997910171747
+    }
+  },
+  "paired_source_through_link_x": {
+    "mech-control": 0.9885794455917516,
+    "roc": 0.8500676775286853,
+    "libdeflate": 5.2896337140604075
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 0.8133630625,
+      "catalog": 0.0656924375,
+      "frontend": 0.2324212705,
+      "artifact": 0.0070356875,
+      "encode": 0.0025483955,
+      "native": 1.3858827495
+    },
+    "mech-ascii-miss": {
+      "parse": 0.7857540005,
+      "catalog": 0.06386568749999999,
+      "frontend": 0.2325346665,
+      "artifact": 0.006977771000000001,
+      "encode": 0.0025478125,
+      "native": 1.3861006045000002
+    }
+  },
+  "source_through_link_paired_ms_saved": 29.33539543300867,
+  "paired_savings_ms": [
+    46.276249922811985,
+    36.20733320713043,
+    28.578083030879498,
+    30.092707835137844,
+    26.24183287844062,
+    28.334375470876694,
+    42.5353329628706,
+    17.99604156985879
+  ],
+  "standalone_paired_ms_saved": 28.526021000000014,
+  "standalone_paired_ratio": 0.9664354290701095,
+  "worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+  "object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "encoder_text_bytes": 71192,
+  "runtime_wins": {
+    "roc": [
+      81,
+      81
+    ],
+    "libdeflate": [
+      61,
+      61
+    ]
+  }
+}
