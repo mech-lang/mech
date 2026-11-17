@@ -11,6 +11,12 @@ checkout-relative reproduction commands. No smaller candidate has been promoted.
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 
+The canonical parser storage update reduces the smaller Mech encoder's matched
+source-through-link build to **4.18694 s** on Apple M1. Its
+complete build takes **1.402× Roc** and
+**8.718× libdeflate** time. The pinned benchmark workers
+match byte for byte. [Current parser results](evidence/compact-parser-storage/README.md)
+
 The accepted runtime floors are **81/81 against Roc and 61/81 against libdeflate**.
 62 is an improvement target. The older raw reports retain the former 62 floor;
 that wording is historical. Historical evidence has not been edited.

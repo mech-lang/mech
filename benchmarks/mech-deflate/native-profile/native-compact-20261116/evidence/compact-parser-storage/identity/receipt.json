@@ -1,0 +1,241 @@
+{
+  "parent": "e7e54b488641a4665bdb5221f124ff028ddca5ca",
+  "input_snapshots": 60,
+  "source_hashes": {
+    "compiler.mec": "ace0610678d31b34ffcdabb39595a61acd5daf7cc2d3107ec2133a0e35e09e31",
+    "config.mec": "1bc2b14a10c595b6ff316e8ecb4cfa2bd0bd481d9986f8bb67c244c711aaaabb",
+    "document.mec": "b552793c637a74cc50e74f297a6d70d7e88a8a589ea7fcebd28341fdb5056099",
+    "empty.mec": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "executable.mec": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+    "interactive.mec": "ec914a29323bac5cf1860c4db3b5cfc69cfa7249f892bb2d044c9d976a5ee928",
+    "malformed.mec": "a690212a34a5eaab0a3b1df7991c2fd495484dc9ed2f204735d858618b215227",
+    "resolver-index.mec": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+    "wasm-document.mec": "45e97cf7cd0b1f04a7d70de7a6d8e2e50f801cf003a9dc574d7295d05599ea25",
+    "unicode-and-numeric.mec": "3a7c0c6a8525b3d806a26e049b19ee9a9662afac1f6455809684f57ae222db15"
+  },
+  "snapshot_comparison": {
+    "control": {
+      "syntax_rlib_sha256": "c2d6b06bddd07a9d0895d8b6075e084c9f1a3a78a92f18b86464042e90ea67a3",
+      "linker": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "codegen-units=16",
+        "-C",
+        "embed-bitcode=no",
+        "-L",
+        "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+        "-D",
+        "warnings",
+        "-L",
+        "native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/build/libmimalloc-sys-2b75cf156f3cf9a0/out",
+        "--extern",
+        "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libsha2-58c79a6f6dca8f56.rlib",
+        "--extern",
+        "mimalloc=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libmimalloc-14ebbbc9ab4f8cc1.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/current/libmech_syntax.rlib",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/snapshot-probe.rs",
+        "-o",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/snapshot-control",
+        "--crate-name",
+        "snapshot_probe"
+      ],
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/snapshot-control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/compiler.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/config.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/document.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/empty.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/interactive.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/malformed.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/wasm-document.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/unicode-and-numeric.mec"
+      ],
+      "digest": "ecb8587b1e25403485e8279188f3b58ed06c49bb4012158458843724e95db02e"
+    },
+    "combined": {
+      "syntax_rlib_sha256": "d39606fd16956020397d18b4ec2678b63022691ae0443418538bb4ae8a6eeb91",
+      "linker": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "-C",
+        "opt-level=3",
+        "-C",
+        "codegen-units=16",
+        "-C",
+        "embed-bitcode=no",
+        "-L",
+        "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+        "-D",
+        "warnings",
+        "-L",
+        "native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/build/libmimalloc-sys-2b75cf156f3cf9a0/out",
+        "--extern",
+        "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+        "--extern",
+        "sha2=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libsha2-58c79a6f6dca8f56.rlib",
+        "--extern",
+        "mimalloc=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libmimalloc-14ebbbc9ab4f8cc1.rlib",
+        "--extern",
+        "mech_syntax=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libmech_syntax-d6ccf61cc22fcc4b.rlib",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/snapshot-probe.rs",
+        "-o",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/snapshot-combined",
+        "--crate-name",
+        "snapshot_probe"
+      ],
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/snapshot-combined",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/compiler.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/config.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/document.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/empty.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/interactive.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/malformed.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/wasm-document.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/unicode-and-numeric.mec"
+      ],
+      "digest": "ecb8587b1e25403485e8279188f3b58ed06c49bb4012158458843724e95db02e"
+    }
+  },
+  "large_tree": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/large-tree/parser",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/large-tree/tree.json"
+    ],
+    "events": 718353,
+    "parse_seconds": 2.131329208,
+    "parser_steps": 3967302,
+    "source_bytes": 243209,
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+  },
+  "large_tree_link": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "codegen-units=16",
+    "-C",
+    "embed-bitcode=no",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+    "-D",
+    "warnings",
+    "-L",
+    "native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/build/libmimalloc-sys-2b75cf156f3cf9a0/out",
+    "--extern",
+    "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+    "--extern",
+    "sha2=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libsha2-58c79a6f6dca8f56.rlib",
+    "--extern",
+    "mimalloc=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libmimalloc-14ebbbc9ab4f8cc1.rlib",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libmech_syntax-d6ccf61cc22fcc4b.rlib",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-journal-batch-study/probe.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/large-tree/parser"
+  ],
+  "frontends": {
+    "control": {
+      "sha256": "7ad7aa9b422266367568f06cbe4ac1f52346e78b146bba0f23139f8a978619eb",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-control",
+        "frontend"
+      ],
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "combined": {
+      "sha256": "e6ce34300f990bba956fafd68505fd7d762ce5804ba0ce5c46791e5a7503a3db",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined",
+        "frontend"
+      ],
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    }
+  },
+  "native": {
+    "retained": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-retained",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/retained",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+      ],
+      "artifacts": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+      },
+      "pinned_reference": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-retained",
+      "linked_smokes": 162
+    },
+    "smaller": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-smaller",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/smaller",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+      ],
+      "artifacts": {
+        "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+        "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+        "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+      },
+      "pinned_reference": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/pinned-smaller",
+      "linked_smokes": 162
+    },
+    "aligned": {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/aligned-register-spills-native/final-candidate",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/aligned",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/identity/frontend-combined/program.mecb",
+        "MECH_COMPACT_INLINE_SINGLE_CALLS=preselected"
+      ],
+      "artifacts": {
+        "program.o": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+        "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+        "mech-worker": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91"
+      },
+      "pinned_reference": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/aligned-register-spills-native/final-candidate",
+      "linked_smokes": 162
+    }
+  },
+  "emitter_sha256": "1dfaef4f798106603f688ebe26b6c55302be6396ec728fede8f2a66229364bf1"
+}
