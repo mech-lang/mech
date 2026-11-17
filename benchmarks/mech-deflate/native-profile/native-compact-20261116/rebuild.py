@@ -64,6 +64,10 @@ parser.add_argument(
     '--preselect-root-inlining', action='store_true',
     help='choose single-call checked-root helpers before native code generation',
 )
+parser.add_argument(
+    '--skip-refused-general-ssa', action='store_true',
+    help='skip general SSA for eligible checked private vector phases already omitted from the object',
+)
 args=parser.parse_args()
 out=args.output.resolve();out.mkdir(parents=True,exist_ok=False)
 target=(args.target_dir or out/'compiler').resolve()
@@ -117,6 +121,8 @@ profiles=recipe.get(variant_key+'_profiles',recipe['profiles'])
 flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in profiles)
 if args.preselect_root_inlining:
     flags['MECH_COMPACT_INLINE_SINGLE_CALLS'] = 'preselected'
+if args.skip_refused_general_ssa:
+    flags['MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA'] = '1'
 if args.reuse_equivalent_vector_ir:
     flags['MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR'] = '1'
 if args.variant=='cold-tails' or fresh_owner_cold_tails:

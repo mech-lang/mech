@@ -26615,8 +26615,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "b3f53823166fbc256fb78ef9da260e61e1519f37c6c35e116dcebc38ae04bbeb",
-      "bytes": 11564
+      "sha256": "edd41ceb36ff37234ac1d0783e4b9e243034b56f914fb3f90def8fe19efea6a2",
+      "bytes": 11837
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
@@ -26854,9 +26854,19 @@
       "bytes": 5272
     },
     {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs",
+      "sha256": "429bdc68dc90e990f7ce3768b589a819f38ff846a277830fb5f73def648047c0",
+      "bytes": 39079
+    },
+    {
       "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_minimal.rs",
       "sha256": "e9fdb3c64ea95939f993f31bfa7510fd58fff6f3be408c86f2a0a20ac54e0270",
       "bytes": 17396
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_bounds.rs",
+      "sha256": "3e5a02064b8bb68cf84c2e815660b43d38d7331c29d78ec604d0874a86e89451",
+      "bytes": 12770
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_traversal.rs",
@@ -26905,8 +26915,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/arrays.rs",
-      "sha256": "353e7b971bea8df16f28e3df1bf59155e2ac2764199d430a3f8d08d89310d643",
-      "bytes": 42000
+      "sha256": "aff6cbd2925cb8516838138ab85872bc71b186248eb67acbcfddec1290572b26",
+      "bytes": 43506
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/backing_owners/mod.rs",
@@ -27050,8 +27060,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
-      "sha256": "003ef03e0f100c77990c1eead2bb5c67c1c1b644398cb9f9af50299f6c4b310d",
-      "bytes": 63073
+      "sha256": "bbe80f667f7ccc84b31a144ff9e5844d59d441ca47fe79c6245a593b44992bad",
+      "bytes": 64715
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs",
@@ -27075,8 +27085,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phases.rs",
-      "sha256": "2eee0c39ffc04b34c91f454da80599d3ba77d14a9a0973bb1d2dacd840affdc7",
-      "bytes": 56809
+      "sha256": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+      "bytes": 58566
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/private_chains.rs",

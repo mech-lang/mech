@@ -9,6 +9,29 @@ use mech_engine::native_artifact::{
 };
 use std::collections::BTreeMap;
 
+pub(super) fn checked_child_bounds(
+    code: CodePlan<'_>,
+    proof: &Proof,
+    terminal_fallbacks: bool,
+) -> Option<Vec<(usize, u64)>> {
+    if !proof
+        .phase
+        .as_ref()
+        .is_some_and(|phase| phase.checked_children)
+    {
+        return None;
+    }
+    // A reduction version requires child prepayment, which declines checked
+    // children. These phases only have the assertion floors from derive.
+    Some(derive(
+        code,
+        proof,
+        &[],
+        &Facts::default(),
+        terminal_fallbacks,
+    ))
+}
+
 pub(super) fn derive(
     code: CodePlan<'_>,
     proof: &Proof,
