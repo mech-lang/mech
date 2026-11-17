@@ -96,6 +96,7 @@ impl CacheWork {
         self.reused += work.reused;
     }
 }
+#[derive(Default)]
 pub(crate) struct Sink {
     at: usize,
     end: usize,
@@ -112,14 +113,20 @@ impl Sink {
         Self {
             at: start,
             end,
-            frames: Vec::new(),
-            token: None,
-            root: None,
-            discarded_depth: 0,
-            discarded_root: false,
             event_nodes: collect_event_nodes.then(BTreeMap::new),
-            work: CacheWork::default(),
+            ..Self::default()
         }
+    }
+
+    fn begin_cache_request(&mut self, start: usize, end: usize) {
+        // The previous request completed before the next one starts. Keep its
+        // empty frame stack so materializing another node can reuse capacity.
+        debug_assert!(self.frames.is_empty() && self.token.is_none() && self.root.is_none());
+        debug_assert!(self.discarded_depth == 0 && self.event_nodes.is_none());
+        self.at = start;
+        self.end = end;
+        self.discarded_root = false;
+        self.work = CacheWork::default();
     }
     fn element(&mut self, element: GreenElement) -> Result<(), BuildError> {
         if let Some(frame) = self.frames.last_mut() {
@@ -355,7 +362,8 @@ impl Sink {
 #[derive(Default)]
 pub(crate) struct TreeCache {
     queue: VecDeque<Request>,
-    active: Option<(Request, Sink)>,
+    active: Option<Request>,
+    sink: Sink,
     // Small one-shot requests own only their immutable event range. Share
     // storage in request order so none of them forces journal page copies.
     copied_events: VecDeque<Event>,
@@ -398,8 +406,8 @@ impl TreeCache {
     }
     pub fn total_work(&self) -> CacheWork {
         let mut work = self.work;
-        if let Some((_, sink)) = &self.active {
-            work.accumulate(sink.work);
+        if self.active.is_some() {
+            work.accumulate(self.sink.work);
         }
         work
     }
@@ -432,7 +440,7 @@ impl TreeCache {
                 let request = self.queue.pop_front().expect("pending cache request");
                 // Cache publication needs the root, while the final sink
                 // collects the event map used to anchor diagnostics.
-                let mut sink = Sink::new(request.start, request.end, false);
+                self.sink.begin_cache_request(request.start, request.end);
                 if self.one_shot
                     && !matches!(current.get(request.start), Some(Event::Start { identity: Some(id), .. }) if *id == request.identity)
                     // Bound potential work before starting. Each event costs one unit.
@@ -443,7 +451,8 @@ impl TreeCache {
                 {
                     // The marker cannot receive the result. Visit the same events and
                     // consume the same work and IDs without allocating a discarded tree.
-                    let complete = sink
+                    let complete = self
+                        .sink
                         .advance_mode::<false>(
                             source,
                             request.events(&self.copied_events),
@@ -453,14 +462,15 @@ impl TreeCache {
                         )
                         .expect("completed canonical marker must materialize");
                     assert!(complete, "bounded cache accounting must complete");
-                    self.work.accumulate(sink.work);
+                    self.work.accumulate(self.sink.work);
                     self.release(request);
                     continue;
                 }
-                self.active = Some((request, sink));
+                self.active = Some(request);
             }
-            let (request, sink) = self.active.as_mut().expect("active cache request");
-            if !sink
+            let request = self.active.as_ref().expect("active cache request");
+            if !self
+                .sink
                 .advance_mode::<true>(
                     source,
                     request.events(&self.copied_events),
@@ -472,19 +482,18 @@ impl TreeCache {
             {
                 return false;
             }
+            let node = self.sink.root.take().expect("materialized root");
             let cached = CachedNode {
-                node: sink.root.as_ref().expect("materialized root").clone(),
-                range: TextRange::at(request.offset, sink.root.as_ref().expect("root").text_len),
+                range: TextRange::at(request.offset, node.text_len),
+                node,
                 end_event: request.end,
             };
-            let (request, sink) = self.active.take().expect("completed cache request");
+            let request = self.active.take().expect("completed cache request");
             let start = request.start;
             let expected_identity = request.identity;
-            let work = sink.work;
             // Release the request's snapshot before publishing the new cache
             // entry, so the completed request cannot force path copying.
             self.release(request);
-            drop(sink);
             if let Some(Event::Start {
                 identity: Some(identity),
                 cached: slot,
@@ -495,7 +504,7 @@ impl TreeCache {
                     *slot = Some(cached);
                 }
             }
-            self.work.accumulate(work);
+            self.work.accumulate(self.sink.work);
         }
     }
 }
