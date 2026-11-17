@@ -367,11 +367,11 @@ fn define_entry<M: Module>(
             let same_backing_family = matches!(
                 (&layout.ty(source.get()).kind, &layout.ty(output.get()).kind),
                 (
-                    super::layout::Kind::Array { .. },
-                    super::layout::Kind::Array { .. }
+                    super::layout::LayoutKind::Array { .. },
+                    super::layout::LayoutKind::Array { .. }
                 ) | (
-                    super::layout::Kind::SortedMap { .. },
-                    super::layout::Kind::SortedMap { .. }
+                    super::layout::LayoutKind::SortedMap { .. },
+                    super::layout::LayoutKind::SortedMap { .. }
                 )
             );
             if !same_backing_family {

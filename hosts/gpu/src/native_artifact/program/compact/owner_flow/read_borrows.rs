@@ -4,7 +4,7 @@
 use super::{OwnerFlow, contains};
 use crate::native_artifact::program::compact::{
     flow::Flow,
-    layout::{ARRAY_OWNER, Kind, Layout},
+    layout::{ARRAY_OWNER, Layout, LayoutKind},
     recipes::Recipe,
 };
 use mech_engine::native_artifact::{
@@ -121,8 +121,8 @@ impl Borrow<'_> {
         match &self.recipes[site] {
             Recipe::Read { source, output, .. } => {
                 if o.reads[site].contains(&loan) {
-                    if !matches!(self.layout.ty(source.get()).kind, Kind::Array { .. })
-                        || !matches!(self.layout.ty(output.get()).kind, Kind::Scalar { .. })
+                    if !matches!(self.layout.ty(source.get()).kind, LayoutKind::Array { .. })
+                        || !matches!(self.layout.ty(output.get()).kind, LayoutKind::Scalar { .. })
                         || self.layout.slot(source.get()) + ARRAY_OWNER != o.slots[loan]
                     {
                         return false;
