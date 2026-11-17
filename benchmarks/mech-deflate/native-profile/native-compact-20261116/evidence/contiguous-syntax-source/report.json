@@ -1,0 +1,132 @@
+{
+  "source_commit": "480b24d24acf5af2f63215b2fccfa8c4c5282e91",
+  "source_parent": "83b30c342149877d37c73d565bc54d520d2a071c",
+  "pr_973_base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "scope": "Apple M1. Source through the final executable link with prebuilt compilers, fixed runtimes and adapters.",
+  "parser_only_seconds": {
+    "before": 2.0444665415000003,
+    "candidate": 1.977618417
+  },
+  "paired_parse_reduction_fraction": 0.033511183759431074,
+  "complete_medians": {
+    "mech-control": {
+      "source_to_native": 3.9901355623733252,
+      "stage_outputs": 0.00027570873498916626,
+      "link": 0.04252477106638253,
+      "total": 4.03290474973619,
+      "compiler_peak_rss_bytes": 401784832.0,
+      "compiler_phases_seconds": {
+        "parse": 2.0859146665,
+        "catalog": 0.06579193750000001,
+        "frontend": 0.2414210625,
+        "artifact": 0.0071802294999999995,
+        "encode": 0.002646271,
+        "native": 1.5439673749999998
+      }
+    },
+    "mech-experiment": {
+      "source_to_native": 3.894217020832002,
+      "stage_outputs": 0.00026920787058770657,
+      "link": 0.04236625041812658,
+      "total": 3.938894583610818,
+      "compiler_peak_rss_bytes": 401522688.0,
+      "compiler_phases_seconds": {
+        "parse": 2.006901833,
+        "catalog": 0.058468229,
+        "frontend": 0.2401371045,
+        "artifact": 0.007144042,
+        "encode": 0.0026272505,
+        "native": 1.5424596035000002
+      }
+    },
+    "roc": {
+      "compile": 3.002812104066834,
+      "link": 0.03794210380874574,
+      "total": 3.041357604553923,
+      "compiler_peak_rss_bytes": 391610368.0
+    },
+    "libdeflate": {
+      "compile": 0.4508766254875809,
+      "link": 0.034208104480057955,
+      "total": 0.4854119166266173,
+      "compiler_peak_rss_bytes": 73629696.0
+    }
+  },
+  "complete_build_reduction_fraction": 0.023310782663915286,
+  "paired_complete_build_reduction_fraction": 0.02230675292009865,
+  "paired_complete_build_faster": 8,
+  "complete_build_x_peers": {
+    "roc": 1.2951106366817844,
+    "libdeflate": 8.114540349532966
+  },
+  "compiler_peak_rss_delta_bytes": -262144.0,
+  "sizes": {
+    "mech-control": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "executable_text_bytes": 150416,
+      "executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_bytes": 210168
+    }
+  },
+  "compiler_construction": {
+    "reused_dependencies": true,
+    "jobs": 4,
+    "seconds": 241.55
+  },
+  "compiler_sha256": {
+    "mech-control": "66f89ec69a387838bdd71a2768cc453b097766bced9594bc85da24405864b6c5",
+    "mech-experiment": "5d1a791930204bafa27b32658e738aa53eec06edd609337a3d9db106c9218109"
+  },
+  "reproduced_artifacts": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "worker_correctness": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/matched/warmup/mech-experiment/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/matched/warmup/mech-experiment/native/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "complete_smokes": 162,
+    "verified": true,
+    "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "syntax_unit_tests": "test result: ok. 534 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.72s",
+  "snapshot_checks": 60,
+  "small_bytecode_checks": {
+    "tests/fixtures/syntax-source-boundary/executable.mec": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+    "tests/fixtures/syntax-source-boundary/resolver-index.mec": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+    "src/syntax/tests/fixtures/document/accepted/unicode.mec": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c"
+  },
+  "performance_evidence": {
+    "runtime_worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "both_complete_orders": {
+      "roc": 81,
+      "libdeflate": 61,
+      "individual_wins_lost": 0
+    },
+    "runtime_component": "Unresolved at 0.5% duplicate-control repeatability on seven-stored-prefix.",
+    "report": "../bound-71768-runtime/full-and-repeat-replay.json"
+  }
+}
