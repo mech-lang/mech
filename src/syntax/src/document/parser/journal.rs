@@ -3,7 +3,8 @@
 use crate::document::retained_sequence::{Measured, RetainedSequence, UnitMeasured};
 use alloc::{sync::Arc, vec::Vec};
 use core::fmt;
-const PAGE: usize = 16;
+// Larger bounded pages amortize persistent tree traversal and allocation.
+const PAGE: usize = 32;
 struct Values<T>(Vec<T>);
 impl<T: Clone> Clone for Values<T> {
     fn clone(&self) -> Self {
@@ -103,6 +104,22 @@ impl<T> Journal<T> {
             self.tail.as_ref()?
         };
         page.0.0.get(index % PAGE)
+    }
+    /// Borrow a page containing this item, with its absolute starting index.
+    pub(crate) fn page_at(&self, index: usize) -> Option<(usize, &[T])> {
+        if index >= self.len {
+            return None;
+        }
+        if let Some(values) = &self.flat {
+            return Some((0, values.as_slice()));
+        }
+        let index = index / PAGE;
+        let page = if index == self.items.len() {
+            self.tail.as_ref()?
+        } else {
+            self.items.get(index)?
+        };
+        Some((index * PAGE, page.0.0.as_slice()))
     }
     pub(crate) fn get_with_work(&self, index: usize) -> (Option<&T>, u64) {
         if index >= self.len {
