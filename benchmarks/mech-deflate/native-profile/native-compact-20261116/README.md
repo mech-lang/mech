@@ -29,10 +29,13 @@ For new runtime campaigns, **policy v2** reports slowdowns and bases the
 runtime gate on preserved individual peer wins and both absolute floors.
 [Qualification policy v2](QUALIFICATION.md#acceptance-policy-v2)
 
-The separate owner-exchange screen emits 71,288 bytes. Both focused orders
-preserve all peer wins and v1 rejects on the empty-input timing. An
-80-byte placement variant remains unresolved under v1.
-[Both owner artifacts and the original decisions](evidence/owner-exchange-71288/README.md)
+The 71,288-byte owner-exchange worker beats Roc on all 81 cases in both
+complete v2 orders. Both Mech workers score 61/81 against libdeflate in
+the forward order and 60/81 in reverse. In reverse, the candidate loses
+the control's random-1024 win and gains 320-overlap. The runtime gate
+rejects the candidate on the individual loss. The 71,768-byte worker remains
+the reference. [Complete v2 orders and replay](evidence/owner-exchange-71288-v2/README.md)
+· [Earlier v1 focused orders](evidence/owner-exchange-71288/README.md)
 · [Match-cache source sizes](evidence/match-cache-offset-slot/README.md)
 · [Cached terminal parser experiment](evidence/cached-terminal-failures/README.md)
 
@@ -157,8 +160,14 @@ Mech's retained linked text includes **237,384 B** from Rust standard libraries,
 **52,156 B** from the benchmark adapter objects, **29,928 B** from JSON and
 serialization libraries, and **14,044 B** from inflation support. The maps
 attribute input symbols and include compiler-generated instances in the object
-that publishes them. A minimal deployment interface still needs a separate
-measurement. [Link maps and file-byte census](evidence/linked-size-census/report.json)
+that publishes them. [Benchmark link maps and file-byte census](evidence/linked-size-census/report.json)
+
+The common raw-DEFLATE deployment CLI measures **575,632 B Mech**,
+**191,920 B Roc** and **155,760 B libdeflate** after identical
+dead stripping and symbol stripping. All six links produce the exact raw
+streams for all 81 cases and inflate independently. Mech's minimal link
+still includes 199,224 B of linked Rust standard-library code.
+[Deployment source, links and verification](evidence/minimal-deployment/README.md)
 
 ## Preselected root inlining
 
