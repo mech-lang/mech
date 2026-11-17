@@ -234,10 +234,12 @@ fn apply(function: &mut Function, cfg: &ControlFlowGraph, replacements: &BTreeMa
         .keys()
         .flat_map(|&block| cfg.pred_iter(block).map(|pred| pred.inst))
         .collect::<BTreeSet<_>>();
-    for params in blocks.values() {
+    for (&block, params) in &blocks {
+        function
+            .dfg
+            .retain_block_params(block, |value| !replacements.contains_key(&value));
         for &value in params.iter().rev() {
             if let Some(&source) = replacements.get(&value) {
-                function.dfg.remove_block_param(value);
                 function.dfg.change_to_alias(value, source);
             }
         }
