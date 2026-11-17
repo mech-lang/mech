@@ -8066,6 +8066,19 @@
         "median": 0.002631578947368421,
         "hot_repetitions": 0
       }
+    },
+    "literal_census": {
+      "cache_hits": 1619590,
+      "cold_scans": 1305761,
+      "expected_unicode_calls": 1652988,
+      "actual_unicode_calls": 2614359,
+      "prefix_and_byte_compare_work": 2360833,
+      "ascii_literal_cold_scans": 1027447,
+      "ascii_expected_unicode_calls": 1360746,
+      "distinct_completed_keys": 1138773,
+      "repeated_cold_misses": 166988,
+      "unicode_calls_at_repeated_misses": 538049,
+      "distinct_static_literals": 164
     }
   }
 }

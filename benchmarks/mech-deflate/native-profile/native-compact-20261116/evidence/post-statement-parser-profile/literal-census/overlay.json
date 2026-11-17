@@ -1,0 +1,10 @@
+{
+  "original": {
+    "src/syntax/src/document/parser/literal_scan.rs": "c98b8bfd3c2bc715754a5a8aa30a82973025594c425d09f2bbcfe0fa0c8ba74b",
+    "src/syntax/src/document/parser/mod.rs": "a798c90a4cda37c501c181d12991b1400b022ff8ed6de360487ced7ab330e98a"
+  },
+  "diagnostic": {
+    "src/syntax/src/document/parser/literal_scan.rs": "e8f6c1bd5f40faad09f14cdf01e459877dcdc06da3187899870cc2efc2893161",
+    "src/syntax/src/document/parser/mod.rs": "7b85f431e6aa1f50f26de01eed628957361539ebe9df4e2bde38b6da2351de9c"
+  }
+}
