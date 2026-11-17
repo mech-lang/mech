@@ -260,13 +260,21 @@ pub fn verify_function<'a, FOI: Into<FlagsOrIsa<'a>>>(
     func: &Function,
     fisa: FOI,
 ) -> VerifierResult<()> {
+    verify_function_and_flowgraph(func, fisa).map(|_| ())
+}
+
+/// Verify the function and return the graphs built directly from its IR.
+pub(crate) fn verify_function_and_flowgraph<'a, FOI: Into<FlagsOrIsa<'a>>>(
+    func: &Function,
+    fisa: FOI,
+) -> Result<(ControlFlowGraph, DominatorTree), VerifierErrors> {
     let _tt = timing::verifier();
     let mut errors = VerifierErrors::default();
     let verifier = Verifier::new(func, fisa.into());
     let result = verifier.run(&mut errors);
     if errors.is_empty() {
         result.unwrap();
-        Ok(())
+        Ok((verifier.expected_cfg, verifier.expected_domtree))
     } else {
         Err(errors)
     }
