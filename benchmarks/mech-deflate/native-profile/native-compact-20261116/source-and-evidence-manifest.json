@@ -18125,13 +18125,13 @@
     },
     {
       "path": "src/syntax/src/document/parser/mod.rs",
-      "sha256": "771dfd566f9e31c5a89fac8f409d466c0de7ac01493d2725865b2917f44fd048",
-      "bytes": 56984
+      "sha256": "7817740c9230ec0e05cf44b65e1b0eb180b08ce52835957e6a8fbcf87b0809f0",
+      "bytes": 56956
     },
     {
       "path": "src/syntax/src/document/parser/tree_cache.rs",
-      "sha256": "1fa85ba4e771302e2f7a6e221f8f3adb4ea06d52efbcb312ece8c766f6610e12",
-      "bytes": 21857
+      "sha256": "92effdc7206fa4e5891bdbaaf5b108ca9461d64f604a52bbc95c50b1f56c9616",
+      "bytes": 24902
     },
     {
       "path": "tests/architecture/distributions/full.json",

@@ -905,7 +905,7 @@ pub(crate) fn parse_canonical_document_with_ids(
     parser.state.diagnostics = Journal::transient();
     // One-shot parsing preserves the logical grants and IDs. Streaming work
     // reports continue tracking every materialized cache allocation.
-    parser.state.tree_cache.discard_stale_requests = true;
+    parser.state.tree_cache.one_shot = true;
     parser.set_resource_rule(rules::PARSE);
     canonical::document::parse_document_root(&mut parser);
     let output = parser.finish();
@@ -1086,7 +1086,7 @@ mod tests {
                 config,
                 &mut ids,
             );
-            parser.state.tree_cache.discard_stale_requests = discard;
+            parser.state.tree_cache.one_shot = discard;
             parser.state.tree_cache.preserve_stale_accounting_for_test = true;
             parser.set_resource_rule(rules::PARSE);
             canonical::document::parse_document_root(&mut parser);
