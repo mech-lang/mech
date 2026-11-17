@@ -40,3 +40,17 @@ Tuple patterns are supported:
   └ * => (0u64,0u64).
 ```
 
+A name bound without a kind annotation refers to the present payload. Its guard and
+result run only when that payload exists; the wildcard also handles absence.
+Every arm must return the same kind.
+
+An explicitly annotated binding can retain the complete optional kind instead.
+
+```mech:optional-battery
+battery<f64?> := 0.3
+status := battery?
+  ├ charge, charge < 0.4 => "recharge"
+  ├ charge => "patrol"
+  └ * => "no reading".
+status
+```

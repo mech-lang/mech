@@ -2903,9 +2903,31 @@ impl PatternItem {
             }
             item => resolve_pattern_item(item, schemas)?,
         };
-        let Some(item) = item else {
+        let Some(mut item) = item else {
             return Ok(None);
         };
+        // A payload-typed match binding is refutable for an optional source.
+        // Resolve presence before the guard or body can observe that binding.
+        if let SchemaBody::Option(payload) = &item.body
+            && binding_shape_observation(binding.body(), payload).is_some()
+            && binding.body() != &item.body
+        {
+            let ValueDataDraft::Option(option) = item.data else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
+            if !option.present {
+                return Ok(None);
+            }
+            item.data = *option.value.ok_or(ResidentKernelError::InvalidInput)?;
+            item.body = payload.as_ref().clone();
+            item.projection_schema = None;
+            item.value_schema = None;
+            item.source_data = match item.source_data {
+                Some(ValueData::Option(value)) => value.map(|value| *value),
+                None => None,
+                _ => return Err(ResidentKernelError::InvalidInput),
+            };
+        }
         let binding_shape = if matches!(binding.body(), SchemaBody::Dynamic) {
             dynamic_binding_shape(binding, Some(&item.shape_values), source_shape_values)?
         } else {
