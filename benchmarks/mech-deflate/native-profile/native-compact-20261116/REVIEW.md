@@ -95,6 +95,15 @@ libdeflate**. The 4 KiB random case remains unresolved because the reverse
 order conflicts with the bounded duplicate-control follow-up.
 [Source reproduction, matched sizes and runtime](evidence/shared-copy-tails/README.md)
 
+The two later full orders record **81/81 Roc** for both actors. The
+71,192-byte candidate records **57/81 and 61/81 libdeflate** versus
+**57/81 and 60/81** from the unchanged control. No individual control
+wins are lost. The full v1 decision is **Reject**, with a **10.468%**
+paired slowdown on `prefix-periodic-16384`. The archive retains both raw
+orders, identifies the cases behind the same-worker win-count drift, and
+reproduces the decision. The 71,768-byte worker remains the reference.
+[Full 71,192-byte replay and control drift](evidence/frame-copies-71192-runtime/README.md)
+
 The separate batched timing study resolved duplicate-control precision on
 seven-stored-prefix for its diagnostic link. It measured the 71,768-byte
 object slower than the 71,960-byte control, with other short cases still
@@ -104,6 +113,15 @@ unresolved. The original paired-worker outcome is preserved.
 The 71,704-byte scorer prototype makes natural text faster in both orders
 and is rejected on two short inputs.
 [Scorer source experiment](evidence/ordered-scorer-addresses/README.md)
+
+## Related-post architecture check
+
+The architecture job stops on the historical after-4 comparison host's
+same-Object restore. The producer and linker consume separate inputs
+there. The checked generator already binds them for managed launch.
+The review records the live callers and the migration boundary that
+preserves the benchmark's timing and input contract.
+[Hosted check and exact sources](evidence/related-post-linked-binding/README.md)
 
 ## Cold error-origin tables
 

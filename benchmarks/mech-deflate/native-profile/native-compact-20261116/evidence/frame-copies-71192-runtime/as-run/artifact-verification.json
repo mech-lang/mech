@@ -1,0 +1,29 @@
+{
+  "mech-control": {
+    "sha256": {
+      "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+      "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+      "runtime.json": "c610f88fe1d61546a7d8e74352f07a4ac175d571dc6816faff3a778f302b115a",
+      "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+    },
+    "encoder_text_bytes": 71768
+  },
+  "mech-experiment": {
+    "sha256": {
+      "program.o": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+      "metadata.json": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "runtime.json": "04bb4b72588601a16c5d3b3af86f31d26679a706585b1de415d3907edfa11bd7",
+      "mech-worker": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+    },
+    "encoder_text_bytes": 71192
+  },
+  "roc": {
+    "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+    "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee",
+    "metadata_bytes_rehashed": false
+  },
+  "libdeflate": {
+    "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+    "metadata": null
+  }
+}
