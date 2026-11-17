@@ -1,0 +1,182 @@
+[
+  [
+    0.0862065409310162,
+    "compact-stage: canonical lowering"
+  ],
+  [
+    0.10422212490811944,
+    "compact-stage: preparation blocks=8223 values=5690"
+  ],
+  [
+    0.2437488748691976,
+    "compact-stage: native module"
+  ],
+  [
+    0.2937769158743322,
+    "compact-stage: numeric phase mech_compact_numeric_475"
+  ],
+  [
+    0.3274154579266906,
+    "compact-stage: numeric phase mech_compact_numeric_475_vector"
+  ],
+  [
+    0.430546916089952,
+    "compact-stage: numeric phase mech_compact_numeric_3009"
+  ],
+  [
+    0.4378800829872489,
+    "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+  ],
+  [
+    0.45381537498906255,
+    "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+  ],
+  [
+    0.4829465001821518,
+    "compact-stage: numeric phase mech_compact_numeric_4173"
+  ],
+  [
+    0.4881904157809913,
+    "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+  ],
+  [
+    0.4941455000080168,
+    "compact-stage: numeric phase mech_compact_numeric_3447"
+  ],
+  [
+    0.4987455001100898,
+    "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+  ],
+  [
+    0.5035680001601577,
+    "compact-stage: numeric phase mech_compact_numeric_3956"
+  ],
+  [
+    0.5048804157413542,
+    "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+  ],
+  [
+    0.5089207501150668,
+    "compact-stage: numeric phase mech_compact_numeric_4879"
+  ],
+  [
+    0.5126212500035763,
+    "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+  ],
+  [
+    0.515947749838233,
+    "compact-stage: numeric phase mech_compact_numeric_4673"
+  ],
+  [
+    0.5183251658454537,
+    "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+  ],
+  [
+    0.5209036660380661,
+    "compact-stage: numeric phase mech_compact_numeric_6633"
+  ],
+  [
+    0.5234306249767542,
+    "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+  ],
+  [
+    0.5264842910692096,
+    "compact-stage: numeric phase mech_compact_numeric_5895"
+  ],
+  [
+    0.5288236658088863,
+    "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+  ],
+  [
+    0.5316375829279423,
+    "compact-stage: numeric phase mech_compact_numeric_3872"
+  ],
+  [
+    0.5336253750137985,
+    "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+  ],
+  [
+    0.5358443749137223,
+    "compact-stage: numeric phase mech_compact_numeric_4799"
+  ],
+  [
+    0.5372850000858307,
+    "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+  ],
+  [
+    0.539089750032872,
+    "compact-stage: numeric phase mech_compact_numeric_2821"
+  ],
+  [
+    0.5406781658530235,
+    "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+  ],
+  [
+    0.5424926658160985,
+    "compact-stage: numeric phase mech_compact_numeric_8026"
+  ],
+  [
+    0.543684583157301,
+    "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+  ],
+  [
+    0.5451637911610305,
+    "compact-stage: numeric phase mech_compact_numeric_362"
+  ],
+  [
+    0.546342708170414,
+    "compact-stage: numeric phase mech_compact_numeric_362_vector"
+  ],
+  [
+    0.5477242497727275,
+    "compact-stage: typed layout"
+  ],
+  [
+    0.5477274158038199,
+    "compact-stage: flow proof"
+  ],
+  [
+    0.5500954161398113,
+    "compact-stage: operation recipes"
+  ],
+  [
+    0.7142650410532951,
+    "compact-stage: source CFG"
+  ],
+  [
+    0.7142688748426735,
+    "compact-stage: source site 0/8223"
+  ],
+  [
+    0.7643338749185205,
+    "compact-stage: source site 4096/8223"
+  ],
+  [
+    0.880929958075285,
+    "compact-stage: source site 8192/8223"
+  ],
+  [
+    0.9049180829897523,
+    "compact-stage: finalize SSA"
+  ],
+  [
+    0.9351104157976806,
+    "compact-stage: compact values before=1399985"
+  ],
+  [
+    0.9470267500728369,
+    "compact-stage: CFG cleanup"
+  ],
+  [
+    1.5833531660027802,
+    "compact-stage: machine code"
+  ],
+  [
+    1.7702721250243485,
+    "compact-stage: machine code complete"
+  ],
+  [
+    1.7736692908219993,
+    "compact-compile-jobs: workers=2 submitted=23 cleanup=2"
+  ]
+]

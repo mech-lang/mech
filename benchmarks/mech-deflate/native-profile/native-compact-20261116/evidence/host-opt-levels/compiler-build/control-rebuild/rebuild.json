@@ -1,0 +1,91 @@
+{
+  "variant": "fresh-owner-counts-cold-tails",
+  "compiler_build": {
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "build",
+      "--locked",
+      "--release",
+      "--manifest-path",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/Cargo.toml",
+      "--target-dir",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler",
+      "--bin",
+      "native_compact_frontend",
+      "--bin",
+      "emit_compact_size",
+      "--message-format=json"
+    ],
+    "seconds": 0.44485683320090175,
+    "profile": {
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "1",
+      "CARGO_PROFILE_RELEASE_DEBUG": "false",
+      "CARGO_PROFILE_RELEASE_LTO": "false",
+      "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+    }
+  },
+  "phases": {
+    "frontend": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/native_compact_frontend",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/control-rebuild/frontend",
+        "frontend"
+      ],
+      "seconds": 5.046525207813829
+    },
+    "native": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/control-rebuild/frontend/program.mecb",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/control-rebuild/native"
+      ],
+      "seconds": 3.942586624994874
+    }
+  },
+  "source_to_object_seconds": 8.99038708396256,
+  "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+  "expected_object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+  "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+  "expected_metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+  "object_text_bytes": 71960,
+  "object_text_x_roc": 1.2472268441486412,
+  "object_text_x_libdeflate": 1.9406688241639698,
+  "full_integrated_source_identity": true,
+  "runtime_wins": "not measured by this command",
+  "worker_link": {
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "-C",
+      "opt-level=3",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/deps",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/worker.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/control-rebuild/mech-worker",
+      "--extern",
+      "mech_gpu=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/control-rebuild/libmech_gpu_runtime.rlib",
+      "-C",
+      "link-arg=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/control-rebuild/native/program.o",
+      "-C",
+      "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "--extern",
+      "mech_engine=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/deps/libmech_engine-1ebfae485b579fd2.rlib",
+      "--extern",
+      "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/deps/libserde-37bf8135007f4b54.rlib",
+      "--extern",
+      "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/deps/libserde_json-058b120b0d8587f0.rlib",
+      "--extern",
+      "miniz_oxide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/deps/libminiz_oxide-36a57ec48cb2f51f.rlib"
+    ],
+    "seconds": 2.000771707855165
+  },
+  "verified_exact_calls": 162,
+  "worker_sha256": "dc46a22e5049a69c08e4be551abf79d05f860f7002a3a0279e7ee984e097ef27"
+}

@@ -1,0 +1,152 @@
+{
+  "executable_file_breakdown": {
+    "header and load commands": 1960,
+    "__TEXT,__text": 150416,
+    "__TEXT,__stubs": 432,
+    "__TEXT,__init_offsets": 4,
+    "__TEXT,__cstring": 3822,
+    "__TEXT,__const": 3104,
+    "__TEXT,__unwind_info": 1240,
+    "__TEXT,__eh_frame": 912,
+    "__DATA_CONST,__got": 328,
+    "__DATA_CONST,__const": 9208,
+    "__DATA,__data": 5696,
+    "__DATA,__thread_vars": 48,
+    "__DATA,__thread_data": 8,
+    "chained fixups": 768,
+    "exports trie": 6768,
+    "function starts": 672,
+    "symbols": 10688,
+    "indirect symbols": 308,
+    "symbol names": 12872,
+    "signature": 1912,
+    "padding and other unassigned bytes": 19434
+  },
+  "encoder_object_file_breakdown": {
+    "header and load commands": 784,
+    "__TEXT,__text": 57696,
+    "__TEXT,__literal16": 480,
+    "__TEXT,__const": 2466,
+    "__DATA,__const": 192,
+    "__TEXT,__cstring": 74,
+    "__LD,__compact_unwind": 576,
+    "__TEXT,__eh_frame": 912,
+    "section relocations": 9464,
+    "symbols": 2416,
+    "symbol names": 2744,
+    "padding and other unassigned bytes": 1356
+  },
+  "linked_text": {
+    "by_family": {
+      "allocator": 91988,
+      "encoder": 57696,
+      "benchmark adapter objects": 732,
+      "text padding and unassigned bytes": 0
+    },
+    "by_object": {
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": 91988,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-cold-tails-current/warmup/roc/encoder.a(roc_app_llvm_arm64mac_speed_17c7dfcc.o)": 57696,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/roc-adapter.o": 732
+    },
+    "largest_symbols_by_family": {
+      "benchmark adapter objects": [
+        [
+          464,
+          "_main"
+        ],
+        [
+          100,
+          "_roc_realloc"
+        ],
+        [
+          100,
+          "_roc_alloc"
+        ],
+        [
+          24,
+          "_roc_dbg"
+        ],
+        [
+          20,
+          "_roc_expect_failed"
+        ],
+        [
+          20,
+          "_roc_crashed"
+        ],
+        [
+          4,
+          "_roc_dealloc"
+        ]
+      ],
+      "encoder": [
+        [
+          21760,
+          "_roc__p521a903b6bff90295acf9c73701bc7b1.fast"
+        ],
+        [
+          16480,
+          "_roc__p81003bf97431a8821d5be871f2471565.fast"
+        ],
+        [
+          3536,
+          "_roc__p1a804bfda1f5e4235a696be5d06bcb43.fast"
+        ],
+        [
+          2528,
+          "_roc__pa6e6a0bf5ace6ced425a6feecccd5c1b.fast"
+        ],
+        [
+          2112,
+          "_roc__p9d8198fedbd801212718a09deebc5774.fast"
+        ],
+        [
+          1564,
+          "_roc__p7e55fe2bbd64ef5a07766497de391d37.fast"
+        ],
+        [
+          1360,
+          "_roc__p251d42c9b11261f4b6c38feff48bfd2d.fast"
+        ],
+        [
+          1336,
+          "_roc__p499ff7eb2f98e9031bc9d0002db086b6.fast"
+        ]
+      ],
+      "allocator": [
+        [
+          2180,
+          "_mi_segments_page_alloc"
+        ],
+        [
+          2152,
+          "__mi_vsnprintf"
+        ],
+        [
+          1852,
+          "__mi_stats_print"
+        ],
+        [
+          1632,
+          "_mi_segment_reclaim"
+        ],
+        [
+          1544,
+          "_mi_segment_alloc"
+        ],
+        [
+          1396,
+          "_mi_segment_span_allocate"
+        ],
+        [
+          1264,
+          "_mi_debug_show_arenas"
+        ],
+        [
+          1232,
+          "__mi_os_alloc_huge_os_pages"
+        ]
+      ]
+    }
+  }
+}
