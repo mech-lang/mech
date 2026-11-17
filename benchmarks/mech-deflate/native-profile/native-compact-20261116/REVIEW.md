@@ -177,6 +177,16 @@ cache scheduling and materialization. Measure which requests publish and
 reuse their completed nodes before changing event or finite-work accounting.
 [Raw profiles and instrumentation](evidence/parser-stage-profile/report.json)
 
+## Native verification and ownership search
+
+Cranelift compares ordered CFG edge iterators before collecting mismatch
+diagnostics. The compact ownership analysis reuses its query storage and the
+consumption decision already established at each buffer operation. The
+71,960-byte encoder's native emission falls from **1.70433
+to 1.59661 s** and its complete build falls from
+**4.18568 to 4.07374 s**. The new emitter reproduces
+the fixed benchmark workers byte for byte. [Builds and checks](evidence/native-pass-work-reuse/README.md)
+
 ## Preselected root inlining
 
 The opt-in AArch64 policy selects private single-call helpers from optimized

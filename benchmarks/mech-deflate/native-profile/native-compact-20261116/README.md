@@ -11,6 +11,12 @@ checkout-relative reproduction commands. No smaller candidate has been promoted.
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 
+The current native emitter builds the 71,960-byte recipe from source through
+final link in **4.07374 s** on Apple M1, with identical encoder
+objects and benchmark workers. The complete build takes **1.366× Roc**
+and **8.478× libdeflate** time.
+[Current native compiler results](evidence/native-pass-work-reuse/README.md)
+
 The canonical parser storage update reduces the smaller Mech encoder's matched
 source-through-link build to **4.18694 s** on Apple M1. Its
 complete build takes **1.402× Roc** and
