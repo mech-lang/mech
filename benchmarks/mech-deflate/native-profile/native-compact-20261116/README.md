@@ -4,7 +4,7 @@ This PR contains compiler and parser source, a pinned Mech program, native build
 configuration, measured runtime source, and raw benchmark evidence. It is stacked
 on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
 
-For another agent, start with [the review and continuation handoff](REVIEW.md).
+Start with [the current scorecard](CURRENT.md) and [the review and continuation handoff](REVIEW.md).
 It identifies the retained baseline, review priorities, unresolved CI, and all
 24 static size screens and their subsequent runtime follow-ups, with
 checkout-relative reproduction commands. No smaller candidate has been promoted.
@@ -168,6 +168,13 @@ dead stripping and symbol stripping. All six links produce the exact raw
 streams for all 81 cases and inflate independently. Mech's minimal link
 still includes 199,224 B of linked Rust standard-library code.
 [Deployment source, links and verification](evidence/minimal-deployment/README.md)
+
+A bounded Mech host uses Rust core and alloc with the same encoder and
+shared deployment link settings. It measures **292,576 B stripped** and
+passes all 81 exact deployment checks and six compiled-provider failure
+cases. A new matched compile-to-deployment comparison gives **3.73555 s**
+Mech, 2.99608 s Roc and 0.48811 s libdeflate.
+[Smaller host, independent timing and reproduction](evidence/alloc-only-deployment/README.md)
 
 ## Preselected root inlining
 
