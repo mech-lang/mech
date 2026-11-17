@@ -21380,8 +21380,8 @@
     },
     {
       "path": "src/syntax/src/document/parser/tree_cache.rs",
-      "sha256": "92effdc7206fa4e5891bdbaaf5b108ca9461d64f604a52bbc95c50b1f56c9616",
-      "bytes": 24902
+      "sha256": "5a7be03abb50dc2d35d77dd71e6576b0f88cd2c48c2ccc105ec09c2e3df0a53f",
+      "bytes": 25268
     },
     {
       "path": "tests/architecture/distributions/full.json",
