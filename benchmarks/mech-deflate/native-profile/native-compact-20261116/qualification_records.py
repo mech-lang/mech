@@ -14,6 +14,7 @@ PEERS = ("roc", "libdeflate")
 ACTORS = (CONTROL, CANDIDATE, *PEERS)
 MECH = (CONTROL, CANDIDATE)
 POLICY_PATH = Path(__file__).with_name("qualification-policy-v1.json")
+POLICIES = {1: POLICY_PATH, 2: POLICY_PATH.with_name("qualification-policy-v2.json")}
 
 
 class InvalidEvidence(ValueError):
@@ -40,6 +41,13 @@ def read_json(path):
             return json.load(stream, object_pairs_hook=distinct_object)
     except (EOFError, OSError, UnicodeError, json.JSONDecodeError) as error:
         raise InvalidEvidence(f"cannot read {path}: {error}") from error
+
+
+def load_policy(version):
+    require(type(version) is int and version in POLICIES, "unsupported qualification policy version")
+    policy = read_json(POLICIES[version])
+    require(policy["version"] == version, "qualification policy file has the wrong version")
+    return policy
 
 
 def digest(path):

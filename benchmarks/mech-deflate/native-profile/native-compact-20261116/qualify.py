@@ -1,4 +1,4 @@
-"""Evaluate a native compact qualification manifest against policy v1."""
+"""Evaluate a native compact qualification manifest against its pinned policy."""
 
 import argparse
 import json
@@ -9,8 +9,8 @@ from qualification_artifacts import (
     artifacts_for, check_builds, check_correctness, check_failures, check_stack, collect_sizes,
 )
 from qualification_records import (
-    ACTORS, CANDIDATE, CONTROL, MECH, POLICY_PATH, Evidence, Findings, InvalidEvidence,
-    is_count, is_digest, load_fixtures, read_json, reference_sha, require,
+    ACTORS, CANDIDATE, CONTROL, MECH, Evidence, Findings, InvalidEvidence,
+    is_count, is_digest, load_fixtures, load_policy, read_json, reference_sha, require,
 )
 from qualification_timings import decide_runtime, duplicate_study, runtime_run
 
@@ -34,7 +34,7 @@ def evidence_bindings(manifest, evidence, policy, identities):
         require(contract["fixture_inventory_sha256"] == policy["fixture_inventory_sha256"]
                 and contract["level"] == 12, "runtime contract changed the fixture inventory or compression level")
         if contract["scope"] != "diagnostic":
-            evidence.findings.unresolved.append("policy v1 applies to the diagnostic native entry")
+            evidence.findings.unresolved.append(f"policy v{policy['version']} applies to the diagnostic native entry")
         require(isinstance(contract["timing_boundary"], str) and bool(contract["timing_boundary"]),
                 "runtime timing boundary is missing")
     return contract
@@ -118,11 +118,10 @@ def check_improvement(objective, sizes, builds, runtime, findings):
 def evaluate_manifest(manifest, evidence_root, plan_sha256):
     findings = Findings()
     evidence = Evidence(evidence_root, findings)
-    policy = read_json(POLICY_PATH)
     require(isinstance(manifest, dict), "manifest must be a JSON object")
-    require(type(manifest.get("schema_version")) is int and manifest["schema_version"] == 1
-            and type(manifest.get("policy_version")) is int and manifest["policy_version"] == policy["version"],
-            "unsupported qualification manifest or policy version")
+    require(type(manifest.get("schema_version")) is int and manifest["schema_version"] == 1,
+            "unsupported qualification manifest version")
+    policy = load_policy(manifest.get("policy_version"))
     require(manifest.get("objective") in OBJECTIVES, "unsupported intended improvement")
     identities = {actor: {} for actor in ACTORS}
     for field in ("environment", "contract"):

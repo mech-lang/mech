@@ -1,4 +1,4 @@
-"""Replay paired benchmark measurements under qualification policy v1."""
+"""Replay paired benchmark measurements under the declared qualification policy."""
 
 from collections import Counter, defaultdict
 from itertools import permutations
@@ -7,7 +7,7 @@ from random import Random
 from statistics import fmean, median
 
 from qualification_records import (
-    ACTORS, CANDIDATE, CONTROL, MECH, PEERS, close, fixture_contract, is_count,
+    ACTORS, CANDIDATE, CONTROL, MECH, PEERS, Findings, close, fixture_contract, is_count,
     is_digest, is_number, reference_sha, require,
 )
 
@@ -383,6 +383,7 @@ def decide_runtime(runs, repeats, policy, fixtures, findings):
             findings.rejected.append(f"{name}: repeated focused loss against {peer}")
     if {run["order"] for run in complete} != {"forward", "reverse"}:
         findings.unresolved.append("both complete timing orders are required")
+    timing_findings = findings if policy.get("require_case_nonregression", True) else Findings()
     per_case = {}
     repeat_report = defaultdict(list)
     for study_id, records in repeats:
@@ -407,20 +408,20 @@ def decide_runtime(runs, repeats, policy, fixtures, findings):
         failing_repeat = not noisy and any(r["ab"]["lower"] > resolution for r in repeatability)
         if combined["lower"] > resolution or failing_repeat:
             state = "regression"
-            findings.rejected.append(f"{name}: established slowdown above the 0.5% resolution")
+            timing_findings.rejected.append(f"{name}: established slowdown above the 0.5% resolution")
         else:
             resolved = bool(repeatability) and all(r["ab"]["upper"] <= resolution for r in repeatability)
             if adverse_runs:
                 state = "unresolved"
-                findings.unresolved.append(f"{name}: combined and individual run bounds conflict: {', '.join(adverse_runs)}")
+                timing_findings.unresolved.append(f"{name}: combined and individual run bounds conflict: {', '.join(adverse_runs)}")
             elif noisy or (combined["upper"] > resolution or sustained) and not resolved:
                 state = "unresolved"
-                findings.unresolved.append(f"{name}: regression bound or duplicate-control repeatability unresolved")
+                timing_findings.unresolved.append(f"{name}: regression bound or duplicate-control repeatability unresolved")
             else:
                 state = "bounded"
         per_case[name] = {"decision": state, "runs": intervals, "combined": combined, "adverse_runs": adverse_runs,
                           "duplicate_controls": repeatability}
-    return {
+    report = {
         "runs": reports, "cases": per_case,
         "scope": "90% per-case paired bootstrap, stratified by run and actor order",
         "equivalent_named_cases": [sorted(group) for group in contracts.values() if len(group) > 1],
@@ -428,3 +429,8 @@ def decide_runtime(runs, repeats, policy, fixtures, findings):
             {actor: max(run["peak"][actor] for run in complete) for actor in MECH} if complete else {}
         ),
     }
+    if timing_findings is not findings:
+        report["candidate_control_timing_observations"] = {
+            "slowdowns": timing_findings.rejected, "uncertain": timing_findings.unresolved,
+        }
+    return report
