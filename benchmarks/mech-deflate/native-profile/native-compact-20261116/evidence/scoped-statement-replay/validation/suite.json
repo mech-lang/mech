@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-statement-replay.yX5T3n5Q/validation/test-syntax",
+    "--test-threads=1",
+    "--nocapture",
+    "--skip",
+    "scoped_statement_"
+  ],
+  "status": "test result: ok. 535 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 40.99s"
+}

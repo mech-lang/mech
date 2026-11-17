@@ -1,0 +1,10 @@
+{
+  "pin": "61f012dd1233e746ec199f1d43ea4584ed172737",
+  "input": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "patch": "7de4dfd2b9692bcbd760af406cd73aa49b13c380eaa36a019048fda69af961db",
+  "production_sources": {
+    "src/syntax/src/document/parser/canonical/document/continuation.rs": "f1ac84a88f3c019802f3513d3b7e754fc0831b9decc2913b2dc6130bbdc8a08b",
+    "src/syntax/src/document/parser/canonical/document/definition_replay.rs": "5c9117e55389f7b136d9f7d2dee12c8ab62dd568cad9ffb3805b4cc3fba912a5"
+  },
+  "ablation": "38c9fcf2be38515aa9ea19afcd4c549105917dc48c3547d0e769c9ca9ff4fa41"
+}
