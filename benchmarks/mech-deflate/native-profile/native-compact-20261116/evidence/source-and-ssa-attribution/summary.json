@@ -1,0 +1,142 @@
+{
+  "source_ns": {
+    "collect_document_units": 711958.0,
+    "create_semantic_builder": 18833.0,
+    "register_types_and_fsms": 546541.5,
+    "register_functions_and_imports": 280188.0,
+    "declare_inputs_and_scan_units": 3721042.0,
+    "lower_document_units": 162148041.5,
+    "publish_and_order_lowered_document": 78062.5,
+    "resolve_pending": 333.0,
+    "schema_finalization": 8997812.5,
+    "constant_store": 3857374.5,
+    "pack_inputs": 875.0,
+    "requirement_canonicalization": 6875.0,
+    "node_materialization_includes_requirements": 2292625.0,
+    "pack_outputs_graph": 4932520.5
+  },
+  "catalog_ns": {
+    "thread_start": 106250.0,
+    "create_builder": 0.0,
+    "install_runtime": 60817833.5,
+    "install_source": 1495208.5,
+    "finalize_validate": 10208.5
+  },
+  "requirement_lookup": {
+    "lookups": 0.0,
+    "comparisons": 0.0,
+    "ns": 0.0
+  },
+  "ssa_aggregate": {
+    "empty": 0.0,
+    "one": 1773.0,
+    "two_to_four": 5311.0,
+    "five_to_fifteen": 9891.0,
+    "sixteen_to_sixty_three": 2504.0,
+    "sixty_four_or_more": 2130.0,
+    "entries": 3926824.0,
+    "dense_maps": 994.0,
+    "sparse_growths": 106843.0,
+    "dense_growths": 2798.0,
+    "definitions": 69165.0,
+    "use_requests": 50309.0,
+    "local_hits": 89745.0,
+    "nonlocal_requests": 3040050.0,
+    "definition_samples": 1101.0,
+    "definition_ns": 228237.5,
+    "use_samples": 803.0,
+    "use_ns": 1354558.0
+  },
+  "ssa_largest_builder": {
+    "empty": 0.0,
+    "one": 1528.0,
+    "two_to_four": 3001.0,
+    "five_to_fifteen": 8426.0,
+    "sixteen_to_sixty_three": 1873.0,
+    "sixty_four_or_more": 1795.0,
+    "entries": 3822220.0,
+    "dense_maps": 743.0,
+    "sparse_growths": 91035.0,
+    "dense_growths": 2147.0,
+    "definitions": 55823.0,
+    "use_requests": 42142.0,
+    "local_hits": 83339.0,
+    "nonlocal_requests": 2976145.0,
+    "definition_samples": 873.0,
+    "definition_ns": 202760.5,
+    "use_samples": 659.0,
+    "use_ns": 1339247.0
+  },
+  "largest_root_word_lanes": {
+    "constant_never_written": {
+      "lanes": 1522,
+      "reads": 2118,
+      "writes": 0,
+      "parameter_reads": 1919
+    },
+    "seed_written": {
+      "lanes": 14648,
+      "reads": 31698,
+      "writes": 31546,
+      "parameter_reads": 27416
+    },
+    "input_never_written": {
+      "lanes": 10,
+      "reads": 23,
+      "writes": 0,
+      "parameter_reads": 5
+    },
+    "input_written": {
+      "lanes": 2,
+      "reads": 22,
+      "writes": 18,
+      "parameter_reads": 12
+    },
+    "table_never_written": {
+      "lanes": 30,
+      "reads": 23,
+      "writes": 0,
+      "parameter_reads": 22
+    },
+    "constant_written": {
+      "lanes": 17,
+      "reads": 7033,
+      "writes": 7012,
+      "parameter_reads": 7030
+    },
+    "seed_never_written": {
+      "lanes": 144,
+      "reads": 0,
+      "writes": 0,
+      "parameter_reads": 0
+    }
+  },
+  "outer_stage_medians_seconds": {
+    "disabled": {
+      "parse": 0.7825548335000001,
+      "catalog": 0.06249091649999999,
+      "frontend": 0.23137783350000002,
+      "artifact": 0.0068740835,
+      "encode": 0.002565583,
+      "native": 1.390279521
+    },
+    "source": {
+      "parse": 0.7841984375,
+      "catalog": 0.0629493335,
+      "frontend": 0.2318990205,
+      "artifact": 0.0069163335,
+      "encode": 0.0025509165,
+      "native": 1.3900377295
+    },
+    "ssa": {
+      "parse": 0.7827502295,
+      "catalog": 0.0625871875,
+      "frontend": 0.2303696045,
+      "artifact": 0.006870729,
+      "encode": 0.0025636245,
+      "native": 1.788748542
+    }
+  },
+  "plan_sha256": "b037ce12975ce85cba6a6b013aa6fa95337833b98595c452ea42702583386bc7",
+  "median_unattributed_source_seconds": 0.044204771500000004
+}
