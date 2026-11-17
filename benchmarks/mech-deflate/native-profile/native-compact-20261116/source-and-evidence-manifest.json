@@ -12410,8 +12410,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "f05a11032f8c3bf5a3478a3864a483d5eff0d2977af0f9b3023c42cfece0c523",
-      "bytes": 7081
+      "sha256": "27ef56af4c9ea625780cd0f38bdf38d439a973f68521e402a3d73668222236f2",
+      "bytes": 7616
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
