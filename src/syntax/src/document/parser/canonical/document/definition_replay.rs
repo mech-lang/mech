@@ -1,5 +1,5 @@
-//! Scoped recipes for the final VARIABLE_DEFINE replay of STATEMENT.
-use super::Parser;
+//! Scoped recipes for winning variable and function definitions.
+use super::{Parser, RuleId};
 use crate::document::parser::canonical::prediction::MIN_ANALYSIS_ALLOWANCE;
 use crate::document::parser::{
     DefinitionRawOrigin, Event, ParserCheckpoint,
@@ -25,11 +25,14 @@ pub(super) struct Position {
     pub child_work: u64,
     pub allowance: u64,
     pub input_final: bool,
+    pub delimiter: Option<RuleId>,
 }
 
 struct Origin {
     checkpoint: ParserCheckpoint,
     position: Position,
+    kind: SyntaxKind,
+    parent_raw: DefinitionRawOrigin,
     recovery_allowed: bool,
     stats: ParseStats,
     ids: IdGenerator,
@@ -98,18 +101,27 @@ fn remaining_headroom(parser: &Parser<'_>) -> Option<u64> {
 }
 
 impl Recording {
-    pub(super) fn begin(parser: &mut Parser<'_>, position: Position) -> Option<Box<Self>> {
-        if !matches!(parser.state.definition_raw, DefinitionRawOrigin::Off)
+    pub(super) fn begin(
+        parser: &mut Parser<'_>,
+        position: Position,
+        kind: SyntaxKind,
+    ) -> Option<Box<Self>> {
+        // A nested trial may borrow the observer after its parent has
+        // recorded the first raw access. Restore that witness on completion.
+        if matches!(parser.state.definition_raw, DefinitionRawOrigin::Waiting)
             || !sealed(parser, position)
             || position.allowance < remaining_headroom(parser)?
         {
             return None;
         }
         let state = &mut parser.state;
-        state.definition_raw = DefinitionRawOrigin::Waiting;
+        let parent_raw =
+            core::mem::replace(&mut state.definition_raw, DefinitionRawOrigin::Waiting);
         Some(Box::new(Self(Phase::Trial(Origin {
             checkpoint: parser.checkpoint(),
             position,
+            kind,
+            parent_raw,
             recovery_allowed: parser.consuming_recovery_allowed(),
             stats: parser.state.stats,
             ids: parser.ids.clone(),
@@ -128,7 +140,7 @@ impl Recording {
     ) -> Option<Box<Self>> {
         match self.0 {
             Phase::Trial(origin) => {
-                let raw = core::mem::take(&mut parser.state.definition_raw);
+                let raw = core::mem::replace(&mut parser.state.definition_raw, origin.parent_raw);
                 if !winner {
                     return None;
                 }
@@ -167,6 +179,7 @@ impl Origin {
         let events = end.events.checked_sub(start.events)?;
         if !sealed(parser, at)
             || at.poll != self.position.poll
+            || at.delimiter != self.position.delimiter
             || end.cursor.offset <= offset
             || (end.cursor.offset - offset).0 > MAX_BYTES
             || events == 0
@@ -216,14 +229,14 @@ impl Origin {
         };
         let range = TextRange::new(offset, end.cursor.offset);
         let Event::Start {
-            kind: SyntaxKind::VariableDefine,
+            kind,
             cached: Some(root),
             ..
         } = state.events.get(start.events)?
         else {
             return None;
         };
-        if root.end_event != end.events || root.range != range {
+        if *kind != self.kind || root.end_event != end.events || root.range != range {
             return None;
         }
         let cache = state.tree_cache.work;
@@ -268,9 +281,10 @@ fn event_headroom(parser: &Parser<'_>) -> bool {
 
 impl Summary {
     fn apply(self, parser: &mut Parser<'_>, at: Position) -> Option<(u64, u64)> {
-        if !matches!(parser.state.definition_raw, DefinitionRawOrigin::Off)
+        if matches!(parser.state.definition_raw, DefinitionRawOrigin::Waiting)
             || !sealed(parser, at)
             || self.origin.position.poll != at.poll
+            || self.origin.position.delimiter != at.delimiter
             || self.origin.checkpoint != parser.checkpoint()
             || self.origin.recovery_allowed != parser.consuming_recovery_allowed()
             || self.origin.stats.recovery_bytes != parser.state.stats.recovery_bytes
