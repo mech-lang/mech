@@ -11,6 +11,16 @@ checkout-relative reproduction commands. No smaller candidate has been promoted.
 The [qualification policy and validator](QUALIFICATION.md) run on new campaigns
 and replay the archived controls against the same fixed 81-case contract.
 
+The current opt-in **71,768-byte** Cranelift encoder uses
+**1.244× Roc** and **1.935× libdeflate** text. Single-piece source
+access brings the matched Apple M1 build through the final link to
+**3.93889 s**, or **1.295× Roc** and
+**8.115× libdeflate**. Both fresh full runtime orders
+record **81/81 Roc and 61/81 libdeflate**, with every individual win
+preserved and one duplicate-control repeatability case open.
+[Matched build and parser checks](evidence/contiguous-syntax-source/README.md)
+· [Bound runtime orders](evidence/bound-71768-runtime/README.md)
+
 Reusing the parser's subtree frame allocation cuts the matched Apple M1
 source-through-link build from **4.01608 to 3.95160 seconds**. The exact
 71,768-byte object, complete metadata, and linked benchmark worker reproduce

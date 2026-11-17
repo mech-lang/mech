@@ -1,0 +1,364 @@
+{
+  "warmups": [
+    {
+      "actor": "before",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/warmup-before.json"
+      ],
+      "wall_time_seconds": 2.1139484588056803,
+      "peak_rss_bytes": 115818496,
+      "events": 718353,
+      "parse_seconds": 2.040845708,
+      "parser_steps": 3967302,
+      "source_bytes": 243209,
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+    },
+    {
+      "actor": "candidate",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/warmup-candidate.json"
+      ],
+      "wall_time_seconds": 2.025390625,
+      "peak_rss_bytes": 115802112,
+      "events": 718353,
+      "parse_seconds": 1.9624734579999998,
+      "parser_steps": 3967302,
+      "source_bytes": 243209,
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+    }
+  ],
+  "orders": [
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ],
+    [
+      "before",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "before"
+    ]
+  ],
+  "trials": [
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-1-before.json"
+        ],
+        "wall_time_seconds": 2.1032075411640108,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.039878583,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-1-candidate.json"
+        ],
+        "wall_time_seconds": 2.057028249837458,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 1.993167959,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-2-candidate.json"
+        ],
+        "wall_time_seconds": 2.0340674589388072,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 1.969339459,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-2-before.json"
+        ],
+        "wall_time_seconds": 2.1165122077800333,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 2.053295334,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-3-before.json"
+        ],
+        "wall_time_seconds": 2.1189422085881233,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.055224291,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-3-candidate.json"
+        ],
+        "wall_time_seconds": 2.031736666802317,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 1.9685590419999999,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-4-candidate.json"
+        ],
+        "wall_time_seconds": 2.0650349999777973,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.000327416,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-4-before.json"
+        ],
+        "wall_time_seconds": 2.105054374784231,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 2.042256208,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-5-before.json"
+        ],
+        "wall_time_seconds": 2.1037487075664103,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.039926709,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-5-candidate.json"
+        ],
+        "wall_time_seconds": 2.0337526672519743,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 1.970427792,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-6-candidate.json"
+        ],
+        "wall_time_seconds": 2.0403641667217016,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 1.977272417,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-6-before.json"
+        ],
+        "wall_time_seconds": 2.103458291850984,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 2.039619417,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-7-before.json"
+        ],
+        "wall_time_seconds": 2.118210499640554,
+        "peak_rss_bytes": 115834880,
+        "events": 718353,
+        "parse_seconds": 2.052390542,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-7-candidate.json"
+        ],
+        "wall_time_seconds": 2.047232416924089,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 1.98373875,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "candidate": {
+        "actor": "candidate",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/candidate/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-8-candidate.json"
+        ],
+        "wall_time_seconds": 2.0413668751716614,
+        "peak_rss_bytes": 115818496,
+        "events": 718353,
+        "parse_seconds": 1.977964417,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "before": {
+        "actor": "before",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/before/parser",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/contiguous-syntax-study/probe-timings/order-8-before.json"
+        ],
+        "wall_time_seconds": 2.1110424580983818,
+        "peak_rss_bytes": 115802112,
+        "events": 718353,
+        "parse_seconds": 2.046676875,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    }
+  ],
+  "median_parse_seconds": {
+    "before": 2.0444665415000003,
+    "candidate": 1.977618417
+  },
+  "median_peak_rss_bytes": {
+    "before": 115818496.0,
+    "candidate": 115818496.0
+  },
+  "paired_parse_ratio": {
+    "candidate": [
+      0.9771012724045056,
+      0.959111641852102,
+      0.9578317318554892,
+      0.979469377135075,
+      0.9659306794242283,
+      0.9694320423308659,
+      0.9665503272427379,
+      0.9664273052384
+    ]
+  }
+}
