@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 72344,
+  "object_text_x_roc": 1.2538824181919024,
+  "object_text_x_libdeflate": 1.951024811218986,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 51840,
+  "root_frame_bytes": 3744,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 2.233946916181594,
+  "peak_resident_bytes": 226689024,
+  "object_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+  "metadata_sha256": "f78b82fbd6dec22d84d92700b74f6a28871b0963c2f8e2acd07359aefc7f08a0",
+  "linked_text_bytes": 475268,
+  "worker_sha256": "4374799309e26e3b85b84e8ac9dc796eac15621a52b1851c6cdb61c3126c4db7",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study-fresh-owners-qualification.json"
+}

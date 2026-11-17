@@ -55,7 +55,17 @@ def main():
                 runs[f'fresh-owner-counts/{variant}/runs/{kind}{suffix}'] = (
                     cases, {'roc': timing['roc_wins'][1], 'libdeflate': timing['libdeflate_wins'][1]},
                 )
-    print(json.dumps({run: replay(run, *spec) for run, spec in runs.items()}, indent=2))
+    widths = json.loads((EVIDENCE / 'continuation-widths/report.json').read_text())
+    expected_controls = {}
+    for variant, measurements in widths['runtime'].items():
+        for timing in measurements['runtime_runs']:
+            run = f"continuation-widths/{variant}/runs/{timing['name']}"
+            runs[run] = (timing['cases'], {'roc': timing['roc_wins'][1], 'libdeflate': timing['libdeflate_wins'][1]})
+            expected_controls[run] = {'roc': timing['roc_wins'][0], 'libdeflate': timing['libdeflate_wins'][0]}
+    results = {run: replay(run, *spec) for run, spec in runs.items()}
+    for run, expected in expected_controls.items():
+        assert results[run]['control_wins'] == expected, run
+    print(json.dumps(results, indent=2))
 
 
 if __name__ == '__main__':

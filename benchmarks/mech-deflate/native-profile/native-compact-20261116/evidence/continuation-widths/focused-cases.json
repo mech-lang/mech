@@ -1,0 +1,17 @@
+[
+  "16384-distribution-change",
+  "320-overlap",
+  "empty",
+  "heldout-mixed-131073",
+  "one-stored",
+  "prefix-natural-16384",
+  "prefix-natural-8192",
+  "prefix-periodic-1024",
+  "prefix-periodic-4096",
+  "prefix-random-1024",
+  "random-1024",
+  "random-64",
+  "repeated-1024",
+  "reymont-prefix-16384",
+  "seven-stored-prefix"
+]
