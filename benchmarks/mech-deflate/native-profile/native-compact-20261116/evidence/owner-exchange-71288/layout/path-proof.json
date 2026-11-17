@@ -1,0 +1,260 @@
+{
+  "prior_v1_focus_rejection": {
+    "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/source-owner-exchange-71288-focus/focus-replay.json",
+    "sha256": "03dcde384240f6e535b3623ec041cca76d873dbd105431911d0fb7bb19db4dab",
+    "empty_combined": {
+      "estimate": 0.011869721823852819,
+      "lower": 0.0062993323602831275,
+      "upper": 0.017276338846104133
+    }
+  },
+  "worker_layouts": {
+    "retained": {
+      "sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "clock_gettime_stub": "0x10007485c",
+      "stubs_start": "0x100074724",
+      "clock_stub_bytes": "d0010090106a40f900021fd6",
+      "residue_mod_64": 28,
+      "residue_mod_128": 92,
+      "crosses_64b_boundary": false,
+      "crosses_128b_boundary": false,
+      "link_destination_for_direct_terminal_call": "0x100016ef4",
+      "finish_byte_appends_addr": "0x100016ef4",
+      "checked_controller_addr_untaken": "0x10005fb00",
+      "owner_record_const_addr": "0x100077750",
+      "owner_record_const_data": "01000000000000000000000000000000"
+    },
+    "size_control": {
+      "sha256": "433164cc7a10056057e039f06999c5368739c845fd9bfac10b8816c2e114c6b4",
+      "clock_gettime_stub": "0x10007484c",
+      "stubs_start": "0x100074714",
+      "clock_stub_bytes": "d0010090106a40f900021fd6",
+      "residue_mod_64": 12,
+      "residue_mod_128": 76,
+      "crosses_64b_boundary": false,
+      "crosses_128b_boundary": false,
+      "link_destination_for_direct_terminal_call": "0x100016ef4",
+      "finish_byte_appends_addr": "0x100016ef4",
+      "checked_controller_addr_untaken": "0x10005fb00",
+      "owner_record_const_addr": "0x100077710",
+      "owner_record_const_data": "01000000000000000000000000000000"
+    },
+    "rejected": {
+      "sha256": "dd885afbed4525cc807a6979ad9f8925e58be73a4b48ff50e9dbc070f1c294c0",
+      "clock_gettime_stub": "0x10007467c",
+      "stubs_start": "0x100074544",
+      "clock_stub_bytes": "d0010090106a40f900021fd6",
+      "residue_mod_64": 60,
+      "residue_mod_128": 124,
+      "crosses_64b_boundary": true,
+      "crosses_128b_boundary": true,
+      "link_destination_for_direct_terminal_call": "0x100016ef4",
+      "finish_byte_appends_addr": "0x100016ef4",
+      "checked_controller_addr_untaken": "0x10005fb40",
+      "owner_record_const_addr": "0x100077550",
+      "owner_record_const_data": "01000000000000000000000000000000"
+    },
+    "padded_128": {
+      "sha256": "2df2496ee60fca5d8ddb0d956339686a2f0007cab509c50cc2f4ce1a3b6625b6",
+      "clock_gettime_stub": "0x1000746cc",
+      "stubs_start": "0x100074594",
+      "clock_stub_bytes": "d0010090106a40f900021fd6",
+      "residue_mod_64": 12,
+      "residue_mod_128": 76,
+      "crosses_64b_boundary": false,
+      "crosses_128b_boundary": false,
+      "link_destination_for_direct_terminal_call": "0x100016ef4",
+      "finish_byte_appends_addr": "0x100016ef4",
+      "checked_controller_addr_untaken": "0x10005fb40",
+      "owner_record_const_addr": "0x100077590",
+      "owner_record_const_data": "01000000000000000000000000000000"
+    }
+  },
+  "executed_path_comparisons": {
+    "worker_setup_transfer_and_cleanup": {
+      "described_instruction_count": 96,
+      "relative_to_size_control": {
+        "retained": [],
+        "size_control": [],
+        "rejected": [],
+        "padded_128": []
+      }
+    },
+    "closed_v2_taken": {
+      "described_instruction_count": 41,
+      "relative_to_size_control": {
+        "retained": [],
+        "size_control": [],
+        "rejected": [],
+        "padded_128": []
+      }
+    },
+    "finish_byte_appends_taken": {
+      "described_instruction_count": 82,
+      "relative_to_size_control": {
+        "retained": [
+          {
+            "address": "0x100016fdc",
+            "control": "0x3dc1c500",
+            "trial": "0x3dc1d500",
+            "meaning": "LDR of identical inline-owner initializer"
+          }
+        ],
+        "size_control": [],
+        "rejected": [
+          {
+            "address": "0x100016fdc",
+            "control": "0x3dc1c500",
+            "trial": "0x3dc15500",
+            "meaning": "LDR of identical inline-owner initializer"
+          }
+        ],
+        "padded_128": [
+          {
+            "address": "0x100016fdc",
+            "control": "0x3dc1c500",
+            "trial": "0x3dc16500",
+            "meaning": "LDR of identical inline-owner initializer"
+          }
+        ]
+      }
+    },
+    "rust_allocator_5_bytes_1_alignment": {
+      "described_instruction_count": 6,
+      "relative_to_size_control": {
+        "retained": [],
+        "size_control": [],
+        "rejected": [],
+        "padded_128": []
+      }
+    },
+    "mimalloc_warm_small_allocation": {
+      "described_instruction_count": 24,
+      "relative_to_size_control": {
+        "retained": [],
+        "size_control": [],
+        "rejected": [],
+        "padded_128": []
+      }
+    },
+    "retire_inline_final_record": {
+      "described_instruction_count": 5,
+      "relative_to_size_control": {
+        "retained": [],
+        "size_control": [],
+        "rejected": [],
+        "padded_128": []
+      }
+    },
+    "discard_empty_heap": {
+      "described_instruction_count": 18,
+      "relative_to_size_control": {
+        "retained": [],
+        "size_control": [],
+        "rejected": [],
+        "padded_128": []
+      }
+    },
+    "timer_entry_and_clock_call": {
+      "described_instruction_count": 15,
+      "relative_to_size_control": {
+        "retained": [
+          {
+            "address": "0x1000260c8",
+            "control": "0x940139e1",
+            "trial": "0x940139e5",
+            "meaning": "BL to clock_gettime import stub"
+          }
+        ],
+        "size_control": [],
+        "rejected": [
+          {
+            "address": "0x1000260c8",
+            "control": "0x940139e1",
+            "trial": "0x9401396d",
+            "meaning": "BL to clock_gettime import stub"
+          }
+        ],
+        "padded_128": [
+          {
+            "address": "0x1000260c8",
+            "control": "0x940139e1",
+            "trial": "0x94013981",
+            "meaning": "BL to clock_gettime import stub"
+          }
+        ]
+      }
+    }
+  },
+  "import_placement": {
+    "checked_import_stubs": 87,
+    "unmodified_candidate_offset": -464,
+    "padded_candidate_offset": -384,
+    "residue_matches_after_padding": 128
+  },
+  "root_scope": "Empty route takes the same checked terminal fast route and does not enter the moved owner-exchange controller",
+  "allocator_counts": {
+    "forward": {
+      "raw_sha256": "fe6a123d0ee04a5b0d1456d37621b767e56a7a8038d38846d80c986a42bbf089",
+      "actors": {
+        "mech-control": {
+          "samples": 49152,
+          "counters": {
+            "payload_allocation_requests": 1,
+            "requested_payload_bytes": 5,
+            "initialized_bytes_copied": 0,
+            "zeroed_bytes": 0,
+            "peak_private_payload_bytes": 5,
+            "nonreturned_private_bytes_at_return": 0
+          }
+        },
+        "mech-experiment": {
+          "samples": 49152,
+          "counters": {
+            "payload_allocation_requests": 1,
+            "requested_payload_bytes": 5,
+            "initialized_bytes_copied": 0,
+            "zeroed_bytes": 0,
+            "peak_private_payload_bytes": 5,
+            "nonreturned_private_bytes_at_return": 0
+          }
+        }
+      }
+    },
+    "reverse": {
+      "raw_sha256": "12f61b84add7fb12b309bf50d88b094423cb2715e8b75b2aa0a0bf172c16800d",
+      "actors": {
+        "mech-control": {
+          "samples": 49152,
+          "counters": {
+            "payload_allocation_requests": 1,
+            "requested_payload_bytes": 5,
+            "initialized_bytes_copied": 0,
+            "zeroed_bytes": 0,
+            "peak_private_payload_bytes": 5,
+            "nonreturned_private_bytes_at_return": 0
+          }
+        },
+        "mech-experiment": {
+          "samples": 49152,
+          "counters": {
+            "payload_allocation_requests": 1,
+            "requested_payload_bytes": 5,
+            "initialized_bytes_copied": 0,
+            "zeroed_bytes": 0,
+            "peak_private_payload_bytes": 5,
+            "nonreturned_private_bytes_at_return": 0
+          }
+        }
+      }
+    }
+  },
+  "padded_source_emit_reproduction": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/match-cache-offset-slot/compile_profile",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/owner-exchange/source.mec",
+    "/private/tmp/mech-root-transport.A9Qtzt/empty-placement/padded-128",
+    "compact"
+  ],
+  "padded_static_and_correctness_receipt": "/private/tmp/mech-root-transport.A9Qtzt/empty-placement/padded-128/proof.json",
+  "performance_causality": "The identical clock stub straddles instruction address regions in the rejected link only. This supports a placement hypothesis. Both timed orders are still required for a new artifact."
+}

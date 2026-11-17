@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-root-transport.A9Qtzt/empty-placement/padded-128/mech-worker",
+    "/private/tmp/mech-root-transport.A9Qtzt/empty-placement/padded-128/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "2df2496ee60fca5d8ddb0d956339686a2f0007cab509c50cc2f4ce1a3b6625b6",
+  "metadata_sha256": "8bd8d79e23d7d736c105358f81f07e666190e5a596eb9c9d033e6ccd9f93ef21"
+}
