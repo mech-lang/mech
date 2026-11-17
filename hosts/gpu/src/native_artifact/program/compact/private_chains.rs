@@ -321,7 +321,7 @@ mod tests {
                 results[site] = Some((
                     from,
                     to,
-                    consuming[site] && owners.can_finish_source(&flow, &guards, site, from),
+                    consuming[site] && owners.can_finish_consumed_source(site, from),
                 ));
                 if *operation == P::MatrixIndexedReplace {
                     retirements[site] =

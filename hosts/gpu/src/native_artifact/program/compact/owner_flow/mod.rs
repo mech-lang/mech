@@ -4,14 +4,19 @@
 //! An array dereference always keeps the owner alive. Aggregate transport
 //! propagates only owners required by the destination's actual future uses.
 //! The concrete heap still checks final exclusivity before any mutation.
-use super::{flow::Flow, guards::Guards, layout::Layout, recipes::Recipe};
+use super::{
+    flow::Flow,
+    guards::{Guards, State},
+    layout::Layout,
+    recipes::Recipe,
+};
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use mech_engine::native_artifact::{
     NativeAggregateWord as Word, NativeCollectionSource as Source, NativeControlLoop as Loop,
     NativeIterationAction as Action, NativeProgramArtifactPlan as Plan,
     NativeScalarAggregateAction as Aggregate,
 };
-use std::collections::BTreeMap;
+use std::{cell::RefCell, collections::BTreeMap};
 
 #[path = "../owner_reads.rs"]
 mod owner_reads;
@@ -29,7 +34,25 @@ pub(super) struct OwnerFlow {
     copies: Vec<Vec<(usize, usize)>>,
     post_uses: Vec<Vec<usize>>,
     alias_families: Vec<usize>,
+    guard_search: RefCell<GuardSearch>,
 }
+
+#[derive(Default)]
+struct GuardSearch {
+    states: Vec<Option<State>>,
+    pending: Vec<(usize, State)>,
+    visited: Vec<usize>,
+}
+
+impl GuardSearch {
+    fn clear(&mut self) {
+        self.pending.clear();
+        for site in self.visited.drain(..) {
+            self.states[site] = None;
+        }
+    }
+}
+
 fn contains(words: &[u64], id: usize) -> bool {
     words[id / 64] & (1u64 << (id % 64)) != 0
 }
@@ -284,6 +307,7 @@ impl OwnerFlow {
             copies,
             post_uses,
             alias_families,
+            guard_search: RefCell::default(),
         })
     }
     /// Retire only other homes that are dead on every continuation allowed
@@ -330,20 +354,13 @@ impl OwnerFlow {
             && !self.post_uses[site].contains(&id)
             && !self.live_after(site, slot)
     }
-    /// Existing held/dead authority, including current outputs and overwrites.
-    /// This is permission to move one reference, not to mutate shared backing.
-    pub fn can_finish_source(
-        &self,
-        flow: &Flow,
-        guards: &Guards,
-        site: usize,
-        slot: usize,
-    ) -> bool {
+    /// Check the held-reference conditions after the caller has proved that
+    /// this operation consumes the source. The heap still checks exclusivity.
+    pub fn can_finish_consumed_source(&self, site: usize, slot: usize) -> bool {
         let id = self.ids[&slot];
         contains(&self.live_in[site], id)
             && !self.definitions[site].contains(&id)
             && !self.post_uses[site].contains(&id)
-            && (!self.live_after(site, slot) || self.last_use_with_guards(flow, guards, site, slot))
     }
     /// Exclude only branches contradicted by facts that MUST hold at this
     /// operation. Any intervening predicate redefinition declines the proof.
@@ -361,27 +378,45 @@ impl OwnerFlow {
         if known.is_empty() || self.post_uses[frontier].contains(&id) {
             return false;
         }
-        let mut after = known.clone();
+        let mut search = self.guard_search.borrow_mut();
+        search.states.resize_with(flow.reachable.len(), || None);
+        let result = self.trace_last_use(flow, guards, frontier, id, &mut search);
+        // Clear every saved fact even if a read ended the search early.
+        // The next query can have a different frontier or owner.
+        search.clear();
+        result
+    }
+
+    fn trace_last_use(
+        &self,
+        flow: &Flow,
+        guards: &Guards,
+        frontier: usize,
+        id: usize,
+        search: &mut GuardSearch,
+    ) -> bool {
+        let mut after = guards.known(frontier).clone();
         guards.advance(flow, frontier, &mut after);
-        let mut pending = guards
-            .successors(flow, frontier, &after)
-            .into_iter()
-            .map(|next| (next, guards.edge(frontier, next, &after)))
-            .collect::<Vec<_>>();
-        let mut states = vec![None::<super::guards::State>; flow.reachable.len()];
-        while let Some((site, state)) = pending.pop() {
+        search.pending.extend(
+            guards
+                .successors(flow, frontier, &after)
+                .into_iter()
+                .map(|next| (next, guards.edge(frontier, next, &after))),
+        );
+        while let Some((site, state)) = search.pending.pop() {
             // No syntactic continuation reads this old owner before a fresh
             // definition. Guarded edges are a subset of that graph, so this
             // subtree cannot affect the answer or any relevant join state.
             if !contains(&self.guard_read_reachable[site], id) {
                 continue;
             }
-            if let Some(existing) = &mut states[site] {
+            if let Some(existing) = &mut search.states[site] {
                 if !existing.merge(&state) {
                     continue;
                 }
             } else {
-                states[site] = Some(state);
+                search.visited.push(site);
+                search.states[site] = Some(state);
             }
             if self.reads[site].contains(&id) || self.post_uses[site].contains(&id) {
                 return false;
@@ -389,9 +424,9 @@ impl OwnerFlow {
             if self.definitions[site].contains(&id) {
                 continue;
             }
-            let mut after = states[site].as_ref().unwrap().clone();
+            let mut after = search.states[site].as_ref().unwrap().clone();
             guards.advance(flow, site, &mut after);
-            pending.extend(
+            search.pending.extend(
                 guards
                     .successors(flow, site, &after)
                     .into_iter()
