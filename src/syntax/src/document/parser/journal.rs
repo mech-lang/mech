@@ -3,7 +3,8 @@ use crate::document::retained_sequence::{Measured, RetainedSequence, UnitMeasure
 use alloc::sync::Arc;
 use core::fmt;
 use smallvec::SmallVec;
-const PAGE: usize = 4;
+// Larger bounded pages amortize persistent tree traversal and allocation.
+const PAGE: usize = 32;
 struct Chunk<T>(Arc<SmallVec<[T; PAGE]>>);
 impl<T> Clone for Chunk<T> {
     fn clone(&self) -> Self {
@@ -66,17 +67,28 @@ impl<T> Journal<T> {
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }
-    pub fn get(&self, index: usize) -> Option<&T> {
-        if index >= self.len {
-            return None;
-        }
-        let page = index / PAGE;
+    #[inline]
+    fn page(&self, page: usize) -> Option<&[T]> {
         let chunk = if page == self.items.len() {
             self.tail.as_ref()?
         } else {
             self.items.get(page)?
         };
-        chunk.0.get(index % PAGE)
+        Some(chunk.0.as_slice())
+    }
+    pub fn get(&self, index: usize) -> Option<&T> {
+        if index >= self.len {
+            return None;
+        }
+        self.page(index / PAGE)?.get(index % PAGE)
+    }
+    /// Borrow a page containing this item, with its absolute starting index.
+    pub(crate) fn page_at(&self, index: usize) -> Option<(usize, &[T])> {
+        if index >= self.len {
+            return None;
+        }
+        let page = index / PAGE;
+        Some((page * PAGE, self.page(page)?))
     }
     pub(crate) fn get_with_work(&self, index: usize) -> (Option<&T>, u64) {
         if index / PAGE == self.items.len() {
