@@ -8,6 +8,7 @@ mod selected_string_footprint;
 pub(in crate::resident) mod selected_string_matrix;
 mod selection_address;
 pub(in crate::resident) mod string_map_access;
+mod table_selection;
 
 #[cfg(test)]
 use mech_core::PORTABLE_SELECTOR_INDEX_MAX as PORTABLE_INDEX_MAX;
@@ -6174,6 +6175,12 @@ fn bind_snapshot_access_mode(
         .get(request.output.schema_id)
         .ok_or(ResidentKernelBindError::UnsupportedLayout)?;
     let selector_count = request.inputs.len() - 1;
+    if matches!(source_schema.body(), SchemaBody::Table { .. })
+        && matches!(output_schema.body(), SchemaBody::Table { .. })
+        && explicit_matrix_mode == Some(ResolvedSelectionMode::Rows)
+    {
+        return table_selection::bind(request);
+    }
     let selector_schemas = request.inputs[1..]
         .iter()
         .map(|selector| {
@@ -16562,6 +16569,9 @@ fn snapshot_access_output_cost(
             Ok(cost)
         }
         (SchemaBody::Table { columns, .. }, ValueData::Table(table)) => {
+            if plan.matrix_mode == Some(ResolvedSelectionMode::Rows) {
+                return table_selection::output_cost(table, columns, selector(0)?, meter);
+            }
             let column = selector_id(selector(0)?)?;
             let live_ordinal = named_schema_ordinal_with_meter(
                 columns.iter().map(|candidate| candidate.name.as_str()),
@@ -16872,6 +16882,12 @@ fn snapshot_access_data(
                 .map_err(|_| ResidentKernelError::InvalidInput)
         }
         SchemaBody::Table { columns, .. } => {
+            if plan.matrix_mode == Some(ResolvedSelectionMode::Rows) {
+                let ValueData::Table(table) = source.data() else {
+                    return Err(ResidentKernelError::InvalidInput);
+                };
+                return table_selection::data(table, columns, &selectors[0]);
+            }
             let index = output_cost
                 .selected_ordinal
                 .ok_or(ResidentKernelError::InvalidInput)?;
@@ -17303,10 +17319,20 @@ fn snapshot_access_from_source(
     // Resolve parameterized result axes before admission. This validates
     // fixed axes independently even when a compensating axis would preserve
     // the same total element count.
-    let resolved_output_shape = output_cost
-        .output_dimensions
-        .map(|(rows, columns)| resolved_snapshot_output_shape(kernel, rows, columns))
-        .transpose()?;
+    let resolved_output_shape = if plan.matrix_mode == Some(ResolvedSelectionMode::Rows)
+        && matches!(source_schema.body(), SchemaBody::Table { .. })
+    {
+        Some(table_selection::output_shape(
+            kernel,
+            source,
+            output_cost.count,
+        )?)
+    } else {
+        output_cost
+            .output_dimensions
+            .map(|(rows, columns)| resolved_snapshot_output_shape(kernel, rows, columns))
+            .transpose()?
+    };
     let footprint_work = footprint_meter.estimate();
     let publication_equality_work = match prior_output_footprint {
         Some(prior) => prior_schema_comparison_work

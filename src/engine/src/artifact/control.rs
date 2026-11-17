@@ -180,7 +180,12 @@ fn validate_structural_pattern(
         super::CollectionPattern::Wildcard => {}
         super::CollectionPattern::Bind { local, schema } => {
             let definition = draft.schemas.get(*schema)?;
-            if *local as usize != bindings.len() || !compatible(definition) {
+            let optional_payload = match expected.body() {
+                SchemaBody::Option(payload) => component_schema(expected, payload)
+                    .is_some_and(|payload| &payload == definition),
+                _ => false,
+            };
+            if *local as usize != bindings.len() || !(compatible(definition) || optional_payload) {
                 return None;
             }
             bindings.push(*schema);
