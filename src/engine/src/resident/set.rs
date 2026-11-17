@@ -4108,7 +4108,9 @@ fn define_set(
     }
     // Reserve recursive key comparisons and both draft/final populations before cloning.
     let levels = u64::from(usize::BITS - inputs.len().max(1).leading_zeros()) + 1;
-    let work = checked_cost_product(&[compare.max(1), levels])?;
+    // Candidate normalization uses the same bounded heapsort as Matrix-to-Set
+    // conversion, followed by duplicate removal and canonical publication.
+    let work = checked_cost_product(&[compare.max(1), levels, 4])?;
     let container = checked_cost_product(&[
         checked_u64(inputs.len())?,
         checked_u64(core::mem::size_of::<ValueDataDraft>())?,
@@ -4124,7 +4126,7 @@ fn define_set(
         compute_work: checked_cost_sum(&[measured.compute_work(), work, checked_u64(inputs.len())?])?,
         output_elements: inputs.len(), output_bytes: bytes,
         temporary_bytes: checked_cost_product(&[bytes, 3])?, cloned_bytes: checked_cost_product(&[payload, 2])?,
-        retained_nodes: checked_cost_sum(&[measured.retained_nodes(), checked_cost_product(&[nodes, 2])?, 4])?,
+        retained_nodes: checked_cost_sum(&[measured.retained_nodes(), checked_cost_product(&[nodes, 3])?, 4])?,
         ..KernelCostEstimate::default()
     };
     let budget = PreparedKernel::new(cost.remaining_incremental_work()?, cost)
@@ -4133,10 +4135,51 @@ fn define_set(
     let values = (0..inputs.len())
         .map(|index| scalar_element_draft(inputs, index))
         .collect::<Result<Vec<_>, _>>()?;
+    let metadata = kernel
+        .snapshot_output()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schemas = kernel
+        .snapshot_schemas()
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let schema = schemas
+        .get(metadata.schema)
+        .ok_or(ResidentKernelError::InvalidOutput)?;
+    let SchemaBody::Set { element, .. } = schema.body() else {
+        return Err(ResidentKernelError::InvalidOutput);
+    };
+    let data = ValueDataDraft::Set(values.into_boxed_slice());
+    let shape = if schema.dimension_parameters().is_empty() {
+        schema
+            .instantiate_shape(Box::new([]))
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+    } else {
+        mech_core::shape_for_value_data(schema, &data, &[], None)
+            .map_err(|_| ResidentKernelError::InvalidOutput)?
+    };
+    let ValueDataDraft::Set(values) = data else {
+        unreachable!()
+    };
+    let allowance = SnapshotCanonicalizationBudget::new(budget);
+    let values = mech_core::snapshot::normalize_set_element_drafts(
+        element,
+        values,
+        &shape,
+        &SnapshotValidationContext::new(schemas).with_canonicalization_budget(&allowance),
+    )
+    .map_err(|error| match error {
+        SnapshotValueError::CanonicalizationWorkLimitExceededV1 { .. } => {
+            ResidentKernelError::InvalidShape
+        }
+        _ => ResidentKernelError::InvalidInput,
+    })?;
     let next = finalize_snapshot_with_work_budget(
         kernel,
-        ValueDataDraft::Set(values.into_boxed_slice()),
-        Some(budget),
+        ValueDataDraft::Set(values),
+        Some(
+            budget
+                .checked_sub(allowance.consumed())
+                .ok_or(ResidentKernelError::InvalidShape)?,
+        ),
     )?;
     write_changed_snapshot(kernel, output, next)
 }

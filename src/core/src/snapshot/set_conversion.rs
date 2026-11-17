@@ -1,5 +1,5 @@
-//! Matrix conversion uses the same finalization and canonical key relation as
-//! ordinary sets. Callers admit the complete staging/sort work before entry.
+//! Set constructors and Matrix conversion share canonical key normalization.
+//! Callers admit the complete staging/sort work before entry.
 use super::error::{SnapshotPath, SnapshotPathSegment};
 use super::relations::{compare_key_data, normalized_key_data};
 use super::validation::{canonical_snapshot_data_draft, finalize_data};
@@ -23,7 +23,9 @@ pub(crate) fn normalize_set_conversion_drafts(
     )
 }
 
-pub(crate) fn normalize_set_conversion_drafts_with_context(
+/// Sorts set-construction candidates and removes equal normalized keys.
+/// Callers must admit the complete staging and sort work before entry.
+pub fn normalize_set_conversion_drafts_with_context(
     body: &SchemaBody,
     drafts: Box<[ValueDataDraft]>,
     shape: &ShapeInstance,

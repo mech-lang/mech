@@ -43,6 +43,7 @@ pub use self::relations::{
     schema_data_partial_cmp, schema_data_snapshot_eq,
 };
 pub use self::sequence::SequenceView;
+pub use self::set_conversion::normalize_set_conversion_drafts_with_context as normalize_set_element_drafts;
 pub use self::validation::{
     CompositeSnapshotConstructor, FrozenSnapshotIdentity, MatrixSnapshotConstructor,
     OwnedSnapshotBytes, OwnedSnapshotString, SnapshotCanonicalizationBudget,

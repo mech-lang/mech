@@ -11684,18 +11684,26 @@ fn complete_activation_shape_facts_with_analysis(
                 .ok_or(ResidentActivationError::InvalidDependency { node: node.node })?
                 .schema();
             if let SchemaBody::Table { rows, .. } = source_schema.body() {
-                // Bytecode intentionally omits non-wire slot-shape hints, so a
-                // dynamic matrix output starts from its valid [0, 0] lower-bound
-                // placeholder. An exact table declaration provides durable
-                // authority for the selected column's [rows, 1] shape before
-                // resident layout and binding. Dynamic or parameter-dependent
-                // row counts need live activation facts and stay closed here.
-                let CardinalitySpec::Exact(DimensionExpr::Constant(rows)) = rows else {
-                    return Err(ResidentActivationError::UnresolvedShape { slot: output });
-                };
-                let shape = matrix_shape_for_extents(output_schema, &[*rows, 1])
-                    .map_err(|_| ResidentActivationError::UnresolvedShape { slot: output })?;
-                facts.slot_shapes.insert(output, shape);
+                // A table column always has one column, including when no rows
+                // survive a live filter. A dynamic population is a runtime seed,
+                // not an activation-fixed zero-row result.
+                match rows {
+                    CardinalitySpec::Exact(DimensionExpr::Constant(rows)) => {
+                        let shape =
+                            matrix_shape_for_extents(output_schema, &[*rows, 1]).map_err(|_| {
+                                ResidentActivationError::UnresolvedShape { slot: output }
+                            })?;
+                        facts.slot_shapes.insert(output, shape);
+                    }
+                    CardinalitySpec::Dynamic { .. } => {
+                        let shape =
+                            matrix_shape_for_extents(output_schema, &[0, 1]).map_err(|_| {
+                                ResidentActivationError::UnresolvedShape { slot: output }
+                            })?;
+                        facts.slot_shape_seeds.insert(output, shape);
+                    }
+                    _ => return Err(ResidentActivationError::UnresolvedShape { slot: output }),
+                }
                 continue;
             }
         }
