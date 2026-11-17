@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "e45fc087624e50db4b1241768ebdac99cc9514ccd4eae0047e9b0040cb926690",
-      "bytes": 8628
+      "sha256": "f0101b2a9492afcb800f195733f8a99e4dd0af4de9ac3ba5d98999ea32ad3583",
+      "bytes": 8700
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -27835,13 +27835,33 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/post-statement-parser-profile/README.md",
-      "sha256": "3833a30dcc0838e1d47c74ae7f04f120a560db2664cebad2ed1ba3c1d3a078c7",
-      "bytes": 1006
+      "sha256": "cfa497012aa1342b8441127945ec7dde09441cd8054e964b2bb59d04cb4c2458",
+      "bytes": 1930
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/post-statement-parser-profile/driver.py",
       "sha256": "f572508c2481cf22a54a0db07581ad9417d2e22e954d56684ef19b2de5f54f08",
       "bytes": 13601
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/post-statement-parser-profile/literal-census/counts.log.gz",
+      "sha256": "724c26dbd9e4a4a2764ec93534326755740caba9fe0f84821fad64dee7005b4f",
+      "bytes": 1774
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/post-statement-parser-profile/literal-census/overlay.json",
+      "sha256": "f8e68a469bde9020d4d148ffa68123cac0228fff9a1df0ca655f0e8e5b5260ff",
+      "bytes": 515
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/post-statement-parser-profile/literal-census/report.json",
+      "sha256": "bedf49009148a0654cfca729ac7540bfb1cb7c26e8977a68494f432d03f40ba9",
+      "bytes": 7300
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/post-statement-parser-profile/literal-census.py",
+      "sha256": "0da64442b1ab9f2d1d68f85c4866a585a8f70a7d04fc0c0d818ad1d2c1422c38",
+      "bytes": 6701
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/post-statement-parser-profile/measure.py",
@@ -33500,8 +33520,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "13b954174c7a349c18c141919e8e874d73748c85f7d4dd0e785f1d280d72a577",
-      "bytes": 279746
+      "sha256": "05efd913f7becbe193295cbc60c67f49d59e2881defdc510ae8f8aadd1041256",
+      "bytes": 280220
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",

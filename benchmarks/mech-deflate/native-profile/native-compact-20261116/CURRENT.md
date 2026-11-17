@@ -102,8 +102,9 @@ both orders. The earlier transient's cause remains open.
 ## Active work
 
 - **Parser.** The current diagnostic samples put base-rule evaluation at
-  19.8% and literal scanning at 16.1%. Measure expected and source grapheme
-  work and repeated literal-cache misses before changing the scanner.
+  19.8% and literal scanning at 16.1%. Expected-side segmentation takes
+  1.65 million Unicode calls across 164 fixed literals. The next candidate
+  can reuse that invariant work while charging the original allowance.
   [Parser profile](evidence/post-statement-parser-profile/README.md)
 - **Native compiler.** Attribute plan/semantic preparation, lazy facts,
   SSA construction, cleanup, Cranelift and worker waits separately. Share
