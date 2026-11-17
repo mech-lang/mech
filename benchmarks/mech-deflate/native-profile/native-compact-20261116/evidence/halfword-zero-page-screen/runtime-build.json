@@ -1,0 +1,27 @@
+{
+  "reference_runtime_sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+  "variant_runtime_sha256": "aef5b2ce8af91062d808a10832ca12b99d731809fc95b6d54dc60eafb649336b",
+  "sources_before": {
+    "zero_pages.rs": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80",
+    "mod.rs": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
+    "terminal_appends.rs": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4"
+  },
+  "sources_after": {
+    "zero_pages.rs": "882cf3209811e60b31d0982abd756810d73d152098873b7a4b7472c9efe0f2b5",
+    "mod.rs": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
+    "terminal_appends.rs": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4"
+  },
+  "runtime_build": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--crate-name",
+    "mech_gpu",
+    "--crate-type=rlib",
+    "-C",
+    "opt-level=3",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/halfword-mapping/source/runtime-lib.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/halfword-mapping/source/libmech_gpu_runtime.rlib"
+  ]
+}

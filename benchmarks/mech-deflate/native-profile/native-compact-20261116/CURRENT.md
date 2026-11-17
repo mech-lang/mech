@@ -41,6 +41,11 @@ win counts are withdrawn because those runs linked the reference encoder
 into both workers.
 [Corrected evidence](evidence/checked-byte-read-regions/README.md)
 
+A separate fixed-encoder runtime screen lowers the large halfword mapping
+threshold. It increases the 1 KiB periodic call from 44 µs to 63 µs and
+loses four libdeflate wins in both focused orders.
+[Allocation profile and focused screen](evidence/halfword-zero-page-screen/README.md)
+
 ## Which build to use
 
 | Role | Encoder text | Status |

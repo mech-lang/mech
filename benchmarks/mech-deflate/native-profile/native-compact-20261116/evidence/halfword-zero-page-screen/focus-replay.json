@@ -1,0 +1,559 @@
+{
+  "runs": [
+    {
+      "id": "halfword-lazy-zeros-focus-v2-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 10,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 7,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 7,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "prefix-periodic-1024",
+            "prefix-periodic-4096",
+            "random-1024",
+            "random-64"
+          ],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "halfword-lazy-zeros-focus-v2-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 10,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "precision_supported_wins": {
+            "mech-control": 10,
+            "mech-experiment": 10
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 8,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 8,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "320-overlap",
+            "prefix-periodic-1024",
+            "prefix-periodic-4096",
+            "random-1024",
+            "random-64"
+          ],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.029333811392069364,
+          "lower": 0.02102760050090735,
+          "upper": 0.03762612126751552
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.01837236713169954,
+          "lower": 0.01096359988393969,
+          "upper": 0.025853817532633938
+        }
+      },
+      "combined": {
+        "estimate": 0.023838419906205832,
+        "lower": 0.01826100089671634,
+        "upper": 0.029411845135752568
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.05125295052453427,
+          "lower": 0.04443930870782653,
+          "upper": 0.058276418139198594
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.00879870292527185,
+          "lower": 0.0010847875152921738,
+          "upper": 0.016333544627006757
+        }
+      },
+      "combined": {
+        "estimate": 0.029807075590139398,
+        "lower": 0.024546139182606064,
+        "upper": 0.03494811235119766
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.02760065326098249,
+          "lower": 0.022727743534501688,
+          "upper": 0.031485474883768516
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.03489039848570785,
+          "lower": 0.033037047564690836,
+          "upper": 0.03670598867831698
+        }
+      },
+      "combined": {
+        "estimate": 0.031239084566441422,
+        "lower": 0.028648121741642774,
+        "upper": 0.0334348428696265
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 1.9427417277261516,
+          "lower": 1.9294894976345414,
+          "upper": 1.9560197291604218
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 1.952074571770694,
+          "lower": 1.9405730343194794,
+          "upper": 1.9628244088078048
+        }
+      },
+      "combined": {
+        "estimate": 1.9474044557387997,
+        "lower": 1.9387142786133378,
+        "upper": 1.956137600410698
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.8216361144054258,
+          "lower": 0.8171362468967396,
+          "upper": 0.8257853561436457
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.8228785484165635,
+          "lower": 0.8191799721331319,
+          "upper": 0.8266098270207316
+        }
+      },
+      "combined": {
+        "estimate": 0.822257225522937,
+        "lower": 0.8193746241444608,
+        "upper": 0.8251080303043097
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.02958467622975669,
+          "lower": 0.027024006854978966,
+          "upper": 0.03230686739293964
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.02909841565611071,
+          "lower": 0.02686700291051536,
+          "upper": 0.031391570003679536
+        }
+      },
+      "combined": {
+        "estimate": 0.029341517229268366,
+        "lower": 0.027674844531875298,
+        "upper": 0.03108967074935043
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.22057254264985904,
+          "lower": 0.21229445457175578,
+          "upper": 0.2289087071098037
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.20900443770345944,
+          "lower": 0.2025436273552017,
+          "upper": 0.21578556991788078
+        }
+      },
+      "combined": {
+        "estimate": 0.21477472010355658,
+        "lower": 0.2094865624630564,
+        "upper": 0.2200151405642614
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.4488048881444904,
+          "lower": 0.4468757588761021,
+          "upper": 0.45078590032453736
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.4536162413703122,
+          "lower": 0.4479819195480048,
+          "upper": 0.4587632198045879
+        }
+      },
+      "combined": {
+        "estimate": 0.4512085708069429,
+        "lower": 0.44812263224696913,
+        "upper": 0.45397125713752784
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.2087446670742812,
+          "lower": 0.20160121990820423,
+          "upper": 0.21579891758951653
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.1880484869335599,
+          "lower": 0.18053091025356882,
+          "upper": 0.19539114344490938
+        }
+      },
+      "combined": {
+        "estimate": 0.19835189857011915,
+        "lower": 0.1932189175058845,
+        "upper": 0.20349006831095418
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-16384": {
+      "decision": "regression",
+      "runs": {
+        "halfword-lazy-zeros-focus-v2-forward": {
+          "estimate": 0.0902998592183093,
+          "lower": 0.08537327335903111,
+          "upper": 0.09575761296980412
+        },
+        "halfword-lazy-zeros-focus-v2-reverse": {
+          "estimate": 0.09175438033305006,
+          "lower": 0.08731867473042931,
+          "upper": 0.09613579278597162
+        }
+      },
+      "combined": {
+        "estimate": 0.09102687738574855,
+        "lower": 0.08774654366712165,
+        "upper": 0.0944745064127126
+      },
+      "adverse_runs": [
+        "halfword-lazy-zeros-focus-v2-forward",
+        "halfword-lazy-zeros-focus-v2-reverse"
+      ],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "candidate_control_timing_observations": {
+    "slowdowns": [
+      "empty: established slowdown above the 0.5% resolution",
+      "seven-stored-prefix: established slowdown above the 0.5% resolution",
+      "320-overlap: established slowdown above the 0.5% resolution",
+      "random-64: established slowdown above the 0.5% resolution",
+      "random-1024: established slowdown above the 0.5% resolution",
+      "prefix-natural-8192: established slowdown above the 0.5% resolution",
+      "prefix-random-4096: established slowdown above the 0.5% resolution",
+      "prefix-periodic-1024: established slowdown above the 0.5% resolution",
+      "prefix-periodic-4096: established slowdown above the 0.5% resolution",
+      "prefix-periodic-16384: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": []
+  },
+  "decision": "Reject",
+  "rejected": [
+    "prefix-periodic-1024: repeated focused loss against libdeflate",
+    "prefix-periodic-4096: repeated focused loss against libdeflate",
+    "random-1024: repeated focused loss against libdeflate",
+    "random-64: repeated focused loss against libdeflate"
+  ],
+  "unresolved": [
+    "halfword-lazy-zeros-focus-v2-forward: focused losses against libdeflate: prefix-periodic-1024, prefix-periodic-4096, random-1024, random-64",
+    "halfword-lazy-zeros-focus-v2-reverse: focused losses against libdeflate: 320-overlap, prefix-periodic-1024, prefix-periodic-4096, random-1024, random-64",
+    "both complete timing orders are required"
+  ],
+  "plan": {
+    "path": "current-roadmap/halfword-mapping/bound-reference/focus/plan.json",
+    "sha256": "e3d141138ad26773de8c97c7718eef929a3a367c2b0d375691f90c434c6c8c56"
+  },
+  "receipts": {
+    "halfword-lazy-zeros-focus-v2-forward": {
+      "id": "halfword-lazy-zeros-focus-v2-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "current-roadmap/halfword-mapping/bound-reference/focus/canonical-pins/halfword-lazy-zeros-focus-v2-forward.json",
+        "sha256": "41c1a9827ba546d46594bb10c6730f69db9c3490c3d48e304c118f64b1b2d0f4"
+      },
+      "original_pins": {
+        "path": "halfword-lazy-zeros-focus-v2-forward/pins.json",
+        "sha256": "6a22a44bc257f1cd4e313ad2f16efc50a353f2de583e6ff296fa3c7ad60b839b"
+      },
+      "summary": {
+        "path": "halfword-lazy-zeros-focus-v2-forward/summary.json",
+        "sha256": "90171e8e2d102b26db0e67144c55a52fe167edb58a69904e5361a7f201d1a2b1"
+      },
+      "complete": {
+        "path": "halfword-lazy-zeros-focus-v2-forward/complete.json",
+        "sha256": "d3042814a2a84f6c5f80f3cd579f53de631bf7101053bc2e24856f89fe0ad5ee"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/320-overlap/observations.json.gz",
+          "sha256": "0f1dfaba9ef93f518abbb48178e9534288f69ec9dd465494d1f8120d5f8190c1"
+        },
+        "empty": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/empty/observations.json.gz",
+          "sha256": "5b6472213b7c6c6fc0baa4bbbc96d0043e72927ec4a4991f1186e6072ecb8e50"
+        },
+        "prefix-natural-8192": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "afb26f11a16641494c8922824531158d4d2c15fd648dd852e477f403747914c0"
+        },
+        "prefix-periodic-1024": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "ce39ce206d1f234f9bfc6eed0c51efea416f6ec17fdddde56aa00fd86c5d1edb"
+        },
+        "prefix-periodic-16384": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/prefix-periodic-16384/observations.json.gz",
+          "sha256": "58a125924637ea778dbceee3d508af3b82365708398cc2643743db2e5096adaf"
+        },
+        "prefix-periodic-4096": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/prefix-periodic-4096/observations.json.gz",
+          "sha256": "3c0799c6a15a2a6b5e4c6a1efc8b664ee8a2af54871e328098fc69f83f133335"
+        },
+        "prefix-random-4096": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "483bfd0d591d8a46ec84fce759cb2631cd6a14fb5cd2213536274b2f504f0296"
+        },
+        "random-1024": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/random-1024/observations.json.gz",
+          "sha256": "76166709952bb4b40770247a368d1b87c19a8ad1f9681ccdcfd58b40bb4514f3"
+        },
+        "random-64": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/random-64/observations.json.gz",
+          "sha256": "13d6d36b9e808c503cb8567a8fd088c4782643761dbffec2e47e489d686eeefe"
+        },
+        "seven-stored-prefix": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "37468cd6a735d3cd88d50983c91a207b44900ba8bd6895e8354440ce5510c79b"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "halfword-lazy-zeros-focus-v2-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "halfword-lazy-zeros-focus-v2-reverse": {
+      "id": "halfword-lazy-zeros-focus-v2-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "current-roadmap/halfword-mapping/bound-reference/focus/canonical-pins/halfword-lazy-zeros-focus-v2-reverse.json",
+        "sha256": "41c1a9827ba546d46594bb10c6730f69db9c3490c3d48e304c118f64b1b2d0f4"
+      },
+      "original_pins": {
+        "path": "halfword-lazy-zeros-focus-v2-reverse/pins.json",
+        "sha256": "6a22a44bc257f1cd4e313ad2f16efc50a353f2de583e6ff296fa3c7ad60b839b"
+      },
+      "summary": {
+        "path": "halfword-lazy-zeros-focus-v2-reverse/summary.json",
+        "sha256": "d9c8ef5f8520939724e2ef859a147783374490df845a5aab1a1a338240d61bb2"
+      },
+      "complete": {
+        "path": "halfword-lazy-zeros-focus-v2-reverse/complete.json",
+        "sha256": "d3042814a2a84f6c5f80f3cd579f53de631bf7101053bc2e24856f89fe0ad5ee"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/320-overlap/observations.json.gz",
+          "sha256": "0fb8196b12b9c9a84acadcac650bd526f4ea7edfb4c3f66ed3f0a1a8c0859201"
+        },
+        "empty": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/empty/observations.json.gz",
+          "sha256": "1b7fbc96815812c583d67fb1aabef17ed8aa0f7d81e9a75f9f4ca5406ef5a13b"
+        },
+        "prefix-natural-8192": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "8c5dd32f2b14b252d2ad571f56fd18f75431f4e8a00812d8848c32204d862cf4"
+        },
+        "prefix-periodic-1024": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "173d23c936a6765235d2ea4538c4ce24dd7f30616cd74812737d3f68739f8e74"
+        },
+        "prefix-periodic-16384": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/prefix-periodic-16384/observations.json.gz",
+          "sha256": "c3b6821a8cb04876df170bb52adba4105570c6ed56969d6be5be98086aaf2028"
+        },
+        "prefix-periodic-4096": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/prefix-periodic-4096/observations.json.gz",
+          "sha256": "b1d0ef6a72962690445c7f76994b853cdd2022141037dad151cb91ee08074a86"
+        },
+        "prefix-random-4096": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "c9a28c2984d35df8a349d733be15b9ec29ac43c52531ae0e4565d80c89b62325"
+        },
+        "random-1024": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/random-1024/observations.json.gz",
+          "sha256": "8454f381b3920f453651b21bd1baef66593dc7c4969701fead054e77a943fa4b"
+        },
+        "random-64": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/random-64/observations.json.gz",
+          "sha256": "cfde6c98765c0b4faff7b878c0d2f322dbca3d3cbf1f3fe938c91a98e6b12684"
+        },
+        "seven-stored-prefix": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "06b6dd1be2b4500a5f9650d494022dc8d088e23102364324493012038157edf7"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "halfword-lazy-zeros-focus-v2-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}
