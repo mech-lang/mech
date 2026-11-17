@@ -280,6 +280,7 @@ impl<'g> Continuation<'g> {
             child_work: self.child_work,
             allowance,
             input_final,
+            delimiter: self.state.codeblock_delimiter,
         }
     }
 
@@ -290,13 +291,23 @@ impl<'g> Continuation<'g> {
         input_final: bool,
         allowance: u64,
     ) -> Option<Box<DefinitionRecording>> {
-        if matches!(expression, GrammarExpression::Rule(rule) if *rule == rules::VARIABLE_DEFINE)
-            && parser.current_rule() == Some(rules::STATEMENT)
-        {
-            DefinitionRecording::begin(parser, self.definition_position(input_final, allowance))
-        } else {
-            None
-        }
+        let GrammarExpression::Rule(rule) = expression else {
+            return None;
+        };
+        let kind = match *rule {
+            rules::VARIABLE_DEFINE if parser.current_rule() == Some(rules::STATEMENT) => {
+                SyntaxKind::VariableDefine
+            }
+            rules::FUNCTION_DEFINE if parser.current_rule() == Some(rules::MECH_CODE_ALT) => {
+                SyntaxKind::FunctionDefine
+            }
+            _ => return None,
+        };
+        DefinitionRecording::begin(
+            parser,
+            self.definition_position(input_final, allowance),
+            kind,
+        )
     }
 
     /// The allowance counts grammar-frame transitions. Ordinary rule/recovery
