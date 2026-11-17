@@ -28,10 +28,17 @@ not received a new full peer timing qualification.
 
 The frontend allocator change is published in `21757538`. Its matched comparison
 improved complete build time by 8.83%, with all ten Mech outputs byte-identical.
-The fresh owner study remeasures the retained control at **6.25214 seconds**,
-or **12.97226× libdeflate**. All builds include final linking, with compilers, fixed
-runtimes, and adapters prebuilt. See the main README for the phase timings and the
-distinction between these benchmarks and compiler construction.
+The parser now reads 32-entry journal pages, hashes token bytes in contiguous
+spans with unchanged work limits, and skips an unused map when caching subtrees.
+The parser benchmark improves by 16.82% with identical trees and parser steps.
+The matched complete build improves from **6.30298 to 5.65845 seconds**
+(10.23% less time), reaching **1.89458× Roc and 11.61221× libdeflate**.
+The retained encoder object, complete metadata, and pinned benchmark worker
+rebuild byte for byte. All 531 syntax unit tests pass. Review the three source
+files under `src/syntax/src/document/parser` and the
+[page-size, parser, and complete build evidence](evidence/parser-journal-pages/report.json).
+All build comparisons include final linking with compilers, fixed runtimes, and
+adapters prebuilt. See the README for phase timings and exact rebuild commands.
 
 ## Fresh owner reference counts
 

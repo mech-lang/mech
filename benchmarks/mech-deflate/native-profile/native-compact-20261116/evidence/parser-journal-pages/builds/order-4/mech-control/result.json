@@ -1,0 +1,14 @@
+{
+  "actor": "mech-control",
+  "seconds": {
+    "frontend": 3.981573333032429,
+    "native": 2.235222749877721,
+    "link": 0.041189834009855986,
+    "total": 6.2585766250267625,
+    "parse": 3.531755584
+  },
+  "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+  "encoder_bytes": 160136,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/order-4/mech-control/compressor",
+  "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+}
