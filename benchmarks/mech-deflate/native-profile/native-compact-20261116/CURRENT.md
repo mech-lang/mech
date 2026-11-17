@@ -1,36 +1,47 @@
 # PR #993 current status
 
-The compiler source is `033d17ce9cfd66b185e8fc45655575a971a86af9` on PR #993, stacked on #973 at
-`9087b1f07727a9bfcb7c09059f48edaca6dc2301`. The comparison uses Apple M1, macOS 15.6.1, and arm64.
+Maintained compiler source `c93ed0e1a726ff7f64164533593349f04fdfa12c` is on PR #993, stacked on #973 at
+`9087b1f07727a9bfcb7c09059f48edaca6dc2301`. These results use Apple M1, macOS 15.6.1 and arm64.
 [Machine-readable scorecard](scorecard.json)
 
 ## Current matched deployment build
 
 | Measurement | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.70063 s | 2.98958 s | 0.48058 s |
-| Source through strip | 2.71108 s | 3.00001 s | 0.49107 s |
+| Source through final link | 2.59466 s | 2.97795 s | 0.48074 s |
+| Source through strip | 2.60531 s | 2.98852 s | 0.49123 s |
 | Encoder text | 71,192 B | 57,696 B | 37,080 B |
 | Stripped executable used in timing | 292,568 B | 191,912 B | 155,752 B |
 
-The current build through linking is **0.903× Roc** and
-**5.621× libdeflate**. Mech encoder text is
-**1.234× Roc** and **1.920× libdeflate**. Both fixed
-host support and the compilers are prebuilt.
-[Ablation, build times and exact outputs](evidence/unused-failure-returns/README.md)
+Mech builds through the final link in **0.870× Roc** and
+**5.405× libdeflate** time. Encoder text is
+**1.234× Roc** and **1.920× libdeflate**.
+Compilers, allocator and deployment support are prebuilt. The byte-identical
+71,192 B worker has **81/81 Roc** and **61/81 libdeflate** wins in both full
+orders. [Matched builds](evidence/sealed-ascii-graphemes/README.md) ·
+[Runtime qualification](evidence/frame-copy-v2/README.md)
 
-The 71,192 B worker records forward 81/61, reverse 81/61 in the two full orders against Roc/libdeflate. Runtime policy v2 records **Retain** for the
-frame-copy candidate. The 71,420 B read outline still has corrected contract
-checks and pending runtime qualification.
-[Frame-copy evidence](evidence/frame-copy-v2/README.md)
-· [Corrected read-outline checks](evidence/checked-byte-read-regions/README.md)
+The separate phase run reports **812.7 ms Mech** and
+**3.0 ms Roc**. Mech includes indexing and its strict check.
+[Parser phase plan](evidence/sealed-ascii-graphemes/parser-phase-plan.json)
 
-The new phase profile attributes **883.5 ms**
-to grammar execution and **34.0 ms**
-to indexing the syntax tree. The earlier paired phase captures measured
-**918 ms Mech** and **3 ms Roc** under their respective parser boundaries.
-[Mech phase attribution](evidence/post-statement-parser-profile/README.md)
-· [Paired comparison with Roc](evidence/scoped-statement-replay/parser-phases/summary.json)
+## Whole-build budget
+
+| Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
+| --- | ---: | ---: | ---: | ---: |
+| Parser | 0.812 s | 0.75 | 0.35 | 0.13 |
+| Native preparation through object | 1.420 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.226 s | 0.18 | 0.09 | 0.04 |
+| Catalog initialization | 0.062 s | 0.05 | 0.02 | 0.01 |
+| Artifact, encoding, link and other work | 0.071 s | 0.07 | 0.06 | 0.05 |
+| **Total** | 2.595 s | 2.00 | 1.00 | 0.45 |
+
+The matched scanner ablation removes **98.5 ms**
+through linking. The remaining gap to libdeflate is **2.114 s**.
+The 0.45 s working budget requires **2.145 s** less elapsed time.
+Removing all parse and native time from each trial leaves
+**0.358 s**. The milestone columns
+allocate elapsed time, and most of the remaining gap needs a tested mechanism.
 
 ## Which build to use
 
@@ -101,25 +112,19 @@ both orders. The earlier transient's cause remains open.
 
 ## Active work
 
-- **Parser.** The current diagnostic samples put base-rule evaluation at
-  19.8% and literal scanning at 16.1%. Expected-side segmentation takes
-  1.65 million Unicode calls across 164 fixed literals. The next candidate
-  can reuse that invariant work while charging the original allowance.
-  [Parser profile](evidence/post-statement-parser-profile/README.md)
-- **Native compiler.** Attribute plan/semantic preparation, lazy facts,
-  SSA construction, cleanup, Cranelift and worker waits separately. Share
-  one immutable facts owner across read packing and branch analysis. Keep
-  phase choices and publication order exact when omitting a body.
-  [First matched source change](evidence/shared-program-facts/README.md)
-  The exclusive trace measures 0.692 s in CFG cleanup and 0.280 s in SSA
-  construction. The facts change removes one graph and 11 definition
-  initializations, about 1 ms in the trace. The scoped demand census finds
-  14 scalar sibling reads with protected boundaries. A checked range-proof
-  chain exposes about 3.2 ms of CFG and dominator recomputation. Park both
-  narrow changes and inspect the next exact-choice omitted-body case. [Scoped native diagnoses](evidence/checked-root-work/README.md)
-  [Exclusive native cost and raw traces](evidence/native-exclusive-work/README.md)
-  The adjacent cleanup now reuses verification when the phi sweep edits
-  no formals. [Matched verifier change](evidence/phi-verifier-reuse/README.md)
+- **Native compiler.** Measure reuse of CFG and dominator graphs at successive
+  root verifier checkpoints with identical ordered flow. Preserve first and
+  standalone checks and the full IR verifier after mutations.
+  [Current trace and scoped experiment](evidence/native-pass-attribution/README.md)
+- **Parser.** Price one family of losing base alternatives by deriving safe
+  exclusions from canonical productions. Start with adjacent rejected
+  alternatives at the same offset in the base choice continuation.
+  Preserve the winner, ties, diagnostics, event and cache order, and logical charges.
+  [Post-change stack samples](evidence/sealed-ascii-graphemes/residual/summary.json)
+- **Source semantic frontend.** Attribute declaration registration,
+  body/name/overload lowering, schema and constant finalization, and
+  requirement canonicalization by the 2.0 s milestone review.
+
 - **Integration and qualification.** Compile and test the checked Related
   Posts producer binding. The 24-block control-drift diagnostic recovers the
   four affected peer wins in both orders. The archived reference has a v2
@@ -129,6 +134,24 @@ Initial diagnosis is bounded to roughly 60–90 minutes and the first
 implementation to half a day. Park a direction after two flat or adverse
 iterations unless new evidence changes its expected benefit. Review
 the portfolio after two experiments or a substantial decision.
+
+## Completed and parked compiler work
+
+| Area | Decision |
+| --- | --- |
+| Variable, function and bounded statement replay, including nested observation | Complete |
+| Adjacent phi verification reuse | Complete |
+| Shared immutable facts | Retained and closed at about 1 ms less materialization |
+| Declaration snapshots | Closed at about 0.048 ms |
+| Minimal deployment without std or JSON | Complete |
+| Conservative scalar demand and mixed scalar transport | Parked. The strict model found zero removals. Reopen the 14 protected reads with evidence of material downstream savings |
+| Narrow range-pass CFG reuse | Bounded to about 3.2 ms |
+| Additional backend workers and initialization-proof rewrite | Deprioritized by worker activity and the 3.8 ms proof ceiling |
+
+[Replay evidence](evidence/scoped-function-replay/README.md) ·
+[Verification reuse](evidence/phi-verifier-reuse/README.md) ·
+[Native preparation limits](evidence/checked-root-work/README.md) ·
+[Minimal deployment](evidence/alloc-only-deployment/README.md)
 
 ## Parked work
 
