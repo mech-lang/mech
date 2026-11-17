@@ -1,0 +1,8 @@
+valid CFG and instructions
+- block0: cfg lacked the following successor(s) [block2]
+- block1: cfg lacked the following successor(s) [block2]
+- block2: cfg lacked the following successor(s) [block2]
+- block1: cfg lacked the following predecessor(s) [inst3]
+- block2: cfg lacked the following predecessor(s) [inst3]
+- inst1 (return): arguments of return must match function signature
+- inst2 (return): arguments of return must match function signature

@@ -1,0 +1,11 @@
+{
+  "source": "b6d684604b07ab777330362e8dbafce6f4779d45",
+  "compiled": {
+    "vendor/cranelift-codegen/src/verifier/mod.rs": "3b8efa46d5139be7df08990a2726d84183e4b9fa1f80f4746124871986e94f85",
+    "hosts/gpu/src/native_artifact/program/compact/owner_flow/mod.rs": "c7b1c2f7f2c9e5010f459e7d84a8056d6624c3d9fb0a55f2d6676b36d6b87e51",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "9b83d8347ece76b121ab7e1ac8d498a13b04938212c242c727688e06a99f1dbf",
+    "hosts/gpu/src/native_artifact/program/compact/private_chains.rs": "189b361dcb2e865657d03c965b323fbd6b10dd82483182c62ef359a95f14da5d"
+  },
+  "emitter_sha256": "1dfaef4f798106603f688ebe26b6c55302be6396ec728fede8f2a66229364bf1",
+  "frontend_sha256": "e6ce34300f990bba956fafd68505fd7d762ce5804ba0ce5c46791e5a7503a3db"
+}
