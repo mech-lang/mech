@@ -216,7 +216,9 @@ impl LiteralCache {
         if !(b' '..=b'~').contains(wanted) {
             return None;
         }
-        let text = source.contiguous_without_lookup_work()?.get(..context_end.to_usize())?;
+        let text = source
+            .contiguous_without_lookup_work()?
+            .get(..context_end.to_usize())?;
         if !text.is_char_boundary(consume_end.to_usize()) {
             return None;
         }
@@ -227,15 +229,24 @@ impl LiteralCache {
             return None;
         }
         let actual = *bytes.get(at)?;
-        if actual == *wanted || !(b' '..=b'~').contains(&actual)
+        if actual == *wanted
+            || !(b' '..=b'~').contains(&actual)
             || !bytes.get(next)?.is_ascii()
             || (at > 0 && !bytes[at - 1].is_ascii())
         {
             return None;
         }
-        self.remember(Self::slot(literal, start), CacheEntry {
-            literal, start, consume_end, context_end, result: None, work: SCAN_WORK,
-        });
+        self.remember(
+            Self::slot(literal, start),
+            CacheEntry {
+                literal,
+                start,
+                consume_end,
+                context_end,
+                result: None,
+                work: SCAN_WORK,
+            },
+        );
         Some((None, SCAN_WORK))
     }
 
@@ -292,14 +303,17 @@ impl LiteralScan<'static> {
         let before = *allowance;
         let result = self.advance(source, consume_end, context_end, final_input, allowance);
         if let LiteralProgress::Complete(result) = result {
-            cache.remember(index, CacheEntry {
-                literal: self.literal,
-                start,
-                consume_end,
-                context_end,
-                result,
-                work: before - *allowance,
-            });
+            cache.remember(
+                index,
+                CacheEntry {
+                    literal: self.literal,
+                    start,
+                    consume_end,
+                    context_end,
+                    result,
+                    work: before - *allowance,
+                },
+            );
         }
         result
     }
@@ -375,10 +389,12 @@ mod tests {
             let end = TextSize(text.len() as u32);
             for budget in 0..=10 {
                 let mut candidate = LiteralCache::default();
-                let admitted = candidate.sealed_ascii_miss(
-                    text, expected, start, end, end, budget,
+                let admitted = candidate.sealed_ascii_miss(text, expected, start, end, end, budget);
+                assert_eq!(
+                    admitted.is_some(),
+                    accepts && budget >= 8,
+                    "{text:?} {budget}"
                 );
-                assert_eq!(admitted.is_some(), accepts && budget >= 8, "{text:?} {budget}");
                 if let Some((result, charged)) = admitted {
                     let mut ordinary = LiteralCache::default();
                     let mut scan = LiteralScan::new(expected, start, Some(end)).unwrap();
