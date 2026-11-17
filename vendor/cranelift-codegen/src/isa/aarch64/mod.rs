@@ -31,6 +31,8 @@ mod spill_forwarding;
 
 #[cfg(all(test, feature = "unwind"))]
 mod cold_epilogues_tests;
+#[cfg(test)]
+mod zero_branch_tests;
 
 use self::inst::EmitInfo;
 
