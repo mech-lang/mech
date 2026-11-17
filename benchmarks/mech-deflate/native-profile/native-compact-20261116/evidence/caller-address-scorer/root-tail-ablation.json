@@ -1,0 +1,12 @@
+{
+  "padded_text_bytes": 71096,
+  "unpadded_text_bytes": 71048,
+  "caller_address_text_bytes": 71048,
+  "root_padding_bytes_removed": 48,
+  "padded_root_emitted_bytes_before_alignment": 50632,
+  "unpadded_root_emitted_bytes_before_alignment": 50632,
+  "caller_address_root_emitted_bytes_before_alignment": 50628,
+  "unpadded_root_frame_bytes": 3728,
+  "caller_address_root_frame_bytes": 3744,
+  "exact_checks": 162
+}
