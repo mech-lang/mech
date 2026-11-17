@@ -145,5 +145,8 @@
     }
   ],
   "fresh_owner_counts_cold_tails_paired_spills_object_sha256": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
-  "fresh_owner_counts_cold_tails_paired_spills_metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab"
+  "fresh_owner_counts_cold_tails_paired_spills_metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+  "zero_branches_tail_profile": "profiles/checked-root-zero-branches.json",
+  "fresh_owner_counts_cold_tails_zero_branches_object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "fresh_owner_counts_cold_tails_zero_branches_metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
 }

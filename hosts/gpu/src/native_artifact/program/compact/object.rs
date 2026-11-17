@@ -756,6 +756,18 @@ impl Module for PreparedObject {
             bodies.insert(id, context.func.clone());
         }
         let buffer = &context.compiled_code().unwrap().buffer;
+        let mut bytes = buffer.data().into();
+        if checked_root
+            && context.func.aarch64_branch_on_zero
+            && let Some(profile) = std::env::var_os("MECH_COMPACT_ROOT_TAIL_PROFILE")
+        {
+            phase_layout::pad_checked_root_tail(
+                std::path::Path::new(&profile),
+                buffer.alignment,
+                &mut bytes,
+            )
+            .map_err(|error| ModuleError::Backend(error.into()))?;
+        }
         let relocs = buffer
             .relocs()
             .iter()
@@ -765,7 +777,7 @@ impl Module for PreparedObject {
             FuncOrDataId::Func(id),
             Body::Text(Text {
                 alignment: u64::from(buffer.alignment),
-                bytes: buffer.data().into(),
+                bytes,
                 relocs,
             }),
         )

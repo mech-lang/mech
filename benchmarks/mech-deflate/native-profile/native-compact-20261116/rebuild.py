@@ -12,6 +12,7 @@ parser.add_argument(
         'baseline', 'cold-tails', 'owner-ranges', 'fresh-owner-counts',
         'fresh-owner-counts-cleanup', 'fresh-owner-counts-cold-tails',
         'fresh-owner-counts-cold-tails-paired-spills',
+        'fresh-owner-counts-cold-tails-zero-branches',
     ],
     default='baseline',
 )
@@ -76,20 +77,25 @@ assert sha(here/'program.mec')==recipe['source_sha256']
 flags=dict(recipe['flags'])
 variant_key=args.variant.replace('-','_')
 paired_spills=args.variant=='fresh-owner-counts-cold-tails-paired-spills'
+zero_branches=args.variant=='fresh-owner-counts-cold-tails-zero-branches'
+fresh_owner_cold_tails=args.variant=='fresh-owner-counts-cold-tails' or paired_spills or zero_branches
 profiles=recipe.get(variant_key+'_profiles',recipe['profiles'])
 flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in profiles)
 if args.preselect_root_inlining:
     flags['MECH_COMPACT_INLINE_SINGLE_CALLS'] = 'preselected'
 if args.reuse_equivalent_vector_ir:
     flags['MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR'] = '1'
-if args.variant in ('cold-tails', 'fresh-owner-counts-cold-tails') or paired_spills:
+if args.variant=='cold-tails' or fresh_owner_cold_tails:
     flags['MECH_COMPACT_SHARE_COLD_TAILS'] = '1'
 if args.variant=='owner-ranges':flags['MECH_COMPACT_PROVE_BACKING_OWNERS']='ranges'
-if args.variant in ('fresh-owner-counts', 'fresh-owner-counts-cleanup', 'fresh-owner-counts-cold-tails') or paired_spills:
+if args.variant in ('fresh-owner-counts', 'fresh-owner-counts-cleanup') or fresh_owner_cold_tails:
     flags['MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS'] = '1'
 if args.variant=='fresh-owner-counts-cleanup':flags.update(MECH_COMPACT_PROVE_BACKING_OWNERS='all',MECH_COMPACT_FINISH_CFG_CLEANUP='1')
 if paired_spills:
     flags['MECH_COMPACT_PAIR_REGISTER_SPILLS'] = '1'
+if zero_branches:
+    flags['MECH_COMPACT_BRANCH_ON_ZERO'] = '1'
+    flags['MECH_COMPACT_ROOT_TAIL_PROFILE'] = str(here / recipe['zero_branches_tail_profile'])
 assert not any('LLVM' in key for key in flags)
 source = here / 'program.mec'
 frontend = out / 'frontend'

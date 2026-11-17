@@ -195,6 +195,9 @@ pub struct FunctionStencil {
     /// Allow AArch64 to forward known values held in private spill slots.
     pub forward_spill_reloads: bool,
 
+    /// Select AArch64 compare-and-branch instructions for integer zero comparisons.
+    pub aarch64_branch_on_zero: bool,
+
     /// Measured order of AArch64 machine blocks, expressed in the original byte offsets.
     pub aarch64_block_layout: Vec<u32>,
 
@@ -244,6 +247,7 @@ impl FunctionStencil {
         self.share_cold_epilogues = false;
         self.aarch64_share_cold_tails = false;
         self.forward_spill_reloads = false;
+        self.aarch64_branch_on_zero = false;
         self.aarch64_block_layout.clear();
         self.aarch64_block_layout_literal_start = None;
         self.srclocs.clear();
@@ -442,6 +446,7 @@ impl Function {
                 share_cold_epilogues: false,
                 aarch64_share_cold_tails: false,
                 forward_spill_reloads: false,
+                aarch64_branch_on_zero: false,
                 aarch64_block_layout: Vec::new(),
                 aarch64_block_layout_literal_start: None,
                 srclocs: SecondaryMap::new(),
