@@ -1,0 +1,148 @@
+{
+  "source_commit": "e722b71013d6511ff124ee18eeec190157f7910b",
+  "parent": "dfdcdb3c1afcbeeb768efa1c8978ce85bb82d894",
+  "pr_973_base": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "scope": "Shared cache sink stack. Apple M1 matched compile-through-link builds using fixed Cranelift options.",
+  "frame_census": {
+    "before": {
+      "frame_pushes": 706474,
+      "frame_capacity_growths": 706474,
+      "maximum_frame_depth": 1
+    },
+    "scratch": {
+      "frame_pushes": 706474,
+      "frame_capacity_growths": 1,
+      "maximum_frame_depth": 1
+    }
+  },
+  "parser_only": {
+    "before": 2.0917497705,
+    "scratch": 2.044305208
+  },
+  "page_window_negative": {
+    "median_seconds": {
+      "before": 2.0911014375,
+      "candidate": 2.1037687710000004
+    },
+    "decision": "slower in screening"
+  },
+  "complete_medians": {
+    "mech-control": {
+      "source_to_native": 3.974706125445664,
+      "stage_outputs": 0.00027104211039841175,
+      "link": 0.04138179146684706,
+      "total": 4.016079354099929,
+      "compiler_peak_rss_bytes": 401465344.0,
+      "compiler_phases_seconds": {
+        "parse": 2.116193833,
+        "catalog": 0.0685332705,
+        "frontend": 0.234949771,
+        "artifact": 0.007128979,
+        "encode": 0.002606396,
+        "native": 1.519405833
+      }
+    },
+    "mech-experiment": {
+      "source_to_native": 3.9080337081104517,
+      "stage_outputs": 0.0002767916303128004,
+      "link": 0.04089802037924528,
+      "total": 3.951601396081969,
+      "compiler_peak_rss_bytes": 402432000.0,
+      "compiler_phases_seconds": {
+        "parse": 2.0480772084999996,
+        "catalog": 0.0662964375,
+        "frontend": 0.2308383745,
+        "artifact": 0.007083354,
+        "encode": 0.0026119380000000003,
+        "native": 1.5216219585
+      }
+    },
+    "roc": {
+      "compile": 2.951078354381025,
+      "link": 0.03479710407555103,
+      "total": 2.986824312712997,
+      "compiler_peak_rss_bytes": 392642560.0
+    },
+    "libdeflate": {
+      "compile": 0.4463171665556729,
+      "link": 0.03437835397198796,
+      "total": 0.480535083450377,
+      "compiler_peak_rss_bytes": 71516160.0
+    }
+  },
+  "complete_build_delta_fraction": -0.016054951193167022,
+  "paired_complete_build_delta_fraction": -0.016013167507046955,
+  "complete_build_x_peers": {
+    "roc": 1.3230109917287516,
+    "libdeflate": 8.223335885713817
+  },
+  "compiler_peak_rss_delta_bytes": 966656.0,
+  "sizes": {
+    "mech-control": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "executable_text_bytes": 150416,
+      "executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_bytes": 210168
+    }
+  },
+  "compiler_construction": {
+    "reused_dependencies": true,
+    "jobs": 4,
+    "seconds": 226
+  },
+  "compiler_sha256": {
+    "mech-control": "b9190966f0833cd9e6efc7f0e44745c7658d8e2d8408aea1f2afdf981fc11018",
+    "mech-experiment": "66f89ec69a387838bdd71a2768cc453b097766bced9594bc85da24405864b6c5"
+  },
+  "reproduced_artifacts": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "worker_correctness": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/matched/warmup/mech-experiment/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-cache-windows/matched/warmup/mech-experiment/native/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "complete_smokes": 162,
+    "verified": true,
+    "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "syntax_unit_tests": "test result: ok. 533 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 8.64s",
+  "snapshot_checks": 60,
+  "small_bytecode_checks": {
+    "tests/fixtures/syntax-source-boundary/executable.mec": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+    "tests/fixtures/syntax-source-boundary/resolver-index.mec": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+    "src/syntax/tests/fixtures/document/accepted/unicode.mec": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c"
+  },
+  "performance_evidence": {
+    "runtime_worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "reported_point_estimates_both_orders": {
+      "roc": 81,
+      "libdeflate": 61
+    },
+    "status": "Exact worker identity. Prior full timing evidence contains missing earlier run bindings.",
+    "original_report": "../branch-on-zero/report.json"
+  }
+}
