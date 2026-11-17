@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "c4169443fe50b88a5886cd7a74ed1db02d5ab8aa92c0c8f30c2f4459d108dd7b",
-      "bytes": 8719
+      "sha256": "8a9f8d9b3d463c216ea5787ddbd63fe56ed607bf965522abcfaaa95616335b36",
+      "bytes": 8783
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -6322,6 +6322,41 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/cached-terminal-failures/validation/unit-run.log.gz",
       "sha256": "6562f132217e5c9ca57f86448e3420a205736a5a85407fdf7c101cbccf36a2d5",
       "bytes": 11633
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/checked-root-work/README.md",
+      "sha256": "82abc4f9b4f8c4c83423d8760b226f9c509a8c03668b752291cf48ed3a6de67a",
+      "bytes": 9484
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/checked-root-work/cfg-chain.json",
+      "sha256": "d49066c4f371b7cf7166fe9b7103fbac5776e1042d541b9af8f2beb6ca9e55e5",
+      "bytes": 1682
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/checked-root-work/cfg-chain.py",
+      "sha256": "c44f8bb83cd12a824b05a3689d18c193954687c249f9b3a1b951f7cda6cff357",
+      "bytes": 3599
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/checked-root-work/inventory.json",
+      "sha256": "4d56aa3278f5a19c1d9df031b7cad958cb313f8c365d49185e62a376b41a61f4",
+      "bytes": 28786
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/checked-root-work/inventory.py",
+      "sha256": "f1c7ec148f5989b8e583928d7413b19ffd93ddcbf4194c76c9eb438f806f07d7",
+      "bytes": 16013
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/checked-root-work/source-cfg-compile.json",
+      "sha256": "4d9b49b3577d4e47b598bdbfe8c05fe3bf8e58f44be46fb86e41645d196cd4d8",
+      "bytes": 1034
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/checked-root-work/source-cfg.json.gz",
+      "sha256": "829ee03bf50ac22e3510524f0f94a193ec256408b8edfd2f3a0e9e6ad207695c",
+      "bytes": 451339
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/ci-44018345099/README.md",

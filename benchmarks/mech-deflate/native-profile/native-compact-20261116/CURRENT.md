@@ -112,7 +112,7 @@ both orders. The earlier transient's cause remains open.
   initializations, about 1 ms in the trace. The scoped demand census finds
   14 scalar sibling reads with protected boundaries. A checked range-proof
   chain exposes about 3.2 ms of CFG and dominator recomputation. Park both
-  narrow changes and inspect the next exact-choice omitted-body case.
+  narrow changes and inspect the next exact-choice omitted-body case. [Scoped native diagnoses](evidence/checked-root-work/README.md)
   [Exclusive native cost and raw traces](evidence/native-exclusive-work/README.md)
 - **Integration and qualification.** Finish the Related Posts producer
   binding and run the bounded control-drift diagnostic before any new full
