@@ -1,0 +1,45 @@
+{
+  "pin": "61f012dd1233e746ec199f1d43ea4584ed172737",
+  "orders": [
+    [
+      "control",
+      "candidate",
+      "capture-only"
+    ],
+    [
+      "control",
+      "capture-only",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "control",
+      "capture-only"
+    ],
+    [
+      "candidate",
+      "capture-only",
+      "control"
+    ],
+    [
+      "capture-only",
+      "control",
+      "candidate"
+    ],
+    [
+      "capture-only",
+      "candidate",
+      "control"
+    ]
+  ],
+  "warmups": [
+    "control",
+    "candidate",
+    "capture-only"
+  ],
+  "hashes": {
+    "control": "afa4284c1ada2cc076f713b3f066c2a3ded1648758a8aed2c2ccdf2415580885",
+    "candidate": "5ede7f15e3002c8c56c63fba043785defc31a475362ebe6ad063511b6723abc4",
+    "capture-only": "61bcaa7f2e69c03bf9c8d6e318e8f98a636b63c942e11d69c483e1b1fb7903c1"
+  }
+}

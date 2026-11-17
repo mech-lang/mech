@@ -1,0 +1,92 @@
+{
+  "compiler_source": "ac485d5a93e632eeff8d5e32bdee3233189e12bb",
+  "profile_parent": "61f012dd1233e746ec199f1d43ea4584ed172737",
+  "source_patch_sha256": "7de4dfd2b9692bcbd760af406cd73aa49b13c380eaa36a019048fda69af961db",
+  "source_through_deployment": {
+    "mech-control": {
+      "source": 2.77356802043505,
+      "link": 0.03431258304044604,
+      "source_through_link": 2.811738916672766,
+      "strip": 0.010392291937023401,
+      "source_through_strip": 2.8222462499979883
+    },
+    "mech-statement-replay": {
+      "source": 2.6736601043958217,
+      "link": 0.03469191584736109,
+      "source_through_link": 2.709269270533696,
+      "strip": 0.010372062679380178,
+      "source_through_strip": 2.7197368119377643
+    },
+    "roc": {
+      "source": 2.950775708304718,
+      "link": 0.03423283318988979,
+      "source_through_link": 2.9850058124866337,
+      "strip": 0.010307833552360535,
+      "source_through_strip": 2.995575478998944
+    },
+    "libdeflate": {
+      "source": 0.44562239572405815,
+      "link": 0.03383783344179392,
+      "source_through_link": 0.4799671664368361,
+      "strip": 0.01033883378840983,
+      "source_through_strip": 0.4903724379837513
+    }
+  },
+  "source_through_link_paired_ratio": {
+    "mech-control": 0.9632902842007569,
+    "roc": 0.9063204926065869,
+    "libdeflate": 5.643640742184223
+  },
+  "compiler_phase_medians_seconds": {
+    "mech-control": {
+      "parse": 1.0153874369999998,
+      "catalog": 0.063822667,
+      "frontend": 0.23155172899999998,
+      "artifact": 0.0069985415,
+      "encode": 0.0025748330000000003,
+      "native": 1.427274271
+    },
+    "mech-statement-replay": {
+      "parse": 0.916081771,
+      "catalog": 0.06272643750000001,
+      "frontend": 0.2316699585,
+      "artifact": 0.006964146,
+      "encode": 0.0025443545,
+      "native": 1.426432937
+    }
+  },
+  "peak_rss_bytes": {
+    "mech-control": 395100160.0,
+    "mech-statement-replay": 395173888.0,
+    "roc": 392847360.0,
+    "libdeflate": 71540736.0
+  },
+  "reported_parser_comparison": {
+    "mech_seconds": 0.9180806045000001,
+    "roc_seconds": 0.003,
+    "mech_over_roc": 306.0268681666667,
+    "diagnostic_pairs": 4,
+    "scope": "Mech lossless parser, strict check and indexes. Roc summed tokenization and parsing with one job."
+  },
+  "standalone": {
+    "median_s": {
+      "control": 1.0109747709999999,
+      "candidate": 0.9144965,
+      "capture-only": 1.0114496665
+    },
+    "paired_ratio_to_control": {
+      "candidate": 0.9048171374750626,
+      "capture-only": 1.0016229149457925
+    }
+  },
+  "applied_statement_recipes": 117,
+  "statement_winners": 123,
+  "existing_syntax_tests": 535,
+  "focused_tests": 3,
+  "output_sha256": {
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+  },
+  "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "exact_linked_calls": 162
+}

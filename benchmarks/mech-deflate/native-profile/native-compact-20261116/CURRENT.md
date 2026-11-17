@@ -1,42 +1,38 @@
 # PR #993 current status
 
-The deployment comparison uses compiler source `fcb818e6420828a19cf019023f0f765a938c351e` on PR #993,
+The deployment comparison uses compiler source `ac485d5a93e632eeff8d5e32bdee3233189e12bb` on PR #993,
 stacked on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
 The host is Apple M1, macOS 15.6.1, arm64.
 [Machine-readable measurements and per-case changes](scorecard.json)
 
 ## Current matched deployment build
 
-The eight balanced comparisons use prebuilt compilers and fixed host support.
+Eight balanced comparisons use prebuilt compilers and fixed host support.
 Peer executables use the same CLI, allocator, target and strip rules.
 
 | Measurement | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.80251 s | 2.98347 s | 0.47961 s |
-| Source through strip | 2.81307 s | 2.99371 s | 0.49005 s |
+| Source through final link | 2.70927 s | 2.98501 s | 0.47997 s |
+| Source through strip | 2.71974 s | 2.99558 s | 0.49037 s |
 | Generated encoder text | 71,768 B | 57,696 B | 37,080 B |
 | Stripped deployment file | 292,576 B | 191,920 B | 155,760 B |
-| Compiler peak RSS | 395,051,008 B | 392,110,080 B | 71,532,544 B |
+| Compiler peak RSS | 395,173,888 B | 392,847,360 B | 71,540,736 B |
 
-The adjacent cleanup verification change reduces paired source-through-link
-build time by **1.40%**. Native preparation through
-object generation falls from **1.464 s** to
-**1.425 s**. The matched time follows the same
-link boundary at **0.941× Roc** and **5.842× libdeflate**.
-Encoder text is **1.244× Roc** and **1.935× libdeflate**. Its checked-root
-symbol extent is **51,264 B**. The bytecode, encoder object, metadata and
-benchmark worker reproduce byte for byte. The normalized timing output name
-changes the signing record by eight bytes.
-[Matched compiler timings and identity checks](evidence/phi-verifier-reuse/README.md)
-· [Previous matched compiler build](evidence/scoped-function-replay/README.md)
-· [Checked-root symbol extents](evidence/scoped-function-replay/root-census.json)
+Statement replay reduces matched source-through-link time by
+**3.67%**, to **0.906× Roc** and
+**5.644× libdeflate**. Encoder text is **1.244× Roc** and
+**1.935× libdeflate**. All build outputs and the existing timed worker are
+byte-exact. The normalized timing output name changes the signing record by
+eight bytes.
+[Current matched builds](evidence/scoped-statement-replay/README.md)
+· [Previous matched compiler build](evidence/phi-verifier-reuse/README.md)
 
-Across four fresh compiler profiles, Mech reports
-**1.020 s** for its
-lossless parser and index construction. Roc reports **3 ms** for summed
-tokenization and parsing with one compilation job. The reported intervals
-are approximately **340×** apart.
-[Separate reported parser phase comparison](evidence/phi-verifier-reuse/parser-phases/README.md)
+Four separate phase captures give **0.918 s for
+Mech** and **3 ms for Roc**, about
+**306×** across the reported intervals. Mech
+builds the lossless syntax tree and indexes. Roc sums tokenization and
+parsing with one compilation job and its cache disabled.
+[Parser phase captures](evidence/scoped-statement-replay/parser-phases/summary.json)
 
 The byte-read outline emits **71,420 B**. Correctly linked workers match
 162 exact output and resource observations and six checked failures. The
@@ -53,7 +49,7 @@ into both workers.
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
-| Current compiler source | **71,768 B** | Guarded parser replay and adjacent cleanup verification |
+| Current compiler source | **71,768 B** | Guarded variable, function and statement replay, adjacent cleanup verification |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
@@ -111,13 +107,10 @@ both orders. The earlier transient's cause remains open.
 
 ## Active work
 
-- **Parser.** Function replay applies all 369 recipes in the pinned source. The standalone parser now takes 1.009 s.
-  The post-variable-replay trace identifies current function-family cost
-  separately from already-removed nested work. The next largest replay
-  family in that trace is the enclosing statement at 165 ms inclusive.
-  Measure the remaining cost and applicable bounds before extending it.
-  [Post-variable profile and both ablations](evidence/scoped-function-replay/README.md)
-  [Earlier variable replay](evidence/scoped-definition-replay/README.md)
+- **Parser.** Measure the remaining work after admitting bounded statement
+  winners. The standalone parser takes 0.914 s. The differential checks
+  retain exact grammar events, identities and resource accounting.
+  [Replay receipts](evidence/scoped-statement-replay/README.md)
 - **Native compiler.** Attribute plan/semantic preparation, lazy facts,
   SSA construction, cleanup, Cranelift and worker waits separately. Share
   one immutable facts owner across read packing and branch analysis. Keep
