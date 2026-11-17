@@ -1,0 +1,2837 @@
+{
+  "source_pin": "b05241855264df7df861994ef125e5dfb678bc81",
+  "flags": {
+    "MECH_PRIVATE_INDEXED_CHAINS": "1",
+    "MECH_PHASE_OWNER_TRANSFER": "1",
+    "MECH_PHASE_VECTOR_FAST": "1",
+    "MECH_PRIVATE_READ_INTERVALS": "1",
+    "MECH_PHASE_INVARIANT_VIEWS": "1",
+    "MECH_CURRENT_PREDICATES": "1",
+    "MECH_PRIVATE_NESTED_PHASES": "1",
+    "MECH_PHASE_ASSERTION_FLOORS": "1",
+    "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+    "MECH_WIDE_ANY_BITS": "1",
+    "MECH_WHOLE_PHASE_CAPACITY": "1",
+    "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+    "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+    "MECH_REUSE_SHIFTED_EQUALITY": "1",
+    "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+    "MECH_CHECKED_APPEND_RUN": "1",
+    "MECH_NARROW_MASKED_ARITHMETIC": "1",
+    "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+    "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+    "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+    "MECH_ORDERED_CAPTURE_SPANS": "1",
+    "MECH_REUSE_EQUALITY_PREFIX": "1",
+    "MECH_ADJACENT_ADDRESSES": "1",
+    "MECH_WIDENING_REDUCTION": "1",
+    "MECH_SHARE_REPEATED_BOUNDS": "1",
+    "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+    "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+    "MECH_PROVE_SCALAR_SPANS": "1",
+    "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+    "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+    "MECH_NARROW_ORDERED_ITEM": "1",
+    "MECH_REUSE_SELECTED_READ_BOUND": "1",
+    "MECH_REVERSE_REDUCTION_CURSOR": "1",
+    "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+    "MECH_GROUP_PACKED_HISTOGRAM": "1",
+    "MECH_REDUCTION_COUNTDOWN": "1",
+    "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+    "MECH_FIRST_PACKED_REVERSE_READ": "1",
+    "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+    "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+    "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+    "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+    "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+    "MECH_SHARE_CLAMP_DECISIONS": "1",
+    "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+    "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+    "MECH_PREFETCH_PRIVATE_WRITES": "1",
+    "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+    "MECH_BORROW_COMPACT_READ_COPIES": "1",
+    "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+    "MECH_PROVE_PACKED_BASE_SPANS": "1",
+    "MECH_PAIR_CHECKED_APPENDS": "1",
+    "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+    "MECH_CARRY_REDUCTION_BOUND": "1",
+    "MECH_TERMINAL_BYTE_APPENDS": "1",
+    "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+    "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+    "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+    "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+    "MECH_ARM64_SUBTRACT_BRANCH": "1",
+    "MECH_COMPACT_REUSE_OVERWRITTEN_RESULT": "1",
+    "MECH_COMPACT_DIRECT_RUNTIME_CALLS": "allocation-and-byte-appends",
+    "MECH_COMPACT_PACK_LARGE_REFUSALS": "1",
+    "MECH_COMPACT_LAYOUT_REGIONS_LAST": "1",
+    "MECH_COMPACT_PREPARE_LAYOUT_REGION_IR": "1",
+    "MECH_COMPACT_ORDER_REGION_CAPTURES": "1",
+    "MECH_COMPACT_BIND_REGION_LITERALS": "1",
+    "MECH_COMPACT_SHARE_PHASE_RELOCATIONS": "1",
+    "MECH_COMPACT_BIND_REGION_INPUT_ROLES": "1",
+    "MECH_COMPACT_FORWARD_VIEW_GEOMETRY": "1",
+    "MECH_COMPACT_VECTOR_FACTS": "1",
+    "MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN": "1",
+    "MECH_COMPACT_ALIGN_REGION_OUTPUTS": "1",
+    "MECH_COMPACT_FOLD_UNIT_BRANCHES": "1",
+    "MECH_COMPACT_PAD_REGION_OUTPUTS": "1",
+    "MECH_COMPACT_SHARE_OWNER_RETIREMENT": "all",
+    "MECH_COMPACT_BIND_REFUSAL_LITERALS": "retry",
+    "MECH_COMPACT_PREPARE_REFUSAL_IR": "1",
+    "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "16",
+    "MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST": "1",
+    "MECH_COMPACT_PAIR_WORDS": "all",
+    "MECH_COMPACT_PAIR_STACK_WORDS": "1",
+    "MECH_COMPACT_ROOT_PROOFS": "all",
+    "MECH_COMPACT_SHARE_COLD_EPILOGUES": "1",
+    "MECH_COMPACT_SHARE_CHECKED_TRAVERSALS": "all",
+    "MECH_COMPACT_SHARE_CONTROLLER_WINDOWS": "2184:2267,2388:2463,2599:2674,2314:2382,2685:2753,31:97",
+    "MECH_COMPACT_REFUSE_GENERAL_VECTORS": "475",
+    "MECH_COMPACT_SHARE_MATRIX_WORDS": "1",
+    "MECH_COMPACT_PACK_WRITABLE_STORAGE": "1",
+    "MECH_COMPACT_GROUP_RETIREMENTS": "1",
+    "MECH_COMPACT_REGISTER_BACKING": "1",
+    "MECH_COMPACT_SHARE_STATIC_ERROR_STATUS": "1",
+    "MECH_PACK_PRIVATE_HALFWORD_STORES": "1",
+    "MECH_COMPACT_FOLD_CHECKED_ADDS": "1",
+    "MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS": "7924:38293:8064,4936:26390:5013,4877:26199:4952,4796:25856:4868,4684:25398:4753,4347:23993:4404,4262:23588:4318,4250:23517:4306,4020:22497:4070,3880:21853:3925,2716:17358:2731,2713:17340:2728,2633:17036:2647,2631:17020:2645,2424:16259:2436,2422:16243:2434,2349:15958:2360,2346:15940:2357,2085:15099:2094,2050:14995:2059,2011:14879:2020,1991:14817:2000,1245:12406:1250,861:11248:862",
+    "MECH_COMPACT_TRIM_RETIREMENTS": "1",
+    "MECH_COMPACT_SHARE_CAPACITY_GROWTH": "preserve",
+    "MECH_COMPACT_FUSE_WRITABLE_GROWTH": "byte-registers",
+    "MECH_COMPACT_PROVE_BACKING_OWNERS": "direct",
+    "MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2": "4",
+    "MECH_COMPACT_COALESCE_PARALLEL_PHIS": "1",
+    "MECH_COMPACT_ROOT_FLOW_PASSES": "equal,identity",
+    "MECH_COMPACT_INLINE_SINGLE_CALLS": "preselected",
+    "MECH_COMPACT_INLINE_SYMBOLS": "mech_compact_numeric_4879,mech_compact_numeric_4673_vector",
+    "MECH_COMPACT_LITERAL_EDGE_ARGUMENTS": "fold",
+    "MECH_COMPACT_FORWARD_SPILL_RELOADS": "1",
+    "MECH_COMPACT_PHASE_BLOCK_LAYOUT": "mech_compact_numeric_475_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-machine-outline-matcher-balanced-fallthroughs-native/final-candidate/report.json;mech_compact_numeric_3956_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-machine-outline-huffman-sort-balanced-fallthroughs-native/final-candidate/report.json;mech_compact_numeric_3009_no_growth_composed@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/vec-window-cursors-scorer-profile.json",
+    "MECH_COMPACT_COMPILE_THREADS": "2",
+    "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000",
+    "MECH_COMPACT_REGION_REGISTER_OUTPUTS": "1",
+    "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+    "MECH_COMPACT_SHARE_COLD_TAILS": "1",
+    "MECH_COMPACT_BRANCH_ON_ZERO": "1",
+    "MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA": "1",
+    "MECH_COMPACT_SHARE_FRAME_COPIES": "1",
+    "MECH_ORDERED_HORIZONTAL_MINIMUM": "1",
+    "MECH_ORDERED_REVERSE_LOW_WORDS": "1",
+    "MECH_ORDERED_VECTOR_WINDOW_CURSORS": "1"
+  },
+  "compile": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/probe-compiler/compile_profile",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/vec-window-cursors-layout/frontend",
+    "compact"
+  ],
+  "compiler_sha256": "0cf55f4eea5e7b1ff54f64298fac1a16d91d8ea7942c883455a42bb7ec311e98",
+  "metadata_sha256": "024e6c83b39e8f4928bbaaadf08223d08d4109985b48220bf899f09c86213e52",
+  "worker_sha256": "4e12fc481cef0a84bc673648b3bf7d69958b81caa51226b8d6243a12991bd355",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "text_bytes": 71064,
+  "exact_checks": 162,
+  "text_change": -128,
+  "changed_symbols": {
+    "_mech_compact_numeric_3009": 1552,
+    "_mech_compact_numeric_3009_no_growth": 1344,
+    "_mech_compact_numeric_3009_no_growth_composed": 1136,
+    "_mech_compact_closed_checked": 50640
+  },
+  "layout": {
+    "text_bytes": 71064,
+    "object_sha256": "8a358ff39ce74f8154e2132f1c2b9539240935cb16fa2a2e79f604882059ce42",
+    "symbols": {
+      "_mech_compact_numeric_475_vector": {
+        "extent": 6768,
+        "start": 0,
+        "sha256": "78faa96a8e28694b8f2d01e9ddb1fdbbc7ef9ce49229d6cbba0729ff66ffe7c8",
+        "relocations": []
+      },
+      "_mech_compact_numeric_3009": {
+        "extent": 1552,
+        "start": 6768,
+        "sha256": "eccf5a03007cd3afc165b0bd13e230fa5d2c07f0ace2968055dc4bdf0902d1e9",
+        "relocations": [
+          [
+            764,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            760,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            680,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_numeric_3009_no_growth": {
+        "extent": 1344,
+        "start": 9456,
+        "sha256": "eabeb074839b9f3c816e719c97b3dfa6990d95dae0706aaaade183b285a281a6",
+        "relocations": []
+      },
+      "_mech_compact_numeric_3009_no_growth_composed": {
+        "extent": 1136,
+        "start": 8320,
+        "sha256": "6fe0d429e2f8856ad1f1afd08892ad43c52787bf3cd2b3f48cc3408c151c1870",
+        "relocations": [
+          [
+            476,
+            108,
+            "_mech_compact_cost_codes_0"
+          ],
+          [
+            472,
+            93,
+            "_mech_compact_cost_codes_0"
+          ]
+        ]
+      },
+      "_mech_compact_numeric_4173": {
+        "extent": 960,
+        "start": 10800,
+        "sha256": "5a7a67e6968b76f774e3bd450c9cea0553d0af5658539b5f4707c7313cc96759",
+        "relocations": []
+      },
+      "_mech_compact_numeric_3447": {
+        "extent": 624,
+        "start": 12480,
+        "sha256": "32610d871b1600a78429b845aec239848871334a29a2463817ef35dc554c6196",
+        "relocations": [
+          [
+            512,
+            45,
+            "_mech_compact_numeric_3447_grouped"
+          ]
+        ]
+      },
+      "_mech_compact_numeric_3447_grouped": {
+        "extent": 720,
+        "start": 11760,
+        "sha256": "3f7198db60ea32b6b9a9650fec60eb9e83caf713b86e79c9cf177edf201d5d3f",
+        "relocations": []
+      },
+      "_mech_compact_numeric_3956_vector": {
+        "extent": 384,
+        "start": 13104,
+        "sha256": "c5e126246a2faa0412c2d7b454b47027130823e8835590040f4425f68d398631",
+        "relocations": []
+      },
+      "_mech_compact_numeric_6633": {
+        "extent": 544,
+        "start": 13488,
+        "sha256": "9db1e3425beab474702f02fd7c6aceb52dd5ac86a9818053809bdcf4f960910e",
+        "relocations": []
+      },
+      "_mech_compact_numeric_5895": {
+        "extent": 416,
+        "start": 14032,
+        "sha256": "6122898bf293520fca7e84cbbaa51a24097b8051ec764a6fa5be4f5e8f5275d8",
+        "relocations": []
+      },
+      "_mech_compact_numeric_3872": {
+        "extent": 288,
+        "start": 14448,
+        "sha256": "34586ce4e0caf31d385cfcffc37f8c0bdefa160a25d9308d91a7e3d44671f842",
+        "relocations": []
+      },
+      "_mech_compact_numeric_4799": {
+        "extent": 304,
+        "start": 14736,
+        "sha256": "8a1f92f42e0c85376dddb7dee367485a39609c341f01a42a5ef4b29b069381af",
+        "relocations": []
+      },
+      "_mech_compact_numeric_2821": {
+        "extent": 368,
+        "start": 15040,
+        "sha256": "5468b1abb953d74fc3ab056f0168e10f31b53cb2c1bfd72debf71ac59145fbc6",
+        "relocations": []
+      },
+      "_mech_compact_numeric_2821_vector": {
+        "extent": 304,
+        "start": 15408,
+        "sha256": "7441e1ab525ae887ce58af79be70f5ae65df6e0ae563e9c8b9f30dcbbd74f78b",
+        "relocations": []
+      },
+      "_mech_compact_numeric_8026": {
+        "extent": 256,
+        "start": 15712,
+        "sha256": "6221947372e5a9a39f691cb21d3d422c694318bbf72e24272a2c076c83e566f2",
+        "relocations": []
+      },
+      "_mech_compact_numeric_362": {
+        "extent": 336,
+        "start": 15968,
+        "sha256": "2022cfbcaa937e8e0050b7d82e8dcb03d67a05b5216b0e85b8ab601050738c23",
+        "relocations": []
+      },
+      "_mech_compact_numeric_362_vector": {
+        "extent": 288,
+        "start": 16304,
+        "sha256": "93e57975accdb9857512edb118a576c54c93a053625404fc056984bb5c045d59",
+        "relocations": []
+      },
+      "_mech_compact_word_collection_10": {
+        "extent": 256,
+        "start": 16592,
+        "sha256": "05166c2d51a0364116f798882bfb92950928d28ecfcad936eb86780988b8dfb1",
+        "relocations": []
+      },
+      "_mech_compact_matrix_word": {
+        "extent": 160,
+        "start": 16848,
+        "sha256": "368526b1e7a576cf261ded7fa0ca83e39804fee4860540f14df005f039277756",
+        "relocations": []
+      },
+      "_mech_compact_unsigned_dot_product": {
+        "extent": 160,
+        "start": 68384,
+        "sha256": "4be484cd4793a5ff8d8086c129be6e5bd257a062574d26f5f04f37780efcc9ec",
+        "relocations": []
+      },
+      "_mech_compact_closed_checked": {
+        "extent": 50640,
+        "start": 17744,
+        "sha256": "df33f2f599487a4dd25445f45a610e7aa5ac812e6f9e239257f58cc156ad7fca",
+        "relocations": [
+          [
+            49684,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            47192,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            47164,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            46956,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            46928,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            46848,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            46816,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            46784,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            46688,
+            45,
+            "_mech_compact_matrix_word"
+          ],
+          [
+            46100,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            46044,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            46040,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            45916,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            45804,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            45712,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            45596,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            45564,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            45560,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            45484,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            45428,
+            108,
+            "_memmove"
+          ],
+          [
+            45424,
+            93,
+            "_memmove"
+          ],
+          [
+            45372,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            45212,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            45120,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            45004,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            44916,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            44800,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            44796,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            44704,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            44496,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            44420,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            43888,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            43752,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            43336,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            43332,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            43268,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            43172,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            43040,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            42996,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            42940,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            42692,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            42688,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            42640,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            42612,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            42568,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            42540,
+            45,
+            "_mech_compact_numeric_8026"
+          ],
+          [
+            42440,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            42184,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            42180,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            42136,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            42108,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            42064,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            42036,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            41992,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            41964,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            41920,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            41892,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            41588,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            41584,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            41504,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            41440,
+            108,
+            "_memmove"
+          ],
+          [
+            41436,
+            93,
+            "_memmove"
+          ],
+          [
+            41392,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            41224,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            41120,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            41004,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            40904,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            40784,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            40696,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            40564,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            40468,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            40212,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            40120,
+            45,
+            "_mech_compact_checked_layout_continuation_44070"
+          ],
+          [
+            40020,
+            45,
+            "_mech_compact_checked_layout_continuation_44070"
+          ],
+          [
+            39948,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            39908,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            39904,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            39864,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            39484,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            38812,
+            108,
+            "_mech_compact_table_18"
+          ],
+          [
+            38808,
+            93,
+            "_mech_compact_table_18"
+          ],
+          [
+            38792,
+            108,
+            "_mech_compact_table_20"
+          ],
+          [
+            38788,
+            93,
+            "_mech_compact_table_20"
+          ],
+          [
+            38728,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            38700,
+            108,
+            "_mech_compact_table_9"
+          ],
+          [
+            38696,
+            93,
+            "_mech_compact_table_9"
+          ],
+          [
+            38384,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            38060,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            37848,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            37720,
+            45,
+            "_mech_compact_checked_layout_continuation_44070"
+          ],
+          [
+            37632,
+            108,
+            "_mech_compact_table_14"
+          ],
+          [
+            37628,
+            93,
+            "_mech_compact_table_14"
+          ],
+          [
+            37524,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            37444,
+            45,
+            "_mech_compact_checked_layout_continuation_44070"
+          ],
+          [
+            37404,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            37108,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            36616,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ],
+          [
+            36396,
+            108,
+            "_mech_compact_table_15"
+          ],
+          [
+            36392,
+            93,
+            "_mech_compact_table_15"
+          ],
+          [
+            36028,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            36008,
+            45,
+            "_mech_compact_unsigned_dot_product"
+          ],
+          [
+            35976,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            35868,
+            108,
+            "_mech_compact_table_22"
+          ],
+          [
+            35864,
+            93,
+            "_mech_compact_table_22"
+          ],
+          [
+            35764,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            35728,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            35672,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            35616,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            35564,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            35536,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            35504,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            35476,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            35076,
+            45,
+            "_mech_compact_numeric_6633"
+          ],
+          [
+            35032,
+            108,
+            "_mech_compact_table_11"
+          ],
+          [
+            35028,
+            93,
+            "_mech_compact_table_11"
+          ],
+          [
+            34952,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            34920,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            34820,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            34756,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            34460,
+            108,
+            "_mech_compact_table_11"
+          ],
+          [
+            34456,
+            93,
+            "_mech_compact_table_11"
+          ],
+          [
+            34204,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            33988,
+            108,
+            "_mech_compact_table_4"
+          ],
+          [
+            33984,
+            93,
+            "_mech_compact_table_4"
+          ],
+          [
+            33944,
+            108,
+            "_mech_compact_table_26"
+          ],
+          [
+            33940,
+            93,
+            "_mech_compact_table_26"
+          ],
+          [
+            33932,
+            108,
+            "_mech_compact_table_25"
+          ],
+          [
+            33928,
+            93,
+            "_mech_compact_table_25"
+          ],
+          [
+            33920,
+            108,
+            "_mech_compact_table_24"
+          ],
+          [
+            33916,
+            93,
+            "_mech_compact_table_24"
+          ],
+          [
+            33804,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            33800,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            33736,
+            108,
+            "_mech_compact_table_6"
+          ],
+          [
+            33732,
+            93,
+            "_mech_compact_table_6"
+          ],
+          [
+            33608,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            33604,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            33536,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            33504,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            33468,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            33412,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            33372,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            33340,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            33312,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            33268,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            33212,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            33040,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            32604,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            32516,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            32440,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            32436,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            32320,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            32300,
+            45,
+            "_mech_compact_numeric_5895"
+          ],
+          [
+            32252,
+            108,
+            "_mech_compact_table_11"
+          ],
+          [
+            32248,
+            93,
+            "_mech_compact_table_11"
+          ],
+          [
+            32172,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            32140,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            32036,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            31748,
+            108,
+            "_mech_compact_table_11"
+          ],
+          [
+            31744,
+            93,
+            "_mech_compact_table_11"
+          ],
+          [
+            31648,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            31612,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            31556,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            31524,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            31488,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            31456,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            31412,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            31356,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            31212,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            30944,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            30808,
+            108,
+            "_mech_compact_table_21"
+          ],
+          [
+            30804,
+            93,
+            "_mech_compact_table_21"
+          ],
+          [
+            30792,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            30640,
+            108,
+            "_mech_compact_table_14"
+          ],
+          [
+            30636,
+            93,
+            "_mech_compact_table_14"
+          ],
+          [
+            30500,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            30464,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            30408,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            30364,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            30332,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            30288,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            30228,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            30068,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            29940,
+            108,
+            "_mech_compact_table_15"
+          ],
+          [
+            29936,
+            93,
+            "_mech_compact_table_15"
+          ],
+          [
+            29896,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            29892,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            29856,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            29548,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            29356,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            29288,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            29140,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            28792,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            28788,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            28372,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            28328,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            28300,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            28256,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            28180,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            28176,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            28012,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            28008,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            27644,
+            108,
+            "_memmove"
+          ],
+          [
+            27640,
+            93,
+            "_memmove"
+          ],
+          [
+            27600,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            27556,
+            45,
+            "_mech_compact_expand_capacity_preserving"
+          ],
+          [
+            27348,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            27268,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            27156,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            27080,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            26916,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            26912,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            26860,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            26808,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            26756,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            26696,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            26280,
+            108,
+            "_mech_compact_table_19"
+          ],
+          [
+            26276,
+            93,
+            "_mech_compact_table_19"
+          ],
+          [
+            26188,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            26072,
+            108,
+            "_mech_compact_table_19"
+          ],
+          [
+            26068,
+            93,
+            "_mech_compact_table_19"
+          ],
+          [
+            26044,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            25916,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            25840,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            25820,
+            45,
+            "_mech_compact_numeric_4799"
+          ],
+          [
+            25724,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            25588,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            25584,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            25492,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            25488,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            25440,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            25404,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            25048,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            24940,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            24936,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            24856,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            24760,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            24664,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            24660,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            24560,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            24496,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            24332,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            24208,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            24032,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            23716,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            23712,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            23612,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            23480,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            23476,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            23388,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            23276,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            23224,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            23124,
+            45,
+            "_mech_compact_numeric_4173"
+          ],
+          [
+            23012,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            22784,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            22648,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            22276,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            22272,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            22228,
+            45,
+            "_mech_compact_numeric_3956_vector"
+          ],
+          [
+            22104,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            21820,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            21792,
+            45,
+            "_mech_compact_numeric_3872"
+          ],
+          [
+            21664,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            21660,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            21580,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            21392,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            21340,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            21260,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            21208,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            20980,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            20868,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            20784,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            20760,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            20712,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            20628,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            20528,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            20440,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            20340,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            20316,
+            45,
+            "_mech_compact_numeric_3447"
+          ],
+          [
+            20256,
+            108,
+            "_mech_compact_table_18"
+          ],
+          [
+            20252,
+            93,
+            "_mech_compact_table_18"
+          ],
+          [
+            20224,
+            108,
+            "_mech_compact_table_7"
+          ],
+          [
+            20220,
+            93,
+            "_mech_compact_table_7"
+          ],
+          [
+            20108,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            20104,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            20064,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            19936,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            19816,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            19724,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            19660,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            19544,
+            108,
+            "_mech_compact_table_18"
+          ],
+          [
+            19540,
+            93,
+            "_mech_compact_table_18"
+          ],
+          [
+            19424,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            19260,
+            108,
+            "_mech_compact_table_7"
+          ],
+          [
+            19256,
+            93,
+            "_mech_compact_table_7"
+          ],
+          [
+            19092,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            19048,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            18928,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            18860,
+            45,
+            "_mech_compact_numeric_3009_no_growth_composed"
+          ],
+          [
+            18840,
+            45,
+            "_mech_compact_numeric_3009_no_growth"
+          ],
+          [
+            18792,
+            45,
+            "_mech_compact_numeric_3009"
+          ],
+          [
+            18724,
+            108,
+            "_mech_compact_table_18"
+          ],
+          [
+            18720,
+            93,
+            "_mech_compact_table_18"
+          ],
+          [
+            18484,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            18460,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            18412,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            18372,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            18340,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            18288,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            18256,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            18212,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            18152,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            18028,
+            108,
+            "_mech_compact_table_18"
+          ],
+          [
+            18024,
+            93,
+            "_mech_compact_table_18"
+          ],
+          [
+            17912,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            17908,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            17848,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            17696,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            17608,
+            45,
+            "_mech_compact_expand_capacity_preserving"
+          ],
+          [
+            17196,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            17156,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            17116,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            17084,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            17032,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            17000,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            16956,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            16896,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            16832,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            16760,
+            108,
+            "_memmove"
+          ],
+          [
+            16756,
+            93,
+            "_memmove"
+          ],
+          [
+            16748,
+            108,
+            "_mech_compact_table_8"
+          ],
+          [
+            16744,
+            93,
+            "_mech_compact_table_8"
+          ],
+          [
+            16696,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            16612,
+            45,
+            "_mech_compact_expand_capacity_preserving"
+          ],
+          [
+            16252,
+            108,
+            "_mech_compact_table_2"
+          ],
+          [
+            16248,
+            93,
+            "_mech_compact_table_2"
+          ],
+          [
+            16108,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            16104,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            16008,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            15900,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            15876,
+            45,
+            "_mech_compact_numeric_2821_vector"
+          ],
+          [
+            15860,
+            45,
+            "_mech_compact_numeric_2821"
+          ],
+          [
+            15724,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            15696,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            15588,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            15228,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            15184,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            14572,
+            45,
+            "_mech_compact_checked_layout_10939"
+          ],
+          [
+            14512,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            14388,
+            45,
+            "_mech_compact_checked_layout_10939"
+          ],
+          [
+            14328,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            14172,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            14168,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            14008,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            14004,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            13848,
+            45,
+            "_mech_compact_checked_layout_10939"
+          ],
+          [
+            13788,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            13628,
+            45,
+            "_mech_compact_checked_layout_10939"
+          ],
+          [
+            13568,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            13308,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            12812,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            12604,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            12500,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            12336,
+            45,
+            "_mech_compact_checked_layout_13100"
+          ],
+          [
+            11948,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            11868,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            11756,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            11680,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            11520,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            11492,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            11436,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            11388,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            11324,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            11208,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            11104,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            10968,
+            45,
+            "_mech_compact_checked_layout_continuation_9562"
+          ],
+          [
+            10800,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            10716,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            10592,
+            45,
+            "_mech_compact_checked_layout_continuation_21031"
+          ],
+          [
+            10456,
+            45,
+            "_mech_compact_checked_layout_continuation_9562"
+          ],
+          [
+            10132,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            10016,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            10012,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            9956,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            9952,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            9712,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            9532,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            9496,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            9440,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            9392,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            8936,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            8908,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            8852,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            8804,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            8740,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            8656,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            8580,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            8444,
+            45,
+            "_mech_compact_checked_layout_continuation_9562"
+          ],
+          [
+            8272,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            8192,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            8064,
+            45,
+            "_mech_compact_checked_layout_continuation_21031"
+          ],
+          [
+            7928,
+            45,
+            "_mech_compact_checked_layout_continuation_9562"
+          ],
+          [
+            7624,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            7620,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            7564,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            7560,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            7324,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            7148,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            7104,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            7048,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            6992,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            6452,
+            45,
+            "_mech_compact_checked_layout_continuation_9112"
+          ],
+          [
+            6308,
+            45,
+            "_mech_compact_checked_layout_16147"
+          ],
+          [
+            5860,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            5784,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            5656,
+            45,
+            "_mech_compact_checked_layout_continuation_9112"
+          ],
+          [
+            5392,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            5364,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            5308,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            5260,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            5172,
+            45,
+            "_mech_compact_release_two"
+          ],
+          [
+            5144,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            5088,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            5040,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            4844,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            4776,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            4712,
+            45,
+            "_mech_compact_word_collection_10"
+          ],
+          [
+            4660,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            4536,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            4448,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            4168,
+            45,
+            "_mech_compact_release_three"
+          ],
+          [
+            4120,
+            45,
+            "_mech_compact_release_four"
+          ],
+          [
+            3724,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            3600,
+            45,
+            "_mech_compact_numeric_475_vector"
+          ],
+          [
+            2624,
+            108,
+            "_mech_compact_table_6"
+          ],
+          [
+            2620,
+            93,
+            "_mech_compact_table_6"
+          ],
+          [
+            2596,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            2592,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            2496,
+            45,
+            "_mech_compact_release_nullable"
+          ],
+          [
+            2476,
+            45,
+            "_mech_compact_numeric_362_vector"
+          ],
+          [
+            2460,
+            45,
+            "_mech_compact_numeric_362"
+          ],
+          [
+            2316,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            2312,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            2272,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            2196,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ],
+          [
+            1884,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            1840,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            1512,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            1468,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            1428,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            1424,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            1372,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            1332,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            1328,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            1280,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            1240,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            1236,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            1184,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            1144,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            1140,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            1088,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            1048,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            1044,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            992,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            952,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            948,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            900,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            844,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            780,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            716,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            560,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            516,
+            45,
+            "_mech_compact_allocate_backing"
+          ],
+          [
+            480,
+            108,
+            "_mech_compact_free"
+          ],
+          [
+            476,
+            93,
+            "_mech_compact_free"
+          ],
+          [
+            380,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_expand_capacity_preserving": {
+        "extent": 176,
+        "start": 17392,
+        "sha256": "46d5ee9a9a63506f3dd09314682af03d7263a37bb7d58ab3be2bbd08207cef7c",
+        "relocations": []
+      },
+      "_mech_compact_append_backing_byte_consume": {
+        "extent": 176,
+        "start": 17568,
+        "sha256": "dd1c3252fa029878f5218e60919a6ebf6270aceefbe6d5b614514813c29e5106",
+        "relocations": [
+          [
+            156,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_checked_layout_16147": {
+        "extent": 304,
+        "start": 68544,
+        "sha256": "678cdfb451bb117d298ed647112195a0280038d99254ad29bb0d3984972d5874",
+        "relocations": [
+          [
+            220,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            144,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_checked_layout_13100": {
+        "extent": 304,
+        "start": 68848,
+        "sha256": "04f1169ad5dbcfd27046834c6c238bf36948aa2954408a8bf337df17612ad964",
+        "relocations": [
+          [
+            220,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            144,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_checked_layout_10939": {
+        "extent": 304,
+        "start": 69152,
+        "sha256": "1497dc6817cbc8bfb3a12d65048983e9368c8fa636fbd64e1390e61f3b6f6244",
+        "relocations": [
+          [
+            224,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            144,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_9112": {
+        "extent": 336,
+        "start": 69456,
+        "sha256": "dab83d7b55474288d8479960e325a815e8e6397d3c140a016a4d7ad5f4ff9e0d",
+        "relocations": [
+          [
+            248,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            160,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_9562": {
+        "extent": 320,
+        "start": 69792,
+        "sha256": "8330e80528c26e866b83e9766f8cc9330daae07bc8f64e8d40bcdae9b4f63e70",
+        "relocations": [
+          [
+            244,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            160,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_21031": {
+        "extent": 304,
+        "start": 70112,
+        "sha256": "b3601e3d03a0ea2cff68b9e77c83993eb5f65a45c703d964241dd5878461bb83",
+        "relocations": [
+          [
+            220,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            136,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      "_mech_compact_checked_layout_continuation_44070": {
+        "extent": 648,
+        "start": 70416,
+        "sha256": "2f287ac738876e1ea5d26b560aa45df7a9b3664852c4044e5899a8236c4a1e39",
+        "relocations": [
+          [
+            520,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            204,
+            45,
+            "_mech_compact_append_backing_byte_consume"
+          ]
+        ]
+      },
+      "_mech_compact_closed_v2": {
+        "extent": 384,
+        "start": 17008,
+        "sha256": "b4b1e2605234726b90bc38d5db655d05c9f71855f80ad2e26615ef2470e34f2b",
+        "relocations": [
+          [
+            344,
+            45,
+            "_mech_compact_finish_byte_appends"
+          ],
+          [
+            296,
+            45,
+            "_mech_compact_closed_checked"
+          ],
+          [
+            188,
+            45,
+            "_mech_compact_finish_byte_appends"
+          ]
+        ]
+      }
+    }
+  }
+}
