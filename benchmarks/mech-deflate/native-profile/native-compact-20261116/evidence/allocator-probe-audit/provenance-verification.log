@@ -1,0 +1,3 @@
+Both original receipt hashes verify with the edited probe and verifier present, without Git.
+Both hash loops reject missing, wrong, corrupt, and out-of-packet probe captures.
+The historical verifier pin and unrelated packet and inventory pins remain enforced.

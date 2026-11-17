@@ -325,6 +325,12 @@ gate still fails on the historical runtime and the inventory includes remaining
 violations inherited from #973. The full gate remains required.
 [Hosted failures, replay, and audit inventory](evidence/ci-44018345099/README.md)
 
+The all-thread allocator probe now drives the tracked allocator with
+owned, layout-checked blocks. Historical probe hashes still verify.
+The full-tree unsafe boundary gate now reaches the inherited same-object
+binding in the generated comparison host.
+[Probe checks, provenance, and the remaining audit failure](evidence/allocator-probe-audit/README.md)
+
 ## Dead spill-store screen
 
 A diagnostic AArch64 liveness pass reduced the smaller encoder from 71,960 to
