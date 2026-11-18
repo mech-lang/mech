@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/usr/bin/clang",
+    "-arch",
+    "arm64",
+    "-mmacosx-version-min=15.0",
+    "-Wl,-dead_strip",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+    "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/shared-growth-refusal/frontend/program.o",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/linked-growth/compressor",
+    "-Wl,-map,/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/linked-growth/compressor.map"
+  ],
+  "encoder_sha256": "87635ffc0308ff8a5eef1592c762207532bf1868f3957aef8a6ab48e9a6b7161",
+  "linked_encoder_text_bytes": 69528,
+  "text_bytes_full_executable": 146216,
+  "stripped_file_bytes": 276056,
+  "stripped_executable_sha256": "190b78c6ecb55bdc75bce0388b2083e666e992c26d2e33b1bc53c29648a5fc86",
+  "linkmap_sha256": "39f77d962ecb58cfb3ca5938eb76f91491f71c7e748faddea17b1007e35226a1"
+}
