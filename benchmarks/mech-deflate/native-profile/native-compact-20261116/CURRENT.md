@@ -135,6 +135,8 @@ Mech needs **1.725 s** less elapsed time to reach the
 
 ## Which build to use
 
+The 64,668 B trial lost one Roc case in the forward sweep. Its V3 result is Reject. [Runtime, timing and replay](evidence/encoder-size-gap/shared-heap-call-screen/README.md)
+
 | Role | Encoder text | Status |
 | --- | ---: | --- |
 | Historical rebuild default | 72,520 B | `rebuild.py --variant baseline`, compiler opt level 1 |
