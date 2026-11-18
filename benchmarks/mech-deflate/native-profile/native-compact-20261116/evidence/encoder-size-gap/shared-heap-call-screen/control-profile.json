@@ -1,0 +1,1003 @@
+{
+  "head": "f5df10d5791a54f39253b693abfb3d43ccb03da3",
+  "compiler_sha256": "a8554ac005c259aaa22e9dc96bf25d01d622db62c4159fb1452cb05d90cda6fd",
+  "artifacts": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+    "metadata.json": "7e37007395174780190f71a2ff56adec3858b5c29b90025e8ad793a4f7a73521"
+  },
+  "rows": [
+    {
+      "wall_seconds": 2.198853042,
+      "native_marks": [
+        [
+          "compact-stage: canonical lowering",
+          1.000349417
+        ],
+        [
+          "compact-stage: preparation blocks=8223 values=5690",
+          1.018271667
+        ],
+        [
+          "compact-stage: native module",
+          1.161502959
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475",
+          1.165796667
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_475",
+          1.165800417
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475_vector",
+          1.212631542
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009",
+          1.291361042
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_3009",
+          1.291366917
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth",
+          1.298321334
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173",
+          1.323342584
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector",
+          1.327908417
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447",
+          1.333408584
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector",
+          1.337504625
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956",
+          1.341622875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector",
+          1.342977292
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879",
+          1.34674075
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector",
+          1.349898
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673",
+          1.352795042
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector",
+          1.35498425
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633",
+          1.357367709
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector",
+          1.359577584
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895",
+          1.362172
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector",
+          1.36422825
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872",
+          1.366556834
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector",
+          1.368208584
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799",
+          1.370148667
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector",
+          1.371496375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821",
+          1.373124875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector",
+          1.374558584
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026",
+          1.376120917
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector",
+          1.377259167
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362",
+          1.378636375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362_vector",
+          1.379736917
+        ],
+        [
+          "compact-stage: typed layout",
+          1.381041792
+        ],
+        [
+          "compact-stage: flow proof",
+          1.381042584
+        ],
+        [
+          "compact-stage: operation recipes",
+          1.383391334
+        ],
+        [
+          "compact-stage: direct scalar literals=1389",
+          1.541984667
+        ],
+        [
+          "compact-stage: source CFG",
+          1.546241417
+        ],
+        [
+          "compact-stage: source site 0/8223",
+          1.5462425
+        ],
+        [
+          "compact-stage: source site 4096/8223",
+          1.57811375
+        ],
+        [
+          "compact-stage: source site 8192/8223",
+          1.63450075
+        ],
+        [
+          "compact-stage: finalize SSA",
+          1.650213084
+        ],
+        [
+          "compact-stage: compact values before=831378",
+          1.671955084
+        ],
+        [
+          "compact-stage: CFG cleanup",
+          1.679196584
+        ],
+        [
+          "compact-stage: machine code",
+          2.093906917
+        ],
+        [
+          "compact-stage: machine code complete",
+          2.187159625
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 2.137744666,
+      "native_marks": [
+        [
+          "compact-stage: canonical lowering",
+          0.950925375
+        ],
+        [
+          "compact-stage: preparation blocks=8223 values=5690",
+          0.968552208
+        ],
+        [
+          "compact-stage: native module",
+          1.1100905
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475",
+          1.113959625
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_475",
+          1.113962541
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475_vector",
+          1.1599905
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009",
+          1.236964083
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_3009",
+          1.236967083
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth",
+          1.243850166
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173",
+          1.268347458
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector",
+          1.272888291
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447",
+          1.278288541
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector",
+          1.282339
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956",
+          1.286458875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector",
+          1.287779583
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879",
+          1.291227791
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector",
+          1.294261458
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673",
+          1.297098333
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector",
+          1.29926475
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633",
+          1.30162225
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector",
+          1.303812625
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895",
+          1.306405708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector",
+          1.308428
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872",
+          1.310730416
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector",
+          1.312376375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799",
+          1.314322208
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector",
+          1.315665958
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821",
+          1.317309625
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector",
+          1.31874
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026",
+          1.320300166
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector",
+          1.32143775
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362",
+          1.322800583
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362_vector",
+          1.32389925
+        ],
+        [
+          "compact-stage: typed layout",
+          1.32519125
+        ],
+        [
+          "compact-stage: flow proof",
+          1.325191833
+        ],
+        [
+          "compact-stage: operation recipes",
+          1.327605291
+        ],
+        [
+          "compact-stage: direct scalar literals=1389",
+          1.4858205
+        ],
+        [
+          "compact-stage: source CFG",
+          1.490054875
+        ],
+        [
+          "compact-stage: source site 0/8223",
+          1.490055666
+        ],
+        [
+          "compact-stage: source site 4096/8223",
+          1.521779416
+        ],
+        [
+          "compact-stage: source site 8192/8223",
+          1.577850875
+        ],
+        [
+          "compact-stage: finalize SSA",
+          1.59355
+        ],
+        [
+          "compact-stage: compact values before=831378",
+          1.615351458
+        ],
+        [
+          "compact-stage: CFG cleanup",
+          1.622510208
+        ],
+        [
+          "compact-stage: machine code",
+          2.033056541
+        ],
+        [
+          "compact-stage: machine code complete",
+          2.125797583
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 2.132142208,
+      "native_marks": [
+        [
+          "compact-stage: canonical lowering",
+          0.949003083
+        ],
+        [
+          "compact-stage: preparation blocks=8223 values=5690",
+          0.966182417
+        ],
+        [
+          "compact-stage: native module",
+          1.106071583
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475",
+          1.109848625
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_475",
+          1.109851
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475_vector",
+          1.155917
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009",
+          1.232569333
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_3009",
+          1.232572042
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth",
+          1.239445792
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173",
+          1.263920875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector",
+          1.268430958
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447",
+          1.273817708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector",
+          1.277833667
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956",
+          1.281919542
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector",
+          1.283244333
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879",
+          1.28665925
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector",
+          1.289673125
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673",
+          1.29249075
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector",
+          1.294626708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633",
+          1.296985833
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector",
+          1.299169708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895",
+          1.301740208
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector",
+          1.303755208
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872",
+          1.306064208
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector",
+          1.307699375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799",
+          1.309620208
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector",
+          1.310958458
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821",
+          1.31258475
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector",
+          1.31400575
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026",
+          1.315557375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector",
+          1.316686
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362",
+          1.318035542
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362_vector",
+          1.319131167
+        ],
+        [
+          "compact-stage: typed layout",
+          1.320400542
+        ],
+        [
+          "compact-stage: flow proof",
+          1.320401167
+        ],
+        [
+          "compact-stage: operation recipes",
+          1.322805667
+        ],
+        [
+          "compact-stage: direct scalar literals=1389",
+          1.480708958
+        ],
+        [
+          "compact-stage: source CFG",
+          1.484953042
+        ],
+        [
+          "compact-stage: source site 0/8223",
+          1.48495375
+        ],
+        [
+          "compact-stage: source site 4096/8223",
+          1.516750917
+        ],
+        [
+          "compact-stage: source site 8192/8223",
+          1.572311542
+        ],
+        [
+          "compact-stage: finalize SSA",
+          1.587860083
+        ],
+        [
+          "compact-stage: compact values before=831378",
+          1.609656583
+        ],
+        [
+          "compact-stage: CFG cleanup",
+          1.616799875
+        ],
+        [
+          "compact-stage: machine code",
+          2.027637125
+        ],
+        [
+          "compact-stage: machine code complete",
+          2.120337417
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 2.132551458,
+      "native_marks": [
+        [
+          "compact-stage: canonical lowering",
+          0.94799125
+        ],
+        [
+          "compact-stage: preparation blocks=8223 values=5690",
+          0.965161666
+        ],
+        [
+          "compact-stage: native module",
+          1.105014666
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475",
+          1.108841125
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_475",
+          1.108843458
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475_vector",
+          1.154874708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009",
+          1.23162925
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_3009",
+          1.231631875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth",
+          1.238474916
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173",
+          1.262954791
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector",
+          1.267473708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447",
+          1.272844125
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector",
+          1.276871291
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956",
+          1.280974791
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector",
+          1.282304708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879",
+          1.285748375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector",
+          1.288784541
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673",
+          1.291618666
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector",
+          1.29376225
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633",
+          1.296116083
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector",
+          1.298303333
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895",
+          1.300874375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector",
+          1.302887875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872",
+          1.305189833
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector",
+          1.306834458
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799",
+          1.308778875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector",
+          1.310116333
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821",
+          1.311749708
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector",
+          1.313176916
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026",
+          1.314734625
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector",
+          1.315862541
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362",
+          1.317217083
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362_vector",
+          1.318307291
+        ],
+        [
+          "compact-stage: typed layout",
+          1.319579208
+        ],
+        [
+          "compact-stage: flow proof",
+          1.319579875
+        ],
+        [
+          "compact-stage: operation recipes",
+          1.321969125
+        ],
+        [
+          "compact-stage: direct scalar literals=1389",
+          1.479845666
+        ],
+        [
+          "compact-stage: source CFG",
+          1.484093333
+        ],
+        [
+          "compact-stage: source site 0/8223",
+          1.484093958
+        ],
+        [
+          "compact-stage: source site 4096/8223",
+          1.515872291
+        ],
+        [
+          "compact-stage: source site 8192/8223",
+          1.57183175
+        ],
+        [
+          "compact-stage: finalize SSA",
+          1.587519833
+        ],
+        [
+          "compact-stage: compact values before=831378",
+          1.609349166
+        ],
+        [
+          "compact-stage: CFG cleanup",
+          1.616483208
+        ],
+        [
+          "compact-stage: machine code",
+          2.027674166
+        ],
+        [
+          "compact-stage: machine code complete",
+          2.120925541
+        ]
+      ]
+    },
+    {
+      "wall_seconds": 2.135052,
+      "native_marks": [
+        [
+          "compact-stage: canonical lowering",
+          0.946939209
+        ],
+        [
+          "compact-stage: preparation blocks=8223 values=5690",
+          0.964124584
+        ],
+        [
+          "compact-stage: native module",
+          1.103923375
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475",
+          1.107856292
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_475",
+          1.107859125
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_475_vector",
+          1.153876542
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009",
+          1.2306
+        ],
+        [
+          "compact-stage: skipped general numeric SSA mech_compact_numeric_3009",
+          1.230603042
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth",
+          1.237464709
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173",
+          1.262001792
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector",
+          1.266505792
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447",
+          1.271870417
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector",
+          1.275914917
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956",
+          1.280025042
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector",
+          1.281359
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879",
+          1.284799084
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector",
+          1.287822834
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673",
+          1.29067025
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector",
+          1.292811834
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633",
+          1.295171334
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector",
+          1.297364084
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895",
+          1.299945667
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector",
+          1.301963875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872",
+          1.30426875
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector",
+          1.305918667
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799",
+          1.307860417
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector",
+          1.309201417
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821",
+          1.310834417
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector",
+          1.312259959
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026",
+          1.313824709
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector",
+          1.314969209
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362",
+          1.316319
+        ],
+        [
+          "compact-stage: numeric phase mech_compact_numeric_362_vector",
+          1.317413875
+        ],
+        [
+          "compact-stage: typed layout",
+          1.318685334
+        ],
+        [
+          "compact-stage: flow proof",
+          1.318686125
+        ],
+        [
+          "compact-stage: operation recipes",
+          1.32109575
+        ],
+        [
+          "compact-stage: direct scalar literals=1389",
+          1.478971292
+        ],
+        [
+          "compact-stage: source CFG",
+          1.48321325
+        ],
+        [
+          "compact-stage: source site 0/8223",
+          1.48321425
+        ],
+        [
+          "compact-stage: source site 4096/8223",
+          1.515086959
+        ],
+        [
+          "compact-stage: source site 8192/8223",
+          1.570880667
+        ],
+        [
+          "compact-stage: finalize SSA",
+          1.586384709
+        ],
+        [
+          "compact-stage: compact values before=831378",
+          1.608290917
+        ],
+        [
+          "compact-stage: CFG cleanup",
+          1.615450417
+        ],
+        [
+          "compact-stage: machine code",
+          2.026476959
+        ],
+        [
+          "compact-stage: machine code complete",
+          2.119695167
+        ]
+      ]
+    }
+  ],
+  "median_stage_elapsed": {
+    "canonical lowering through preparation blocks=8223 values=5690": 0.017182354499999997,
+    "preparation blocks=8223 values=5690 through native module": 0.13987108300000006,
+    "native module through numeric phase mech_compact_numeric_475": 0.003847791999999961,
+    "numeric phase mech_compact_numeric_475 through skipped general numeric SSA mech_compact_numeric_475": 2.6040000000726593e-06,
+    "skipped general numeric SSA mech_compact_numeric_475 through numeric phase mech_compact_numeric_475_vector": 0.04602960449999993,
+    "numeric phase mech_compact_numeric_475_vector through numeric phase mech_compact_numeric_3009": 0.076739,
+    "numeric phase mech_compact_numeric_3009 through skipped general numeric SSA mech_compact_numeric_3009": 2.8544999999269294e-06,
+    "skipped general numeric SSA mech_compact_numeric_3009 through numeric phase mech_compact_numeric_3009_no_growth": 0.006867708499999958,
+    "numeric phase mech_compact_numeric_3009_no_growth through numeric phase mech_compact_numeric_4173": 0.02448858350000005,
+    "numeric phase mech_compact_numeric_4173 through numeric phase mech_compact_numeric_4173_vector": 0.004514499999999977,
+    "numeric phase mech_compact_numeric_4173_vector through numeric phase mech_compact_numeric_3447": 0.005378583499999978,
+    "numeric phase mech_compact_numeric_3447 through numeric phase mech_compact_numeric_3447_vector": 0.004035832999999989,
+    "numeric phase mech_compact_numeric_3447_vector through numeric phase mech_compact_numeric_3956": 0.004106812500000001,
+    "numeric phase mech_compact_numeric_3956 through numeric phase mech_compact_numeric_3956_vector": 0.0013273540000000583,
+    "numeric phase mech_compact_numeric_3956_vector through numeric phase mech_compact_numeric_4879": 0.00344187550000008,
+    "numeric phase mech_compact_numeric_4879 through numeric phase mech_compact_numeric_4879_vector": 0.0030287084999999214,
+    "numeric phase mech_compact_numeric_4879_vector through numeric phase mech_compact_numeric_4673": 0.002835499999999991,
+    "numeric phase mech_compact_numeric_4673 through numeric phase mech_compact_numeric_4673_vector": 0.002142584000000003,
+    "numeric phase mech_compact_numeric_4673_vector through numeric phase mech_compact_numeric_6633": 0.0023583124999999594,
+    "numeric phase mech_compact_numeric_6633 through numeric phase mech_compact_numeric_6633_vector": 0.002188812499999915,
+    "numeric phase mech_compact_numeric_6633_vector through numeric phase mech_compact_numeric_5895": 0.002576312500000011,
+    "numeric phase mech_compact_numeric_5895 through numeric phase mech_compact_numeric_5895_vector": 0.002016604000000033,
+    "numeric phase mech_compact_numeric_5895_vector through numeric phase mech_compact_numeric_3872": 0.002303645500000062,
+    "numeric phase mech_compact_numeric_3872 through numeric phase mech_compact_numeric_3872_vector": 0.001645291999999965,
+    "numeric phase mech_compact_numeric_3872_vector through numeric phase mech_compact_numeric_4799": 0.0019430835000000535,
+    "numeric phase mech_compact_numeric_4799 through numeric phase mech_compact_numeric_4799_vector": 0.0013396249999999554,
+    "numeric phase mech_compact_numeric_4799_vector through numeric phase mech_compact_numeric_2821": 0.0016331874999999663,
+    "numeric phase mech_compact_numeric_2821 through numeric phase mech_compact_numeric_2821_vector": 0.0014263749999999797,
+    "numeric phase mech_compact_numeric_2821_vector through numeric phase mech_compact_numeric_8026": 0.0015589375000000238,
+    "numeric phase mech_compact_numeric_8026 through numeric phase mech_compact_numeric_8026_vector": 0.0011331045000000373,
+    "numeric phase mech_compact_numeric_8026_vector through numeric phase mech_compact_numeric_362": 0.0013521665000000294,
+    "numeric phase mech_compact_numeric_362 through numeric phase mech_compact_numeric_362_vector": 0.001095249999999992,
+    "numeric phase mech_compact_numeric_362_vector through typed layout": 0.001271687999999993,
+    "typed layout through flow proof": 6.460000000485522e-07,
+    "flow proof through operation recipes": 0.002407062500000001,
+    "operation recipes through direct scalar literals=1389": 0.1578899159999999,
+    "direct scalar literals=1389 through source CFG": 0.004243020999999958,
+    "source CFG through source site 0/8223": 7.495000000634633e-07,
+    "source site 0/8223 through source site 4096/8223": 0.03178774999999989,
+    "source site 4096/8223 through source site 8192/8223": 0.05587658350000002,
+    "source site 8192/8223 through finalize SSA": 0.015618311999999968,
+    "finalize SSA through compact values before=831378": 0.0218153955,
+    "compact values before=831378 through CFG cleanup": 0.007151021000000091,
+    "CFG cleanup through machine code": 0.410931896,
+    "machine code through machine code complete": 0.09297962500000012
+  }
+}

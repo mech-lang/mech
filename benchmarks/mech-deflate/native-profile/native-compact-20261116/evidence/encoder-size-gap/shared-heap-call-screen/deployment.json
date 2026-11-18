@@ -1,0 +1,85 @@
+{
+  "plan_sha256": "78d1629e5defb617387c6e2d9285b21ec9f41dc838b700aa8e1a440c969ddeea",
+  "medians": {
+    "mech-control-qualified": {
+      "source": 2.1448411454912275,
+      "link": 0.03471270785667002,
+      "source_through_link": 2.180151750566438,
+      "strip": 0.010356042068451643,
+      "source_through_strip": 2.19079004204832
+    },
+    "mech-shared-heap-calls": {
+      "source": 2.1483874784316868,
+      "link": 0.03497633314691484,
+      "source_through_link": 2.1834957704413682,
+      "strip": 0.010482062352821231,
+      "source_through_strip": 2.1942315413616598
+    },
+    "roc": {
+      "source": 2.94572745799087,
+      "link": 0.03476020833477378,
+      "source_through_link": 2.981041020946577,
+      "strip": 0.010364062152802944,
+      "source_through_strip": 2.991631145356223
+    },
+    "libdeflate": {
+      "source": 0.44562258338555694,
+      "link": 0.03418722958303988,
+      "source_through_link": 0.48005593684501946,
+      "strip": 0.01036291685886681,
+      "source_through_strip": 0.49055202049203217
+    }
+  },
+  "phases": {
+    "mech-control-qualified": {
+      "parse": 0.7095350835,
+      "catalog": 1.99375e-05,
+      "frontend": 0.2137106875,
+      "artifact": 0.006930021,
+      "encode": 0.0025912295,
+      "native": 1.1857453960000002
+    },
+    "mech-shared-heap-calls": {
+      "parse": 0.710227583,
+      "catalog": 1.9792e-05,
+      "frontend": 0.214810667,
+      "artifact": 0.006951792,
+      "encode": 0.002593542,
+      "native": 1.1874357500000001
+    }
+  },
+  "paired_ratios": {
+    "mech-control-qualified": {
+      "roc": 0.731438235442488,
+      "libdeflate": 4.545367914785135,
+      "mech-control-qualified": 1.0
+    },
+    "mech-shared-heap-calls": {
+      "roc": 0.7325352351572081,
+      "libdeflate": 4.546455863333239,
+      "mech-control-qualified": 1.0012613624502382
+    }
+  },
+  "median_paired_ms_saved": -2.7491042856127024,
+  "faster_trials": 2,
+  "trials": 8,
+  "selected": "mech-shared-heap-calls",
+  "stripped_executables": {
+    "mech-control-qualified": {
+      "bytes": 276056,
+      "sha256": "ed21493e1451d162bbe27652cc16aaaf13efdc9a337697ce676efd4fb8b0c271"
+    },
+    "mech-shared-heap-calls": {
+      "bytes": 276072,
+      "sha256": "8c3d728ed3a4554c714c936a130dcebab455a98cfb94e689510377670aa41a61"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  }
+}
