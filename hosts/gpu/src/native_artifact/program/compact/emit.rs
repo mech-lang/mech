@@ -1923,6 +1923,13 @@ fn define_entry<M: Module>(
             cfg_cleanup::optimize_final_ordered(&controls, &mut context, module.isa())?
         } else if schedule == "routes" {
             cfg_cleanup::optimize_final_routes(&controls, &mut context, module.isa())?
+        } else if schedule == "batched-routes" || schedule == "lean-routes" {
+            cfg_cleanup::optimize_final_batched_routes(
+                &controls,
+                &mut context,
+                module.isa(),
+                schedule == "batched-routes",
+            )?
         } else {
             cfg_cleanup::optimize(&controls, &mut context, module.isa())?
         };
