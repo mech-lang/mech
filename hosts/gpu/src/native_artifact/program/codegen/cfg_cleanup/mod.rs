@@ -328,6 +328,20 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
     if !report.enabled {
         return Ok(report);
     }
+    let combine_verification = std::env::var_os("MECH_COMPACT_VERIFY_CLEANUP_ONCE").is_some();
+    let finish_route = |context: &mut Context| -> Result<(), NativeCompileError> {
+        if combine_verification {
+            context
+                .compute_flowgraph_cleanup_and_verify(isa)
+                .map_err(backend)?;
+        } else {
+            context
+                .compute_flowgraph_and_cleanup(isa)
+                .map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        Ok(())
+    };
     // Each search reconstructs its current CFG and dominance facts. Between
     // rewrites retire unreachable routes/constant phis, retaining valid SSA,
     // without rerunning every ordered source-range search after each edge.
@@ -339,10 +353,7 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
             threaded_edges::optimize(&mut context.func, &context.cfg, &context.domtree)
                 .threaded_edges;
         if report.loop_edges != 0 {
-            context
-                .compute_flowgraph_and_cleanup(isa)
-                .map_err(backend)?;
-            context.verify(isa).map_err(backend)?;
+            finish_route(context)?;
         }
     }
     if controls.enabled(OptimizationPass::IdentityRoutes) {
@@ -353,10 +364,7 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
             identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, None)
                 .threaded_edges;
         if report.identity_edges != 0 {
-            context
-                .compute_flowgraph_and_cleanup(isa)
-                .map_err(backend)?;
-            context.verify(isa).map_err(backend)?;
+            finish_route(context)?;
         }
     }
     if report.loop_edges != 0 || report.identity_edges != 0 {
