@@ -1,0 +1,123 @@
+{
+  "compiler_sha256": "3fe38e086baf63eaba48b6c87f82232aa461a82a541d310723f4f51fbbc0cad8",
+  "samples": [
+    {
+      "total": 567,
+      "by_parser_family": {
+        "base-continuation": 117,
+        "grammar-journal": 62,
+        "recognition-memo": 9,
+        "cache-enqueue": 9,
+        "literal-scan": 28,
+        "grammar-source-access": 6,
+        "grapheme-scan": 2,
+        "grammar-transactions": 4,
+        "literal-continuation": 50,
+        "precedence-continuation": 87,
+        "operator-continuation": 22,
+        "tree-storage": 15,
+        "subtree-cache": 23,
+        "tree-source-access": 6,
+        "tree-journal-access": 7,
+        "structural-replay": 54,
+        "document-continuation": 38,
+        "snapshot-index": 27,
+        "restart-index": 1
+      },
+      "sample_sha256": "607a1e24bdc1560e318d7ae4710d966d1c6c40ffe00c8a54bf238ae8b0a96d50"
+    },
+    {
+      "total": 574,
+      "by_parser_family": {
+        "base-continuation": 113,
+        "grammar-journal": 65,
+        "cache-enqueue": 10,
+        "recognition-memo": 7,
+        "literal-scan": 26,
+        "grammar-source-access": 7,
+        "grammar-transactions": 6,
+        "literal-continuation": 50,
+        "tree-storage": 14,
+        "subtree-cache": 40,
+        "tree-journal-access": 8,
+        "precedence-continuation": 79,
+        "operator-continuation": 27,
+        "structural-replay": 52,
+        "document-continuation": 42,
+        "snapshot-index": 27,
+        "restart-index": 1
+      },
+      "sample_sha256": "d8025d6202386c02a2a201114b94619673ca3a61b34d8c76392808a2b02e96cf"
+    },
+    {
+      "total": 578,
+      "by_parser_family": {
+        "grammar-journal": 76,
+        "cache-enqueue": 12,
+        "recognition-memo": 7,
+        "base-continuation": 128,
+        "grammar-source-access": 6,
+        "literal-scan": 32,
+        "literal-continuation": 51,
+        "grammar-transactions": 13,
+        "subtree-cache": 26,
+        "tree-storage": 14,
+        "tree-source-access": 2,
+        "tree-journal-access": 3,
+        "precedence-continuation": 67,
+        "operator-continuation": 20,
+        "document-continuation": 42,
+        "structural-replay": 50,
+        "snapshot-index": 27,
+        "restart-index": 2
+      },
+      "sample_sha256": "3cce40cac9ee03cdd0e2441427ce93d8ad31b8cee79e030cb4acc2ec293b583a"
+    },
+    {
+      "total": 574,
+      "by_parser_family": {
+        "base-continuation": 105,
+        "grammar-journal": 50,
+        "cache-enqueue": 8,
+        "recognition-memo": 7,
+        "literal-scan": 30,
+        "grammar-source-access": 10,
+        "grapheme-scan": 2,
+        "grammar-transactions": 15,
+        "literal-continuation": 52,
+        "tree-storage": 22,
+        "subtree-cache": 37,
+        "tree-source-access": 4,
+        "tree-journal-access": 10,
+        "precedence-continuation": 88,
+        "operator-continuation": 22,
+        "document-continuation": 34,
+        "structural-replay": 49,
+        "snapshot-index": 27,
+        "restart-index": 2
+      },
+      "sample_sha256": "e13dd9ff7f46ce91db0003395af0219705ca37fff7caf59e9177c578201c29e0"
+    }
+  ],
+  "parser_families": {
+    "base-continuation": 463,
+    "precedence-continuation": 321,
+    "grammar-journal": 253,
+    "structural-replay": 205,
+    "literal-continuation": 203,
+    "document-continuation": 156,
+    "subtree-cache": 126,
+    "literal-scan": 116,
+    "snapshot-index": 108,
+    "operator-continuation": 91,
+    "tree-storage": 65,
+    "cache-enqueue": 39,
+    "grammar-transactions": 38,
+    "recognition-memo": 30,
+    "grammar-source-access": 29,
+    "tree-journal-access": 28,
+    "tree-source-access": 12,
+    "restart-index": 6,
+    "grapheme-scan": 4
+  }
+}

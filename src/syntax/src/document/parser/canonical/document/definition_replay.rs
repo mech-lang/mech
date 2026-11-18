@@ -177,13 +177,20 @@ impl Origin {
         let start = self.checkpoint;
         let offset = start.cursor.offset;
         let events = end.events.checked_sub(start.events)?;
+        // Completed one-shot statements can contain several nested blocks.
+        // Bound their transcript separately from single-definition choices.
+        let scale = if self.kind == SyntaxKind::Statement {
+            4
+        } else {
+            1
+        };
         if !sealed(parser, at)
             || at.poll != self.position.poll
             || at.delimiter != self.position.delimiter
             || end.cursor.offset <= offset
-            || (end.cursor.offset - offset).0 > MAX_BYTES
+            || (end.cursor.offset - offset).0 > MAX_BYTES * scale as u32
             || events == 0
-            || events > MAX_EVENTS
+            || events > MAX_EVENTS * scale
             || end.open_markers != start.open_markers
             || end.rule_depth != start.rule_depth
             || end.nesting != start.nesting
@@ -211,8 +218,8 @@ impl Origin {
         let nodes = parser.ids.next_node().checked_sub(self.ids.next_node())?;
         let tokens = parser.ids.next_token().checked_sub(self.ids.next_token())?;
         if nodes == 0
-            || nodes > MAX_IDS
-            || tokens > MAX_IDS
+            || nodes > MAX_IDS * scale as u64
+            || tokens > MAX_IDS * scale as u64
             || parser.ids.next_node() == u64::MAX
             || parser.ids.next_token() == u64::MAX
         {

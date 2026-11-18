@@ -12981,6 +12981,45 @@
           "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
         },
         "evidence": "evidence/encoder-size-gap/dense-scorer-direct-branches/deployment.json"
+      },
+      {
+        "name": "Folded grapheme frames and longer statement replay",
+        "encoder_sha256": "4e9d5ba4767252f5583aa50c2c56b3e320bb7d4a13a075b127fa92e83fb8b2d3",
+        "encoder_text_bytes": 66192,
+        "encoder_text_ratios": {
+          "roc": 1.1472545757071548,
+          "libdeflate": 1.7851132686084143
+        },
+        "compiler_sha256": "4a0cb4066a6268bd9ed00795f33110c12d0107b236a563543854581da2d3d1bb",
+        "measurement_plan_sha256": "fb5e87b62d2862c6fe3e813815872466e650a5926ea4926d427b594f57b1c4b4",
+        "median_seconds": {
+          "source": 2.159930062480271,
+          "link": 0.034325208282098174,
+          "source_through_link": 2.1952553750015795,
+          "strip": 0.010453187627717853,
+          "source_through_strip": 2.2058111873921007
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7192647915,
+          "catalog": 1.8895500000000002e-05,
+          "frontend": 0.2192190625,
+          "artifact": 0.0069916875,
+          "encode": 0.002595,
+          "native": 1.184706291
+        },
+        "paired_ratios": {
+          "roc": 0.7367325204185038,
+          "libdeflate": 4.577940619653097
+        },
+        "paired_ratio_to_session_control": 0.971968675840073,
+        "median_paired_seconds_saved": 0.0632458955515176,
+        "measured_trials": 8,
+        "faster_paired_trials": 8,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
+        },
+        "evidence": "evidence/sealed-grapheme-and-statement-replay/deployment.json"
       }
     ]
   },
@@ -13205,5 +13244,61 @@
     },
     "worker_sha256": "d95861e141f5f26f79fa993f75f53b47da2742e3e836abdc03785331b47504c5",
     "peak_stack_bytes": 4640
+  },
+  "sealed_grapheme_and_statement_replay": {
+    "build": {
+      "name": "Folded grapheme frames and longer statement replay",
+      "encoder_sha256": "4e9d5ba4767252f5583aa50c2c56b3e320bb7d4a13a075b127fa92e83fb8b2d3",
+      "encoder_text_bytes": 66192,
+      "encoder_text_ratios": {
+        "roc": 1.1472545757071548,
+        "libdeflate": 1.7851132686084143
+      },
+      "compiler_sha256": "4a0cb4066a6268bd9ed00795f33110c12d0107b236a563543854581da2d3d1bb",
+      "measurement_plan_sha256": "fb5e87b62d2862c6fe3e813815872466e650a5926ea4926d427b594f57b1c4b4",
+      "median_seconds": {
+        "source": 2.159930062480271,
+        "link": 0.034325208282098174,
+        "source_through_link": 2.1952553750015795,
+        "strip": 0.010453187627717853,
+        "source_through_strip": 2.2058111873921007
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.7192647915,
+        "catalog": 1.8895500000000002e-05,
+        "frontend": 0.2192190625,
+        "artifact": 0.0069916875,
+        "encode": 0.002595,
+        "native": 1.184706291
+      },
+      "paired_ratios": {
+        "roc": 0.7367325204185038,
+        "libdeflate": 4.577940619653097
+      },
+      "paired_ratio_to_session_control": 0.971968675840073,
+      "median_paired_seconds_saved": 0.0632458955515176,
+      "measured_trials": 8,
+      "faster_paired_trials": 8,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
+      },
+      "evidence": "evidence/sealed-grapheme-and-statement-replay/deployment.json"
+    },
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/sealed-grapheme-and-statement-replay",
+    "worker_sha256": "d95861e141f5f26f79fa993f75f53b47da2742e3e836abdc03785331b47504c5",
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    }
   }
 }

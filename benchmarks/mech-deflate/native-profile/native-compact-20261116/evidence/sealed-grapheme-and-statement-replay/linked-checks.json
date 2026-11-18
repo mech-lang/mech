@@ -1,0 +1,31 @@
+{
+  "commands": {
+    "failures": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/linked-proofs/check-linked-error-exits.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/worker-checks/maintained",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/worker-checks/folded-graphemes-and-statement-replay"
+    ],
+    "stack": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/linked-proofs/check-layout-stack.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/worker-checks/maintained",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/worker-checks/folded-graphemes-and-statement-replay"
+    ]
+  },
+  "peak_stack_bytes": {
+    "maintained": 4752,
+    "folded-graphemes-and-statement-replay": 4640
+  },
+  "matches_success_observations": 162,
+  "checked_failure_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ]
+}
