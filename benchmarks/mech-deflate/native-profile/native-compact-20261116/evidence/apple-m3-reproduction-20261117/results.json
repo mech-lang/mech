@@ -1,0 +1,60 @@
+{
+  "schema": "mech.pr993.m3-reproduction.v1",
+  "source_commit": "ed99ade92836761bebd2f7357bf46817204433d4",
+  "encoder_rebuild_identity": "exact object and metadata match",
+  "encoder_text_bytes": 71192,
+  "raw_replay": "passed for both M3 campaigns",
+  "accepted_timed_calls_per_m3_campaign": 1965312,
+  "win_counts": [
+    {
+      "machine": "Apple M1",
+      "execution": "qualified archived executable",
+      "order": "forward",
+      "roc_wins": 81,
+      "libdeflate_wins": 61,
+      "cases": 81
+    },
+    {
+      "machine": "Apple M1",
+      "execution": "qualified archived executable",
+      "order": "reverse",
+      "roc_wins": 81,
+      "libdeflate_wins": 61,
+      "cases": 81
+    },
+    {
+      "machine": "Apple M3",
+      "execution": "M3 source rebuild",
+      "order": "forward",
+      "roc_wins": 71,
+      "libdeflate_wins": 57,
+      "cases": 81
+    },
+    {
+      "machine": "Apple M3",
+      "execution": "M3 source rebuild",
+      "order": "reverse",
+      "roc_wins": 69,
+      "libdeflate_wins": 58,
+      "cases": 81
+    },
+    {
+      "machine": "Apple M3",
+      "execution": "M1 executable replayed on M3",
+      "order": "forward",
+      "roc_wins": 68,
+      "libdeflate_wins": 58,
+      "cases": 81
+    },
+    {
+      "machine": "Apple M3",
+      "execution": "M1 executable replayed on M3",
+      "order": "reverse",
+      "roc_wins": 68,
+      "libdeflate_wins": 57,
+      "cases": 81
+    }
+  ],
+  "timing_boundary": "diagnostic native compress-into call through private cleanup; startup and ordinary resource admission omitted",
+  "attribution": "Both rebuilt and unchanged M1 executables fail to reproduce M1 win counts on M3. Hardware, operating system and within-machine variation are not separated."
+}

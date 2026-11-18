@@ -1,0 +1,72 @@
+{
+  "schema": "mech.pr993.cross-machine.v1",
+  "pinned_commit": "ed99ade92836761bebd2f7357bf46817204433d4",
+  "qualified_object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "environment_sha256": "9156d7a997e777ccf2772c5af102761454491d779cd9c26bff28f64acc6c623b",
+  "contract_sha256": "609262fe4fdbd65ae828a63425257a80347c9c3ef8c4cbe22617d2ad2ea5008d",
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490",
+  "local_fixture_inventory_sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38",
+  "timer_original_sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+  "timer_sha256": "f48035efcec9f19edb00418d810edf6457fac80e5360941cef346294874b390c",
+  "adaptation": "Relocate inputs and executables; repeat all 24 actor permutations four times, matching the M1 driver. Unused Roc metadata argument is a deliberately absent file.",
+  "runs": [
+    {
+      "id": "full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "worker_sha256": {
+    "mech-control": "fcce2877a8e3752d2b012216e0ea1235794c46b17d296edf172812d273dff7d4",
+    "mech-experiment": "6828360cbf38c42a27e7c0c24bf07af7c2f0e407f5bcaf11e82f911f180512d2",
+    "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+    "libdeflate": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+  },
+  "shared_lock": "/Users/cim310/.codex/worktrees/benchmark-suite/benchmarks/.local/campaign.lock",
+  "execution": "M3 source rebuild",
+  "created_at": "2026-11-18T00:15:10.952723+00:00",
+  "artifacts": {
+    "mech-control": {
+      "worker": "m3-control/mech-worker",
+      "worker_sha256": "fcce2877a8e3752d2b012216e0ea1235794c46b17d296edf172812d273dff7d4",
+      "metadata": "m3-control/metadata.json",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+      "encoder": "m3-control/program.o",
+      "encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b"
+    },
+    "mech-experiment": {
+      "worker": "m3-qualified/mech-worker",
+      "worker_sha256": "6828360cbf38c42a27e7c0c24bf07af7c2f0e407f5bcaf11e82f911f180512d2",
+      "metadata": "m3-qualified/metadata.json",
+      "metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "encoder": "m3-qualified/program.o",
+      "encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+    },
+    "roc": {
+      "worker": "pinned-peers/roc-worker",
+      "worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+    },
+    "libdeflate": {
+      "worker": "pinned-peers/libdeflate-worker",
+      "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+    }
+  },
+  "canonical_fixture_directory": "/private/tmp/mech-pr993-m3-20261117/benchmarks/mech-deflate/native-profile/native-compact-20261116",
+  "source_rebuild": "3a1af7fde0b14e666f526bd561be34cef5d2f1f89f4e35c558ab682f7d83b13a",
+  "setup_attempts": [
+    {
+      "folder": "setup-overlap-aborted-forward",
+      "status": "aborted; excluded from accepted timing orders",
+      "reason": "Acquisition was started before the control correctness preflight was awaited. Preserve the partial observations and restart after all verification processes have exited.",
+      "case_summaries_retained": 13
+    }
+  ],
+  "driver_sha256": "97f31a600a9f809f7c72efc83fb51e1c684066a92287a56e5e28ec82f2cc69d5"
+}

@@ -1,0 +1,14 @@
+{
+  "sha256": "20caefffbb3166eb43af59774b47b717aa3faec644478867b1774ca343ed78f2",
+  "bytes": 38618306,
+  "files_verified": 628,
+  "archive_content_verification": "passed",
+  "schema": "mech.pr993.m3-evidence.v1",
+  "asset": "pr993-deflate-apple-m3-source-rebuild-20261117-20caefffbb31.tar.gz",
+  "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr993-deflate-apple-m3-source-rebuild-20261117-20caefffbb31.tar.gz",
+  "sha256_url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr993-deflate-apple-m3-source-rebuild-20261117-20caefffbb31.tar.gz.sha256",
+  "root_directory": "pr993-apple-m3-20261117",
+  "source_commit": "ed99ade92836761bebd2f7357bf46817204433d4",
+  "source_replay": "source-built/replay.json",
+  "archived_binary_replay": "archived-binary/replay.json"
+}
