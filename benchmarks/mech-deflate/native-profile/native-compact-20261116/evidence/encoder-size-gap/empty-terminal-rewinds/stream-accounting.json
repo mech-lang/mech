@@ -1,0 +1,106 @@
+[
+  {
+    "allowance": 18446744073709551615,
+    "bytes": 243209,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [] }",
+      "stats": "ParseStats { source_bytes: 243209, parser_steps: 3967302, events_emitted: 718353, diagnostics_emitted: 0, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 160696 }",
+      "tree": 16316362869846795903
+    },
+    "limit": 18446744073709551615,
+    "progress": "Finished",
+    "state": "Finished",
+    "work": "StreamWork { accepted_bytes: 243209, retained_source_bytes: 243209, peak_source_pieces: 1, source_bytes_copied: 243209, source_index_bytes: 243209, source_lookup_steps: 54739383, source_nodes_allocated: 17680, source_node_body_bytes: 565760, parser_work: 547890673, continuation_resumes: 1, checkpoint_rewinds: 60066812, rewound_bytes: 3758093, cached_replay_bytes: 0, peak_rule_depth: 132, peak_open_markers: 152, journal_nodes_allocated: 4516063, journal_mutations: 19612676, tree_nodes_materialized: 2121122, tree_token_bytes_hashed: 4111529, tree_child_storage_nodes: 9975076, tree_nodes_reused: 628192, peak_pending_tree_nodes: 68, discarded_entries: 10619180, publications: 2, preview_work: 0, preview_parser_work: 0, export_work: 1360973, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 64, peak_events: 718373 }"
+  },
+  {
+    "allowance": 1,
+    "bytes": 18,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [] }",
+      "stats": "ParseStats { source_bytes: 18, parser_steps: 509, events_emitted: 113, diagnostics_emitted: 0, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 38 }",
+      "tree": 10014499736442065163
+    },
+    "limit": 18446744073709551615,
+    "progress": "Finished",
+    "state": "Finished",
+    "work": "StreamWork { accepted_bytes: 18, retained_source_bytes: 18, peak_source_pieces: 1, source_bytes_copied: 18, source_index_bytes: 18, source_lookup_steps: 129086, source_nodes_allocated: 5, source_node_body_bytes: 160, parser_work: 133289, continuation_resumes: 133289, checkpoint_rewinds: 17519, rewound_bytes: 507, cached_replay_bytes: 0, peak_rule_depth: 32, peak_open_markers: 26, journal_nodes_allocated: 8614, journal_mutations: 7929, tree_nodes_materialized: 361, tree_token_bytes_hashed: 204, tree_child_storage_nodes: 471, tree_nodes_reused: 215, peak_pending_tree_nodes: 1, discarded_entries: 4061, publications: 133290, preview_work: 0, preview_parser_work: 0, export_work: 189, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 39, peak_events: 133 }"
+  },
+  {
+    "allowance": 12,
+    "bytes": 18,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [] }",
+      "stats": "ParseStats { source_bytes: 18, parser_steps: 509, events_emitted: 113, diagnostics_emitted: 0, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 38 }",
+      "tree": 10014499736442065163
+    },
+    "limit": 18446744073709551615,
+    "progress": "Finished",
+    "state": "Finished",
+    "work": "StreamWork { accepted_bytes: 18, retained_source_bytes: 18, peak_source_pieces: 1, source_bytes_copied: 18, source_index_bytes: 18, source_lookup_steps: 38154, source_nodes_allocated: 5, source_node_body_bytes: 160, parser_work: 133289, continuation_resumes: 11108, checkpoint_rewinds: 17519, rewound_bytes: 507, cached_replay_bytes: 0, peak_rule_depth: 32, peak_open_markers: 26, journal_nodes_allocated: 4917, journal_mutations: 7929, tree_nodes_materialized: 361, tree_token_bytes_hashed: 204, tree_child_storage_nodes: 471, tree_nodes_reused: 215, peak_pending_tree_nodes: 4, discarded_entries: 4061, publications: 11109, preview_work: 0, preview_parser_work: 0, export_work: 189, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 39, peak_events: 133 }"
+  },
+  {
+    "allowance": 18446744073709551615,
+    "bytes": 18,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [] }",
+      "stats": "ParseStats { source_bytes: 18, parser_steps: 509, events_emitted: 113, diagnostics_emitted: 0, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 38 }",
+      "tree": 10014499736442065163
+    },
+    "limit": 18446744073709551615,
+    "progress": "Finished",
+    "state": "Finished",
+    "work": "StreamWork { accepted_bytes: 18, retained_source_bytes: 18, peak_source_pieces: 1, source_bytes_copied: 18, source_index_bytes: 18, source_lookup_steps: 8770, source_nodes_allocated: 5, source_node_body_bytes: 160, parser_work: 133689, continuation_resumes: 1, checkpoint_rewinds: 17519, rewound_bytes: 507, cached_replay_bytes: 0, peak_rule_depth: 32, peak_open_markers: 26, journal_nodes_allocated: 864, journal_mutations: 6751, tree_nodes_materialized: 481, tree_token_bytes_hashed: 284, tree_child_storage_nodes: 591, tree_nodes_reused: 135, peak_pending_tree_nodes: 29, discarded_entries: 3435, publications: 2, preview_work: 0, preview_parser_work: 0, export_work: 189, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 39, peak_events: 133 }"
+  },
+  {
+    "allowance": 64,
+    "bytes": 11,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/missing-delimiter\"), phase: Syntax, severity: Error, rule: Some(RuleId(365099244)), context: None, primary: Element { element: Node(NodeId(74)), relative: TextRange { start: TextSize(0), end: TextSize(0) } }, labels: [], expected: [Token(RightBracket)], found: Some(FoundSyntax { kind: Some(Eof), text: None }), fixes: [DiagnosticFix { title: \"Insert `]`\", applicability: MachineApplicable, edits: [TextEdit { delete: TextRange { start: TextSize(11), end: TextSize(11) }, insert: \"]\" }] }], related: [], recovery: Some(Insert { syntax: Token(RightBracket), at: TextSize(11) }), tags: DiagnosticTags(0), message: \"missing closing delimiter\" }] }",
+      "stats": "ParseStats { source_bytes: 11, parser_steps: 84, events_emitted: 114, diagnostics_emitted: 1, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 41 }",
+      "tree": 17667110939993565744
+    },
+    "limit": 18446744073709551615,
+    "progress": "Finished",
+    "state": "Finished",
+    "work": "StreamWork { accepted_bytes: 11, retained_source_bytes: 11, peak_source_pieces: 1, source_bytes_copied: 11, source_index_bytes: 11, source_lookup_steps: 7375, source_nodes_allocated: 1, source_node_body_bytes: 32, parser_work: 60197, continuation_resumes: 941, checkpoint_rewinds: 9235, rewound_bytes: 74, cached_replay_bytes: 0, peak_rule_depth: 36, peak_open_markers: 42, journal_nodes_allocated: 842, journal_mutations: 3445, tree_nodes_materialized: 104, tree_token_bytes_hashed: 48, tree_child_storage_nodes: 125, tree_nodes_reused: 55, peak_pending_tree_nodes: 5, discarded_entries: 1651, publications: 942, preview_work: 0, preview_parser_work: 0, export_work: 181, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 39, peak_events: 134 }"
+  },
+  {
+    "allowance": 23,
+    "bytes": 17,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [] }",
+      "stats": "ParseStats { source_bytes: 17, parser_steps: 209, events_emitted: 51, diagnostics_emitted: 0, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 16 }",
+      "tree": 10118716518563163846
+    },
+    "limit": 18446744073709551615,
+    "progress": "Finished",
+    "state": "Finished",
+    "work": "StreamWork { accepted_bytes: 17, retained_source_bytes: 17, peak_source_pieces: 1, source_bytes_copied: 17, source_index_bytes: 17, source_lookup_steps: 12524, source_nodes_allocated: 3, source_node_body_bytes: 96, parser_work: 72513, continuation_resumes: 3153, checkpoint_rewinds: 10439, rewound_bytes: 200, cached_replay_bytes: 0, peak_rule_depth: 30, peak_open_markers: 26, journal_nodes_allocated: 1571, journal_mutations: 4049, tree_nodes_materialized: 68, tree_token_bytes_hashed: 100, tree_child_storage_nodes: 147, tree_nodes_reused: 49, peak_pending_tree_nodes: 2, discarded_entries: 2031, publications: 3154, preview_work: 0, preview_parser_work: 0, export_work: 97, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 39, peak_events: 71 }"
+  },
+  {
+    "allowance": 9,
+    "bytes": 11,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/recovery-limit\"), phase: Syntax, severity: Error, rule: Some(RuleId(1111180012)), context: None, primary: Absolute { revision: Revision(1), range: TextRange { start: TextSize(0), end: TextSize(11) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Alpha), text: Some(\"x\") }), fixes: [], related: [], recovery: Some(ResourceLimit { range: TextRange { start: TextSize(0), end: TextSize(11) } }), tags: DiagnosticTags(0), message: \"parser resource limit reached\" }] }",
+      "stats": "ParseStats { source_bytes: 11, parser_steps: 0, events_emitted: 5, diagnostics_emitted: 1, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 2 }",
+      "tree": 16171147999691515290
+    },
+    "limit": 59,
+    "progress": "Limited",
+    "state": "Limited",
+    "work": "StreamWork { accepted_bytes: 11, retained_source_bytes: 11, peak_source_pieces: 1, source_bytes_copied: 11, source_index_bytes: 11, source_lookup_steps: 653, source_nodes_allocated: 1, source_node_body_bytes: 32, parser_work: 59, continuation_resumes: 7, checkpoint_rewinds: 7, rewound_bytes: 0, cached_replay_bytes: 0, peak_rule_depth: 7, peak_open_markers: 1, journal_nodes_allocated: 3, journal_mutations: 9, tree_nodes_materialized: 2, tree_token_bytes_hashed: 11, tree_child_storage_nodes: 2, tree_nodes_reused: 0, peak_pending_tree_nodes: 1, discarded_entries: 0, publications: 10, preview_work: 0, preview_parser_work: 0, export_work: 723, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 9, peak_events: 5 }"
+  },
+  {
+    "allowance": 17,
+    "bytes": 14,
+    "final": {
+      "diagnostics": "DiagnosticStore { revision: Revision(1), diagnostics: [Diagnostic { id: DiagnosticId(1), code: DiagnosticCode(\"syntax/recovery-limit\"), phase: Syntax, severity: Error, rule: Some(RuleId(2556802313)), context: None, primary: Absolute { revision: Revision(1), range: TextRange { start: TextSize(1), end: TextSize(14) } }, labels: [], expected: [], found: Some(FoundSyntax { kind: Some(Whitespace), text: Some(\" \") }), fixes: [], related: [], recovery: Some(ResourceLimit { range: TextRange { start: TextSize(1), end: TextSize(14) } }), tags: DiagnosticTags(0), message: \"parser resource limit reached\" }] }",
+      "stats": "ParseStats { source_bytes: 14, parser_steps: 1, events_emitted: 8, diagnostics_emitted: 1, diagnostics_truncated: false, recovery_bytes: 0, reparse_root_count: 0, reused_node_count: 0, new_node_count: 3 }",
+      "tree": 5517941066307639865
+    },
+    "limit": 125,
+    "progress": "Limited",
+    "state": "Limited",
+    "work": "StreamWork { accepted_bytes: 14, retained_source_bytes: 14, peak_source_pieces: 1, source_bytes_copied: 14, source_index_bytes: 14, source_lookup_steps: 1110, source_nodes_allocated: 5, source_node_body_bytes: 160, parser_work: 125, continuation_resumes: 8, checkpoint_rewinds: 20, rewound_bytes: 0, cached_replay_bytes: 0, peak_rule_depth: 9, peak_open_markers: 2, journal_nodes_allocated: 4, journal_mutations: 14, tree_nodes_materialized: 3, tree_token_bytes_hashed: 14, tree_child_storage_nodes: 5, tree_nodes_reused: 1, peak_pending_tree_nodes: 1, discarded_entries: 0, publications: 11, preview_work: 0, preview_parser_work: 0, export_work: 747, full_document_restarts: 0, edit_restart_work: 0, peak_document_frames: 14, peak_events: 8 }"
+  }
+]
