@@ -1,0 +1,197 @@
+{
+  "schema": "mech.pr993.cross-machine-counter-diagnostic.v1",
+  "boundary": "whole warmup loop including compression, independent output validation, loop and pipe overhead; not the qualification function-call boundary",
+  "matched_binary_sha256": {
+    "M1": {
+      "mech": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+    },
+    "M3": {
+      "mech": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+    }
+  },
+  "rows": [
+    {
+      "case": "prefix-natural-65536",
+      "actor": "mech",
+      "m1_loop_seconds": 0.01054960747368421,
+      "m3_loop_seconds": 0.007940568903846153,
+      "m1_m3_loop_speedup": 1.3285707361061152,
+      "m1_instructions_per_call": 124119252.60526314,
+      "m3_instructions_per_call": 124243673.65384616,
+      "m1_cycles_per_call": 33801108.2631579,
+      "m3_cycles_per_call": 32204509.019230768,
+      "cycles_reduction_fraction": 0.04723511523636548,
+      "m1_cpi": 0.2723303590873851,
+      "m3_cpi": 0.25920953543215713,
+      "m1_ghz": 3.2038854175068217,
+      "m3_ghz": 4.055855511788204
+    },
+    {
+      "case": "prefix-natural-65536",
+      "actor": "roc",
+      "m1_loop_seconds": 0.010855047157894737,
+      "m3_loop_seconds": 0.007670400462962964,
+      "m1_m3_loop_speedup": 1.4151864964950722,
+      "m1_instructions_per_call": 116190582.78947368,
+      "m3_instructions_per_call": 115974987.3888889,
+      "m1_cycles_per_call": 34779002.684210524,
+      "m3_cycles_per_call": 31106253.5,
+      "cycles_reduction_fraction": 0.10560248715463982,
+      "m1_cpi": 0.29932601463187064,
+      "m3_cpi": 0.2682157274935907,
+      "m1_ghz": 3.2038486228866496,
+      "m3_ghz": 4.055809263758636
+    },
+    {
+      "case": "prefix-natural-8192",
+      "actor": "mech",
+      "m1_loop_seconds": 0.0009130420454545455,
+      "m3_loop_seconds": 0.0005959733988095238,
+      "m1_m3_loop_speedup": 1.5320181190609792,
+      "m1_instructions_per_call": 13317193.154545454,
+      "m3_instructions_per_call": 13367660.851787059,
+      "m1_cycles_per_call": 2925569.584090909,
+      "m3_cycles_per_call": 2282611.027483397,
+      "cycles_reduction_fraction": 0.21977209501489425,
+      "m1_cpi": 0.21967984857815068,
+      "m3_cpi": 0.17075719970479958,
+      "m1_ghz": 3.203861160191793,
+      "m3_ghz": 3.830843382335476
+    },
+    {
+      "case": "prefix-natural-8192",
+      "actor": "roc",
+      "m1_loop_seconds": 0.001076153564516129,
+      "m3_loop_seconds": 0.0006554684787581699,
+      "m1_m3_loop_speedup": 1.6418082629312334,
+      "m1_instructions_per_call": 13410333.226395838,
+      "m3_instructions_per_call": 13410114.061745545,
+      "m1_cycles_per_call": 3447753.8736559143,
+      "m3_cycles_per_call": 2566535.4281045753,
+      "cycles_reduction_fraction": 0.2555920398740402,
+      "m1_cpi": 0.25709971189180186,
+      "m3_cpi": 0.19138811514211912,
+      "m1_ghz": 3.2038748891794286,
+      "m3_ghz": 3.9195484103441918
+    },
+    {
+      "case": "random-1024",
+      "actor": "mech",
+      "m1_loop_seconds": 3.110833402902979e-05,
+      "m3_loop_seconds": 2.8528305282739733e-05,
+      "m1_m3_loop_speedup": 1.090437504812143,
+      "m1_instructions_per_call": 547849.592654835,
+      "m3_instructions_per_call": 569410.6289365094,
+      "m1_cycles_per_call": 99677.23267501513,
+      "m3_cycles_per_call": 108807.22239762725,
+      "cycles_reduction_fraction": -0.09159553769293827,
+      "m1_cpi": 0.18194417648725938,
+      "m3_cpi": 0.1910876693992599,
+      "m1_ghz": 3.2038404196658066,
+      "m3_ghz": 3.7864608379442046
+    },
+    {
+      "case": "random-1024",
+      "actor": "roc",
+      "m1_loop_seconds": 0.00030623439052175096,
+      "m3_loop_seconds": 0.00017648167717746117,
+      "m1_m3_loop_speedup": 1.7352191764010545,
+      "m1_instructions_per_call": 1692578.1825153374,
+      "m3_instructions_per_call": 1692564.3164612674,
+      "m1_cycles_per_call": 981265.9345504869,
+      "m3_cycles_per_call": 709001.97124605,
+      "cycles_reduction_fraction": 0.2774619537048941,
+      "m1_cpi": 0.5796278829380868,
+      "m3_cpi": 0.4188903964576095,
+      "m1_ghz": 3.203877804497817,
+      "m3_ghz": 4.006956854097535
+    }
+  ],
+  "interpretation": {
+    "native_instruction_work": "same machine code and nearly unchanged instruction count at 64 KiB; no algorithm or recompile explanation for the measured delta",
+    "cpu_cycles": "Roc whole-loop cycle cost fell more than Mech; same effective clock ratio at 64 KiB",
+    "physical_cause": "not isolated: hardware generation and macOS version both change; no cache-miss, branch-miss or stall-event measurements",
+    "small_case_warning": "M1 random-1024 final sample/closure may overlap a newly started rustc and Xprotect load shown in the post-capture snapshot; do not use it to assign a physical cause",
+    "sampling_limit": "5-second 1-ms stack captures are coarse and may alias short periodic loops; phase fractions are indicative, not exact phase timers"
+  },
+  "plans": {
+    "M1": {
+      "started_at": "2026-11-18T02:24:45.837782+00:00",
+      "boundary": "whole W command: repeated compressions plus independent output validation and loop/pipe overhead; not isolated native-call counts",
+      "sample_boundary": "W loop; compression and validation are separable by stack",
+      "cpu": "Apple M1",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+      "power": "Now drawing from 'AC Power'",
+      "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "cases": [
+        "prefix-natural-65536",
+        "prefix-natural-8192",
+        "random-1024"
+      ],
+      "counter_blocks": 12,
+      "commands": {
+        "mech": [
+          "/private/tmp/mech-pr993-cross-machine-20261118/mech-worker",
+          "/private/tmp/mech-pr993-cross-machine-20261118/metadata.json",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+        ],
+        "roc": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/roc-worker",
+          "/unused-metadata-argument",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+        ]
+      },
+      "sha256": {
+        "mech": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+        "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+        "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "fixtures": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+      }
+    },
+    "M3": {
+      "started_at": "2026-11-18T02:21:01.494283+00:00",
+      "boundary": "whole W command: repeated compressions plus independent output validation and loop/pipe overhead; not isolated native-call counts",
+      "sample_boundary": "W loop; compression and validation are separable by stack",
+      "cpu": "Apple M3",
+      "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.2\nBuildVersion:\t\t25C56",
+      "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22413411)\t78%; AC attached; not charging present: true",
+      "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "cases": [
+        "prefix-natural-65536",
+        "prefix-natural-8192",
+        "random-1024"
+      ],
+      "counter_blocks": 12,
+      "commands": {
+        "mech": [
+          "/private/tmp/mech-pr993-m3-run/qualified/mech-worker",
+          "/private/tmp/mech-pr993-m3-run/qualified/metadata.json",
+          "/private/tmp/mech-pr993-m3-run/fixtures.json"
+        ],
+        "roc": [
+          "/private/tmp/mech-pr993-m3-run/pinned-peers/roc-worker",
+          "/unused-metadata-argument",
+          "/private/tmp/mech-pr993-m3-run/fixtures.json"
+        ]
+      },
+      "sha256": {
+        "mech": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+        "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+        "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+        "fixtures": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+      }
+    }
+  }
+}
