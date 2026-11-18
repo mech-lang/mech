@@ -1788,6 +1788,20 @@ fn define_entry<M: Module>(
         )
         .map_err(backend)?;
     }
+    let release_stubs = if outline_allowed
+        && memory
+        && compile_root.is_none()
+        && terminal_appends.is_some()
+        && std::env::var_os("MECH_COMPACT_SHARE_RELEASE_SETUP").is_some()
+    {
+        let stubs = super::release_stubs::ReleaseStubs::prepare(module, &mut context.func)?;
+        if stubs.is_some() {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        stubs
+    } else {
+        None
+    };
     eprintln!("compact-stage: machine code");
     let function = if let Some((checked, _)) = &early_entry {
         *checked
@@ -1833,6 +1847,13 @@ fn define_entry<M: Module>(
                 serde_json::to_vec_pretty(&locations).map_err(backend)?,
             )
             .map_err(backend)?;
+        }
+        if let Some(stubs) = release_stubs {
+            let frame = compiled
+                .buffer
+                .frame_layout()
+                .ok_or_else(|| backend("release setup needs a checked frame"))?;
+            stubs.define(module, frame)?;
         }
         (
             compiled.code_info().total_size,
