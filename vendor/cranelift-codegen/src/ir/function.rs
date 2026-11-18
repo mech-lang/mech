@@ -199,6 +199,11 @@ pub struct FunctionStencil {
     /// Allow AArch64 to forward known values held in private spill slots.
     pub forward_spill_reloads: bool,
 
+    /// Prefer the existing preserved integer register pool for Apple AArch64.
+    /// Allocatable registers, call clobbers, and ABI preservation are unchanged.
+    #[cfg_attr(feature = "enable-serde", serde(default))]
+    pub aarch64_prefer_preserved_regs: bool,
+
     /// Select AArch64 compare-and-branch instructions for integer zero comparisons.
     pub aarch64_branch_on_zero: bool,
 
@@ -256,6 +261,7 @@ impl FunctionStencil {
         self.aarch64_share_cold_tails = false;
         self.aarch64_share_frame_copies = false;
         self.forward_spill_reloads = false;
+        self.aarch64_prefer_preserved_regs = false;
         self.aarch64_branch_on_zero = false;
         self.aarch64_block_layout.clear();
         self.aarch64_block_layout_literal_start = None;
@@ -457,6 +463,7 @@ impl Function {
                 aarch64_share_cold_tails: false,
                 aarch64_share_frame_copies: false,
                 forward_spill_reloads: false,
+                aarch64_prefer_preserved_regs: false,
                 aarch64_branch_on_zero: false,
                 aarch64_block_layout: Vec::new(),
                 aarch64_block_layout_literal_start: None,
