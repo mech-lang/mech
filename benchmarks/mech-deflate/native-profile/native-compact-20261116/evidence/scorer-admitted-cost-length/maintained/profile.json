@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/immutable-root-literals/compiler/compile_profile",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/maintained/frontend",
+    "compact"
+  ],
+  "artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "compiler_sha256": "cd4df110a8ada70e28ed24670923c3c4ebfda36ab631d9885ed5cfaf2a072b25",
+  "clif_sha256": "388cbf258de5178d79d93dc574f7d91efb61d8a06e93c3120948129cc4ce3999",
+  "vcode_sha256": "710adb6842b0fbde3614be389bd5e8b841865d790b38226a83ab736d3cba93e8"
+}

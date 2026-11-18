@@ -106,7 +106,7 @@ The optimized compact path is diagnostic. Finite admission, cumulative
 accounting and recovery under the ordinary entry remain required. The bounded control-drift check recovered all four affected periodic wins in
 both orders. The earlier transient's cause remains open.
 [Fixed-worker sentinel diagnostic](evidence/fixed-reference-drift/README.md)
-[Current #993 checks](https://github.com/mech-lang/mech/pull/993/checks) · [Local format and contract checks](evidence/pinned-formatter-repair/README.md)
+[Current #993 checks](https://github.com/mech-lang/mech/pull/993/checks) · [Related Posts after-4 failure](https://github.com/mech-lang/mech/actions/runs/44204215687/job/134466751590) · [Local format and contract checks](evidence/pinned-formatter-repair/README.md)
 · [Related Posts binding audit](evidence/related-post-linked-binding/README.md)
 
 ## Runtime scorer study
@@ -208,6 +208,17 @@ A paired **40.63 ms** saving brings the matched M1 build to **2.495 s** from sou
 The 90% interval is **33.08 to 47.17 ms**.
 The frame-copy recipe uses this path.
 [Exact build and paired measurements](evidence/immutable-root-literals/README.md)
+
+## Scorer cost length
+
+The shorter scorer uses the caller's admitted minimum and preserves
+the full-length check for larger offsets. Natural 8 KiB falls from
+**43,074 to 54** stack loads in the placed scorer. The **71,128 B**
+encoder wins the forward 8 KiB comparison at **0.99426× libdeflate**
+and finishes at **1.00101×** in reverse. The focused comparison keeps
+both overlap wins and every other peer win. The candidate remains
+experimental on the v3 runtime gate.
+[Scorer patch, phase counts and paired observations](evidence/scorer-admitted-cost-length/README.md)
 
 ## Active work
 
