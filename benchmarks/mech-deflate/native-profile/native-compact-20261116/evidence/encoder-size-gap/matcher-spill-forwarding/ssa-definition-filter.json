@@ -1,0 +1,18 @@
+{
+  "reproduced_encoder": {
+    "compiler_sha256": "1ddee80136383c61564bb1c5d6c53f8e69fe0397e4331a019ef3e6bcc866b4ad",
+    "source_pin": "bc52387f8a01588d90d67a954a36b3a0a3410d84",
+    "control": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/combined",
+    "encoder_sha256": "461a1037862c610618f61d08a500825ac9e9e2a4a618caa0164758ad4827d2ed",
+    "worker_sha256": "e5697cd0126448827e6e16339f938c938bc0da53c9189e79142138744c786b69",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata_sha256": "653b5e80cea4ae3ae8f5b2178d7faff5b1e3e34a0900adaa9ba3ea926ad65a0e",
+    "encoder_text_bytes": 65612,
+    "peak_stack_bytes": 4784
+  },
+  "paired_build_result": {
+    "median_paired_ms_saved": -2.109728753566742,
+    "faster_trials": 3,
+    "trials": 8
+  }
+}

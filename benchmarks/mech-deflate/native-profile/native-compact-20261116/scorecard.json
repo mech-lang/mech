@@ -13098,6 +13098,45 @@
           "sha256": "cde0a4c11b1d29636aa73777dc30639a039965ba1a0bcb00e91e354e25c7a21c"
         },
         "evidence": "evidence/encoder-size-gap/select-checked-default-address/deployment.json"
+      },
+      {
+        "name": "Forward match collector spills",
+        "encoder_text_bytes": 65516,
+        "encoder_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+        "compiler_sha256": "1dc34e820e4d29947a1aa2c629c8f9d4f6459b5580492323bcbd8afa70911445",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "a6aa3aec730e391d3cefe2c63a0dce77f34bbf8048437b4802db9d9a408bc6f8",
+        "median_seconds": {
+          "source": 2.1655105834361166,
+          "link": 0.03494004160165787,
+          "source_through_link": 2.2012235205620527,
+          "strip": 0.01046381238847971,
+          "source_through_strip": 2.211994187440723
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.719961042,
+          "catalog": 1.95835e-05,
+          "frontend": 0.21908958350000002,
+          "artifact": 0.006952812500000001,
+          "encode": 0.0025799374999999998,
+          "native": 1.1911954375
+        },
+        "paired_ratios": {
+          "roc": 0.7395986440743688,
+          "libdeflate": 4.585968634089252
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1355379922351636,
+          "libdeflate": 1.7668824163969794
+        },
+        "paired_ratio_to_session_control": 1.0002923827355548,
+        "median_paired_seconds_saved": -0.0006433960516005754,
+        "faster_paired_trials": 2,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+        },
+        "evidence": "evidence/encoder-size-gap/matcher-spill-forwarding/deployment.json"
       }
     ]
   },
@@ -13494,5 +13533,63 @@
       },
       "evidence": "evidence/encoder-size-gap/select-checked-default-address/deployment.json"
     }
+  },
+  "matcher_spill_forwarding": {
+    "qualified": true,
+    "build": {
+      "name": "Forward match collector spills",
+      "encoder_text_bytes": 65516,
+      "encoder_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+      "compiler_sha256": "1dc34e820e4d29947a1aa2c629c8f9d4f6459b5580492323bcbd8afa70911445",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "a6aa3aec730e391d3cefe2c63a0dce77f34bbf8048437b4802db9d9a408bc6f8",
+      "median_seconds": {
+        "source": 2.1655105834361166,
+        "link": 0.03494004160165787,
+        "source_through_link": 2.2012235205620527,
+        "strip": 0.01046381238847971,
+        "source_through_strip": 2.211994187440723
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.719961042,
+        "catalog": 1.95835e-05,
+        "frontend": 0.21908958350000002,
+        "artifact": 0.006952812500000001,
+        "encode": 0.0025799374999999998,
+        "native": 1.1911954375
+      },
+      "paired_ratios": {
+        "roc": 0.7395986440743688,
+        "libdeflate": 4.585968634089252
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1355379922351636,
+        "libdeflate": 1.7668824163969794
+      },
+      "paired_ratio_to_session_control": 1.0002923827355548,
+      "median_paired_seconds_saved": -0.0006433960516005754,
+      "faster_paired_trials": 2,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+      },
+      "evidence": "evidence/encoder-size-gap/matcher-spill-forwarding/deployment.json"
+    },
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/matcher-spill-forwarding",
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "worker_sha256": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
+    "peak_stack_bytes": 4784
   }
 }
