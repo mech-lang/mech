@@ -24,6 +24,7 @@ struct Stub {
     function: FuncId,
     target: FuncId,
     operands: u8,
+    allocation_geometry: Option<(u64, bool)>,
 }
 
 pub(super) struct ReleaseStubs {
@@ -49,6 +50,8 @@ impl ReleaseStubs {
         let scope = std::env::var("MECH_COMPACT_SHARE_BACKING_SETUP").ok();
         let backing = matches!(scope.as_deref(), Some("all" | "backing"));
         let append = matches!(scope.as_deref(), Some("all" | "append"));
+        let literal_allocation =
+            std::env::var_os("MECH_COMPACT_LITERAL_ALLOCATION_FROM_FRAME").is_some();
         let calls = root
             .layout
             .blocks()
@@ -105,14 +108,30 @@ impl ReleaseStubs {
             {
                 continue;
             }
-            targets.entry(target).or_insert_with(|| {
-                (
-                    format!("{name}_from_frame"),
-                    signature.clone(),
-                    (params - 1) as u8,
-                )
+            let allocation_geometry = (literal_allocation
+                && name == "mech_compact_allocate_backing")
+                .then(|| {
+                    let stride = super::allocation_stubs::constant(root, arguments[2])?;
+                    let alignment = super::allocation_stubs::constant(root, arguments[3])?;
+                    let zeroed = super::allocation_stubs::constant(root, arguments[4])?;
+                    (matches!(stride, 1 | 2 | 4 | 8) && alignment == stride)
+                        .then_some((stride, zeroed != 0))
+                })
+                .flatten();
+            let key = (target, allocation_geometry);
+            targets.entry(key).or_insert_with(|| {
+                let name = match allocation_geometry {
+                    Some((stride, zeroed)) => {
+                        format!(
+                            "{name}_stride_{stride}_zeroed_{}_from_frame",
+                            u8::from(zeroed)
+                        )
+                    }
+                    None => format!("{name}_from_frame"),
+                };
+                (name, signature.clone(), (params - 1) as u8)
             });
-            replace.push((inst, target));
+            replace.push((inst, key));
         }
         if replace.is_empty() {
             return Ok(None);
@@ -126,18 +145,23 @@ impl ReleaseStubs {
             .at_first_inst(entry)
             .ins()
             .stack_store(heap, heap_slot, 0);
-        let mut imports = BTreeMap::<FuncId, FuncRef>::new();
+        let mut imports = BTreeMap::<(FuncId, Option<(u64, bool)>), FuncRef>::new();
         let mut stubs = Vec::new();
-        for (target, (name, mut signature, operands)) in targets {
+        for (key, (name, mut signature, operands)) in targets {
+            let (target, allocation_geometry) = key;
             signature.params.remove(0);
+            if allocation_geometry.is_some() {
+                signature.params.truncate(1);
+            }
             let function = module
                 .declare_function(&name, Linkage::Local, &signature)
                 .map_err(backend)?;
-            imports.insert(target, module.declare_func_in_func(function, root));
+            imports.insert(key, module.declare_func_in_func(function, root));
             stubs.push(Stub {
                 function,
-                target: target,
+                target,
                 operands,
+                allocation_geometry,
             });
         }
         let relocated_backings = stubs
@@ -154,14 +178,26 @@ impl ReleaseStubs {
         if relocated_backings != 0 {
             eprintln!("compact root shared backing setup: {relocated_backings} additional stubs");
         }
+        let literal_stubs = stubs
+            .iter()
+            .filter(|stub| stub.allocation_geometry.is_some())
+            .count();
+        if literal_stubs != 0 {
+            eprintln!("compact root literal allocation frame stubs: {literal_stubs}");
+        }
         eprintln!(
             "compact root shared release setup: {} calls in {} stubs",
             replace.len(),
             stubs.len()
         );
-        for (inst, target) in replace {
-            let operands = root.dfg.inst_args(inst)[1..].to_vec();
-            root.dfg.replace(inst).call(imports[&target], &operands);
+        for (inst, key) in replace {
+            let arguments = root.dfg.inst_args(inst);
+            let operands = if key.1.is_some() {
+                vec![arguments[1]]
+            } else {
+                arguments[1..].to_vec()
+            };
+            root.dfg.replace(inst).call(imports[&key], &operands);
         }
         Ok(Some(Self { heap_slot, stubs }))
     }
@@ -188,11 +224,22 @@ impl ReleaseStubs {
         }
         for stub in self.stubs {
             let mut code = Vec::with_capacity((usize::from(stub.operands) + 2) * 4);
-            // Shift the operands into their original registers before restoring x0. The
-            // tail branch preserves the original return address and status.
-            for destination in (1..=u32::from(stub.operands)).rev() {
+            // Shift live arguments before restoring literals and the original
+            // heap. The tail branch retains SP, LR and the runtime result ABI.
+            let operands = if stub.allocation_geometry.is_some() {
+                1
+            } else {
+                u32::from(stub.operands)
+            };
+            for destination in (1..=operands).rev() {
                 let mov = 0xaa00_03e0_u32 | ((destination - 1) << 16) | destination;
                 code.extend(mov.to_le_bytes());
+            }
+            if let Some((stride, zeroed)) = stub.allocation_geometry {
+                for (register, value) in [(2u32, stride), (3, stride), (4, u64::from(zeroed))] {
+                    let mov = 0xd280_0000u32 | ((value as u32) << 5) | register;
+                    code.extend(mov.to_le_bytes());
+                }
             }
             let load_heap = 0xf940_03e0_u32 | (offset / 8) << 10;
             code.extend(load_heap.to_le_bytes());
