@@ -1,0 +1,116 @@
+{
+  "kind": "focus",
+  "policy_version": 3,
+  "decision": "Unresolved",
+  "preserves_peer_wins": false,
+  "both_targets_win": false,
+  "runs": [
+    {
+      "order": "forward",
+      "focus_ratios_vs_libdeflate": {
+        "320-overlap": {
+          "mech-control": 0.9993750614169307,
+          "mech-experiment": 1.0006256552972532,
+          "roc": 10.933869861268475,
+          "libdeflate": 1.0
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.059257964970176,
+          "mech-experiment": 1.0726391793042307,
+          "roc": 1.6887405880470152,
+          "libdeflate": 1.0
+        },
+        "prefix-natural-8192": {
+          "mech-control": 0.976287621374752,
+          "mech-experiment": 0.9852706123296315,
+          "roc": 1.240081556601556,
+          "libdeflate": 1.0
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9674751605155604,
+          "mech-experiment": 0.9678538631126772,
+          "roc": 7.253114224049477,
+          "libdeflate": 1.0
+        },
+        "prefix-random-1024": {
+          "mech-control": 0.9468279539720911,
+          "mech-experiment": 0.9471476677687505,
+          "roc": 9.330391588569702,
+          "libdeflate": 1.0
+        }
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 13,
+          "mech-experiment": 12
+        }
+      },
+      "losses": {
+        "roc": [],
+        "libdeflate": [
+          "320-overlap"
+        ]
+      },
+      "receipts": "shared-terminal-byte-outline-vector-8-focus-forward"
+    },
+    {
+      "order": "reverse",
+      "focus_ratios_vs_libdeflate": {
+        "320-overlap": {
+          "libdeflate": 1.0,
+          "roc": 10.858420719085624,
+          "mech-experiment": 0.9953820009445082,
+          "mech-control": 0.9963250321302821
+        },
+        "prefix-natural-4096": {
+          "libdeflate": 1.0,
+          "roc": 1.7082815155901485,
+          "mech-experiment": 1.0862401990370298,
+          "mech-control": 1.0774276055795462
+        },
+        "prefix-natural-8192": {
+          "libdeflate": 1.0,
+          "roc": 1.2444630803431507,
+          "mech-experiment": 0.9855337501357544,
+          "mech-control": 0.980985358690079
+        },
+        "prefix-periodic-1024": {
+          "libdeflate": 1.0,
+          "roc": 7.279289949307678,
+          "mech-experiment": 0.9732568884558128,
+          "mech-control": 0.9736016268104165
+        },
+        "prefix-random-1024": {
+          "libdeflate": 1.0,
+          "roc": 9.212276549902075,
+          "mech-experiment": 0.9468544982131647,
+          "mech-control": 0.9492788560581668
+        }
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 13,
+          "mech-experiment": 13
+        }
+      },
+      "losses": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "receipts": "shared-terminal-byte-outline-vector-8-focus-reverse"
+    }
+  ],
+  "rejected": [],
+  "unresolved": [
+    "shared-terminal-byte-outline-vector-8-focus-forward: focused losses against libdeflate: 320-overlap",
+    "both complete timing orders are required"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "source_sha256": "682a054d3e3377a720861f9adeee9ea39839d0185d904f4cc2f03021a4a836a7",
+  "compiler_arguments": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition",
+    "2024",
+    "--test",
+    "-O",
+    "--cfg",
+    "feature=\"jit\"",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_codegen-e20ffdf0b6997069.rlib",
+    "--extern",
+    "cranelift_module=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_module-96e3671221dcd9ab.rlib",
+    "--extern",
+    "cranelift_jit=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_jit-dada59b38861a580.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_frontend-433cb6a8ceee285b.rlib",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/regression.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/defaulted-load-regression"
+  ],
+  "libraries": {
+    "cranelift_codegen": "46e987158428b994cd363513a0ecde92a91d2023ea4103cf670ec32c3ac71757",
+    "cranelift_module": "c730b961670e321af8e7d99576706aa30f86d232108a19959da85fe46b931ffd",
+    "cranelift_jit": "47dc50503ba798c78f2a6adc943d819d3c90187623c5f3e43e40c793a08899de",
+    "cranelift_frontend": "c993a98354f17ff9586b592dc760d2230cea93213fce425c840e55dfb2ad4786"
+  },
+  "test_log_sha256": "4e3acd4f7d8e31928be8ab6db078096638db341557cc889e34dee5ea74ca6fae"
+}
