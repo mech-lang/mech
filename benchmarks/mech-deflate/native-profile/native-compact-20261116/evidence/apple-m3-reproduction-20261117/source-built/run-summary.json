@@ -1,0 +1,34 @@
+{
+  "schema": "mech.pr993.m3-results.v1",
+  "finished_at": "2026-11-18T00:23:26.481145+00:00",
+  "elapsed_seconds": 495.2492473330349,
+  "plan_sha256": "632a5b6e5ddd4a40adfa96f351fd6e7928a5a79c95b5ca8ee240cd794bc74109",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": 81,
+      "timed_calls": 982656,
+      "qualified_wins": {
+        "roc": 71,
+        "libdeflate": 57
+      },
+      "control_wins": {
+        "roc": 69,
+        "libdeflate": 57
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 81,
+      "timed_calls": 982656,
+      "qualified_wins": {
+        "roc": 69,
+        "libdeflate": 58
+      },
+      "control_wins": {
+        "roc": 68,
+        "libdeflate": 58
+      }
+    }
+  ]
+}
