@@ -614,6 +614,9 @@ fn define_entry<M: Module>(
         outline_allowed && std::env::var_os("MECH_COMPACT_EMPTY_SOURCE_ROUTES").is_some();
     context.func.forward_spill_reloads =
         outline_allowed && std::env::var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS").is_some();
+    context.func.aarch64_prefer_preserved_regs = outline_allowed
+        && memory
+        && std::env::var_os("MECH_COMPACT_PREFER_PRESERVED_REGS").is_some();
     context.func.aarch64_share_cold_tails =
         outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_COLD_TAILS").is_some();
     context.func.aarch64_share_frame_copies =

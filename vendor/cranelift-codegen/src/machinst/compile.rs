@@ -62,7 +62,21 @@ pub fn compile<B: LowerBackend + TargetIsa>(
             RegallocAlgorithm::SinglePass => Algorithm::Fastalloc,
         };
 
-        regalloc2::run(&vcode, vcode.abi.machine_env(), &options)
+        let normal_env = vcode.abi.machine_env();
+        let mut preserved_env;
+        let allocation_env = if f.aarch64_prefer_preserved_regs
+            && f.signature.call_conv == crate::isa::CallConv::AppleAarch64
+        {
+            preserved_env = normal_env.clone();
+            core::mem::swap(
+                &mut preserved_env.preferred_regs_by_class[0],
+                &mut preserved_env.non_preferred_regs_by_class[0],
+            );
+            &preserved_env
+        } else {
+            normal_env
+        };
+        regalloc2::run(&vcode, allocation_env, &options)
             .map_err(|err| {
                 log::error!(
                     "Register allocation error for vcode\n{vcode:?}\nError: {err:?}\nCLIF for error:\n{f:?}",
