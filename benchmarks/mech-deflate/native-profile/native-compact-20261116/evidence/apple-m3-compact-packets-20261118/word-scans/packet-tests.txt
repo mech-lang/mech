@@ -6,4 +6,3 @@ test native_artifact::phase_storage::tests::exit_packet_words_refuse_escape_exte
 test native_artifact::phase_storage::tests::input_packet_flags_require_the_complete_nonescaping_load_contract ... ok
 
 test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-

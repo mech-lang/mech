@@ -1,0 +1,10 @@
+{
+  "archive": "/private/tmp/pr993-deflate-m3-rebase-20261118-22bde6df4516.tar.gz",
+  "bytes": 22666268,
+  "sha256": "22bde6df4516babb41180956dc82af367ee322886a97d06c5ad36c7eecf43b95",
+  "files": 337,
+  "verified_members": 336,
+  "manifest_sha256": "3248c1ff3691da190802dac0420805b1280cf67753456caf8b9a42e7b8078f3d",
+  "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr993-deflate-m3-rebase-20261118-22bde6df4516.tar.gz",
+  "parent_archive_sha256": "6a4e8af15206b24db41c2612e09941de9c4d2a6551580acf628b489e0d63b4a3"
+}

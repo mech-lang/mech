@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/private/tmp/mech-pr993-m3-20261117/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-pr993-m3-rebuilt/compiler",
+    "--message-format=json",
+    "--bin",
+    "compile_profile"
+  ],
+  "source_commit": "476963df3f2d38d089a7ae81d5107dccecc41c68",
+  "upstream_commit": "ca0c778e58618c72e6bd13e7df03d3089d4ec2e3",
+  "previous_tip": "13f10d2fd48ff7e9a34da801c2b7cdf59a76626e"
+}
