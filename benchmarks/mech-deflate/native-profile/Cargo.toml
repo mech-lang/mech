@@ -91,6 +91,10 @@ name = "ssa_builder"
 path = "ssa_builder_tests.rs"
 
 [[test]]
+name = "verified_cleanup"
+path = "verified_cleanup_tests.rs"
+
+[[test]]
 name = "dimension_remap"
 path = "dimension_remap_tests.rs"
 

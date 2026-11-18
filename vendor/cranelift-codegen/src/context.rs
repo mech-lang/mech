@@ -27,7 +27,7 @@ use crate::trace;
 use crate::unreachable_code::eliminate_unreachable_code;
 use crate::verifier::{
     VerifierErrors, VerifierResult, verify_context, verify_context_dominators,
-    verify_function_and_flowgraph, verify_ir_with_dominators,
+    verify_context_graphs, verify_function_and_flowgraph, verify_ir_with_dominators,
 };
 use crate::{CompileError, timing};
 #[cfg(feature = "souper-harvest")]
@@ -363,6 +363,35 @@ impl Context {
     pub fn compute_flowgraph_and_cleanup(&mut self, isa: &dyn TargetIsa) -> CodegenResult<()> {
         self.flowgraph();
         self.prune_and_remove_constant_phis(isa, true)
+    }
+
+    /// Clean the function and unconditionally validate its IR and cached graphs.
+    ///
+    /// Cleanup already validates IR before and after phi edits when enabled.
+    /// With no intervening edit, only the independent graph-integrity checks
+    /// remain. Disabled cleanup verification retains the full verifier below.
+    pub fn compute_flowgraph_cleanup_and_verify(
+        &mut self,
+        isa: &dyn TargetIsa,
+    ) -> CodegenResult<()> {
+        self.compute_flowgraph_and_cleanup(isa)?;
+        if isa.flags().enable_verifier() {
+            let _tt = timing::verifier();
+            let mut errors = VerifierErrors::default();
+            let _ = verify_context_graphs(
+                &self.func,
+                &self.cfg,
+                &self.domtree,
+                FlagsOrIsa::from(isa),
+                &mut errors,
+            );
+            if !errors.is_empty() {
+                return Err(errors.into());
+            }
+        } else {
+            self.verify(isa)?;
+        }
+        Ok(())
     }
 
     fn prune_and_remove_constant_phis(
