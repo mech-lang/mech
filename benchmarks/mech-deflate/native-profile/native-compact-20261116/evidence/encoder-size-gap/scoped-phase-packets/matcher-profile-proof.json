@@ -1,0 +1,11 @@
+{
+  "previous_raw_object_sha256": "03fe72c83c9e1aa01ac4cedd7206a51bbb18914dedebf4a098b136f187c99d1f",
+  "scoped_raw_object_sha256": "352ca30e347e32770b82549085a63098d92935e64351fc1dd4efabd9292e3e9d",
+  "same_raw_matcher": {
+    "extent": 6560,
+    "start": 0,
+    "sha256": "d0106687bd2e223d000e71d11f5dbbdb51748853583f75cb1299d553ef3592e4",
+    "relocations": []
+  },
+  "profile_sha256": "55bdbe755a0ee2709beb1ba0bd24528e0d0c8cc6d12f99e9f8c00fe56325acc7"
+}
