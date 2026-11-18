@@ -12408,5 +12408,151 @@
       "upper_90": 6.2187709999999985
     },
     "evidence": "evidence/inline-syntax-child-traversal/README.md"
+  },
+  "mechdeflate_build_history": {
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "scope": "Fresh-process MechDeflate source through final executable link with fixed support prebuilt.",
+    "builds": [
+      {
+        "name": "Collector-only packets",
+        "encoder_text_bytes": 68840,
+        "encoder_sha256": "1f2b91186059fba397b397e78ee12c88df8112b2b5d5887b17cc73d83addb656",
+        "compiler_sha256": "976e1bd062c75bab5eb59249216f00dc25e5c7934415066f4192eadae89c178a",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "71bc591b550562e6e7ee19a7593f62005d8512e2303177c3dd3998982ee2d040",
+        "median_seconds": {
+          "source": 2.397912187501788,
+          "link": 0.03548864577896893,
+          "source_through_link": 2.433893291512504,
+          "strip": 0.011193791637197137,
+          "source_through_strip": 2.4449757914990187
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.787251813,
+          "catalog": 2.1417000000000002e-05,
+          "frontend": 0.225553375,
+          "artifact": 0.007048125000000001,
+          "encode": 0.0026148545,
+          "native": 1.343314521
+        },
+        "paired_ratios": {
+          "roc": 0.8139979819026038,
+          "libdeflate": 5.045547846685507
+        },
+        "evidence": "evidence/encoder-size-gap/scoped-phase-packets/deployment.json"
+      },
+      {
+        "name": "Shared layout refusals",
+        "encoder_text_bytes": 68136,
+        "encoder_sha256": "607b6ac37be2be9ad976d82fe484f8e85287ce031451f771af34ae168f9e2a2d",
+        "compiler_sha256": "976e1bd062c75bab5eb59249216f00dc25e5c7934415066f4192eadae89c178a",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "e5f09cf85bd1b5a2d21184a5a10b4113e2d7c965556325fd61f17281ddfeb74a",
+        "median_seconds": {
+          "source": 2.3910209168680012,
+          "link": 0.03561916621401906,
+          "source_through_link": 2.4267847498413175,
+          "strip": 0.010695666773244739,
+          "source_through_strip": 2.4376560624223202
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7851377915,
+          "catalog": 2.00005e-05,
+          "frontend": 0.22046641649999998,
+          "artifact": 0.0070118125,
+          "encode": 0.0026206874999999998,
+          "native": 1.3477917295
+        },
+        "paired_ratios": {
+          "roc": 0.8144903703747164,
+          "libdeflate": 5.052791073376611
+        },
+        "evidence": "evidence/encoder-size-gap/checked-layout-refusals/deployment.json"
+      },
+      {
+        "name": "One-body preparation",
+        "encoder_text_bytes": 68136,
+        "encoder_sha256": "607b6ac37be2be9ad976d82fe484f8e85287ce031451f771af34ae168f9e2a2d",
+        "compiler_sha256": "8637417693159132e7f65289bb66918774696f717c2c87ff66fe566689bd24e2",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "34e9c4334de582d47edd084e2f8329aa3b7a5745604024c8d5ed901ab8e5a3c6",
+        "median_seconds": {
+          "source": 2.3862966254819185,
+          "link": 0.03445531241595745,
+          "source_through_link": 2.420700062531978,
+          "strip": 0.010420645587146282,
+          "source_through_strip": 2.4312507084105164
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7859984785,
+          "catalog": 1.6063e-05,
+          "frontend": 0.223437063,
+          "artifact": 0.0070493125,
+          "encode": 0.0026261875,
+          "native": 1.341119146
+        },
+        "paired_ratios": {
+          "roc": 0.8114913072292467,
+          "libdeflate": 5.046350109580693
+        },
+        "evidence": "evidence/encoder-size-gap/checked-layout-refusals/single-body-preparation/summary.json"
+      },
+      {
+        "name": "All-phase output pruning",
+        "encoder_text_bytes": 67512,
+        "encoder_sha256": "84f2eb16693ae6788c71045f464650621adeba948e9d3f99b18a9303a396c40e",
+        "compiler_sha256": "976e1bd062c75bab5eb59249216f00dc25e5c7934415066f4192eadae89c178a",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "34e9c4334de582d47edd084e2f8329aa3b7a5745604024c8d5ed901ab8e5a3c6",
+        "median_seconds": {
+          "source": 2.3904403960332274,
+          "link": 0.03425689600408077,
+          "source_through_link": 2.4255071880761534,
+          "strip": 0.010446687461808324,
+          "source_through_strip": 2.436108979396522
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7851313755,
+          "catalog": 2.1062499999999997e-05,
+          "frontend": 0.22231670850000002,
+          "artifact": 0.0070923125,
+          "encode": 0.002628229,
+          "native": 1.3487381875
+        },
+        "paired_ratios": {
+          "roc": 0.8144496279196939,
+          "libdeflate": 5.059406181841247
+        },
+        "evidence": "evidence/encoder-size-gap/checked-layout-refusals/single-body-preparation/summary.json"
+      },
+      {
+        "name": "Private sorter interfaces",
+        "encoder_text_bytes": 67464,
+        "encoder_sha256": "f350cbf8fa073dc9d3ef04052ff8b1bb8aae96abfd21dca0d2173a720d6e37d1",
+        "compiler_sha256": "e454e68c860ed337075bc2cef123f4e397c279bb983fbff32c9478c49518027f",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "ddbd99510f2b8058ad96953efa8e65e2035913c571569f3d1111dfeaa89ff7f9",
+        "median_seconds": {
+          "source": 2.3949835828971118,
+          "link": 0.0374917914159596,
+          "source_through_link": 2.4344410004559904,
+          "strip": 0.010568729368969798,
+          "source_through_strip": 2.4454647914972156
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.787838104,
+          "catalog": 1.8895500000000002e-05,
+          "frontend": 0.2265328955,
+          "artifact": 0.007048833,
+          "encode": 0.0026116875000000003,
+          "native": 1.3436362499999999
+        },
+        "paired_ratios": {
+          "roc": 0.8127490696991491,
+          "libdeflate": 5.0509837542235045
+        },
+        "evidence": "evidence/encoder-size-gap/checked-layout-refusals/non-private-outputs/deployment.json"
+      }
+    ]
   }
 }

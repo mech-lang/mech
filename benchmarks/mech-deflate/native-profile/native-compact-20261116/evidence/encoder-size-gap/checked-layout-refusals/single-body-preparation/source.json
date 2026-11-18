@@ -1,0 +1,34 @@
+{
+  "base": "d63fdfa5220ec3a78b7deb93e79b230dabac8357",
+  "files": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_read_setup.rs": {
+      "current": "367d5dc9ff9bbcf96ca1234dbf64e11195073f86f198b72733f9c00fcf7781a7",
+      "candidate": "c6f112941c0106d39093ed6e5f754d1638a414341e9118f16dfc9414d60b9571"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+      "current": "e74aea973a1abe309cd37b432d6b1305307c1b5e2e36d984aedc34fd3d0d6965",
+      "candidate": "a82a641795919dc1d013335ca8310d8ec237106dda381f5dedbcb2a0a41141f0"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+      "current": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
+      "candidate": "aa518bb3743a2cb7b6b940f13b3a7c9f04ab383067c18134c8649bb83ce7b0d3"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+      "current": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+      "candidate": "2523d71eee066aedd5111520bb8fea8181fa6d0c6bec34016005635a72747325"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": {
+      "current": "808d514eda4aa95f1c213707fb6750c4df07f42e2bb2c6ae55ad8e2d7e932845",
+      "candidate": "774ef4e52ecb71acaab1dd7fa5a83402e83a640ada4aacffd685e33dfe87cbfb"
+    }
+  },
+  "patch_sha256": "89522e43499b73d123d58bf82cf0fa1f6a225b984742833a8ffbcbd1ac74145a",
+  "options": [
+    "MECH_COMPACT_REFUSE_PHASE_GROWTH",
+    "MECH_ORDERED_PACK_WINNER_AT_EXIT",
+    "MECH_ORDERED_ENCODE_WINNER_WITH_OFFSET",
+    "MECH_ORDERED_FIRST_REVERSE_FROM_END",
+    "MECH_ORDERED_REUSE_FIRST_ORDINAL",
+    "MECH_COMPACT_PREPARE_REFUSED_VECTOR_ONLY"
+  ]
+}

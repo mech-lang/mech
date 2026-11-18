@@ -1,0 +1,62 @@
+{
+  "median_seconds": {
+    "mech-maintained": {
+      "source": 2.40846827137284,
+      "link": 0.03415589593350887,
+      "source_through_link": 2.44609516649507,
+      "strip": 0.010463229147717357,
+      "source_through_strip": 2.456789249787107
+    },
+    "mech-smaller": {
+      "source": 2.3949835828971118,
+      "link": 0.0374917914159596,
+      "source_through_link": 2.4344410004559904,
+      "strip": 0.010568729368969798,
+      "source_through_strip": 2.4454647914972156
+    },
+    "roc": {
+      "source": 2.9546609581448138,
+      "link": 0.03427522908896208,
+      "source_through_link": 2.9917486670892686,
+      "strip": 0.010508833453059196,
+      "source_through_strip": 3.0024550624657422
+    },
+    "libdeflate": {
+      "source": 0.4473235416226089,
+      "link": 0.034031396033242345,
+      "source_through_link": 0.4809898326639086,
+      "strip": 0.010383603861555457,
+      "source_through_strip": 0.491588540840894
+    }
+  },
+  "paired_ratios": {
+    "mech-maintained": 0.9931806042560686,
+    "mech-smaller": 1.0,
+    "roc": 0.8127490696991491,
+    "libdeflate": 5.0509837542235045
+  },
+  "sizes": {
+    "mech-maintained": 292568,
+    "mech-smaller": 276056,
+    "roc": 191912,
+    "libdeflate": 155752
+  },
+  "mech_phase_seconds": {
+    "mech-maintained": {
+      "parse": 0.791142875,
+      "catalog": 1.86665e-05,
+      "frontend": 0.2267790625,
+      "artifact": 0.0070544375,
+      "encode": 0.002603125,
+      "native": 1.3524100415
+    },
+    "mech-smaller": {
+      "parse": 0.787838104,
+      "catalog": 1.8895500000000002e-05,
+      "frontend": 0.2265328955,
+      "artifact": 0.007048833,
+      "encode": 0.0026116875000000003,
+      "native": 1.3436362499999999
+    }
+  }
+}
