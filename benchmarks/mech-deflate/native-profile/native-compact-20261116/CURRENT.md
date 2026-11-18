@@ -6,6 +6,8 @@ The compiler changes are rebased onto `ca0c778e58618c72e6bd13e7df03d3089d4ec2e3`
 
 [Complete integration results and reproduction](evidence/apple-m3-rebase-20261118/README.md) · [All timings in seconds and comparator multiples](evidence/apple-m3-rebase-20261118/timings.csv)
 
+The latest shared compiler also contains the M1 heap-setup work and the M3 literal-allocation setup pass. It reproduces the named **64,652 B M1 encoder**, complete metadata and bytecode exactly. That common recipe passes the linked M3 correctness, failure, cleanup and stack checks; M3 timing is pending. Five further combined builds are ready. A single final configuration has not yet been qualified on both machines. [Shared-source verification and pending comparisons](evidence/apple-m3-win-recovery-20261118/integration/README.md) · [Recovery trials and completed later orders](evidence/apple-m3-win-recovery-20261118/README.md)
+
 ## Apple M3 comparison before upstream integration
 
 The retained word-scan and current-guard optimization records **81/81 against Roc and 61/81 against libdeflate 1.26 level 12 in both orders** in its [complete M3 confirmation](evidence/apple-m3-compact-packets-20261118/word-scans/confirmation/README.md). Encoder text is **64,512 B** and native stack high-water is **4,736 B**, below the unchanged 5,280 B bound. The original Mech source, bytecode, runtime, allocator and peer executables are unchanged.

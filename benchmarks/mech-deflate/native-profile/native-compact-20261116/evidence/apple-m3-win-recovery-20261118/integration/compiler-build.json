@@ -1,0 +1,29 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/private/tmp/mech-pr993-m3-20261117/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-pr993-m3-rebuilt/compiler",
+    "--message-format=json",
+    "--bin",
+    "compile_profile"
+  ],
+  "seconds": 47.48917383281514,
+  "exit_code": 0,
+  "source_commit": "e981b748cf3b3d710432ef48c4bd6badea6ba813",
+  "source_status": "?? benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/results.json\n?? benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/timings.csv\n",
+  "source_files": {
+    "hosts/gpu/src/native_artifact/program/compact/allocation_stubs.rs": "3cda98c549d0670c21f36b043fa50d80417477aa2f0f8af679074436d5b407d7",
+    "hosts/gpu/src/native_artifact/program/compact/mod.rs": "1d66e9354f51aa2e6103aa7e85c73e2bdfbb8bfce2dad4bbafe807350c5a4a6c",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "de5ceb1e8fa1025882ef58b0fce3679ad76117fc9c736be788adacf6dee9d32a"
+  },
+  "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834"
+}
