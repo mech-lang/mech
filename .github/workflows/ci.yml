@@ -69,14 +69,15 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-          # The PR integration merge includes its base as a direct parent.
-          # Classification needs commit trees and these three source files.
+          # Classification needs commit trees and these source files.
+          # A moving base is fetched separately without unrelated refs/blobs.
           fetch-depth: 2
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /.github/ci/owners.toml
             /scripts/ci-impact.py
             /scripts/ci_owners.py
+            /scripts/ci-fetch-impact-base.sh
       - name: Record selected checkout identity
         env:
           VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
@@ -97,6 +98,7 @@ jobs:
           set -euo pipefail
           if test "$GITHUB_EVENT_NAME" = pull_request
           then
+            bash scripts/ci-fetch-impact-base.sh "$PR_BASE" "$GITHUB_SHA"
             python3 scripts/ci-impact.py --base "$PR_BASE" --head "$GITHUB_SHA" \
               --labels "$PR_LABELS" | tee /tmp/ci-impact.json
           elif test "$GITHUB_EVENT_NAME" = workflow_dispatch
