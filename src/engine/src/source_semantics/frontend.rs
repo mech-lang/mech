@@ -3493,6 +3493,8 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
+    document_function_plans:
+        BTreeMap<String, Arc<document_lowering::document_functions::DocumentFunctionPlan>>,
     local_fsms: BTreeMap<String, document_lowering::document_fsms::DeclaredFsm>,
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
@@ -3691,6 +3693,7 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
+            document_function_plans: BTreeMap::new(),
             local_fsms: BTreeMap::new(),
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),

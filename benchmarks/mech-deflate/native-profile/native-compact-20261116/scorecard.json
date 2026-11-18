@@ -13137,6 +13137,45 @@
           "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
         },
         "evidence": "evidence/encoder-size-gap/matcher-spill-forwarding/deployment.json"
+      },
+      {
+        "name": "Index checked region block order",
+        "encoder_text_bytes": 65516,
+        "encoder_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+        "compiler_sha256": "b88798fac1deb7abb769bcca32376b8e9b847f6622125b0f9541d8807925da66",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "ab596df84cc90a1dde94c4a4f990f6c8b51b99f9f538f860f67c41b22b61ddee",
+        "median_seconds": {
+          "source": 2.1542889999691397,
+          "link": 0.03459164616651833,
+          "source_through_link": 2.1895629793871194,
+          "strip": 0.010432915994897485,
+          "source_through_strip": 2.2001747293397784
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.718957396,
+          "catalog": 2.01045e-05,
+          "frontend": 0.21491462449999998,
+          "artifact": 0.0069388745,
+          "encode": 0.0025986665,
+          "native": 1.1839586039999999
+        },
+        "paired_ratios": {
+          "roc": 0.7348441003275283,
+          "libdeflate": 4.577223974195331
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1355379922351636,
+          "libdeflate": 1.7668824163969794
+        },
+        "paired_ratio_to_session_control": 0.9954702339550374,
+        "median_paired_seconds_saved": 0.009956791764125228,
+        "faster_paired_trials": 8,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+        },
+        "evidence": "evidence/encoder-size-gap/indexed-checked-regions/deployment.json"
       }
     ]
   },
@@ -13591,5 +13630,63 @@
     },
     "worker_sha256": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
     "peak_stack_bytes": 4784
+  },
+  "indexed_checked_regions": {
+    "qualified": true,
+    "worker_sha256": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
+    "peak_stack_bytes": 4784,
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/indexed-checked-regions",
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "build": {
+      "name": "Index checked region block order",
+      "encoder_text_bytes": 65516,
+      "encoder_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+      "compiler_sha256": "b88798fac1deb7abb769bcca32376b8e9b847f6622125b0f9541d8807925da66",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "ab596df84cc90a1dde94c4a4f990f6c8b51b99f9f538f860f67c41b22b61ddee",
+      "median_seconds": {
+        "source": 2.1542889999691397,
+        "link": 0.03459164616651833,
+        "source_through_link": 2.1895629793871194,
+        "strip": 0.010432915994897485,
+        "source_through_strip": 2.2001747293397784
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.718957396,
+        "catalog": 2.01045e-05,
+        "frontend": 0.21491462449999998,
+        "artifact": 0.0069388745,
+        "encode": 0.0025986665,
+        "native": 1.1839586039999999
+      },
+      "paired_ratios": {
+        "roc": 0.7348441003275283,
+        "libdeflate": 4.577223974195331
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1355379922351636,
+        "libdeflate": 1.7668824163969794
+      },
+      "paired_ratio_to_session_control": 0.9954702339550374,
+      "median_paired_seconds_saved": 0.009956791764125228,
+      "faster_paired_trials": 8,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+      },
+      "evidence": "evidence/encoder-size-gap/indexed-checked-regions/deployment.json"
+    }
   }
 }
