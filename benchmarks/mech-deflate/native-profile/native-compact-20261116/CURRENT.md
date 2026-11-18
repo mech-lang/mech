@@ -44,6 +44,13 @@ The candidate's peak stack is **5,296 B** and natural 8 KiB still loses
 to libdeflate.
 [Source patch and measured results](evidence/encoder-size-gap/shared-growth-refusal/README.md)
 
+Collector-only packet packing and the shared growth fallback emit
+**68,840 B**, with **4,624 B** measured peak stack. Both focused
+orders preserve their peer wins. Natural 8 KiB measures **1.00064×**
+and **1.00262× libdeflate**. The maintained qualification remains
+on the 71,192 B worker.
+[Compiler patch, exact replay and comparisons](evidence/encoder-size-gap/scoped-phase-packets/README.md)
+
 ## Whole-build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
