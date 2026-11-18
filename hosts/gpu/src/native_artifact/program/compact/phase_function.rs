@@ -1225,6 +1225,21 @@ fn prepare_impl<M: Module>(
     if !observe
         && private.is_some()
         && vectors.is_some()
+        && controls.enabled(OptimizationPass::ScalarSelects)
+        && std::env::var_os("MECH_COMPACT_PHASE_SELECTS")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+    {
+        let selected =
+            crate::native_artifact::codegen::common::scalar_selects::optimize(&mut context.func);
+        if selected != 0 {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("{symbol} scalar choices folded: {selected}");
+    }
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
             .is_some_and(|scope| scope == "vector" || scope == "all")
     {
