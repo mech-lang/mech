@@ -1,0 +1,7 @@
+{
+  "base": "cbcc3a803e59d506bb3d582f885e332e71ee1f53",
+  "source": "src/syntax/src/document/retained_sequence.rs",
+  "control_sha256": "f1018f6d8bf6c7f4dec275638ce87c3141ef0f606e308c88d39a38a1566bf93b",
+  "candidate_sha256": "8f6c71cc6232af4a72adfc28d12afd5a17366a89cca83efe2ab0ddc12e4a57aa",
+  "patch_sha256": "bf7d154a3d29f04bdba0120b10d26571bd12bc66b54013bf84c2a4b825d56e50"
+}
