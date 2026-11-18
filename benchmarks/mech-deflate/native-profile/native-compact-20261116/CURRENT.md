@@ -73,6 +73,10 @@ The dominating-definition experiments emitted an encoder as small as **67,272 B*
 Scalar and non-owning field definitions measured 81/81 and 81/81 Roc wins and 62/81 and 62/81 libdeflate wins in complete orders. The v3 runtime decision was **Retain**.
 [Source replay and measured results](evidence/encoder-size-gap/dominating-definitions/README.md)
 
+Keeping the checked returns available in the caller restores two shared continuation sites and emits **67,672 B**.
+The 67,664 B encoder won 81/81 and 81/81 Roc cases and 62/81 and 61/81 libdeflate cases in complete orders. V3 returned **Reject**.
+[Compiler replay, size and runtime measurements](evidence/encoder-size-gap/shared-continuation-returns/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -93,6 +97,8 @@ Roc and libdeflate trials from the same session.
 | [Scalar definitions with forwarded jumps](evidence/encoder-size-gap/dominating-definitions/scalar/deployment.json) | 67,272 B | 2.375 s | 0.794× | 4.939× |
 | [Non-owning field definitions](evidence/encoder-size-gap/dominating-definitions/fields/deployment.json) | 68,488 B | 2.323 s | 0.777× | 4.834× |
 | [Scalar and non-owning field definitions](evidence/encoder-size-gap/dominating-definitions/fields/deployment.json) | 68,424 B | 2.305 s | 0.771× | 4.787× |
+| [Shared cold returns](evidence/encoder-size-gap/shared-continuation-returns/deployment.json) | 67,672 B | 2.304 s | 0.770× | 4.796× |
+| [Shared cold returns with one additional continuation family](evidence/encoder-size-gap/shared-continuation-returns/deployment.json) | 67,664 B | 2.302 s | 0.770× | 4.794× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.

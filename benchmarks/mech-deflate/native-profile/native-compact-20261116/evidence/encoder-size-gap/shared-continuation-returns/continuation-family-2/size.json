@@ -1,0 +1,69 @@
+{
+  "encoder_bytes": {
+    "control": 68424,
+    "candidate": 67664
+  },
+  "checked_continuations": {
+    "control": [
+      [
+        9112,
+        18836
+      ],
+      [
+        9562,
+        10073,
+        20752,
+        22297
+      ],
+      [
+        21031,
+        22580
+      ],
+      [
+        44070,
+        44405
+      ]
+    ],
+    "candidate": [
+      [
+        9112,
+        18836
+      ],
+      [
+        9562,
+        10073,
+        20752,
+        22297
+      ],
+      [
+        21031,
+        22580
+      ],
+      [
+        44070,
+        44405,
+        46040,
+        46259
+      ],
+      [
+        16644,
+        43303
+      ]
+    ]
+  },
+  "retained_returns": [
+    "compact checked region 46040 retains 1 shared returns",
+    "compact checked region 46259 retains 1 shared returns"
+  ],
+  "identical_proof_fields": [
+    "origins",
+    "source_error_origins",
+    "numeric_phases",
+    "all_path_initialization_proved",
+    "layout_checked_controllers",
+    "guarded_consuming_sites",
+    "owner_transfer_sites",
+    "buffer_result_sites",
+    "prechange_retirement_sites"
+  ]
+}

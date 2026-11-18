@@ -1,0 +1,63 @@
+{
+  "encoder_sha256": "a3a04c9625efea0f6c25cd1d3a5d1369a87de9fe85961c8e826f70c3450dbd86",
+  "worker_sha256": "04a5c79eb65efe8385b4aee7fbee90f791b1e11d7b63c99671bcc6dc91286b81",
+  "instrumented_encoder_sha256": "f610f39ae72a39a4957358086add208afa9939adf3563be2676153027f427f8a",
+  "instrumented_worker_sha256": "85d0e2528485ab215b30d9a6d3728f4f1bb45922cfd5b169d56f44b4834703f7",
+  "raw_timings_sha256": "10fb3c7f6ff22034e259feef7f55c5f5e27e6c7dbf4d95d8e06c5eba7fb99ad5",
+  "callback_driver_sha256": "e2c43cab0e33c32631e42ed01bcfa1612919da5a5405e0d00e08805ea9a0db27",
+  "verified_hot_atoms": {
+    "_mech_compact_numeric_3009_no_growth_composed": {
+      "extent": 1136,
+      "start": 8112,
+      "sha256": "0777c08041e8d6b7118da557c653adb25e67d5afc1e8ba18d94e30256f654695",
+      "relocations": [
+        [
+          472,
+          108,
+          "_mech_compact_cost_codes_0"
+        ],
+        [
+          468,
+          93,
+          "_mech_compact_cost_codes_0"
+        ]
+      ]
+    },
+    "_mech_compact_numeric_475_vector": {
+      "extent": 6592,
+      "start": 0,
+      "sha256": "c5b903b1c18a7e4fe65ba1a7a1185752f7a40ad2bb3006492719d8bc41624739",
+      "relocations": []
+    }
+  },
+  "observations": [
+    {
+      "case": "prefix-natural-4096",
+      "instrumented_median_ns": 977917.0,
+      "scorer": {
+        "calls": 5,
+        "median_ns": 459958,
+        "median_fraction": 0.4835723546182976
+      },
+      "match_collection": {
+        "calls": 1,
+        "median_ns": 285750,
+        "median_fraction": 0.2896479896439366
+      }
+    },
+    {
+      "case": "prefix-natural-8192",
+      "instrumented_median_ns": 960958.0,
+      "scorer": {
+        "calls": 6,
+        "median_ns": 478917,
+        "median_fraction": 0.5065067510495038
+      },
+      "match_collection": {
+        "calls": 1,
+        "median_ns": 304334,
+        "median_fraction": 0.3121915299882114
+      }
+    }
+  ]
+}
