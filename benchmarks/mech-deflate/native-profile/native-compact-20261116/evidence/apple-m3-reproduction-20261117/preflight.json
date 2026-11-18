@@ -1,0 +1,27 @@
+{
+  "control": {
+    "case_count": 81,
+    "checked_calls": 162,
+    "exact_reference": true,
+    "independent_inflation": true,
+    "input_and_borrowed_output_preserved": true,
+    "nonreturned_private_bytes_at_return": 0
+  },
+  "qualified": {
+    "case_count": 81,
+    "checked_calls": 162,
+    "exact_reference": true,
+    "independent_inflation": true,
+    "input_and_borrowed_output_preserved": true,
+    "nonreturned_private_bytes_at_return": 0
+  },
+  "m3-control/correctness.stdout": {
+    "sha256": "9a4c4d7e8f59ea572e6ab1402d8d588250dffa6b24ef0a2db41e74c239ecd557"
+  },
+  "m3-control/correctness.stderr": {
+    "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+  },
+  "m3-qualified/correctness.json": {
+    "sha256": "9a9ab7012789d5fea45d6ff705e09d3226ab9c9924a2cdc97697b7a7d6ee4872"
+  }
+}
