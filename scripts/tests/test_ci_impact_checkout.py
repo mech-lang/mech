@@ -37,7 +37,8 @@ class ImpactCheckoutTests(unittest.TestCase):
             for key, value in [('user.name', 'CI fixture'), ('user.email', 'ci@example.invalid'),
                                ('commit.gpgsign', 'false'), ('uploadpack.allowFilter', 'true')]:
                 git(source, 'config', key, value)
-            for name in ['scripts/ci-impact.py', 'scripts/ci_owners.py', '.github/ci/owners.toml']:
+            for name in ['scripts/ci-impact.py', 'scripts/ci_owners.py', '.github/ci/owners.toml',
+                         'scripts/ci-fetch-impact-base.sh']:
                 destination = source / name
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copyfile(ROOT / name, destination)
@@ -47,6 +48,7 @@ class ImpactCheckoutTests(unittest.TestCase):
             (source / 'README.md').write_text('initial\n')
             git(source, 'add', '.')
             git(source, 'commit', '--quiet', '-m', 'base')
+            event_base = git(source, 'rev-parse', 'HEAD')
             git(source, 'checkout', '--quiet', '-b', 'feature')
             native.write_text('fn after() {}\n')
             git(source, 'commit', '--quiet', '-am', 'native change')
@@ -57,28 +59,36 @@ class ImpactCheckoutTests(unittest.TestCase):
             git(source, 'merge', '--quiet', '--no-ff', 'feature', '-m', 'PR integration merge')
             head = git(source, 'rev-parse', 'HEAD')
 
-            def classify(directory):
+            def classify(directory, comparison_base):
                 env = {key: value for key, value in os.environ.items() if not key.startswith('GITHUB_')}
                 return json.loads(subprocess.check_output(
-                    [sys.executable, 'scripts/ci-impact.py', '--base', base, '--head', head],
+                    [sys.executable, 'scripts/ci-impact.py', '--base', comparison_base, '--head', head],
                     cwd=directory, env=env, text=True))
 
-            expected = classify(source)
-            checkout = root / 'checkout'
-            subprocess.run(['git', 'clone', '--quiet', '--single-branch', '--no-checkout',
-                            '--depth', str(depth), '--filter=blob:none', source.as_uri(), str(checkout)],
-                           check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            git(checkout, 'sparse-checkout', 'set', '--no-cone', '--stdin', input='\n'.join(patterns)+'\n')
-            git(checkout, 'checkout', '--quiet')
-            self.assertEqual(git(checkout, 'rev-parse', 'HEAD'), head)
-            self.assertEqual(git(checkout, 'rev-parse', 'HEAD^1'), base)
-            self.assertEqual(git(checkout, 'rev-parse', '--is-shallow-repository'), 'true')
-            self.assertEqual(git(checkout, 'rev-list', '--count', 'HEAD'), '3')
-            self.assertFalse((checkout / 'hosts/gpu/src/backend.rs').exists())
-            observed = classify(checkout)
-            self.assertEqual(observed, expected)
-            self.assertEqual(observed['paths'], ['hosts/gpu/src/backend.rs'])
-            self.assertTrue(observed['native_validation_required'])
+            for index, comparison_base in enumerate([base, event_base]):
+                with self.subTest(base=comparison_base):
+                    expected = classify(source, comparison_base)
+                    checkout = root / f'checkout-{index}'
+                    subprocess.run(['git', 'clone', '--quiet', '--single-branch', '--no-checkout',
+                                    '--depth', str(depth), '--filter=blob:none', source.as_uri(), str(checkout)],
+                                   check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    git(checkout, 'sparse-checkout', 'set', '--no-cone', '--stdin', input='\n'.join(patterns)+'\n')
+                    git(checkout, 'checkout', '--quiet')
+                    self.assertEqual(git(checkout, 'rev-parse', 'HEAD'), head)
+                    self.assertEqual(git(checkout, 'rev-parse', 'HEAD^1'), base)
+                    self.assertEqual(git(checkout, 'rev-parse', '--is-shallow-repository'), 'true')
+                    self.assertEqual(git(checkout, 'rev-list', '--count', 'HEAD'), '3')
+                    subprocess.run(['bash', 'scripts/ci-fetch-impact-base.sh', comparison_base, head],
+                                   cwd=checkout, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    self.assertEqual(git(checkout, 'rev-parse', 'HEAD'), head)
+                    self.assertFalse((checkout / 'hosts/gpu/src/backend.rs').exists())
+                    observed = classify(checkout, comparison_base)
+                    self.assertEqual(observed, expected)
+                    self.assertTrue(observed['native_validation_required'])
+                    if comparison_base == base:
+                        self.assertEqual(observed['paths'], ['hosts/gpu/src/backend.rs'])
+                    else:
+                        self.assertEqual(observed['paths'], ['README.md', 'hosts/gpu/src/backend.rs'])
 
 
 if __name__ == '__main__':
