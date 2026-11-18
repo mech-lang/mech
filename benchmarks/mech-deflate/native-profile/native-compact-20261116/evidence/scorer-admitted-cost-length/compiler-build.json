@@ -1,0 +1,45 @@
+{
+  "base": "8c7cec1199fa1348e364c2052d9ec82b0934754e",
+  "compiler_sha256": "f2c3c4588740f8b91490b07e63a8b533b47d53257d7ebb4b441415119af4aefd",
+  "artifacts_disabled": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "source": {
+    "base": "8c7cec1199fa1348e364c2052d9ec82b0934754e",
+    "files": {
+      "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_read_setup.rs": {
+        "current": "367d5dc9ff9bbcf96ca1234dbf64e11195073f86f198b72733f9c00fcf7781a7",
+        "probe": "c6f112941c0106d39093ed6e5f754d1638a414341e9118f16dfc9414d60b9571"
+      },
+      "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+        "current": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
+        "probe": "aa518bb3743a2cb7b6b940f13b3a7c9f04ab383067c18134c8649bb83ce7b0d3"
+      },
+      "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+        "current": "e74aea973a1abe309cd37b432d6b1305307c1b5e2e36d984aedc34fd3d0d6965",
+        "probe": "224ff89799f8cbefa3fb7c8064b1ca30f89613f5644e4ce70e799c06806ae0c4"
+      }
+    },
+    "patch_sha256": "0fd4621432119c84246c2e5fa3afa9779433a9575b177307860880ec551c7895"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/compiler/disabled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "comparison_plan_sha256": "c4b8b2ade8e998e44586bc796f056c53215a8e8c89ee31982b6cb1e0a116908e",
+  "cargo_log_sha256": "01c78b9ed661a745e55e0acc2e867ee0217d2f0dd22304f3f33f998e79da93d7",
+  "rebuild_sha256": "aa68941c2fa1047c0790a40400954bee45f36a3c95566de6ea8a8e3a74ef8625"
+}
