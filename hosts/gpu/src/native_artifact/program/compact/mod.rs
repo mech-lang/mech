@@ -38,6 +38,7 @@ mod vector_guard_facts;
 pub(in crate::native_artifact) use phases::{
     NoGrowth, PRIVATE_HANDOFF, PrivatePhase, VectorContract,
 };
+mod allocation_stubs;
 mod map_index;
 mod maps;
 mod object;
@@ -46,7 +47,6 @@ mod owner_retirement;
 mod private_chains;
 mod recipes;
 mod release_stubs;
-mod allocation_stubs;
 mod strings;
 mod terminal_appends;
 mod utf8_classes;
