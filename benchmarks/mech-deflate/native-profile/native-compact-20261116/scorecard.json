@@ -14865,5 +14865,76 @@
         }
       }
     }
+  },
+  "heap_layout_recovery_m1": {
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "maintained_recipe": "frame-copies",
+    "smallest_peer_qualified_recipe": "m1-shared-heap-layout",
+    "status": "opt-in peer-qualified worker",
+    "runtime": {
+      "encoder_bytes": 64652,
+      "runtime_decision": "Retain",
+      "peak_stack_bytes": 4784,
+      "wins": [
+        {
+          "order": "forward",
+          "roc": 81,
+          "libdeflate": 62,
+          "distinct_roc": 74,
+          "distinct_libdeflate": 56,
+          "original_losing_case_x_roc": 0.9691181001537073
+        },
+        {
+          "order": "reverse",
+          "roc": 81,
+          "libdeflate": 62,
+          "distinct_roc": 74,
+          "distinct_libdeflate": 56,
+          "original_losing_case_x_roc": 0.9673089450421245
+        }
+      ],
+      "full_rejected": [],
+      "full_unresolved": [],
+      "relative": {
+        "slowdowns": [
+          "reymont-prefix-32769: established slowdown above the 0.5% resolution",
+          "heldout-window-32767: established slowdown above the 0.5% resolution",
+          "heldout-window-32768: established slowdown above the 0.5% resolution",
+          "heldout-slides-65537: established slowdown above the 0.5% resolution",
+          "prefix-natural-8192: established slowdown above the 0.5% resolution",
+          "prefix-natural-32767: established slowdown above the 0.5% resolution",
+          "prefix-natural-32768: established slowdown above the 0.5% resolution",
+          "prefix-natural-32769: established slowdown above the 0.5% resolution",
+          "prefix-natural-33027: established slowdown above the 0.5% resolution",
+          "prefix-natural-65535: established slowdown above the 0.5% resolution",
+          "prefix-natural-65536: established slowdown above the 0.5% resolution",
+          "prefix-natural-65537: established slowdown above the 0.5% resolution",
+          "prefix-natural-131072: established slowdown above the 0.5% resolution",
+          "prefix-natural-262144: established slowdown above the 0.5% resolution",
+          "prefix-natural-1048576: established slowdown above the 0.5% resolution"
+        ],
+        "uncertain": [
+          "prefix-natural-4096: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved"
+        ]
+      }
+    },
+    "original_smaller_experiment": {
+      "recipe": "m1-shared-heap-setup",
+      "encoder_bytes": 64668,
+      "peer_wins": [
+        {
+          "order": "forward",
+          "roc": 80,
+          "libdeflate": 62
+        },
+        {
+          "order": "reverse",
+          "roc": 81,
+          "libdeflate": 62
+        }
+      ]
+    },
+    "evidence": "evidence/encoder-size-gap/shared-heap-layout-recovery/result.json"
   }
 }

@@ -1,0 +1,30 @@
+{
+  "training": [
+    "prefix-natural-16384",
+    "prefix-natural-65536",
+    "prefix-random-4096",
+    "prefix-random-1048576",
+    "prefix-periodic-1024",
+    "heldout-mixed-131073"
+  ],
+  "held_out": [
+    "prefix-natural-32769",
+    "prefix-natural-8192",
+    "prefix-random-8192",
+    "320-overlap"
+  ],
+  "saved_unconditional_jumps": {
+    "prefix-natural-16384": 53.5,
+    "prefix-natural-65536": 67.0,
+    "prefix-random-4096": 1,
+    "prefix-random-1048576": 6,
+    "prefix-periodic-1024": 4.0,
+    "heldout-mixed-131073": 66.5,
+    "prefix-natural-32769": 15.5,
+    "prefix-natural-8192": 44.0,
+    "prefix-random-8192": 1,
+    "320-overlap": 3.0
+  },
+  "original_profile_sha256": "a67d413cfbc8860fb0e157b2deff34a81c36423173bf7d50aea6d782ebaea881",
+  "source_count_sha256": "5aaf271349c5a82e56cdff3440af2456c70c57ee2a4d56200862db3f7b36bd54"
+}

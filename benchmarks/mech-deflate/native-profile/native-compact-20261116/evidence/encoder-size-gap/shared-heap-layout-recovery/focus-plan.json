@@ -1,0 +1,26 @@
+{
+  "base_worker_sha256": "2b5ad01cdf276075c93d75957b48da8d0914e256f6ad9414bc3c76403966ba85",
+  "candidate_worker_sha256": "de6f455470e6c07a49ecf53a09d178ab41177c1a54ccd810233eee3dbe7cc361",
+  "policy_sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c",
+  "base_timer_sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+  "timer_sha256": "cc6d5d3cc5ddacca1110fb3b1207edfae4ccec2482ffe6083d69b4bb884b872b",
+  "cases": [
+    "prefix-natural-32767",
+    "prefix-natural-32768",
+    "prefix-natural-32769",
+    "prefix-natural-33027",
+    "prefix-natural-8192",
+    "prefix-natural-4096",
+    "320-overlap",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-random-32769",
+    "prefix-periodic-32769",
+    "heldout-window-32768"
+  ],
+  "orders": [
+    "forward",
+    "reverse"
+  ],
+  "blocks_per_case": 96
+}

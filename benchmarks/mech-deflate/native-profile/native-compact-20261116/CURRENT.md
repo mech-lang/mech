@@ -31,7 +31,10 @@ Shared release setup spends 0.706 s parsing, 0.217 s in source semantics, 0.009 
 
 Frame-copies remains the maintained control. All three named recipes remain opt-in. Each exact archived worker records 81/81 Roc and 62/81 libdeflate wins in each full order, covering 74/74 and 56/74 distinct contracts. The fresh comparison with frame-copies found four cases with established slowdowns in both orders for checked regions and six for compact match equality. Shared release setup still needs a direct runtime comparison with frame-copies. [Runtime qualification](evidence/m1-source-built-20261118/result.json) · [Paired intervals and matcher diagnosis](evidence/m1-source-built-20261118/maintained-runtime/README.md)
 
-PR #993 also records a 64,668 B trial whose forward sweep lost a Roc case. [PR #993 M1 results](https://github.com/mech-lang/mech/pull/993)
+The 64,668 B shared-heap trial missed one Roc win in the forward sweep.
+Its **64,652 B** successor passes both full M1 sweeps at **81/81 Roc and
+62/81 libdeflate**. The previously lost case runs at 0.969× Roc forward
+and 0.967× reverse. Both heap recipes are opt-in. [Original trial](evidence/encoder-size-gap/shared-heap-call-screen/README.md) · [Smaller qualified worker](evidence/encoder-size-gap/shared-heap-layout-recovery/README.md)
 
 The current native profile attributes the largest traced intervals to root CFG cleanup and phase construction. Retirement-transition caching reuses 3.1% of transitions and adds a paired median 4.7 ms to the complete build. It stays experimental. [Native spans and paired prototype results](evidence/m1-source-built-20261118/native-attribution/README.md)
 
